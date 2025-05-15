@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import TripNew from "./pages/TripNew";
+import TripOffers from "./pages/TripOffers";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 
@@ -35,6 +36,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <TripNew />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/trip/offers" 
+            element={
+              <AuthGuard>
+                <TripOffers />
               </AuthGuard>
             } 
           />
