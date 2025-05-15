@@ -1,10 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Airplane, Calendar, Clock } from "lucide-react";
+import { PlaneTakeoff, Calendar, Clock } from "lucide-react";
 
 interface Offer {
   id: string;
@@ -205,7 +204,7 @@ const TripOffers = () => {
                   </div>
                   
                   <div className="mt-4 flex items-center">
-                    <Airplane className="h-4 w-4 mr-2 text-gray-500" />
+                    <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
                     <span className="text-sm text-gray-500">Flight duration: {offer.duration}</span>
                   </div>
                 </div>
