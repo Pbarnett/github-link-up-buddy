@@ -4,29 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form } from "@/components/ui/form";
+import TripDateField from "./TripDateField";
+import TripNumberField from "./TripNumberField";
 
 // Form schema with Zod validation
 const formSchema = z.object({
@@ -126,8 +110,8 @@ const TripRequestForm = () => {
         description: "Your trip request has been submitted successfully!",
       });
       
-      // Here you could potentially redirect to a results page
-      // navigate(`/trip/offers?id=${responseData.trip_request_id}`);
+      // Navigate to the offers page with the trip ID
+      navigate(`/trip/offers?id=${responseData.trip_request_id}`);
     } catch (error) {
       console.error("Error submitting trip request:", error);
       toast({
@@ -149,144 +133,31 @@ const TripRequestForm = () => {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
+            <TripDateField 
               name="earliestDeparture"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Earliest Departure Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Select date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < new Date(new Date().setHours(0, 0, 0, 0))
-                        }
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    The earliest date you can depart for your trip.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Earliest Departure Date"
+              description="The earliest date you can depart for your trip."
             />
 
-            <FormField
-              control={form.control}
+            <TripDateField 
               name="latestDeparture"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Latest Departure Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Select date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < new Date(new Date().setHours(0, 0, 0, 0))
-                        }
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    The latest date you can depart for your trip.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Latest Departure Date"
+              description="The latest date you can depart for your trip."
             />
 
-            <FormField
-              control={form.control}
+            <TripNumberField 
               name="duration"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Duration (days)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Enter trip duration"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    How many days will your trip last? (1-30)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Duration (days)"
+              description="How many days will your trip last? (1-30)"
+              placeholder="Enter trip duration"
             />
 
-            <FormField
-              control={form.control}
+            <TripNumberField 
               name="budget"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Budget (USD)</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <span className="text-gray-500">$</span>
-                      </div>
-                      <Input
-                        type="number"
-                        placeholder="Enter your budget"
-                        className="pl-7"
-                        {...field}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormDescription>
-                    Your budget for the trip ($100-$10,000)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Budget (USD)"
+              description="Your budget for the trip ($100-$10,000)"
+              placeholder="Enter your budget"
+              prefix="$"
             />
 
             <div className="pt-4 flex justify-between">
