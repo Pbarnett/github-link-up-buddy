@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import TripNew from "./pages/TripNew";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 
@@ -26,6 +27,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <Dashboard />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/trip/new" 
+            element={
+              <AuthGuard>
+                <TripNew />
               </AuthGuard>
             } 
           />
