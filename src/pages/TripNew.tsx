@@ -57,8 +57,15 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+// Mock API response type
+interface FlightSearchResponse {
+  trip_request_id: string;
+  offers: Array<any>;
+}
+
 const TripNew = () => {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Initialize form with React Hook Form and Zod resolver
   const form = useForm<FormValues>({
@@ -70,12 +77,67 @@ const TripNew = () => {
   });
 
   // Form submission handler
-  const onSubmit = (data: FormValues) => {
-    console.log("Form data:", data);
-    toast({
-      title: "Trip request submitted",
-      description: "Your trip request has been submitted successfully!",
-    });
+  const onSubmit = async (data: FormValues) => {
+    try {
+      setIsSubmitting(true);
+      
+      console.log("Sending form data:", data);
+      
+      // Mock implementation of API call
+      // In a real application, this would be a fetch call to a real endpoint
+      const response = await fetch('/api/search-flight', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      // For development purposes, we'll simulate a successful response
+      // Remove this mock implementation when connecting to a real API
+      const mockResponse: FlightSearchResponse = {
+        trip_request_id: `trip-${Date.now()}`,
+        offers: [
+          { 
+            id: 'offer-1', 
+            price: data.budget * 0.8, 
+            airline: 'Mock Airlines', 
+            departure_date: data.earliestDeparture.toISOString() 
+          },
+          { 
+            id: 'offer-2', 
+            price: data.budget * 0.9, 
+            airline: 'Test Airways', 
+            departure_date: new Date(
+              data.earliestDeparture.getTime() + 24 * 60 * 60 * 1000
+            ).toISOString() 
+          }
+        ],
+      };
+      
+      // Simulate API response
+      const responseData: FlightSearchResponse = mockResponse;
+      
+      // Log the offers from the response
+      console.log('Received offers:', responseData?.offers);
+      
+      toast({
+        title: "Trip request submitted",
+        description: "Your trip request has been submitted successfully!",
+      });
+      
+      // Here you could potentially redirect to a results page
+      // navigate(`/trip/offers?id=${responseData.trip_request_id}`);
+    } catch (error) {
+      console.error("Error submitting trip request:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit trip request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -236,8 +298,11 @@ const TripNew = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">
-                  Submit
+                <Button 
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit"}
                 </Button>
               </div>
             </form>
