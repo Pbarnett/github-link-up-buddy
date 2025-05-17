@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form } from "@/components/ui/form";
 import TripDateField from "./TripDateField";
 import TripNumberField from "./TripNumberField";
+import { supabase } from "@/integrations/supabase/client";
 
 // Form schema with Zod validation
 const formSchema = z.object({
@@ -41,21 +42,22 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-// Mock API response type
-interface FlightSearchResponse {
-  trip_request_id: string;
-  trip_details: {
-    earliestDeparture: string;
-    latestDeparture: string;
-    duration: number;
-    budget: number;
-  };
-  offers: Array<any>;
-}
-
 const TripRequestForm = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  
+  // Get the current user ID when component mounts
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    
+    getCurrentUser();
+  }, []);
   
   // Initialize form with React Hook Form and Zod resolver
   const form = useForm<FormValues>({
@@ -71,61 +73,69 @@ const TripRequestForm = () => {
     try {
       setIsSubmitting(true);
       
+      if (!userId) {
+        toast({
+          title: "Authentication error",
+          description: "You must be logged in to create a trip request.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       console.log("Sending form data:", data);
       
-      // Mock implementation of API call
-      // In a real application, this would be a fetch call to a real endpoint
-      const response = await fetch('/api/search-flight', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      // For development purposes, we'll simulate a successful response
-      // Remove this mock implementation when connecting to a real API
-      const mockResponse: FlightSearchResponse = {
-        trip_request_id: `trip-${Date.now()}`,
-        trip_details: {
-          earliestDeparture: data.earliestDeparture.toISOString(),
-          latestDeparture: data.latestDeparture.toISOString(),
+      // Insert trip request into Supabase
+      const { data: tripRequest, error } = await supabase
+        .from('trip_requests')
+        .insert({
+          user_id: userId,
+          earliest_departure: data.earliestDeparture.toISOString(),
+          latest_departure: data.latestDeparture.toISOString(),
           duration: data.duration,
           budget: data.budget
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error submitting trip request:", error);
+        toast({
+          title: "Error",
+          description: `Failed to submit trip request: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log("Trip request created:", tripRequest);
+      
+      // Generate mock offers for now (will be replaced with real offers in the future)
+      const mockOffers = [
+        { 
+          id: 'offer-1', 
+          price: data.budget * 0.8, 
+          airline: 'Mock Airlines',
+          flight_number: 'MA1234',
+          departure_date: data.earliestDeparture.toISOString().split('T')[0],
+          departure_time: '08:30',
+          return_date: new Date(data.earliestDeparture.getTime() + data.duration * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          return_time: '10:45',
+          duration: '2h 15m'
         },
-        offers: [
-          { 
-            id: 'offer-1', 
-            price: data.budget * 0.8, 
-            airline: 'Mock Airlines',
-            flight_number: 'MA1234',
-            departure_date: data.earliestDeparture.toISOString().split('T')[0],
-            departure_time: '08:30',
-            return_date: new Date(data.earliestDeparture.getTime() + data.duration * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            return_time: '10:45',
-            duration: '2h 15m'
-          },
-          { 
-            id: 'offer-2', 
-            price: data.budget * 0.9, 
-            airline: 'Test Airways',
-            flight_number: 'TA5678',
-            departure_date: new Date(
-              data.earliestDeparture.getTime() + 24 * 60 * 60 * 1000
-            ).toISOString().split('T')[0],
-            departure_time: '14:20',
-            return_date: new Date(data.earliestDeparture.getTime() + (data.duration + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            return_time: '16:30',
-            duration: '2h 45m'
-          }
-        ],
-      };
-      
-      // Simulate API response
-      const responseData: FlightSearchResponse = mockResponse;
-      
-      // Log the offers from the response
-      console.log('Received offers:', responseData?.offers);
+        { 
+          id: 'offer-2', 
+          price: data.budget * 0.9, 
+          airline: 'Test Airways',
+          flight_number: 'TA5678',
+          departure_date: new Date(
+            data.earliestDeparture.getTime() + 24 * 60 * 60 * 1000
+          ).toISOString().split('T')[0],
+          departure_time: '14:20',
+          return_date: new Date(data.earliestDeparture.getTime() + (data.duration + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          return_time: '16:30',
+          duration: '2h 45m'
+        }
+      ];
       
       toast({
         title: "Trip request submitted",
@@ -133,8 +143,16 @@ const TripRequestForm = () => {
       });
       
       // Navigate to the offers page with the trip ID and trip details
-      navigate(`/trip/offers?id=${responseData.trip_request_id}`, { 
-        state: { tripDetails: responseData.trip_details } 
+      navigate(`/trip/offers?id=${tripRequest.id}`, { 
+        state: { 
+          tripDetails: {
+            earliestDeparture: data.earliestDeparture.toISOString(),
+            latestDeparture: data.latestDeparture.toISOString(),
+            duration: data.duration,
+            budget: data.budget
+          },
+          offers: mockOffers
+        } 
       });
     } catch (error) {
       console.error("Error submitting trip request:", error);
