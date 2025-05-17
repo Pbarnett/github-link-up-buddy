@@ -12,6 +12,7 @@ import { Form } from "@/components/ui/form";
 import TripDateField from "./TripDateField";
 import TripNumberField from "./TripNumberField";
 import { supabase } from "@/integrations/supabase/client";
+import { TablesInsert } from "@/integrations/supabase/types";
 
 // Form schema with Zod validation
 const formSchema = z.object({
@@ -84,16 +85,19 @@ const TripRequestForm = () => {
       
       console.log("Sending form data:", data);
       
-      // Insert trip request into Supabase
+      // Create a typed insert object for trip_requests
+      const tripRequestData: TablesInsert<"trip_requests"> = {
+        user_id: userId,
+        earliest_departure: data.earliestDeparture.toISOString(),
+        latest_departure: data.latestDeparture.toISOString(),
+        duration: data.duration,
+        budget: data.budget
+      };
+      
+      // Insert trip request into Supabase with proper types
       const { data: tripRequest, error } = await supabase
-        .from('trip_requests')
-        .insert({
-          user_id: userId,
-          earliest_departure: data.earliestDeparture.toISOString(),
-          latest_departure: data.latestDeparture.toISOString(),
-          duration: data.duration,
-          budget: data.budget
-        })
+        .from("trip_requests")
+        .insert(tripRequestData)
         .select()
         .single();
       
@@ -143,7 +147,8 @@ const TripRequestForm = () => {
       });
       
       // Navigate to the offers page with the trip ID and trip details
-      navigate(`/trip/offers?id=${tripRequest.id}`, { 
+      // Added null check for tripRequest
+      navigate(`/trip/offers?id=${tripRequest?.id || ''}`, { 
         state: { 
           tripDetails: {
             earliestDeparture: data.earliestDeparture.toISOString(),
