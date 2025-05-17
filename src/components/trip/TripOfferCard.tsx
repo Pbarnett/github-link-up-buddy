@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlaneTakeoff, Calendar, Clock } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
 
 export interface OfferProps {
   id: string;
@@ -18,8 +19,26 @@ export interface OfferProps {
 }
 
 const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
+  const router = useRouter();
+
   const handleSelect = () => {
     console.log('Selected offer', offer.id);
+    
+    // Create query parameters from the offer
+    const params = new URLSearchParams();
+    params.set('id', offer.id);
+    params.set('airline', offer.airline);
+    params.set('flight_number', offer.flight_number);
+    params.set('price', offer.price.toString());
+    params.set('departure_date', offer.departure_date);
+    params.set('departure_time', offer.departure_time);
+    params.set('return_date', offer.return_date);
+    params.set('return_time', offer.return_time);
+    params.set('duration', offer.duration);
+    
+    // Navigate to confirm page with offer details in query string
+    router.push(`/trip/confirm?${params.toString()}`);
+    
     toast({
       title: "Flight Selected",
       description: `You've selected ${offer.airline} flight ${offer.flight_number}`,
