@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlaneTakeoff, Calendar, Clock } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
 export interface OfferProps {
   id: string;
@@ -19,7 +19,7 @@ export interface OfferProps {
 }
 
 const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const handleSelect = () => {
     console.log('Selected offer', offer.id);
@@ -37,7 +37,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
     params.set('duration', offer.duration);
     
     // Navigate to confirm page with offer details in query string
-    router.push(`/trip/confirm?${params.toString()}`);
+    navigate(`/trip/confirm?${params.toString()}`);
     
     toast({
       title: "Flight Selected",
