@@ -9,6 +9,56 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      flight_offers: {
+        Row: {
+          airline: string
+          created_at: string
+          departure_date: string
+          departure_time: string
+          duration: string
+          flight_number: string
+          id: string
+          price: number
+          return_date: string
+          return_time: string
+          trip_request_id: string
+        }
+        Insert: {
+          airline: string
+          created_at?: string
+          departure_date: string
+          departure_time: string
+          duration: string
+          flight_number: string
+          id?: string
+          price: number
+          return_date: string
+          return_time: string
+          trip_request_id: string
+        }
+        Update: {
+          airline?: string
+          created_at?: string
+          departure_date?: string
+          departure_time?: string
+          duration?: string
+          flight_number?: string
+          id?: string
+          price?: number
+          return_date?: string
+          return_time?: string
+          trip_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_offers_trip_request_id_fkey"
+            columns: ["trip_request_id"]
+            isOneToOne: false
+            referencedRelation: "trip_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_requests: {
         Row: {
           budget: number
