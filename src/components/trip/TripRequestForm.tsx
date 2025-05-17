@@ -44,6 +44,12 @@ type FormValues = z.infer<typeof formSchema>;
 // Mock API response type
 interface FlightSearchResponse {
   trip_request_id: string;
+  trip_details: {
+    earliestDeparture: string;
+    latestDeparture: string;
+    duration: number;
+    budget: number;
+  };
   offers: Array<any>;
 }
 
@@ -81,20 +87,36 @@ const TripRequestForm = () => {
       // Remove this mock implementation when connecting to a real API
       const mockResponse: FlightSearchResponse = {
         trip_request_id: `trip-${Date.now()}`,
+        trip_details: {
+          earliestDeparture: data.earliestDeparture.toISOString(),
+          latestDeparture: data.latestDeparture.toISOString(),
+          duration: data.duration,
+          budget: data.budget
+        },
         offers: [
           { 
             id: 'offer-1', 
             price: data.budget * 0.8, 
-            airline: 'Mock Airlines', 
-            departure_date: data.earliestDeparture.toISOString() 
+            airline: 'Mock Airlines',
+            flight_number: 'MA1234',
+            departure_date: data.earliestDeparture.toISOString().split('T')[0],
+            departure_time: '08:30',
+            return_date: new Date(data.earliestDeparture.getTime() + data.duration * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            return_time: '10:45',
+            duration: '2h 15m'
           },
           { 
             id: 'offer-2', 
             price: data.budget * 0.9, 
-            airline: 'Test Airways', 
+            airline: 'Test Airways',
+            flight_number: 'TA5678',
             departure_date: new Date(
               data.earliestDeparture.getTime() + 24 * 60 * 60 * 1000
-            ).toISOString() 
+            ).toISOString().split('T')[0],
+            departure_time: '14:20',
+            return_date: new Date(data.earliestDeparture.getTime() + (data.duration + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            return_time: '16:30',
+            duration: '2h 45m'
           }
         ],
       };
@@ -110,8 +132,10 @@ const TripRequestForm = () => {
         description: "Your trip request has been submitted successfully!",
       });
       
-      // Navigate to the offers page with the trip ID
-      navigate(`/trip/offers?id=${responseData.trip_request_id}`);
+      // Navigate to the offers page with the trip ID and trip details
+      navigate(`/trip/offers?id=${responseData.trip_request_id}`, { 
+        state: { tripDetails: responseData.trip_details } 
+      });
     } catch (error) {
       console.error("Error submitting trip request:", error);
       toast({

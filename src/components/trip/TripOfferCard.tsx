@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlaneTakeoff, Calendar, Clock } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 export interface OfferProps {
   id: string;
@@ -17,6 +18,14 @@ export interface OfferProps {
 }
 
 const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
+  const handleSelect = () => {
+    console.log('Selected offer', offer.id);
+    toast({
+      title: "Flight Selected",
+      description: `You've selected ${offer.airline} flight ${offer.flight_number}`,
+    });
+  };
+
   return (
     <Card key={offer.id} className="overflow-hidden hover:shadow-md transition-shadow">
       <div className="flex flex-col md:flex-row">
@@ -62,7 +71,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
         <div className="bg-gray-50 p-6 flex flex-col justify-center items-center md:items-end">
           <p className="text-3xl font-bold mb-2">${offer.price}</p>
           <p className="text-sm text-gray-500 mb-4">Round trip per person</p>
-          <Button className="w-full md:w-auto">
+          <Button className="w-full md:w-auto" onClick={handleSelect}>
             Select This Flight
           </Button>
         </div>
