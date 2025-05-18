@@ -84,10 +84,28 @@ const TripRequestForm = () => {
         return;
       }
       
+      // Explicitly check if all required fields are present
+      if (!data.earliestDeparture || !data.latestDeparture || !data.duration || !data.budget) {
+        toast({
+          title: "Validation error",
+          description: "Please fill in all required fields.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       console.log("Sending form data:", data);
       
+      // Construct a valid TripFormValues object
+      const tripFormData: TripFormValues = {
+        earliestDeparture: data.earliestDeparture,
+        latestDeparture: data.latestDeparture,
+        duration: data.duration,
+        budget: data.budget
+      };
+      
       // Use the tripService to create the trip request and flight offers
-      const result = await createTripRequest(userId, data);
+      const result = await createTripRequest(userId, tripFormData);
       
       // Log the inserted offers to console
       console.log("Inserted offers:", result.offers);
