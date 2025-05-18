@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,15 +8,56 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+// Auth state cleanup utility
+const cleanupAuthState = () => {
+  // Remove standard auth tokens
+  localStorage.removeItem('supabase.auth.token');
+  
+  // Remove all Supabase auth keys from localStorage
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      localStorage.removeItem(key);
+    }
+  });
+  
+  // Remove from sessionStorage if in use
+  try {
+    Object.keys(sessionStorage || {}).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  } catch (error) {
+    // Ignore if sessionStorage is not available
+  }
+};
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check if user is already authenticated
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (session) setIsAuthenticated(true);
-  });
+  useEffect(() => {
+    // Check if user is already authenticated on mount
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      console.log('Initial session check:', data.session);
+      setIsAuthenticated(!!data.session);
+    };
+    
+    checkSession();
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      setIsAuthenticated(!!session);
+    });
+    
+    // Clean up subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +74,17 @@ const Login = () => {
     setLoading(true);
     
     try {
+      // Clean up existing auth state
+      cleanupAuthState();
+      
+      // Attempt to sign out globally (ignore errors)
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (signOutError) {
+        console.log('Sign out error (ignored):', signOutError);
+      }
+      
+      // Now sign in with OTP
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
@@ -47,6 +99,7 @@ const Login = () => {
         description: "We've sent you a login link",
       });
     } catch (error: any) {
+      console.error('Login error:', error);
       toast({
         title: "Error",
         description: error.message || "An error occurred during login",
@@ -61,6 +114,17 @@ const Login = () => {
     setLoading(true);
     
     try {
+      // Clean up existing auth state
+      cleanupAuthState();
+      
+      // Attempt to sign out globally (ignore errors)
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (signOutError) {
+        console.log('Sign out error (ignored):', signOutError);
+      }
+      
+      // Now sign in with Google OAuth
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -70,6 +134,7 @@ const Login = () => {
       
       if (error) throw error;
     } catch (error: any) {
+      console.error('Google login error:', error);
       toast({
         title: "Error",
         description: error.message || "An error occurred during login",
