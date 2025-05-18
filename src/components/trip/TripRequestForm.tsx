@@ -184,29 +184,34 @@ const TripRequestForm = () => {
       // Generate mock offers based on the trip details
       const mockOffers = generateMockOffers(data, tripRequest.id);
       
-      // Store the offers in Supabase
+      // Store the offers in Supabase and explicitly await the response
       const { data: offersData, error: offersError } = await supabase
         .from("flight_offers")
-        .insert(mockOffers);
+        .insert(mockOffers)
+        .select();
       
       if (offersError) {
         console.error("Error storing flight offers:", offersError);
         toast({
-          title: "Warning",
-          description: `Trip request saved, but there was an issue with flight offers: ${offersError.message}`,
+          title: "Error",
+          description: `Failed to save flight offers: ${offersError.message}`,
           variant: "destructive",
         });
+        // Don't navigate since the offers insert failed
+        return;
       } else {
-        console.log("Flight offers stored successfully");
+        // Log the inserted offers to console
+        console.log("Inserted offers:", offersData);
+        
+        // Show success toast with count of offers saved
+        toast({
+          title: "Trip request submitted",
+          description: `Your trip request has been submitted with ${offersData?.length || 0} flight offers!`,
+        });
+        
+        // Navigate to the offers page with only the trip ID
+        navigate(`/trip/offers?id=${tripRequest.id}`);
       }
-      
-      toast({
-        title: "Trip request submitted",
-        description: "Your trip request has been submitted successfully!",
-      });
-      
-      // Navigate to the offers page with only the trip ID
-      navigate(`/trip/offers?id=${tripRequest.id}`);
     } catch (error) {
       console.error("Error submitting trip request:", error);
       toast({
