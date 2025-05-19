@@ -5,16 +5,19 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, PlaneTakeoff, Check, X } from "lucide-react";
+import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
+import { supabase } from "@/integrations/supabase/client";
+import { TablesInsert } from "@/integrations/supabase/types";
 
 const TripConfirm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [offer, setOffer] = useState<OfferProps | null>(null);
   const [hasError, setHasError] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
 
   useEffect(() => {
     // Parse query parameters
@@ -62,13 +65,71 @@ const TripConfirm = () => {
     router.push('/trip/offers');
   };
 
-  const handleConfirm = () => {
-    console.log('Confirmed booking for offer:', offer);
-    // Just log to console for now, no booking logic yet
-    toast({
-      title: "Booking Confirmed",
-      description: `You've booked ${offer?.airline} flight ${offer?.flight_number}`,
-    });
+  const handleConfirm = async () => {
+    if (!offer || !offer.id) {
+      toast({
+        title: "Error",
+        description: "Invalid flight information. Cannot complete booking.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsBooking(true);
+
+    try {
+      // 1. Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error(userError?.message || "User not authenticated");
+      }
+
+      // 2. Get the trip_request_id from flight_offers using the flight offer ID
+      const { data: flightOffer, error: flightOfferError } = await supabase
+        .from('flight_offers')
+        .select('trip_request_id')
+        .eq('id', offer.id)
+        .single();
+
+      if (flightOfferError || !flightOffer) {
+        throw new Error(flightOfferError?.message || "Could not find flight offer details");
+      }
+
+      // 3. Create booking record
+      const bookingData: TablesInsert<"bookings"> = {
+        user_id: user.id,
+        trip_request_id: flightOffer.trip_request_id,
+        flight_offer_id: offer.id,
+      };
+
+      const { error: bookingError } = await supabase
+        .from('bookings')
+        .insert(bookingData);
+
+      if (bookingError) {
+        throw new Error(bookingError.message || "Failed to create booking");
+      }
+
+      // Success
+      toast({
+        title: "Booking Confirmed",
+        description: `You've successfully booked ${offer.airline} flight ${offer.flight_number}`,
+      });
+
+      // Redirect to dashboard
+      router.push('/dashboard');
+
+    } catch (error: any) {
+      console.error("Error creating booking:", error);
+      toast({
+        title: "Booking Failed",
+        description: error.message || "There was a problem creating your booking. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   if (hasError) {
@@ -167,11 +228,19 @@ const TripConfirm = () => {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button onClick={handleCancel} variant="outline">
+          <Button onClick={handleCancel} variant="outline" disabled={isBooking}>
             <X className="mr-2 h-4 w-4" /> Cancel
           </Button>
-          <Button onClick={handleConfirm}>
-            <Check className="mr-2 h-4 w-4" /> Confirm Booking
+          <Button onClick={handleConfirm} disabled={isBooking}>
+            {isBooking ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing
+              </>
+            ) : (
+              <>
+                <Check className="mr-2 h-4 w-4" /> Confirm Booking
+              </>
+            )}
           </Button>
         </CardFooter>
       </Card>
