@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -117,6 +118,14 @@ const Login = () => {
       console.log("Initiating Google login from:", window.location.origin);
       console.log("Redirect URL:", window.location.origin + '/dashboard');
       
+      // Log the Supabase client configuration
+      console.log("Supabase URL:", supabase.supabaseUrl);
+      console.log("Supabase auth config:", {
+        storage: supabase.auth.storage,
+        autoRefreshToken: supabase.auth.autoRefreshToken,
+        persistSession: supabase.auth.persistSession
+      });
+      
       // Clean up existing auth state
       cleanupAuthState();
       
@@ -127,13 +136,37 @@ const Login = () => {
         console.log('Sign out error (ignored):', signOutError);
       }
       
-      // Now sign in with Google OAuth
-      const { error } = await supabase.auth.signInWithOAuth({
+      // Check for popup blockers
+      const popupTest = window.open('about:blank', '_blank', 'width=1,height=1');
+      if (!popupTest) {
+        toast({
+          title: "Popup Blocked",
+          description: "Please enable popups for this site to use Google login",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+      popupTest.close();
+      
+      console.log("Sending OAuth request with params:", {
         provider: 'google',
         options: {
           redirectTo: window.location.origin + '/dashboard',
+          skipBrowserRedirect: false
         }
       });
+      
+      // Now sign in with Google OAuth with explicit parameters
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/dashboard',
+          skipBrowserRedirect: false
+        }
+      });
+      
+      console.log("OAuth response:", data);
       
       if (error) throw error;
     } catch (error: any) {
