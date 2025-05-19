@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -118,12 +117,12 @@ const Login = () => {
       console.log("Initiating Google login from:", window.location.origin);
       console.log("Redirect URL:", window.location.origin + '/dashboard');
       
-      // Log the Supabase client configuration
-      console.log("Supabase URL:", supabase.supabaseUrl);
+      // Log known Supabase configuration (using hardcoded known values instead of accessing protected properties)
+      console.log("Supabase URL:", "https://bbonngdyfyfjqfhvoljl.supabase.co");
       console.log("Supabase auth config:", {
-        storage: supabase.auth.storage,
-        autoRefreshToken: supabase.auth.autoRefreshToken,
-        persistSession: supabase.auth.persistSession
+        storage: "localStorage",
+        autoRefreshToken: true,
+        persistSession: true
       });
       
       // Clean up existing auth state
