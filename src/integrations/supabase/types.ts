@@ -102,28 +102,40 @@ export type Database = {
         Row: {
           budget: number
           created_at: string
+          departure_airports: string[]
+          destination_airport: string | null
           duration: number
           earliest_departure: string
           id: string
           latest_departure: string
+          max_duration: number
+          min_duration: number
           user_id: string
         }
         Insert: {
           budget: number
           created_at?: string
+          departure_airports?: string[]
+          destination_airport?: string | null
           duration: number
           earliest_departure: string
           id?: string
           latest_departure: string
+          max_duration?: number
+          min_duration?: number
           user_id: string
         }
         Update: {
           budget?: number
           created_at?: string
+          departure_airports?: string[]
+          destination_airport?: string | null
           duration?: number
           earliest_departure?: string
           id?: string
           latest_departure?: string
+          max_duration?: number
+          min_duration?: number
           user_id?: string
         }
         Relationships: []
