@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -114,6 +113,10 @@ const Login = () => {
     setLoading(true);
     
     try {
+      // Log debugging information
+      console.log("Initiating Google login from:", window.location.origin);
+      console.log("Redirect URL:", window.location.origin + '/dashboard');
+      
       // Clean up existing auth state
       cleanupAuthState();
       
@@ -135,6 +138,7 @@ const Login = () => {
       if (error) throw error;
     } catch (error: any) {
       console.error('Google login error:', error);
+      console.error('Google login error details:', JSON.stringify(error, null, 2));
       toast({
         title: "Error",
         description: error.message || "An error occurred during login",
