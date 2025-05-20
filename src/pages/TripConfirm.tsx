@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -92,7 +93,7 @@ const TripConfirm = () => {
 
     try {
       // Get the trip_request_id from flight_offers using the flight offer ID
-      const flightOfferResult = await safeQuery(() => 
+      const flightOfferResult = await safeQuery<{ trip_request_id: string }>(() => 
         supabase
           .from('flight_offers')
           .select('trip_request_id')
@@ -107,7 +108,7 @@ const TripConfirm = () => {
       const flightOffer = flightOfferResult.data;
       
       // Security check: Verify that the trip request belongs to the current user
-      const tripRequestResult = await safeQuery(() => 
+      const tripRequestResult = await safeQuery<{ user_id: string }>(() => 
         supabase
           .from('trip_requests')
           .select('user_id')
@@ -139,7 +140,7 @@ const TripConfirm = () => {
         flight_offer_id: offer.id,
       };
 
-      const bookingResult = await safeQuery(() => 
+      const bookingResult = await safeQuery<Tables<"bookings">>(() => 
         supabase
           .from('bookings')
           .insert(bookingData)

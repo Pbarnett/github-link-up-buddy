@@ -24,7 +24,7 @@ export const createTripRequest = async (
   };
   
   // Insert trip request into Supabase with proper types
-  const tripRequestResult = await safeQuery(() =>
+  const tripRequestResult = await safeQuery<Tables<"trip_requests">>(() =>
     supabase
       .from("trip_requests")
       .insert(tripRequestData)
@@ -36,7 +36,7 @@ export const createTripRequest = async (
     throw new Error(`Failed to submit trip request: ${tripRequestResult.error.message}`);
   }
   
-  const tripRequest = tripRequestResult.data;
+  const tripRequest = tripRequestResult.data as Tables<"trip_requests">;
   
   // Generate mock offers based on the trip details
   const mockOffers = generateMockOffers({
@@ -46,7 +46,7 @@ export const createTripRequest = async (
   }, tripRequest.id);
   
   // Store the offers in Supabase and explicitly await the response
-  const offersResult = await safeQuery(() => 
+  const offersResult = await safeQuery<Tables<"flight_offers">>(() => 
     supabase
       .from("flight_offers")
       .insert(mockOffers)
