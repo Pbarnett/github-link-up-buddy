@@ -1,5 +1,5 @@
 
-import { PostgrestError } from '@supabase/supabase-js';
+import { PostgrestError, PostgrestSingleResponse, PostgrestResponse, PostgrestMaybeSingleResponse } from '@supabase/supabase-js';
 import { toast } from '@/components/ui/use-toast';
 
 /**
@@ -20,7 +20,7 @@ interface QueryResult<T> {
 }
 
 export async function safeQuery<T>(
-  queryFn: () => Promise<{ data: T | null; error: PostgrestError | null }>,
+  queryFn: () => Promise<PostgrestSingleResponse<T> | PostgrestResponse<T> | PostgrestMaybeSingleResponse<T>>,
   options?: {
     errorMessage?: string;
     showErrorToast?: boolean;
