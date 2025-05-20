@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,11 +14,11 @@ import { TripFormValues } from "@/services/mockOffers";
 
 // Import the section components
 import DateRangeSection from "./sections/DateRangeSection";
+import BudgetSection from "./sections/BudgetSection";
 // We'll add the other imports later
 // import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 // import DestinationSection from "./sections/DestinationSection";
 // import TripDurationSection from "./sections/TripDurationSection";
-// import BudgetSection from "./sections/BudgetSection";
 
 // Form schema with Zod validation
 const formSchema = z.object({
@@ -207,11 +206,17 @@ const TripRequestForm = () => {
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Add DateRangeSection */}
+            {/* DateRangeSection */}
             <div className="p-4 bg-blue-100 rounded mb-4">
               DateRangeSection test container:
             </div>
             <DateRangeSection control={form.control} />
+            
+            {/* BudgetSection */}
+            <div className="p-4 bg-green-100 rounded mb-4">
+              BudgetSection test container:
+            </div>
+            <BudgetSection control={form.control} />
             
             <div className="pt-4 flex justify-between">
               <Button 
