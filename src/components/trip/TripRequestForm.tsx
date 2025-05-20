@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,10 +15,11 @@ import { TripFormValues } from "@/services/mockOffers";
 
 // Import the section components
 import DateRangeSection from "./sections/DateRangeSection";
-import DepartureAirportsSection from "./sections/DepartureAirportsSection";
-import DestinationSection from "./sections/DestinationSection";
-import TripDurationSection from "./sections/TripDurationSection";
-import BudgetSection from "./sections/BudgetSection";
+// We'll add the other imports later
+// import DepartureAirportsSection from "./sections/DepartureAirportsSection";
+// import DestinationSection from "./sections/DestinationSection";
+// import TripDurationSection from "./sections/TripDurationSection";
+// import BudgetSection from "./sections/BudgetSection";
 
 // Form schema with Zod validation
 const formSchema = z.object({
@@ -192,7 +194,6 @@ const TripRequestForm = () => {
 
   console.log("Before return in TripRequestForm");
   
-  // Start with a very simple form to confirm rendering
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
@@ -206,9 +207,11 @@ const TripRequestForm = () => {
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="bg-green-100 p-4 rounded mb-4">
-              Simple form field test
+            {/* Add DateRangeSection */}
+            <div className="p-4 bg-blue-100 rounded mb-4">
+              DateRangeSection test container:
             </div>
+            <DateRangeSection control={form.control} />
             
             <div className="pt-4 flex justify-between">
               <Button 

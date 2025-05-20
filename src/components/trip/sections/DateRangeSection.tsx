@@ -8,6 +8,7 @@ interface DateRangeSectionProps {
 }
 
 const DateRangeSection = ({ control }: DateRangeSectionProps) => {
+  console.log("Rendering DateRangeSection");
   return (
     <div className="space-y-6">
       <TripDateField 
