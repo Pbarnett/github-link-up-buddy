@@ -43,7 +43,7 @@ function WalletPage() {
         description: "Your default payment method has been updated.",
       });
       
-      queryClient.invalidateQueries(["payment_methods"]);
+      queryClient.invalidateQueries({ queryKey: ["payment_methods"] });
     } catch (err: any) {
       toast({
         title: "Error",
@@ -81,7 +81,7 @@ function WalletPage() {
         description: "Your payment method has been removed.",
       });
       
-      queryClient.invalidateQueries(["payment_methods"]);
+      queryClient.invalidateQueries({ queryKey: ["payment_methods"] });
     } catch (err: any) {
       toast({
         title: "Error",

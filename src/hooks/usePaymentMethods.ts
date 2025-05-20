@@ -1,10 +1,18 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 
-// Export the type for convenience when using this hook elsewhere
-export type PaymentMethod = Database["public"]["Tables"]["payment_methods"]["Row"];
+// Define the type for the payment method
+export interface PaymentMethod {
+  id: string;
+  user_id: string;
+  brand: string;
+  last4: string;
+  exp_month: number;
+  exp_year: number;
+  is_default: boolean;
+  created_at: string;
+}
 
 export function usePaymentMethods() {
   return useQuery<PaymentMethod[], Error>({
