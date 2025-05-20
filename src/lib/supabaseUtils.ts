@@ -1,5 +1,10 @@
 
-import { PostgrestError, PostgrestSingleResponse, PostgrestResponse, PostgrestMaybeSingleResponse } from '@supabase/supabase-js';
+import {
+  PostgrestError,
+  PostgrestResponse,
+  PostgrestSingleResponse,
+  PostgrestMaybeSingleResponse
+} from '@supabase/supabase-js';
 import { toast } from '@/components/ui/use-toast';
 
 /**
@@ -13,19 +18,47 @@ import { toast } from '@/components/ui/use-toast';
  *
  * This ensures type safety and proper promise behavior.
  */
+
+/**
+ * For `.single()` or `.maybeSingle()` responses — returns QueryResult with T
+ */
+export async function safeQuery<T>(
+  queryFn: () => Promise<PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T>>,
+  options?: {
+    errorMessage?: string;
+    showErrorToast?: boolean;
+  }
+): Promise<QueryResult<T>>;
+
+/**
+ * For `.select()` responses — returns QueryResult with T[]
+ */
+export async function safeQuery<T>(
+  queryFn: () => Promise<PostgrestResponse<T>>,
+  options?: {
+    errorMessage?: string;
+    showErrorToast?: boolean;
+  }
+): Promise<QueryResult<T[]>>;
+
+// Type for the result object
 interface QueryResult<T> {
   data: T | null;
   error: Error | null;
   loading: boolean;
 }
 
+// Implementation
 export async function safeQuery<T>(
-  queryFn: () => Promise<PostgrestSingleResponse<T> | PostgrestResponse<T> | PostgrestMaybeSingleResponse<T>>,
+  queryFn: () =>
+    | Promise<PostgrestSingleResponse<T>>
+    | Promise<PostgrestMaybeSingleResponse<T>>
+    | Promise<PostgrestResponse<T>>,
   options?: {
     errorMessage?: string;
     showErrorToast?: boolean;
   }
-): Promise<QueryResult<T>> {
+): Promise<QueryResult<T> | QueryResult<T[]>> {
   const defaultOptions = {
     errorMessage: 'An error occurred while fetching data',
     showErrorToast: true,

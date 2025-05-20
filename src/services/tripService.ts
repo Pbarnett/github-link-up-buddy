@@ -24,12 +24,12 @@ export const createTripRequest = async (
   };
   
   // Insert trip request into Supabase with proper types
-  const tripRequestResult = await safeQuery<Tables<"trip_requests">>(() =>
+  const tripRequestResult = await safeQuery(() =>
     supabase
       .from("trip_requests")
       .insert(tripRequestData)
       .select()
-      .single() // FIX: execute query
+      .single()
   );
   
   if (tripRequestResult.error) {
@@ -46,11 +46,11 @@ export const createTripRequest = async (
   }, tripRequest.id);
   
   // Store the offers in Supabase and explicitly await the response
-  const offersResult = await safeQuery<Tables<"flight_offers">[]>(() => 
+  const offersResult = await safeQuery(() => 
     supabase
       .from("flight_offers")
       .insert(mockOffers)
-      .select() // FIX: already executed correctly
+      .select()
   );
   
   if (offersResult.error) {
