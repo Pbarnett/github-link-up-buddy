@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
-import { TablesInsert } from "@/integrations/supabase/types";
+import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
 
@@ -93,7 +93,7 @@ const TripConfirm = () => {
 
     try {
       // Get the trip_request_id from flight_offers using the flight offer ID
-      const flightOfferResult = await safeQuery(() => 
+      const flightOfferResult = await safeQuery<Pick<Tables<'flight_offers'>, 'trip_request_id'>>(() => 
         supabase
           .from('flight_offers')
           .select('trip_request_id')
@@ -108,7 +108,7 @@ const TripConfirm = () => {
       const flightOffer = flightOfferResult.data;
       
       // Security check: Verify that the trip request belongs to the current user
-      const tripRequestResult = await safeQuery(() => 
+      const tripRequestResult = await safeQuery<Pick<Tables<'trip_requests'>, 'user_id'>>(() => 
         supabase
           .from('trip_requests')
           .select('user_id')
@@ -140,7 +140,7 @@ const TripConfirm = () => {
         flight_offer_id: offer.id,
       };
 
-      const bookingResult = await safeQuery(() => 
+      const bookingResult = await safeQuery<null>(() => 
         supabase
           .from('bookings')
           .insert(bookingData)

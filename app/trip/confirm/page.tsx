@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
-import { TablesInsert } from "@/integrations/supabase/types";
+import { TablesInsert, Tables } from "@/integrations/supabase/types";
+import { safeQuery } from "@/lib/supabaseUtils";
 
 const TripConfirm = () => {
   const router = useRouter();
@@ -86,29 +87,33 @@ const TripConfirm = () => {
       }
 
       // 2. Get the trip_request_id from flight_offers using the flight offer ID
-      const { data: flightOffer, error: flightOfferError } = await supabase
-        .from('flight_offers')
-        .select('trip_request_id')
-        .eq('id', offer.id)
-        .single();
+      const flightOfferResult = await safeQuery<Pick<Tables<'flight_offers'>, 'trip_request_id'>>(() =>
+        supabase
+          .from('flight_offers')
+          .select('trip_request_id')
+          .eq('id', offer.id)
+          .single()
+      );
 
-      if (flightOfferError || !flightOffer) {
-        throw new Error(flightOfferError?.message || "Could not find flight offer details");
+      if (flightOfferResult.error || !flightOfferResult.data) {
+        throw new Error(flightOfferResult.error?.message || "Could not find flight offer details");
       }
 
       // 3. Create booking record
       const bookingData: TablesInsert<"bookings"> = {
         user_id: user.id,
-        trip_request_id: flightOffer.trip_request_id,
+        trip_request_id: flightOfferResult.data.trip_request_id,
         flight_offer_id: offer.id,
       };
 
-      const { error: bookingError } = await supabase
-        .from('bookings')
-        .insert(bookingData);
+      const bookingResult = await safeQuery<null>(() =>
+        supabase
+          .from('bookings')
+          .insert(bookingData)
+      );
 
-      if (bookingError) {
-        throw new Error(bookingError.message || "Failed to create booking");
+      if (bookingResult.error) {
+        throw new Error(bookingResult.error.message || "Failed to create booking");
       }
 
       // Success
