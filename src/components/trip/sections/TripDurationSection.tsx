@@ -7,6 +7,7 @@ interface TripDurationSectionProps {
 }
 
 const TripDurationSection = ({ control }: TripDurationSectionProps) => {
+  console.log("Rendering TripDurationSection");
   return (
     <div className="grid grid-cols-2 gap-4">
       <TripNumberField 
