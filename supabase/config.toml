@@ -10,3 +10,9 @@ path = "supabase/functions/create-booking"
 [functions.stripe-webhook]
 path = "supabase/functions/stripe-webhook"
 verify_jwt = false
+
+[functions.create-setup-session]
+path = "supabase/functions/create-setup-session"
+
+[functions.create-payment-session]
+path = "supabase/functions/create-payment-session"
