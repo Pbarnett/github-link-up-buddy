@@ -94,11 +94,13 @@ const TripConfirm = () => {
     try {
       // Get the trip_request_id from flight_offers using the flight offer ID
       const flightOfferResult = await safeQuery<{ trip_request_id: string }>(() => 
-        supabase
-          .from('flight_offers')
-          .select('trip_request_id')
-          .eq('id', offer.id)
-          .single()
+        Promise.resolve(
+          supabase
+            .from('flight_offers')
+            .select('trip_request_id')
+            .eq('id', offer.id)
+            .single()
+        )
       );
 
       if (flightOfferResult.error || !flightOfferResult.data) {
@@ -109,11 +111,13 @@ const TripConfirm = () => {
       
       // Security check: Verify that the trip request belongs to the current user
       const tripRequestResult = await safeQuery<{ user_id: string }>(() => 
-        supabase
-          .from('trip_requests')
-          .select('user_id')
-          .eq('id', flightOffer.trip_request_id)
-          .single()
+        Promise.resolve(
+          supabase
+            .from('trip_requests')
+            .select('user_id')
+            .eq('id', flightOffer.trip_request_id)
+            .single()
+        )
       );
         
       if (tripRequestResult.error || !tripRequestResult.data) {
@@ -141,9 +145,12 @@ const TripConfirm = () => {
       };
 
       const bookingResult = await safeQuery<Tables<"bookings">>(() => 
-        supabase
-          .from('bookings')
-          .insert(bookingData)
+        Promise.resolve(
+          supabase
+            .from('bookings')
+            .insert(bookingData)
+            .select()
+        )
       );
 
       if (bookingResult.error) {
