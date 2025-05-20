@@ -2,7 +2,7 @@
 import { useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { Link } from "react-router-dom";
-import { usePaymentMethods } from "@/hooks/usePaymentMethods";
+import { usePaymentMethods, PaymentMethod } from "@/hooks/usePaymentMethods";
 import { supabase } from "@/integrations/supabase/client";
 
 function WalletPage() {
@@ -10,6 +10,18 @@ function WalletPage() {
   const { data, error, isLoading, refetch } = usePaymentMethods();
   const [isCreating, setIsCreating] = useState(false);
   const [fetchError, setFetchError] = useState<string|null>(null);
+
+  const handleSetDefault = async (id: string) => {
+    // This is a placeholder function that will be implemented later
+    console.log("Setting default payment method:", id);
+    // TODO: Implement the actual API call to set default payment method
+  };
+
+  const handleDeleteCard = async (id: string) => {
+    // This is a placeholder function that will be implemented later
+    console.log("Deleting payment method:", id);
+    // TODO: Implement the actual API call to delete payment method
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -23,15 +35,15 @@ function WalletPage() {
 
             {data?.length ? (
               <ul>
-                {data.map(pm => (
+                {data.map((pm: PaymentMethod) => (
                   <li key={pm.id} className="flex justify-between items-center">
                     <span>{pm.brand.toUpperCase()} •••• {pm.last4}</span>
                     <div className="space-x-2">
                       {pm.is_default
                         ? <span className="text-green-600">Default</span>
-                        : <button onClick={/* TODO: call edge fn to set default */}>Make default</button>
+                        : <button onClick={() => handleSetDefault(pm.id)}>Make default</button>
                       }
-                      <button onClick={/* TODO: call edge fn to delete */} className="text-red-600">Delete</button>
+                      <button onClick={() => handleDeleteCard(pm.id)} className="text-red-600">Delete</button>
                     </div>
                   </li>
                 ))}
