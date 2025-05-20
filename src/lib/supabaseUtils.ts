@@ -2,6 +2,17 @@
 import { PostgrestError } from '@supabase/supabase-js';
 import { toast } from '@/components/ui/use-toast';
 
+/**
+ * safeQuery wraps a Supabase query inside a typed Promise handler.
+ *
+ * ✅ Always pass a function that EXECUTES the query:
+ *   safeQuery(() => supabase.from('table').select(...).single())
+ *
+ * ❌ Do NOT pass the query builder directly:
+ *   safeQuery(supabase.from(...)) // TypeScript will error
+ *
+ * This ensures type safety and proper promise behavior.
+ */
 interface QueryResult<T> {
   data: T | null;
   error: Error | null;
