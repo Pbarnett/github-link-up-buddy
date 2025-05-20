@@ -1,1 +1,12 @@
+
 project_id = "bbonngdyfyfjqfhvoljl"
+
+[functions.flight-search]
+path = "supabase/functions/flight-search"
+
+[functions.create-booking]
+path = "supabase/functions/create-booking"
+
+[functions.stripe-webhook]
+path = "supabase/functions/stripe-webhook"
+verify_jwt = false
