@@ -17,8 +17,8 @@ import { TripFormValues } from "@/services/mockOffers";
 import DateRangeSection from "./sections/DateRangeSection";
 import BudgetSection from "./sections/BudgetSection";
 import TripDurationSection from "./sections/TripDurationSection";
+import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 // We'll add the other imports later
-// import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 // import DestinationSection from "./sections/DestinationSection";
 
 // Form schema with Zod validation
@@ -224,6 +224,12 @@ const TripRequestForm = () => {
               TripDurationSection test container:
             </div>
             <TripDurationSection control={form.control} />
+            
+            {/* DepartureAirportsSection */}
+            <div className="p-4 bg-[#FFDEE2] rounded mb-4">
+              DepartureAirportsSection test container:
+            </div>
+            <DepartureAirportsSection control={form.control} />
             
             <div className="pt-4 flex justify-between">
               <Button 
