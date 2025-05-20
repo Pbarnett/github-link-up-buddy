@@ -1,3 +1,4 @@
+
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -24,6 +25,13 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      "no-restricted-syntax": [
+        "error",
+        {
+          "selector": "CallExpression[callee.name='safeQuery'] > :not(FunctionExpression):not(ArrowFunctionExpression)",
+          "message": "safeQuery must be passed a function that returns a Supabase query (not the query itself)"
+        }
+      ],
     },
   }
 );

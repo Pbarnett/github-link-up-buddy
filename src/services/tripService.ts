@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { TablesInsert } from "@/integrations/supabase/types";
+import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { TripFormValues, ExtendedTripFormValues, TripRequestResult } from "@/types/form";
 import { generateMockOffers } from "./mockOffers";
 import { safeQuery } from "@/lib/supabaseUtils";
@@ -24,15 +24,19 @@ export const createTripRequest = async (
   };
   
   // Insert trip request into Supabase with proper types
-  const { data: tripRequest, error } = await supabase
-    .from("trip_requests")
-    .insert(tripRequestData)
-    .select()
-    .single();
+  const tripRequestResult = await safeQuery<Tables<"trip_requests">>(() =>
+    supabase
+      .from("trip_requests")
+      .insert(tripRequestData)
+      .select()
+      .single()
+  );
   
-  if (error) {
-    throw new Error(`Failed to submit trip request: ${error.message}`);
+  if (tripRequestResult.error) {
+    throw new Error(`Failed to submit trip request: ${tripRequestResult.error.message}`);
   }
+  
+  const tripRequest = tripRequestResult.data;
   
   // Generate mock offers based on the trip details
   const mockOffers = generateMockOffers({
@@ -42,18 +46,20 @@ export const createTripRequest = async (
   }, tripRequest.id);
   
   // Store the offers in Supabase and explicitly await the response
-  const { data: offersData, error: offersError } = await supabase
-    .from("flight_offers")
-    .insert(mockOffers)
-    .select();
+  const offersResult = await safeQuery<Tables<"flight_offers">[]>(() => 
+    supabase
+      .from("flight_offers")
+      .insert(mockOffers)
+      .select()
+  );
   
-  if (offersError) {
-    throw new Error(`Failed to save flight offers: ${offersError.message}`);
+  if (offersResult.error) {
+    throw new Error(`Failed to save flight offers: ${offersResult.error.message}`);
   }
   
   return {
     tripRequest,
-    offers: offersData || [],
-    offersCount: offersData?.length || 0
+    offers: offersResult.data || [],
+    offersCount: offersResult.data?.length || 0
   };
 };
