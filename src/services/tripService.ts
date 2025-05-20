@@ -1,24 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert } from "@/integrations/supabase/types";
-import { TripFormValues, generateMockOffers } from "./mockOffers";
-
-// Extended trip form values with the new fields
-export interface ExtendedTripFormValues extends TripFormValues {
-  departure_airports?: string[];
-  destination_airport?: string;
-  min_duration?: number;
-  max_duration?: number;
-}
-
-// Interface for trip request creation result
-export interface TripRequestResult {
-  tripRequest: {
-    id: string;
-  };
-  offers: any[];
-  offersCount: number;
-}
+import { TripFormValues, ExtendedTripFormValues, TripRequestResult } from "@/types/form";
+import { generateMockOffers } from "./mockOffers";
+import { safeQuery } from "@/lib/supabaseUtils";
 
 // Function to create trip request and related flight offers
 export const createTripRequest = async (
@@ -50,7 +35,11 @@ export const createTripRequest = async (
   }
   
   // Generate mock offers based on the trip details
-  const mockOffers = generateMockOffers(formData, tripRequest.id);
+  const mockOffers = generateMockOffers({
+    ...formData,
+    earliestDeparture: formData.earliestDeparture,
+    latestDeparture: formData.latestDeparture,
+  }, tripRequest.id);
   
   // Store the offers in Supabase and explicitly await the response
   const { data: offersData, error: offersError } = await supabase

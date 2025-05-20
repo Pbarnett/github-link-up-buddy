@@ -9,26 +9,7 @@ import {
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-// Available airports data
-export const NYC_AIRPORTS = [
-  { id: "JFK", label: "New York JFK" },
-  { id: "LGA", label: "New York LaGuardia" },
-  { id: "EWR", label: "Newark" },
-];
-
-export const OTHER_AIRPORTS = [
-  { code: "BOS", name: "Boston (BOS)" },
-  { code: "LAX", name: "Los Angeles (LAX)" },
-  { code: "SFO", name: "San Francisco (SFO)" },
-  { code: "ORD", name: "Chicago (ORD)" },
-  { code: "MIA", name: "Miami (MIA)" },
-  { code: "ATL", name: "Atlanta (ATL)" },
-  { code: "DFW", name: "Dallas (DFW)" },
-  { code: "DEN", name: "Denver (DEN)" },
-  { code: "SEA", name: "Seattle (SEA)" },
-  { code: "PHX", name: "Phoenix (PHX)" },
-];
+import { NYC_AIRPORTS, MAJOR_AIRPORTS } from "@/data/airports";
 
 interface DepartureAirportsSectionProps {
   control: Control<any>;
@@ -91,9 +72,9 @@ const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) =>
                 </SelectTrigger>
               </FormControl>
               <SelectContent className="max-h-64 overflow-auto">
-                {OTHER_AIRPORTS.map((airport) => (
-                  <SelectItem key={airport.code} value={airport.code}>
-                    {airport.name}
+                {MAJOR_AIRPORTS.map((airport) => (
+                  <SelectItem key={airport.id} value={airport.id}>
+                    {airport.label}
                   </SelectItem>
                 ))}
               </SelectContent>

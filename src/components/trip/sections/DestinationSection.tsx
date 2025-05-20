@@ -10,19 +10,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-export const POPULAR_DESTINATIONS = [
-  { code: "LHR", name: "London (LHR)" },
-  { code: "CDG", name: "Paris (CDG)" },
-  { code: "FCO", name: "Rome (FCO)" },
-  { code: "MAD", name: "Madrid (MAD)" },
-  { code: "TYO", name: "Tokyo (TYO)" },
-  { code: "HKG", name: "Hong Kong (HKG)" },
-  { code: "SYD", name: "Sydney (SYD)" },
-  { code: "MEX", name: "Mexico City (MEX)" },
-  { code: "GRU", name: "São Paulo (GRU)" },
-  { code: "DXB", name: "Dubai (DXB)" },
-];
+import { POPULAR_DESTINATIONS } from "@/data/airports";
 
 interface DestinationSectionProps {
   control: Control<any>;
@@ -54,8 +42,8 @@ const DestinationSection = ({ control, watch }: DestinationSectionProps) => {
               </FormControl>
               <SelectContent className="max-h-64 overflow-auto">
                 {POPULAR_DESTINATIONS.map((airport) => (
-                  <SelectItem key={airport.code} value={airport.code}>
-                    {airport.name}
+                  <SelectItem key={airport.id} value={airport.id}>
+                    {airport.label}
                   </SelectItem>
                 ))}
               </SelectContent>
