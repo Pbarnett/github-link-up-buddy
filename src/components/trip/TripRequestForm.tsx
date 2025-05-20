@@ -74,6 +74,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const TripRequestForm = () => {
+  console.log("TripRequestForm rendering");
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -191,6 +192,9 @@ const TripRequestForm = () => {
         <CardDescription>Enter your trip preferences below.</CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Temporary div to verify rendering */}
+        <div>hello - form is rendering</div>
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Date range section */}
@@ -199,8 +203,8 @@ const TripRequestForm = () => {
             {/* Departure airports section */}
             <DepartureAirportsSection control={form.control} />
             
-            {/* Destination section */}
-            <DestinationSection control={form.control} />
+            {/* Destination section - now with watch prop */}
+            <DestinationSection control={form.control} watch={form.watch} />
 
             {/* Trip duration section */}
             <TripDurationSection control={form.control} />

@@ -1,5 +1,5 @@
 
-import { Control } from "react-hook-form";
+import { Control, UseFormWatch } from "react-hook-form";
 import { 
   FormControl, 
   FormDescription, 
@@ -26,9 +26,15 @@ export const POPULAR_DESTINATIONS = [
 
 interface DestinationSectionProps {
   control: Control<any>;
+  watch: UseFormWatch<any>;
 }
 
-const DestinationSection = ({ control }: DestinationSectionProps) => {
+const DestinationSection = ({ control, watch }: DestinationSectionProps) => {
+  // Watch the destination_airport value to conditionally disable the custom field
+  const selectedDestination = watch("destination_airport");
+  
+  console.log("DestinationSection rendering, selectedDestination:", selectedDestination);
+  
   return (
     <div className="space-y-6">
       {/* Destination Airport Dropdown */}
@@ -71,7 +77,7 @@ const DestinationSection = ({ control }: DestinationSectionProps) => {
               <Input 
                 placeholder="Enter destination airport code" 
                 {...field} 
-                disabled={!!field.value}
+                disabled={!!selectedDestination}
               />
             </FormControl>
             <FormMessage />
