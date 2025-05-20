@@ -92,12 +92,12 @@ const TripConfirm = () => {
 
     try {
       // Get the trip_request_id from flight_offers using the flight offer ID
-      const flightOfferResult = await safeQuery<Pick<Tables<'flight_offers'>, 'trip_request_id'>>(() => 
+      const flightOfferResult = await safeQuery(() => 
         supabase
           .from('flight_offers')
           .select('trip_request_id')
           .eq('id', offer.id)
-          .single() // FIX: execute query
+          .single()
       );
 
       if (flightOfferResult.error || !flightOfferResult.data) {
@@ -107,12 +107,12 @@ const TripConfirm = () => {
       const flightOffer = flightOfferResult.data;
       
       // Security check: Verify that the trip request belongs to the current user
-      const tripRequestResult = await safeQuery<Pick<Tables<'trip_requests'>, 'user_id'>>(() => 
+      const tripRequestResult = await safeQuery(() => 
         supabase
           .from('trip_requests')
           .select('user_id')
           .eq('id', flightOffer.trip_request_id)
-          .single() // FIX: execute query
+          .single()
       );
         
       if (tripRequestResult.error || !tripRequestResult.data) {
@@ -139,7 +139,7 @@ const TripConfirm = () => {
         flight_offer_id: offer.id,
       };
 
-      const bookingResult = await safeQuery<null>(() => 
+      const bookingResult = await safeQuery(() => 
         supabase
           .from('bookings')
           .insert(bookingData)
