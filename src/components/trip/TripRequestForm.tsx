@@ -18,8 +18,7 @@ import DateRangeSection from "./sections/DateRangeSection";
 import BudgetSection from "./sections/BudgetSection";
 import TripDurationSection from "./sections/TripDurationSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
-// We'll add the other imports later
-// import DestinationSection from "./sections/DestinationSection";
+import DestinationSection from "./sections/DestinationSection";
 
 // Form schema with Zod validation
 const formSchema = z.object({
@@ -230,6 +229,12 @@ const TripRequestForm = () => {
               DepartureAirportsSection test container:
             </div>
             <DepartureAirportsSection control={form.control} />
+            
+            {/* DestinationSection */}
+            <div className="p-4 bg-purple-100 rounded mb-4">
+              DestinationSection test container:
+            </div>
+            <DestinationSection control={form.control} watch={form.watch} />
             
             <div className="pt-4 flex justify-between">
               <Button 

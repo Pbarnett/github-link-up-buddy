@@ -45,14 +45,16 @@ const DestinationSection = ({ control, watch }: DestinationSectionProps) => {
           <FormItem>
             <FormLabel>Destination</FormLabel>
             <FormDescription>Select a popular destination.</FormDescription>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select 
+              onValueChange={field.onChange} 
+              value={field.value || undefined}
+            >
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select destination" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent className="max-h-64 overflow-auto">
-                <SelectItem value="">None (I'll enter my own)</SelectItem>
                 {POPULAR_DESTINATIONS.map((airport) => (
                   <SelectItem key={airport.code} value={airport.code}>
                     {airport.name}
