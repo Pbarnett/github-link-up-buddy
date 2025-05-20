@@ -4,23 +4,76 @@ import AuthGuard from "@/components/AuthGuard";
 import { Link } from "react-router-dom";
 import { usePaymentMethods, PaymentMethod } from "@/hooks/usePaymentMethods";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
+import { safeQuery } from "@/lib/supabaseUtils";
 
 function WalletPage() {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
   const { data, error, isLoading, refetch } = usePaymentMethods();
   const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string|null>(null);
 
   const handleSetDefault = async (id: string) => {
-    // This is a placeholder function that will be implemented later
-    console.log("Setting default payment method:", id);
-    // TODO: Implement the actual API call to set default payment method
+    try {
+      setIsUpdating(id);
+      
+      // First, update all payment methods to not be default
+      await supabase
+        .from('payment_methods')
+        .update({ is_default: false, updated_at: new Date().toISOString() })
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+        
+      // Then set the selected one as default
+      const { error } = await supabase
+        .from('payment_methods')
+        .update({ is_default: true, updated_at: new Date().toISOString() })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Payment method updated",
+        description: "Your default payment method has been updated.",
+      });
+      
+      refetch();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: `Failed to update default payment method: ${err.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(null);
+    }
   };
 
   const handleDeleteCard = async (id: string) => {
-    // This is a placeholder function that will be implemented later
-    console.log("Deleting payment method:", id);
-    // TODO: Implement the actual API call to delete payment method
+    try {
+      setIsUpdating(id);
+      const { error } = await supabase
+        .from('payment_methods')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Payment method deleted",
+        description: "Your payment method has been removed.",
+      });
+      
+      refetch();
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: `Failed to delete payment method: ${err.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(null);
+    }
   };
 
   return (
@@ -30,26 +83,49 @@ function WalletPage() {
           <div className="px-4 py-5 sm:p-6 space-y-6">
             <h1 className="text-2xl font-semibold">Wallet</h1>
             
-            {isLoading && <p>Loading saved cards…</p>}
+            {isLoading && <p className="text-gray-600">Loading saved cards…</p>}
             {error && <p className="text-red-600">Error loading cards: {error.message}</p>}
 
             {data?.length ? (
-              <ul>
+              <ul className="divide-y divide-gray-200">
                 {data.map((pm: PaymentMethod) => (
-                  <li key={pm.id} className="flex justify-between items-center">
-                    <span>{pm.brand.toUpperCase()} •••• {pm.last4}</span>
-                    <div className="space-x-2">
-                      {pm.is_default
-                        ? <span className="text-green-600">Default</span>
-                        : <button onClick={() => handleSetDefault(pm.id)}>Make default</button>
-                      }
-                      <button onClick={() => handleDeleteCard(pm.id)} className="text-red-600">Delete</button>
+                  <li key={pm.id} className="py-4 flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        {pm.brand.toUpperCase()}
+                      </span>
+                      <span className="text-gray-900">•••• {pm.last4}</span>
+                      <span className="text-gray-500 text-sm">
+                        Exp: {pm.exp_month}/{pm.exp_year}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      {pm.is_default ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Default
+                        </span>
+                      ) : (
+                        <button 
+                          onClick={() => handleSetDefault(pm.id)} 
+                          disabled={isUpdating !== null}
+                          className="text-sm text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
+                        >
+                          {isUpdating === pm.id ? 'Updating...' : 'Make default'}
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => handleDeleteCard(pm.id)}
+                        disabled={isUpdating !== null} 
+                        className="text-sm text-red-600 hover:text-red-900 disabled:opacity-50"
+                      >
+                        {isUpdating === pm.id ? 'Deleting...' : 'Delete'}
+                      </button>
                     </div>
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p className="text-gray-600">No cards saved yet.</p>
+            ) : !isLoading && (
+              <p className="text-gray-600 py-4">No payment methods saved yet.</p>
             )}
 
             {!stripeKey && (
@@ -78,17 +154,17 @@ function WalletPage() {
                       setIsCreating(false);
                     }
                   }}
-                  className="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                  className="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                 >
                   {isCreating ? "Redirecting…" : "Add a new card"}
                 </button>
-                {fetchError && <p className="text-red-600">{fetchError}</p>}
+                {fetchError && <p className="text-red-600 mt-2">{fetchError}</p>}
               </>
             )}
 
             <Link
               to="/dashboard"
-              className="inline-block text-indigo-600 hover:underline"
+              className="inline-block text-indigo-600 hover:underline mt-4"
             >
               ← Back to Dashboard
             </Link>
