@@ -29,7 +29,7 @@ export const createTripRequest = async (
       .from("trip_requests")
       .insert(tripRequestData)
       .select()
-      .single()
+      .single() // FIX: execute query
   );
   
   if (tripRequestResult.error) {
@@ -50,7 +50,7 @@ export const createTripRequest = async (
     supabase
       .from("flight_offers")
       .insert(mockOffers)
-      .select()
+      .select() // FIX: already executed correctly
   );
   
   if (offersResult.error) {

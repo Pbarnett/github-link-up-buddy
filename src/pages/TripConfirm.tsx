@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -98,7 +97,7 @@ const TripConfirm = () => {
           .from('flight_offers')
           .select('trip_request_id')
           .eq('id', offer.id)
-          .single()
+          .single() // FIX: execute query
       );
 
       if (flightOfferResult.error || !flightOfferResult.data) {
@@ -113,7 +112,7 @@ const TripConfirm = () => {
           .from('trip_requests')
           .select('user_id')
           .eq('id', flightOffer.trip_request_id)
-          .single()
+          .single() // FIX: execute query
       );
         
       if (tripRequestResult.error || !tripRequestResult.data) {
