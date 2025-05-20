@@ -3,8 +3,7 @@ import {
   PostgrestError,
   PostgrestResponse,
   PostgrestSingleResponse,
-  PostgrestMaybeSingleResponse,
-  PostgrestBuilder
+  PostgrestMaybeSingleResponse
 } from '@supabase/supabase-js';
 import { toast } from '@/components/ui/use-toast';
 
@@ -22,13 +21,17 @@ interface QueryResult<T> {
  *   safeQuery(() => supabase.from('table').select(...))
  *
  * This ensures type safety and proper promise behavior.
+ * 
+ * NOTE: This function handles both .single()/.maybeSingle() queries returning a single item T,
+ * and .select() queries returning arrays T[]. The implementation uses Array.isArray(data)
+ * to correctly type the return data.
  */
 
 /**
  * For `.single()` or `.maybeSingle()` responses — returns QueryResult with T
  */
 export async function safeQuery<T>(
-  queryFn: () => Promise<PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T>> | PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T> | PostgrestBuilder<T>,
+  queryFn: () => Promise<PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T>> | PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T>,
   options?: {
     errorMessage?: string;
     showErrorToast?: boolean;
@@ -39,7 +42,7 @@ export async function safeQuery<T>(
  * For `.select()` responses — returns QueryResult with T[]
  */
 export async function safeQuery<T>(
-  queryFn: () => Promise<PostgrestResponse<T>> | PostgrestResponse<T> | PostgrestBuilder<T[]>,
+  queryFn: () => Promise<PostgrestResponse<T>> | PostgrestResponse<T>,
   options?: {
     errorMessage?: string;
     showErrorToast?: boolean;
@@ -52,9 +55,7 @@ export async function safeQuery<T>(
     | Promise<PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T> | PostgrestResponse<T>>
     | PostgrestSingleResponse<T>
     | PostgrestMaybeSingleResponse<T>
-    | PostgrestResponse<T>
-    | PostgrestBuilder<T>
-    | PostgrestBuilder<T[]>,
+    | PostgrestResponse<T>,
   options?: {
     errorMessage?: string;
     showErrorToast?: boolean;

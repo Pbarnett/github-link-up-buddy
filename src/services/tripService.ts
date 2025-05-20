@@ -57,9 +57,12 @@ export const createTripRequest = async (
     throw new Error(`Failed to save flight offers: ${offersResult.error.message}`);
   }
   
+  // Ensure we have a proper array even if data is null
+  const offers = offersResult.data || [];
+  
   return {
     tripRequest,
-    offers: offersResult.data || [],
-    offersCount: offersResult.data?.length || 0
+    offers,
+    offersCount: offers.length
   };
 };
