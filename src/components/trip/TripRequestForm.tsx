@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -74,7 +73,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const TripRequestForm = () => {
-  console.log("TripRequestForm rendering");
+  console.log("TripRequestForm rendering - TESTING");
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -82,9 +81,15 @@ const TripRequestForm = () => {
   // Get the current user ID when component mounts
   useEffect(() => {
     const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
+      try {
+        console.log("Getting current user");
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log("User data:", user);
+        if (user) {
+          setUserId(user.id);
+        }
+      } catch (error) {
+        console.error("Error getting user:", error);
       }
     };
     
@@ -185,6 +190,9 @@ const TripRequestForm = () => {
     }
   };
 
+  console.log("Before return in TripRequestForm");
+  
+  // Start with a very simple form to confirm rendering
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
@@ -192,26 +200,16 @@ const TripRequestForm = () => {
         <CardDescription>Enter your trip preferences below.</CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Temporary div to verify rendering */}
-        <div>hello - form is rendering</div>
+        <div className="p-4 bg-yellow-100 rounded mb-4">
+          TESTING: Form component is rendering
+        </div>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Date range section */}
-            <DateRangeSection control={form.control} />
+            <div className="bg-green-100 p-4 rounded mb-4">
+              Simple form field test
+            </div>
             
-            {/* Departure airports section */}
-            <DepartureAirportsSection control={form.control} />
-            
-            {/* Destination section - now with watch prop */}
-            <DestinationSection control={form.control} watch={form.watch} />
-
-            {/* Trip duration section */}
-            <TripDurationSection control={form.control} />
-
-            {/* Budget section */}
-            <BudgetSection control={form.control} />
-
             <div className="pt-4 flex justify-between">
               <Button 
                 type="button" 
