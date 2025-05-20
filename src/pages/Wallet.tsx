@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { Link } from "react-router-dom";
@@ -22,7 +21,7 @@ function WalletPage() {
       setIsUpdating(id);
       
       const res = await fetch(
-        "https://bbonngdyfyfjqfhvoljl.supabase.co/functions/v1/set-default-payment-method",
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/set-default-payment-method`,
         {
           method: "POST",
           headers: { 
@@ -60,7 +59,7 @@ function WalletPage() {
       setIsUpdating(id);
       
       const res = await fetch(
-        "https://bbonngdyfyfjqfhvoljl.supabase.co/functions/v1/delete-payment-method",
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-payment-method`,
         {
           method: "POST",
           headers: { 
@@ -166,7 +165,16 @@ function WalletPage() {
                     setFetchError(null);
                     setIsCreating(true);
                     try {
-                      const res = await fetch("/functions/v1/create-setup-session", { method: "POST" });
+                      const res = await fetch(
+                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-session`, 
+                        {
+                          method: "POST",
+                          headers: { 
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+                          }
+                        }
+                      );
                       const { url } = await res.json();
                       window.location.href = url;
                     } catch (err: any) {
