@@ -5,7 +5,8 @@ import { TablesInsert } from "@/integrations/supabase/types";
 export interface TripFormValues {
   earliestDeparture: Date;
   latestDeparture: Date;
-  duration: number;
+  min_duration?: number;
+  max_duration?: number;
   budget: number;
 }
 
@@ -14,6 +15,10 @@ export const generateMockOffers = (tripData: TripFormValues, tripRequestId: stri
   const startDate = new Date(tripData.earliestDeparture);
   const endDate = new Date(tripData.latestDeparture);
   const dayDiff = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Get the min and max duration, defaulting to reasonable values if not provided
+  const minDuration = tripData.min_duration || 3;
+  const maxDuration = tripData.max_duration || 6;
   
   // Airlines and flight durations for mock data
   const airlines = [
@@ -38,9 +43,12 @@ export const generateMockOffers = (tripData: TripFormValues, tripRequestId: stri
     const departDate = new Date(startDate);
     departDate.setDate(departDate.getDate() + departDaysOffset);
     
-    // Return date based on duration
+    // Generate a random trip duration between min and max
+    const tripDuration = Math.floor(Math.random() * (maxDuration - minDuration + 1)) + minDuration;
+    
+    // Return date based on calculated trip duration
     const returnDate = new Date(departDate);
-    returnDate.setDate(returnDate.getDate() + tripData.duration);
+    returnDate.setDate(returnDate.getDate() + tripDuration);
     
     // Random price around budget with some variation
     const priceVariation = Math.random() * 0.3 - 0.15; // -15% to +15%
