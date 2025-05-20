@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2 } from "lucide-react";
+import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
@@ -16,6 +16,7 @@ const TripConfirm = () => {
   const [offer, setOffer] = useState<OfferProps | null>(null);
   const [hasError, setHasError] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     // Parse query parameters
@@ -76,6 +77,7 @@ const TripConfirm = () => {
     }
 
     setIsBooking(true);
+    setErrorMessage(null);
 
     try {
       // 1. Get the current user
@@ -95,8 +97,30 @@ const TripConfirm = () => {
       if (flightOfferError || !flightOffer) {
         throw new Error(flightOfferError?.message || "Could not find flight offer details");
       }
+      
+      // 3. Security check: Verify that the trip request belongs to the current user
+      const { data: tripRequest, error: tripRequestError } = await supabase
+        .from('trip_requests')
+        .select('user_id')
+        .eq('id', flightOffer.trip_request_id)
+        .single();
+        
+      if (tripRequestError || !tripRequest) {
+        throw new Error("Could not verify trip ownership");
+      }
+      
+      // 4. Verify the trip belongs to the logged-in user
+      if (tripRequest.user_id !== user.id) {
+        setErrorMessage("Security error: You don't have permission to book this flight");
+        toast({
+          title: "Security Error",
+          description: "You don't have permission to book this flight. It belongs to another user.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      // 3. Create booking record
+      // 5. Create booking record
       const bookingData: TablesInsert<"bookings"> = {
         user_id: user.id,
         trip_request_id: flightOffer.trip_request_id,
@@ -122,6 +146,7 @@ const TripConfirm = () => {
 
     } catch (error: any) {
       console.error("Error creating booking:", error);
+      setErrorMessage(error.message || "There was a problem creating your booking");
       toast({
         title: "Booking Failed",
         description: error.message || "There was a problem creating your booking. Please try again.",
@@ -175,6 +200,14 @@ const TripConfirm = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Security Error Message */}
+          {errorMessage && (
+            <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md flex items-start">
+              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+              <p>{errorMessage}</p>
+            </div>
+          )}
+          
           {/* Airline and Flight Number */}
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -231,7 +264,7 @@ const TripConfirm = () => {
           <Button onClick={handleCancel} variant="outline" disabled={isBooking}>
             <X className="mr-2 h-4 w-4" /> Cancel
           </Button>
-          <Button onClick={handleConfirm} disabled={isBooking}>
+          <Button onClick={handleConfirm} disabled={isBooking || !!errorMessage}>
             {isBooking ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing

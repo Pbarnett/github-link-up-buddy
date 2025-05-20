@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 
 interface TripNumberFieldProps {
-  name: "duration" | "budget" | "min_duration" | "max_duration";
+  name: "budget" | "min_duration" | "max_duration";
   label: string;
   description: string;
   placeholder: string;
