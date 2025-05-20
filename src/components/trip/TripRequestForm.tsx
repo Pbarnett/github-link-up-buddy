@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,50 +8,17 @@ import { toast } from "@/components/ui/use-toast";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import TripDateField from "./TripDateField";
-import TripNumberField from "./TripNumberField";
+import { Form } from "@/components/ui/form";
 import { supabase } from "@/integrations/supabase/client";
 import { createTripRequest } from "@/services/tripService";
 import { TripFormValues } from "@/services/mockOffers";
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Check, ChevronDown, MapPin, Plane } from "lucide-react";
 
-// Available airports data
-const NYC_AIRPORTS = [
-  { id: "JFK", label: "New York JFK" },
-  { id: "LGA", label: "New York LaGuardia" },
-  { id: "EWR", label: "Newark" },
-];
-
-const OTHER_AIRPORTS = [
-  { code: "BOS", name: "Boston (BOS)" },
-  { code: "LAX", name: "Los Angeles (LAX)" },
-  { code: "SFO", name: "San Francisco (SFO)" },
-  { code: "ORD", name: "Chicago (ORD)" },
-  { code: "MIA", name: "Miami (MIA)" },
-  { code: "ATL", name: "Atlanta (ATL)" },
-  { code: "DFW", name: "Dallas (DFW)" },
-  { code: "DEN", name: "Denver (DEN)" },
-  { code: "SEA", name: "Seattle (SEA)" },
-  { code: "PHX", name: "Phoenix (PHX)" },
-];
-
-const POPULAR_DESTINATIONS = [
-  { code: "LHR", name: "London (LHR)" },
-  { code: "CDG", name: "Paris (CDG)" },
-  { code: "FCO", name: "Rome (FCO)" },
-  { code: "MAD", name: "Madrid (MAD)" },
-  { code: "TYO", name: "Tokyo (TYO)" },
-  { code: "HKG", name: "Hong Kong (HKG)" },
-  { code: "SYD", name: "Sydney (SYD)" },
-  { code: "MEX", name: "Mexico City (MEX)" },
-  { code: "GRU", name: "São Paulo (GRU)" },
-  { code: "DXB", name: "Dubai (DXB)" },
-];
+// Import the section components
+import DateRangeSection from "./sections/DateRangeSection";
+import DepartureAirportsSection from "./sections/DepartureAirportsSection";
+import DestinationSection from "./sections/DestinationSection";
+import TripDurationSection from "./sections/TripDurationSection";
+import BudgetSection from "./sections/BudgetSection";
 
 // Form schema with Zod validation
 const formSchema = z.object({
@@ -225,153 +193,20 @@ const TripRequestForm = () => {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <TripDateField 
-              name="earliestDeparture"
-              label="Earliest Departure Date"
-              description="The earliest date you can depart for your trip."
-            />
-
-            <TripDateField 
-              name="latestDeparture"
-              label="Latest Departure Date"
-              description="The latest date you can depart for your trip."
-            />
+            {/* Date range section */}
+            <DateRangeSection />
             
-            {/* NYC Airports Checkboxes */}
-            <FormField
-              control={form.control}
-              name="nyc_airports"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="mb-4">
-                    <FormLabel>NYC Area Airports</FormLabel>
-                    <FormDescription>Select the NYC area airports you can depart from.</FormDescription>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {NYC_AIRPORTS.map((airport) => (
-                      <FormItem
-                        key={airport.id}
-                        className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"
-                      >
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value?.includes(airport.id)}
-                            onCheckedChange={(checked) => {
-                              const updatedValue = checked
-                                ? [...(field.value || []), airport.id]
-                                : (field.value || []).filter((value) => value !== airport.id);
-                              field.onChange(updatedValue);
-                            }}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">{airport.label}</FormLabel>
-                      </FormItem>
-                    ))}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Departure airports section */}
+            <DepartureAirportsSection />
             
-            {/* Other Departure Airport Dropdown */}
-            <FormField
-              control={form.control}
-              name="other_departure_airport"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Other Departure Airport</FormLabel>
-                  <FormDescription>If you're not departing from NYC, select another airport.</FormDescription>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select another airport (optional)" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="max-h-64 overflow-auto">
-                      <SelectItem value="">None</SelectItem>
-                      {OTHER_AIRPORTS.map((airport) => (
-                        <SelectItem key={airport.code} value={airport.code}>
-                          {airport.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {/* Destination Airport Dropdown */}
-            <FormField
-              control={form.control}
-              name="destination_airport"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Destination</FormLabel>
-                  <FormDescription>Select a popular destination.</FormDescription>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select destination" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="max-h-64 overflow-auto">
-                      <SelectItem value="">None (I'll enter my own)</SelectItem>
-                      {POPULAR_DESTINATIONS.map((airport) => (
-                        <SelectItem key={airport.code} value={airport.code}>
-                          {airport.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {/* Custom Destination Field */}
-            <FormField
-              control={form.control}
-              name="destination_other"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Other Destination</FormLabel>
-                  <FormDescription>If your destination isn't listed above, enter it here.</FormDescription>
-                  <FormControl>
-                    <Input 
-                      placeholder="Enter destination airport code" 
-                      {...field} 
-                      disabled={!!form.watch("destination_airport")}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Destination section */}
+            <DestinationSection />
 
-            <div className="grid grid-cols-2 gap-4">
-              <TripNumberField 
-                name="min_duration"
-                label="Min Duration (days)"
-                description="Minimum length of your trip (1-30)"
-                placeholder="Min days"
-              />
+            {/* Trip duration section */}
+            <TripDurationSection />
 
-              <TripNumberField 
-                name="max_duration"
-                label="Max Duration (days)"
-                description="Maximum length of your trip (1-30)"
-                placeholder="Max days"
-              />
-            </div>
-
-            <TripNumberField 
-              name="budget"
-              label="Budget (USD)"
-              description="Your budget for the trip ($100-$10,000)"
-              placeholder="Enter your budget"
-              prefix="$"
-            />
+            {/* Budget section */}
+            <BudgetSection />
 
             <div className="pt-4 flex justify-between">
               <Button 
