@@ -1,7 +1,7 @@
 
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { useFormContext } from "react-hook-form";
+import { Control, Controller } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -23,11 +23,10 @@ interface TripDateFieldProps {
   name: "earliestDeparture" | "latestDeparture";
   label: string;
   description: string;
+  control: Control<any>;
 }
 
-const TripDateField = ({ name, label, description }: TripDateFieldProps) => {
-  const { control } = useFormContext();
-
+const TripDateField = ({ name, label, description, control }: TripDateFieldProps) => {
   return (
     <FormField
       control={control}

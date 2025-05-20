@@ -1,5 +1,5 @@
 
-import { useFormContext } from "react-hook-form";
+import { Control } from "react-hook-form";
 import {
   FormControl,
   FormDescription,
@@ -16,6 +16,7 @@ interface TripNumberFieldProps {
   description: string;
   placeholder: string;
   prefix?: string;
+  control: Control<any>;
 }
 
 const TripNumberField = ({
@@ -23,10 +24,9 @@ const TripNumberField = ({
   label, 
   description, 
   placeholder,
-  prefix
+  prefix,
+  control
 }: TripNumberFieldProps) => {
-  const { control } = useFormContext();
-
   return (
     <FormField
       control={control}

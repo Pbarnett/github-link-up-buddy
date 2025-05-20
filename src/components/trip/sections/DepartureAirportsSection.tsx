@@ -1,4 +1,5 @@
-import { useFormContext } from "react-hook-form";
+
+import { Control } from "react-hook-form";
 import { 
   FormControl, 
   FormDescription, 
@@ -30,9 +31,11 @@ export const OTHER_AIRPORTS = [
   { code: "PHX", name: "Phoenix (PHX)" },
 ];
 
-const DepartureAirportsSection = () => {
-  const { control } = useFormContext();
+interface DepartureAirportsSectionProps {
+  control: Control<any>;
+}
 
+const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) => {
   return (
     <div className="space-y-6">
       {/* NYC Airports Checkboxes */}
@@ -57,7 +60,7 @@ const DepartureAirportsSection = () => {
                       onCheckedChange={(checked) => {
                         const updatedValue = checked
                           ? [...(field.value || []), airport.id]
-                          : (field.value || []).filter((value) => value !== airport.id);
+                          : (field.value || []).filter((value: string) => value !== airport.id);
                         field.onChange(updatedValue);
                       }}
                     />
