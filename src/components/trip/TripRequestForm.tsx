@@ -194,19 +194,19 @@ const TripRequestForm = () => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Date range section */}
-            <DateRangeSection />
+            <DateRangeSection control={form.control} />
             
             {/* Departure airports section */}
-            <DepartureAirportsSection />
+            <DepartureAirportsSection control={form.control} />
             
             {/* Destination section */}
-            <DestinationSection />
+            <DestinationSection control={form.control} />
 
             {/* Trip duration section */}
-            <TripDurationSection />
+            <TripDurationSection control={form.control} />
 
             {/* Budget section */}
-            <BudgetSection />
+            <BudgetSection control={form.control} />
 
             <div className="pt-4 flex justify-between">
               <Button 

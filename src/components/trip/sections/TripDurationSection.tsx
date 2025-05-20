@@ -1,7 +1,12 @@
 
+import { Control } from "react-hook-form";
 import TripNumberField from "../TripNumberField";
 
-const TripDurationSection = () => {
+interface TripDurationSectionProps {
+  control: Control<any>;
+}
+
+const TripDurationSection = ({ control }: TripDurationSectionProps) => {
   return (
     <div className="grid grid-cols-2 gap-4">
       <TripNumberField 
@@ -9,6 +14,7 @@ const TripDurationSection = () => {
         label="Min Duration (days)"
         description="Minimum length of your trip (1-30)"
         placeholder="Min days"
+        control={control}
       />
 
       <TripNumberField 
@@ -16,6 +22,7 @@ const TripDurationSection = () => {
         label="Max Duration (days)"
         description="Maximum length of your trip (1-30)"
         placeholder="Max days"
+        control={control}
       />
     </div>
   );

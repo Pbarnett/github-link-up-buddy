@@ -1,5 +1,5 @@
 
-import { useFormContext } from "react-hook-form";
+import { Control } from "react-hook-form";
 import { 
   FormControl, 
   FormDescription, 
@@ -24,10 +24,11 @@ export const POPULAR_DESTINATIONS = [
   { code: "DXB", name: "Dubai (DXB)" },
 ];
 
-const DestinationSection = () => {
-  const { control, watch } = useFormContext();
-  const selectedDestination = watch("destination_airport");
+interface DestinationSectionProps {
+  control: Control<any>;
+}
 
+const DestinationSection = ({ control }: DestinationSectionProps) => {
   return (
     <div className="space-y-6">
       {/* Destination Airport Dropdown */}
@@ -70,7 +71,7 @@ const DestinationSection = () => {
               <Input 
                 placeholder="Enter destination airport code" 
                 {...field} 
-                disabled={!!selectedDestination}
+                disabled={!!field.value}
               />
             </FormControl>
             <FormMessage />
