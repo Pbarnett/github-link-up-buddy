@@ -14,7 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 interface TripDetails {
   earliestDeparture: string;
   latestDeparture: string;
-  duration: number;
+  min_duration: number;
+  max_duration: number;
   budget: number;
 }
 
@@ -60,7 +61,8 @@ const TripOffers = () => {
             setTripDetails({
               earliestDeparture: tripData.earliest_departure,
               latestDeparture: tripData.latest_departure,
-              duration: tripData.duration,
+              min_duration: tripData.min_duration,
+              max_duration: tripData.max_duration,
               budget: tripData.budget
             });
           }
@@ -160,7 +162,7 @@ const TripOffers = () => {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Duration</p>
-              <p>{tripDetails.duration} days</p>
+              <p>{tripDetails.min_duration}–{tripDetails.max_duration} days</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Budget</p>
