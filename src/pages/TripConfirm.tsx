@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -17,8 +16,8 @@ const TripConfirm = () => {
   const location = useLocation();
   const [offer, setOffer] = useState<OfferProps | null>(null);
   const [hasError, setHasError] = useState(false);
-  const [isBooking, setIsBooking] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { user, userId, loading: userLoading } = useCurrentUser();
 
   useEffect(() => {
@@ -69,7 +68,7 @@ const TripConfirm = () => {
     navigate('/trip/offers');
   };
 
-  const handleConfirm = async () => {
+  const onConfirm = async () => {
     if (!offer || !offer.id) {
       toast({
         title: "Error",
@@ -88,8 +87,8 @@ const TripConfirm = () => {
       return;
     }
 
-    setIsBooking(true);
-    setErrorMessage(null);
+    setIsConfirming(true);
+    setError(null);
 
     try {
       // Get the trip_request_id from flight_offers using the flight offer ID
@@ -110,11 +109,11 @@ const TripConfirm = () => {
       const flightOffer = flightOfferResult.data;
       
       // Security check: Verify that the trip request belongs to the current user
-      const tripRequestResult = await safeQuery<{ user_id: string }>(() => 
+      const tripRequestResult = await safeQuery<{ user_id: string, id: string }>(() => 
         Promise.resolve(
           supabase
             .from('trip_requests')
-            .select('user_id')
+            .select('user_id, id')
             .eq('id', flightOffer.trip_request_id)
             .single()
         )
@@ -128,7 +127,7 @@ const TripConfirm = () => {
       
       // Verify the trip belongs to the logged-in user
       if (tripRequest.user_id !== userId) {
-        setErrorMessage("Security error: You don't have permission to book this flight");
+        setError("Security error: You don't have permission to book this flight");
         toast({
           title: "Security Error",
           description: "You don't have permission to book this flight. It belongs to another user.",
@@ -137,45 +136,36 @@ const TripConfirm = () => {
         return;
       }
 
-      // Create booking record
-      const bookingData: TablesInsert<"bookings"> = {
-        user_id: userId,
-        trip_request_id: flightOffer.trip_request_id,
-        flight_offer_id: offer.id,
-      };
-
-      const bookingResult = await safeQuery<Tables<"bookings">>(() => 
-        Promise.resolve(
-          supabase
-            .from('bookings')
-            .insert(bookingData)
-            .select()
-        )
-      );
-
-      if (bookingResult.error) {
-        throw new Error(bookingResult.error.message || "Failed to create booking");
-      }
-
-      // Success
-      toast({
-        title: "Booking Confirmed",
-        description: `You've successfully booked ${offer.airline} flight ${offer.flight_number}`,
+      // Call payment session endpoint
+      const res = await fetch("/functions/v1/create-payment-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trip_request_id: tripRequest.id,
+          offer_id: offer.id,
+          user_id: userId,
+          flight_offer_id: offer.id,
+        }),
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to create payment session");
+      }
+      
+      const { url } = await res.json();
+      window.location.href = url;
 
-      // Redirect to dashboard
-      navigate('/dashboard');
-
-    } catch (error: any) {
-      console.error("Error creating booking:", error);
-      setErrorMessage(error.message || "There was a problem creating your booking");
+    } catch (err: any) {
+      console.error("Error creating payment session:", err);
+      setError(err.message || "There was a problem with the payment process");
       toast({
-        title: "Booking Failed",
-        description: error.message || "There was a problem creating your booking. Please try again.",
+        title: "Payment Session Failed",
+        description: err.message || "There was a problem setting up payment. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsBooking(false);
+      setIsConfirming(false);
     }
   };
 
@@ -223,10 +213,10 @@ const TripConfirm = () => {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Security Error Message */}
-          {errorMessage && (
+          {error && (
             <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md flex items-start">
               <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-              <p>{errorMessage}</p>
+              <p>{error}</p>
             </div>
           )}
           
@@ -283,17 +273,17 @@ const TripConfirm = () => {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button onClick={handleCancel} variant="outline" disabled={isBooking}>
+          <Button onClick={handleCancel} variant="outline" disabled={isConfirming}>
             <X className="mr-2 h-4 w-4" /> Cancel
           </Button>
-          <Button onClick={handleConfirm} disabled={isBooking || !!errorMessage}>
-            {isBooking ? (
+          <Button onClick={onConfirm} disabled={isConfirming || !!error}>
+            {isConfirming ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing…
               </>
             ) : (
               <>
-                <Check className="mr-2 h-4 w-4" /> Confirm Booking
+                <Check className="mr-2 h-4 w-4" /> Pay & Book
               </>
             )}
           </Button>
