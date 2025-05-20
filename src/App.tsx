@@ -10,6 +10,8 @@ import Dashboard from "./pages/Dashboard";
 import TripNew from "./pages/TripNew";
 import TripOffers from "./pages/TripOffers";
 import TripConfirm from "./pages/TripConfirm";
+import Profile from "./pages/Profile";
+import Wallet from "./pages/Wallet";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 
@@ -56,6 +58,22 @@ const App = () => {
                   <TripConfirm />
                 </AuthGuard>
               } 
+            />
+            <Route
+              path="/profile"
+              element={
+                <AuthGuard>
+                  <Profile />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/wallet"
+              element={
+                <AuthGuard>
+                  <Wallet />
+                </AuthGuard>
+              }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
