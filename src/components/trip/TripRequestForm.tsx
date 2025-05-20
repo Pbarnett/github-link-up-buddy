@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import TripDateField from "./TripDateField";
 import TripNumberField from "./TripNumberField";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,17 +20,36 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { Check, ChevronDown, MapPin, Plane } from "lucide-react";
 
 // Available airports data
-const AIRPORTS = [
-  { code: "JFK", name: "New York (JFK)" },
+const NYC_AIRPORTS = [
+  { id: "JFK", label: "New York JFK" },
+  { id: "LGA", label: "New York LaGuardia" },
+  { id: "EWR", label: "Newark" },
+];
+
+const OTHER_AIRPORTS = [
+  { code: "BOS", name: "Boston (BOS)" },
   { code: "LAX", name: "Los Angeles (LAX)" },
   { code: "SFO", name: "San Francisco (SFO)" },
   { code: "ORD", name: "Chicago (ORD)" },
   { code: "MIA", name: "Miami (MIA)" },
+  { code: "ATL", name: "Atlanta (ATL)" },
+  { code: "DFW", name: "Dallas (DFW)" },
+  { code: "DEN", name: "Denver (DEN)" },
+  { code: "SEA", name: "Seattle (SEA)" },
+  { code: "PHX", name: "Phoenix (PHX)" },
+];
+
+const POPULAR_DESTINATIONS = [
   { code: "LHR", name: "London (LHR)" },
   { code: "CDG", name: "Paris (CDG)" },
   { code: "FCO", name: "Rome (FCO)" },
   { code: "MAD", name: "Madrid (MAD)" },
   { code: "TYO", name: "Tokyo (TYO)" },
+  { code: "HKG", name: "Hong Kong (HKG)" },
+  { code: "SYD", name: "Sydney (SYD)" },
+  { code: "MEX", name: "Mexico City (MEX)" },
+  { code: "GRU", name: "São Paulo (GRU)" },
+  { code: "DXB", name: "Dubai (DXB)" },
 ];
 
 // Form schema with Zod validation
@@ -60,18 +79,28 @@ const formSchema = z.object({
   }).max(10000, {
     message: "Budget cannot exceed $10,000",
   }),
-  departure_airports: z.array(z.string()).min(1, {
-    message: "Select at least one departure airport",
-  }),
-  destination_airport: z.string({
-    required_error: "Destination airport is required",
-  }),
+  nyc_airports: z.array(z.string()).optional(),
+  other_departure_airport: z.string().optional(),
+  destination_airport: z.string().optional(),
+  destination_other: z.string().optional(),
 }).refine((data) => data.latestDeparture > data.earliestDeparture, {
   message: "Latest departure date must be after earliest departure date",
   path: ["latestDeparture"],
 }).refine((data) => data.max_duration >= data.min_duration, {
   message: "Maximum duration must be greater than or equal to minimum duration",
   path: ["max_duration"],
+}).refine((data) => {
+  const hasNycAirports = data.nyc_airports && data.nyc_airports.length > 0;
+  const hasOtherAirport = !!data.other_departure_airport;
+  return hasNycAirports || hasOtherAirport;
+}, {
+  message: "At least one departure airport must be selected",
+  path: ["nyc_airports"],
+}).refine((data) => {
+  return !!data.destination_airport || !!data.destination_other;
+}, {
+  message: "Please select a destination or enter a custom one",
+  path: ["destination_airport"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -100,8 +129,10 @@ const TripRequestForm = () => {
       min_duration: 3,
       max_duration: 7,
       budget: 1000,
-      departure_airports: [],
+      nyc_airports: [],
+      other_departure_airport: "",
       destination_airport: "",
+      destination_other: "",
     },
   });
 
@@ -119,7 +150,34 @@ const TripRequestForm = () => {
         return;
       }
       
-      console.log("Sending form data:", data);
+      // Combine NYC airports and other departure airports
+      const departureAirports: string[] = [];
+      
+      if (data.nyc_airports && data.nyc_airports.length > 0) {
+        departureAirports.push(...data.nyc_airports);
+      }
+      
+      if (data.other_departure_airport) {
+        departureAirports.push(data.other_departure_airport);
+      }
+      
+      // Use destination_airport or fallback to destination_other
+      const destinationAirport = data.destination_airport || data.destination_other || "";
+      
+      if (!destinationAirport) {
+        toast({
+          title: "Validation error",
+          description: "Please select a destination or enter a custom one.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log("Sending form data:", {
+        ...data,
+        departure_airports: departureAirports,
+        destination_airport: destinationAirport
+      });
       
       // Construct a valid TripFormValues object for backward compatibility
       const tripFormData: TripFormValues = {
@@ -132,14 +190,11 @@ const TripRequestForm = () => {
       // Use the tripService to create the trip request with new fields
       const result = await createTripRequest(userId, {
         ...tripFormData,
-        departure_airports: data.departure_airports,
-        destination_airport: data.destination_airport,
+        departure_airports: departureAirports,
+        destination_airport: destinationAirport,
         min_duration: data.min_duration,
         max_duration: data.max_duration
       });
-      
-      // Log the inserted offers to console
-      console.log("Inserted offers:", result.offers);
       
       // Show success toast with count of offers saved
       toast({
@@ -147,7 +202,7 @@ const TripRequestForm = () => {
         description: `Your trip request has been submitted with ${result.offersCount} flight offers!`,
       });
       
-      // Navigate to the offers page with only the trip ID
+      // Navigate to the offers page with the trip ID
       navigate(`/trip/offers?id=${result.tripRequest.id}`);
       
     } catch (error: any) {
@@ -160,14 +215,6 @@ const TripRequestForm = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Get selected departure airport names for display
-  const getSelectedDepartureAirportsText = () => {
-    const selectedAirports = form.watch("departure_airports");
-    if (selectedAirports.length === 0) return "Select departure airports";
-    if (selectedAirports.length === 1) return AIRPORTS.find(a => a.code === selectedAirports[0])?.name || selectedAirports[0];
-    return `${selectedAirports.length} airports selected`;
   };
 
   return (
@@ -191,73 +238,113 @@ const TripRequestForm = () => {
               description="The latest date you can depart for your trip."
             />
             
-            {/* Departure Airports Multi-select */}
+            {/* NYC Airports Checkboxes */}
             <FormField
               control={form.control}
-              name="departure_airports"
+              name="nyc_airports"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Departure Airports</FormLabel>
-                  <FormDescription>Select one or more airports you're willing to depart from.</FormDescription>
-                  <DropdownMenu>
-                    <FormControl>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between">
-                          <div className="flex items-center gap-2">
-                            <Plane className="h-4 w-4" />
-                            <span>{getSelectedDepartureAirportsText()}</span>
-                          </div>
-                          <ChevronDown className="h-4 w-4 opacity-50" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                    </FormControl>
-                    <DropdownMenuContent className="w-full max-h-64 overflow-auto">
-                      {AIRPORTS.map((airport) => (
-                        <DropdownMenuCheckboxItem
-                          key={airport.code}
-                          checked={field.value?.includes(airport.code)}
-                          onCheckedChange={(checked) => {
-                            const updatedValue = checked
-                              ? [...field.value, airport.code]
-                              : field.value.filter((value) => value !== airport.code);
-                            field.onChange(updatedValue);
-                          }}
-                        >
-                          {airport.name}
-                        </DropdownMenuCheckboxItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="mb-4">
+                    <FormLabel>NYC Area Airports</FormLabel>
+                    <FormDescription>Select the NYC area airports you can depart from.</FormDescription>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {NYC_AIRPORTS.map((airport) => (
+                      <FormItem
+                        key={airport.id}
+                        className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"
+                      >
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value?.includes(airport.id)}
+                            onCheckedChange={(checked) => {
+                              const updatedValue = checked
+                                ? [...(field.value || []), airport.id]
+                                : (field.value || []).filter((value) => value !== airport.id);
+                              field.onChange(updatedValue);
+                            }}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">{airport.label}</FormLabel>
+                      </FormItem>
+                    ))}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
-            {/* Destination Airport Single-select */}
+            {/* Other Departure Airport Dropdown */}
             <FormField
               control={form.control}
-              name="destination_airport"
+              name="other_departure_airport"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Destination Airport</FormLabel>
-                  <FormDescription>Where would you like to travel to?</FormDescription>
+                  <FormLabel>Other Departure Airport</FormLabel>
+                  <FormDescription>If you're not departing from NYC, select another airport.</FormDescription>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger className="w-full">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          <SelectValue placeholder="Select a destination" />
-                        </div>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select another airport (optional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="max-h-64 overflow-auto">
-                      {AIRPORTS.map((airport) => (
+                      <SelectItem value="">None</SelectItem>
+                      {OTHER_AIRPORTS.map((airport) => (
                         <SelectItem key={airport.code} value={airport.code}>
                           {airport.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Destination Airport Dropdown */}
+            <FormField
+              control={form.control}
+              name="destination_airport"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Destination</FormLabel>
+                  <FormDescription>Select a popular destination.</FormDescription>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select destination" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="max-h-64 overflow-auto">
+                      <SelectItem value="">None (I'll enter my own)</SelectItem>
+                      {POPULAR_DESTINATIONS.map((airport) => (
+                        <SelectItem key={airport.code} value={airport.code}>
+                          {airport.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Custom Destination Field */}
+            <FormField
+              control={form.control}
+              name="destination_other"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Other Destination</FormLabel>
+                  <FormDescription>If your destination isn't listed above, enter it here.</FormDescription>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter destination airport code" 
+                      {...field} 
+                      disabled={!!form.watch("destination_airport")}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
