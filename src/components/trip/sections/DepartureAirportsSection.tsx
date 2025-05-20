@@ -1,3 +1,4 @@
+
 import { Control } from "react-hook-form";
 import { 
   FormControl, 
@@ -82,14 +83,16 @@ const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) =>
           <FormItem>
             <FormLabel>Other Departure Airport</FormLabel>
             <FormDescription>If you're not departing from NYC, select another airport.</FormDescription>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select 
+              onValueChange={field.onChange} 
+              value={field.value || undefined}
+            >
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select another airport (optional)" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent className="max-h-64 overflow-auto">
-                <SelectItem value="">None</SelectItem>
                 {OTHER_AIRPORTS.map((airport) => (
                   <SelectItem key={airport.code} value={airport.code}>
                     {airport.name}
