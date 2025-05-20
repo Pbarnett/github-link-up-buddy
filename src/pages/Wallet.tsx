@@ -103,7 +103,7 @@ function WalletPage() {
             {isLoading && <p className="text-gray-600">Loading saved cards…</p>}
             {error && <p className="text-red-600">Error loading cards: {error.message}</p>}
 
-            {data?.length ? (
+            {data && data.length > 0 ? (
               <ul className="divide-y divide-gray-200">
                 {data.map((pm: PaymentMethod) => (
                   <li key={pm.id} className="py-4 flex justify-between items-center">
