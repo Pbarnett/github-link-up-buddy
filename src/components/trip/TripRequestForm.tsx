@@ -183,7 +183,8 @@ const TripRequestForm = () => {
       const tripFormData: TripFormValues = {
         earliestDeparture: data.earliestDeparture,
         latestDeparture: data.latestDeparture,
-        duration: data.max_duration, // Use max_duration for compatibility with existing code
+        min_duration: data.min_duration,
+        max_duration: data.max_duration,
         budget: data.budget
       };
       
@@ -192,8 +193,6 @@ const TripRequestForm = () => {
         ...tripFormData,
         departure_airports: departureAirports,
         destination_airport: destinationAirport,
-        min_duration: data.min_duration,
-        max_duration: data.max_duration
       });
       
       // Show success toast with count of offers saved
