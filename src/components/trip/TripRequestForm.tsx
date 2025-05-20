@@ -1,17 +1,18 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { toast } from "@/components/ui/use-toast";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
-import { supabase } from "@/integrations/supabase/client";
 import { createTripRequest } from "@/services/tripService";
-import { TripFormValues } from "@/services/mockOffers";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+
+// Import type definitions
+import { FormValues, tripFormSchema } from "@/types/form";
 
 // Import the section components
 import DateRangeSection from "./sections/DateRangeSection";
@@ -20,83 +21,14 @@ import TripDurationSection from "./sections/TripDurationSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import DestinationSection from "./sections/DestinationSection";
 
-// Form schema with Zod validation
-const formSchema = z.object({
-  earliestDeparture: z.date({
-    required_error: "Earliest departure date is required",
-  }).refine((date) => date > new Date(), {
-    message: "Earliest departure date must be in the future",
-  }),
-  latestDeparture: z.date({
-    required_error: "Latest departure date is required",
-  }).refine((date) => date > new Date(), {
-    message: "Latest departure date must be in the future",
-  }),
-  min_duration: z.coerce.number().int().min(1, {
-    message: "Minimum duration must be at least 1 day",
-  }).max(30, {
-    message: "Minimum duration cannot exceed 30 days",
-  }),
-  max_duration: z.coerce.number().int().min(1, {
-    message: "Maximum duration must be at least 1 day",
-  }).max(30, {
-    message: "Maximum duration cannot exceed 30 days",
-  }),
-  budget: z.coerce.number().min(100, {
-    message: "Budget must be at least $100",
-  }).max(10000, {
-    message: "Budget cannot exceed $10,000",
-  }),
-  nyc_airports: z.array(z.string()).optional(),
-  other_departure_airport: z.string().optional(),
-  destination_airport: z.string().optional(),
-  destination_other: z.string().optional(),
-}).refine((data) => data.latestDeparture > data.earliestDeparture, {
-  message: "Latest departure date must be after earliest departure date",
-  path: ["latestDeparture"],
-}).refine((data) => data.max_duration >= data.min_duration, {
-  message: "Maximum duration must be greater than or equal to minimum duration",
-  path: ["max_duration"],
-}).refine((data) => {
-  const hasNycAirports = data.nyc_airports && data.nyc_airports.length > 0;
-  const hasOtherAirport = !!data.other_departure_airport;
-  return hasNycAirports || hasOtherAirport;
-}, {
-  message: "At least one departure airport must be selected",
-  path: ["nyc_airports"],
-}).refine((data) => {
-  return !!data.destination_airport || !!data.destination_other;
-}, {
-  message: "Please select a destination or enter a custom one",
-  path: ["destination_airport"],
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
 const TripRequestForm = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  
-  // Get the current user ID when component mounts
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          setUserId(user.id);
-        }
-      } catch (error) {
-        console.error("Error getting user:", error);
-      }
-    };
-    
-    getCurrentUser();
-  }, []);
+  const { user, userId, loading: userLoading, error: userError } = useCurrentUser();
   
   // Initialize form with React Hook Form and Zod resolver
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(tripFormSchema),
     defaultValues: {
       min_duration: 3,
       max_duration: 7,
@@ -145,18 +77,13 @@ const TripRequestForm = () => {
         return;
       }
       
-      // Construct a valid TripFormValues object for backward compatibility
-      const tripFormData: TripFormValues = {
+      // Use the tripService to create the trip request with new fields
+      const result = await createTripRequest(userId, {
         earliestDeparture: data.earliestDeparture,
         latestDeparture: data.latestDeparture,
         min_duration: data.min_duration,
         max_duration: data.max_duration,
-        budget: data.budget
-      };
-      
-      // Use the tripService to create the trip request with new fields
-      const result = await createTripRequest(userId, {
-        ...tripFormData,
+        budget: data.budget,
         departure_airports: departureAirports,
         destination_airport: destinationAirport,
       });
@@ -181,6 +108,26 @@ const TripRequestForm = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Show error if user authentication fails
+  if (userError && !userLoading) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl">Authentication Error</CardTitle>
+          <CardDescription>There was a problem authenticating your account.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-red-500">{userError.message}</p>
+          <div className="pt-4">
+            <Button onClick={() => navigate("/login")}>
+              Go to Login
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <Card className="w-full max-w-md">

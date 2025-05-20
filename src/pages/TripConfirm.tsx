@@ -9,6 +9,8 @@ import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert } from "@/integrations/supabase/types";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { safeQuery } from "@/lib/supabaseUtils";
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -17,6 +19,7 @@ const TripConfirm = () => {
   const [hasError, setHasError] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { user, userId, loading: userLoading } = useCurrentUser();
 
   useEffect(() => {
     // Parse query parameters
@@ -76,41 +79,51 @@ const TripConfirm = () => {
       return;
     }
 
+    if (!userId) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to book a flight.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsBooking(true);
     setErrorMessage(null);
 
     try {
-      // 1. Get the current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
-        throw new Error(userError?.message || "User not authenticated");
-      }
+      // Get the trip_request_id from flight_offers using the flight offer ID
+      const flightOfferResult = await safeQuery(() => 
+        supabase
+          .from('flight_offers')
+          .select('trip_request_id')
+          .eq('id', offer.id)
+          .single()
+      );
 
-      // 2. Get the trip_request_id from flight_offers using the flight offer ID
-      const { data: flightOffer, error: flightOfferError } = await supabase
-        .from('flight_offers')
-        .select('trip_request_id')
-        .eq('id', offer.id)
-        .single();
-
-      if (flightOfferError || !flightOffer) {
-        throw new Error(flightOfferError?.message || "Could not find flight offer details");
+      if (flightOfferResult.error || !flightOfferResult.data) {
+        throw new Error(flightOfferResult.error?.message || "Could not find flight offer details");
       }
       
-      // 3. Security check: Verify that the trip request belongs to the current user
-      const { data: tripRequest, error: tripRequestError } = await supabase
-        .from('trip_requests')
-        .select('user_id')
-        .eq('id', flightOffer.trip_request_id)
-        .single();
+      const flightOffer = flightOfferResult.data;
+      
+      // Security check: Verify that the trip request belongs to the current user
+      const tripRequestResult = await safeQuery(() => 
+        supabase
+          .from('trip_requests')
+          .select('user_id')
+          .eq('id', flightOffer.trip_request_id)
+          .single()
+      );
         
-      if (tripRequestError || !tripRequest) {
+      if (tripRequestResult.error || !tripRequestResult.data) {
         throw new Error("Could not verify trip ownership");
       }
       
-      // 4. Verify the trip belongs to the logged-in user
-      if (tripRequest.user_id !== user.id) {
+      const tripRequest = tripRequestResult.data;
+      
+      // Verify the trip belongs to the logged-in user
+      if (tripRequest.user_id !== userId) {
         setErrorMessage("Security error: You don't have permission to book this flight");
         toast({
           title: "Security Error",
@@ -120,19 +133,21 @@ const TripConfirm = () => {
         return;
       }
 
-      // 5. Create booking record
+      // Create booking record
       const bookingData: TablesInsert<"bookings"> = {
-        user_id: user.id,
+        user_id: userId,
         trip_request_id: flightOffer.trip_request_id,
         flight_offer_id: offer.id,
       };
 
-      const { error: bookingError } = await supabase
-        .from('bookings')
-        .insert(bookingData);
+      const bookingResult = await safeQuery(() => 
+        supabase
+          .from('bookings')
+          .insert(bookingData)
+      );
 
-      if (bookingError) {
-        throw new Error(bookingError.message || "Failed to create booking");
+      if (bookingResult.error) {
+        throw new Error(bookingResult.error.message || "Failed to create booking");
       }
 
       // Success
@@ -180,7 +195,7 @@ const TripConfirm = () => {
     );
   }
 
-  if (!offer) {
+  if (userLoading || !offer) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
         <div className="animate-pulse">
