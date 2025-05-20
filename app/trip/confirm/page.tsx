@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -86,7 +87,7 @@ const TripConfirm = () => {
       }
 
       // 2. Get the trip_request_id from flight_offers using the flight offer ID
-      const flightOfferResult = await safeQuery(() =>
+      const flightOfferResult = await safeQuery<{ trip_request_id: string }>(() =>
         supabase
           .from('flight_offers')
           .select('trip_request_id')
@@ -105,7 +106,7 @@ const TripConfirm = () => {
         flight_offer_id: offer.id,
       };
 
-      const bookingResult = await safeQuery(() =>
+      const bookingResult = await safeQuery<Tables<"bookings">>(() =>
         supabase
           .from('bookings')
           .insert(bookingData)

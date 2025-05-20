@@ -3,7 +3,8 @@ import {
   PostgrestError,
   PostgrestResponse,
   PostgrestSingleResponse,
-  PostgrestMaybeSingleResponse
+  PostgrestMaybeSingleResponse,
+  PostgrestBuilder
 } from '@supabase/supabase-js';
 import { toast } from '@/components/ui/use-toast';
 
@@ -27,7 +28,7 @@ interface QueryResult<T> {
  * For `.single()` or `.maybeSingle()` responses — returns QueryResult with T
  */
 export async function safeQuery<T>(
-  queryFn: () => Promise<PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T>> | PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T>,
+  queryFn: () => Promise<PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T>> | PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T> | PostgrestBuilder<T>,
   options?: {
     errorMessage?: string;
     showErrorToast?: boolean;
@@ -38,7 +39,7 @@ export async function safeQuery<T>(
  * For `.select()` responses — returns QueryResult with T[]
  */
 export async function safeQuery<T>(
-  queryFn: () => Promise<PostgrestResponse<T>> | PostgrestResponse<T>,
+  queryFn: () => Promise<PostgrestResponse<T>> | PostgrestResponse<T> | PostgrestBuilder<T[]>,
   options?: {
     errorMessage?: string;
     showErrorToast?: boolean;
@@ -51,7 +52,9 @@ export async function safeQuery<T>(
     | Promise<PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T> | PostgrestResponse<T>>
     | PostgrestSingleResponse<T>
     | PostgrestMaybeSingleResponse<T>
-    | PostgrestResponse<T>,
+    | PostgrestResponse<T>
+    | PostgrestBuilder<T>
+    | PostgrestBuilder<T[]>,
   options?: {
     errorMessage?: string;
     showErrorToast?: boolean;
