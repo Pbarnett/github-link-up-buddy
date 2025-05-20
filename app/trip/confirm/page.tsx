@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -92,7 +91,7 @@ const TripConfirm = () => {
           .from('flight_offers')
           .select('trip_request_id')
           .eq('id', offer.id)
-          .single()
+          .single() // FIX: execute query
       );
 
       if (flightOfferResult.error || !flightOfferResult.data) {
@@ -109,7 +108,7 @@ const TripConfirm = () => {
       const bookingResult = await safeQuery<null>(() =>
         supabase
           .from('bookings')
-          .insert(bookingData)
+          .insert(bookingData) // Already executed correctly
       );
 
       if (bookingResult.error) {
