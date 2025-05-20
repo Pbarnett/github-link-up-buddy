@@ -1,44 +1,23 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
-// Define the type for the payment method
-export interface PaymentMethod {
-  id: string;
-  user_id: string;
-  brand: string;
-  last4: string;
-  exp_month: number;
-  exp_year: number;
-  is_default: boolean;
-  created_at: string;
-}
+export type PaymentMethod = Database["public"]["Tables"]["payment_methods"]["Row"];
 
 export function usePaymentMethods() {
   return useQuery<PaymentMethod[], Error>({
     queryKey: ["payment_methods"],
     queryFn: async () => {
       try {
-        // Use any type here since the payment_methods table doesn't exist in types yet
         const { data, error } = await supabase
           .from("payment_methods")
           .select("*")
-          .order("created_at", { ascending: false }) as any;
+          .order("created_at", { ascending: false });
         
         if (error) throw error;
         
-        // Filter the data to ensure it matches our PaymentMethod interface
-        const paymentMethods = data?.filter((item: any): item is PaymentMethod => {
-          return (
-            'brand' in item && 
-            'last4' in item && 
-            'exp_month' in item && 
-            'exp_year' in item &&
-            'is_default' in item
-          );
-        }) || [];
-        
-        return paymentMethods;
+        return data || [];
       } catch (error) {
         console.error("Error fetching payment methods:", error);
         throw error;
