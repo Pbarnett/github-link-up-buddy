@@ -1,4 +1,3 @@
-
 import { Control } from "react-hook-form";
 import { 
   FormControl, 
@@ -36,7 +35,6 @@ interface DepartureAirportsSectionProps {
 }
 
 const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) => {
-  console.log("Rendering DepartureAirportsSection");
   return (
     <div className="space-y-6">
       {/* NYC Airports Checkboxes */}

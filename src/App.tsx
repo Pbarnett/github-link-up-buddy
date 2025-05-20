@@ -33,8 +33,14 @@ const App = () => {
                 </AuthGuard>
               } 
             />
-            {/* Temporarily removed AuthGuard for testing */}
-            <Route path="/trip/new" element={<TripNew />} />
+            <Route 
+              path="/trip/new" 
+              element={
+                <AuthGuard>
+                  <TripNew />
+                </AuthGuard>
+              } 
+            />
             <Route 
               path="/trip/offers" 
               element={

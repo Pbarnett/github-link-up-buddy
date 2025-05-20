@@ -7,7 +7,6 @@ interface BudgetSectionProps {
 }
 
 const BudgetSection = ({ control }: BudgetSectionProps) => {
-  console.log("Rendering BudgetSection");
   return (
     <TripNumberField 
       name="budget"

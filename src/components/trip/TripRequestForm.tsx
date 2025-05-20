@@ -74,7 +74,6 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const TripRequestForm = () => {
-  console.log("TripRequestForm rendering - TESTING");
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -83,9 +82,7 @@ const TripRequestForm = () => {
   useEffect(() => {
     const getCurrentUser = async () => {
       try {
-        console.log("Getting current user");
         const { data: { user } } = await supabase.auth.getUser();
-        console.log("User data:", user);
         if (user) {
           setUserId(user.id);
         }
@@ -148,12 +145,6 @@ const TripRequestForm = () => {
         return;
       }
       
-      console.log("Sending form data:", {
-        ...data,
-        departure_airports: departureAirports,
-        destination_airport: destinationAirport
-      });
-      
       // Construct a valid TripFormValues object for backward compatibility
       const tripFormData: TripFormValues = {
         earliestDeparture: data.earliestDeparture,
@@ -190,8 +181,6 @@ const TripRequestForm = () => {
       setIsSubmitting(false);
     }
   };
-
-  console.log("Before return in TripRequestForm");
   
   return (
     <Card className="w-full max-w-md">
@@ -200,40 +189,21 @@ const TripRequestForm = () => {
         <CardDescription>Enter your trip preferences below.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="p-4 bg-yellow-100 rounded mb-4">
-          TESTING: Form component is rendering
-        </div>
-        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* DateRangeSection */}
-            <div className="p-4 bg-blue-100 rounded mb-4">
-              DateRangeSection test container:
-            </div>
             <DateRangeSection control={form.control} />
             
             {/* BudgetSection */}
-            <div className="p-4 bg-green-100 rounded mb-4">
-              BudgetSection test container:
-            </div>
             <BudgetSection control={form.control} />
             
             {/* TripDurationSection */}
-            <div className="p-4 bg-amber-100 rounded mb-4">
-              TripDurationSection test container:
-            </div>
             <TripDurationSection control={form.control} />
             
             {/* DepartureAirportsSection */}
-            <div className="p-4 bg-[#FFDEE2] rounded mb-4">
-              DepartureAirportsSection test container:
-            </div>
             <DepartureAirportsSection control={form.control} />
             
             {/* DestinationSection */}
-            <div className="p-4 bg-purple-100 rounded mb-4">
-              DestinationSection test container:
-            </div>
             <DestinationSection control={form.control} watch={form.watch} />
             
             <div className="pt-4 flex justify-between">

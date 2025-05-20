@@ -33,8 +33,6 @@ const DestinationSection = ({ control, watch }: DestinationSectionProps) => {
   // Watch the destination_airport value to conditionally disable the custom field
   const selectedDestination = watch("destination_airport");
   
-  console.log("DestinationSection rendering, selectedDestination:", selectedDestination);
-  
   return (
     <div className="space-y-6">
       {/* Destination Airport Dropdown */}
