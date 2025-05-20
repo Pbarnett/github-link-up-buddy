@@ -15,47 +15,49 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route 
-            path="/dashboard" 
-            element={
-              <AuthGuard>
-                <Dashboard />
-              </AuthGuard>
-            } 
-          />
-          {/* Temporarily removed AuthGuard for testing */}
-          <Route path="/trip/new" element={<TripNew />} />
-          <Route 
-            path="/trip/offers" 
-            element={
-              <AuthGuard>
-                <TripOffers />
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/trip/confirm" 
-            element={
-              <AuthGuard>
-                <TripConfirm />
-              </AuthGuard>
-            } 
-          />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route 
+              path="/dashboard" 
+              element={
+                <AuthGuard>
+                  <Dashboard />
+                </AuthGuard>
+              } 
+            />
+            {/* Temporarily removed AuthGuard for testing */}
+            <Route path="/trip/new" element={<TripNew />} />
+            <Route 
+              path="/trip/offers" 
+              element={
+                <AuthGuard>
+                  <TripOffers />
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/trip/confirm" 
+              element={
+                <AuthGuard>
+                  <TripConfirm />
+                </AuthGuard>
+              } 
+            />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
