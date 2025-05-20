@@ -30,7 +30,6 @@ export const createTripRequest = async (
       .insert(tripRequestData)
       .select()
       .single()
-      .then(result => result)
   );
   
   if (tripRequestResult.error) {
@@ -52,7 +51,6 @@ export const createTripRequest = async (
       .from("flight_offers")
       .insert(mockOffers)
       .select()
-      .then(result => result)
   );
   
   if (offersResult.error) {
