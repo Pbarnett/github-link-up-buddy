@@ -104,7 +104,6 @@ export type Database = {
           created_at: string
           departure_airports: string[]
           destination_airport: string | null
-          duration: number
           earliest_departure: string
           id: string
           latest_departure: string
@@ -117,7 +116,6 @@ export type Database = {
           created_at?: string
           departure_airports?: string[]
           destination_airport?: string | null
-          duration: number
           earliest_departure: string
           id?: string
           latest_departure: string
@@ -130,7 +128,6 @@ export type Database = {
           created_at?: string
           departure_airports?: string[]
           destination_airport?: string | null
-          duration?: number
           earliest_departure?: string
           id?: string
           latest_departure?: string
