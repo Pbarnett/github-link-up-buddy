@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -93,7 +92,6 @@ const TripConfirm = () => {
           .select('trip_request_id')
           .eq('id', offer.id)
           .single()
-          .then(result => result)
       );
 
       if (flightOfferResult.error || !flightOfferResult.data) {
@@ -111,7 +109,6 @@ const TripConfirm = () => {
         supabase
           .from('bookings')
           .insert(bookingData)
-          .then(result => result)
       );
 
       if (bookingResult.error) {
