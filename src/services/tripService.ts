@@ -30,13 +30,12 @@ export const createTripRequest = async (
     user_id: userId,
     earliest_departure: formData.earliestDeparture.toISOString(),
     latest_departure: formData.latestDeparture.toISOString(),
-    duration: formData.duration,
     budget: formData.budget,
     // Include new fields if provided
     departure_airports: formData.departure_airports || [],
     destination_airport: formData.destination_airport || null,
     min_duration: formData.min_duration || 3,
-    max_duration: formData.max_duration || formData.duration || 6
+    max_duration: formData.max_duration || 6
   };
   
   // Insert trip request into Supabase with proper types
