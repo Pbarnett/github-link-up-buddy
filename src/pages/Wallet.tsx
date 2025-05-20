@@ -6,6 +6,8 @@ import { usePaymentMethods, PaymentMethod } from "@/hooks/usePaymentMethods";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { safeQuery } from "@/lib/supabaseUtils";
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 
 function WalletPage() {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
@@ -13,31 +15,35 @@ function WalletPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string|null>(null);
+  const queryClient = useQueryClient();
 
   const handleSetDefault = async (id: string) => {
     try {
       setIsUpdating(id);
       
-      // First, update all payment methods to not be default
-      await supabase
-        .from('payment_methods')
-        .update({ is_default: false, updated_at: new Date().toISOString() })
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
-        
-      // Then set the selected one as default
-      const { error } = await supabase
-        .from('payment_methods')
-        .update({ is_default: true, updated_at: new Date().toISOString() })
-        .eq('id', id);
-        
-      if (error) throw error;
+      const res = await fetch(
+        "https://bbonngdyfyfjqfhvoljl.supabase.co/functions/v1/set-default-payment-method",
+        {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+          body: JSON.stringify({ id }),
+        }
+      );
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to update default payment method");
+      }
       
       toast({
         title: "Payment method updated",
         description: "Your default payment method has been updated.",
       });
       
-      refetch();
+      queryClient.invalidateQueries(["payment_methods"]);
     } catch (err: any) {
       toast({
         title: "Error",
@@ -52,19 +58,30 @@ function WalletPage() {
   const handleDeleteCard = async (id: string) => {
     try {
       setIsUpdating(id);
-      const { error } = await supabase
-        .from('payment_methods')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
+      
+      const res = await fetch(
+        "https://bbonngdyfyfjqfhvoljl.supabase.co/functions/v1/delete-payment-method",
+        {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+          body: JSON.stringify({ id }),
+        }
+      );
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to delete payment method");
+      }
       
       toast({
         title: "Payment method deleted",
         description: "Your payment method has been removed.",
       });
       
-      refetch();
+      queryClient.invalidateQueries(["payment_methods"]);
     } catch (err: any) {
       toast({
         title: "Error",
@@ -105,21 +122,25 @@ function WalletPage() {
                           Default
                         </span>
                       ) : (
-                        <button 
+                        <Button 
                           onClick={() => handleSetDefault(pm.id)} 
                           disabled={isUpdating !== null}
+                          variant="outline" 
+                          size="sm"
                           className="text-sm text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
                         >
                           {isUpdating === pm.id ? 'Updating...' : 'Make default'}
-                        </button>
+                        </Button>
                       )}
-                      <button 
+                      <Button 
                         onClick={() => handleDeleteCard(pm.id)}
                         disabled={isUpdating !== null} 
+                        variant="outline"
+                        size="sm"
                         className="text-sm text-red-600 hover:text-red-900 disabled:opacity-50"
                       >
                         {isUpdating === pm.id ? 'Deleting...' : 'Delete'}
-                      </button>
+                      </Button>
                     </div>
                   </li>
                 ))}
@@ -139,7 +160,7 @@ function WalletPage() {
 
             {stripeKey && (
               <>
-                <button
+                <Button
                   disabled={isCreating}
                   onClick={async () => {
                     setFetchError(null);
@@ -157,7 +178,7 @@ function WalletPage() {
                   className="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                 >
                   {isCreating ? "Redirecting…" : "Add a new card"}
-                </button>
+                </Button>
                 {fetchError && <p className="text-red-600 mt-2">{fetchError}</p>}
               </>
             )}

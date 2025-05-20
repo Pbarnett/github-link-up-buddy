@@ -16,3 +16,9 @@ path = "supabase/functions/create-setup-session"
 
 [functions.create-payment-session]
 path = "supabase/functions/create-payment-session"
+
+[functions.set-default-payment-method]
+path = "supabase/functions/set-default-payment-method"
+
+[functions.delete-payment-method]
+path = "supabase/functions/delete-payment-method"
