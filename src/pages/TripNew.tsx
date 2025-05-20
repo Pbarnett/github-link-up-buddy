@@ -1,11 +1,9 @@
 
-import TripRequestForm from "@/components/trip/TripRequestForm";
-
 const TripNew = () => {
-  console.log("TripNew page rendering");
+  console.log("TripNew page rendering - test version");
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <TripRequestForm />
+      <div className="text-xl font-bold">Hello from TripNew</div>
     </div>
   );
 };
