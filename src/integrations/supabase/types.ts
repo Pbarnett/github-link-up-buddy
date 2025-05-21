@@ -98,6 +98,48 @@ export type Database = {
           },
         ]
       }
+      payment_methods: {
+        Row: {
+          brand: string
+          created_at: string
+          exp_month: number
+          exp_year: number
+          id: string
+          is_default: boolean
+          last4: string
+          nickname: string | null
+          stripe_pm_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand: string
+          created_at?: string
+          exp_month: number
+          exp_year: number
+          id?: string
+          is_default?: boolean
+          last4: string
+          nickname?: string | null
+          stripe_pm_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand?: string
+          created_at?: string
+          exp_month?: number
+          exp_year?: number
+          id?: string
+          is_default?: boolean
+          last4?: string
+          nickname?: string | null
+          stripe_pm_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       trip_requests: {
         Row: {
           budget: number
