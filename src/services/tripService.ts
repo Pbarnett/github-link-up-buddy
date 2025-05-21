@@ -20,7 +20,11 @@ export const createTripRequest = async (
     departure_airports: formData.departure_airports || [],
     destination_airport: formData.destination_airport || null,
     min_duration: formData.min_duration || 3,
-    max_duration: formData.max_duration || 6
+    max_duration: formData.max_duration || 6,
+    // Include auto-booking fields
+    auto_book_enabled: formData.auto_book_enabled || false,
+    max_price: formData.max_price || null,
+    preferred_payment_method_id: formData.preferred_payment_method_id || null
   };
   
   // Insert trip request into Supabase with proper types

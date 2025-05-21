@@ -20,6 +20,7 @@ import BudgetSection from "./sections/BudgetSection";
 import TripDurationSection from "./sections/TripDurationSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import DestinationSection from "./sections/DestinationSection";
+import AutoBookingSection from "./sections/AutoBookingSection";
 
 const TripRequestForm = () => {
   const navigate = useNavigate();
@@ -37,6 +38,10 @@ const TripRequestForm = () => {
       other_departure_airport: "",
       destination_airport: "",
       destination_other: "",
+      // Auto-booking defaults
+      auto_book_enabled: false,
+      max_price: null,
+      preferred_payment_method_id: null,
     },
   });
 
@@ -86,12 +91,18 @@ const TripRequestForm = () => {
         budget: data.budget,
         departure_airports: departureAirports,
         destination_airport: destinationAirport,
+        // Add auto-booking fields
+        auto_book_enabled: data.auto_book_enabled,
+        max_price: data.max_price,
+        preferred_payment_method_id: data.preferred_payment_method_id,
       });
       
       // Show success toast with count of offers saved
       toast({
         title: "Trip request submitted",
-        description: `Your trip request has been submitted with ${result.offersCount} flight offers!`,
+        description: `Your trip request has been submitted with ${result.offersCount} flight offers!${
+          data.auto_book_enabled ? ' Auto-booking is enabled.' : ''
+        }`,
       });
       
       // Navigate to the offers page with the trip ID
@@ -152,6 +163,9 @@ const TripRequestForm = () => {
             
             {/* DestinationSection */}
             <DestinationSection control={form.control} watch={form.watch} />
+            
+            {/* Auto-booking section */}
+            <AutoBookingSection control={form.control} watch={form.watch} />
             
             <div className="pt-4 flex justify-between">
               <Button 

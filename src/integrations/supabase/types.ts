@@ -48,6 +48,51 @@ export type Database = {
           },
         ]
       }
+      flight_matches: {
+        Row: {
+          created_at: string
+          depart_at: string
+          flight_offer_id: string
+          id: string
+          notified: boolean
+          price: number
+          trip_request_id: string
+        }
+        Insert: {
+          created_at?: string
+          depart_at: string
+          flight_offer_id: string
+          id?: string
+          notified?: boolean
+          price: number
+          trip_request_id: string
+        }
+        Update: {
+          created_at?: string
+          depart_at?: string
+          flight_offer_id?: string
+          id?: string
+          notified?: boolean
+          price?: number
+          trip_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_matches_flight_offer_id_fkey"
+            columns: ["flight_offer_id"]
+            isOneToOne: false
+            referencedRelation: "flight_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_matches_trip_request_id_fkey"
+            columns: ["trip_request_id"]
+            isOneToOne: false
+            referencedRelation: "trip_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flight_offers: {
         Row: {
           airline: string
@@ -142,39 +187,51 @@ export type Database = {
       }
       trip_requests: {
         Row: {
+          auto_book_enabled: boolean
           budget: number
           created_at: string
           departure_airports: string[]
           destination_airport: string | null
           earliest_departure: string
           id: string
+          last_checked_at: string | null
           latest_departure: string
           max_duration: number
+          max_price: number | null
           min_duration: number
+          preferred_payment_method_id: string | null
           user_id: string
         }
         Insert: {
+          auto_book_enabled?: boolean
           budget: number
           created_at?: string
           departure_airports?: string[]
           destination_airport?: string | null
           earliest_departure: string
           id?: string
+          last_checked_at?: string | null
           latest_departure: string
           max_duration?: number
+          max_price?: number | null
           min_duration?: number
+          preferred_payment_method_id?: string | null
           user_id: string
         }
         Update: {
+          auto_book_enabled?: boolean
           budget?: number
           created_at?: string
           departure_airports?: string[]
           destination_airport?: string | null
           earliest_departure?: string
           id?: string
+          last_checked_at?: string | null
           latest_departure?: string
           max_duration?: number
+          max_price?: number | null
           min_duration?: number
+          preferred_payment_method_id?: string | null
           user_id?: string
         }
         Relationships: []
