@@ -175,27 +175,36 @@ export type Database = {
           amount: number
           created_at: string
           currency: string
+          description: string | null
           id: string
           match_id: string
           payment_intent_id: string
+          status: string | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           amount: number
           created_at?: string
           currency?: string
+          description?: string | null
           id?: string
           match_id: string
           payment_intent_id: string
+          status?: string | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           amount?: number
           created_at?: string
           currency?: string
+          description?: string | null
           id?: string
           match_id?: string
           payment_intent_id?: string
+          status?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [

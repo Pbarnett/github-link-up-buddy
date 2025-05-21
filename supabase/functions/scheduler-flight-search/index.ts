@@ -71,12 +71,16 @@ serve(async (req: Request) => {
         const autoBookUrl = `${functionUrl}/functions/v1/auto-book`;
         console.log(`[scheduler-flight-search] Calling auto-book at ${autoBookUrl} (attempt ${attempts + 1}/${maxRetries})`);
         
+        // Pass the current retry attempt number to the auto-book function
         const autoBookResponse = await fetch(autoBookUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
           },
+          body: JSON.stringify({
+            retryCount: attempts
+          })
         });
         
         if (!autoBookResponse.ok) {
@@ -90,6 +94,7 @@ serve(async (req: Request) => {
           matchesProcessed: autoBookResult.matchesProcessed,
           matchesSucceeded: autoBookResult.matchesSucceeded,
           matchesFailed: autoBookResult.matchesFailed,
+          notificationsCreated: autoBookResult.notificationsCreated || 0,
           totalDuration: `${autoBookResult.totalDurationMs}ms`
         });
         
