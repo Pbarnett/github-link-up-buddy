@@ -2,6 +2,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Import the flight API service
+import { searchOffers, FlightSearchParams } from "../../src/services/flightApi.ts";
+
 // Set up CORS headers
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,22 +17,6 @@ const supabaseClient = createClient(
   Deno.env.get("SUPABASE_URL") || "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
 );
-
-// Import shared mock offer generator function
-import { generateMockOffers } from "./mockOffers.ts";
-
-// Mock offers generator function
-const createMockOffers = (tripRequest) => {
-  const offersData = {
-    earliestDeparture: new Date(tripRequest.earliest_departure),
-    latestDeparture: new Date(tripRequest.latest_departure),
-    budget: tripRequest.budget,
-    min_duration: tripRequest.min_duration,
-    max_duration: tripRequest.max_duration,
-  };
-  
-  return generateMockOffers(offersData, tripRequest.id);
-};
 
 serve(async (req: Request) => {
   // Handle CORS preflight requests
@@ -71,16 +58,35 @@ serve(async (req: Request) => {
           continue;
         }
         
-        // Generate mock offers for this request using the shared module
-        const mockOffers = createMockOffers(request);
+        // Create search params from the trip request
+        const searchParams: FlightSearchParams = {
+          origin: request.departure_airports,
+          destination: request.destination_airport,
+          earliestDeparture: new Date(request.earliest_departure),
+          latestDeparture: new Date(request.latest_departure),
+          minDuration: request.min_duration,
+          maxDuration: request.max_duration,
+          budget: request.budget,
+        };
+        
+        let offers;
+        try {
+          // Use the real API to get flight offers
+          offers = await searchOffers(searchParams, request.id);
+          console.log(`[flight-search] Request ${request.id}: Found ${offers.length} offers`);
+        } catch (apiError) {
+          console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
+          details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
+          continue;
+        }
         
         // Filter offers based on max_price (if specified)
         // If max_price is null, no filtering is applied (treat as "no filter")
         const filteredOffers = request.max_price === null 
-          ? mockOffers 
-          : mockOffers.filter(offer => offer.price <= request.max_price);
+          ? offers 
+          : offers.filter(offer => offer.price <= request.max_price);
         
-        console.log(`[flight-search] Request ${request.id}: Generated ${mockOffers.length} offers, filtered to ${filteredOffers.length}`);
+        console.log(`[flight-search] Request ${request.id}: Generated ${offers.length} offers, filtered to ${filteredOffers.length}`);
         
         // Save offers to the database
         const { data: savedOffers, error: offersError } = await supabaseClient
@@ -127,11 +133,11 @@ serve(async (req: Request) => {
         details.push({ 
           tripRequestId: request.id, 
           matchesFound: newInserts,
-          offersGenerated: mockOffers.length,
+          offersGenerated: offers.length,
           offersFiltered: filteredOffers.length
         });
         
-        console.log(`[flight-search] Request ${request.id}: fetched ${mockOffers.length} offers → ${newInserts} new matches`);
+        console.log(`[flight-search] Request ${request.id}: fetched ${offers.length} offers → ${newInserts} new matches`);
       } catch (requestError) {
         // Catch any errors in processing this specific trip request
         console.error(`[flight-search] Failed to process request ${request.id}: ${requestError.message}`);
