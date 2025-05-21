@@ -2,14 +2,19 @@
 import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { TripFormValues, ExtendedTripFormValues, TripRequestResult } from "@/types/form";
-import { generateMockOffers } from "./mockOffers";
+import { generateMockOffers } from "@/shared/mockOffers";
 import { safeQuery } from "@/lib/supabaseUtils";
 
-// Function to create trip request and related flight offers
-export const createTripRequest = async (
+/**
+ * Create a new trip request in the database
+ * @param userId User ID creating the trip
+ * @param formData Trip form data
+ * @returns Created trip request data
+ */
+const createTrip = async (
   userId: string, 
   formData: ExtendedTripFormValues
-): Promise<TripRequestResult> => {
+): Promise<Tables<"trip_requests">> => {
   // Create a typed insert object for trip_requests
   const tripRequestData: TablesInsert<"trip_requests"> = {
     user_id: userId,
@@ -42,21 +47,21 @@ export const createTripRequest = async (
     throw new Error(`Failed to submit trip request: ${tripRequestResult.error.message}`);
   }
   
-  const tripRequest = tripRequestResult.data as Tables<"trip_requests">;
-  
-  // Generate mock offers based on the trip details
-  const mockOffers = generateMockOffers({
-    ...formData,
-    earliestDeparture: formData.earliestDeparture,
-    latestDeparture: formData.latestDeparture,
-  }, tripRequest.id);
-  
+  return tripRequestResult.data as Tables<"trip_requests">;
+};
+
+/**
+ * Insert flight offers into the database
+ * @param offers Array of flight offers to insert
+ * @returns Array of inserted offers
+ */
+const insertOffers = async (offers: TablesInsert<"flight_offers">[]): Promise<Tables<"flight_offers">[]> => {
   // Store the offers in Supabase and explicitly await the response
-  const offersResult = await safeQuery<Tables<"flight_offers">>(() => 
+  const offersResult = await safeQuery<Tables<"flight_offers">[]>(() => 
     Promise.resolve(
       supabase
         .from("flight_offers")
-        .insert(mockOffers)
+        .insert(offers)
         .select()
     )
   );
@@ -66,7 +71,28 @@ export const createTripRequest = async (
   }
   
   // Ensure we have a proper array even if data is null
-  const offers = offersResult.data || [];
+  return offersResult.data || [];
+};
+
+// Function to create trip request and related flight offers
+export const createTripRequest = async (
+  userId: string, 
+  formData: ExtendedTripFormValues
+): Promise<TripRequestResult> => {
+  // Create the trip request
+  const tripRequest = await createTrip(userId, formData);
+  
+  // Generate mock offers based on the trip details
+  const mockOffers = generateMockOffers({
+    earliestDeparture: formData.earliestDeparture,
+    latestDeparture: formData.latestDeparture,
+    min_duration: formData.min_duration,
+    max_duration: formData.max_duration,
+    budget: formData.budget
+  }, tripRequest.id);
+  
+  // Insert the offers into the database
+  const offers = await insertOffers(mockOffers);
   
   return {
     tripRequest,

@@ -1,8 +1,7 @@
-
 import { TablesInsert } from "@/integrations/supabase/types";
 
-// Function to generate mock flight offers based on trip details
-export interface TripFormValues {
+// Shared interface for trip data required for mock offer generation
+export interface MockTripData {
   earliestDeparture: Date;
   latestDeparture: Date;
   min_duration?: number;
@@ -10,7 +9,19 @@ export interface TripFormValues {
   budget: number;
 }
 
-export const generateMockOffers = (tripData: TripFormValues, tripRequestId: string): TablesInsert<"flight_offers">[] => {
+/**
+ * Generate mock flight offers based on trip criteria
+ * Used by both client-side code and edge functions
+ * 
+ * @param tripData Trip parameters used to generate realistic offers
+ * @param tripRequestId ID of the trip request these offers belong to
+ * @returns Array of mock flight offers ready for database insertion
+ */
+export const generateMockOffers = (tripData: MockTripData, tripRequestId: string): TablesInsert<"flight_offers">[] => {
+  // TODO: In production, this function would be replaced with a real API call
+  // to a flight search service. The interface should remain the same so replacing
+  // this mock implementation with a real one will be seamless.
+  
   // Generate dates for departures and returns based on the trip parameters
   const startDate = new Date(tripData.earliestDeparture);
   const endDate = new Date(tripData.latestDeparture);

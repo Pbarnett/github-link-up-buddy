@@ -1,7 +1,7 @@
 
 import { z } from "zod";
 
-// Base trip form values interface
+// Base trip form values interface for core trip parameters
 export interface TripFormValues {
   earliestDeparture: Date;
   latestDeparture: Date;
@@ -10,14 +10,14 @@ export interface TripFormValues {
   budget: number;
 }
 
-// Extended trip form values with additional fields
+// Extended trip form values with additional fields needed for API
 export interface ExtendedTripFormValues extends TripFormValues {
   departure_airports?: string[];
   destination_airport?: string;
   // Auto-booking fields
   auto_book_enabled?: boolean;
-  max_price?: number;
-  preferred_payment_method_id?: string;
+  max_price?: number | null;
+  preferred_payment_method_id?: string | null;
 }
 
 // Form schema with Zod validation for the trip request form
@@ -91,6 +91,7 @@ export type FormValues = z.infer<typeof tripFormSchema>;
 export interface TripRequestResult {
   tripRequest: {
     id: string;
+    auto_book_enabled?: boolean;
   };
   offers: any[];
   offersCount: number;

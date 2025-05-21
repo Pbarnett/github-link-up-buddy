@@ -1,10 +1,22 @@
 
-// Mock data generator for flight offers
+/**
+ * This is an adapter file for the edge function that imports the shared mock offers module.
+ * We keep this separate to avoid having to modify import paths in the edge function.
+ */
+
+// Import types and interfaces
+interface MockTripData {
+  earliestDeparture: Date;
+  latestDeparture: Date;
+  min_duration?: number;
+  max_duration?: number;
+  budget: number;
+}
 
 /**
  * Generate mock flight offers based on trip criteria
  */
-export const generateMockOffers = (tripData, tripRequestId) => {
+export const generateMockOffers = (tripData: MockTripData, tripRequestId: string) => {
   // Generate dates for departures and returns based on the trip parameters
   const startDate = new Date(tripData.earliestDeparture);
   const endDate = new Date(tripData.latestDeparture);

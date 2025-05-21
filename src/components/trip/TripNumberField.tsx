@@ -10,8 +10,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
+// Define the allowed field names as an enum for better extensibility
+export enum TripNumberFieldName {
+  Budget = "budget",
+  MinDuration = "min_duration",
+  MaxDuration = "max_duration",
+  MaxPrice = "max_price"
+}
+
 interface TripNumberFieldProps {
-  name: "budget" | "min_duration" | "max_duration" | "max_price";
+  name: TripNumberFieldName | string; // Allow string to keep compatibility
   label: string;
   description: string;
   placeholder: string;
