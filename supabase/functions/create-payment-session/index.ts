@@ -9,6 +9,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey",
 };
 
+// Helper function to create notifications
+async function createNotification(
+  supabase: any,
+  userId: string,
+  type: string,
+  payload: Record<string, any>
+) {
+  try {
+    const { error } = await supabase
+      .from("notifications")
+      .insert({
+        user_id: userId,
+        type,
+        payload,
+        created_at: new Date().toISOString()
+      });
+      
+    if (error) {
+      console.error("Error creating notification:", error);
+    }
+  } catch (err) {
+    console.error("Exception creating notification:", err);
+  }
+}
+
 serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -134,6 +159,11 @@ serve(async (req: Request) => {
       ],
       success_url: `${origin}/trip/confirm?id=${offer_id}&payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/trip/confirm?id=${offer_id}&payment=canceled`,
+      metadata: {
+        user_id: user.id,
+        trip_request_id,
+        flight_offer_id: offer_id
+      }
     });
     
     // Create order record
@@ -142,7 +172,7 @@ serve(async (req: Request) => {
       .insert({
         user_id: user.id,
         trip_request_id: trip_request_id,
-        stripe_session_id: session.id,
+        payment_intent_id: session.id,
         amount: flightOffer.price,
         currency: "usd",
         status: "created",
@@ -155,6 +185,15 @@ serve(async (req: Request) => {
       console.error("Error creating order:", orderError);
       throw new Error("Failed to create order record");
     }
+    
+    // Create notification for payment session
+    await createNotification(supabase, user.id, "payment_initiated", {
+      orderId: order.id,
+      flightOfferId: offer_id,
+      amount: flightOffer.price,
+      currency: "usd",
+      timestamp: new Date().toISOString()
+    });
     
     return new Response(
       JSON.stringify({ 

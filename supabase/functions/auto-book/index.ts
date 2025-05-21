@@ -26,6 +26,16 @@ const log = (message: string, data?: any) => {
   console.log(`[auto-book] ${message}`, data ? data : "");
 };
 
+// Error code mapping
+const ErrorCodes = {
+  GENERAL: "P0001",      // general/unexpected
+  NOT_FOUND: "P0002",    // missing match
+  DUPLICATE: "P0003",    // duplicate booking
+  PERMISSION: "P0004",   // invalid user/permission
+  PAYMENT_METHOD: "P0005", // missing payment method
+  CUSTOMER: "P0006",     // Stripe customer not found
+};
+
 // Helper function to charge a customer via Stripe
 async function chargeCustomer(
   customerId: string, 
@@ -94,6 +104,16 @@ serve(async (req: Request) => {
     log("Starting auto-booking process");
     const functionStartTime = Date.now();
     
+    // Parse the request body to get the retry count (if provided)
+    let retryCount = 0;
+    try {
+      const requestBody = await req.json();
+      retryCount = requestBody?.retryCount || 0;
+    } catch (e) {
+      // If parsing fails, default to 0
+      log("No request body or invalid JSON, defaulting retry count to 0");
+    }
+    
     // Step 1: Fetch all un-notified matches for trip requests with auto_book_enabled=true
     log("Fetching eligible flight matches");
     
@@ -155,6 +175,7 @@ serve(async (req: Request) => {
     const details: any[] = [];
     let successfulBookings = 0;
     let failedBookings = 0;
+    let notificationsCreated = 0;
     
     // Process each match
     for (const match of eligibleMatches) {
@@ -169,7 +190,6 @@ serve(async (req: Request) => {
       
       // Tracking metrics
       const matchStartTime = Date.now();
-      let retryCount = 0;
       let errorCode: string | null = null;
       
       try {
@@ -209,7 +229,7 @@ serve(async (req: Request) => {
         }
         
         if (!paymentMethod) {
-          errorCode = "P0005"; // Custom code for no payment method
+          errorCode = ErrorCodes.PAYMENT_METHOD;
           throw new Error("No valid payment method found");
         }
         
@@ -228,6 +248,7 @@ serve(async (req: Request) => {
         const customers = await stripe.customers.list({ email, limit: 1 });
         
         if (customers.data.length === 0) {
+          errorCode = ErrorCodes.CUSTOMER;
           throw new Error("No Stripe customer found for this user");
         }
         
@@ -265,7 +286,7 @@ serve(async (req: Request) => {
         // If RPC fails, issue a refund
         let refund = null;
         if (rpcError) {
-          errorCode = rpcError.code || "UNKNOWN";
+          errorCode = rpcError.code || ErrorCodes.GENERAL;
           log(`RPC failed: ${rpcError.code} - ${rpcError.message}`, rpcError);
           
           // Issue a refund
@@ -303,6 +324,7 @@ serve(async (req: Request) => {
             errorMessage: rpcError.message,
             timestamp: new Date().toISOString()
           });
+          notificationsCreated++;
         } else {
           successfulBookings++;
           resultDetail.orderId = rpcResult?.order_id;
@@ -318,6 +340,7 @@ serve(async (req: Request) => {
             currency,
             timestamp: new Date().toISOString()
           });
+          notificationsCreated++;
         }
         
         details.push(resultDetail);
@@ -334,10 +357,11 @@ serve(async (req: Request) => {
           await createNotification(userId, "booking_failure", {
             matchId,
             flightOfferId,
-            errorCode: errorCode || "PROCESSING_ERROR",
+            errorCode: errorCode || ErrorCodes.GENERAL,
             errorMessage: error.message,
             timestamp: new Date().toISOString()
           });
+          notificationsCreated++;
         }
         
         details.push({
@@ -345,7 +369,7 @@ serve(async (req: Request) => {
           tripRequestId,
           flightOfferId,
           success: false,
-          errorCode: errorCode || "PROCESSING_ERROR",
+          errorCode: errorCode || ErrorCodes.GENERAL,
           errorMessage: error.message,
           durationMs: Date.now() - matchStartTime,
           retryCount,
@@ -362,6 +386,7 @@ serve(async (req: Request) => {
       matchesProcessed: eligibleMatches.length,
       matchesSucceeded: successfulBookings,
       matchesFailed: failedBookings,
+      notificationsCreated,
       totalDurationMs,
       details
     };
@@ -388,6 +413,7 @@ serve(async (req: Request) => {
         matchesProcessed: 0,
         matchesSucceeded: 0,
         matchesFailed: 0,
+        notificationsCreated: 0,
         totalDurationMs,
         details: []
       }),

@@ -20,6 +20,30 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Helper function to create notifications
+async function createNotification(
+  userId: string,
+  type: string,
+  payload: Record<string, any>
+) {
+  try {
+    const { error } = await supabase
+      .from("notifications")
+      .insert({
+        user_id: userId,
+        type,
+        payload,
+        created_at: new Date().toISOString()
+      });
+      
+    if (error) {
+      console.error("Error creating notification:", error);
+    }
+  } catch (err) {
+    console.error("Exception creating notification:", err);
+  }
+}
+
 serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -116,7 +140,7 @@ serve(async (req: Request) => {
           }
           
           // Now insert the new payment method
-          const { error: insertError } = await supabase
+          const { error: insertError, data: insertedMethod } = await supabase
             .from("payment_methods")
             .insert({
               user_id: userId,
@@ -127,12 +151,22 @@ serve(async (req: Request) => {
               exp_year: pm.card?.exp_year,
               is_default: true,
               nickname: session.metadata?.nickname || null,
-            });
+            })
+            .select()
+            .single();
             
           if (insertError) {
             console.error("Error inserting payment method:", insertError);
             throw new Error(`Failed to save payment method: ${insertError.message}`);
           }
+          
+          // Create notification for new payment method
+          await createNotification(userId, "payment_method_added", {
+            paymentMethodId: insertedMethod.id,
+            brand: pm.card?.brand,
+            last4: pm.card?.last4,
+            timestamp: new Date().toISOString()
+          });
           
           console.log(`✅ Payment method ${pm.id} saved for user ${userId}`);
         } else if (session.mode === "payment") {
@@ -162,19 +196,29 @@ serve(async (req: Request) => {
           }
           
           // 2. Create a booking linked to this order
-          const { error: bookingError } = await supabase
+          const { error: bookingError, data: booking } = await supabase
             .from("bookings")
             .insert({
               user_id: userId,
               trip_request_id: tripRequestId,
               flight_offer_id: flightOfferId,
               order_id: orderId,
-            });
+            })
+            .select()
+            .single();
             
           if (bookingError) {
             console.error("Error creating booking:", bookingError);
             throw new Error(`Failed to create booking: ${bookingError.message}`);
           }
+          
+          // Create notification for booking
+          await createNotification(userId, "booking_success", {
+            bookingId: booking.id,
+            flightOfferId,
+            orderId,
+            timestamp: new Date().toISOString()
+          });
           
           console.log(`✅ Order ${orderId} completed and booking created`);
         }
