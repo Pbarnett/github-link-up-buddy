@@ -22,3 +22,7 @@ path = "supabase/functions/set-default-payment-method"
 
 [functions.delete-payment-method]
 path = "supabase/functions/delete-payment-method"
+
+[functions.scheduler-flight-search]
+path = "supabase/functions/scheduler-flight-search"
+schedule = "0 * * * *"
