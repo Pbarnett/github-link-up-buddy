@@ -31,14 +31,15 @@ async function chargeCustomer(
   customerId: string, 
   paymentMethodId: string, 
   amount: number, 
-  description: string
+  description: string,
+  currency: string = "usd"
 ): Promise<Stripe.PaymentIntent> {
   try {
     log(`Creating payment intent for customer ${customerId} using payment method ${paymentMethodId}`);
     
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Stripe uses cents
-      currency: "usd",
+      currency: currency,
       customer: customerId,
       payment_method: paymentMethodId,
       off_session: true,
@@ -54,6 +55,32 @@ async function chargeCustomer(
   }
 }
 
+// Helper function to create an in-app notification
+async function createNotification(
+  userId: string,
+  type: string,
+  payload: Record<string, any>
+) {
+  try {
+    const { error } = await supabaseClient
+      .from("notifications")
+      .insert({
+        user_id: userId,
+        type,
+        payload,
+        created_at: new Date().toISOString()
+      });
+    
+    if (error) {
+      log(`Failed to create notification: ${error.message}`);
+    } else {
+      log(`Created ${type} notification for user ${userId}`);
+    }
+  } catch (err) {
+    log(`Error creating notification: ${err.message}`);
+  }
+}
+
 serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -65,6 +92,7 @@ serve(async (req: Request) => {
 
   try {
     log("Starting auto-booking process");
+    const functionStartTime = Date.now();
     
     // Step 1: Fetch all un-notified matches for trip requests with auto_book_enabled=true
     log("Fetching eligible flight matches");
@@ -105,6 +133,9 @@ serve(async (req: Request) => {
         JSON.stringify({
           requestsProcessed: 0,
           matchesProcessed: 0,
+          matchesSucceeded: 0,
+          matchesFailed: 0,
+          totalDurationMs: Date.now() - functionStartTime,
           details: []
         }),
         {
@@ -122,6 +153,8 @@ serve(async (req: Request) => {
     // Track unique trip requests processed
     const tripRequestsProcessed = new Set<string>();
     const details: any[] = [];
+    let successfulBookings = 0;
+    let failedBookings = 0;
     
     // Process each match
     for (const match of eligibleMatches) {
@@ -130,8 +163,14 @@ serve(async (req: Request) => {
       const flightOfferId = match.flight_offer_id;
       const userId = match.trip_requests?.user_id;
       const price = match.price;
+      const currency = "usd"; // Default currency
       
       tripRequestsProcessed.add(tripRequestId);
+      
+      // Tracking metrics
+      const matchStartTime = Date.now();
+      let retryCount = 0;
+      let errorCode: string | null = null;
       
       try {
         log(`Processing match ${matchId} for trip request ${tripRequestId}`);
@@ -170,6 +209,7 @@ serve(async (req: Request) => {
         }
         
         if (!paymentMethod) {
+          errorCode = "P0005"; // Custom code for no payment method
           throw new Error("No valid payment method found");
         }
         
@@ -203,7 +243,8 @@ serve(async (req: Request) => {
           customerId, 
           paymentMethod.stripe_pm_id, 
           price, 
-          description
+          description,
+          currency
         );
         
         if (!intent || intent.status !== 'succeeded') {
@@ -214,15 +255,17 @@ serve(async (req: Request) => {
         
         // Step 6: Call the RPC function to handle all DB operations atomically
         log(`Calling rpc_auto_book_match for match ${matchId}`);
-        const { error: rpcError } = await supabaseClient
+        const { data: rpcResult, error: rpcError } = await supabaseClient
           .rpc("rpc_auto_book_match", {
             p_match_id: matchId,
             p_payment_intent_id: intent.id,
+            p_currency: currency,
           });
           
         // If RPC fails, issue a refund
         let refund = null;
         if (rpcError) {
+          errorCode = rpcError.code || "UNKNOWN";
           log(`RPC failed: ${rpcError.code} - ${rpcError.message}`, rpcError);
           
           // Issue a refund
@@ -232,7 +275,7 @@ serve(async (req: Request) => {
         }
         
         // Add details to results
-        details.push({
+        const resultDetail = {
           matchId,
           tripRequestId,
           flightOfferId,
@@ -240,34 +283,86 @@ serve(async (req: Request) => {
           refundId: rpcError ? refund?.id : null,
           refundStatus: rpcError ? refund?.status : null,
           amount: price,
+          currency,
           success: !rpcError,
-          errorCode: rpcError?.code,
+          errorCode: errorCode || rpcError?.code,
           errorMessage: rpcError?.message,
+          durationMs: Date.now() - matchStartTime,
+          retryCount,
           timestamp: new Date().toISOString()
-        });
+        };
+        
+        if (rpcError) {
+          failedBookings++;
+          
+          // Create failure notification
+          await createNotification(userId, "booking_failure", {
+            matchId,
+            flightOfferId,
+            errorCode: errorCode || rpcError.code,
+            errorMessage: rpcError.message,
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          successfulBookings++;
+          resultDetail.orderId = rpcResult?.order_id;
+          resultDetail.bookingId = rpcResult?.booking_id;
+          
+          // Create success notification
+          await createNotification(userId, "booking_success", {
+            matchId,
+            flightOfferId,
+            orderId: rpcResult?.order_id,
+            bookingId: rpcResult?.booking_id,
+            amount: price,
+            currency,
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        details.push(resultDetail);
         
         if (!rpcError) {
           log(`Successfully processed match ${matchId}`);
         }
       } catch (error) {
+        failedBookings++;
         log(`Error processing match ${matchId}: ${error.message}`);
+        
+        // Create notification for errors
+        if (userId) {
+          await createNotification(userId, "booking_failure", {
+            matchId,
+            flightOfferId,
+            errorCode: errorCode || "PROCESSING_ERROR",
+            errorMessage: error.message,
+            timestamp: new Date().toISOString()
+          });
+        }
+        
         details.push({
           matchId,
           tripRequestId,
           flightOfferId,
           success: false,
-          error: error.message,
+          errorCode: errorCode || "PROCESSING_ERROR",
+          errorMessage: error.message,
+          durationMs: Date.now() - matchStartTime,
+          retryCount,
           timestamp: new Date().toISOString()
         });
         // We continue processing other matches even if one fails
       }
     }
     
-    // Return summary results
+    // Return summary results with enhanced metrics
+    const totalDurationMs = Date.now() - functionStartTime;
     const result = {
       requestsProcessed: tripRequestsProcessed.size,
       matchesProcessed: eligibleMatches.length,
-      successfulBookings: details.filter(d => d.success).length,
+      matchesSucceeded: successfulBookings,
+      matchesFailed: failedBookings,
+      totalDurationMs,
       details
     };
     
@@ -284,12 +379,16 @@ serve(async (req: Request) => {
       }
     );
   } catch (error) {
+    const totalDurationMs = Date.now() - (error.functionStartTime || Date.now());
     log(`Function error: ${error.message}`);
     return new Response(
       JSON.stringify({
         error: error.message,
         requestsProcessed: 0,
         matchesProcessed: 0,
+        matchesSucceeded: 0,
+        matchesFailed: 0,
+        totalDurationMs,
         details: []
       }),
       {

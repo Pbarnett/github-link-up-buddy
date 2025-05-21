@@ -88,7 +88,9 @@ serve(async (req: Request) => {
         console.log("[scheduler-flight-search] Auto-book completed successfully:", {
           requestsProcessed: autoBookResult.requestsProcessed,
           matchesProcessed: autoBookResult.matchesProcessed,
-          successfulBookings: autoBookResult.successfulBookings
+          matchesSucceeded: autoBookResult.matchesSucceeded,
+          matchesFailed: autoBookResult.matchesFailed,
+          totalDuration: `${autoBookResult.totalDurationMs}ms`
         });
         
         break; // Success, exit retry loop
