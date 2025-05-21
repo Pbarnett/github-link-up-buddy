@@ -32,7 +32,7 @@ async function chargeCustomer(
   paymentMethodId: string, 
   amount: number, 
   description: string
-): Promise<string> {
+): Promise<Stripe.PaymentIntent> {
   try {
     log(`Creating payment intent for customer ${customerId} using payment method ${paymentMethodId}`);
     
@@ -46,8 +46,8 @@ async function chargeCustomer(
       description: description
     });
     
-    log(`Payment intent created: ${paymentIntent.id}`);
-    return paymentIntent.id;
+    log(`Payment intent created: ${paymentIntent.id} (status: ${paymentIntent.status})`);
+    return paymentIntent;
   } catch (error) {
     log(`Stripe payment error: ${error.message}`);
     throw error;
@@ -87,6 +87,7 @@ serve(async (req: Request) => {
           flight_number,
           departure_date,
           departure_time,
+          return_date,
           duration
         )
       `)
@@ -124,6 +125,7 @@ serve(async (req: Request) => {
     
     // Process each match
     for (const match of eligibleMatches) {
+      const matchId = match.id;
       const tripRequestId = match.trip_request_id;
       const flightOfferId = match.flight_offer_id;
       const userId = match.trip_requests?.user_id;
@@ -132,30 +134,9 @@ serve(async (req: Request) => {
       tripRequestsProcessed.add(tripRequestId);
       
       try {
-        log(`Processing match ${match.id} for trip request ${tripRequestId}`);
+        log(`Processing match ${matchId} for trip request ${tripRequestId}`);
         
-        // Step 2: Check for existing booking for this flight offer (duplicate prevention)
-        const { data: existingBooking } = await supabaseClient
-          .from("bookings")
-          .select("id")
-          .eq("flight_offer_id", flightOfferId)
-          .maybeSingle();
-        
-        if (existingBooking) {
-          log(`Skipping match ${match.id}: Booking already exists`);
-          details.push({
-            matchId: match.id,
-            tripRequestId,
-            flightOfferId,
-            success: false,
-            skipped: true,
-            reason: "Booking already exists",
-            timestamp: new Date().toISOString()
-          });
-          continue;
-        }
-        
-        // Step 3: Get payment method (preferred or default)
+        // Step 2: Get payment method (preferred or default)
         const preferredPaymentMethodId = match.trip_requests?.preferred_payment_method_id;
         let paymentMethod;
         
@@ -192,7 +173,7 @@ serve(async (req: Request) => {
           throw new Error("No valid payment method found");
         }
         
-        // Step 4: Get Stripe customer ID for the user
+        // Step 3: Get Stripe customer ID for the user
         const { data: user, error: userError } = await supabaseClient.auth.admin.getUserById(userId);
         if (userError || !user) {
           throw new Error(`Failed to get user: ${userError?.message || "User not found"}`);
@@ -212,96 +193,66 @@ serve(async (req: Request) => {
         
         const customerId = customers.data[0].id;
         
-        // Step 5: Create description for the charge
+        // Step 4: Create description for the charge
         const flightOffer = match.flight_offers;
-        const description = `Flight ${flightOffer?.airline} ${flightOffer?.flight_number} on ${flightOffer?.departure_date} at ${flightOffer?.departure_time}`;
+        const description = `Flight ${flightOffer?.airline} ${flightOffer?.flight_number}: ${flightOffer?.departure_date} to ${flightOffer?.return_date}`;
         
-        // Step 6: Charge via Stripe
+        // Step 5: Charge via Stripe
         log(`Charging customer ${customerId} $${price} for flight`);
-        const paymentIntentId = await chargeCustomer(
+        const intent = await chargeCustomer(
           customerId, 
           paymentMethod.stripe_pm_id, 
           price, 
           description
         );
         
-        // Step 7: Insert order record
-        log(`Creating order record`);
-        const { data: order, error: orderError } = await supabaseClient
-          .from("orders")
-          .insert({
-            user_id: userId,
-            trip_request_id: tripRequestId,
-            flight_offer_id: flightOfferId,
-            stripe_session_id: paymentIntentId,
-            amount: price,
-            currency: "usd",
-            status: "paid",
-            description: description
-          })
-          .select("id")
-          .single();
-          
-        if (orderError) {
-          throw new Error(`Failed to create order: ${orderError.message}`);
+        if (!intent || intent.status !== 'succeeded') {
+          throw new Error(`Stripe charge failed: ${intent?.last_payment_error?.message || "Unknown error"}`);
         }
         
-        // Step 8: Insert booking record
-        log(`Creating booking record`);
-        const { data: booking, error: bookingError } = await supabaseClient
-          .from("bookings")
-          .insert({
-            user_id: userId,
-            trip_request_id: tripRequestId,
-            flight_offer_id: flightOfferId
-          })
-          .select("id")
-          .single();
+        log(`Payment succeeded: ${intent.id}`);
+        
+        // Step 6: Call the RPC function to handle all DB operations atomically
+        log(`Calling rpc_auto_book_match for match ${matchId}`);
+        const { error: rpcError } = await supabaseClient
+          .rpc("rpc_auto_book_match", {
+            p_match_id: matchId,
+            p_payment_intent_id: intent.id,
+          });
           
-        if (bookingError) {
-          throw new Error(`Failed to create booking: ${bookingError.message}`);
+        // If RPC fails, issue a refund
+        let refund = null;
+        if (rpcError) {
+          log(`RPC failed: ${rpcError.code} - ${rpcError.message}`, rpcError);
+          
+          // Issue a refund
+          log(`Issuing refund for payment ${intent.id}`);
+          refund = await stripe.refunds.create({ payment_intent: intent.id });
+          log(`Issued refund: ${refund.id} (status: ${refund.status})`, refund);
         }
         
-        // Step 9: Update flight_matches.notified = true
-        log(`Marking match ${match.id} as notified`);
-        const { error: updateMatchError } = await supabaseClient
-          .from("flight_matches")
-          .update({ notified: true })
-          .eq("id", match.id);
-          
-        if (updateMatchError) {
-          throw new Error(`Failed to update match: ${updateMatchError.message}`);
-        }
-        
-        // Step 10: Disable auto_book_enabled on trip_request
-        log(`Disabling auto-book for trip request ${tripRequestId}`);
-        const { error: updateRequestError } = await supabaseClient
-          .from("trip_requests")
-          .update({ auto_book_enabled: false })
-          .eq("id", tripRequestId);
-          
-        if (updateRequestError) {
-          throw new Error(`Failed to update trip request: ${updateRequestError.message}`);
-        }
-        
-        // Add success details
+        // Add details to results
         details.push({
-          matchId: match.id,
+          matchId,
           tripRequestId,
           flightOfferId,
-          orderId: order.id,
-          bookingId: booking.id,
-          paymentIntentId,
+          paymentIntentId: intent.id,
+          refundId: rpcError ? refund?.id : null,
+          refundStatus: rpcError ? refund?.status : null,
           amount: price,
-          success: true,
+          success: !rpcError,
+          errorCode: rpcError?.code,
+          errorMessage: rpcError?.message,
           timestamp: new Date().toISOString()
         });
         
-        log(`Successfully processed match ${match.id}`);
+        if (!rpcError) {
+          log(`Successfully processed match ${matchId}`);
+        }
       } catch (error) {
-        log(`Error processing match ${match.id}: ${error.message}`);
+        log(`Error processing match ${matchId}: ${error.message}`);
         details.push({
-          matchId: match.id,
+          matchId,
           tripRequestId,
           flightOfferId,
           success: false,

@@ -27,8 +27,14 @@ serve(async (req: Request) => {
   try {
     console.log("[scheduler-flight-search] Starting scheduled flight search...");
     
+    // Get the Supabase Functions URL and check that it's available
+    const functionUrl = Deno.env.get("SUPABASE_URL");
+    if (!functionUrl) {
+      throw new Error("Missing SUPABASE_URL environment variable");
+    }
+    
     // Call the flight-search function using fetch
-    const flightSearchUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/flight-search`;
+    const flightSearchUrl = `${functionUrl}/functions/v1/flight-search`;
     
     console.log(`[scheduler-flight-search] Calling flight-search at ${flightSearchUrl}`);
     
@@ -53,12 +59,63 @@ serve(async (req: Request) => {
       detailsCount: searchResults.details?.length || 0
     });
     
-    // Return success response with the search results
+    // Now call the auto-book function with retry logic
+    console.log("[scheduler-flight-search] Calling auto-book function");
+    
+    let autoBookResult = null;
+    let attempts = 0;
+    const maxRetries = 3;
+    
+    while (attempts < maxRetries) {
+      try {
+        const autoBookUrl = `${functionUrl}/functions/v1/auto-book`;
+        console.log(`[scheduler-flight-search] Calling auto-book at ${autoBookUrl} (attempt ${attempts + 1}/${maxRetries})`);
+        
+        const autoBookResponse = await fetch(autoBookUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+        });
+        
+        if (!autoBookResponse.ok) {
+          const errorText = await autoBookResponse.text();
+          throw new Error(`Status ${autoBookResponse.status}: ${errorText}`);
+        }
+        
+        autoBookResult = await autoBookResponse.json();
+        console.log("[scheduler-flight-search] Auto-book completed successfully:", {
+          requestsProcessed: autoBookResult.requestsProcessed,
+          matchesProcessed: autoBookResult.matchesProcessed,
+          successfulBookings: autoBookResult.successfulBookings
+        });
+        
+        break; // Success, exit retry loop
+      } catch (err) {
+        attempts++;
+        console.error(`[scheduler-flight-search] Auto-book attempt ${attempts} failed:`, err.message);
+        
+        if (attempts < maxRetries) {
+          // Exponential backoff: wait longer between each retry
+          const delay = 1000 * Math.pow(2, attempts - 1);
+          console.log(`[scheduler-flight-search] Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    if (attempts >= maxRetries) {
+      console.error(`[scheduler-flight-search] Auto-book failed after ${maxRetries} attempts`);
+    }
+    
+    // Return success response with the search and auto-book results
     return new Response(
       JSON.stringify({
         success: true,
         timestamp: new Date().toISOString(),
-        flightSearchResults: searchResults
+        flightSearchResults: searchResults,
+        autoBookResults: autoBookResult
       }),
       {
         status: 200,
