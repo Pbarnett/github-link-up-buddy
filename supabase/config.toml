@@ -26,3 +26,6 @@ path = "supabase/functions/delete-payment-method"
 [functions.scheduler-flight-search]
 path = "supabase/functions/scheduler-flight-search"
 schedule = "0 * * * *"
+
+[functions.auto-book]
+path = "supabase/functions/auto-book"
