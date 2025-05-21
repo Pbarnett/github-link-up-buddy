@@ -12,7 +12,7 @@ import { createTripRequest } from "@/services/tripService";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 // Import type definitions
-import { FormValues, tripFormSchema } from "@/types/form";
+import { FormValues, tripFormSchema, ExtendedTripFormValues, TripRequestResult } from "@/types/form";
 
 // Import the section components
 import DateRangeSection from "./sections/DateRangeSection";
@@ -45,7 +45,78 @@ const TripRequestForm = () => {
     },
   });
 
-  // Form submission handler
+  // Validate form data and handle any custom validations
+  const validateFormData = (data: FormValues): boolean => {
+    // Check if destination airport is provided
+    const destinationAirport = data.destination_airport || data.destination_other || "";
+    
+    if (!destinationAirport) {
+      toast({
+        title: "Validation error",
+        description: "Please select a destination or enter a custom one.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Transform form data into the extended format needed by the API
+  const transformFormData = (data: FormValues): ExtendedTripFormValues => {
+    // Combine NYC airports and other departure airports
+    const departureAirports: string[] = [];
+    
+    if (data.nyc_airports && data.nyc_airports.length > 0) {
+      departureAirports.push(...data.nyc_airports);
+    }
+    
+    if (data.other_departure_airport) {
+      departureAirports.push(data.other_departure_airport);
+    }
+    
+    // Use destination_airport or fallback to destination_other
+    const destinationAirport = data.destination_airport || data.destination_other || "";
+    
+    return {
+      earliestDeparture: data.earliestDeparture,
+      latestDeparture: data.latestDeparture,
+      min_duration: data.min_duration,
+      max_duration: data.max_duration,
+      budget: data.budget,
+      departure_airports: departureAirports,
+      destination_airport: destinationAirport,
+      // Add auto-booking fields
+      auto_book_enabled: data.auto_book_enabled,
+      max_price: data.max_price,
+      preferred_payment_method_id: data.preferred_payment_method_id,
+    };
+  };
+
+  // Submit the trip request to the API
+  const submitTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestResult> => {
+    if (!userId) {
+      throw new Error("You must be logged in to create a trip request.");
+    }
+    
+    return await createTripRequest(userId, formData);
+  };
+
+  // Navigate to the confirmation page with the trip ID
+  const navigateToConfirmation = (result: TripRequestResult): void => {
+    // Show success toast with count of offers saved
+    toast({
+      title: "Trip request submitted",
+      description: `Your trip request has been submitted with ${result.offersCount} flight offers!${
+        result.tripRequest.auto_book_enabled ? ' Auto-booking is enabled.' : ''
+      }`,
+    });
+    
+    // Navigate to the offers page with the trip ID
+    navigate(`/trip/offers?id=${result.tripRequest.id}`);
+  };
+
+  // Main form submission handler that orchestrates the process
   const onSubmit = async (data: FormValues) => {
     try {
       setIsSubmitting(true);
@@ -59,54 +130,19 @@ const TripRequestForm = () => {
         return;
       }
       
-      // Combine NYC airports and other departure airports
-      const departureAirports: string[] = [];
-      
-      if (data.nyc_airports && data.nyc_airports.length > 0) {
-        departureAirports.push(...data.nyc_airports);
-      }
-      
-      if (data.other_departure_airport) {
-        departureAirports.push(data.other_departure_airport);
-      }
-      
-      // Use destination_airport or fallback to destination_other
-      const destinationAirport = data.destination_airport || data.destination_other || "";
-      
-      if (!destinationAirport) {
-        toast({
-          title: "Validation error",
-          description: "Please select a destination or enter a custom one.",
-          variant: "destructive",
-        });
+      // Step 1: Validate form data
+      if (!validateFormData(data)) {
         return;
       }
       
-      // Use the tripService to create the trip request with new fields
-      const result = await createTripRequest(userId, {
-        earliestDeparture: data.earliestDeparture,
-        latestDeparture: data.latestDeparture,
-        min_duration: data.min_duration,
-        max_duration: data.max_duration,
-        budget: data.budget,
-        departure_airports: departureAirports,
-        destination_airport: destinationAirport,
-        // Add auto-booking fields
-        auto_book_enabled: data.auto_book_enabled,
-        max_price: data.max_price,
-        preferred_payment_method_id: data.preferred_payment_method_id,
-      });
+      // Step 2: Transform form data
+      const transformedData = transformFormData(data);
       
-      // Show success toast with count of offers saved
-      toast({
-        title: "Trip request submitted",
-        description: `Your trip request has been submitted with ${result.offersCount} flight offers!${
-          data.auto_book_enabled ? ' Auto-booking is enabled.' : ''
-        }`,
-      });
+      // Step 3: Submit trip request
+      const result = await submitTripRequest(transformedData);
       
-      // Navigate to the offers page with the trip ID
-      navigate(`/trip/offers?id=${result.tripRequest.id}`);
+      // Step 4: Navigate to confirmation page
+      navigateToConfirmation(result);
       
     } catch (error: any) {
       console.error("Error submitting trip request:", error);

@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { generateMockOffers } from "./mockOffers.ts";
 
 // Set up CORS headers
 const corsHeaders = {
@@ -15,6 +14,9 @@ const supabaseClient = createClient(
   Deno.env.get("SUPABASE_URL") || "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
 );
+
+// Import shared mock offer generator function
+import { generateMockOffers } from "./mockOffers.ts";
 
 // Mock offers generator function
 const createMockOffers = (tripRequest) => {
@@ -66,7 +68,7 @@ serve(async (req: Request) => {
         continue;
       }
       
-      // Generate mock offers for this request
+      // Generate mock offers for this request using the shared module
       const mockOffers = createMockOffers(request);
       totalOffersFetched += mockOffers.length;
       
