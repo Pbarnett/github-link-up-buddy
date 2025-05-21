@@ -14,6 +14,10 @@ export interface TripFormValues {
 export interface ExtendedTripFormValues extends TripFormValues {
   departure_airports?: string[];
   destination_airport?: string;
+  // Auto-booking fields
+  auto_book_enabled?: boolean;
+  max_price?: number;
+  preferred_payment_method_id?: string;
 }
 
 // Form schema with Zod validation for the trip request form
@@ -47,6 +51,10 @@ export const tripFormSchema = z.object({
   other_departure_airport: z.string().optional(),
   destination_airport: z.string().optional(),
   destination_other: z.string().optional(),
+  // Auto-booking fields
+  auto_book_enabled: z.boolean().default(false),
+  max_price: z.coerce.number().min(100).max(10000).optional().nullable(),
+  preferred_payment_method_id: z.string().optional().nullable(),
 }).refine((data) => data.latestDeparture > data.earliestDeparture, {
   message: "Latest departure date must be after earliest departure date",
   path: ["latestDeparture"],
@@ -65,6 +73,15 @@ export const tripFormSchema = z.object({
 }, {
   message: "Please select a destination or enter a custom one",
   path: ["destination_airport"],
+}).refine((data) => {
+  // If auto-booking is enabled, max_price and payment method must be provided
+  if (data.auto_book_enabled) {
+    return !!data.max_price && !!data.preferred_payment_method_id;
+  }
+  return true;
+}, {
+  message: "Maximum price and payment method are required for auto-booking",
+  path: ["max_price"],
 });
 
 // Form values type derived from the schema
