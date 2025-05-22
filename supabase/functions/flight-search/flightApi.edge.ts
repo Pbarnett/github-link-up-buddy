@@ -147,24 +147,40 @@ export async function searchOffers(
     ).values()
   );
 
-  // Enforce trip duration window (in days, rounded) and log counts
-  console.log(
-    `[flight-search] ${uniqueOffers.length} offers before duration filter`
-  );
+  // Enforce trip duration window (in days) with enhanced debugging
+  console.log(`[flight-search] ${uniqueOffers.length} offers before duration filter`);
+  
+  // Debug sample offers to identify duration calculation issues
+  if (uniqueOffers.length > 0) {
+    const sampleOffer = uniqueOffers[0];
+    const outDate = sampleOffer.itineraries[0].segments[0].departure.at;
+    const returnDate = sampleOffer.itineraries[1]?.segments.slice(-1)[0].departure.at;
+    
+    console.log(`[flight-search] Sample offer - Out: ${outDate}, Return: ${returnDate}`);
+    if (outDate && returnDate) {
+      const diffDays = (new Date(returnDate).getTime() - new Date(outDate).getTime()) / (1000 * 60 * 60 * 24);
+      console.log(`[flight-search] Sample offer duration: ${diffDays} days (${Math.floor(diffDays)} floored, ${Math.ceil(diffDays)} ceiling, ${Math.round(diffDays)} rounded)`);
+    }
+    
+    console.log(`[flight-search] Filter criteria: min=${params.minDuration}, max=${params.maxDuration} days`);
+  }
+  
+  // Modified filter with more lenient approach
   const filteredOffers = uniqueOffers.filter((offer: any) => {
     const outAt = offer.itineraries[0].segments[0].departure.at;
-    const backAt =
-      offer.itineraries[1]?.segments.slice(-1)[0].departure.at ?? outAt;
-    // compute exact diff in days, then round
-    const diffDays =
-      (new Date(backAt).getTime() - new Date(outAt).getTime()) /
-      (1000 * 60 * 60 * 24);
-    const days = Math.round(diffDays);
-    return days >= params.minDuration && days <= params.maxDuration;
+    // Try to get return departure date, fallback to return arrival date if available
+    const backSeg = offer.itineraries[1]?.segments.slice(-1)[0];
+    const backAt = backSeg ? (backSeg.departure.at || backSeg.arrival.at) : outAt;
+    
+    // Calculate difference in days, using floor instead of round to be more lenient
+    const diffMs = new Date(backAt).getTime() - new Date(outAt).getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    const days = Math.floor(diffDays); // Floor the value to be more inclusive
+    
+    return days >= (params.minDuration - 1) && days <= (params.maxDuration + 1); // Add 1-day buffer
   });
-  console.log(
-    `[flight-search] ${filteredOffers.length} offers after duration filter`
-  );
+  
+  console.log(`[flight-search] ${filteredOffers.length} offers after duration filter`);
 
   console.log(`[flight-search] Found ${filteredOffers.length} offers for trip ${tripRequestId}`);
   const api = { data: filteredOffers };
