@@ -91,39 +91,65 @@ export async function searchOffers(
   // Simple rate-limit pause
   await new Promise(r => setTimeout(r, 1000));
 
-  // Build the API URL with parameters
-  const originStr = params.origin.join(",");
-  const destinationStr = params.destination || "";
-  const departureDate = params.earliestDeparture.toISOString().slice(0,10);
-  const returnDate = params.latestDeparture.toISOString().slice(0,10);
-  
-  const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers?` +
-    `originLocationCode=${originStr}` +
-    `&destinationLocationCode=${destinationStr}` +
-    `&departureDate=${departureDate}` +
-    `&returnDate=${returnDate}` +
-    `&adults=1` +
-    `&maxPrice=${params.budget}` +
-    `&max=${params.maxDuration}&min=${params.minDuration}`;
+  // Build departure + return dates once
+  const depDate = params.earliestDeparture.toISOString().slice(0, 10);
+  // use latestDeparture (window end) for return dates
+  const retDate = params.latestDeparture.toISOString().slice(0, 10);
 
-  // Call the Amadeus API with retry logic
-  let data = await withRetry(async () => {
-    const res = await fetch(url, { 
-      headers: { 
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/json"
-      } 
+  // For each origin, call Amadeus and collect raw responses
+  const allResponses: any[] = [];
+  for (const originCode of params.origin) {
+    console.log(`[flight-search] Processing origin airport: ${originCode}`);
+    const payload = {
+      originDestinations: [
+        { id: "1", originLocationCode: originCode, destinationLocationCode: params.destination, departureDateTimeRange: { date: depDate } },
+        { id: "2", originLocationCode: params.destination!, destinationLocationCode: originCode, departureDateTimeRange: { date: retDate } },
+      ],
+      travelers: [{ id: "1", travelerType: "ADULT" }],
+      sources: ["GDS"],
+      searchCriteria: { price: { max: params.budget.toString() } },
+    };
+
+    const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers`;
+    const resp = await withRetry(async () => {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        console.error("[flight-search] Error response body:", JSON.stringify(j, null, 2));
+        throw new Error(`Amadeus API error: ${r.status}`);
+      }
+      return j;
     });
-    
-    // Handle errors
-    if (res.status === 429) throw new Error("Rate limit exceeded");
-    if (!res.ok) throw new Error(`Amadeus API error: ${res.status}`);
-    
-    return await res.json();
-  }, 3, 500);
-  
-  // Transform the response into our flight_offers format
-  return transformAmadeusToOffers(data, tripRequestId);
+    allResponses.push(...(resp.data || []));
+  }
+
+  // Dedupe by outbound+return departure times
+  const uniqueOffers = Array.from(
+    new Map(
+      allResponses.map((offer: any) => {
+        const outSeg = offer.itineraries[0].segments[0];
+        const backSeg = offer.itineraries[1]?.segments.slice(-1)[0] ?? outSeg;
+        const key = [
+          outSeg.carrierCode,
+          outSeg.number,
+          outSeg.departure.at,
+          backSeg.departure.at
+        ].join("-");
+        return [key, offer];
+      })
+    ).values()
+  );
+
+  console.log(`[flight-search] Found ${uniqueOffers.length} offers for trip ${tripRequestId}`);
+  const api = { data: uniqueOffers };
+  return transformAmadeusToOffers(api, tripRequestId);
 }
 
 // Transform Amadeus response to our format
