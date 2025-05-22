@@ -33,33 +33,46 @@ serve(async (req: Request) => {
   try {
     // Parse request body for optional tripRequestId
     let tripRequestId: string | null = null;
+    let body = {};
     
     if (req.method === "POST") {
-      const body = await req.json();
+      body = await req.json();
       tripRequestId = body.tripRequestId || null;
     }
     
+    console.log(`[flight-search] Invoked${tripRequestId ? ` for ${tripRequestId}` : ' for auto-book enabled trips'}`);
+    
     // Build the query based on whether tripRequestId is provided
-    let tripsQuery;
+    let requests;
     
     if (tripRequestId) {
       console.log(`[flight-search] Processing single trip request ${tripRequestId}`);
-      tripsQuery = supabaseClient
+      const { data: single, error } = await supabaseClient
         .from("trip_requests")
         .select("*")
-        .eq("id", tripRequestId);
+        .eq("id", tripRequestId)
+        .single();
+        
+      if (error || !single) {
+        throw new Error(`Trip request not found: ${error?.message || "No data returned"}`);
+      }
+      
+      requests = [single];
     } else {
       console.log(`[flight-search] Processing all auto-book enabled trip requests`);
-      tripsQuery = supabaseClient
+      const { data: many, error } = await supabaseClient
         .from("trip_requests")
         .select("*")
         .eq("auto_book_enabled", true);
+        
+      if (error) {
+        throw new Error(`Failed to fetch trip requests: ${error.message}`);
+      }
+      
+      requests = many || [];
     }
     
-    // Execute the query
-    const { data: requests, error: reqError } = await tripsQuery;
-    
-    if (reqError) throw new Error(`Failed to fetch trip requests: ${reqError.message}`);
+    console.log(`[flight-search] Got ${requests.length} request(s) to process`);
     
     let processedRequests = 0;
     let totalMatchesInserted = 0;
@@ -94,11 +107,23 @@ serve(async (req: Request) => {
           budget: request.budget,
         };
         
+        let token;
+        try {
+          // Try to fetch token first to isolate auth issues
+          const { fetchToken } = await import("./flightApi.edge.ts");
+          token = await fetchToken();
+          console.log(`[flight-search] Fetched OAuth token: ${token?.substring(0, 10)}...`);
+        } catch (tokenError) {
+          console.error(`[flight-search] Token fetch error for ${request.id}: ${tokenError.message}`);
+          details.push({ tripRequestId: request.id, matchesFound: 0, error: `Token error: ${tokenError.message}` });
+          continue;
+        }
+        
         let offers;
         try {
           // Use the real API to get flight offers
           offers = await searchOffers(searchParams, request.id);
-          console.log(`[flight-search] Request ${request.id}: Found ${offers.length} offers`);
+          console.log(`[flight-search] Request ${request.id}: Found ${offers.length} raw offers from API`);
         } catch (apiError) {
           console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
@@ -113,11 +138,25 @@ serve(async (req: Request) => {
         
         console.log(`[flight-search] Request ${request.id}: Generated ${offers.length} offers, filtered to ${filteredOffers.length}`);
         
+        if (filteredOffers.length === 0) {
+          details.push({ 
+            tripRequestId: request.id, 
+            matchesFound: 0, 
+            offersGenerated: offers.length,
+            offersFiltered: 0,
+            error: "No matching offers after filtering"
+          });
+          continue;
+        }
+        
         // Save offers to the database
-        const { data: savedOffers, error: offersError } = await supabaseClient
+        const { data: savedOffers, error: offersError, count: offersCount } = await supabaseClient
           .from("flight_offers")
           .insert(filteredOffers)
-          .select("id, price, departure_date, departure_time");
+          .select("id, price, departure_date, departure_time")
+          .returns();
+        
+        console.log(`[flight-search] Inserted ${offersCount || 0} offers into flight_offers`);
         
         if (offersError) {
           console.error(`[flight-search] Error saving offers for request ${request.id}: ${offersError.message}`);
@@ -136,12 +175,15 @@ serve(async (req: Request) => {
         // Insert matches, avoiding duplicates with onConflict option
         let newInserts = 0;
         if (matchesToInsert.length > 0) {
-          const { data: insertedMatches, error: matchesError } = await supabaseClient
+          const { data: insertedMatches, error: matchesError, count: matchCount } = await supabaseClient
             .from("flight_matches")
             .upsert(matchesToInsert, { 
               onConflict: ["trip_request_id", "flight_offer_id"],
               ignoreDuplicates: true 
-            });
+            })
+            .select("id");
+          
+          console.log(`[flight-search] Inserted ${matchCount || 0} flight_matches`);
           
           if (matchesError) {
             console.error(`[flight-search] Error saving matches for request ${request.id}: ${matchesError.message}`);
@@ -150,7 +192,7 @@ serve(async (req: Request) => {
           }
           
           // Count new inserts (non-duplicates)
-          newInserts = insertedMatches ? insertedMatches.length : 0;
+          newInserts = matchCount || 0;
           totalMatchesInserted += newInserts;
         }
         
