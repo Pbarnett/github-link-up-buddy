@@ -127,6 +127,7 @@ const TripOffers = () => {
       setHasError(false);
       try {
         // 1. Invoke the edge function
+        console.log("[flight-search-ui] invoking edge-function for trip:", tripId);
         const { data: invokeData, error: invokeError } =
           await supabase.functions.invoke("flight-search", {
             body: { tripRequestId: tripId },
@@ -155,6 +156,7 @@ const TripOffers = () => {
           if (location.state?.tripDetails) {
             setTripDetails(location.state.tripDetails);
           } else {
+            console.log("[flight-search-ui] fetching trip details");
             const { data: tripData, error: tripError } = await supabase
               .from("trip_requests")
               .select("*")
@@ -184,6 +186,7 @@ const TripOffers = () => {
         }
 
         // 3. Fetch flight_offers after edge function insertion
+        console.log("[flight-search-ui] querying flight_offers table");
         const { data: rows, error: fetchError } = await supabase
           .from("flight_offers")
           .select("*")
@@ -238,7 +241,7 @@ const TripOffers = () => {
         setIsLoading(false);
       }
     })();
-  }, [tripId, tripDetails, location.state]);
+  }, [tripId, location.state, tripDetails]);
 
   if (hasError) {
     return (
