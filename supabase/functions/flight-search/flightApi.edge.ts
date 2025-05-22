@@ -1,4 +1,3 @@
-
 // This file is specifically for Supabase Edge Functions
 // It contains Deno-specific code that shouldn't be imported by client-side code
 
@@ -190,65 +189,40 @@ export async function searchOffers(
   // Log input duration parameters
   console.log(`[flight-search] Duration filter params: minDuration=${params.minDuration}, maxDuration=${params.maxDuration}`);
 
-  // IMPROVED: More robust duration filter with better logging
+  // IMPROVED: More robust duration filter with better error handling and logging
   const filteredOffers = uniqueOffers.filter((offer: any, i: number) => {
-    const outAt = offer.itineraries[0].segments[0].departure.at;
-    const backItin = offer.itineraries[1];
-    const backSeg = backItin?.segments?.slice(-1)[0];
-    const backAt = backSeg?.departure?.at || backSeg?.arrival?.at || null;
+    try {
+      const outAt = offer.itineraries[0].segments[0].departure.at;
+      const backItin = offer.itineraries[1];
+      if (!backItin) {
+        console.log(`[flight-search] Offer #${i}: No return itinerary, skipping. Full offer:`, JSON.stringify(offer, null, 2));
+        return false;
+      }
+      const backSeg = backItin.segments?.slice(-1)[0];
+      const backAt = backSeg?.departure?.at || backSeg?.arrival?.at || null;
+      if (!backAt) {
+        console.log(`[flight-search] Offer #${i}: No backAt, skipping. Full offer:`, JSON.stringify(offer, null, 2));
+        return false;
+      }
 
-    if (!backAt) {
-      console.log(`[flight-search] Offer #${i}: No backAt, skipping.`);
+      const outDate = new Date(outAt);
+      const backDate = new Date(backAt);
+      const tripDaysRaw = (backDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24);
+      const tripDays = Math.round(tripDaysRaw);
+
+      console.log(`[flight-search] Offer #${i}: outAt=${outAt}, backAt=${backAt}, daysRaw=${tripDaysRaw}, days=${tripDays}, minDuration=${params.minDuration}, maxDuration=${params.maxDuration}`);
+
+      const matches = tripDays >= (params.minDuration - 1) && tripDays <= (params.maxDuration + 1);
+      console.log(`[flight-search] Offer #${i}: matches duration filter: ${matches}`);
+      return matches;
+    } catch (err) {
+      console.error(`[flight-search] Offer #${i}: Exception in filter:`, err, JSON.stringify(offer, null, 2));
       return false;
     }
-
-    const outDate = new Date(outAt);
-    const backDate = new Date(backAt);
-    const tripDaysRaw = (backDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24);
-    const tripDays = Math.round(tripDaysRaw); // Round to nearest integer day
-
-    const matches = tripDays >= (params.minDuration - 1) && tripDays <= (params.maxDuration + 1);
-    console.log(`[flight-search] Offer #${i}: outAt=${outAt}, backAt=${backAt}, daysRaw=${tripDaysRaw}, days=${tripDays}, matches=${matches}`);
-    return matches;
   });
   
-  console.log(`[flight-search] ${filteredOffers.length} offers after applying duration filter`);
+  console.log(`[flight-search] Filtered offers count: ${filteredOffers.length} (from ${uniqueOffers.length})`);
   
-  // Log duration details for a few offers to debug
-  if (filteredOffers.length > 0) {
-    console.log("[flight-search] Detailed duration analysis for up to 5 offers:");
-    filteredOffers.slice(0, 5).forEach((offer: any, i: number) => {
-      try {
-        const outAt = offer.itineraries[0].segments[0].departure.at;
-        const outDate = new Date(outAt);
-        
-        // Try to get return date using various fallbacks
-        const backItin = offer.itineraries[1];
-        const backSeg = backItin?.segments?.slice(-1)[0];
-        const backAt = backSeg?.departure?.at || backSeg?.arrival?.at || null;
-        const backDate = backAt ? new Date(backAt) : null;
-        
-        const tripDaysRaw = backDate ? 
-          (backDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24) : 
-          null;
-        const tripDays = tripDaysRaw !== null ? Math.round(tripDaysRaw) : null;
-        
-        console.log(`[flight-search] Offer #${i+1}:`);
-        console.log(`  - Out: ${outAt} (${outDate.toISOString()})`);
-        console.log(`  - Back: ${backAt} (${backDate?.toISOString() || 'N/A'})`);
-        console.log(`  - Duration raw: ${tripDaysRaw?.toFixed(2) || 'Unknown'} days`);
-        console.log(`  - Duration rounded: ${tripDays || 'Unknown'} days`);
-        console.log(`  - Matches filter: ${
-          tripDays !== null ? 
-          (tripDays >= params.minDuration - 1 && tripDays <= params.maxDuration + 1) : 
-          'Unknown'
-        }`);
-      } catch (err) {
-        console.error(`[flight-search] Error analyzing offer #${i+1}:`, err);
-      }
-    });
-  }
-
   // Show requested filter parameters
   console.log(`[flight-search] Requested duration window: ${params.minDuration}-${params.maxDuration} days`);
 
