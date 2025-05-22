@@ -1,9 +1,8 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Import the flight API service (edge version)
-import { searchOffers, FlightSearchParams } from "./flightApi.edge.ts";
+// Import the flight API service (edge version) with explicit fetchToken
+import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
 
 // Set up CORS headers
 const corsHeaders = {
@@ -107,10 +106,20 @@ serve(async (req: Request) => {
           budget: request.budget,
         };
         
+        // Log search parameters for debugging
+        console.log(`[flight-search] Search params:`, JSON.stringify({
+          origin: searchParams.origin,
+          destination: searchParams.destination,
+          earliestDeparture: searchParams.earliestDeparture.toISOString(),
+          latestDeparture: searchParams.latestDeparture.toISOString(),
+          minDuration: searchParams.minDuration,
+          maxDuration: searchParams.maxDuration,
+          budget: searchParams.budget
+        }, null, 2));
+        
         let token;
         try {
-          // Try to fetch token first to isolate auth issues
-          const { fetchToken } = await import("./flightApi.edge.ts");
+          // Call fetchToken function that's now properly imported
           token = await fetchToken();
           console.log(`[flight-search] Fetched OAuth token: ${token?.substring(0, 10)}...`);
         } catch (tokenError) {
@@ -123,7 +132,7 @@ serve(async (req: Request) => {
         try {
           // Use the real API to get flight offers
           offers = await searchOffers(searchParams, request.id);
-          console.log(`[flight-search] Request ${request.id}: Found ${offers.length} raw offers from API`);
+          console.log(`[flight-search] Request ${request.id}: Found ${offers.length} transformed offers from API`);
         } catch (apiError) {
           console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
@@ -136,7 +145,7 @@ serve(async (req: Request) => {
           ? offers 
           : offers.filter(offer => offer.price <= request.max_price);
         
-        console.log(`[flight-search] Request ${request.id}: Generated ${offers.length} offers, filtered to ${filteredOffers.length}`);
+        console.log(`[flight-search] Request ${request.id}: Generated ${offers.length} offers, filtered to ${filteredOffers.length} by max price`);
         
         if (filteredOffers.length === 0) {
           details.push({ 
@@ -149,6 +158,10 @@ serve(async (req: Request) => {
           continue;
         }
         
+        // Log offers being inserted
+        console.log(`[flight-search] Inserting ${filteredOffers.length} offers. First offer:`, 
+          JSON.stringify(filteredOffers[0], null, 2));
+        
         // Save offers to the database
         const { data: savedOffers, error: offersError, count: offersCount } = await supabaseClient
           .from("flight_offers")
@@ -156,11 +169,23 @@ serve(async (req: Request) => {
           .select("id, price, departure_date, departure_time")
           .returns();
         
-        console.log(`[flight-search] Inserted ${offersCount || 0} offers into flight_offers`);
-        
         if (offersError) {
           console.error(`[flight-search] Error saving offers for request ${request.id}: ${offersError.message}`);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `Offers error: ${offersError.message}` });
+          continue;
+        }
+        
+        console.log(`[flight-search] Inserted ${offersCount || 0} offers into flight_offers`);
+        
+        if (!savedOffers || savedOffers.length === 0) {
+          console.log(`[flight-search] No offers were saved for request ${request.id}. This could be due to duplicates.`);
+          details.push({ 
+            tripRequestId: request.id,
+            matchesFound: 0,
+            offersGenerated: offers.length,
+            offersInserted: 0,
+            error: "No offers were saved to the database"
+          });
           continue;
         }
         
