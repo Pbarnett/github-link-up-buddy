@@ -1,6 +1,6 @@
 
-import { describe, test, expect } from 'vitest';
-import { transformAmadeusToOffers } from "./flightApi";
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { transformAmadeusToOffers } from "./flightApi.client";
 
 describe("flightApi", () => {
   test("transformAmadeusToOffers maps correctly", () => {
@@ -63,5 +63,18 @@ describe("flightApi", () => {
   test("transformAmadeusToOffers handles empty data", () => {
     expect(transformAmadeusToOffers({ data: [] }, "test-id")).toEqual([]);
     expect(transformAmadeusToOffers({ data: null }, "test-id")).toEqual([]);
+  });
+
+  test("transformAmadeusToOffers handles malformed data gracefully", () => {
+    const malformedData = {
+      data: [{ 
+        // Missing required fields
+        price: { total: "100.00" } 
+      }]
+    };
+    
+    // Should not throw an error but return empty array for malformed entry
+    const result = transformAmadeusToOffers(malformedData, "test-id");
+    expect(result).toEqual([]);
   });
 });
