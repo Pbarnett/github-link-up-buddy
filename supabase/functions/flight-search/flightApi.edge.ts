@@ -147,8 +147,27 @@ export async function searchOffers(
     ).values()
   );
 
-  console.log(`[flight-search] Found ${uniqueOffers.length} offers for trip ${tripRequestId}`);
-  const api = { data: uniqueOffers };
+  // Enforce trip duration window (in days, rounded) and log counts
+  console.log(
+    `[flight-search] ${uniqueOffers.length} offers before duration filter`
+  );
+  const filteredOffers = uniqueOffers.filter((offer: any) => {
+    const outAt = offer.itineraries[0].segments[0].departure.at;
+    const backAt =
+      offer.itineraries[1]?.segments.slice(-1)[0].departure.at ?? outAt;
+    // compute exact diff in days, then round
+    const diffDays =
+      (new Date(backAt).getTime() - new Date(outAt).getTime()) /
+      (1000 * 60 * 60 * 24);
+    const days = Math.round(diffDays);
+    return days >= params.minDuration && days <= params.maxDuration;
+  });
+  console.log(
+    `[flight-search] ${filteredOffers.length} offers after duration filter`
+  );
+
+  console.log(`[flight-search] Found ${filteredOffers.length} offers for trip ${tripRequestId}`);
+  const api = { data: filteredOffers };
   return transformAmadeusToOffers(api, tripRequestId);
 }
 
