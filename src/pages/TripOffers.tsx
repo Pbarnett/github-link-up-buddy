@@ -116,66 +116,78 @@ const TripOffers = () => {
     }
   };
 
-  useEffect(() => {
-    // Get trip details from location state if available
+  // Fetch trip details if needed
+  const fetchTripDetails = async (id: string) => {
+    // Only fetch if not already available from state
     if (location.state?.tripDetails) {
       setTripDetails(location.state.tripDetails);
+      return;
+    }
+    
+    // Fetch from database
+    try {
+      const { data: tripData, error: tripError } = await supabase
+        .from("trip_requests")
+        .select("*")
+        .eq("id", id)
+        .single();
+        
+      if (tripError) {
+        console.error("Error fetching trip details:", tripError);
+        throw new Error("Could not fetch trip details");
+      }
+      
+      if (tripData) {
+        setTripDetails({
+          earliestDeparture: tripData.earliest_departure,
+          latestDeparture: tripData.latest_departure,
+          min_duration: tripData.min_duration,
+          max_duration: tripData.max_duration,
+          budget: tripData.budget
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching trip details:", error);
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    if (!tripId) {
+      setHasError(true);
+      return;
     }
 
-    // Load offers from Supabase
-    const loadOffersFromSupabase = async (id: string) => {
+    // ❗️ 1) Invoke the flight-search Edge Function on mount
+    ;(async () => {
+      try {
+        await supabase.functions.invoke("flight-search", {
+          body: { tripRequestId: tripId }
+        });
+      } catch (invokeErr) {
+        console.error("Error invoking flight-search on load:", invokeErr);
+      }
+    })();
+
+    // ❗️ 2) Then fetch whatever offers have been written
+    (async () => {
       setIsLoading(true);
       setHasError(false);
-      
       try {
-        // First fetch the trip details if not available from state
-        if (!location.state?.tripDetails) {
-          const { data: tripData, error: tripError } = await supabase
-            .from("trip_requests")
-            .select("*")
-            .eq("id", id)
-            .single();
-            
-          if (tripError) {
-            console.error("Error fetching trip details:", tripError);
-            setHasError(true);
-            return;
-          }
-          
-          if (tripData) {
-            setTripDetails({
-              earliestDeparture: tripData.earliest_departure,
-              latestDeparture: tripData.latest_departure,
-              min_duration: tripData.min_duration,
-              max_duration: tripData.max_duration,
-              budget: tripData.budget
-            });
-          }
-        }
+        // Get trip details first
+        await fetchTripDetails(tripId);
         
-        // Fetch the flight offers
-        const offersData = await fetchOffers(id);
+        // Then get offers
+        const offersData = await fetchOffers(tripId);
         setOffers(offersData);
-        
-      } catch (error) {
-        console.error("Error:", error);
+      } catch (loadErr) {
+        console.error("Error loading offers:", loadErr);
         setHasError(true);
-        toast({
-          title: "Error loading offers",
-          description: "We couldn't load flight offers. Please try again.",
-          variant: "destructive",
-        });
       } finally {
         setIsLoading(false);
       }
-    };
-
-    if (tripId) {
-      loadOffersFromSupabase(tripId);
-    } else {
-      setHasError(true);
-    }
-  }, [location, searchParams]);
+    })();
+  }, [tripId]);
 
   if (hasError) {
     return (
