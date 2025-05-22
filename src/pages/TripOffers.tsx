@@ -83,12 +83,13 @@ const TripOffers = () => {
     setIsRefreshing(true);
     try {
       // Invoke the flight-search edge function for this trip
+      console.log("[flight-search-ui] refreshing offers for trip:", tripId);
       const { data, error } = await supabase.functions.invoke("flight-search", {
         body: { tripRequestId: tripId }
       });
       
       if (error) {
-        console.error("Error refreshing offers:", error);
+        console.error("[flight-search-ui] error refreshing offers:", error);
         toast({
           title: "Error refreshing offers",
           description: "We couldn't refresh the flight offers. Please try again.",
@@ -96,6 +97,7 @@ const TripOffers = () => {
         });
       } else {
         // Fetch the updated offers
+        console.log("[flight-search-ui] fetch updated offers after refresh");
         const updatedOffers = await fetchOffers(tripId);
         setOffers(updatedOffers);
         
@@ -105,7 +107,7 @@ const TripOffers = () => {
         });
       }
     } catch (error) {
-      console.error("Error in refresh:", error);
+      console.error("[flight-search-ui] error in refresh:", error);
       toast({
         title: "Error refreshing offers",
         description: "We couldn't refresh the flight offers. Please try again.",
