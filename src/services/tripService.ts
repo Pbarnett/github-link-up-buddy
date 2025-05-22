@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { TripFormValues, ExtendedTripFormValues, TripRequestResult } from "@/types/form";
 import { safeQuery } from "@/lib/supabaseUtils";
+import { toast } from "@/hooks/use-toast";
 
 /**
  * Create a new trip request in the database
