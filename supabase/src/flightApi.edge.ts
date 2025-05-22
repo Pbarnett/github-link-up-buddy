@@ -48,9 +48,10 @@ export async function searchOffers(
 ): Promise<TablesInsert<"flight_offers">[]> {
   console.warn("Using deprecated searchOffers implementation. Please migrate to the new version.");
   
-  // Forward to new implementation
-  const { searchOffers } = await import("../functions/flight-search/flightApi.edge.ts");
-  return searchOffers(params, tripRequestId);
+  // IMPORTANT: Changed to avoid circular imports - don't forward to new implementation
+  // Instead, just return an empty array
+  console.error("This function is deprecated. Please use the new implementation directly.");
+  return [];
 }
 
 // Transform Amadeus response to our format - DEPRECATED
@@ -58,7 +59,8 @@ export async function searchOffers(
 export function transformAmadeusToOffers(api: any, tripRequestId: string): TablesInsert<"flight_offers">[] {
   console.warn("Using deprecated transformAmadeusToOffers implementation. Please migrate to the new version.");
   
-  // Import from the new location
-  const { transformAmadeusToOffers: newTransform } = require("../functions/flight-search/flightApi.edge.ts");
-  return newTransform(api, tripRequestId);
+  // IMPORTANT: Changed to avoid circular imports - don't forward to new implementation
+  // Instead, just return an empty array
+  console.error("This function is deprecated. Please use the new implementation directly.");
+  return [];
 }

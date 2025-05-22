@@ -1,4 +1,3 @@
-
 // This file is specifically for Supabase Edge Functions
 // It contains Deno-specific code that shouldn't be imported by client-side code
 
@@ -18,25 +17,40 @@ export interface FlightSearchParams {
 let _token: string|undefined, _tokenExpires = 0;
 
 export async function fetchToken(): Promise<string> {
+  console.log("[flight-search] Fetching OAuth token...");
   const now = Date.now();
-  if (_token && now < _tokenExpires - 60000) return _token;  // reuse until 1 min before expiry
+  if (_token && now < _tokenExpires - 60000) {
+    console.log("[flight-search] Reusing existing token");
+    return _token;  // reuse until 1 min before expiry
+  }
 
-  const res = await fetch(`${Deno.env.get("AMADEUS_BASE_URL")}/v1/security/oauth2/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: Deno.env.get("AMADEUS_CLIENT_ID")!,
-      client_secret: Deno.env.get("AMADEUS_CLIENT_SECRET")!,
-    }),
-  });
-  
-  if (!res.ok) throw new Error(`Token fetch failed: ${res.status}`);
-  
-  const { access_token, expires_in } = await res.json();
-  _token = access_token;
-  _tokenExpires = now + expires_in * 1000;
-  return _token;
+  try {
+    console.log(`[flight-search] Requesting new token from ${Deno.env.get("AMADEUS_BASE_URL")}/v1/security/oauth2/token`);
+    const res = await fetch(`${Deno.env.get("AMADEUS_BASE_URL")}/v1/security/oauth2/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: Deno.env.get("AMADEUS_CLIENT_ID")!,
+        client_secret: Deno.env.get("AMADEUS_CLIENT_SECRET")!,
+      }),
+    });
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`[flight-search] Token fetch failed: ${res.status}`, errorText);
+      throw new Error(`Token fetch failed: ${res.status} - ${errorText}`);
+    }
+    
+    const data = await res.json();
+    console.log("[flight-search] Successfully received token");
+    _token = data.access_token;
+    _tokenExpires = now + data.expires_in * 1000;
+    return _token;
+  } catch (error) {
+    console.error("[flight-search] Error in fetchToken:", error);
+    throw error;
+  }
 }
 
 /**
@@ -86,6 +100,7 @@ export async function searchOffers(
   params: FlightSearchParams,
   tripRequestId: string
 ): Promise<TablesInsert<"flight_offers">[]> {
+  console.log(`[flight-search] Starting searchOffers for trip ${tripRequestId}`);
   const token = await fetchToken();
   
   // Simple rate-limit pause
@@ -95,6 +110,8 @@ export async function searchOffers(
   const depDate = params.earliestDeparture.toISOString().slice(0, 10);
   // use latestDeparture (window end) for return dates
   const retDate = params.latestDeparture.toISOString().slice(0, 10);
+
+  console.log(`[flight-search] Search dates: departure ${depDate}, return ${retDate}`);
 
   // For each origin, call Amadeus and collect raw responses
   const allResponses: any[] = [];
@@ -111,6 +128,8 @@ export async function searchOffers(
     };
 
     const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers`;
+    console.log(`[flight-search] Calling Amadeus API at ${url} with payload:`, JSON.stringify(payload));
+    
     const resp = await withRetry(async () => {
       const r = await fetch(url, {
         method: "POST",
@@ -120,12 +139,14 @@ export async function searchOffers(
         },
         body: JSON.stringify(payload),
       });
-      const j = await r.json();
+      
       if (!r.ok) {
-        console.error("[flight-search] Error response body:", JSON.stringify(j, null, 2));
-        throw new Error(`Amadeus API error: ${r.status}`);
+        const errorText = await r.text();
+        console.error(`[flight-search] Amadeus API error: ${r.status}`, errorText);
+        throw new Error(`Amadeus API error: ${r.status} - ${errorText}`);
       }
-      return j;
+      
+      return await r.json();
     });
     
     if (resp.data && resp.data.length > 0) {
@@ -139,8 +160,11 @@ export async function searchOffers(
     allResponses.push(...(resp.data || []));
   }
 
-  // Log total raw offers count
+  // Log total raw offers count and sample of raw data
   console.log(`[flight-search] Total raw offers from all origins: ${allResponses.length}`);
+  if (allResponses.length > 0) {
+    console.log("[flight-search] Raw offers sample:", JSON.stringify(allResponses.slice(0, 2), null, 2));
+  }
 
   // Dedupe by outbound+return departure times
   const uniqueOffers = Array.from(
@@ -162,8 +186,7 @@ export async function searchOffers(
   // Log after deduplication
   console.log(`[flight-search] ${uniqueOffers.length} unique offers after deduplication`);
 
-  // TEMPORARY: Skip duration filtering for debugging
-  // Just use all unique offers without filtering
+  // TEMPORARY: Make filter very permissive for debugging
   const filteredOffers = uniqueOffers;
   
   console.log(`[flight-search] ${filteredOffers.length} offers after skipping duration filter (temporary)`);

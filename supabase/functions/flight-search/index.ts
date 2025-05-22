@@ -1,8 +1,9 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Import the flight API service (edge version)
-import { searchOffers, FlightSearchParams } from "./flightApi.edge.ts";
+// Import the flight API service (edge version) with explicit fetchToken
+import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
 
 // Set up CORS headers
 const corsHeaders = {
@@ -119,7 +120,7 @@ serve(async (req: Request) => {
         
         let token;
         try {
-          // Try to fetch token first to isolate auth issues
+          // Call fetchToken function that's now properly imported
           token = await fetchToken();
           console.log(`[flight-search] Fetched OAuth token: ${token?.substring(0, 10)}...`);
         } catch (tokenError) {
