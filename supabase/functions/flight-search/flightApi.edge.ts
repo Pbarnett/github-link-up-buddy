@@ -1,3 +1,4 @@
+
 // This file is specifically for Supabase Edge Functions
 // It contains Deno-specific code that shouldn't be imported by client-side code
 
@@ -186,21 +187,29 @@ export async function searchOffers(
   // Log after deduplication
   console.log(`[flight-search] ${uniqueOffers.length} unique offers after deduplication`);
 
-  // RESTORED: Apply the duration filter
-  const filteredOffers = uniqueOffers.filter((offer: any) => {
+  // Log input duration parameters
+  console.log(`[flight-search] Duration filter params: minDuration=${params.minDuration}, maxDuration=${params.maxDuration}`);
+
+  // IMPROVED: More robust duration filter with better logging
+  const filteredOffers = uniqueOffers.filter((offer: any, i: number) => {
     const outAt = offer.itineraries[0].segments[0].departure.at;
     const backItin = offer.itineraries[1];
     const backSeg = backItin?.segments?.slice(-1)[0];
     const backAt = backSeg?.departure?.at || backSeg?.arrival?.at || null;
 
-    if (!backAt) return false;
+    if (!backAt) {
+      console.log(`[flight-search] Offer #${i}: No backAt, skipping.`);
+      return false;
+    }
 
     const outDate = new Date(outAt);
     const backDate = new Date(backAt);
-    const tripDays = (backDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24);
+    const tripDaysRaw = (backDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24);
+    const tripDays = Math.round(tripDaysRaw); // Round to nearest integer day
 
-    // 1-day buffer as before
-    return tripDays >= (params.minDuration - 1) && tripDays <= (params.maxDuration + 1);
+    const matches = tripDays >= (params.minDuration - 1) && tripDays <= (params.maxDuration + 1);
+    console.log(`[flight-search] Offer #${i}: outAt=${outAt}, backAt=${backAt}, daysRaw=${tripDaysRaw}, days=${tripDays}, matches=${matches}`);
+    return matches;
   });
   
   console.log(`[flight-search] ${filteredOffers.length} offers after applying duration filter`);
@@ -219,15 +228,17 @@ export async function searchOffers(
         const backAt = backSeg?.departure?.at || backSeg?.arrival?.at || null;
         const backDate = backAt ? new Date(backAt) : null;
         
-        const tripDays = backDate ? 
+        const tripDaysRaw = backDate ? 
           (backDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24) : 
           null;
+        const tripDays = tripDaysRaw !== null ? Math.round(tripDaysRaw) : null;
         
         console.log(`[flight-search] Offer #${i+1}:`);
         console.log(`  - Out: ${outAt} (${outDate.toISOString()})`);
         console.log(`  - Back: ${backAt} (${backDate?.toISOString() || 'N/A'})`);
-        console.log(`  - Duration: ${tripDays?.toFixed(2) || 'Unknown'} days`);
-        console.log(`  - Should match filter: ${
+        console.log(`  - Duration raw: ${tripDaysRaw?.toFixed(2) || 'Unknown'} days`);
+        console.log(`  - Duration rounded: ${tripDays || 'Unknown'} days`);
+        console.log(`  - Matches filter: ${
           tripDays !== null ? 
           (tripDays >= params.minDuration - 1 && tripDays <= params.maxDuration + 1) : 
           'Unknown'
