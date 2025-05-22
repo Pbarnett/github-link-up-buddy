@@ -186,10 +186,24 @@ export async function searchOffers(
   // Log after deduplication
   console.log(`[flight-search] ${uniqueOffers.length} unique offers after deduplication`);
 
-  // TEMPORARY: Make filter very permissive for debugging
-  const filteredOffers = uniqueOffers;
+  // RESTORED: Apply the duration filter
+  const filteredOffers = uniqueOffers.filter((offer: any) => {
+    const outAt = offer.itineraries[0].segments[0].departure.at;
+    const backItin = offer.itineraries[1];
+    const backSeg = backItin?.segments?.slice(-1)[0];
+    const backAt = backSeg?.departure?.at || backSeg?.arrival?.at || null;
+
+    if (!backAt) return false;
+
+    const outDate = new Date(outAt);
+    const backDate = new Date(backAt);
+    const tripDays = (backDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24);
+
+    // 1-day buffer as before
+    return tripDays >= (params.minDuration - 1) && tripDays <= (params.maxDuration + 1);
+  });
   
-  console.log(`[flight-search] ${filteredOffers.length} offers after skipping duration filter (temporary)`);
+  console.log(`[flight-search] ${filteredOffers.length} offers after applying duration filter`);
   
   // Log duration details for a few offers to debug
   if (filteredOffers.length > 0) {
