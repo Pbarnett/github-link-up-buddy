@@ -32,8 +32,8 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
         flight_number: out.number,
         departure_date: out.departure.at.split("T")[0],
         departure_time: out.departure.at.split("T")[1].slice(0,5),
-        return_date: back.arrival.at.split("T")[0],
-        return_time: back.arrival.at.split("T")[1].slice(0,5),
+        return_date: back.departure.at.split("T")[0],  // Changed from back.arrival.at to back.departure.at
+        return_time: back.departure.at.split("T")[1].slice(0,5),  // Changed from back.arrival.at to back.departure.at
         duration: offer.itineraries[0].duration,
         price: parseFloat(offer.price.total),
       }];
