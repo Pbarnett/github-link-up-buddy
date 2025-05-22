@@ -60,6 +60,7 @@ export const createTripRequest = async (
   
   try {
     // Invoke the flight-search edge function directly for this trip
+    console.log(`Invoking flight-search function for trip request ${tripRequest.id}`);
     const { data: fsData, error: fsError } = await supabase.functions.invoke<{
       requestsProcessed: number;
       matchesInserted: number;
@@ -73,10 +74,22 @@ export const createTripRequest = async (
       console.error("Error invoking flight-search function:", fsError);
     } else {
       console.log("Flight search completed:", fsData);
+      // Show information about the search results
+      if (fsData.matchesInserted > 0) {
+        toast({
+          title: "Flight search completed",
+          description: `Found ${fsData.matchesInserted} potential flight matches`,
+        });
+      }
     }
   } catch (invocationError) {
     console.error("Failed to invoke flight-search function:", invocationError);
     // We don't throw here to allow the flow to continue even if search fails
+    toast({
+      title: "Warning",
+      description: "We couldn't search for flights automatically. Please refresh the offers page.",
+      variant: "destructive",
+    });
   }
   
   // Fetch the newly created offers
