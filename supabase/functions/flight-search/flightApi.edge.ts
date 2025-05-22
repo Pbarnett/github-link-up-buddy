@@ -127,8 +127,20 @@ export async function searchOffers(
       }
       return j;
     });
+    
+    if (resp.data && resp.data.length > 0) {
+      console.log(`[flight-search] Found ${resp.data.length} raw offers from ${originCode}`);
+      // Log a sample offer for debugging
+      console.log("[flight-search] Sample raw offer:", JSON.stringify(resp.data[0], null, 2));
+    } else {
+      console.log(`[flight-search] No offers found for ${originCode}`);
+    }
+    
     allResponses.push(...(resp.data || []));
   }
+
+  // Log total raw offers count
+  console.log(`[flight-search] Total raw offers from all origins: ${allResponses.length}`);
 
   // Dedupe by outbound+return departure times
   const uniqueOffers = Array.from(
@@ -147,40 +159,50 @@ export async function searchOffers(
     ).values()
   );
 
-  // Enforce trip duration window (in days) with enhanced debugging
-  console.log(`[flight-search] ${uniqueOffers.length} offers before duration filter`);
+  // Log after deduplication
+  console.log(`[flight-search] ${uniqueOffers.length} unique offers after deduplication`);
+
+  // TEMPORARY: Skip duration filtering for debugging
+  // Just use all unique offers without filtering
+  const filteredOffers = uniqueOffers;
   
-  // Debug sample offers to identify duration calculation issues
-  if (uniqueOffers.length > 0) {
-    const sampleOffer = uniqueOffers[0];
-    const outDate = sampleOffer.itineraries[0].segments[0].departure.at;
-    const returnDate = sampleOffer.itineraries[1]?.segments.slice(-1)[0].departure.at;
-    
-    console.log(`[flight-search] Sample offer - Out: ${outDate}, Return: ${returnDate}`);
-    if (outDate && returnDate) {
-      const diffDays = (new Date(returnDate).getTime() - new Date(outDate).getTime()) / (1000 * 60 * 60 * 24);
-      console.log(`[flight-search] Sample offer duration: ${diffDays} days (${Math.floor(diffDays)} floored, ${Math.ceil(diffDays)} ceiling, ${Math.round(diffDays)} rounded)`);
-    }
-    
-    console.log(`[flight-search] Filter criteria: min=${params.minDuration}, max=${params.maxDuration} days`);
+  console.log(`[flight-search] ${filteredOffers.length} offers after skipping duration filter (temporary)`);
+  
+  // Log duration details for a few offers to debug
+  if (filteredOffers.length > 0) {
+    console.log("[flight-search] Detailed duration analysis for up to 5 offers:");
+    filteredOffers.slice(0, 5).forEach((offer: any, i: number) => {
+      try {
+        const outAt = offer.itineraries[0].segments[0].departure.at;
+        const outDate = new Date(outAt);
+        
+        // Try to get return date using various fallbacks
+        const backItin = offer.itineraries[1];
+        const backSeg = backItin?.segments?.slice(-1)[0];
+        const backAt = backSeg?.departure?.at || backSeg?.arrival?.at || null;
+        const backDate = backAt ? new Date(backAt) : null;
+        
+        const tripDays = backDate ? 
+          (backDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24) : 
+          null;
+        
+        console.log(`[flight-search] Offer #${i+1}:`);
+        console.log(`  - Out: ${outAt} (${outDate.toISOString()})`);
+        console.log(`  - Back: ${backAt} (${backDate?.toISOString() || 'N/A'})`);
+        console.log(`  - Duration: ${tripDays?.toFixed(2) || 'Unknown'} days`);
+        console.log(`  - Should match filter: ${
+          tripDays !== null ? 
+          (tripDays >= params.minDuration - 1 && tripDays <= params.maxDuration + 1) : 
+          'Unknown'
+        }`);
+      } catch (err) {
+        console.error(`[flight-search] Error analyzing offer #${i+1}:`, err);
+      }
+    });
   }
-  
-  // Modified filter with more lenient approach
-  const filteredOffers = uniqueOffers.filter((offer: any) => {
-    const outAt = offer.itineraries[0].segments[0].departure.at;
-    // Try to get return departure date, fallback to return arrival date if available
-    const backSeg = offer.itineraries[1]?.segments.slice(-1)[0];
-    const backAt = backSeg ? (backSeg.departure.at || backSeg.arrival.at) : outAt;
-    
-    // Calculate difference in days, using floor instead of round to be more lenient
-    const diffMs = new Date(backAt).getTime() - new Date(outAt).getTime();
-    const diffDays = diffMs / (1000 * 60 * 60 * 24);
-    const days = Math.floor(diffDays); // Floor the value to be more inclusive
-    
-    return days >= (params.minDuration - 1) && days <= (params.maxDuration + 1); // Add 1-day buffer
-  });
-  
-  console.log(`[flight-search] ${filteredOffers.length} offers after duration filter`);
+
+  // Show requested filter parameters
+  console.log(`[flight-search] Requested duration window: ${params.minDuration}-${params.maxDuration} days`);
 
   console.log(`[flight-search] Found ${filteredOffers.length} offers for trip ${tripRequestId}`);
   const api = { data: filteredOffers };
@@ -191,28 +213,49 @@ export async function searchOffers(
 export function transformAmadeusToOffers(api: any, tripRequestId: string): TablesInsert<"flight_offers">[] {
   // Handle empty response
   if (!api.data || !Array.isArray(api.data) || api.data.length === 0) {
+    console.log("[flight-search] No data to transform");
     return [];
   }
   
-  return api.data.flatMap((offer: any) => {
-    try {
-      const out = offer.itineraries[0].segments[0];
-      const back = offer.itineraries[1]?.segments.slice(-1)[0] ?? out;
-      
-      return [{
-        trip_request_id: tripRequestId,
-        airline: out.carrierCode,
-        flight_number: out.number,
-        departure_date: out.departure.at.split("T")[0],
-        departure_time: out.departure.at.split("T")[1].slice(0,5),
-        return_date: back.departure.at.split("T")[0],  // Changed from back.arrival.at to back.departure.at
-        return_time: back.departure.at.split("T")[1].slice(0,5),  // Changed from back.arrival.at to back.departure.at
-        duration: offer.itineraries[0].duration,
-        price: parseFloat(offer.price.total),
-      }];
-    } catch (err) {
-      console.error("Error transforming Amadeus offer:", err);
-      return []; // Skip this offer if transformation fails
-    }
-  });
+  try {
+    const offers = api.data.flatMap((offer: any) => {
+      try {
+        const out = offer.itineraries[0].segments[0];
+        // More robust handling of return segment
+        const backItin = offer.itineraries[1];
+        if (!backItin) {
+          console.log("[flight-search] Skipping one-way flight without return itinerary");
+          return [];
+        }
+        
+        const back = backItin.segments.slice(-1)[0];
+        if (!back?.departure?.at) {
+          console.log("[flight-search] Skipping offer with missing return departure time");
+          return [];
+        }
+        
+        return [{
+          trip_request_id: tripRequestId,
+          airline: out.carrierCode,
+          flight_number: out.number,
+          departure_date: out.departure.at.split("T")[0],
+          departure_time: out.departure.at.split("T")[1].slice(0,5),
+          return_date: back.departure.at.split("T")[0],
+          return_time: back.departure.at.split("T")[1].slice(0,5),
+          duration: offer.itineraries[0].duration,
+          price: parseFloat(offer.price.total),
+        }];
+      } catch (err) {
+        console.error("[flight-search] Error transforming individual offer:", err);
+        console.log("[flight-search] Problematic offer:", JSON.stringify(offer, null, 2));
+        return []; // Skip this offer if transformation fails
+      }
+    });
+    
+    console.log(`[flight-search] Successfully transformed ${offers.length} offers`);
+    return offers;
+  } catch (err) {
+    console.error("[flight-search] Error in transformAmadeusToOffers:", err);
+    return [];
+  }
 }
