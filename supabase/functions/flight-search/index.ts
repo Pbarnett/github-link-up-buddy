@@ -31,11 +31,33 @@ serve(async (req: Request) => {
   }
 
   try {
-    // 1. Fetch all trip requests with auto_book_enabled = true
-    const { data: requests, error: reqError } = await supabaseClient
-      .from("trip_requests")
-      .select("*")
-      .eq("auto_book_enabled", true);
+    // Parse request body for optional tripRequestId
+    let tripRequestId: string | null = null;
+    
+    if (req.method === "POST") {
+      const body = await req.json();
+      tripRequestId = body.tripRequestId || null;
+    }
+    
+    // Build the query based on whether tripRequestId is provided
+    let tripsQuery;
+    
+    if (tripRequestId) {
+      console.log(`[flight-search] Processing single trip request ${tripRequestId}`);
+      tripsQuery = supabaseClient
+        .from("trip_requests")
+        .select("*")
+        .eq("id", tripRequestId);
+    } else {
+      console.log(`[flight-search] Processing all auto-book enabled trip requests`);
+      tripsQuery = supabaseClient
+        .from("trip_requests")
+        .select("*")
+        .eq("auto_book_enabled", true);
+    }
+    
+    // Execute the query
+    const { data: requests, error: reqError } = await tripsQuery;
     
     if (reqError) throw new Error(`Failed to fetch trip requests: ${reqError.message}`);
     
@@ -43,7 +65,7 @@ serve(async (req: Request) => {
     let totalMatchesInserted = 0;
     const details = [];
     
-    // 2. Process each trip request
+    // Process each trip request
     for (const request of requests) {
       try {
         console.log(`[flight-search] Processing trip request ${request.id}`);

@@ -10,6 +10,7 @@ import { Offer } from "@/services/tripOffersService";
 import { toast } from "@/components/ui/use-toast";
 import { format as formatDate } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { RefreshCw } from "lucide-react";
 
 interface TripDetails {
   earliestDeparture: string;
@@ -24,14 +25,98 @@ const TripOffers = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [tripDetails, setTripDetails] = useState<TripDetails | null>(null);
+  
+  // Get trip ID from URL query parameter
+  const tripId = searchParams.get("id");
+
+  const fetchOffers = async (id: string) => {
+    try {
+      // Fetch the flight offers
+      const { data: offersData, error: offersError } = await supabase
+        .from("flight_offers")
+        .select("*")
+        .eq("trip_request_id", id)
+        .order("price", { ascending: true });
+        
+      if (offersError) {
+        console.error("Error fetching flight offers:", offersError);
+        toast({
+          title: "Error loading offers",
+          description: "We couldn't load flight offers. Please try again.",
+          variant: "destructive",
+        });
+        return [];
+      }
+      
+      if (offersData && offersData.length > 0) {
+        // Map the Supabase data to the Offer interface
+        const formattedOffers: Offer[] = offersData.map(offer => ({
+          id: offer.id,
+          airline: offer.airline,
+          flight_number: offer.flight_number,
+          departure_date: offer.departure_date,
+          departure_time: offer.departure_time,
+          return_date: offer.return_date,
+          return_time: offer.return_time,
+          duration: offer.duration,
+          price: Number(offer.price) // Ensure price is a number
+        }));
+        
+        return formattedOffers;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error("Error:", error);
+      return [];
+    }
+  };
+
+  // Function to refresh offers
+  const refreshOffers = async () => {
+    if (!tripId) return;
+    
+    setIsRefreshing(true);
+    try {
+      // Invoke the flight-search edge function for this trip
+      const { data, error } = await supabase.functions.invoke("flight-search", {
+        body: { tripRequestId: tripId }
+      });
+      
+      if (error) {
+        console.error("Error refreshing offers:", error);
+        toast({
+          title: "Error refreshing offers",
+          description: "We couldn't refresh the flight offers. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        // Fetch the updated offers
+        const updatedOffers = await fetchOffers(tripId);
+        setOffers(updatedOffers);
+        
+        toast({
+          title: "Offers refreshed",
+          description: `Found ${updatedOffers.length} flight offers for your trip.`,
+        });
+      }
+    } catch (error) {
+      console.error("Error in refresh:", error);
+      toast({
+        title: "Error refreshing offers",
+        description: "We couldn't refresh the flight offers. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    // Get trip ID from URL query parameter
-    const tripId = searchParams.get("id");
-
     // Get trip details from location state if available
     if (location.state?.tripDetails) {
       setTripDetails(location.state.tripDetails);
@@ -68,42 +153,10 @@ const TripOffers = () => {
           }
         }
         
-        // Then fetch the flight offers
-        const { data: offersData, error: offersError } = await supabase
-          .from("flight_offers")
-          .select("*")
-          .eq("trip_request_id", id);
-          
-        if (offersError) {
-          console.error("Error fetching flight offers:", offersError);
-          setHasError(true);
-          toast({
-            title: "Error loading offers",
-            description: "We couldn't load flight offers. Please try again.",
-            variant: "destructive",
-          });
-          return;
-        }
+        // Fetch the flight offers
+        const offersData = await fetchOffers(id);
+        setOffers(offersData);
         
-        if (offersData && offersData.length > 0) {
-          // Map the Supabase data to the Offer interface
-          const formattedOffers: Offer[] = offersData.map(offer => ({
-            id: offer.id,
-            airline: offer.airline,
-            flight_number: offer.flight_number,
-            departure_date: offer.departure_date,
-            departure_time: offer.departure_time,
-            return_date: offer.return_date,
-            return_time: offer.return_time,
-            duration: offer.duration,
-            price: Number(offer.price) // Ensure price is a number
-          }));
-          
-          setOffers(formattedOffers);
-        } else {
-          // No offers found
-          setOffers([]);
-        }
       } catch (error) {
         console.error("Error:", error);
         setHasError(true);
@@ -174,13 +227,23 @@ const TripOffers = () => {
 
       {/* Offers Header Card */}
       <Card className="w-full max-w-5xl mb-6">
-        <CardHeader>
-          <CardTitle className="text-2xl">Trip Offers</CardTitle>
-          <CardDescription>
-            {isLoading
-              ? "Loading available offers for your trip..."
-              : `${offers.length} offers found for your trip`}
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-2xl">Trip Offers</CardTitle>
+            <CardDescription>
+              {isLoading
+                ? "Loading available offers for your trip..."
+                : `${offers.length} offers found for your trip`}
+            </CardDescription>
+          </div>
+          <Button 
+            onClick={refreshOffers} 
+            disabled={isRefreshing || isLoading}
+            className="ml-auto"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Offers'}
+          </Button>
         </CardHeader>
       </Card>
 
@@ -188,9 +251,15 @@ const TripOffers = () => {
         <TripOffersLoading />
       ) : (
         <div className="w-full max-w-5xl space-y-6">
-          {offers.map((offer) => (
-            <TripOfferCard key={offer.id} offer={offer} />
-          ))}
+          {offers.length > 0 ? (
+            offers.map((offer) => (
+              <TripOfferCard key={offer.id} offer={offer} />
+            ))
+          ) : (
+            <Card className="p-6 text-center">
+              <p className="text-gray-500">No offers found. Try adjusting your trip criteria or click Refresh Offers.</p>
+            </Card>
+          )}
         </div>
       )}
     </div>

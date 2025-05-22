@@ -21,6 +21,7 @@ import TripDurationSection from "./sections/TripDurationSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import DestinationSection from "./sections/DestinationSection";
 import AutoBookingSection from "./sections/AutoBookingSection";
+import { Loader2 } from "lucide-react";
 
 const TripRequestForm = () => {
   const navigate = useNavigate();
@@ -132,8 +133,15 @@ const TripRequestForm = () => {
       
       // Step 1: Validate form data
       if (!validateFormData(data)) {
+        setIsSubmitting(false);
         return;
       }
+      
+      // Display an initial toast notification
+      toast({
+        title: "Searching for flights",
+        description: "Please wait while we search for flights matching your criteria...",
+      });
       
       // Step 2: Transform form data
       const transformedData = transformFormData(data);
@@ -208,14 +216,21 @@ const TripRequestForm = () => {
                 type="button" 
                 variant="outline" 
                 onClick={() => navigate("/dashboard")}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button 
                 type="submit"
                 disabled={isSubmitting}
+                className="min-w-[120px]"
               >
-                {isSubmitting ? "Submitting..." : "Submit"}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Searching...
+                  </>
+                ) : "Submit"}
               </Button>
             </div>
           </form>
