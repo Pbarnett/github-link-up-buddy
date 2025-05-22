@@ -1,5 +1,9 @@
+<<<<<<< HEAD
+// supabase/functions/flight-search/flightApi.edge.ts
+=======
+>>>>>>> origin/main
 // This file is specifically for Supabase Edge Functions
-// It contains Deno-specific code that shouldn't be imported by client-side code
+// It contains Deno-specific code that shouldn’t be imported by client-side code
 
 import type { TablesInsert } from "@/integrations/supabase/types";
 
@@ -8,25 +12,24 @@ export interface FlightSearchParams {
   destination: string | null;
   earliestDeparture: Date;
   latestDeparture: Date;
-  minDuration: number;
-  maxDuration: number;
   budget: number;
 }
 
+// ——————————————————————————————————————————
 // OAuth2 Token Management
-let _token: string|undefined, _tokenExpires = 0;
+// ——————————————————————————————————————————
+let _token: string | undefined;
+let _tokenExpires = 0;
 
 export async function fetchToken(): Promise<string> {
   console.log("[flight-search] Fetching OAuth token...");
   const now = Date.now();
-  if (_token && now < _tokenExpires - 60000) {
-    console.log("[flight-search] Reusing existing token");
-    return _token;  // reuse until 1 min before expiry
-  }
+ HEAD
+  if (_token && now < _tokenExpires - 60_000) return _token;
 
-  try {
-    console.log(`[flight-search] Requesting new token from ${Deno.env.get("AMADEUS_BASE_URL")}/v1/security/oauth2/token`);
-    const res = await fetch(`${Deno.env.get("AMADEUS_BASE_URL")}/v1/security/oauth2/token`, {
+  const res = await fetch(
+    `${Deno.env.get("AMADEUS_BASE_URL")}/v1/security/oauth2/token`,
+    {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
@@ -34,78 +37,127 @@ export async function fetchToken(): Promise<string> {
         client_id: Deno.env.get("AMADEUS_CLIENT_ID")!,
         client_secret: Deno.env.get("AMADEUS_CLIENT_SECRET")!,
       }),
-    });
-    
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error(`[flight-search] Token fetch failed: ${res.status}`, errorText);
-      throw new Error(`Token fetch failed: ${res.status} - ${errorText}`);
     }
-    
-    const data = await res.json();
-    console.log("[flight-search] Successfully received token");
-    _token = data.access_token;
-    _tokenExpires = now + data.expires_in * 1000;
-    return _token;
-  } catch (error) {
-    console.error("[flight-search] Error in fetchToken:", error);
-    throw error;
-  }
+  );
+
+  if (!res.ok) throw new Error(`Token fetch failed: ${res.status}`);
+  const { access_token, expires_in } = await res.json();
+  _token = access_token;
+  _tokenExpires = now + expires_in * 1000;
+  return access_token;
+
+ origin/main
 }
 
-/**
- * Implements retry logic with exponential backoff
- * @param fn The async function to retry
- * @param maxAttempts Maximum number of attempts before failing
- * @param baseDelayMs Base delay in milliseconds
- */
+// ——————————————————————————————————————————
+// Retry with exponential backoff
+// ——————————————————————————————————————————
 async function withRetry<T>(
   fn: () => Promise<T>,
-  maxAttempts: number = 3,
-  baseDelayMs: number = 500
+  maxAttempts = 3,
+  baseDelayMs = 500
 ): Promise<T> {
-  let attempts = 0;
-  
+  let attempt = 0;
   while (true) {
-    attempts++;
+    attempt++;
     try {
       return await fn();
-    } catch (error) {
-      // Don't retry if we've hit max attempts
-      if (attempts >= maxAttempts) {
-        console.error(`Failed after ${attempts} attempts: ${error.message}`);
+    } catch (error: any) {
+      if (attempt >= maxAttempts) {
+        console.error(`[flight-search] Give up after ${attempt} tries:`, error);
         throw error;
       }
-      
-      // Only retry on rate limits or server errors
-      if (error.message?.includes('429') || 
-          error.message?.includes('5') || 
-          error.name === 'NetworkError' ||
-          error.name === 'TypeError') {
-        // Calculate delay with exponential backoff: baseDelay * 2^(attempts-1)
-        const delayMs = baseDelayMs * Math.pow(2, attempts - 1);
-        console.log(`Attempt ${attempts} failed with ${error.message}. Retrying in ${delayMs}ms...`);
-        await new Promise(r => setTimeout(r, delayMs));
-        continue;
-      }
-      
-      // Don't retry on other errors
-      throw error;
+      const retryable =
+        error.message.includes("429") ||
+        error.message.startsWith("5") ||
+        error.name === "TypeError" ||
+        error.name === "NetworkError";
+      if (!retryable) throw error;
+      const delay = baseDelayMs * 2 ** (attempt - 1);
+      console.warn(`[flight-search] Attempt ${attempt} failed; retrying in ${delay}ms…`);
+      await new Promise((r) => setTimeout(r, delay));
     }
   }
 }
 
-// Main Search Function
+// ——————————————————————————————————————————
+// Main Amadeus flight-offers call (v2 JSON body)
+// ——————————————————————————————————————————
 export async function searchOffers(
   params: FlightSearchParams,
   tripRequestId: string
 ): Promise<TablesInsert<"flight_offers">[]> {
   console.log(`[flight-search] Starting searchOffers for trip ${tripRequestId}`);
   const token = await fetchToken();
-  
-  // Simple rate-limit pause
-  await new Promise(r => setTimeout(r, 1000));
 
+<<<<<<< HEAD
+  // Build the JSON payload per Amadeus v2 spec:
+  const departureDate = params.earliestDeparture.toISOString().slice(0, 10);
+
+  const payload = {
+    originDestinations: [
+      {
+        id: "1",
+        originLocationCode: params.origin[0],
+        destinationLocationCode: params.destination,
+        departureDateTimeRange: { date: departureDate },
+      },
+    ],
+    travelers: [{ id: "1", travelerType: "ADULT" }],
+    sources: ["GDS"],
+    searchCriteria: {
+      price: { max: params.budget.toString() },
+    },
+  };
+
+  const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers`;
+
+  const api = await withRetry(async () => {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    let json: any;
+    try {
+      json = await res.json();
+    } catch (e) {
+      console.error("[flight-search] Invalid JSON from Amadeus:", e);
+      throw new Error(`Amadeus API error: ${res.status}`);
+    }
+
+    if (!res.ok) {
+      console.error(
+        "[flight-search] Amadeus error response body:",
+        JSON.stringify(json, null, 2)
+      );
+      throw new Error(`Amadeus API error: ${res.status}`);
+    }
+    return json;
+  });
+
+  return transformAmadeusToOffers(api, tripRequestId);
+}
+
+// ——————————————————————————————————————————
+// Transform Amadeus response to our flight_offers rows
+// ——————————————————————————————————————————
+export function transformAmadeusToOffers(
+  api: any,
+  tripRequestId: string
+): TablesInsert<"flight_offers">[] {
+  if (!api.data || !Array.isArray(api.data)) return [];
+  return api.data.flatMap((offer: any) => {
+    try {
+      const out = offer.itineraries[0].segments[0];
+      const back = offer.itineraries[1]?.segments.slice(-1)[0] ?? out;
+      return [
+        {
+=======
   // Build departure + return dates once
   const depDate = params.earliestDeparture.toISOString().slice(0, 10);
   // use latestDeparture (window end) for return dates
@@ -257,10 +309,25 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
         }
         
         return [{
+>>>>>>> origin/main
           trip_request_id: tripRequestId,
           airline: out.carrierCode,
           flight_number: out.number,
           departure_date: out.departure.at.split("T")[0],
+<<<<<<< HEAD
+          departure_time: out.departure.at.split("T")[1].slice(0, 5),
+          return_date: back.arrival.at.split("T")[0],
+          return_time: back.arrival.at.split("T")[1].slice(0, 5),
+          duration: offer.itineraries[0].duration,
+          price: parseFloat(offer.price.total),
+        },
+      ];
+    } catch (e) {
+      console.error("[flight-search] Error transforming offer:", e);
+      return [];
+    }
+  });
+=======
           departure_time: out.departure.at.split("T")[1].slice(0,5),
           return_date: back.departure.at.split("T")[0],
           return_time: back.departure.at.split("T")[1].slice(0,5),
@@ -280,4 +347,6 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
     console.error("[flight-search] Error in transformAmadeusToOffers:", err);
     return [];
   }
+>>>>>>> origin/main
 }
+
