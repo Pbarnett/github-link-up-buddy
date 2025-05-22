@@ -98,6 +98,7 @@ export default function TripOffers() {
     if (!tripId) return;
     setIsRefreshing(true);
     try {
+ HEAD
       console.log("[flight-search-ui] manually invoking flight-search edge function");
       const { error: invokeError } = await supabase.functions.invoke("flight-search", {
         body: { tripRequestId: tripId },
@@ -115,6 +116,8 @@ export default function TripOffers() {
       toast({ title: "Offers refreshed", description: `Found ${rows?.length ?? 0} offers.` });
     } catch (err: any) {
       console.error("[flight-search-ui] error refreshing offers:", err);
+
+ origin/main
       toast({
         title: "Error refreshing offers",
         description: err.message || "Could not refresh.",
@@ -125,8 +128,137 @@ export default function TripOffers() {
     }
   };
 
+<<<<<<< HEAD
   // Final state check
   console.log('[flight-search-ui] final `offers` state:', offers);
+=======
+  useEffect(() => {
+    if (!tripId) {
+      setHasError(true);
+      return;
+    }
+
+    (async () => {
+      setIsLoading(true);
+      setHasError(false);
+      try {
+        // 1. Invoke the edge function
+        console.log("[flight-search-ui] invoking edge-function for trip:", tripId);
+        const { data: invokeData, error: invokeError } =
+          await supabase.functions.invoke("flight-search", {
+            body: { tripRequestId: tripId },
+          });
+        console.log("[flight-search-ui] invoke result:", {
+          invokeData,
+          invokeError,
+        });
+        if (invokeError) {
+          console.error(
+            "[flight-search-ui] error invoking flight-search:",
+            invokeError
+          );
+          toast({
+            title: "Error refreshing offers",
+            description: invokeError.message,
+            variant: "destructive",
+          });
+          setHasError(true);
+          return;
+        }
+
+        // 2. Fetch trip details if needed
+        if (!tripDetails) {
+          // Check location state first
+          if (location.state?.tripDetails) {
+            setTripDetails(location.state.tripDetails);
+          } else {
+            console.log("[flight-search-ui] fetching trip details");
+            const { data: tripData, error: tripError } = await supabase
+              .from("trip_requests")
+              .select("*")
+              .eq("id", tripId)
+              .single();
+            if (tripError) {
+              console.error(
+                "[flight-search-ui] error fetching trip details:",
+                tripError
+              );
+              toast({
+                title: "Error loading trip",
+                description: tripError.message,
+                variant: "destructive",
+              });
+              setHasError(true);
+              return;
+            }
+            setTripDetails({
+              earliestDeparture: tripData.earliest_departure,
+              latestDeparture: tripData.latest_departure,
+              min_duration: tripData.min_duration,
+              max_duration: tripData.max_duration,
+              budget: tripData.budget,
+            });
+          }
+        }
+
+        // 3. Fetch flight_offers after edge function insertion
+        console.log("[flight-search-ui] querying flight_offers table");
+        const { data: rows, error: fetchError } = await supabase
+          .from("flight_offers")
+          .select("*")
+          .eq("trip_request_id", tripId)
+          .order("price", { ascending: true });
+          
+        if (fetchError) {
+          console.error(
+            "[flight-search-ui] error fetching offers:",
+            fetchError
+          );
+          toast({
+            title: "Error loading offers",
+            description: fetchError.message,
+            variant: "destructive",
+          });
+          setHasError(true);
+          return;
+        }
+        console.log(
+          "[flight-search-ui] rows fetched:",
+          rows?.length ?? 0,
+          rows
+        );
+        
+        // Map the Supabase data to the Offer interface
+        if (rows && rows.length > 0) {
+          const formattedOffers: Offer[] = rows.map(offer => ({
+            id: offer.id,
+            airline: offer.airline,
+            flight_number: offer.flight_number,
+            departure_date: offer.departure_date,
+            departure_time: offer.departure_time,
+            return_date: offer.return_date,
+            return_time: offer.return_time,
+            duration: offer.duration,
+            price: Number(offer.price)
+          }));
+          setOffers(formattedOffers);
+        } else {
+          setOffers([]);
+        }
+      } catch (err) {
+        console.error("[flight-search-ui] unexpected error:", err);
+        toast({
+          title: "Something went wrong",
+          description: String(err),
+          variant: "destructive",
+        });
+        setHasError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [tripId, location.state, tripDetails]);
+>>>>>>> origin/main
 
   if (hasError) {
     return <TripErrorCard />;

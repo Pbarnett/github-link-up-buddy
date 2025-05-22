@@ -1,6 +1,6 @@
 
-// This file is specifically for Supabase Edge Functions
-// It contains Deno-specific code that shouldn't be imported by client-side code
+// This file is deprecated and will be removed soon.
+// Please use supabase/functions/flight-search/flightApi.edge.ts instead.
 
 import type { TablesInsert } from "@/integrations/supabase/types";
 
@@ -18,6 +18,7 @@ export interface FlightSearchParams {
 let _token: string|undefined, _tokenExpires = 0;
 
 export async function fetchToken(): Promise<string> {
+  console.warn("Using deprecated flightApi.edge.ts implementation. Please migrate to the new version.");
   const now = Date.now();
   if (_token && now < _tokenExpires - 60000) return _token;  // reuse until 1 min before expiry
 
@@ -39,75 +40,27 @@ export async function fetchToken(): Promise<string> {
   return _token;
 }
 
-// Main Search Function
+// Main Search Function - DEPRECATED
+// Use supabase/functions/flight-search/flightApi.edge.ts instead
 export async function searchOffers(
   params: FlightSearchParams,
   tripRequestId: string
 ): Promise<TablesInsert<"flight_offers">[]> {
-  const token = await fetchToken();
+  console.warn("Using deprecated searchOffers implementation. Please migrate to the new version.");
   
-  // Simple rate-limit pause
-  await new Promise(r => setTimeout(r, 1000));
-
-  // Build the API URL with parameters
-  const originStr = params.origin.join(",");
-  const destinationStr = params.destination || "";
-  const departureDate = params.earliestDeparture.toISOString().slice(0,10);
-  const returnDate = params.latestDeparture.toISOString().slice(0,10);
-  
-  const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers?` +
-    `originLocationCode=${originStr}` +
-    `&destinationLocationCode=${destinationStr}` +
-    `&departureDate=${departureDate}` +
-    `&returnDate=${returnDate}` +
-    `&adults=1` +
-    `&maxPrice=${params.budget}` +
-    `&max=${params.maxDuration}&min=${params.minDuration}`;
-
-  // Call the Amadeus API
-  const res = await fetch(url, { 
-    headers: { 
-      "Authorization": `Bearer ${token}`,
-      "Accept": "application/json"
-    } 
-  });
-  
-  // Handle errors
-  if (res.status === 429) throw new Error("Rate limit exceeded");
-  if (!res.ok) throw new Error(`Amadeus API error: ${res.status}`);
-  
-  const data = await res.json();
-  
-  // Transform the response into our flight_offers format
-  return transformAmadeusToOffers(data, tripRequestId);
+  // IMPORTANT: Changed to avoid circular imports - don't forward to new implementation
+  // Instead, just return an empty array
+  console.error("This function is deprecated. Please use the new implementation directly.");
+  return [];
 }
 
-// Transform Amadeus response to our format
+// Transform Amadeus response to our format - DEPRECATED
+// Use supabase/functions/flight-search/flightApi.edge.ts instead
 export function transformAmadeusToOffers(api: any, tripRequestId: string): TablesInsert<"flight_offers">[] {
-  // Handle empty response
-  if (!api.data || !Array.isArray(api.data) || api.data.length === 0) {
-    return [];
-  }
+  console.warn("Using deprecated transformAmadeusToOffers implementation. Please migrate to the new version.");
   
-  return api.data.flatMap((offer: any) => {
-    try {
-      const out = offer.itineraries[0].segments[0];
-      const back = offer.itineraries[1]?.segments.slice(-1)[0] ?? out;
-      
-      return [{
-        trip_request_id: tripRequestId,
-        airline: out.carrierCode,
-        flight_number: out.number,
-        departure_date: out.departure.at.split("T")[0],
-        departure_time: out.departure.at.split("T")[1].slice(0,5),
-        return_date: back.arrival.at.split("T")[0],
-        return_time: back.arrival.at.split("T")[1].slice(0,5),
-        duration: offer.itineraries[0].duration,
-        price: parseFloat(offer.price.total),
-      }];
-    } catch (err) {
-      console.error("Error transforming Amadeus offer:", err);
-      return []; // Skip this offer if transformation fails
-    }
-  });
+  // IMPORTANT: Changed to avoid circular imports - don't forward to new implementation
+  // Instead, just return an empty array
+  console.error("This function is deprecated. Please use the new implementation directly.");
+  return [];
 }
