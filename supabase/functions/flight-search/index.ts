@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -18,6 +19,9 @@ const supabaseClient = createClient(
 );
 
 serve(async (req: Request) => {
+  // Performance timing start
+  const functionStartTime = Date.now();
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -148,11 +152,15 @@ serve(async (req: Request) => {
       }
     }
     
-    // Return enhanced summary
+    // Calculate total duration
+    const totalDurationMs = Date.now() - functionStartTime;
+    
+    // Return enhanced summary with performance metrics
     return new Response(
       JSON.stringify({
         requestsProcessed: processedRequests,
         matchesInserted: totalMatchesInserted,
+        totalDurationMs,
         details
       }),
       {
@@ -166,11 +174,16 @@ serve(async (req: Request) => {
   } catch (error) {
     // Top-level error handler
     console.error("[flight-search] Function error:", error);
+    
+    // Calculate total duration even for errors
+    const totalDurationMs = Date.now() - functionStartTime;
+    
     return new Response(
       JSON.stringify({ 
         error: error.message,
         requestsProcessed: 0,
         matchesInserted: 0,
+        totalDurationMs,
         details: []
       }),
       {

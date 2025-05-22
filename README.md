@@ -72,6 +72,50 @@ The application integrates with the Amadeus Flight API for real flight searches.
 - Rate limit: The Amadeus API has rate limits of approximately 1 request/second, 50 requests/minute
 - Throttling & retry logic is built into our implementation
 
+### Retry Logic
+The application implements exponential backoff for API requests:
+- Retries up to 3 times on rate limits (HTTP 429) or server errors
+- Base delay of 500ms, doubles with each retry (500ms → 1s → 2s)
+- Network errors are also automatically retried
+- Performance metrics are tracked and reported
+
+### Testing & Monitoring
+
+#### Unit Tests
+Run the test suite with:
+```bash
+pnpm test
+```
+
+The test suite includes:
+- OAuth token management tests
+- Retry logic tests
+- Response transformation tests
+- Error handling tests
+
+#### Manual Testing
+A test script is provided to manually invoke the flight search function:
+```bash
+node scripts/testFlightSearch.js <trip-request-id>
+```
+
+This script:
+- Verifies the trip request exists
+- Invokes the flight-search edge function
+- Checks for new offers and matches in the database
+- Reports performance metrics
+
+#### Performance Monitoring
+The edge functions track and report the following metrics:
+- `totalDurationMs`: Total execution time in milliseconds
+- `retryCount`: Number of retries performed on API calls
+- Counts of processed requests, matches, and errors
+
+Use these metrics to:
+- Identify slow or failing requests
+- Monitor rate limit impacts
+- Ensure the system is performing within expected parameters
+
 ## Project Structure
 
 - `/src/pages` - Main application pages
@@ -96,3 +140,24 @@ The application integrates with the Amadeus Flight API for real flight searches.
 - React Router for routing
 - shadcn/ui for UI components
 - Amadeus API for flight searches
+
+## Smoke Test Checklist
+
+Before deploying, verify:
+
+1. **Flight Search**
+   - [ ] Create a new trip request in the UI
+   - [ ] Manually trigger flight search via script
+   - [ ] Verify offers appear in the database
+   - [ ] Verify offers display correctly in the UI
+
+2. **Auto-Booking**
+   - [ ] Enable auto-booking on a trip request
+   - [ ] Trigger the auto-book function
+   - [ ] Verify booking and payment records are created
+   - [ ] Check that notifications are generated
+
+3. **Error Handling**
+   - [ ] Test with invalid credentials
+   - [ ] Verify rate limit handling works
+   - [ ] Check error logging and reporting

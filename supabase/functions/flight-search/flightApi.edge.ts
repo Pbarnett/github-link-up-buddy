@@ -39,6 +39,48 @@ export async function fetchToken(): Promise<string> {
   return _token;
 }
 
+/**
+ * Implements retry logic with exponential backoff
+ * @param fn The async function to retry
+ * @param maxAttempts Maximum number of attempts before failing
+ * @param baseDelayMs Base delay in milliseconds
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxAttempts: number = 3,
+  baseDelayMs: number = 500
+): Promise<T> {
+  let attempts = 0;
+  
+  while (true) {
+    attempts++;
+    try {
+      return await fn();
+    } catch (error) {
+      // Don't retry if we've hit max attempts
+      if (attempts >= maxAttempts) {
+        console.error(`Failed after ${attempts} attempts: ${error.message}`);
+        throw error;
+      }
+      
+      // Only retry on rate limits or server errors
+      if (error.message?.includes('429') || 
+          error.message?.includes('5') || 
+          error.name === 'NetworkError' ||
+          error.name === 'TypeError') {
+        // Calculate delay with exponential backoff: baseDelay * 2^(attempts-1)
+        const delayMs = baseDelayMs * Math.pow(2, attempts - 1);
+        console.log(`Attempt ${attempts} failed with ${error.message}. Retrying in ${delayMs}ms...`);
+        await new Promise(r => setTimeout(r, delayMs));
+        continue;
+      }
+      
+      // Don't retry on other errors
+      throw error;
+    }
+  }
+}
+
 // Main Search Function
 export async function searchOffers(
   params: FlightSearchParams,
@@ -64,19 +106,21 @@ export async function searchOffers(
     `&maxPrice=${params.budget}` +
     `&max=${params.maxDuration}&min=${params.minDuration}`;
 
-  // Call the Amadeus API
-  const res = await fetch(url, { 
-    headers: { 
-      "Authorization": `Bearer ${token}`,
-      "Accept": "application/json"
-    } 
-  });
-  
-  // Handle errors
-  if (res.status === 429) throw new Error("Rate limit exceeded");
-  if (!res.ok) throw new Error(`Amadeus API error: ${res.status}`);
-  
-  const data = await res.json();
+  // Call the Amadeus API with retry logic
+  let data = await withRetry(async () => {
+    const res = await fetch(url, { 
+      headers: { 
+        "Authorization": `Bearer ${token}`,
+        "Accept": "application/json"
+      } 
+    });
+    
+    // Handle errors
+    if (res.status === 429) throw new Error("Rate limit exceeded");
+    if (!res.ok) throw new Error(`Amadeus API error: ${res.status}`);
+    
+    return await res.json();
+  }, 3, 500);
   
   // Transform the response into our flight_offers format
   return transformAmadeusToOffers(data, tripRequestId);
