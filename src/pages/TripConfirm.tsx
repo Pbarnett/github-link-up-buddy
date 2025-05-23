@@ -78,7 +78,7 @@ const TripConfirm = () => {
 
       setOffer(parsedOffer);
     } catch (error) {
-      console.error("Error parsing offer details:", error);
+      // console.error("Error parsing offer details:", error); // Removed, existing toast handles this
       setHasError(true);
       toast({
         title: "Error",
@@ -105,8 +105,8 @@ const TripConfirm = () => {
         if (data) {
           updateBookingStatusMessage(data.status);
         }
-      } catch (err) {
-        console.error("Error fetching booking request:", err);
+      } catch (err: any) {
+        toast({ title: "Error Fetching Booking Details", description: err.message || "Could not retrieve your booking status at this time.", variant: "destructive" });
         setError("Could not retrieve booking status.");
       }
     };
@@ -122,7 +122,7 @@ const TripConfirm = () => {
         table: 'booking_requests',
         filter: `checkout_session_id=eq.${sessionId}`,
       }, (payload: BookingRequestPayload) => {
-        console.log('[trip-confirm] booking status updated:', payload);
+        // console.log('[trip-confirm] booking status updated:', payload); // Commented out
         updateBookingStatusMessage(payload.new.status);
       })
       .subscribe();
@@ -202,7 +202,7 @@ const TripConfirm = () => {
       // Redirect to Stripe checkout
       window.location.href = res.data.url;
     } catch (err: any) {
-      console.error("Error creating booking request:", err);
+      // console.error("Error creating booking request:", err); // Removed, existing toast handles this
       setError(err.message || "There was a problem setting up the booking");
       toast({
         title: "Booking Failed",

@@ -40,15 +40,15 @@ const Login = () => {
     // Check if user is already authenticated on mount
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
-      console.log('Initial session check:', data.session);
+      // console.log('Initial session check:', data.session); // Removed
       setIsAuthenticated(!!data.session);
     };
     
     checkSession();
     
     // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // console.log('Auth state changed:', event, session?.user?.id); // Removed
       setIsAuthenticated(!!session);
     });
     
@@ -80,7 +80,7 @@ const Login = () => {
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (signOutError) {
-        console.log('Sign out error (ignored):', signOutError);
+        // console.log('Sign out error (ignored):', signOutError); // Removed
       }
       
       // Now sign in with OTP
@@ -98,12 +98,7 @@ const Login = () => {
         description: "We've sent you a login link",
       });
     } catch (error: any) {
-      console.error('Login error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "An error occurred during login",
-        variant: "destructive",
-      });
+      toast({ title: "Login Failed", description: error.message || "An unexpected error occurred. Please try again.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -114,16 +109,16 @@ const Login = () => {
     
     try {
       // Log debugging information
-      console.log("Initiating Google login from:", window.location.origin);
-      console.log("Redirect URL:", window.location.origin + '/dashboard');
+      // console.log("Initiating Google login from:", window.location.origin); // Removed
+      // console.log("Redirect URL:", window.location.origin + '/dashboard'); // Removed
       
       // Log known Supabase configuration (using hardcoded known values instead of accessing protected properties)
-      console.log("Supabase URL:", "https://bbonngdyfyfjqfhvoljl.supabase.co");
-      console.log("Supabase auth config:", {
-        storage: "localStorage",
-        autoRefreshToken: true,
-        persistSession: true
-      });
+      // console.log("Supabase URL:", "https://bbonngdyfyfjqfhvoljl.supabase.co"); // Removed
+      // console.log("Supabase auth config:", { // Removed
+      //   storage: "localStorage", // Removed
+      //   autoRefreshToken: true, // Removed
+      //   persistSession: true // Removed
+      // }); // Removed
       
       // Clean up existing auth state
       cleanupAuthState();
@@ -132,7 +127,7 @@ const Login = () => {
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (signOutError) {
-        console.log('Sign out error (ignored):', signOutError);
+        // console.log('Sign out error (ignored):', signOutError); // Removed
       }
       
       // Check for popup blockers
@@ -148,13 +143,13 @@ const Login = () => {
       }
       popupTest.close();
       
-      console.log("Sending OAuth request with params:", {
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/dashboard',
-          skipBrowserRedirect: false
-        }
-      });
+      // console.log("Sending OAuth request with params:", { // Removed
+      //   provider: 'google', // Removed
+      //   options: { // Removed
+      //     redirectTo: window.location.origin + '/dashboard', // Removed
+      //     skipBrowserRedirect: false // Removed
+      //   } // Removed
+      // }); // Removed
       
       // Now sign in with Google OAuth with explicit parameters
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -165,17 +160,11 @@ const Login = () => {
         }
       });
       
-      console.log("OAuth response:", data);
+      // console.log("OAuth response:", data); // Removed
       
       if (error) throw error;
     } catch (error: any) {
-      console.error('Google login error:', error);
-      console.error('Google login error details:', JSON.stringify(error, null, 2));
-      toast({
-        title: "Error",
-        description: error.message || "An error occurred during login",
-        variant: "destructive",
-      });
+      toast({ title: "Google Login Failed", description: error.message || "An unexpected error occurred with Google login. Please try again.", variant: "destructive" });
       setLoading(false);
     }
   };
