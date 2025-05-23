@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -10,8 +11,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
-import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
-import type { Database } from '@/integrations/supabase/types'
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -101,31 +100,18 @@ const TripConfirm = () => {
     
     fetchBookingRequest();
     
-    // Subscribe to booking status updates with explicit typing
-    const channel = supabase
-      .channel(`checkout:${sessionId}`)
-      .on<
-        RealtimePostgresChangesPayload<
-          Database['public']['Tables']['booking_requests']['Row']
-        >
-      >(
-        'postgres_changes',
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'booking_requests',
-          filter: `checkout_session_id=eq.${sessionId}`
-        },
-        (payload) => {
-          console.log('Booking status updated:', payload);
-          const status = payload.new.status;
-          updateBookingStatusMessage(status);
-        }
-      )
+    // Subscribe to booking status updates using the cleaner .from().on() syntax
+    const subscription = supabase
+      .from<{ status: string }>(`booking_requests:checkout_session_id=eq.${sessionId}`)
+      .on('UPDATE', (payload) => {
+        console.log('Booking status updated:', payload);
+        const status = payload.new.status;
+        updateBookingStatusMessage(status);
+      })
       .subscribe();
       
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeSubscription(subscription);
     };
   }, [sessionId]);
   
