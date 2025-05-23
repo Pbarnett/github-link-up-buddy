@@ -46,6 +46,7 @@ export default function TripOffers() {
     const returnDate = new Date(offer.return_date);
     const tripDays = Math.round((returnDate.getTime() - departDate.getTime()) / (1000 * 60 * 60 * 24));
     
+    // Match the same validation logic used in the edge function
     return tripDays >= minDuration && tripDays <= maxDuration;
   };
 
@@ -60,6 +61,7 @@ export default function TripOffers() {
 
     (async () => {
       setIsLoading(true);
+      setHasError(false);
       try {
         // 1) Invoke the edge function - this MUST happen first
         console.log("[flight-search-ui] about to invoke flight-search edge function");
@@ -108,6 +110,7 @@ export default function TripOffers() {
         console.log("[flight-search-ui] rows fetched:", rows?.length, rows);
         
         // Validate each offer meets the trip duration requirements
+        // This is a double-check in case the server filtering didn't catch something
         const validOffers = (rows || []).filter(offer => 
           validateOfferDuration(offer, tripData.min_duration, tripData.max_duration)
         );
@@ -116,6 +119,12 @@ export default function TripOffers() {
           console.warn(
             `[flight-search-ui] Filtered out ${(rows || []).length - validOffers.length} offers that didn't meet duration criteria`
           );
+          
+          toast({
+            title: "Duration filter applied",
+            description: `Found ${rows?.length} offers, but only ${validOffers.length} match your ${tripData.min_duration}-${tripData.max_duration} day trip duration requirements.`,
+            variant: "default",
+          });
         }
         
         setOffers(validOffers);
@@ -187,13 +196,33 @@ export default function TripOffers() {
           console.warn(
             `[flight-search-ui] Filtered out ${(rows || []).length - validOffers.length} offers that didn't meet duration criteria`
           );
+          
+          toast({ 
+            title: "Duration filter applied", 
+            description: `Found ${rows?.length} offers, but only ${validOffers.length} match your duration criteria.` 
+          });
         }
         
         setOffers(validOffers);
-        toast({ 
-          title: "Offers refreshed", 
-          description: `Found ${validOffers.length} offers that match your trip criteria.` 
-        });
+        
+        if (validOffers.length > 0) {
+          toast({ 
+            title: "Offers refreshed", 
+            description: `Found ${validOffers.length} offers that match your trip criteria.` 
+          });
+        } else if ((rows || []).length > 0) {
+          toast({
+            title: "Duration filter applied",
+            description: `Found ${rows?.length} offers, but none match your trip duration requirements.`,
+            variant: "destructive",
+          });
+        } else {
+          toast({ 
+            title: "No offers found", 
+            description: "No flight offers match your search criteria. Try adjusting your trip parameters.",
+            variant: "destructive"
+          });
+        }
       } else {
         setOffers(rows || []);
         toast({ 

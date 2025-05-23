@@ -40,13 +40,22 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
           return [];
         }
         
+        // Get outbound and return dates
+        const departureDate = out.departure.at.split("T")[0];
+        const returnDate = back.departure.at.split("T")[0];
+        
+        // Calculate trip duration to ensure it meets requirements
+        const outDate = new Date(departureDate);
+        const retDate = new Date(returnDate);
+        const tripDays = Math.round((retDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24));
+        
         return [{
           trip_request_id: tripRequestId,
           airline: out.carrierCode,
           flight_number: out.number,
-          departure_date: out.departure.at.split("T")[0],
+          departure_date: departureDate,
           departure_time: out.departure.at.split("T")[1].slice(0,5),
-          return_date: back.departure.at.split("T")[0],
+          return_date: returnDate,
           return_time: back.departure.at.split("T")[1].slice(0,5),
           duration: offer.itineraries[0].duration,
           price: parseFloat(offer.price.total),
