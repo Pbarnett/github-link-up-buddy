@@ -96,7 +96,7 @@ serve(async (req: Request) => {
           continue;
         }
         
-        // NEW: Delete existing flight offers for this trip to avoid stale data
+        // Always delete existing flight offers for this trip to avoid stale data
         console.log(`[flight-search] Deleting existing offers for trip ${request.id}`);
         const { error: deleteError } = await supabaseClient
           .from("flight_offers")
@@ -106,6 +106,27 @@ serve(async (req: Request) => {
         if (deleteError) {
           console.error(`[flight-search] Error deleting existing offers for request ${request.id}: ${deleteError.message}`);
           // Continue anyway - this is non-critical
+        }
+        
+        // Validate the trip request data before proceeding
+        if (!request.departure_airports || !request.departure_airports.length) {
+          console.error(`[flight-search] No departure airports specified for request ${request.id}`);
+          details.push({ 
+            tripRequestId: request.id, 
+            matchesFound: 0, 
+            error: "No departure airports specified" 
+          });
+          continue;
+        }
+        
+        if (!request.destination_airport) {
+          console.error(`[flight-search] No destination airport specified for request ${request.id}`);
+          details.push({ 
+            tripRequestId: request.id, 
+            matchesFound: 0, 
+            error: "No destination airport specified" 
+          });
+          continue;
         }
         
         // Create search params from the trip request
@@ -143,7 +164,7 @@ serve(async (req: Request) => {
         
         let offers;
         try {
-          // Use the real API to get flight offers
+          // Use the enhanced API to get flight offers with multiple search strategies
           offers = await searchOffers(searchParams, request.id);
           console.log(`[flight-search] Request ${request.id}: Found ${offers.length} transformed offers from API`);
         } catch (apiError) {
