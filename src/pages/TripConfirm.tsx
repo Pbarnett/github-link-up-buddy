@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -18,11 +19,21 @@ const TripConfirm = () => {
   const [hasError, setHasError] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bookingStatus, setBookingStatus] = useState<string | null>(null);
   const { user, userId, loading: userLoading } = useCurrentUser();
+  const searchParams = new URLSearchParams(location.search);
+  const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
     // Parse query parameters
     try {
+      if (sessionId) {
+        // We're returning from Stripe checkout, show booking status
+        setBookingStatus("Processing payment...");
+        return;
+      }
+      
+      // Parse offer details from query params
       const searchParams = new URLSearchParams(location.search);
       
       if (!searchParams.has('id')) {
@@ -62,7 +73,83 @@ const TripConfirm = () => {
         variant: "destructive",
       });
     }
-  }, [location.search]);
+  }, [location.search, sessionId]);
+
+  // Subscribe to booking status updates if we have a session ID
+  useEffect(() => {
+    if (!sessionId) return;
+    
+    // Try to find the booking request with this session ID
+    const fetchBookingRequest = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('booking_requests')
+          .select('*')
+          .eq('checkout_session_id', sessionId)
+          .single();
+          
+        if (error) throw error;
+        if (data) {
+          updateBookingStatusMessage(data.status);
+        }
+      } catch (err) {
+        console.error("Error fetching booking request:", err);
+        setError("Could not retrieve booking status.");
+      }
+    };
+    
+    fetchBookingRequest();
+    
+    // Subscribe to booking status updates
+    const channel = supabase
+      .channel(`checkout:${sessionId}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'booking_requests',
+          filter: `checkout_session_id=eq.${sessionId}`
+        },
+        (payload) => {
+          console.log('Booking status updated:', payload);
+          const status = payload.new.status;
+          updateBookingStatusMessage(status);
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId]);
+  
+  const updateBookingStatusMessage = (status: string) => {
+    switch (status) {
+      case 'pending_payment':
+        setBookingStatus("Waiting for payment confirmation...");
+        break;
+      case 'pending_booking':
+        setBookingStatus("Payment received! Booking your flight...");
+        break;
+      case 'processing':
+        setBookingStatus("Finalizing your booking...");
+        break;
+      case 'done':
+        setBookingStatus("✅ Your flight is booked!");
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 3000);
+        break;
+      case 'failed':
+        setBookingStatus("❌ Booking failed");
+        setError("There was a problem with your booking. Please try again.");
+        break;
+      default:
+        setBookingStatus(`Status: ${status}`);
+    }
+  };
 
   const handleCancel = () => {
     navigate('/trip/offers');
@@ -91,83 +178,79 @@ const TripConfirm = () => {
     setError(null);
 
     try {
-      // Get the trip_request_id from flight_offers using the flight offer ID
-      const flightOfferResult = await safeQuery<{ trip_request_id: string }>(() => 
-        Promise.resolve(
-          supabase
-            .from('flight_offers')
-            .select('trip_request_id')
-            .eq('id', offer.id)
-            .single()
-        )
-      );
-
-      if (flightOfferResult.error || !flightOfferResult.data) {
-        throw new Error(flightOfferResult.error?.message || "Could not find flight offer details");
-      }
-      
-      const flightOffer = flightOfferResult.data;
-      
-      // Security check: Verify that the trip request belongs to the current user
-      const tripRequestResult = await safeQuery<{ user_id: string, id: string }>(() => 
-        Promise.resolve(
-          supabase
-            .from('trip_requests')
-            .select('user_id, id')
-            .eq('id', flightOffer.trip_request_id)
-            .single()
-        )
-      );
-        
-      if (tripRequestResult.error || !tripRequestResult.data) {
-        throw new Error("Could not verify trip ownership");
-      }
-      
-      const tripRequest = tripRequestResult.data;
-      
-      // Verify the trip belongs to the logged-in user
-      if (tripRequest.user_id !== userId) {
-        setError("Security error: You don't have permission to book this flight");
-        toast({
-          title: "Security Error",
-          description: "You don't have permission to book this flight. It belongs to another user.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Call payment session endpoint
-      const res = await fetch("/functions/v1/create-payment-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          trip_request_id: tripRequest.id,
-          offer_id: offer.id,
-          user_id: userId,
-          flight_offer_id: offer.id,
-        }),
+      // Call the create-booking-request edge function
+      const res = await supabase.functions.invoke("create-booking-request", {
+        body: { userId, offerId: offer.id }
       });
       
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to create payment session");
+      if (res.error) {
+        throw new Error(res.error.message || "Failed to create booking request");
       }
       
-      const { url } = await res.json();
-      window.location.href = url;
-
+      if (!res.data || !res.data.url) {
+        throw new Error("No checkout URL received from server");
+      }
+      
+      // Redirect to Stripe checkout
+      window.location.href = res.data.url;
     } catch (err: any) {
-      console.error("Error creating payment session:", err);
-      setError(err.message || "There was a problem with the payment process");
+      console.error("Error creating booking request:", err);
+      setError(err.message || "There was a problem setting up the booking");
       toast({
-        title: "Payment Session Failed",
-        description: err.message || "There was a problem setting up payment. Please try again.",
+        title: "Booking Failed",
+        description: err.message || "There was a problem setting up your booking. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsConfirming(false);
     }
   };
+
+  // Show booking status if we're returning from checkout
+  if (sessionId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
+        <Card className="w-full max-w-3xl">
+          <CardHeader>
+            <CardTitle className="text-2xl">Booking Status</CardTitle>
+            <CardDescription>
+              Your flight booking is being processed
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex flex-col items-center justify-center p-6">
+              {error ? (
+                <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md flex items-start">
+                  <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+                  <p>{error}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                  <p className="text-lg font-medium text-gray-700">{bookingStatus}</p>
+                </>
+              )}
+            </div>
+            
+            <div className="bg-gray-50 p-4 rounded-md">
+              <p className="text-sm text-gray-500">
+                Please don't close this page while we're processing your booking.
+                You'll be redirected to your dashboard when the booking is complete.
+              </p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            {error && (
+              <Button onClick={() => navigate('/trip/offers')} variant="outline">
+                <X className="mr-2 h-4 w-4" /> Return to Flight Offers
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   if (hasError) {
     return (

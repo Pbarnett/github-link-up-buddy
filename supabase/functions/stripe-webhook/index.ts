@@ -44,6 +44,43 @@ async function createNotification(
   }
 }
 
+// Helper function to process booking requests
+async function processBookingRequest(orderId: string) {
+  try {
+    console.log(`Processing booking request: ${orderId}`);
+    
+    // Update booking request status
+    const { data: request, error: requestError } = await supabase
+      .from("booking_requests")
+      .update({ 
+        status: "pending_booking",
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", orderId)
+      .select("user_id, offer_id, offer_data")
+      .single();
+      
+    if (requestError || !request) {
+      console.error("Error updating booking request:", requestError);
+      return false;
+    }
+    
+    console.log(`Updated booking request status to pending_booking: ${orderId}`);
+    
+    // Create notification for payment confirmation
+    await createNotification(request.user_id, "payment_received", {
+      bookingRequestId: orderId,
+      timestamp: new Date().toISOString(),
+      flightInfo: `${request.offer_data?.airline} ${request.offer_data?.flight_number}`
+    });
+    
+    return true;
+  } catch (err) {
+    console.error("Error processing booking request:", err);
+    return false;
+  }
+}
+
 serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -95,6 +132,7 @@ serve(async (req: Request) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.user_id;
+        const orderId = session.metadata?.order_id; // This is now the booking_request_id
         
         if (!userId) {
           console.error("Missing user_id in session metadata");
@@ -170,57 +208,67 @@ serve(async (req: Request) => {
           
           console.log(`✅ Payment method ${pm.id} saved for user ${userId}`);
         } else if (session.mode === "payment") {
-          // Handle payment mode - complete order and create booking
-          const orderId = session.metadata?.order_id;
-          const tripRequestId = session.metadata?.trip_request_id;
-          const flightOfferId = session.metadata?.flight_offer_id;
-          
-          if (!orderId || !tripRequestId || !flightOfferId) {
-            throw new Error("Missing required metadata for payment completion");
-          }
-          
-          console.log(`Processing payment for order ${orderId}`);
-          
-          // 1. Update the order status to completed
-          const { error: orderError } = await supabase
-            .from("orders")
-            .update({ 
-              status: "completed", 
-              updated_at: new Date().toISOString() 
-            })
-            .eq("id", orderId);
+          // Handle payment mode - process booking request or complete order
+          if (orderId) {
+            // Handle new booking flow with booking_requests
+            console.log(`Processing payment for booking request ${orderId}`);
+            const success = await processBookingRequest(orderId);
             
-          if (orderError) {
-            console.error("Error updating order:", orderError);
-            throw new Error(`Failed to update order: ${orderError.message}`);
-          }
-          
-          // 2. Create a booking linked to this order
-          const { error: bookingError, data: booking } = await supabase
-            .from("bookings")
-            .insert({
-              user_id: userId,
-              trip_request_id: tripRequestId,
-              flight_offer_id: flightOfferId,
-              order_id: orderId,
-            })
-            .select()
-            .single();
+            if (!success) {
+              console.error(`Failed to process booking request: ${orderId}`);
+            }
+          } else {
+            // Handle legacy flow (this is the old code path for orders)
+            const tripRequestId = session.metadata?.trip_request_id;
+            const flightOfferId = session.metadata?.flight_offer_id;
             
-          if (bookingError) {
-            console.error("Error creating booking:", bookingError);
-            throw new Error(`Failed to create booking: ${bookingError.message}`);
+            if (!tripRequestId || !flightOfferId) {
+              throw new Error("Missing required metadata for payment completion");
+            }
+            
+            console.log(`Processing legacy payment with trip request ${tripRequestId}`);
+            
+            // 1. Update the order status to completed
+            const { error: orderError } = await supabase
+              .from("orders")
+              .update({ 
+                status: "completed", 
+                updated_at: new Date().toISOString() 
+              })
+              .eq("id", orderId);
+              
+            if (orderError) {
+              console.error("Error updating order:", orderError);
+              throw new Error(`Failed to update order: ${orderError.message}`);
+            }
+            
+            // 2. Create a booking linked to this order
+            const { error: bookingError, data: booking } = await supabase
+              .from("bookings")
+              .insert({
+                user_id: userId,
+                trip_request_id: tripRequestId,
+                flight_offer_id: flightOfferId,
+                order_id: orderId,
+              })
+              .select()
+              .single();
+              
+            if (bookingError) {
+              console.error("Error creating booking:", bookingError);
+              throw new Error(`Failed to create booking: ${bookingError.message}`);
+            }
+            
+            // Create notification for booking
+            await createNotification(userId, "booking_success", {
+              bookingId: booking.id,
+              flightOfferId,
+              orderId,
+              timestamp: new Date().toISOString()
+            });
+            
+            console.log(`✅ Order ${orderId} completed and booking created`);
           }
-          
-          // Create notification for booking
-          await createNotification(userId, "booking_success", {
-            bookingId: booking.id,
-            flightOfferId,
-            orderId,
-            timestamp: new Date().toISOString()
-          });
-          
-          console.log(`✅ Order ${orderId} completed and booking created`);
         }
         break;
       }
