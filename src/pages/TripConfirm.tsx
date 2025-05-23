@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -11,12 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
-import { 
-  RealtimeChannel, 
-  RealtimePostgresChangesPayload,
-  RealtimePostgresOptions 
-} from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -106,34 +100,22 @@ const TripConfirm = () => {
     
     fetchBookingRequest();
     
-    // Subscribe to booking status updates using v2 channel API with proper typing
-    const channel: RealtimeChannel = supabase
+    // Subscribe to booking status updates using v2 channel API
+    const channel = supabase
       .channel(`checkout:${sessionId}`)
-      .on<
-        'postgres_changes',
-        Database['public']['Tables']['booking_requests']['Row']
-      >(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'booking_requests',
-          filter: `checkout_session_id=eq.${sessionId}`
-        } as RealtimePostgresOptions<'public', 'booking_requests'>,
-        (
-          payload: RealtimePostgresChangesPayload<
-            Database['public']['Tables']['booking_requests']['Row']
-          >
-        ) => {
-          console.log('[trip-confirm] booking status updated:', payload);
-          const status = payload.new.status;
-          updateBookingStatusMessage(status);
-        }
-      )
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'booking_requests',
+        filter: `checkout_session_id=eq.${sessionId}`,
+      }, (payload: any) => {
+        console.log('[trip-confirm] booking status updated:', payload);
+        updateBookingStatusMessage(payload.new.status);
+      })
       .subscribe();
       
     return () => {
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
     };
   }, [sessionId]);
   
