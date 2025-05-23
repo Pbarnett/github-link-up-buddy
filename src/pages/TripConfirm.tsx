@@ -84,7 +84,7 @@ const TripConfirm = () => {
       try {
         const { data, error } = await supabase
           .from('booking_requests')
-          .select('*')
+          .select('status')
           .eq('checkout_session_id', sessionId)
           .single();
           
