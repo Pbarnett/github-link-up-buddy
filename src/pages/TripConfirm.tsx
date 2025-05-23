@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -100,18 +101,28 @@ const TripConfirm = () => {
     
     fetchBookingRequest();
     
-    // Subscribe to booking status updates using the cleaner .from().on() syntax
-    const subscription = supabase
-      .from<{ status: string }>(`booking_requests:checkout_session_id=eq.${sessionId}`)
-      .on('UPDATE', (payload) => {
-        console.log('Booking status updated:', payload);
-        const status = payload.new.status;
-        updateBookingStatusMessage(status);
-      })
+    // Subscribe to booking status updates using v2 channel API
+    const channel: RealtimeChannel = supabase
+      .channel(`checkout:${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'booking_requests',
+          filter: `checkout_session_id=eq.${sessionId}`
+        },
+        // Explicitly type payload as any to avoid deep generic recursion
+        (payload: any) => {
+          console.log('[trip-confirm] booking status updated:', payload);
+          const status = payload.new.status as string;
+          updateBookingStatusMessage(status);
+        }
+      )
       .subscribe();
       
     return () => {
-      supabase.removeSubscription(subscription);
+      supabase.removeChannel(channel);
     };
   }, [sessionId]);
   
