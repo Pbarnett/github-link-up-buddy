@@ -33,11 +33,17 @@ serve(async (req: Request) => {
   try {
     // Parse request body for optional tripRequestId
     let tripRequestId: string | null = null;
-    let body = {};
+    let body: any = {};
+    let relaxedCriteria = false;
     
     if (req.method === "POST") {
       body = await req.json();
       tripRequestId = body.tripRequestId || null;
+      relaxedCriteria = body.relaxedCriteria === true;
+      
+      if (relaxedCriteria) {
+        console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
+      }
     }
     
     console.log(`[flight-search] Invoked${tripRequestId ? ` for ${tripRequestId}` : ' for auto-book enabled trips'}`);
@@ -136,9 +142,9 @@ serve(async (req: Request) => {
           destination: request.destination_airport,
           earliestDeparture: new Date(request.earliest_departure),
           latestDeparture: new Date(request.latest_departure),
-          minDuration: request.min_duration,
-          maxDuration: request.max_duration,
-          budget: request.budget,
+          minDuration: relaxedCriteria ? 1 : request.min_duration, // Relax min duration if requested
+          maxDuration: relaxedCriteria ? 30 : request.max_duration, // Relax max duration if requested
+          budget: relaxedCriteria ? Math.ceil(request.budget * 1.2) : request.budget, // Increase budget by 20% if relaxed
           maxConnections: 2 // reasonable default
         };
         
@@ -150,7 +156,8 @@ serve(async (req: Request) => {
           latestDeparture: searchParams.latestDeparture.toISOString(),
           minDuration: searchParams.minDuration,
           maxDuration: searchParams.maxDuration,
-          budget: searchParams.budget
+          budget: searchParams.budget,
+          relaxedCriteria: relaxedCriteria
         }, null, 2));
         
         let token;
@@ -262,7 +269,8 @@ serve(async (req: Request) => {
           tripRequestId: request.id, 
           matchesFound: newInserts,
           offersGenerated: offers.length,
-          offersFiltered: filteredOffers.length
+          offersFiltered: filteredOffers.length,
+          relaxedCriteria: relaxedCriteria
         });
         
         console.log(`[flight-search] Request ${request.id}: fetched ${offers.length} offers → ${newInserts} new matches`);
@@ -286,6 +294,7 @@ serve(async (req: Request) => {
         requestsProcessed: processedRequests,
         matchesInserted: totalMatchesInserted,
         totalDurationMs,
+        relaxedCriteriaUsed: relaxedCriteria,
         details
       }),
       {
