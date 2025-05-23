@@ -1,0 +1,31 @@
+
+project_id = "bbonngdyfyfjqfhvoljl"
+
+[functions.flight-search]
+path = "supabase/functions/flight-search"
+
+[functions.create-booking]
+path = "supabase/functions/create-booking"
+
+[functions.stripe-webhook]
+path = "supabase/functions/stripe-webhook"
+verify_jwt = false
+
+[functions.create-setup-session]
+path = "supabase/functions/create-setup-session"
+
+[functions.create-payment-session]
+path = "supabase/functions/create-payment-session"
+
+[functions.set-default-payment-method]
+path = "supabase/functions/set-default-payment-method"
+
+[functions.delete-payment-method]
+path = "supabase/functions/delete-payment-method"
+
+[functions.scheduler-flight-search]
+path = "supabase/functions/scheduler-flight-search"
+schedule = "0 * * * *"
+
+[functions.auto-book]
+path = "supabase/functions/auto-book"
