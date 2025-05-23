@@ -38,6 +38,7 @@ export default function TripOffers() {
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [ignoreFilter, setIgnoreFilter] = useState(false);
+  const [usedRelaxedCriteria, setUsedRelaxedCriteria] = useState(false);
 
   // Function to validate that offers meet duration requirements
   const validateOfferDuration = (offer: Offer, minDuration: number, maxDuration: number): boolean => {
@@ -51,8 +52,8 @@ export default function TripOffers() {
     return tripDays >= minDuration && tripDays <= maxDuration;
   };
 
-  const loadOffers = async (overrideFilter = false) => {
-    console.log("[flight-search-ui] Loading offers with overrideFilter =", overrideFilter);
+  const loadOffers = async (overrideFilter = false, relaxCriteria = false) => {
+    console.log("[flight-search-ui] Loading offers with overrideFilter =", overrideFilter, "relaxCriteria =", relaxCriteria);
     setIsLoading(true);
     setHasError(false);
     
@@ -64,15 +65,30 @@ export default function TripOffers() {
         return;
       }
 
+      // Set state for tracking if we're using relaxed criteria
+      if (relaxCriteria) {
+        setUsedRelaxedCriteria(true);
+      }
+
       // 1) Invoke the edge function - this MUST happen first
       console.log("[flight-search-ui] about to invoke flight-search edge function");
       const { data: invokeData, error: invokeError } =
         await supabase.functions.invoke("flight-search", {
-          body: { tripRequestId: tripId },
+          body: { 
+            tripRequestId: tripId,
+            relaxedCriteria: relaxCriteria  // Pass this flag to the edge function
+          },
         });
         
       console.log("[flight-search-ui] invoke result:", { data: invokeData, error: invokeError });
       if (invokeError) throw invokeError;
+
+      if (relaxCriteria) {
+        toast({
+          title: "Search with relaxed criteria",
+          description: "Finding flights with more flexible duration and budget constraints.",
+        });
+      }
 
       // 2) Fetch trip details (if not in location.state)
       let tripData;
@@ -197,6 +213,17 @@ export default function TripOffers() {
       description: "Finding all available flights regardless of trip duration...",
     });
   };
+  
+  const handleRelaxCriteria = async () => {
+    if (!tripId) return;
+    setIsRefreshing(true);
+    try {
+      // Call loadOffers with the relaxCriteria flag to trigger server-side relaxed search
+      await loadOffers(false, true);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   if (hasError) {
     return (
@@ -204,6 +231,8 @@ export default function TripOffers() {
         message={errorMessage} 
         onOverrideSearch={handleOverrideSearch} 
         showOverrideButton={!ignoreFilter && errorMessage.toLowerCase().includes("no offers")}
+        onRelaxCriteria={handleRelaxCriteria}
+        showRelaxButton={!usedRelaxedCriteria && errorMessage.toLowerCase().includes("no offers")}
       />
     );
   }
@@ -229,11 +258,12 @@ export default function TripOffers() {
               <p>
                 {tripDetails.min_duration}–{tripDetails.max_duration} days
                 {ignoreFilter && " (filter disabled)"}
+                {usedRelaxedCriteria && " (using relaxed criteria)"}
               </p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Budget</p>
-              <p>${tripDetails.budget}</p>
+              <p>${tripDetails.budget}{usedRelaxedCriteria && " (up to +20% with relaxed criteria)"}</p>
             </div>
           </CardContent>
         </Card>
@@ -251,6 +281,15 @@ export default function TripOffers() {
             </CardDescription>
           </div>
           <div className="flex gap-2">
+            {!usedRelaxedCriteria && (
+              <Button 
+                variant="outline" 
+                onClick={handleRelaxCriteria}
+                disabled={isRefreshing || isLoading}
+              >
+                Try Relaxed Criteria
+              </Button>
+            )}
             {!ignoreFilter && (
               <Button 
                 variant="outline" 
@@ -280,18 +319,29 @@ export default function TripOffers() {
             <Card className="p-6 text-center">
               <p className="mb-4">No offers found that match your criteria.</p>
               <p className="text-sm text-gray-500">
-                {ignoreFilter 
-                  ? "Try adjusting your budget or destination, or click Refresh Offers."
-                  : "Try clicking 'Search Any Duration' above or adjust your trip criteria."}
+                {usedRelaxedCriteria 
+                  ? "We tried with relaxed criteria but still couldn't find any offers. Try adjusting your destination or dates."
+                  : ignoreFilter 
+                    ? "Try adjusting your budget or destination, or click Refresh Offers."
+                    : "Try one of the search options above or adjust your trip criteria."}
               </p>
-              {!ignoreFilter && (
-                <Button 
-                  onClick={handleOverrideSearch} 
-                  className="mt-4"
-                >
-                  Search Any Duration
-                </Button>
-              )}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
+                {!usedRelaxedCriteria && (
+                  <Button 
+                    onClick={handleRelaxCriteria} 
+                    variant="secondary"
+                  >
+                    Try Relaxed Criteria
+                  </Button>
+                )}
+                {!ignoreFilter && (
+                  <Button 
+                    onClick={handleOverrideSearch}
+                  >
+                    Search Any Duration
+                  </Button>
+                )}
+              </div>
             </Card>
           )}
         </div>

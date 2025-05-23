@@ -3,18 +3,22 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw, PlaneTakeoff, Settings } from 'lucide-react';
+import { AlertTriangle, RefreshCw, PlaneTakeoff, Settings, Filter } from 'lucide-react';
 
 type TripErrorCardProps = {
   message?: string;
   onOverrideSearch?: () => void;
   showOverrideButton?: boolean;
+  onRelaxCriteria?: () => void;
+  showRelaxButton?: boolean;
 };
 
 export default function TripErrorCard({ 
   message = "We couldn't load your trip offers",
   onOverrideSearch,
-  showOverrideButton = false
+  showOverrideButton = false,
+  onRelaxCriteria,
+  showRelaxButton = false
 }: TripErrorCardProps) {
   const navigate = useNavigate();
 
@@ -30,7 +34,7 @@ export default function TripErrorCard({
       return "There was an issue connecting to the flight search service. This might be temporary - please try again.";
     }
     
-    if (errorMessage.toLowerCase().includes("no offers")) {
+    if (errorMessage.toLowerCase().includes("no offers") || errorMessage.toLowerCase().includes("no flight offers found")) {
       return "No flight offers were found for your search criteria. Try adjusting your budget, date range, or airports.";
     }
     
@@ -71,6 +75,17 @@ export default function TripErrorCard({
             Retry
           </Button>
         </div>
+        
+        {showRelaxButton && onRelaxCriteria && (
+          <Button 
+            onClick={onRelaxCriteria}
+            variant="secondary" 
+            className="flex items-center gap-2 w-full"
+          >
+            <Filter size={16} />
+            Try Relaxed Search Criteria
+          </Button>
+        )}
         
         {showOverrideButton && onOverrideSearch && (
           <Button 

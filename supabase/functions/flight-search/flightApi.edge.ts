@@ -262,76 +262,140 @@ export async function searchOffers(
     }
   }
 
-  if (allRawOffers.length === 0) {
-    // If no results found with all origins, try with just the first origin as a last resort
-    if (params.origin.length > 1) {
-      console.log(`[flight-search] No offers found for any origins. Trying again with primary origin ${params.origin[0]} only`);
+  // First tier fallback: If no results found with all origins, try with just the first origin as a last resort
+  if (allRawOffers.length === 0 && params.origin.length > 1) {
+    console.log(`[flight-search] FALLBACK 1: No offers found for any origins. Trying again with primary origin ${params.origin[0]} only`);
+    
+    try {
+      // Try a simplified search with just the primary origin
+      const primaryOrigin = params.origin[0];
+      const depDate = params.earliestDeparture.toISOString().slice(0, 10);
+      const retDate = calculateReturnDate(params.earliestDeparture, params.maxDuration, params.latestDeparture);
       
-      try {
-        // Try a simplified search with just the primary origin
-        const primaryOrigin = params.origin[0];
-        const depDate = params.earliestDeparture.toISOString().slice(0, 10);
-        const retDate = calculateReturnDate(params.earliestDeparture, params.maxDuration, params.latestDeparture);
-        
-        const payload = {
-          originDestinations: [
-            { 
-              id: "1", 
-              originLocationCode: primaryOrigin, 
-              destinationLocationCode: params.destination, 
-              departureDateTimeRange: { date: depDate } 
-            },
-            { 
-              id: "2", 
-              originLocationCode: params.destination!, 
-              destinationLocationCode: primaryOrigin, 
-              departureDateTimeRange: { date: retDate } 
-            },
-          ],
-          travelers: [{ id: "1", travelerType: "ADULT" }],
-          sources: ["GDS"],
-          searchCriteria: { 
-            maxFlightOffers: 50,
-            flightFilters: {
-              connectionRestriction: {
-                maxNumberOfConnections: params.maxConnections || 2
-              }
-            }
+      const payload = {
+        originDestinations: [
+          { 
+            id: "1", 
+            originLocationCode: primaryOrigin, 
+            destinationLocationCode: params.destination, 
+            departureDateTimeRange: { date: depDate } 
           },
-        };
-        
-        const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers`;
-        
-        const resp = await withRetry(async () => {
-          const r = await fetch(url, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          });
-          
-          if (!r.ok) {
-            throw new Error(`Fallback single-origin search failed: ${r.status}`);
+          { 
+            id: "2", 
+            originLocationCode: params.destination!, 
+            destinationLocationCode: primaryOrigin, 
+            departureDateTimeRange: { date: retDate } 
+          },
+        ],
+        travelers: [{ id: "1", travelerType: "ADULT" }],
+        sources: ["GDS"],
+        searchCriteria: { 
+          maxFlightOffers: 50,
+          flightFilters: {
+            connectionRestriction: {
+              maxNumberOfConnections: params.maxConnections || 2
+            }
           }
-          
-          return await r.json();
+        },
+      };
+      
+      const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers`;
+      
+      const resp = await withRetry(async () => {
+        const r = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         });
         
-        if (resp.data && resp.data.length > 0) {
-          console.log(`[flight-search] Found ${resp.data.length} offers from fallback single-origin search`);
-          allRawOffers.push(...resp.data);
+        if (!r.ok) {
+          throw new Error(`Fallback single-origin search failed: ${r.status}`);
         }
-      } catch (fallbackError) {
-        console.error(`[flight-search] Fallback search also failed:`, fallbackError);
+        
+        return await r.json();
+      });
+      
+      if (resp.data && resp.data.length > 0) {
+        console.log(`[flight-search] Found ${resp.data.length} offers from fallback single-origin search`);
+        allRawOffers.push(...resp.data);
       }
+    } catch (fallbackError) {
+      console.error(`[flight-search] Fallback search also failed:`, fallbackError);
     }
+  }
+
+  // Second tier fallback: If still no results, try with extremely relaxed criteria
+  if (allRawOffers.length === 0) {
+    console.log(`[flight-search] FALLBACK 2: Still no offers. Trying with maximally relaxed criteria`);
     
-    if (allRawOffers.length === 0) {
-      console.log(`[flight-search] No offers found for any origins or strategies`);
-      return [];
+    try {
+      // Use the primary origin only
+      const primaryOrigin = params.origin[0];
+      
+      // Use the full date range
+      const depDate = params.earliestDeparture.toISOString().slice(0, 10);
+      const maxRetDate = params.latestDeparture.toISOString().slice(0, 10);
+      
+      const relaxedPayload = {
+        originDestinations: [
+          { 
+            id: "1", 
+            originLocationCode: primaryOrigin, 
+            destinationLocationCode: params.destination, 
+            departureDateTimeRange: { date: depDate } 
+          },
+          { 
+            id: "2", 
+            originLocationCode: params.destination!, 
+            destinationLocationCode: primaryOrigin, 
+            departureDateTimeRange: { date: maxRetDate } 
+          },
+        ],
+        travelers: [{ id: "1", travelerType: "ADULT" }],
+        sources: ["GDS"],
+        searchCriteria: { 
+          maxFlightOffers: 50,
+          // Increased budget by 20%
+          price: { 
+            max: Math.ceil(params.budget * 1.2).toString() 
+          }
+        }
+      };
+      
+      const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers`;
+      console.log("[flight-search] Trying maximally relaxed search criteria with 20% higher budget");
+      
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(relaxedPayload),
+      });
+      
+      if (!resp.ok) {
+        console.error(`[flight-search] Maximally relaxed search failed: ${resp.status}`);
+      } else {
+        const data = await resp.json();
+        if (data.data && data.data.length > 0) {
+          console.log(`[flight-search] Found ${data.data.length} offers with maximally relaxed criteria`);
+          allRawOffers.push(...data.data);
+        } else {
+          console.log("[flight-search] No offers found even with maximally relaxed criteria");
+        }
+      }
+    } catch (extremeFallbackError) {
+      console.error("[flight-search] Extreme fallback search failed:", extremeFallbackError);
     }
+  }
+    
+  if (allRawOffers.length === 0) {
+    console.log(`[flight-search] No offers found after all fallback strategies`);
+    return [];
   }
 
   // Log total raw offers count across all origins and strategies
@@ -344,7 +408,7 @@ export async function searchOffers(
   // Log input duration parameters
   console.log(`[flight-search] Duration filter params: minDuration=${params.minDuration}, maxDuration=${params.maxDuration}`);
 
-  // Enhanced server-side duration filter
+  // Enhanced server-side duration filter with detailed logging
   const msPerDay = 24 * 60 * 60 * 1000;
   const durationFilteredOffers = uniqueOffers.filter((offer: any, i: number) => {
     try {
@@ -367,6 +431,7 @@ export async function searchOffers(
       const ret = new Date(backAt);
       const tripDays = Math.round((ret.getTime() - dep.getTime()) / msPerDay);
 
+      // Enhanced logging showing detailed timing information
       console.log(`[flight-search] Offer #${i}: outAt=${dep.toISOString()}, backAt=${ret.toISOString()}, days=${tripDays}, allowed=${params.minDuration}-${params.maxDuration}`);
 
       // We use a strict filter here to ensure we only get trips within the requested duration range
@@ -387,7 +452,7 @@ export async function searchOffers(
     // If we have offers but none match our strict duration filter, 
     // try one last time with relaxed duration constraints if this was a strict search
     if (uniqueOffers.length > 0 && params.minDuration > 1 && params.maxDuration < 30) {
-      console.log(`[flight-search] Trying relaxed duration filter as fallback`);
+      console.log(`[flight-search] FALLBACK 3: Trying relaxed duration filter as fallback`);
       // Use a more permissive filter
       const relaxedOffers = uniqueOffers.filter((offer: any) => {
         try {
