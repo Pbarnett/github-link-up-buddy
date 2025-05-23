@@ -12,6 +12,7 @@ export interface FlightSearchParams {
   minDuration: number;
   maxDuration: number;
   budget: number;
+  maxConnections?: number;
 }
 
 // ——————————————————————————————————————————
@@ -53,24 +54,44 @@ export async function fetchToken(): Promise<string> {
 async function withRetry<T>(
   fn: () => Promise<T>,
   maxAttempts = 3,
-  baseDelayMs = 500
+  baseDelayMs = 500,
+  simplifiedFallbackFn?: () => Promise<T>
 ): Promise<T> {
   let attempt = 0;
+  let lastError: any;
+  
   while (true) {
     attempt++;
     try {
       return await fn();
     } catch (error: any) {
+      lastError = error;
+      
       if (attempt >= maxAttempts) {
         console.error(`[flight-search] Give up after ${attempt} tries:`, error);
+        
+        // Try the simplified fallback if provided and we've exhausted normal retries
+        if (simplifiedFallbackFn) {
+          console.log("[flight-search] Attempting simplified fallback strategy");
+          try {
+            return await simplifiedFallbackFn();
+          } catch (fallbackError) {
+            console.error("[flight-search] Fallback strategy also failed:", fallbackError);
+            throw lastError; // Throw the original error if fallback also fails
+          }
+        }
+        
         throw error;
       }
+      
       const retryable =
         error.message.includes("429") ||
         error.message.startsWith("5") ||
         error.name === "TypeError" ||
         error.name === "NetworkError";
+        
       if (!retryable) throw error;
+      
       const delay = baseDelayMs * 2 ** (attempt - 1);
       console.warn(`[flight-search] Attempt ${attempt} failed; retrying in ${delay}ms…`);
       await new Promise((r) => setTimeout(r, delay));
@@ -158,7 +179,7 @@ export async function searchOffers(
           // Ensure only round trips
           flightFilters: {
             connectionRestriction: {
-              maxNumberOfConnections: 2  // Reasonable default to avoid too many stops
+              maxNumberOfConnections: params.maxConnections || 2  // Use provided maxConnections or default to 2
             }
           }
         },
@@ -168,6 +189,46 @@ export async function searchOffers(
       console.log(`[flight-search] Calling Amadeus API at ${url} with strategy=${strategy.name}`);
       
       try {
+        // Create a simplified fallback function for retry
+        const simplifiedSearch = async () => {
+          console.log(`[flight-search] Using simplified search fallback for ${originCode}`);
+          // Simplified payload with just basic parameters
+          const simplePayload = {
+            originDestinations: [
+              { 
+                id: "1", 
+                originLocationCode: originCode, 
+                destinationLocationCode: params.destination, 
+                departureDateTimeRange: { date: depDate } 
+              },
+              { 
+                id: "2", 
+                originLocationCode: params.destination!, 
+                destinationLocationCode: originCode, 
+                departureDateTimeRange: { date: calculateReturnDate(params.earliestDeparture, params.maxDuration, params.latestDeparture) } 
+              },
+            ],
+            travelers: [{ id: "1", travelerType: "ADULT" }],
+            sources: ["GDS"]
+          };
+          
+          const r = await fetch(url, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(simplePayload),
+          });
+          
+          if (!r.ok) {
+            const errorText = await r.text();
+            throw new Error(`Simplified search error: ${r.status} - ${errorText}`);
+          }
+          
+          return await r.json();
+        };
+        
         const resp = await withRetry(async () => {
           const r = await fetch(url, {
             method: "POST",
@@ -185,7 +246,7 @@ export async function searchOffers(
           }
           
           return await r.json();
-        });
+        }, 3, 500, simplifiedSearch);
         
         if (resp.data && resp.data.length > 0) {
           console.log(`[flight-search] Found ${resp.data.length} raw offers from ${originCode} using strategy ${strategy.name}`);
@@ -202,8 +263,75 @@ export async function searchOffers(
   }
 
   if (allRawOffers.length === 0) {
-    console.log(`[flight-search] No offers found for any origins or strategies`);
-    return [];
+    // If no results found with all origins, try with just the first origin as a last resort
+    if (params.origin.length > 1) {
+      console.log(`[flight-search] No offers found for any origins. Trying again with primary origin ${params.origin[0]} only`);
+      
+      try {
+        // Try a simplified search with just the primary origin
+        const primaryOrigin = params.origin[0];
+        const depDate = params.earliestDeparture.toISOString().slice(0, 10);
+        const retDate = calculateReturnDate(params.earliestDeparture, params.maxDuration, params.latestDeparture);
+        
+        const payload = {
+          originDestinations: [
+            { 
+              id: "1", 
+              originLocationCode: primaryOrigin, 
+              destinationLocationCode: params.destination, 
+              departureDateTimeRange: { date: depDate } 
+            },
+            { 
+              id: "2", 
+              originLocationCode: params.destination!, 
+              destinationLocationCode: primaryOrigin, 
+              departureDateTimeRange: { date: retDate } 
+            },
+          ],
+          travelers: [{ id: "1", travelerType: "ADULT" }],
+          sources: ["GDS"],
+          searchCriteria: { 
+            maxFlightOffers: 50,
+            flightFilters: {
+              connectionRestriction: {
+                maxNumberOfConnections: params.maxConnections || 2
+              }
+            }
+          },
+        };
+        
+        const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers`;
+        
+        const resp = await withRetry(async () => {
+          const r = await fetch(url, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+          
+          if (!r.ok) {
+            throw new Error(`Fallback single-origin search failed: ${r.status}`);
+          }
+          
+          return await r.json();
+        });
+        
+        if (resp.data && resp.data.length > 0) {
+          console.log(`[flight-search] Found ${resp.data.length} offers from fallback single-origin search`);
+          allRawOffers.push(...resp.data);
+        }
+      } catch (fallbackError) {
+        console.error(`[flight-search] Fallback search also failed:`, fallbackError);
+      }
+    }
+    
+    if (allRawOffers.length === 0) {
+      console.log(`[flight-search] No offers found for any origins or strategies`);
+      return [];
+    }
   }
 
   // Log total raw offers count across all origins and strategies
@@ -216,18 +344,86 @@ export async function searchOffers(
   // Log input duration parameters
   console.log(`[flight-search] Duration filter params: minDuration=${params.minDuration}, maxDuration=${params.maxDuration}`);
 
-  // Filter offers by trip duration
-  const filteredOffers = filterOffersByDuration(uniqueOffers, params.minDuration, params.maxDuration);
-  console.log(`[flight-search] Filtered offers count: ${filteredOffers.length} (from ${uniqueOffers.length})`);
+  // Enhanced server-side duration filter
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const durationFilteredOffers = uniqueOffers.filter((offer: any, i: number) => {
+    try {
+      const dep = new Date(offer.itineraries[0].segments[0].departure.at);
+      const backItin = offer.itineraries[1];
+      
+      if (!backItin) {
+        console.log(`[flight-search] Offer #${i}: No return itinerary, skipping.`);
+        return false;
+      }
+      
+      const backSeg = backItin.segments?.slice(-1)[0];
+      const backAt = backSeg?.departure?.at || backSeg?.arrival?.at || null;
+      
+      if (!backAt) {
+        console.log(`[flight-search] Offer #${i}: No return time, skipping.`);
+        return false;
+      }
+
+      const ret = new Date(backAt);
+      const tripDays = Math.round((ret.getTime() - dep.getTime()) / msPerDay);
+
+      console.log(`[flight-search] Offer #${i}: outAt=${dep.toISOString()}, backAt=${ret.toISOString()}, days=${tripDays}, allowed=${params.minDuration}-${params.maxDuration}`);
+
+      // We use a strict filter here to ensure we only get trips within the requested duration range
+      const matches = tripDays >= params.minDuration && tripDays <= params.maxDuration;
+      console.log(`[flight-search] Offer #${i}: matches duration filter: ${matches}`);
+      return matches;
+    } catch (err) {
+      console.error(`[flight-search] Offer #${i}: Exception in filter:`, err);
+      return false;
+    }
+  });
   
-  if (filteredOffers.length === 0) {
+  console.log(`[flight-search] Kept ${durationFilteredOffers.length} offers after duration filter (from ${uniqueOffers.length})`);
+  
+  if (durationFilteredOffers.length === 0) {
     console.log(`[flight-search] No offers found that match duration criteria ${params.minDuration}-${params.maxDuration} days`);
+    
+    // If we have offers but none match our strict duration filter, 
+    // try one last time with relaxed duration constraints if this was a strict search
+    if (uniqueOffers.length > 0 && params.minDuration > 1 && params.maxDuration < 30) {
+      console.log(`[flight-search] Trying relaxed duration filter as fallback`);
+      // Use a more permissive filter
+      const relaxedOffers = uniqueOffers.filter((offer: any) => {
+        try {
+          const dep = new Date(offer.itineraries[0].segments[0].departure.at);
+          const backAt = offer.itineraries[1]?.segments?.slice(-1)[0]?.departure?.at;
+          
+          if (!backAt) return false;
+          
+          const ret = new Date(backAt);
+          const tripDays = Math.round((ret.getTime() - dep.getTime()) / msPerDay);
+          
+          // More permissive filter - accept anything reasonable
+          const isReasonable = tripDays >= 1 && tripDays <= 30;
+          if (isReasonable) {
+            console.log(`[flight-search] Relaxed filter accepting offer with duration: ${tripDays} days`);
+          }
+          return isReasonable;
+        } catch (err) {
+          return false;
+        }
+      });
+      
+      if (relaxedOffers.length > 0) {
+        console.log(`[flight-search] Found ${relaxedOffers.length} offers with relaxed duration filter`);
+        // Transform Amadeus response to our database format
+        const api = { data: relaxedOffers };
+        return transformAmadeusToOffers(api, tripRequestId);
+      }
+    }
+    
     return [];
   }
 
   // Transform Amadeus response to our database format
-  console.log(`[flight-search] Found ${filteredOffers.length} offers for trip ${tripRequestId}`);
-  const api = { data: filteredOffers };
+  console.log(`[flight-search] Found ${durationFilteredOffers.length} offers for trip ${tripRequestId}`);
+  const api = { data: durationFilteredOffers };
   return transformAmadeusToOffers(api, tripRequestId);
 }
 
@@ -269,44 +465,6 @@ function dedupOffers(allOffers: any[]): any[] {
       }).filter(Boolean) as [string, any][]
     ).values()
   );
-}
-
-// Helper to filter offers by trip duration
-function filterOffersByDuration(offers: any[], minDuration: number, maxDuration: number): any[] {
-  return offers.filter((offer: any, i: number) => {
-    try {
-      const outAt = offer.itineraries[0].segments[0].departure.at;
-      const backItin = offer.itineraries[1];
-      
-      if (!backItin) {
-        console.log(`[flight-search] Offer #${i}: No return itinerary, skipping.`);
-        return false;
-      }
-      
-      const backSeg = backItin.segments?.slice(-1)[0];
-      const backAt = backSeg?.departure?.at || backSeg?.arrival?.at || null;
-      
-      if (!backAt) {
-        console.log(`[flight-search] Offer #${i}: No return time, skipping.`);
-        return false;
-      }
-
-      const outDate = new Date(outAt);
-      const backDate = new Date(backAt);
-      const tripDaysRaw = (backDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24);
-      const tripDays = Math.round(tripDaysRaw);
-
-      console.log(`[flight-search] Offer #${i}: outAt=${outAt}, backAt=${backAt}, days=${tripDays}, allowed=${minDuration}-${maxDuration}`);
-
-      // We use a strict filter here to ensure we only get trips within the requested duration range
-      const matches = tripDays >= minDuration && tripDays <= maxDuration;
-      console.log(`[flight-search] Offer #${i}: matches duration filter: ${matches}`);
-      return matches;
-    } catch (err) {
-      console.error(`[flight-search] Offer #${i}: Exception in filter:`, err);
-      return false;
-    }
-  });
 }
 
 // Transform Amadeus response to our format
