@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -11,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
+import type { Database } from '@/integrations/supabase/types'
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -100,10 +101,14 @@ const TripConfirm = () => {
     
     fetchBookingRequest();
     
-    // Subscribe to booking status updates
+    // Subscribe to booking status updates with explicit typing
     const channel = supabase
       .channel(`checkout:${sessionId}`)
-      .on(
+      .on<
+        RealtimePostgresChangesPayload<
+          Database['public']['Tables']['booking_requests']['Row']
+        >
+      >(
         'postgres_changes',
         { 
           event: 'UPDATE', 
