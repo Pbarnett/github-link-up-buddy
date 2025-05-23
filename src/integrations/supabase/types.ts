@@ -9,6 +9,53 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      booking_requests: {
+        Row: {
+          attempts: number
+          auto: boolean
+          created_at: string
+          error: string | null
+          id: string
+          offer_data: Json
+          offer_id: string
+          processed_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          auto?: boolean
+          created_at?: string
+          error?: string | null
+          id?: string
+          offer_data: Json
+          offer_id: string
+          processed_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          auto?: boolean
+          created_at?: string
+          error?: string | null
+          id?: string
+          offer_data?: Json
+          offer_id?: string
+          processed_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_requests_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "flight_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booked_at: string
@@ -173,9 +220,12 @@ export type Database = {
       orders: {
         Row: {
           amount: number
+          booking_request_id: string | null
+          checkout_session_id: string | null
           created_at: string
           currency: string
           description: string | null
+          error_message: string | null
           id: string
           match_id: string
           payment_intent_id: string
@@ -185,9 +235,12 @@ export type Database = {
         }
         Insert: {
           amount: number
+          booking_request_id?: string | null
+          checkout_session_id?: string | null
           created_at?: string
           currency?: string
           description?: string | null
+          error_message?: string | null
           id?: string
           match_id: string
           payment_intent_id: string
@@ -197,9 +250,12 @@ export type Database = {
         }
         Update: {
           amount?: number
+          booking_request_id?: string | null
+          checkout_session_id?: string | null
           created_at?: string
           currency?: string
           description?: string | null
+          error_message?: string | null
           id?: string
           match_id?: string
           payment_intent_id?: string
@@ -208,6 +264,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_booking_request_id_fkey"
+            columns: ["booking_request_id"]
+            isOneToOne: false
+            referencedRelation: "booking_requests"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_match_id_fkey"
             columns: ["match_id"]
