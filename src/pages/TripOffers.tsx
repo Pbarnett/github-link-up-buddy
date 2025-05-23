@@ -53,7 +53,7 @@ export default function TripOffers() {
   };
 
   const loadOffers = async (overrideFilter = false, relaxCriteria = false) => {
-    console.log("[flight-search-ui] Loading offers with overrideFilter =", overrideFilter, "relaxCriteria =", relaxCriteria);
+    // console.log("[flight-search-ui] Loading offers with overrideFilter =", overrideFilter, "relaxCriteria =", relaxCriteria); // Removed
     setIsLoading(true);
     setHasError(false);
     
@@ -71,7 +71,7 @@ export default function TripOffers() {
       }
 
       // 1) Invoke the edge function - this MUST happen first
-      console.log("[flight-search-ui] about to invoke flight-search edge function");
+      // console.log("[flight-search-ui] about to invoke flight-search edge function"); // Removed
       const { data: invokeData, error: invokeError } =
         await supabase.functions.invoke("flight-search", {
           body: { 
@@ -80,7 +80,7 @@ export default function TripOffers() {
           },
         });
         
-      console.log("[flight-search-ui] invoke result:", { data: invokeData, error: invokeError });
+      // console.log("[flight-search-ui] invoke result:", { data: invokeData, error: invokeError }); // Removed
       if (invokeError) throw invokeError;
 
       if (relaxCriteria) {
@@ -93,11 +93,11 @@ export default function TripOffers() {
       // 2) Fetch trip details (if not in location.state)
       let tripData;
       if (location.state?.tripDetails) {
-        console.log("[flight-search-ui] using trip details from state");
+        // console.log("[flight-search-ui] using trip details from state"); // Removed
         tripData = location.state.tripDetails;
         setTripDetails(location.state.tripDetails);
       } else {
-        console.log("[flight-search-ui] fetching trip details");
+        // console.log("[flight-search-ui] fetching trip details"); // Removed
         const { data: fetchedTripData, error: tripError } = await supabase
           .from("trip_requests")
           .select("*")
@@ -116,7 +116,7 @@ export default function TripOffers() {
       }
 
       // 3) Fetch the newly-written flight_offers
-      console.log("[flight-search-ui] querying flight_offers for trip:", tripId);
+      // console.log("[flight-search-ui] querying flight_offers for trip:", tripId); // Removed
       const { data: rows, error: fetchError } = await supabase
         .from("flight_offers")
         .select("*")
@@ -125,10 +125,10 @@ export default function TripOffers() {
       
       if (fetchError) throw fetchError;
       
-      console.log("[flight-search-ui] rows fetched:", rows?.length, rows);
+      // console.log("[flight-search-ui] rows fetched:", rows?.length, rows); // Removed
       
       if (!rows || rows.length === 0) {
-        console.warn("[flight-search-ui] No offers found at all");
+        // console.warn("[flight-search-ui] No offers found at all"); // Removed
         toast({
           title: "No flight offers found",
           description: "Try relaxing your search criteria or refreshing.",
@@ -146,9 +146,9 @@ export default function TripOffers() {
         );
         
         if (validOffers.length < rows.length) {
-          console.warn(
-            `[flight-search-ui] Filtered out ${rows.length - validOffers.length} offers that didn't meet duration criteria`
-          );
+          // console.warn( // Removed
+          //   `[flight-search-ui] Filtered out ${rows.length - validOffers.length} offers that didn't meet duration criteria` // Removed
+          // ); // Removed
           
           toast({
             title: "Duration filter applied",
@@ -179,14 +179,9 @@ export default function TripOffers() {
         }
       }
     } catch (err: any) {
-      console.error("[flight-search-ui] error in load flow:", err);
       setHasError(true);
       setErrorMessage(err.message || "Something went wrong loading offers");
-      toast({
-        title: "Error loading offers",
-        description: err.message || "Something went wrong.",
-        variant: "destructive",
-      });
+      toast({ title: "Error Loading Flight Offers", description: err.message || "An unexpected error occurred while trying to load flight offers. Please try again.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
