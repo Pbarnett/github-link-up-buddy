@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,11 +36,24 @@ export default function TripOffers() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  // Function to validate that offers meet duration requirements
+  const validateOfferDuration = (offer: Offer, minDuration: number, maxDuration: number): boolean => {
+    if (!offer.departure_date || !offer.return_date) return false;
+    
+    const departDate = new Date(offer.departure_date);
+    const returnDate = new Date(offer.return_date);
+    const tripDays = Math.round((returnDate.getTime() - departDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return tripDays >= minDuration && tripDays <= maxDuration;
+  };
 
   useEffect(() => {
     console.log("[flight-search-ui] useEffect start – tripId:", tripId);
     if (!tripId) {
       setHasError(true);
+      setErrorMessage("No trip ID provided");
       setIsLoading(false);
       return;
     }
@@ -47,7 +61,7 @@ export default function TripOffers() {
     (async () => {
       setIsLoading(true);
       try {
-        // 1) Invoke the edge function
+        // 1) Invoke the edge function - this MUST happen first
         console.log("[flight-search-ui] about to invoke flight-search edge function");
         const { data: invokeData, error: invokeError } =
           await supabase.functions.invoke("flight-search", {
@@ -57,22 +71,27 @@ export default function TripOffers() {
         if (invokeError) throw invokeError;
 
         // 2) Fetch trip details (if not in location.state)
+        let tripData;
         if (location.state?.tripDetails) {
+          console.log("[flight-search-ui] using trip details from state");
+          tripData = location.state.tripDetails;
           setTripDetails(location.state.tripDetails);
         } else {
           console.log("[flight-search-ui] fetching trip details");
-          const { data: tripData, error: tripError } = await supabase
+          const { data: fetchedTripData, error: tripError } = await supabase
             .from("trip_requests")
             .select("*")
             .eq("id", tripId)
             .single();
-          if (tripError || !tripData) throw tripError || new Error("No trip data");
+          
+          if (tripError || !fetchedTripData) throw tripError || new Error("No trip data");
+          tripData = fetchedTripData;
           setTripDetails({
-            earliest_departure: tripData.earliest_departure,
-            latest_departure: tripData.latest_departure,
-            min_duration: tripData.min_duration,
-            max_duration: tripData.max_duration,
-            budget: tripData.budget,
+            earliest_departure: fetchedTripData.earliest_departure,
+            latest_departure: fetchedTripData.latest_departure,
+            min_duration: fetchedTripData.min_duration,
+            max_duration: fetchedTripData.max_duration,
+            budget: fetchedTripData.budget,
           });
         }
 
@@ -83,17 +102,50 @@ export default function TripOffers() {
           .select("*")
           .eq("trip_request_id", tripId)
           .order("price");
+        
         if (fetchError) throw fetchError;
+        
         console.log("[flight-search-ui] rows fetched:", rows?.length, rows);
-        setOffers(rows ?? []);
+        
+        // Validate each offer meets the trip duration requirements
+        const validOffers = (rows || []).filter(offer => 
+          validateOfferDuration(offer, tripData.min_duration, tripData.max_duration)
+        );
+        
+        if (validOffers.length < (rows || []).length) {
+          console.warn(
+            `[flight-search-ui] Filtered out ${(rows || []).length - validOffers.length} offers that didn't meet duration criteria`
+          );
+        }
+        
+        setOffers(validOffers);
+        
+        if (validOffers.length === 0) {
+          // No offers were found that match our criteria
+          if ((rows || []).length > 0) {
+            toast({
+              title: "Duration filter applied",
+              description: `Found ${rows?.length} offers, but none match your ${tripData.min_duration}-${tripData.max_duration} day trip duration requirements.`,
+              variant: "destructive",
+            });
+          } else {
+            console.warn("[flight-search-ui] No offers found at all");
+            toast({
+              title: "No flight offers found",
+              description: "Try adjusting your search criteria or refreshing.",
+              variant: "destructive",
+            });
+          }
+        }
       } catch (err: any) {
         console.error("[flight-search-ui] error in load flow:", err);
+        setHasError(true);
+        setErrorMessage(err.message || "Something went wrong loading offers");
         toast({
           title: "Error loading offers",
           description: err.message || "Something went wrong.",
           variant: "destructive",
         });
-        setHasError(true);
       } finally {
         setIsLoading(false);
       }
@@ -105,21 +157,50 @@ export default function TripOffers() {
     setIsRefreshing(true);
     try {
       console.log("[flight-search-ui] refreshing offers – invoking edge function");
-      const { error: invokeError } = await supabase.functions.invoke("flight-search", {
+      const { data: invokeData, error: invokeError } = await supabase.functions.invoke("flight-search", {
         body: { tripRequestId: tripId },
       });
+      
+      console.log("[flight-search-ui] refresh invoke result:", { data: invokeData, error: invokeError });
       if (invokeError) throw invokeError;
+
+      // Wait a moment to ensure offers are processed
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const { data: rows, error } = await supabase
         .from("flight_offers")
         .select("*")
         .eq("trip_request_id", tripId)
         .order("price");
+        
       if (error) throw error;
 
       console.log("[flight-search-ui] rows fetched after refresh:", rows?.length, rows);
-      setOffers(rows ?? []);
-      toast({ title: "Offers refreshed", description: `Found ${rows?.length ?? 0} offers.` });
+      
+      // Validate each offer meets the trip duration requirements
+      if (tripDetails) {
+        const validOffers = (rows || []).filter(offer => 
+          validateOfferDuration(offer, tripDetails.min_duration, tripDetails.max_duration)
+        );
+        
+        if (validOffers.length < (rows || []).length) {
+          console.warn(
+            `[flight-search-ui] Filtered out ${(rows || []).length - validOffers.length} offers that didn't meet duration criteria`
+          );
+        }
+        
+        setOffers(validOffers);
+        toast({ 
+          title: "Offers refreshed", 
+          description: `Found ${validOffers.length} offers that match your trip criteria.` 
+        });
+      } else {
+        setOffers(rows || []);
+        toast({ 
+          title: "Offers refreshed", 
+          description: `Found ${rows?.length ?? 0} offers.` 
+        });
+      }
     } catch (err: any) {
       console.error("[flight-search-ui] error refreshing:", err);
       toast({
@@ -132,7 +213,7 @@ export default function TripOffers() {
     }
   };
 
-  if (hasError) return <TripErrorCard />;
+  if (hasError) return <TripErrorCard message={errorMessage} />;
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
@@ -176,7 +257,7 @@ export default function TripOffers() {
             </CardDescription>
           </div>
           <Button onClick={refreshOffers} disabled={isRefreshing || isLoading}>
-            Refresh Offers
+            {isRefreshing ? "Refreshing..." : "Refresh Offers"}
           </Button>
         </CardHeader>
       </Card>
@@ -189,7 +270,10 @@ export default function TripOffers() {
             offers.map((offer) => <TripOfferCard key={offer.id} offer={offer} />)
           ) : (
             <Card className="p-6 text-center">
-              No offers found. Try adjusting your trip criteria or click Refresh Offers.
+              <p className="mb-4">No offers found that match your criteria.</p>
+              <p className="text-sm text-gray-500">
+                Try adjusting your trip criteria or click Refresh Offers.
+              </p>
             </Card>
           )}
         </div>
@@ -197,4 +281,3 @@ export default function TripOffers() {
     </div>
   );
 }
-
