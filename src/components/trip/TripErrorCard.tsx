@@ -3,13 +3,19 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw, PlaneTakeoff } from 'lucide-react';
+import { AlertTriangle, RefreshCw, PlaneTakeoff, Settings } from 'lucide-react';
 
 type TripErrorCardProps = {
   message?: string;
+  onOverrideSearch?: () => void;
+  showOverrideButton?: boolean;
 };
 
-export default function TripErrorCard({ message = "We couldn't load your trip offers" }: TripErrorCardProps) {
+export default function TripErrorCard({ 
+  message = "We couldn't load your trip offers",
+  onOverrideSearch,
+  showOverrideButton = false
+}: TripErrorCardProps) {
   const navigate = useNavigate();
 
   // Identify common error types and provide more specific guidance
@@ -47,22 +53,35 @@ export default function TripErrorCard({ message = "We couldn't load your trip of
           {errorHint}
         </p>
       </CardContent>
-      <CardFooter className="flex justify-center gap-4">
-        <Button 
-          onClick={() => navigate('/trip/new')}
-          className="flex items-center gap-2"
-        >
-          <PlaneTakeoff size={16} />
-          New Trip
-        </Button>
-        <Button 
-          onClick={() => window.location.reload()} 
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <RefreshCw size={16} />
-          Retry
-        </Button>
+      <CardFooter className="flex flex-col gap-4">
+        <div className="flex justify-center gap-4 w-full">
+          <Button 
+            onClick={() => navigate('/trip/new')}
+            className="flex items-center gap-2"
+          >
+            <PlaneTakeoff size={16} />
+            New Trip
+          </Button>
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw size={16} />
+            Retry
+          </Button>
+        </div>
+        
+        {showOverrideButton && onOverrideSearch && (
+          <Button 
+            onClick={onOverrideSearch}
+            variant="secondary" 
+            className="flex items-center gap-2 w-full"
+          >
+            <Settings size={16} />
+            Search With Any Duration
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
