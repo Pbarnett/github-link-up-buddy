@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -93,6 +94,18 @@ serve(async (req: Request) => {
           console.error(`[flight-search] Error updating last_checked_at for request ${request.id}: ${updateError.message}`);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `Update error: ${updateError.message}` });
           continue;
+        }
+        
+        // NEW: Delete existing flight offers for this trip to avoid stale data
+        console.log(`[flight-search] Deleting existing offers for trip ${request.id}`);
+        const { error: deleteError } = await supabaseClient
+          .from("flight_offers")
+          .delete()
+          .eq("trip_request_id", request.id);
+        
+        if (deleteError) {
+          console.error(`[flight-search] Error deleting existing offers for request ${request.id}: ${deleteError.message}`);
+          // Continue anyway - this is non-critical
         }
         
         // Create search params from the trip request
