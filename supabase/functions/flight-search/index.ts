@@ -97,6 +97,7 @@ serve(async (req: Request) => {
         }
         
         // Always delete existing flight offers for this trip to avoid stale data
+        // CRITICAL: This must happen BEFORE we search for new offers
         console.log(`[flight-search] Deleting existing offers for trip ${request.id}`);
         const { error: deleteError } = await supabaseClient
           .from("flight_offers")
@@ -138,6 +139,7 @@ serve(async (req: Request) => {
           minDuration: request.min_duration,
           maxDuration: request.max_duration,
           budget: request.budget,
+          maxConnections: 2 // reasonable default
         };
         
         // Log search parameters for debugging

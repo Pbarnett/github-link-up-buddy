@@ -37,6 +37,7 @@ export default function TripOffers() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [ignoreFilter, setIgnoreFilter] = useState(false);
 
   // Function to validate that offers meet duration requirements
   const validateOfferDuration = (offer: Offer, minDuration: number, maxDuration: number): boolean => {
@@ -50,79 +51,92 @@ export default function TripOffers() {
     return tripDays >= minDuration && tripDays <= maxDuration;
   };
 
-  useEffect(() => {
-    console.log("[flight-search-ui] useEffect start – tripId:", tripId);
-    if (!tripId) {
-      setHasError(true);
-      setErrorMessage("No trip ID provided");
-      setIsLoading(false);
-      return;
-    }
+  const loadOffers = async (overrideFilter = false) => {
+    console.log("[flight-search-ui] Loading offers with overrideFilter =", overrideFilter);
+    setIsLoading(true);
+    setHasError(false);
+    
+    try {
+      if (!tripId) {
+        setHasError(true);
+        setErrorMessage("No trip ID provided");
+        setIsLoading(false);
+        return;
+      }
 
-    (async () => {
-      setIsLoading(true);
-      setHasError(false);
-      try {
-        // 1) Invoke the edge function - this MUST happen first
-        console.log("[flight-search-ui] about to invoke flight-search edge function");
-        const { data: invokeData, error: invokeError } =
-          await supabase.functions.invoke("flight-search", {
-            body: { tripRequestId: tripId },
-          });
-        console.log("[flight-search-ui] invoke result:", { data: invokeData, error: invokeError });
-        if (invokeError) throw invokeError;
+      // 1) Invoke the edge function - this MUST happen first
+      console.log("[flight-search-ui] about to invoke flight-search edge function");
+      const { data: invokeData, error: invokeError } =
+        await supabase.functions.invoke("flight-search", {
+          body: { tripRequestId: tripId },
+        });
+        
+      console.log("[flight-search-ui] invoke result:", { data: invokeData, error: invokeError });
+      if (invokeError) throw invokeError;
 
-        // 2) Fetch trip details (if not in location.state)
-        let tripData;
-        if (location.state?.tripDetails) {
-          console.log("[flight-search-ui] using trip details from state");
-          tripData = location.state.tripDetails;
-          setTripDetails(location.state.tripDetails);
-        } else {
-          console.log("[flight-search-ui] fetching trip details");
-          const { data: fetchedTripData, error: tripError } = await supabase
-            .from("trip_requests")
-            .select("*")
-            .eq("id", tripId)
-            .single();
-          
-          if (tripError || !fetchedTripData) throw tripError || new Error("No trip data");
-          tripData = fetchedTripData;
-          setTripDetails({
-            earliest_departure: fetchedTripData.earliest_departure,
-            latest_departure: fetchedTripData.latest_departure,
-            min_duration: fetchedTripData.min_duration,
-            max_duration: fetchedTripData.max_duration,
-            budget: fetchedTripData.budget,
-          });
-        }
-
-        // 3) Fetch the newly-written flight_offers
-        console.log("[flight-search-ui] querying flight_offers for trip:", tripId);
-        const { data: rows, error: fetchError } = await supabase
-          .from("flight_offers")
+      // 2) Fetch trip details (if not in location.state)
+      let tripData;
+      if (location.state?.tripDetails) {
+        console.log("[flight-search-ui] using trip details from state");
+        tripData = location.state.tripDetails;
+        setTripDetails(location.state.tripDetails);
+      } else {
+        console.log("[flight-search-ui] fetching trip details");
+        const { data: fetchedTripData, error: tripError } = await supabase
+          .from("trip_requests")
           .select("*")
-          .eq("trip_request_id", tripId)
-          .order("price");
+          .eq("id", tripId)
+          .single();
         
-        if (fetchError) throw fetchError;
-        
-        console.log("[flight-search-ui] rows fetched:", rows?.length, rows);
-        
-        // Validate each offer meets the trip duration requirements
-        // This is a double-check in case the server filtering didn't catch something
-        const validOffers = (rows || []).filter(offer => 
+        if (tripError || !fetchedTripData) throw tripError || new Error("No trip data");
+        tripData = fetchedTripData;
+        setTripDetails({
+          earliest_departure: fetchedTripData.earliest_departure,
+          latest_departure: fetchedTripData.latest_departure,
+          min_duration: fetchedTripData.min_duration,
+          max_duration: fetchedTripData.max_duration,
+          budget: fetchedTripData.budget,
+        });
+      }
+
+      // 3) Fetch the newly-written flight_offers
+      console.log("[flight-search-ui] querying flight_offers for trip:", tripId);
+      const { data: rows, error: fetchError } = await supabase
+        .from("flight_offers")
+        .select("*")
+        .eq("trip_request_id", tripId)
+        .order("price");
+      
+      if (fetchError) throw fetchError;
+      
+      console.log("[flight-search-ui] rows fetched:", rows?.length, rows);
+      
+      if (!rows || rows.length === 0) {
+        console.warn("[flight-search-ui] No offers found at all");
+        toast({
+          title: "No flight offers found",
+          description: "Try relaxing your search criteria or refreshing.",
+          variant: "destructive",
+        });
+        setOffers([]);
+        return;
+      }
+      
+      // Apply client-side duration filter as a safety net
+      // Skip it if we're in override mode
+      if (!overrideFilter && tripData) {
+        const validOffers = rows.filter(offer => 
           validateOfferDuration(offer, tripData.min_duration, tripData.max_duration)
         );
         
-        if (validOffers.length < (rows || []).length) {
+        if (validOffers.length < rows.length) {
           console.warn(
-            `[flight-search-ui] Filtered out ${(rows || []).length - validOffers.length} offers that didn't meet duration criteria`
+            `[flight-search-ui] Filtered out ${rows.length - validOffers.length} offers that didn't meet duration criteria`
           );
           
           toast({
             title: "Duration filter applied",
-            description: `Found ${rows?.length} offers, but only ${validOffers.length} match your ${tripData.min_duration}-${tripData.max_duration} day trip duration requirements.`,
+            description: `Found ${rows.length} offers, but only ${validOffers.length} match your ${tripData.min_duration}-${tripData.max_duration} day trip duration requirements.`,
             variant: "default",
           });
         }
@@ -131,118 +145,68 @@ export default function TripOffers() {
         
         if (validOffers.length === 0) {
           // No offers were found that match our criteria
-          if ((rows || []).length > 0) {
-            toast({
-              title: "Duration filter applied",
-              description: `Found ${rows?.length} offers, but none match your ${tripData.min_duration}-${tripData.max_duration} day trip duration requirements.`,
-              variant: "destructive",
-            });
-          } else {
-            console.warn("[flight-search-ui] No offers found at all");
-            toast({
-              title: "No flight offers found",
-              description: "Try adjusting your search criteria or refreshing.",
-              variant: "destructive",
-            });
-          }
+          toast({
+            title: "Duration filter applied",
+            description: `Found ${rows.length} offers, but none match your ${tripData.min_duration}-${tripData.max_duration} day trip duration requirements.`,
+            variant: "destructive",
+          });
         }
-      } catch (err: any) {
-        console.error("[flight-search-ui] error in load flow:", err);
-        setHasError(true);
-        setErrorMessage(err.message || "Something went wrong loading offers");
-        toast({
-          title: "Error loading offers",
-          description: err.message || "Something went wrong.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+      } else {
+        // No filter in override mode
+        setOffers(rows);
+        
+        if (overrideFilter) {
+          toast({
+            title: "Search without duration filter",
+            description: `Showing all ${rows.length} available offers regardless of trip duration.`,
+          });
+        }
       }
-    })();
-  }, [tripId]);
+    } catch (err: any) {
+      console.error("[flight-search-ui] error in load flow:", err);
+      setHasError(true);
+      setErrorMessage(err.message || "Something went wrong loading offers");
+      toast({
+        title: "Error loading offers",
+        description: err.message || "Something went wrong.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadOffers(ignoreFilter);
+  }, [tripId, ignoreFilter]);
 
   const refreshOffers = async () => {
     if (!tripId) return;
     setIsRefreshing(true);
     try {
-      console.log("[flight-search-ui] refreshing offers – invoking edge function");
-      const { data: invokeData, error: invokeError } = await supabase.functions.invoke("flight-search", {
-        body: { tripRequestId: tripId },
-      });
-      
-      console.log("[flight-search-ui] refresh invoke result:", { data: invokeData, error: invokeError });
-      if (invokeError) throw invokeError;
-
-      // Wait a moment to ensure offers are processed
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const { data: rows, error } = await supabase
-        .from("flight_offers")
-        .select("*")
-        .eq("trip_request_id", tripId)
-        .order("price");
-        
-      if (error) throw error;
-
-      console.log("[flight-search-ui] rows fetched after refresh:", rows?.length, rows);
-      
-      // Validate each offer meets the trip duration requirements
-      if (tripDetails) {
-        const validOffers = (rows || []).filter(offer => 
-          validateOfferDuration(offer, tripDetails.min_duration, tripDetails.max_duration)
-        );
-        
-        if (validOffers.length < (rows || []).length) {
-          console.warn(
-            `[flight-search-ui] Filtered out ${(rows || []).length - validOffers.length} offers that didn't meet duration criteria`
-          );
-          
-          toast({ 
-            title: "Duration filter applied", 
-            description: `Found ${rows?.length} offers, but only ${validOffers.length} match your duration criteria.` 
-          });
-        }
-        
-        setOffers(validOffers);
-        
-        if (validOffers.length > 0) {
-          toast({ 
-            title: "Offers refreshed", 
-            description: `Found ${validOffers.length} offers that match your trip criteria.` 
-          });
-        } else if ((rows || []).length > 0) {
-          toast({
-            title: "Duration filter applied",
-            description: `Found ${rows?.length} offers, but none match your trip duration requirements.`,
-            variant: "destructive",
-          });
-        } else {
-          toast({ 
-            title: "No offers found", 
-            description: "No flight offers match your search criteria. Try adjusting your trip parameters.",
-            variant: "destructive"
-          });
-        }
-      } else {
-        setOffers(rows || []);
-        toast({ 
-          title: "Offers refreshed", 
-          description: `Found ${rows?.length ?? 0} offers.` 
-        });
-      }
-    } catch (err: any) {
-      console.error("[flight-search-ui] error refreshing:", err);
-      toast({
-        title: "Error refreshing offers",
-        description: err.message || "Could not refresh.",
-        variant: "destructive",
-      });
+      await loadOffers(ignoreFilter);
     } finally {
       setIsRefreshing(false);
     }
   };
+  
+  const handleOverrideSearch = () => {
+    setIgnoreFilter(true);
+    toast({
+      title: "Searching without duration filter",
+      description: "Finding all available flights regardless of trip duration...",
+    });
+  };
 
-  if (hasError) return <TripErrorCard message={errorMessage} />;
+  if (hasError) {
+    return (
+      <TripErrorCard 
+        message={errorMessage} 
+        onOverrideSearch={handleOverrideSearch} 
+        showOverrideButton={!ignoreFilter && errorMessage.toLowerCase().includes("no offers")}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
@@ -264,6 +228,7 @@ export default function TripOffers() {
               <p className="text-sm font-medium text-gray-500">Duration</p>
               <p>
                 {tripDetails.min_duration}–{tripDetails.max_duration} days
+                {ignoreFilter && " (filter disabled)"}
               </p>
             </div>
             <div>
@@ -285,9 +250,23 @@ export default function TripOffers() {
                 : `${offers.length} offers found for your trip`}
             </CardDescription>
           </div>
-          <Button onClick={refreshOffers} disabled={isRefreshing || isLoading}>
-            {isRefreshing ? "Refreshing..." : "Refresh Offers"}
-          </Button>
+          <div className="flex gap-2">
+            {!ignoreFilter && (
+              <Button 
+                variant="outline" 
+                onClick={handleOverrideSearch} 
+                disabled={isRefreshing || isLoading}
+              >
+                Search Any Duration
+              </Button>
+            )}
+            <Button 
+              onClick={refreshOffers} 
+              disabled={isRefreshing || isLoading}
+            >
+              {isRefreshing ? "Refreshing..." : "Refresh Offers"}
+            </Button>
+          </div>
         </CardHeader>
       </Card>
 
@@ -301,8 +280,18 @@ export default function TripOffers() {
             <Card className="p-6 text-center">
               <p className="mb-4">No offers found that match your criteria.</p>
               <p className="text-sm text-gray-500">
-                Try adjusting your trip criteria or click Refresh Offers.
+                {ignoreFilter 
+                  ? "Try adjusting your budget or destination, or click Refresh Offers."
+                  : "Try clicking 'Search Any Duration' above or adjust your trip criteria."}
               </p>
+              {!ignoreFilter && (
+                <Button 
+                  onClick={handleOverrideSearch} 
+                  className="mt-4"
+                >
+                  Search Any Duration
+                </Button>
+              )}
             </Card>
           )}
         </div>
