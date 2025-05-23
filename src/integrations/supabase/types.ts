@@ -1,10 +1,5 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+/** Collapse the recursive Json union to `unknown` to prevent TS recursion errors */
+export type Json = unknown;
 
 export type Database = {
   public: {
