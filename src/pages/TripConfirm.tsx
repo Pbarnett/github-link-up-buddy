@@ -11,7 +11,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
-import { RealtimeChannel } from "@supabase/supabase-js";
+import { 
+  RealtimeChannel, 
+  RealtimePostgresChangesPayload,
+  RealtimePostgresOptions 
+} from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -101,21 +106,27 @@ const TripConfirm = () => {
     
     fetchBookingRequest();
     
-    // Subscribe to booking status updates using v2 channel API
+    // Subscribe to booking status updates using v2 channel API with proper typing
     const channel: RealtimeChannel = supabase
       .channel(`checkout:${sessionId}`)
-      .on(
+      .on<
+        'postgres_changes',
+        Database['public']['Tables']['booking_requests']['Row']
+      >(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
           table: 'booking_requests',
           filter: `checkout_session_id=eq.${sessionId}`
-        },
-        // Explicitly type payload as any to avoid deep generic recursion
-        (payload: any) => {
+        } as RealtimePostgresOptions<'public', 'booking_requests'>,
+        (
+          payload: RealtimePostgresChangesPayload<
+            Database['public']['Tables']['booking_requests']['Row']
+          >
+        ) => {
           console.log('[trip-confirm] booking status updated:', payload);
-          const status = payload.new.status as string;
+          const status = payload.new.status;
           updateBookingStatusMessage(status);
         }
       )
