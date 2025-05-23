@@ -12,6 +12,19 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
+type BookingRequestPayload = {
+  new: Tables<'booking_requests'>;
+  old: Tables<'booking_requests'>;
+  // Include other properties from the Supabase payload if necessary,
+  // but 'new' and 'old' are the most critical for this use case.
+  // For example: commit_timestamp: string, errors: any[], table: string, schema: string, type: string
+  commit_timestamp: string;
+  errors: any[] | null;
+  table: string;
+  schema: string;
+  type: 'INSERT' | 'UPDATE' | 'DELETE';
+};
+
 const TripConfirm = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -108,7 +121,7 @@ const TripConfirm = () => {
         schema: 'public',
         table: 'booking_requests',
         filter: `checkout_session_id=eq.${sessionId}`,
-      }, (payload: any) => {
+      }, (payload: BookingRequestPayload) => {
         console.log('[trip-confirm] booking status updated:', payload);
         updateBookingStatusMessage(payload.new.status);
       })
