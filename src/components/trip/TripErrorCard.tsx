@@ -1,21 +1,35 @@
 
-import React from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
 
-const TripErrorCard = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Error</CardTitle>
-          <CardDescription>No trip ID provided</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p>Please submit a trip request to view offers.</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+type TripErrorCardProps = {
+  message?: string;
 };
 
-export default TripErrorCard;
+export default function TripErrorCard({ message = "We couldn't load your trip offers" }: TripErrorCardProps) {
+  const navigate = useNavigate();
+
+  return (
+    <Card className="w-full max-w-md mx-auto mt-8">
+      <CardHeader className="text-center">
+        <div className="flex justify-center mb-4">
+          <AlertTriangle className="h-12 w-12 text-destructive" />
+        </div>
+        <CardTitle>Error Loading Trip Offers</CardTitle>
+      </CardHeader>
+      <CardContent className="text-center">
+        <p>{message}</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          You can try reloading the page or creating a new trip request.
+        </p>
+      </CardContent>
+      <CardFooter className="flex justify-center gap-4">
+        <Button onClick={() => navigate('/trip/new')}>New Trip</Button>
+        <Button onClick={() => window.location.reload()} variant="outline">Retry</Button>
+      </CardFooter>
+    </Card>
+  );
+}
