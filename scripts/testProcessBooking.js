@@ -69,7 +69,7 @@ async function main() {
     console.log("📊 Final booking request status:", {
       id: finalRequest.id,
       status: finalRequest.status,
-      retry_count: finalRequest.retry_count,
+      attempts: finalRequest.attempts,
       error: finalRequest.error,
       processed_at: finalRequest.processed_at
     });

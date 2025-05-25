@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { bookWithAmadeus } from "../lib/amadeus.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,13 +29,19 @@ async function processBookingRequest(bookingRequest: any) {
       })
       .eq("id", bookingRequest.id);
 
-    // Simulate booking process (replace with actual Amadeus integration)
-    console.log("Simulating flight booking with offer data:", bookingRequest.offer_data);
+    console.log("Calling Amadeus booking with offer data:", bookingRequest.offer_data);
     
-    // For now, we'll simulate a successful booking
-    const success = Math.random() > 0.2; // 80% success rate for testing
+    // Get traveler data from the booking request
+    const travelerData = bookingRequest.traveler_data || {
+      firstName: "John",
+      lastName: "Doe",
+      email: "john.doe@example.com"
+    };
     
-    if (success) {
+    // Call Amadeus booking API
+    const amadeusResult = await bookWithAmadeus(bookingRequest.offer_data, travelerData);
+    
+    if (amadeusResult.success) {
       // Create booking record
       const { data: booking, error: bookingError } = await supabase
         .from("bookings")
@@ -58,27 +65,27 @@ async function processBookingRequest(bookingRequest: any) {
         .eq("id", bookingRequest.id);
 
       console.log(`✅ Booking request ${bookingRequest.id} completed successfully`);
-      return { success: true, bookingId: booking.id };
+      return { success: true, bookingId: booking.id, amadeusData: amadeusResult };
     } else {
-      throw new Error("Simulated booking failure");
+      throw new Error(amadeusResult.error || "Amadeus booking failed");
     }
   } catch (error) {
     console.error(`❌ Booking request ${bookingRequest.id} failed:`, error);
     
-    const retryCount = (bookingRequest.retry_count || 0) + 1;
-    const shouldRetry = retryCount < 3;
+    const attempts = (bookingRequest.attempts || 0) + 1;
+    const shouldRetry = attempts < 3;
     
     await supabase
       .from("booking_requests")
       .update({ 
         status: shouldRetry ? "pending_booking" : "failed",
         error: error.message,
-        retry_count: retryCount,
+        attempts: attempts,
         processed_at: new Date().toISOString()
       })
       .eq("id", bookingRequest.id);
 
-    return { success: false, error: error.message, retryCount };
+    return { success: false, error: error.message, attempts };
   }
 }
 
@@ -95,7 +102,7 @@ serve(async (req: Request) => {
       .from("booking_requests")
       .select("*")
       .eq("status", "pending_booking")
-      .lt("retry_count", 3)
+      .lt("attempts", 3)
       .order("created_at", { ascending: true })
       .limit(5); // Process up to 5 at a time
 
