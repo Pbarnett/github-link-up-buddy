@@ -7,7 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 export type PaymentMethod = Database["public"]["Tables"]["payment_methods"]["Row"];
 
 export function usePaymentMethods() {
-  return useQuery<PaymentMethod[], Error>({
+  const query = useQuery<PaymentMethod[], Error>({
     queryKey: ["payment_methods"],
     queryFn: async () => {
       try {
@@ -25,4 +25,12 @@ export function usePaymentMethods() {
       }
     }
   });
+
+  // Return the expected shape that components are using
+  return {
+    paymentMethods: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
 }

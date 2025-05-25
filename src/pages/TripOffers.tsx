@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Offer } from "@/services/tripOffersService";
@@ -25,6 +25,10 @@ interface TripDetails {
   budget: number;
 }
 
+// Simple in-memory cache for search results
+const searchCache = new Map<string, { offers: Offer[], timestamp: number, tripDetails: TripDetails }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export default function TripOffers() {
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get("id");
@@ -39,6 +43,12 @@ export default function TripOffers() {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [ignoreFilter, setIgnoreFilter] = useState(false);
   const [usedRelaxedCriteria, setUsedRelaxedCriteria] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
+
+  // Cache key for this search
+  const cacheKey = useMemo(() => {
+    return `${tripId}-${ignoreFilter}-${usedRelaxedCriteria}`;
+  }, [tripId, ignoreFilter, usedRelaxedCriteria]);
 
   // Function to validate that offers meet duration requirements
   const validateOfferDuration = (offer: Offer, minDuration: number, maxDuration: number): boolean => {
@@ -48,12 +58,24 @@ export default function TripOffers() {
     const returnDate = new Date(offer.return_date);
     const tripDays = Math.round((returnDate.getTime() - departDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Match the same validation logic used in the edge function
     return tripDays >= minDuration && tripDays <= maxDuration;
   };
 
-  const loadOffers = async (overrideFilter = false, relaxCriteria = false) => {
-    // console.log("[flight-search-ui] Loading offers with overrideFilter =", overrideFilter, "relaxCriteria =", relaxCriteria); // Removed
+  const loadOffers = async (overrideFilter = false, relaxCriteria = false, useCache = true) => {
+    console.log("[TripOffers] Loading offers with overrideFilter =", overrideFilter, "relaxCriteria =", relaxCriteria);
+    
+    // Check cache first (unless explicitly refreshing)
+    if (useCache && !isRefreshing) {
+      const cached = searchCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        console.log("[TripOffers] Using cached results");
+        setOffers(cached.offers);
+        setTripDetails(cached.tripDetails);
+        setIsLoading(false);
+        return;
+      }
+    }
+
     setIsLoading(true);
     setHasError(false);
     
@@ -70,40 +92,33 @@ export default function TripOffers() {
         setUsedRelaxedCriteria(true);
       }
 
-      // 1) Invoke the edge function - this MUST happen first
-      // console.log("[flight-search-ui] about to invoke flight-search edge function"); // Removed
-      const { data: invokeData, error: invokeError } =
-        await supabase.functions.invoke("flight-search", {
+      console.log("[TripOffers] Starting parallel requests");
+      
+      // Parallel execution: trip details + flight search
+      const [tripDetailsPromise, searchPromise] = await Promise.all([
+        // Get trip details (use cached from location.state if available)
+        location.state?.tripDetails 
+          ? Promise.resolve(location.state.tripDetails)
+          : supabase.from("trip_requests").select("*").eq("id", tripId).single(),
+        
+        // Invoke flight search
+        supabase.functions.invoke("flight-search", {
           body: { 
             tripRequestId: tripId,
-            relaxedCriteria: relaxCriteria  // Pass this flag to the edge function
+            relaxedCriteria: relaxCriteria
           },
-        });
-        
-      // console.log("[flight-search-ui] invoke result:", { data: invokeData, error: invokeError }); // Removed
-      if (invokeError) throw invokeError;
+        })
+      ]);
 
-      if (relaxCriteria) {
-        toast({
-          title: "Search with relaxed criteria",
-          description: "Finding flights with more flexible duration and budget constraints.",
-        });
-      }
+      console.log("[TripOffers] Parallel requests completed");
 
-      // 2) Fetch trip details (if not in location.state)
+      // Handle trip details
       let tripData;
       if (location.state?.tripDetails) {
-        // console.log("[flight-search-ui] using trip details from state"); // Removed
         tripData = location.state.tripDetails;
         setTripDetails(location.state.tripDetails);
       } else {
-        // console.log("[flight-search-ui] fetching trip details"); // Removed
-        const { data: fetchedTripData, error: tripError } = await supabase
-          .from("trip_requests")
-          .select("*")
-          .eq("id", tripId)
-          .single();
-        
+        const { data: fetchedTripData, error: tripError } = tripDetailsPromise as any;
         if (tripError || !fetchedTripData) throw tripError || new Error("No trip data");
         tripData = fetchedTripData;
         setTripDetails({
@@ -115,8 +130,19 @@ export default function TripOffers() {
         });
       }
 
-      // 3) Fetch the newly-written flight_offers
-      // console.log("[flight-search-ui] querying flight_offers for trip:", tripId); // Removed
+      // Handle search results
+      const { data: invokeData, error: invokeError } = searchPromise as any;
+      if (invokeError) throw invokeError;
+
+      if (relaxCriteria) {
+        toast({
+          title: "Search with relaxed criteria",
+          description: "Finding flights with more flexible duration and budget constraints.",
+        });
+      }
+
+      // Fetch the newly-written flight_offers
+      console.log("[TripOffers] Fetching flight offers from database");
       const { data: rows, error: fetchError } = await supabase
         .from("flight_offers")
         .select("*")
@@ -125,30 +151,37 @@ export default function TripOffers() {
       
       if (fetchError) throw fetchError;
       
-      // console.log("[flight-search-ui] rows fetched:", rows?.length, rows); // Removed
+      console.log("[TripOffers] Fetched", rows?.length, "offers");
       
       if (!rows || rows.length === 0) {
-        // console.warn("[flight-search-ui] No offers found at all"); // Removed
+        console.warn("[TripOffers] No offers found");
         toast({
           title: "No flight offers found",
           description: "Try relaxing your search criteria or refreshing.",
           variant: "destructive",
         });
         setOffers([]);
+        
+        // Cache empty results too
+        if (tripData) {
+          searchCache.set(cacheKey, {
+            offers: [],
+            timestamp: Date.now(),
+            tripDetails: tripData
+          });
+        }
         return;
       }
       
       // Apply client-side duration filter as a safety net
-      // Skip it if we're in override mode
+      let finalOffers;
       if (!overrideFilter && tripData) {
         const validOffers = rows.filter(offer => 
           validateOfferDuration(offer, tripData.min_duration, tripData.max_duration)
         );
         
         if (validOffers.length < rows.length) {
-          // console.warn( // Removed
-          //   `[flight-search-ui] Filtered out ${rows.length - validOffers.length} offers that didn't meet duration criteria` // Removed
-          // ); // Removed
+          console.warn(`[TripOffers] Filtered out ${rows.length - validOffers.length} offers that didn't meet duration criteria`);
           
           toast({
             title: "Duration filter applied",
@@ -157,10 +190,9 @@ export default function TripOffers() {
           });
         }
         
-        setOffers(validOffers);
+        finalOffers = validOffers;
         
         if (validOffers.length === 0) {
-          // No offers were found that match our criteria
           toast({
             title: "Duration filter applied",
             description: `Found ${rows.length} offers, but none match your ${tripData.min_duration}-${tripData.max_duration} day trip duration requirements.`,
@@ -168,8 +200,7 @@ export default function TripOffers() {
           });
         }
       } else {
-        // No filter in override mode
-        setOffers(rows);
+        finalOffers = rows;
         
         if (overrideFilter) {
           toast({
@@ -178,12 +209,30 @@ export default function TripOffers() {
           });
         }
       }
+
+      setOffers(finalOffers);
+
+      // Cache the results
+      if (tripData) {
+        searchCache.set(cacheKey, {
+          offers: finalOffers,
+          timestamp: Date.now(),
+          tripDetails: tripData
+        });
+      }
+
     } catch (err: any) {
+      console.error("[TripOffers] Error loading offers:", err);
       setHasError(true);
       setErrorMessage(err.message || "Something went wrong loading offers");
-      toast({ title: "Error Loading Flight Offers", description: err.message || "An unexpected error occurred while trying to load flight offers. Please try again.", variant: "destructive" });
+      toast({ 
+        title: "Error Loading Flight Offers", 
+        description: err.message || "An unexpected error occurred while trying to load flight offers. Please try again.", 
+        variant: "destructive" 
+      });
     } finally {
       setIsLoading(false);
+      setLastRefreshTime(Date.now());
     }
   };
 
@@ -193,9 +242,20 @@ export default function TripOffers() {
 
   const refreshOffers = async () => {
     if (!tripId) return;
+    
+    // Debounce: prevent refresh if less than 3 seconds since last refresh
+    const timeSinceLastRefresh = Date.now() - lastRefreshTime;
+    if (timeSinceLastRefresh < 3000) {
+      toast({
+        title: "Please wait",
+        description: "Please wait a moment before refreshing again.",
+      });
+      return;
+    }
+
     setIsRefreshing(true);
     try {
-      await loadOffers(ignoreFilter);
+      await loadOffers(ignoreFilter, usedRelaxedCriteria, false); // Don't use cache on refresh
     } finally {
       setIsRefreshing(false);
     }
@@ -213,8 +273,7 @@ export default function TripOffers() {
     if (!tripId) return;
     setIsRefreshing(true);
     try {
-      // Call loadOffers with the relaxCriteria flag to trigger server-side relaxed search
-      await loadOffers(false, true);
+      await loadOffers(false, true, false); // Don't use cache for relaxed search
     } finally {
       setIsRefreshing(false);
     }
@@ -234,7 +293,7 @@ export default function TripOffers() {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
-      {/* Trip Summary Card */}
+      {/* Trip Summary Card - Show immediately if we have data */}
       {tripDetails && (
         <Card className="w-full max-w-5xl mb-6">
           <CardHeader>
