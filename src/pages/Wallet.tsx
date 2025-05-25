@@ -3,6 +3,7 @@ import { useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { Link } from "react-router-dom";
 import { usePaymentMethods, PaymentMethod } from "@/hooks/usePaymentMethods";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { safeQuery } from "@/lib/supabaseUtils";
@@ -12,14 +13,24 @@ import { Button } from "@/components/ui/button";
 function WalletPage() {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
   const { data, error, isLoading, refetch } = usePaymentMethods();
+  const { user } = useCurrentUser();
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string|null>(null);
   const queryClient = useQueryClient();
 
-  const handleSetDefault = async (id: string) => {
+  const handleSetDefault = async (paymentMethod: PaymentMethod) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      setIsUpdating(id);
+      setIsUpdating(paymentMethod.id);
       
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/set-default-payment-method`,
@@ -29,7 +40,9 @@ function WalletPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           },
-          body: JSON.stringify({ id }),
+          body: JSON.stringify({ 
+            id: paymentMethod.id  // Keep using the database ID since our edge function expects it
+          }),
         }
       );
       
@@ -65,7 +78,16 @@ function WalletPage() {
     }
   };
 
-  const handleDeleteCard = async (id: string, paymentMethod: PaymentMethod) => {
+  const handleDeleteCard = async (paymentMethod: PaymentMethod) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (paymentMethod.is_default) {
       toast({
         title: "Cannot delete default payment method",
@@ -76,7 +98,7 @@ function WalletPage() {
     }
 
     try {
-      setIsUpdating(id);
+      setIsUpdating(paymentMethod.id);
       
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-payment-method`,
@@ -86,7 +108,9 @@ function WalletPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           },
-          body: JSON.stringify({ id }),
+          body: JSON.stringify({ 
+            id: paymentMethod.id  // Keep using the database ID since our edge function expects it
+          }),
         }
       );
       
@@ -152,7 +176,7 @@ function WalletPage() {
                         </span>
                       ) : (
                         <Button 
-                          onClick={() => handleSetDefault(pm.id)} 
+                          onClick={() => handleSetDefault(pm)} 
                           disabled={isUpdating !== null}
                           variant="outline" 
                           size="sm"
@@ -162,7 +186,7 @@ function WalletPage() {
                         </Button>
                       )}
                       <Button 
-                        onClick={() => handleDeleteCard(pm.id, pm)}
+                        onClick={() => handleDeleteCard(pm)}
                         disabled={isUpdating !== null || pm.is_default} 
                         variant="outline"
                         size="sm"
