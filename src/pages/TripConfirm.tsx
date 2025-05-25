@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -10,19 +11,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
-import { RealtimeChannel } from "@supabase/supabase-js";
 
 type BookingRequestPayload = {
   new: Tables<'booking_requests'>;
   old: Tables<'booking_requests'>;
-  // Include other properties from the Supabase payload if necessary,
-  // but 'new' and 'old' are the most critical for this use case.
-  // For example: commit_timestamp: string, errors: any[], table: string, schema: string, type: string
   commit_timestamp: string;
   errors: any[] | null;
   table: string;
   schema: string;
-  type: 'INSERT' | 'UPDATE' | 'DELETE';
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
 };
 
 const TripConfirm = () => {
@@ -78,7 +75,6 @@ const TripConfirm = () => {
 
       setOffer(parsedOffer);
     } catch (error) {
-      // console.error("Error parsing offer details:", error); // Removed, existing toast handles this
       setHasError(true);
       toast({
         title: "Error",
@@ -106,7 +102,11 @@ const TripConfirm = () => {
           updateBookingStatusMessage(data.status);
         }
       } catch (err: any) {
-        toast({ title: "Error Fetching Booking Details", description: err.message || "Could not retrieve your booking status at this time.", variant: "destructive" });
+        toast({ 
+          title: "Error Fetching Booking Details", 
+          description: err.message || "Could not retrieve your booking status at this time.", 
+          variant: "destructive" 
+        });
         setError("Could not retrieve booking status.");
       }
     };
@@ -116,15 +116,18 @@ const TripConfirm = () => {
     // Subscribe to booking status updates using v2 channel API
     const channel = supabase
       .channel(`checkout:${sessionId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'booking_requests',
-        filter: `checkout_session_id=eq.${sessionId}`,
-      }, (payload: BookingRequestPayload) => {
-        // console.log('[trip-confirm] booking status updated:', payload); // Commented out
-        updateBookingStatusMessage(payload.new.status);
-      })
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'booking_requests',
+          filter: `checkout_session_id=eq.${sessionId}`,
+        },
+        (payload: BookingRequestPayload) => {
+          updateBookingStatusMessage(payload.new.status);
+        }
+      )
       .subscribe();
       
     return () => {
@@ -202,7 +205,6 @@ const TripConfirm = () => {
       // Redirect to Stripe checkout
       window.location.href = res.data.url;
     } catch (err: any) {
-      // console.error("Error creating booking request:", err); // Removed, existing toast handles this
       setError(err.message || "There was a problem setting up the booking");
       toast({
         title: "Booking Failed",

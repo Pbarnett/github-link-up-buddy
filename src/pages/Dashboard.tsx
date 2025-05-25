@@ -14,7 +14,7 @@ interface BookingRequest {
   created_at: string;
   processed_at: string | null;
   error: string | null;
-  retry_count: number;
+  attempts: number;
   offer_data: any;
 }
 
@@ -149,7 +149,7 @@ const Dashboard = () => {
         .from('booking_requests')
         .update({ 
           status: 'pending_booking',
-          retry_count: 0,
+          attempts: 0,
           error: null
         })
         .eq('id', requestId);
@@ -280,7 +280,7 @@ const Dashboard = () => {
                         <Badge variant={getStatusBadgeVariant(request.status)}>
                           {request.status}
                         </Badge>
-                        {request.status === 'failed' && request.retry_count < 3 && (
+                        {request.status === 'failed' && request.attempts < 3 && (
                           <Button
                             size="sm"
                             variant="outline"
