@@ -153,12 +153,7 @@ const TripRequestForm = () => {
       navigateToConfirmation(result);
       
     } catch (error: any) {
-      console.error("Error submitting trip request:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to submit trip request. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Submission Failed", description: error.message || "Could not submit your trip request. Please try again.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
