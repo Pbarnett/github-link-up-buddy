@@ -1,6 +1,5 @@
 
 // Amadeus booking integration wrapper
-// This is a placeholder for actual Amadeus integration
 
 export interface TravelerData {
   firstName: string;
@@ -22,6 +21,36 @@ export interface BookingResponse {
   bookingReference?: string;
   error?: string;
   confirmationNumber?: string;
+  bookingData?: any;
+}
+
+async function getAmadeusAccessToken(): Promise<string> {
+  const baseUrl = Deno.env.get("AMADEUS_BASE_URL");
+  const clientId = Deno.env.get("AMADEUS_CLIENT_ID");
+  const clientSecret = Deno.env.get("AMADEUS_CLIENT_SECRET");
+
+  if (!baseUrl || !clientId || !clientSecret) {
+    throw new Error("Missing Amadeus credentials in environment variables");
+  }
+
+  const response = await fetch(`${baseUrl}/v1/security/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get Amadeus access token: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
 }
 
 export async function bookWithAmadeus(
@@ -33,27 +62,89 @@ export async function bookWithAmadeus(
     console.log("Offer data:", offerData);
     console.log("Traveler data:", travelerData);
 
-    // TODO: Implement actual Amadeus booking API call
-    // For now, we'll simulate the booking process
+    const baseUrl = Deno.env.get("AMADEUS_BASE_URL");
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    if (!baseUrl) {
+      throw new Error("AMADEUS_BASE_URL not configured");
+    }
+
+    // Get access token
+    const accessToken = await getAmadeusAccessToken();
     
-    // Simulate success/failure (90% success rate)
-    const success = Math.random() > 0.1;
+    // Prepare booking request payload
+    const bookingPayload = {
+      data: {
+        type: "flight-order",
+        flightOffers: [offerData],
+        travelers: [
+          {
+            id: "1",
+            dateOfBirth: travelerData.dateOfBirth || "1990-01-01",
+            name: {
+              firstName: travelerData.firstName,
+              lastName: travelerData.lastName,
+            },
+            gender: travelerData.gender || "MALE",
+            contact: {
+              emailAddress: travelerData.email,
+              phones: travelerData.phone ? [
+                {
+                  deviceType: "MOBILE",
+                  countryCallingCode: "1",
+                  number: travelerData.phone,
+                }
+              ] : [],
+            },
+            documents: travelerData.documents || [
+              {
+                documentType: "PASSPORT",
+                birthPlace: "Madrid",
+                issuanceLocation: "Madrid",
+                issuanceDate: "2015-04-14",
+                number: "00000000",
+                expiryDate: "2025-04-14",
+                issuanceCountry: "ES",
+                validityCountry: "ES",
+                nationality: "ES",
+                holder: true,
+              }
+            ],
+          }
+        ],
+      }
+    };
+
+    console.log("Making Amadeus booking request...");
     
-    if (success) {
-      return {
-        success: true,
-        bookingReference: `AM${Date.now()}`,
-        confirmationNumber: `CONF${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
-      };
-    } else {
+    // Make the booking request
+    const response = await fetch(`${baseUrl}/v1/booking/flight-orders`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/vnd.amadeus+json',
+      },
+      body: JSON.stringify(bookingPayload),
+    });
+
+    const responseData = await response.json();
+    
+    if (!response.ok) {
+      console.error("Amadeus booking failed:", responseData);
       return {
         success: false,
-        error: "Amadeus booking failed - flight no longer available",
+        error: responseData.errors?.[0]?.detail || `Amadeus API error: ${response.status}`,
       };
     }
+
+    console.log("Amadeus booking successful:", responseData);
+    
+    return {
+      success: true,
+      bookingReference: responseData.data?.id || `AM${Date.now()}`,
+      confirmationNumber: responseData.data?.associatedRecords?.[0]?.reference || 
+                         `CONF${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
+      bookingData: responseData.data,
+    };
   } catch (error) {
     console.error("Amadeus booking error:", error);
     return {
