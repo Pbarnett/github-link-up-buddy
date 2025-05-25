@@ -3,6 +3,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { stripe } from "../lib/stripe.ts";
 
+// Cache environment variables and clients at module scope for better performance
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -10,6 +14,9 @@ const corsHeaders = {
 };
 
 serve(async (req: Request) => {
+  const requestStart = Date.now();
+  console.log("Request started at:", new Date().toISOString());
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -19,9 +26,10 @@ serve(async (req: Request) => {
   }
 
   try {
+    const authStart = Date.now();
     const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
       {
         global: {
           headers: { Authorization: req.headers.get("Authorization")! },
@@ -44,6 +52,7 @@ serve(async (req: Request) => {
         }
       );
     }
+    console.log("Auth check took:", Date.now() - authStart, "ms");
 
     // Get the payment method ID from the request
     const { id } = await req.json();
@@ -61,6 +70,7 @@ serve(async (req: Request) => {
     console.log(`Setting default payment method ${id} for user ${user.id}`);
 
     // First, get the payment method details from our database
+    const fetchStart = Date.now();
     const { data: paymentMethod, error: fetchError } = await supabaseClient
       .from("payment_methods")
       .select("stripe_pm_id, stripe_customer_id")
@@ -78,6 +88,7 @@ serve(async (req: Request) => {
         }
       );
     }
+    console.log("Payment method fetch took:", Date.now() - fetchStart, "ms");
 
     let stripeCustomerId = paymentMethod.stripe_customer_id;
 
@@ -86,9 +97,11 @@ serve(async (req: Request) => {
       console.log("No stripe_customer_id found, retrieving from Stripe...");
       
       try {
+        const stripeRetrieveStart = Date.now();
         // Get the payment method from Stripe to find the customer
         const stripePaymentMethod = await stripe.paymentMethods.retrieve(paymentMethod.stripe_pm_id);
         stripeCustomerId = stripePaymentMethod.customer as string;
+        console.log("Stripe PM retrieve took:", Date.now() - stripeRetrieveStart, "ms");
 
         if (!stripeCustomerId) {
           return new Response(
@@ -101,10 +114,12 @@ serve(async (req: Request) => {
         }
 
         // Update our database with the customer ID for future use
+        const updateCustomerStart = Date.now();
         await supabaseClient
           .from("payment_methods")
           .update({ stripe_customer_id: stripeCustomerId })
           .eq("stripe_pm_id", paymentMethod.stripe_pm_id);
+        console.log("Customer ID update took:", Date.now() - updateCustomerStart, "ms");
 
         console.log(`Updated payment method with stripe_customer_id: ${stripeCustomerId}`);
       } catch (stripeError: any) {
@@ -123,11 +138,13 @@ serve(async (req: Request) => {
     try {
       console.log(`Updating Stripe customer ${stripeCustomerId} default payment method to ${paymentMethod.stripe_pm_id}`);
       
+      const stripeUpdateStart = Date.now();
       await stripe.customers.update(stripeCustomerId, {
         invoice_settings: {
           default_payment_method: paymentMethod.stripe_pm_id,
         },
       });
+      console.log("Stripe customer update took:", Date.now() - stripeUpdateStart, "ms");
 
       console.log("Successfully updated default payment method in Stripe");
     } catch (stripeError: any) {
@@ -141,15 +158,26 @@ serve(async (req: Request) => {
       );
     }
 
-    // Now update our database - first unset any existing default payment methods
-    const { error: unsetError } = await supabaseClient
-      .from("payment_methods")
-      .update({ is_default: false, updated_at: new Date().toISOString() })
-      .eq("user_id", user.id);
+    // Now update our database - parallelize the unset and set operations
+    const dbUpdateStart = Date.now();
+    const [unsetResult, setResult] = await Promise.all([
+      // First unset any existing default payment methods
+      supabaseClient
+        .from("payment_methods")
+        .update({ is_default: false, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id),
+      
+      // Then set the new default payment method
+      supabaseClient
+        .from("payment_methods")
+        .update({ is_default: true, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .eq("user_id", user.id)
+    ]);
+    console.log("Parallel DB updates took:", Date.now() - dbUpdateStart, "ms");
 
-    if (unsetError) {
-      console.error("Error unsetting default payment methods:", unsetError);
-      // Try to rollback Stripe changes would be complex here, so we log the error
+    if (unsetResult.error) {
+      console.error("Error unsetting default payment methods:", unsetResult.error);
       return new Response(
         JSON.stringify({ error: "Failed to update payment methods in database" }),
         {
@@ -159,15 +187,8 @@ serve(async (req: Request) => {
       );
     }
 
-    // Then set the new default payment method
-    const { error: setError } = await supabaseClient
-      .from("payment_methods")
-      .update({ is_default: true, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .eq("user_id", user.id);
-
-    if (setError) {
-      console.error("Error setting default payment method:", setError);
+    if (setResult.error) {
+      console.error("Error setting default payment method:", setResult.error);
       return new Response(
         JSON.stringify({ error: "Failed to set default payment method in database" }),
         {
@@ -178,6 +199,7 @@ serve(async (req: Request) => {
     }
 
     console.log(`Successfully set payment method ${id} as default for user ${user.id}`);
+    console.log("Total request time:", Date.now() - requestStart, "ms");
 
     return new Response(
       JSON.stringify({ ok: true }),
@@ -188,6 +210,7 @@ serve(async (req: Request) => {
     );
   } catch (error) {
     console.error("Error setting default payment method:", error);
+    console.log("Total request time (with error):", Date.now() - requestStart, "ms");
     return new Response(
       JSON.stringify({ error: error.message }),
       {
