@@ -195,6 +195,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          booking_request_id: string | null
           created_at: string
           id: string
           is_read: boolean
@@ -203,6 +204,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          booking_request_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -211,6 +213,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          booking_request_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -218,7 +221,15 @@ export type Database = {
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_booking_request_id_fkey"
+            columns: ["booking_request_id"]
+            isOneToOne: false
+            referencedRelation: "booking_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {
@@ -328,6 +339,33 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       trip_requests: {
         Row: {
           auto_book_enabled: boolean
@@ -384,6 +422,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_reminder_candidates: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          booking_request_id: string
+          user_id: string
+          phone: string
+          trip_details: Json
+          departure_date: string
+          departure_time: string
+        }[]
+      }
       rpc_auto_book_match: {
         Args: {
           p_match_id: string
