@@ -294,10 +294,15 @@ const TripConfirm = () => {
     setError(null);
 
     try {
-      console.log("[TripConfirm] Invoking create-booking-request with:", { userId, offerId: offer.id, bookingRequestId });
-      
-      const res = await supabase.functions.invoke("create-booking-request", {
-        body: { userId, offerId: offer.id, bookingRequestId }
+console.log(
+  "[TripConfirm] Invoking create-booking-request with:", 
+  { userId, offerId: offer.id, bookingRequestId }
+);
+
+const res = await supabase.functions.invoke<{ url: string }>(
+  "create-booking-request",
+  { body: { userId, offerId: offer.id, bookingRequestId } }
+);
       });
       
       console.log("[TripConfirm] Create-booking-request response:", res);
