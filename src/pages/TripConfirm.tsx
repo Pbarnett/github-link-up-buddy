@@ -187,7 +187,7 @@ const TripConfirm = () => {
 
     try {
       // Call the create-booking-request edge function
-      const res = await supabase.functions.invoke("create-booking-request", {
+      const res = await supabase.functions.invoke<{ url: string }>("create-booking-request", {
         body: { userId, offerId: offer.id }
       });
       

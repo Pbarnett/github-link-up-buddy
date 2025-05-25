@@ -27,7 +27,7 @@ interface AutoBookingSectionProps {
 }
 
 const AutoBookingSection = ({ control, watch }: AutoBookingSectionProps) => {
-  const { data: paymentMethods, isLoading } = usePaymentMethods();
+  const { paymentMethods, loading, error } = usePaymentMethods();
   const autoBookEnabled = watch("auto_book_enabled");
 
   return (
@@ -71,7 +71,7 @@ const AutoBookingSection = ({ control, watch }: AutoBookingSectionProps) => {
               <FormItem>
                 <FormLabel>Payment Method</FormLabel>
                 <Select
-                  disabled={isLoading || !paymentMethods || paymentMethods.length === 0}
+                  disabled={loading || !!error || !paymentMethods || paymentMethods.length === 0}
                   onValueChange={field.onChange}
                   value={field.value || ""}
                 >
@@ -96,7 +96,15 @@ const AutoBookingSection = ({ control, watch }: AutoBookingSectionProps) => {
             )}
           />
 
-          {(!paymentMethods || paymentMethods.length === 0) && (
+          {error && (
+            <Alert variant="destructive">
+              <CircleAlertIcon className="h-4 w-4" />
+              <AlertDescription>
+                Error loading payment methods: {error.message}
+              </AlertDescription>
+            </Alert>
+          )}
+          {(!error && !loading && (!paymentMethods || paymentMethods.length === 0)) && (
             <Alert variant="destructive">
               <CircleAlertIcon className="h-4 w-4" />
               <AlertDescription>
