@@ -1,6 +1,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { stripe } from "../lib/stripe.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -57,7 +58,64 @@ serve(async (req: Request) => {
       );
     }
 
-    // Delete the payment method
+    console.log(`Deleting payment method ${id} for user ${user.id}`);
+
+    // First, get the payment method details from our database
+    const { data: paymentMethod, error: fetchError } = await supabaseClient
+      .from("payment_methods")
+      .select("stripe_pm_id, stripe_customer_id, is_default")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (fetchError || !paymentMethod) {
+      console.error("Error fetching payment method:", fetchError);
+      return new Response(
+        JSON.stringify({ error: "Payment method not found" }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Check if this is the default payment method
+    if (paymentMethod.is_default) {
+      console.log("Cannot delete default payment method, user should set another as default first");
+      return new Response(
+        JSON.stringify({ error: "Cannot delete the default payment method. Please set another payment method as default first." }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Detach the payment method from Stripe first
+    try {
+      console.log(`Detaching payment method ${paymentMethod.stripe_pm_id} from Stripe`);
+      
+      await stripe.paymentMethods.detach(paymentMethod.stripe_pm_id);
+
+      console.log("Successfully detached payment method from Stripe");
+    } catch (stripeError: any) {
+      console.error("Error detaching payment method from Stripe:", stripeError);
+      
+      // If the payment method doesn't exist in Stripe, we can still delete it from our database
+      if (stripeError.code === 'resource_missing') {
+        console.log("Payment method not found in Stripe, continuing with database deletion");
+      } else {
+        return new Response(
+          JSON.stringify({ error: `Failed to detach payment method from Stripe: ${stripeError.message}` }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
+    // Now delete from our database
     const { error: deleteError } = await supabaseClient
       .from("payment_methods")
       .delete()
@@ -65,15 +123,31 @@ serve(async (req: Request) => {
       .eq("user_id", user.id);
 
     if (deleteError) {
-      console.error("Error deleting payment method:", deleteError);
+      console.error("Error deleting payment method from database:", deleteError);
+      
+      // If we successfully detached from Stripe but failed to delete from database,
+      // we should try to re-attach to Stripe (best effort rollback)
+      try {
+        if (paymentMethod.stripe_customer_id) {
+          await stripe.paymentMethods.attach(paymentMethod.stripe_pm_id, {
+            customer: paymentMethod.stripe_customer_id,
+          });
+          console.log("Rolled back Stripe detachment due to database error");
+        }
+      } catch (rollbackError) {
+        console.error("Failed to rollback Stripe detachment:", rollbackError);
+      }
+
       return new Response(
-        JSON.stringify({ error: "Failed to delete payment method" }),
+        JSON.stringify({ error: "Failed to delete payment method from database" }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
     }
+
+    console.log(`Successfully deleted payment method ${id} for user ${user.id}`);
 
     return new Response(
       JSON.stringify({ ok: true }),
