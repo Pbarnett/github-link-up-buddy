@@ -12,12 +12,20 @@ import { Button } from "@/components/ui/button";
 
 function WalletPage() {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-  const { data, error, isLoading, refetch } = usePaymentMethods();
+  const {
+    paymentMethods,
+    error: paymentMethodsError,
+    loading,
+    refetch,
+  } = usePaymentMethods();
   const { user } = useCurrentUser();
+
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
-  const [fetchError, setFetchError] = useState<string|null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  // …
+}
 
   const handleSetDefault = async (paymentMethod: PaymentMethod) => {
     if (!user) {
@@ -153,12 +161,12 @@ function WalletPage() {
           <div className="px-4 py-5 sm:p-6 space-y-6">
             <h1 className="text-2xl font-semibold">Wallet</h1>
             
-            {isLoading && <p className="text-gray-600">Loading saved cards…</p>}
-            {error && <p className="text-red-600">Error loading cards: {error.message}</p>}
+            {loading && <p className="text-gray-600">Loading saved cards…</p>}
+            {paymentMethodsError && <p className="text-red-600">Error loading cards: {paymentMethodsError.message}</p>}
 
-            {data && data.length > 0 ? (
+            {paymentMethods && paymentMethods.length > 0 ? (
               <ul className="divide-y divide-gray-200">
-                {data.map((pm: PaymentMethod) => (
+                {paymentMethods.map((pm: PaymentMethod) => (
                   <li key={pm.id} className="py-4 flex justify-between items-center">
                     <div className="flex items-center space-x-3">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -199,7 +207,7 @@ function WalletPage() {
                   </li>
                 ))}
               </ul>
-            ) : !isLoading && (
+            ) : !loading && !paymentMethodsError && (
               <p className="text-gray-600 py-4">No payment methods saved yet.</p>
             )}
 
