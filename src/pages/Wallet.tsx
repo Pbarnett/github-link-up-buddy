@@ -24,8 +24,6 @@ function WalletPage() {
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  // …
-}
 
   const handleSetDefault = async (paymentMethod: PaymentMethod) => {
     if (!user) {
