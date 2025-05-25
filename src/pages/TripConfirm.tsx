@@ -8,19 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
-import { TablesInsert, Tables } from "@/integrations/supabase/types";
+import { Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { safeQuery } from "@/lib/supabaseUtils";
-
-type BookingRequestPayload = {
-  new: Tables<'booking_requests'>;
-  old: Tables<'booking_requests'>;
-  commit_timestamp: string;
-  errors: any[] | null;
-  table: string;
-  schema: string;
-  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-};
+import TravelerDataForm, { TravelerData } from "@/components/TravelerDataForm";
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -30,6 +20,10 @@ const TripConfirm = () => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bookingStatus, setBookingStatus] = useState<string | null>(null);
+  const [showTravelerForm, setShowTravelerForm] = useState(true);
+  const [travelerData, setTravelerData] = useState<TravelerData | null>(null);
+  const [bookingRequestId, setBookingRequestId] = useState<string | null>(null);
+  const [isSavingTravelerData, setIsSavingTravelerData] = useState(false);
   const { user, userId, loading: userLoading } = useCurrentUser();
   const searchParams = new URLSearchParams(location.search);
   const sessionId = searchParams.get('session_id');
@@ -40,6 +34,7 @@ const TripConfirm = () => {
       if (sessionId) {
         // We're returning from Stripe checkout, show booking status
         setBookingStatus("Processing payment...");
+        setShowTravelerForm(false);
         return;
       }
       
@@ -166,6 +161,55 @@ const TripConfirm = () => {
     navigate('/trip/offers');
   };
 
+  const handleTravelerDataSubmit = async (data: TravelerData) => {
+    if (!offer || !userId) {
+      toast({
+        title: "Error",
+        description: "Missing required information to save traveler data.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingTravelerData(true);
+    setError(null);
+
+    try {
+      // First, create or update the booking request with traveler data
+      const { data: bookingRequest, error: bookingError } = await supabase
+        .from("booking_requests")
+        .insert({
+          user_id: userId,
+          offer_id: offer.id,
+          offer_data: offer,
+          traveler_data: data,
+          status: 'new'
+        })
+        .select()
+        .single();
+
+      if (bookingError) throw bookingError;
+
+      setBookingRequestId(bookingRequest.id);
+      setTravelerData(data);
+      setShowTravelerForm(false);
+
+      toast({
+        title: "Traveler Information Saved",
+        description: "You can now proceed to payment.",
+      });
+    } catch (err: any) {
+      setError(err.message || "Failed to save traveler information");
+      toast({
+        title: "Error",
+        description: err.message || "Failed to save traveler information. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingTravelerData(false);
+    }
+  };
+
   const onConfirm = async () => {
     if (!offer || !offer.id) {
       toast({
@@ -185,13 +229,22 @@ const TripConfirm = () => {
       return;
     }
 
+    if (!bookingRequestId) {
+      toast({
+        title: "Error",
+        description: "Please complete traveler information first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsConfirming(true);
     setError(null);
 
     try {
-      // Call the create-booking-request edge function
+      // Call the create-booking-request edge function with the existing booking request ID
       const res = await supabase.functions.invoke("create-booking-request", {
-        body: { userId, offerId: offer.id }
+        body: { userId, offerId: offer.id, bookingRequestId }
       });
       
       if (res.error) {
@@ -297,91 +350,144 @@ const TripConfirm = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
-      <Card className="w-full max-w-3xl">
-        <CardHeader>
-          <CardTitle className="text-2xl">Confirm Your Flight</CardTitle>
-          <CardDescription>
-            Please review your selected flight details before confirming
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Security Error Message */}
-          {error && (
-            <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md flex items-start">
-              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-              <p>{error}</p>
-            </div>
-          )}
-          
-          {/* Airline and Flight Number */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <h3 className="text-xl font-semibold">{offer.airline}</h3>
-              <Badge variant="outline" className="ml-2">{offer.flight_number}</Badge>
-            </div>
-            <p className="text-2xl font-bold">${offer.price}</p>
-          </div>
-          
-          {/* Flight Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-b py-4">
-            {/* Departure Info */}
-            <div className="space-y-3">
-              <h4 className="font-medium">Departure</h4>
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{new Date(offer.departure_date).toLocaleDateString()}</span>
+      <div className="w-full max-w-3xl space-y-6">
+        {/* Flight Details Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Confirm Your Flight</CardTitle>
+            <CardDescription>
+              Please review your selected flight details
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Security Error Message */}
+            {error && (
+              <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md flex items-start">
+                <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+                <p>{error}</p>
               </div>
+            )}
+            
+            {/* Airline and Flight Number */}
+            <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{offer.departure_time}</span>
+                <h3 className="text-xl font-semibold">{offer.airline}</h3>
+                <Badge variant="outline" className="ml-2">{offer.flight_number}</Badge>
+              </div>
+              <p className="text-2xl font-bold">${offer.price}</p>
+            </div>
+            
+            {/* Flight Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-b py-4">
+              {/* Departure Info */}
+              <div className="space-y-3">
+                <h4 className="font-medium">Departure</h4>
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>{new Date(offer.departure_date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center">
+                  <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>{offer.departure_time}</span>
+                </div>
+              </div>
+              
+              {/* Return Info */}
+              <div className="space-y-3">
+                <h4 className="font-medium">Return</h4>
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>{new Date(offer.return_date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center">
+                  <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>{offer.return_time}</span>
+                </div>
               </div>
             </div>
             
-            {/* Return Info */}
-            <div className="space-y-3">
-              <h4 className="font-medium">Return</h4>
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{new Date(offer.return_date).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{offer.return_time}</span>
-              </div>
+            {/* Duration */}
+            <div className="flex items-center">
+              <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
+              <span className="text-sm text-gray-500">Flight duration: {offer.duration}</span>
             </div>
-          </div>
-          
-          {/* Duration */}
-          <div className="flex items-center">
-            <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
-            <span className="text-sm text-gray-500">Flight duration: {offer.duration}</span>
-          </div>
-          
-          {/* Notes */}
-          <div className="bg-gray-50 p-4 rounded-md">
-            <p className="text-sm text-gray-500">
-              By confirming this booking, you agree to the terms and conditions of the airline.
-              This booking is non-refundable after 24 hours.
-            </p>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button onClick={handleCancel} variant="outline" disabled={isConfirming}>
-            <X className="mr-2 h-4 w-4" /> Cancel
-          </Button>
-          <Button onClick={onConfirm} disabled={isConfirming || !!error}>
-            {isConfirming ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing…
-              </>
-            ) : (
-              <>
-                <Check className="mr-2 h-4 w-4" /> Pay & Book
-              </>
-            )}
-          </Button>
-        </CardFooter>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Traveler Data Form */}
+        {showTravelerForm && (
+          <TravelerDataForm
+            onSubmit={handleTravelerDataSubmit}
+            isLoading={isSavingTravelerData}
+          />
+        )}
+
+        {/* Traveler Data Summary (when form is completed) */}
+        {!showTravelerForm && travelerData && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Passenger Information
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTravelerForm(true)}
+                  disabled={isConfirming}
+                >
+                  Edit
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Name:</span> {travelerData.firstName} {travelerData.lastName}
+                </div>
+                <div>
+                  <span className="font-medium">Date of Birth:</span> {new Date(travelerData.dateOfBirth).toLocaleDateString()}
+                </div>
+                <div>
+                  <span className="font-medium">Gender:</span> {travelerData.gender}
+                </div>
+                <div>
+                  <span className="font-medium">Document:</span> {travelerData.passportNumber}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Payment Card */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="bg-gray-50 p-4 rounded-md mb-4">
+              <p className="text-sm text-gray-500">
+                By confirming this booking, you agree to the terms and conditions of the airline.
+                This booking is non-refundable after 24 hours.
+              </p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button onClick={handleCancel} variant="outline" disabled={isConfirming || isSavingTravelerData}>
+              <X className="mr-2 h-4 w-4" /> Cancel
+            </Button>
+            <Button 
+              onClick={onConfirm} 
+              disabled={isConfirming || showTravelerForm || !!error || isSavingTravelerData}
+            >
+              {isConfirming ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing…
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" /> Pay & Book
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 };

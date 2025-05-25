@@ -21,6 +21,7 @@ export type Database = {
           offer_id: string
           processed_at: string | null
           status: Database["public"]["Enums"]["booking_request_status"]
+          traveler_data: Json | null
           user_id: string
         }
         Insert: {
@@ -34,6 +35,7 @@ export type Database = {
           offer_id: string
           processed_at?: string | null
           status?: Database["public"]["Enums"]["booking_request_status"]
+          traveler_data?: Json | null
           user_id: string
         }
         Update: {
@@ -47,6 +49,7 @@ export type Database = {
           offer_id?: string
           processed_at?: string | null
           status?: Database["public"]["Enums"]["booking_request_status"]
+          traveler_data?: Json | null
           user_id?: string
         }
         Relationships: [
