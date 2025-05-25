@@ -64,6 +64,13 @@ async function processBookingRequest(bookingRequest: any) {
         })
         .eq("id", bookingRequest.id);
 
+      // Send booking confirmation email
+      supabase.functions
+        .invoke("send-booking-confirmation", { 
+          body: { booking_request_id: bookingRequest.id } 
+        })
+        .catch(console.error);
+
       console.log(`✅ Booking request ${bookingRequest.id} completed successfully`);
       return { success: true, bookingId: booking.id, amadeusData: amadeusResult };
     } else {
@@ -84,6 +91,15 @@ async function processBookingRequest(bookingRequest: any) {
         processed_at: new Date().toISOString()
       })
       .eq("id", bookingRequest.id);
+
+    // Send booking failure email if final failure
+    if (!shouldRetry) {
+      supabase.functions
+        .invoke("send-booking-failed", { 
+          body: { booking_request_id: bookingRequest.id } 
+        })
+        .catch(console.error);
+    }
 
     return { success: false, error: error.message, attempts };
   }
