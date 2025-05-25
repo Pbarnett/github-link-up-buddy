@@ -2,12 +2,37 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
+
+interface BookingRequest {
+  id: string;
+  status: string;
+  created_at: string;
+  processed_at: string | null;
+  error: string | null;
+  retry_count: number;
+  offer_data: any;
+}
+
+interface TripRequest {
+  id: string;
+  destination_airport: string;
+  earliest_departure: string;
+  latest_departure: string;
+  budget: number;
+  created_at: string;
+}
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([]);
+  const [tripRequests, setTripRequests] = useState<TripRequest[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
@@ -21,6 +46,7 @@ const Dashboard = () => {
       
       if (data?.user) {
         setUser(data.user);
+        await loadDashboardData(data.user.id);
       }
       
       setLoading(false);
@@ -33,6 +59,7 @@ const Dashboard = () => {
         setUser(null);
       } else if (session?.user) {
         setUser(session.user);
+        loadDashboardData(session.user.id);
       }
     });
     
@@ -40,6 +67,114 @@ const Dashboard = () => {
       authListener.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Set up real-time subscription for booking requests
+    const channel = supabase
+      .channel('booking-requests-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'booking_requests',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Booking request change:', payload);
+          loadBookingRequests(user.id);
+          
+          if (payload.eventType === 'UPDATE') {
+            const newStatus = payload.new.status;
+            const oldStatus = payload.old?.status;
+            
+            if (newStatus !== oldStatus) {
+              toast({
+                title: "Booking Status Updated",
+                description: `Booking request ${payload.new.id.slice(0, 8)} is now ${newStatus}`,
+                variant: newStatus === 'done' ? 'default' : newStatus === 'failed' ? 'destructive' : 'default'
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const loadDashboardData = async (userId: string) => {
+    await Promise.all([
+      loadBookingRequests(userId),
+      loadTripRequests(userId)
+    ]);
+  };
+
+  const loadBookingRequests = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('booking_requests')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading booking requests:', error);
+    } else {
+      setBookingRequests(data || []);
+    }
+  };
+
+  const loadTripRequests = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('trip_requests')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (error) {
+      console.error('Error loading trip requests:', error);
+    } else {
+      setTripRequests(data || []);
+    }
+  };
+
+  const retryBookingRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('booking_requests')
+        .update({ 
+          status: 'pending_booking',
+          retry_count: 0,
+          error: null
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Booking Retry Initiated",
+        description: "The booking request has been queued for retry",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Retry Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const refreshData = async () => {
+    if (!user) return;
+    setRefreshing(true);
+    await loadDashboardData(user.id);
+    setRefreshing(false);
+  };
   
   const handleSignOut = async () => {
     try {
@@ -53,6 +188,26 @@ const Dashboard = () => {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'done': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed': return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'processing': return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
+      case 'pending_booking':
+      case 'pending_payment': return <Clock className="h-4 w-4 text-yellow-500" />;
+      default: return <AlertCircle className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'done': return 'default';
+      case 'failed': return 'destructive';
+      case 'processing': return 'secondary';
+      default: return 'outline';
     }
   };
 
@@ -73,14 +228,113 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="bg-white shadow overflow-hidden rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
             <p className="mt-2 text-lg text-gray-600">Hello, {user.email}</p>
-            <div className="mt-6">
-              <Button onClick={handleSignOut}>Sign Out</Button>
-            </div>
           </div>
+          <div className="flex gap-3">
+            <Button 
+              onClick={refreshData} 
+              disabled={refreshing}
+              variant="outline"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button onClick={handleSignOut}>Sign Out</Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Booking Requests */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Booking Requests</CardTitle>
+              <CardDescription>
+                Track your flight booking requests and their status
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {bookingRequests.length === 0 ? (
+                <p className="text-gray-500">No booking requests yet</p>
+              ) : (
+                <div className="space-y-4">
+                  {bookingRequests.map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        {getStatusIcon(request.status)}
+                        <div>
+                          <p className="font-medium">
+                            {request.offer_data?.airline} {request.offer_data?.flight_number}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Created {new Date(request.created_at).toLocaleDateString()}
+                          </p>
+                          {request.error && (
+                            <p className="text-sm text-red-600 mt-1">{request.error}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={getStatusBadgeVariant(request.status)}>
+                          {request.status}
+                        </Badge>
+                        {request.status === 'failed' && request.retry_count < 3 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => retryBookingRequest(request.id)}
+                          >
+                            Retry
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Trip Requests */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Trip Requests</CardTitle>
+              <CardDescription>
+                Your latest trip searches and requests
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {tripRequests.length === 0 ? (
+                <p className="text-gray-500">No trip requests yet</p>
+              ) : (
+                <div className="space-y-4">
+                  {tripRequests.map((trip) => (
+                    <div key={trip.id} className="p-4 border rounded-lg">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">
+                            To: {trip.destination_airport || 'Any destination'}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(trip.earliest_departure).toLocaleDateString()} - 
+                            {new Date(trip.latest_departure).toLocaleDateString()}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Budget: ${trip.budget}
+                          </p>
+                        </div>
+                        <Badge variant="outline">
+                          {new Date(trip.created_at).toLocaleDateString()}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

@@ -1,5 +1,10 @@
-/** Collapse the recursive Json union to `unknown` to prevent TS recursion errors */
-export type Json = unknown;
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
   public: {
@@ -8,37 +13,40 @@ export type Database = {
         Row: {
           attempts: number
           auto: boolean
+          checkout_session_id: string | null
           created_at: string
           error: string | null
           id: string
           offer_data: Json
           offer_id: string
           processed_at: string | null
-          status: string
+          status: Database["public"]["Enums"]["booking_request_status"]
           user_id: string
         }
         Insert: {
           attempts?: number
           auto?: boolean
+          checkout_session_id?: string | null
           created_at?: string
           error?: string | null
           id?: string
           offer_data: Json
           offer_id: string
           processed_at?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["booking_request_status"]
           user_id: string
         }
         Update: {
           attempts?: number
           auto?: boolean
+          checkout_session_id?: string | null
           created_at?: string
           error?: string | null
           id?: string
           offer_data?: Json
           offer_id?: string
           processed_at?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["booking_request_status"]
           user_id?: string
         }
         Relationships: [
@@ -383,7 +391,13 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      booking_request_status:
+        | "new"
+        | "pending_payment"
+        | "pending_booking"
+        | "processing"
+        | "done"
+        | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -498,6 +512,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      booking_request_status: [
+        "new",
+        "pending_payment",
+        "pending_booking",
+        "processing",
+        "done",
+        "failed",
+      ],
+    },
   },
 } as const
