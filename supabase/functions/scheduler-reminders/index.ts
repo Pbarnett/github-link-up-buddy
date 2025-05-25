@@ -15,6 +15,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: candidates, error } = await supabase.rpc('get_reminder_candidates');
 
     if (error) {
+      console.error("RPC error:", error);
       throw new Error(`Failed to get reminder candidates: ${error.message}`);
     }
 
@@ -23,14 +24,15 @@ const handler = async (req: Request): Promise<Response> => {
     if (!candidates || candidates.length === 0) {
       return new Response(JSON.stringify({ 
         message: "No reminders to send",
-        processed: 0 
+        processed: 0,
+        results: []
       }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Process each reminder candidate
+    // Process each reminder candidate with detailed error handling
     const results = await Promise.allSettled(
       candidates.map(async (candidate) => {
         try {
@@ -42,27 +44,52 @@ const handler = async (req: Request): Promise<Response> => {
 
           if (error) {
             console.error(`Failed to send reminder for ${candidate.booking_request_id}:`, error);
-            throw error;
+            return { 
+              id: candidate.booking_request_id, 
+              status: "error", 
+              error: error.message 
+            };
           }
 
-          return { success: true, booking_id: candidate.booking_request_id };
+          return { 
+            id: candidate.booking_request_id, 
+            status: "sent" 
+          };
         } catch (error) {
           console.error(`Error processing reminder for ${candidate.booking_request_id}:`, error);
-          return { success: false, booking_id: candidate.booking_request_id, error: error.message };
+          return { 
+            id: candidate.booking_request_id, 
+            status: "error", 
+            error: error.message 
+          };
         }
       })
     );
 
-    const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-    const failed = results.length - successful;
+    // Transform Promise.allSettled results
+    const processedResults = results.map(result => {
+      if (result.status === 'fulfilled') {
+        return result.value;
+      } else {
+        return {
+          id: 'unknown',
+          status: 'error',
+          error: result.reason?.message || 'Unknown error'
+        };
+      }
+    });
+
+    const successful = processedResults.filter(r => r.status === 'sent').length;
+    const failed = processedResults.filter(r => r.status === 'error').length;
 
     console.log(`Reminder processing complete: ${successful} successful, ${failed} failed`);
 
     return new Response(JSON.stringify({ 
       message: "Reminder processing complete",
-      processed: results.length,
+      processed: processedResults.length,
       successful,
-      failed 
+      failed,
+      results: processedResults
     }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -70,7 +97,13 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error) {
     console.error("Error in scheduler-reminders:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      processed: 0,
+      successful: 0,
+      failed: 0,
+      results: []
+    }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
