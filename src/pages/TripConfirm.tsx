@@ -218,15 +218,18 @@ const TripConfirm = () => {
     setError(null);
 
     try {
+      // Create the booking request data object with proper typing
+      const bookingRequestData = {
+        user_id: userId,
+        offer_id: offer.id,
+        offer_data: offer as any, // Cast to any to avoid type conflicts
+        traveler_data: data as any, // Cast to any to avoid type conflicts
+        status: 'new' as const
+      };
+
       const { data: bookingRequest, error: bookingError } = await supabase
         .from("booking_requests")
-        .insert({
-          user_id: userId,
-          offer_id: offer.id,
-          offer_data: offer,
-          traveler_data: data,
-          status: 'new'
-        })
+        .insert(bookingRequestData)
         .select()
         .single();
 
