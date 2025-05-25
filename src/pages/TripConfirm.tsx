@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -294,16 +293,15 @@ const TripConfirm = () => {
     setError(null);
 
     try {
-console.log(
-  "[TripConfirm] Invoking create-booking-request with:", 
-  { userId, offerId: offer.id, bookingRequestId }
-);
+      console.log(
+        "[TripConfirm] Invoking create-booking-request with:", 
+        { userId, offerId: offer.id, bookingRequestId }
+      );
 
-const res = await supabase.functions.invoke<{ url: string }>(
-  "create-booking-request",
-  { body: { userId, offerId: offer.id, bookingRequestId } }
-);
-      });
+      const res = await supabase.functions.invoke<{ url: string }>(
+        "create-booking-request",
+        { body: { userId, offerId: offer.id, bookingRequestId } }
+      );
       
       console.log("[TripConfirm] Create-booking-request response:", res);
       

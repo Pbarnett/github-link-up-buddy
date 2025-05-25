@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { format, parseISO } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -293,7 +295,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="center" side="bottom">
-          <Calendar
+          <CalendarComponent
             mode="range"
             defaultMonth={dateRange?.from}
             selected={dateRange}
