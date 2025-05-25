@@ -1,12 +1,14 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye } from 'lucide-react';
 
 interface BookingRequest {
   id: string;
@@ -33,6 +35,11 @@ const Dashboard = () => {
   const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([]);
   const [tripRequests, setTripRequests] = useState<TripRequest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedError, setSelectedError] = useState<string | null>(null);
+  
+  // Track previous statuses for smart toast notifications
+  const prevStatuses = useRef<Record<string, string>>({});
 
   useEffect(() => {
     const getUser = async () => {
@@ -68,6 +75,13 @@ const Dashboard = () => {
     };
   }, []);
 
+  // Initialize previous statuses when booking requests are first loaded
+  useEffect(() => {
+    bookingRequests.forEach(request => {
+      prevStatuses.current[request.id] = request.status;
+    });
+  }, [bookingRequests.length]); // Only run when length changes (initial load)
+
   useEffect(() => {
     if (!user) return;
 
@@ -84,20 +98,53 @@ const Dashboard = () => {
         },
         (payload) => {
           console.log('Booking request change:', payload);
-          loadBookingRequests(user.id);
           
-          if (payload.eventType === 'UPDATE') {
+          setBookingRequests(prev => {
+            const requestId = payload.new.id;
+            const oldStatus = prevStatuses.current[requestId];
             const newStatus = payload.new.status;
-            const oldStatus = payload.old?.status;
             
-            if (newStatus !== oldStatus) {
-              toast({
-                title: "Booking Status Updated",
-                description: `Booking request ${payload.new.id.slice(0, 8)} is now ${newStatus}`,
-                variant: newStatus === 'done' ? 'default' : newStatus === 'failed' ? 'destructive' : 'default'
-              });
+            // Enhanced toast notifications for meaningful transitions
+            if (oldStatus && oldStatus !== newStatus) {
+              const requestShortId = requestId.slice(0, 8);
+              
+              if (oldStatus === 'processing' && newStatus === 'done') {
+                toast({
+                  title: "🎉 Booking Confirmed!",
+                  description: `Your booking ${requestShortId} has been successfully completed.`,
+                });
+              } else if (oldStatus === 'processing' && newStatus === 'failed') {
+                toast({
+                  title: "❌ Booking Failed",
+                  description: `Booking ${requestShortId} encountered an error. You can retry if needed.`,
+                  variant: 'destructive'
+                });
+              } else if (newStatus === 'processing') {
+                toast({
+                  title: "⏳ Processing Booking",
+                  description: `Booking ${requestShortId} is now being processed.`,
+                });
+              } else if (newStatus === 'pending_payment') {
+                toast({
+                  title: "💳 Payment Required",
+                  description: `Booking ${requestShortId} is waiting for payment confirmation.`,
+                });
+              }
             }
-          }
+            
+            // Update the previous status tracker
+            prevStatuses.current[requestId] = newStatus;
+            
+            // Update the list
+            const existingIndex = prev.findIndex(r => r.id === requestId);
+            if (existingIndex >= 0) {
+              const updated = [...prev];
+              updated[existingIndex] = payload.new;
+              return updated;
+            } else {
+              return [payload.new, ...prev];
+            }
+          });
         }
       )
       .subscribe();
@@ -105,6 +152,17 @@ const Dashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+  }, [user]);
+
+  // Automatic polling fallback every 30 seconds
+  useEffect(() => {
+    if (!user) return;
+
+    const pollInterval = setInterval(async () => {
+      await loadBookingRequests(user.id);
+    }, 30000);
+
+    return () => clearInterval(pollInterval);
   }, [user]);
 
   const loadDashboardData = async (userId: string) => {
@@ -157,8 +215,8 @@ const Dashboard = () => {
       if (error) throw error;
 
       toast({
-        title: "Booking Retry Initiated",
-        description: "The booking request has been queued for retry",
+        title: "🔄 Retry Initiated",
+        description: "Your booking request has been queued for retry",
       });
     } catch (error: any) {
       toast({
@@ -202,13 +260,31 @@ const Dashboard = () => {
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case 'done': return 'default';
       case 'failed': return 'destructive';
       case 'processing': return 'secondary';
+      case 'pending_payment':
+      case 'pending_booking': return 'outline';
       default: return 'outline';
     }
+  };
+
+  const getFilteredBookingRequests = () => {
+    if (statusFilter === 'all') return bookingRequests;
+    return bookingRequests.filter(request => request.status === statusFilter);
+  };
+
+  const getStatusCounts = () => {
+    return {
+      all: bookingRequests.length,
+      pending_booking: bookingRequests.filter(r => r.status === 'pending_booking').length,
+      pending_payment: bookingRequests.filter(r => r.status === 'pending_payment').length,
+      processing: bookingRequests.filter(r => r.status === 'processing').length,
+      done: bookingRequests.filter(r => r.status === 'done').length,
+      failed: bookingRequests.filter(r => r.status === 'failed').length,
+    };
   };
 
   if (loading) {
@@ -224,6 +300,9 @@ const Dashboard = () => {
   if (!user) {
     return <Navigate to="/login" />;
   }
+
+  const statusCounts = getStatusCounts();
+  const filteredRequests = getFilteredBookingRequests();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -247,7 +326,7 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Booking Requests */}
+          {/* Booking Requests with Tabs */}
           <Card>
             <CardHeader>
               <CardTitle>Booking Requests</CardTitle>
@@ -256,44 +335,103 @@ const Dashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {bookingRequests.length === 0 ? (
-                <p className="text-gray-500">No booking requests yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {bookingRequests.map((request) => (
-                    <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        {getStatusIcon(request.status)}
-                        <div>
-                          <p className="font-medium">
-                            {request.offer_data?.airline} {request.offer_data?.flight_number}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Created {new Date(request.created_at).toLocaleDateString()}
-                          </p>
-                          {request.error && (
-                            <p className="text-sm text-red-600 mt-1">{request.error}</p>
-                          )}
+              <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+                  <TabsTrigger value="all" className="text-xs">
+                    All ({statusCounts.all})
+                  </TabsTrigger>
+                  <TabsTrigger value="pending_booking" className="text-xs">
+                    Pending ({statusCounts.pending_booking})
+                  </TabsTrigger>
+                  <TabsTrigger value="processing" className="text-xs">
+                    Processing ({statusCounts.processing})
+                  </TabsTrigger>
+                  <TabsTrigger value="done" className="text-xs">
+                    Done ({statusCounts.done})
+                  </TabsTrigger>
+                  <TabsTrigger value="failed" className="text-xs">
+                    Failed ({statusCounts.failed})
+                  </TabsTrigger>
+                  <TabsTrigger value="pending_payment" className="text-xs">
+                    Payment ({statusCounts.pending_payment})
+                  </TabsTrigger>
+                </TabsList>
+                
+                <div className="mt-6">
+                  {filteredRequests.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">
+                      {statusFilter === 'all' 
+                        ? 'No booking requests yet' 
+                        : `No ${statusFilter.replace('_', ' ')} requests`
+                      }
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {filteredRequests.map((request) => (
+                        <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            {getStatusIcon(request.status)}
+                            <div>
+                              <p className="font-medium">
+                                {request.offer_data?.airline} {request.offer_data?.flight_number}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                Created {new Date(request.created_at).toLocaleDateString()}
+                              </p>
+                              {request.error && (
+                                <div className="flex items-center space-x-2 mt-1">
+                                  <p className="text-sm text-red-600 truncate max-w-xs">
+                                    {request.error.substring(0, 50)}...
+                                  </p>
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => setSelectedError(request.error)}
+                                        className="p-1 h-auto"
+                                      >
+                                        <Eye className="h-3 w-3" />
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-2xl">
+                                      <DialogHeader>
+                                        <DialogTitle>Error Details</DialogTitle>
+                                        <DialogDescription>
+                                          Booking request {request.id.slice(0, 8)} error information
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      <div className="mt-4">
+                                        <pre className="whitespace-pre-wrap text-sm bg-gray-100 p-4 rounded max-h-96 overflow-y-auto">
+                                          {request.error}
+                                        </pre>
+                                      </div>
+                                    </DialogContent>
+                                  </Dialog>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={getStatusBadgeVariant(request.status)}>
+                              {request.status.replace('_', ' ')}
+                            </Badge>
+                            {request.status === 'failed' && request.attempts < 3 && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => retryBookingRequest(request.id)}
+                              >
+                                Retry
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={getStatusBadgeVariant(request.status)}>
-                          {request.status}
-                        </Badge>
-                        {request.status === 'failed' && request.attempts < 3 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => retryBookingRequest(request.id)}
-                          >
-                            Retry
-                          </Button>
-                        )}
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
+              </Tabs>
             </CardContent>
           </Card>
 
