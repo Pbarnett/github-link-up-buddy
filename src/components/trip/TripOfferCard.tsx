@@ -22,7 +22,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
   const navigate = useNavigate();
 
   const handleSelect = () => {
-    console.log('Selected offer', offer.id);
+    // console.log('Selected offer', offer.id); // Removed
     
     // Create query parameters from the offer
     const params = new URLSearchParams();

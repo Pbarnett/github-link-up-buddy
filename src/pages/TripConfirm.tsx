@@ -201,12 +201,23 @@ const TripConfirm = () => {
       
       // Redirect to Stripe checkout
       window.location.href = res.data.url;
-    } catch (err: any) {
-      // console.error("Error creating booking request:", err); // Removed, existing toast handles this
-      setError(err.message || "There was a problem setting up the booking");
+    } catch (e: unknown) {
+      let errorMessage = "There was a problem setting up your booking. Please try again.";
+      if (e instanceof Error) {
+        errorMessage = e.message || errorMessage;
+      } else if (typeof e === 'string') {
+        errorMessage = e || errorMessage;
+      }
+      // If e is an object with a message property (common for Supabase errors not strictly an Error instance)
+      else if (typeof e === 'object' && e !== null && 'message' in e && typeof (e as any).message === 'string') {
+        errorMessage = (e as any).message || errorMessage;
+      }
+
+
+      setError(errorMessage);
       toast({
         title: "Booking Failed",
-        description: err.message || "There was a problem setting up your booking. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       setIsConfirming(false);
