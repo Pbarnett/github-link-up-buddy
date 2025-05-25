@@ -100,9 +100,10 @@ const Dashboard = () => {
           console.log('Booking request change:', payload);
           
           setBookingRequests(prev => {
-            const requestId = payload.new.id;
+            const bookingUpdate = payload.new as BookingRequest;
+            const requestId = bookingUpdate.id;
             const oldStatus = prevStatuses.current[requestId];
-            const newStatus = payload.new.status;
+            const newStatus = bookingUpdate.status;
             
             // Enhanced toast notifications for meaningful transitions
             if (oldStatus && oldStatus !== newStatus) {
@@ -139,10 +140,10 @@ const Dashboard = () => {
             const existingIndex = prev.findIndex(r => r.id === requestId);
             if (existingIndex >= 0) {
               const updated = [...prev];
-              updated[existingIndex] = payload.new;
+              updated[existingIndex] = bookingUpdate;
               return updated;
             } else {
-              return [payload.new, ...prev];
+              return [bookingUpdate, ...prev];
             }
           });
         }
