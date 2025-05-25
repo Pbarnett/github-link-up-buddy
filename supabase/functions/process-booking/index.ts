@@ -17,7 +17,7 @@ const supabase = createClient(
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function processBookingRequest(bookingRequest: any) {
-  console.log(`Processing booking request ${bookingRequest.id}`);
+  console.log(`[PROCESS-BOOKING] Processing booking request ${bookingRequest.id}`);
   
   try {
     // Mark as processing
@@ -29,7 +29,7 @@ async function processBookingRequest(bookingRequest: any) {
       })
       .eq("id", bookingRequest.id);
 
-    console.log("Calling Amadeus booking with offer data:", bookingRequest.offer_data);
+    console.log("[PROCESS-BOOKING] Calling Amadeus booking with offer data:", bookingRequest.offer_data);
     
     // Get traveler data from the booking request
     const travelerData = bookingRequest.traveler_data || {
@@ -71,13 +71,13 @@ async function processBookingRequest(bookingRequest: any) {
         })
         .catch(console.error);
 
-      console.log(`✅ Booking request ${bookingRequest.id} completed successfully`);
+      console.log(`[PROCESS-BOOKING] ✅ Booking request ${bookingRequest.id} completed successfully`);
       return { success: true, bookingId: booking.id, amadeusData: amadeusResult };
     } else {
       throw new Error(amadeusResult.error || "Amadeus booking failed");
     }
   } catch (error) {
-    console.error(`❌ Booking request ${bookingRequest.id} failed:`, error);
+    console.error(`[PROCESS-BOOKING] ❌ Booking request ${bookingRequest.id} failed:`, error);
     
     const attempts = (bookingRequest.attempts || 0) + 1;
     const shouldRetry = attempts < 3;
@@ -111,28 +111,74 @@ serve(async (req: Request) => {
   }
 
   try {
-    console.log("Processing pending booking requests...");
+    console.log("[PROCESS-BOOKING] Processing request...");
     
-    // Get next pending booking request
-    const { data: bookingRequests, error } = await supabase
-      .from("booking_requests")
-      .select("*")
-      .eq("status", "pending_booking")
-      .lt("attempts", 3)
-      .order("created_at", { ascending: true })
-      .limit(5); // Process up to 5 at a time
+    const body = await req.json();
+    console.log("[PROCESS-BOOKING] Request body:", body);
+    
+    let bookingRequests = [];
+    
+    if (body.bookingRequestId) {
+      // Single booking request processing
+      console.log(`[PROCESS-BOOKING] Processing specific booking request: ${body.bookingRequestId}`);
+      
+      const { data: request, error } = await supabase
+        .from("booking_requests")
+        .select("*")
+        .eq("id", body.bookingRequestId)
+        .single();
+        
+      if (error) {
+        console.error("[PROCESS-BOOKING] Error fetching booking request:", error);
+        throw error;
+      }
+      
+      if (!request) {
+        throw new Error(`Booking request ${body.bookingRequestId} not found`);
+      }
+      
+      bookingRequests = [request];
+    } else if (body.sessionId) {
+      // Handle session-based lookup (for direct invocation from TripConfirm)
+      console.log(`[PROCESS-BOOKING] Processing by session ID: ${body.sessionId}`);
+      
+      const { data: requests, error } = await supabase
+        .from("booking_requests")
+        .select("*")
+        .eq("checkout_session_id", body.sessionId)
+        .eq("status", "pending_booking");
+        
+      if (error) {
+        console.error("[PROCESS-BOOKING] Error fetching booking requests by session:", error);
+        throw error;
+      }
+      
+      bookingRequests = requests || [];
+    } else {
+      // Batch processing of pending requests
+      console.log("[PROCESS-BOOKING] Processing all pending booking requests...");
+      
+      const { data: requests, error } = await supabase
+        .from("booking_requests")
+        .select("*")
+        .eq("status", "pending_booking")
+        .lt("attempts", 3)
+        .order("created_at", { ascending: true })
+        .limit(5);
 
-    if (error) throw error;
+      if (error) throw error;
+      bookingRequests = requests || [];
+    }
 
-    if (!bookingRequests || bookingRequests.length === 0) {
-      console.log("No pending booking requests found");
+    if (bookingRequests.length === 0) {
+      console.log("[PROCESS-BOOKING] No booking requests found to process");
       return new Response(
         JSON.stringify({ message: "No pending requests", processed: 0 }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Found ${bookingRequests.length} pending booking requests`);
+    console.log(`[PROCESS-BOOKING] Found ${bookingRequests.length} booking requests to process`);
     const results = [];
 
     for (const request of bookingRequests) {
@@ -154,7 +200,7 @@ serve(async (req: Request) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("process-booking error:", error);
+    console.error("[PROCESS-BOOKING] process-booking error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

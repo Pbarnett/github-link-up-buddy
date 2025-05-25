@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import TravelerDataForm, { TravelerData } from "@/components/TravelerDataForm";
 
@@ -29,12 +28,37 @@ const TripConfirm = () => {
   const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
-    // Parse query parameters
+    console.log("[TripConfirm] Component mounted with location:", location.search);
+    
     try {
       if (sessionId) {
-        // We're returning from Stripe checkout, show booking status
+        console.log("[TripConfirm] Returning from Stripe checkout with sessionId:", sessionId);
         setBookingStatus("Processing payment...");
         setShowTravelerForm(false);
+        
+        // Trigger process-booking for completed checkout sessions
+        const processCompletedBooking = async () => {
+          try {
+            console.log("[TripConfirm] Invoking process-booking for sessionId:", sessionId);
+            const { data, error } = await supabase.functions.invoke("process-booking", {
+              body: { sessionId }
+            });
+            
+            if (error) {
+              console.error("[TripConfirm] Error processing booking:", error);
+              setError(`Booking processing failed: ${error.message}`);
+              setBookingStatus("❌ Booking failed");
+            } else {
+              console.log("[TripConfirm] Process-booking response:", data);
+            }
+          } catch (err: any) {
+            console.error("[TripConfirm] Exception processing booking:", err);
+            setError(`Booking processing error: ${err.message}`);
+            setBookingStatus("❌ Booking failed");
+          }
+        };
+        
+        processCompletedBooking();
         return;
       }
       
@@ -42,6 +66,7 @@ const TripConfirm = () => {
       const searchParams = new URLSearchParams(location.search);
       
       if (!searchParams.has('id')) {
+        console.error("[TripConfirm] Missing flight ID in URL params");
         setHasError(true);
         toast({
           title: "Error",
@@ -63,13 +88,15 @@ const TripConfirm = () => {
         duration: searchParams.get('duration') || '',
       };
 
-      // Validate the parsed offer
+      console.log("[TripConfirm] Parsed offer:", parsedOffer);
+
       if (!parsedOffer.id || !parsedOffer.airline || !parsedOffer.price) {
         throw new Error("Incomplete flight information");
       }
 
       setOffer(parsedOffer);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("[TripConfirm] Error parsing offer details:", error);
       setHasError(true);
       toast({
         title: "Error",
@@ -83,20 +110,28 @@ const TripConfirm = () => {
   useEffect(() => {
     if (!sessionId) return;
     
-    // Try to find the booking request with this session ID
+    console.log("[TripConfirm] Setting up realtime subscription for sessionId:", sessionId);
+    
     const fetchBookingRequest = async () => {
       try {
+        console.log("[TripConfirm] Fetching booking request status for sessionId:", sessionId);
         const { data, error } = await supabase
           .from('booking_requests')
           .select('status')
           .eq('checkout_session_id', sessionId)
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error("[TripConfirm] Error fetching booking request:", error);
+          throw error;
+        }
+        
         if (data) {
+          console.log("[TripConfirm] Found booking request with status:", data.status);
           updateBookingStatusMessage(data.status);
         }
       } catch (err: any) {
+        console.error("[TripConfirm] Exception fetching booking request:", err);
         toast({ 
           title: "Error Fetching Booking Details", 
           description: err.message || "Could not retrieve your booking status at this time.", 
@@ -108,7 +143,7 @@ const TripConfirm = () => {
     
     fetchBookingRequest();
     
-    // Subscribe to booking status updates using v2 channel API
+    // Subscribe to booking status updates
     const channel = supabase
       .channel(`checkout:${sessionId}`)
       .on(
@@ -120,17 +155,21 @@ const TripConfirm = () => {
           filter: `checkout_session_id=eq.${sessionId}`,
         },
         (payload: any) => {
+          console.log("[TripConfirm] Received booking status update:", payload);
           updateBookingStatusMessage(payload.new.status);
         }
       )
       .subscribe();
       
     return () => {
+      console.log("[TripConfirm] Unsubscribing from realtime channel");
       channel.unsubscribe();
     };
   }, [sessionId]);
   
   const updateBookingStatusMessage = (status: string) => {
+    console.log("[TripConfirm] Updating booking status message for status:", status);
+    
     switch (status) {
       case 'pending_payment':
         setBookingStatus("Waiting for payment confirmation...");
@@ -143,7 +182,10 @@ const TripConfirm = () => {
         break;
       case 'done':
         setBookingStatus("✅ Your flight is booked!");
-        // Redirect to dashboard after a short delay
+        toast({
+          title: "Booking Confirmed!",
+          description: "Your flight has been successfully booked. Redirecting to dashboard...",
+        });
         setTimeout(() => {
           navigate('/dashboard');
         }, 3000);
@@ -163,6 +205,7 @@ const TripConfirm = () => {
 
   const handleTravelerDataSubmit = async (data: TravelerData) => {
     if (!offer || !userId) {
+      console.error("[TripConfirm] Missing offer or userId for traveler data submit");
       toast({
         title: "Error",
         description: "Missing required information to save traveler data.",
@@ -171,11 +214,11 @@ const TripConfirm = () => {
       return;
     }
 
+    console.log("[TripConfirm] Saving traveler data:", data);
     setIsSavingTravelerData(true);
     setError(null);
 
     try {
-      // First, create or update the booking request with traveler data
       const { data: bookingRequest, error: bookingError } = await supabase
         .from("booking_requests")
         .insert({
@@ -188,8 +231,12 @@ const TripConfirm = () => {
         .select()
         .single();
 
-      if (bookingError) throw bookingError;
+      if (bookingError) {
+        console.error("[TripConfirm] Error creating booking request:", bookingError);
+        throw bookingError;
+      }
 
+      console.log("[TripConfirm] Created booking request:", bookingRequest);
       setBookingRequestId(bookingRequest.id);
       setTravelerData(data);
       setShowTravelerForm(false);
@@ -199,6 +246,7 @@ const TripConfirm = () => {
         description: "You can now proceed to payment.",
       });
     } catch (err: any) {
+      console.error("[TripConfirm] Exception saving traveler data:", err);
       setError(err.message || "Failed to save traveler information");
       toast({
         title: "Error",
@@ -212,6 +260,7 @@ const TripConfirm = () => {
 
   const onConfirm = async () => {
     if (!offer || !offer.id) {
+      console.error("[TripConfirm] Missing offer for confirmation");
       toast({
         title: "Error",
         description: "Invalid flight information. Cannot complete booking.",
@@ -221,6 +270,7 @@ const TripConfirm = () => {
     }
 
     if (!userId) {
+      console.error("[TripConfirm] User not authenticated");
       toast({
         title: "Authentication Error",
         description: "You must be logged in to book a flight.",
@@ -230,6 +280,7 @@ const TripConfirm = () => {
     }
 
     if (!bookingRequestId) {
+      console.error("[TripConfirm] Missing booking request ID");
       toast({
         title: "Error",
         description: "Please complete traveler information first.",
@@ -238,26 +289,33 @@ const TripConfirm = () => {
       return;
     }
 
+    console.log("[TripConfirm] Starting payment confirmation for booking request:", bookingRequestId);
     setIsConfirming(true);
     setError(null);
 
     try {
-      // Call the create-booking-request edge function with the existing booking request ID
+      console.log("[TripConfirm] Invoking create-booking-request with:", { userId, offerId: offer.id, bookingRequestId });
+      
       const res = await supabase.functions.invoke("create-booking-request", {
         body: { userId, offerId: offer.id, bookingRequestId }
       });
       
+      console.log("[TripConfirm] Create-booking-request response:", res);
+      
       if (res.error) {
+        console.error("[TripConfirm] Edge function error:", res.error);
         throw new Error(res.error.message || "Failed to create booking request");
       }
       
       if (!res.data || !res.data.url) {
+        console.error("[TripConfirm] No checkout URL received:", res.data);
         throw new Error("No checkout URL received from server");
       }
       
-      // Redirect to Stripe checkout
+      console.log("[TripConfirm] Redirecting to Stripe checkout:", res.data.url);
       window.location.href = res.data.url;
     } catch (err: any) {
+      console.error("[TripConfirm] Exception during confirmation:", err);
       setError(err.message || "There was a problem setting up the booking");
       toast({
         title: "Booking Failed",
@@ -360,7 +418,7 @@ const TripConfirm = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Security Error Message */}
+            {/* Error Message */}
             {error && (
               <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md flex items-start">
                 <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
