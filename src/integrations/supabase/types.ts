@@ -293,6 +293,7 @@ export type Database = {
           is_default: boolean
           last4: string
           nickname: string | null
+          stripe_customer_id: string | null
           stripe_pm_id: string
           updated_at: string
           user_id: string
@@ -306,6 +307,7 @@ export type Database = {
           is_default?: boolean
           last4: string
           nickname?: string | null
+          stripe_customer_id?: string | null
           stripe_pm_id: string
           updated_at?: string
           user_id: string
@@ -319,6 +321,7 @@ export type Database = {
           is_default?: boolean
           last4?: string
           nickname?: string | null
+          stripe_customer_id?: string | null
           stripe_pm_id?: string
           updated_at?: string
           user_id?: string

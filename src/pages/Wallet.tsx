@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { Link } from "react-router-dom";
@@ -34,19 +35,29 @@ function WalletPage() {
       
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText || "Failed to update default payment method");
+        let errorMessage = "Failed to update default payment method";
+        
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       toast({
         title: "Payment method updated",
-        description: "Your default payment method has been updated.",
+        description: "Your default payment method has been updated in both our system and Stripe.",
       });
       
       queryClient.invalidateQueries({ queryKey: ["payment_methods"] });
     } catch (err: any) {
+      console.error("Error setting default payment method:", err);
       toast({
         title: "Error",
-        description: `Failed to update default payment method: ${err.message}`,
+        description: err.message,
         variant: "destructive",
       });
     } finally {
@@ -54,7 +65,16 @@ function WalletPage() {
     }
   };
 
-  const handleDeleteCard = async (id: string) => {
+  const handleDeleteCard = async (id: string, paymentMethod: PaymentMethod) => {
+    if (paymentMethod.is_default) {
+      toast({
+        title: "Cannot delete default payment method",
+        description: "Please set another payment method as default before deleting this one.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsUpdating(id);
       
@@ -72,19 +92,29 @@ function WalletPage() {
       
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText || "Failed to delete payment method");
+        let errorMessage = "Failed to delete payment method";
+        
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       toast({
         title: "Payment method deleted",
-        description: "Your payment method has been removed.",
+        description: "Your payment method has been removed from both our system and Stripe.",
       });
       
       queryClient.invalidateQueries({ queryKey: ["payment_methods"] });
     } catch (err: any) {
+      console.error("Error deleting payment method:", err);
       toast({
         title: "Error",
-        description: `Failed to delete payment method: ${err.message}`,
+        description: err.message,
         variant: "destructive",
       });
     } finally {
@@ -132,11 +162,12 @@ function WalletPage() {
                         </Button>
                       )}
                       <Button 
-                        onClick={() => handleDeleteCard(pm.id)}
-                        disabled={isUpdating !== null} 
+                        onClick={() => handleDeleteCard(pm.id, pm)}
+                        disabled={isUpdating !== null || pm.is_default} 
                         variant="outline"
                         size="sm"
                         className="text-sm text-red-600 hover:text-red-900 disabled:opacity-50"
+                        title={pm.is_default ? "Cannot delete default payment method" : "Delete payment method"}
                       >
                         {isUpdating === pm.id ? 'Deleting...' : 'Delete'}
                       </Button>
@@ -190,6 +221,15 @@ function WalletPage() {
                 {fetchError && <p className="text-red-600 mt-2">{fetchError}</p>}
               </>
             )}
+
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <h3 className="text-sm font-medium text-blue-900 mb-2">Enhanced Security</h3>
+              <p className="text-sm text-blue-700">
+                All payment method changes are now synchronized with Stripe for enhanced security. 
+                Setting a payment method as default will update your Stripe customer profile, 
+                and deleting a payment method will remove it from both our system and Stripe.
+              </p>
+            </div>
 
             <Link
               to="/dashboard"
