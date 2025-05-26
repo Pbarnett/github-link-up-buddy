@@ -60,50 +60,126 @@ export default function TripOffers() {
     
     return tripDays >= minDuration && tripDays <= maxDuration;
   };
+const loadOffers = async (
+  currentPage = 0,
+  overrideFilter = false,
+  relaxCriteria = false,
+  useCache = true
+) => {
+  console.log(
+    "[TripOffers] Loading offers | page:",
+    currentPage,
+    "overrideFilter:",
+    overrideFilter,
+    "relaxCriteria:",
+    relaxCriteria
+  );
 
-  const loadOffers = async (overrideFilter = false, relaxCriteria = false, useCache = true) => {
-    console.log("[TripOffers] Loading offers with overrideFilter =", overrideFilter, "relaxCriteria =", relaxCriteria);
-    
-    // Check cache first (unless explicitly refreshing)
-    if (useCache && !isRefreshing) {
-      const cached = searchCache.get(cacheKey);
-      if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-        console.log("[TripOffers] Using cached results");
-        setOffers(cached.offers);
-        setTripDetails(cached.tripDetails);
-        setIsLoading(false);
-        return;
+  // 1) Try cache first (unless explicitly refreshing)
+  if (useCache && !isRefreshing) {
+    const cached = searchCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log("[TripOffers] Using cached results");
+      setOffers(cached.offers);
+      setTripDetails(cached.tripDetails);
+      setIsLoading(false);
+      return;
+    }
+  }
+
+  // 2) Kick off loading
+  setIsLoading(true);
+  setHasError(false);
+
+  try {
+    if (!tripId) {
+      setHasError(true);
+      setErrorMessage("No trip ID provided");
+      return;
+    }
+
+    if (relaxCriteria) {
+      setUsedRelaxedCriteria(true);
+    }
+
+    console.log("[TripOffers] Starting parallel requests");
+
+    // 3) Fetch trip details (or use state) + invoke flight-search in parallel
+    const [tripDetailsRes, flightSearchRes] = await Promise.all([
+      location.state?.tripDetails
+        ? Promise.resolve({ data: location.state.tripDetails })
+        : supabase
+            .from("trip_requests")
+            .select("*")
+            .eq("id", tripId)
+            .single(),
+      supabase.functions.invoke("flight-search", {
+        body: { tripRequestId: tripId, relaxedCriteria },
+      }),
+    ]);
+
+    if (tripDetailsRes.error) throw tripDetailsRes.error;
+    const tripDetailsData = tripDetailsRes.data;
+    setTripDetails(tripDetailsData);
+
+    if (flightSearchRes.error) throw flightSearchRes.error;
+    console.log("[TripOffers] flight-search invoke:", flightSearchRes);
+
+    // 4) Pull the requested page of offers
+    const pageSize = 20;
+    const { data: rows, error: fetchErr } = await supabase
+      .from("flight_offers")
+      .select("*")
+      .eq("trip_request_id", tripId)
+      .order("price")
+      .range(
+        currentPage * pageSize,
+        (currentPage + 1) * pageSize - 1
+      );
+    if (fetchErr) throw fetchErr;
+
+    // 5) Optionally filter out offers by duration
+    let offersToSet = rows;
+    if (!overrideFilter && tripDetailsData) {
+      const filtered = rows.filter((o) =>
+        validateOfferDuration(
+          o,
+          tripDetailsData.min_duration,
+          tripDetailsData.max_duration
+        )
+      );
+      offersToSet = filtered;
+      if (filtered.length === 0 && rows.length > 0) {
+        toast({
+          title: "Duration filter applied",
+          description: `Found ${rows.length} offers, but none match your ${tripDetailsData.min_duration}–${tripDetailsData.max_duration}-day trip.`,
+          variant: "destructive",
+        });
       }
     }
 
-    setIsLoading(true);
-    setHasError(false);
-    
-    try {
-      if (!tripId) {
-        setHasError(true);
-        setErrorMessage("No trip ID provided");
-        setIsLoading(false);
-        return;
-      }
+    // 6) Merge or replace based on page index
+    if (currentPage === 0) {
+      setOffers(offersToSet);
+    } else {
+      setOffers((prev) => [...prev, ...offersToSet]);
+    }
 
-      // Set state for tracking if we're using relaxed criteria
-      if (relaxCriteria) {
-        setUsedRelaxedCriteria(true);
-      }
-
-      console.log("[TripOffers] Starting parallel requests");
-      
-      // Parallel execution: trip details + flight search
-      const [tripDetailsPromise, searchPromise] = await Promise.all([
-        // Get trip details (use cached from location.state if available)
-        location.state?.tripDetails 
-          ? Promise.resolve(location.state.tripDetails)
-          : supabase.from("trip_requests").select("*").eq("id", tripId).single(),
-        
-        // Invoke flight search
-        supabase.functions.invoke("flight-search", {
-          body: { 
+    // 7) Update cache
+    searchCache.set(cacheKey, {
+      offers: offersToSet,
+      tripDetails: tripDetailsData,
+      timestamp: Date.now(),
+    });
+  } catch (err: any) {
+    console.error("[TripOffers] loadOffers error:", err);
+    setHasError(true);
+    setErrorMessage(err.message || "Something went wrong loading offers");
+  } finally {
+    setIsLoading(false);
+  }
+};
+ dc32f05 (Feat: Apply performance optimizations)
             tripRequestId: tripId,
             relaxedCriteria: relaxCriteria
           },
@@ -130,6 +206,7 @@ export default function TripOffers() {
         });
       }
 
+<<<<<<< HEAD
       // Handle search results
       const { data: invokeData, error: invokeError } = searchPromise as any;
       if (invokeError) throw invokeError;
@@ -143,11 +220,17 @@ export default function TripOffers() {
 
       // Fetch the newly-written flight_offers
       console.log("[TripOffers] Fetching flight offers from database");
+=======
+      // 3) Fetch the newly-written flight_offers
+      // console.log("[flight-search-ui] querying flight_offers for trip:", tripId); // Removed
+      const pageSize = 20; // Define page size for pagination
+>>>>>>> dc32f05 (Feat: Apply performance optimizations)
       const { data: rows, error: fetchError } = await supabase
         .from("flight_offers")
         .select("*")
         .eq("trip_request_id", tripId)
-        .order("price");
+        .order("price")
+        .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1); // Add .range()
       
       if (fetchError) throw fetchError;
       
@@ -173,8 +256,15 @@ export default function TripOffers() {
         return;
       }
       
+      
+      // OPTIMIZATION TODO: Move this duration validation to the server-side (edge function or database query) if possible.
       // Apply client-side duration filter as a safety net
+<<<<<<< HEAD
       let finalOffers;
+=======
+      // Skip it if we're in override mode
+      let offersToSet = rows; // Default to rows from DB
+>>>>>>> dc32f05 (Feat: Apply performance optimizations)
       if (!overrideFilter && tripData) {
         const validOffers = rows.filter(offer => 
           validateOfferDuration(offer, tripData.min_duration, tripData.max_duration)
@@ -190,26 +280,37 @@ export default function TripOffers() {
           });
         }
         
+<<<<<<< HEAD
         finalOffers = validOffers;
         
         if (validOffers.length === 0) {
+=======
+        offersToSet = validOffers; // Use filtered offers
+        
+        if (validOffers.length === 0 && rows.length > 0) { // If filtering resulted in zero offers but there were some initially
+          // No offers were found that match our criteria
+>>>>>>> dc32f05 (Feat: Apply performance optimizations)
           toast({
             title: "Duration filter applied",
             description: `Found ${rows.length} offers, but none match your ${tripData.min_duration}-${tripData.max_duration} day trip duration requirements.`,
             variant: "destructive",
           });
         }
+<<<<<<< HEAD
       } else {
         finalOffers = rows;
         
         if (overrideFilter) {
+=======
+      } else if (overrideFilter) {
+>>>>>>> dc32f05 (Feat: Apply performance optimizations)
           toast({
             title: "Search without duration filter",
             description: `Showing all ${rows.length} available offers regardless of trip duration.`,
           });
-        }
       }
 
+<<<<<<< HEAD
       setOffers(finalOffers);
 
       // Cache the results
@@ -219,6 +320,13 @@ export default function TripOffers() {
           timestamp: Date.now(),
           tripDetails: tripData
         });
+=======
+      // Adjust how offers are set based on currentPage
+      if (currentPage === 0) {
+        setOffers(offersToSet);
+      } else {
+        setOffers(prevOffers => [...prevOffers, ...offersToSet]);
+>>>>>>> dc32f05 (Feat: Apply performance optimizations)
       }
 
     } catch (err: any) {
