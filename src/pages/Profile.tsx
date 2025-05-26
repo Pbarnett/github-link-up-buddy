@@ -1,24 +1,25 @@
 
 import AuthGuard from "@/components/AuthGuard";
 import { Link } from "react-router-dom";
-import { ProfileForm } from "@/components/ProfileForm";
 
 function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
+        <div className="bg-white shadow overflow-hidden rounded-lg">
+          <div className="px-4 py-5 sm:p-6 space-y-4">
+            <h1 className="text-2xl font-semibold">Profile (coming soon)</h1>
+            <p className="text-gray-600">
+              Manage your traveler info (name, DOB, FF#) here.
+            </p>
+            {/* TODO: add form fields for profile data */}
             <Link
               to="/dashboard"
-              className="inline-flex items-center text-indigo-600 hover:text-indigo-500 font-medium"
+              className="inline-block text-indigo-600 hover:underline"
             >
               ← Back to Dashboard
             </Link>
           </div>
-          
-          <ProfileForm />
         </div>
       </div>
     </div>
