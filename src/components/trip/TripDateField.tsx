@@ -1,7 +1,8 @@
 
+import React from "react"; // Added React import
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { Control, Controller } from "react-hook-form";
+import { Control } from "react-hook-form"; // Removed Controller as it's not used
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -26,7 +27,8 @@ interface TripDateFieldProps {
   control: Control<any>;
 }
 
-const TripDateField = ({ name, label, description, control }: TripDateFieldProps) => {
+// Renamed original component
+const TripDateFieldComponent = ({ name, label, description, control }: TripDateFieldProps) => {
   return (
     <FormField
       control={control}
@@ -76,4 +78,6 @@ const TripDateField = ({ name, label, description, control }: TripDateFieldProps
   );
 };
 
+// Memoized component for export
+const TripDateField = React.memo(TripDateFieldComponent);
 export default TripDateField;
