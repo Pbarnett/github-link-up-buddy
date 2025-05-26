@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Offer } from "@/services/tripOffersService";
@@ -24,6 +24,13 @@ interface TripDetails {
   budget: number;
 }
 
+// Simple in-memory cache for search results (optional)
+const searchCache = new Map<
+  string,
+  { offers: Offer[]; timestamp: number; tripDetails: TripDetails }
+>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export default function TripOffers() {
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get("id");
@@ -38,195 +45,158 @@ export default function TripOffers() {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [ignoreFilter, setIgnoreFilter] = useState(false);
   const [usedRelaxedCriteria, setUsedRelaxedCriteria] = useState(false);
+
+  // ─── Pagination state ─────────────────────────────
   const [currentPage, setCurrentPage] = useState(0);
   const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
-  // Client-side validateOfferDuration is removed.
-
-  const loadOffers = async (pageToLoad = 0, overrideFilter = false, relaxCriteria = false) => {
-    if (pageToLoad === 0) {
-      setIsLoading(true);
-    } else {
-      setIsFetchingNextPage(true);
-    }
+  // ─── loadOffers with server-side pagination ────────
+  const loadOffers = async (
+    pageToLoad = 0,
+    overrideFilter = false,
+    relaxCriteria = false
+  ) => {
+    // 1) loading flags
+    if (pageToLoad === 0) setIsLoading(true);
+    else setIsFetchingNextPage(true);
     setHasError(false);
 
     const pageSize = 20;
-
     try {
-      if (!tripId) {
-        setHasError(true);
-        setErrorMessage("No trip ID provided");
-        if (pageToLoad === 0) setIsLoading(false); else setIsFetchingNextPage(false);
-        return;
-      }
+      if (!tripId) throw new Error("No trip ID provided");
 
-      // Fetch trip details if not already available. This is crucial for filters.
-      let currentTripDetails = tripDetails;
-      if (!currentTripDetails) { // Fetch if tripDetails is null
-        const { data: fetchedTripData, error: tripError } = await supabase
+      // 2) ensure tripDetails exist
+      if (!tripDetails) {
+        const { data, error } = await supabase
           .from("trip_requests")
-          .select("min_duration,max_duration,budget,earliest_departure,latest_departure")
+          .select("min_duration,max_duration,budget")
           .eq("id", tripId)
           .single();
-
-        if (tripError || !fetchedTripData) {
-          throw tripError || new Error("No trip data found for this ID.");
-        }
-        currentTripDetails = fetchedTripData;
-        setTripDetails(currentTripDetails);
+        if (error || !data) throw error || new Error("Missing trip details");
+        setTripDetails(data);
       }
-      
-      // If tripDetails are still null (e.g. initial fetch failed before, or for some other reason), we cannot proceed.
-      if (!currentTripDetails) {
-          throw new Error("Trip details are not available to send to the server for filtering.");
-      }
-      
-      // The 'flight-search' edge function is now the source of truth for offers.
-      // It handles pagination and filtering based on the parameters passed.
-      const { data: invokeResponse, error: invokeError } = await supabase.functions.invoke<{
-        offers: Offer[];
-        pagination: { totalFilteredOffers: number; currentPage: number; pageSize: number };
-      }>("flight-search", {
-        body: {
-          tripRequestId: tripId,
-          relaxedCriteria: relaxCriteria,
-          page: pageToLoad,
-          pageSize: pageSize,
-          minDuration: overrideFilter ? undefined : currentTripDetails.min_duration,
-          maxDuration: overrideFilter ? undefined : currentTripDetails.max_duration,
-          maxPrice: overrideFilter ? undefined : currentTripDetails.budget
-        },
-      });
 
+      // 3) invoke the edge function
+      const { data: invokeData, error: invokeError } =
+        await supabase.functions.invoke<{
+          offers: Offer[];
+          pagination: {
+            totalFilteredOffers: number;
+            pageSize: number;
+            currentPage: number;
+          };
+        }>("flight-search", {
+          body: {
+            tripRequestId: tripId,
+            relaxedCriteria,
+            page: pageToLoad,
+            pageSize,
+            minDuration: overrideFilter
+              ? undefined
+              : tripDetails!.min_duration,
+            maxDuration: overrideFilter
+              ? undefined
+              : tripDetails!.max_duration,
+            maxPrice: overrideFilter ? undefined : tripDetails!.budget,
+          },
+        });
       if (invokeError) throw invokeError;
 
-      const newOffers = invokeResponse?.offers || [];
-      const paginationData = invokeResponse?.pagination;
+      // 4) replace or append results
+      const newOffers = invokeData!.offers || [];
+      const { pagination } = invokeData!;
+      if (pageToLoad === 0) setOffers(newOffers);
+      else setOffers((prev) => [...prev, ...newOffers]);
 
-      // Update usedRelaxedCriteria state based on the actual criteria used for this load.
-      // This is important for reflecting the state accurately in the UI and subsequent calls.
-      // Only update this on a full reload (page 0) to reflect the current filter set accurately.
-      if (pageToLoad === 0) {
-        setUsedRelaxedCriteria(relaxCriteria);
-      }
-
-
-      if (pageToLoad === 0) { // Only show these toasts on initial load/refresh
-        if (relaxCriteria) {
-          toast({
-            title: "Search with relaxed criteria",
-            description: "Finding flights with more flexible duration and budget constraints.",
-          });
-        }
-        if (overrideFilter) {
-          toast({
-            title: "Search without duration filter",
-            description: `Showing all available offers regardless of trip duration.`,
-          });
-        }
-      }
-      
-      if (newOffers.length === 0 && pageToLoad === 0) {
-        toast({
-          title: "No flight offers found",
-          description: "Try relaxing your search criteria or refreshing.",
-          variant: "destructive",
-        });
-        setOffers([]);
-      } else if (pageToLoad === 0) {
-        setOffers(newOffers);
-      } else {
-        setOffers(prevOffers => [...prevOffers, ...newOffers]);
-      }
-
-      if (paginationData) {
-        setHasMore((paginationData.currentPage + 1) * paginationData.pageSize < paginationData.totalFilteredOffers);
-      } else {
-        // Fallback if paginationData is not available from the server
-        setHasMore(newOffers.length === pageSize);
-      }
-
+      // 5) set hasMore flag
+      setHasMore(
+        (pagination.currentPage + 1) * pagination.pageSize <
+          pagination.totalFilteredOffers
+      );
     } catch (err: any) {
+      console.error("Error loading offers:", err);
       setHasError(true);
-      setErrorMessage(err.message || "Something went wrong loading offers");
-      toast({ title: "Error Loading Flight Offers", description: err.message || "An unexpected error occurred while trying to load flight offers. Please try again.", variant: "destructive" });
+      setErrorMessage(err.message || "Failed to load offers");
+      toast({
+        title: "Error loading offers",
+        description: err.message,
+        variant: "destructive",
+      });
       setHasMore(false);
     } finally {
       if (pageToLoad === 0) setIsLoading(false);
-      setIsFetchingNextPage(false);
+      else setIsFetchingNextPage(false);
     }
   };
-  
-  // Main useEffect for loading offers when tripId or primary filters change.
-  useEffect(() => {
-    if (tripId) { // Ensure tripId is present before attempting to load.
-        setCurrentPage(0); 
-        setOffers([]); 
-        setHasMore(true); 
-        setTripDetails(null); // Force re-fetch of trip details for new filter sets
-        loadOffers(0, ignoreFilter, usedRelaxedCriteria);
-    }
-  // ignoreFilter and usedRelaxedCriteria changes will trigger a page 0 reload.
-  }, [tripId, ignoreFilter, usedRelaxedCriteria]); 
 
-
-  const refreshOffers = async () => {
-    if (!tripId) return;
-    setIsRefreshing(true); 
-    setCurrentPage(0);
-    setOffers([]);
-    setHasMore(true);
-    setTripDetails(null); // Force re-fetch of trip details
-    try {
-      // When refreshing, use the current state of ignoreFilter and usedRelaxedCriteria
-      await loadOffers(0, ignoreFilter, usedRelaxedCriteria); 
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-  
-  const handleOverrideSearch = () => {
-    setIgnoreFilter(true); 
-    setUsedRelaxedCriteria(false); // Override should disable relaxed criteria.
-    // useEffect will handle reloading from page 0.
-    // Toast message for overrideFilter is now handled inside loadOffers if pageToLoad === 0
-  };
-  
-  const handleRelaxCriteria = async () => {
-    if (!tripId) return;
-    setIgnoreFilter(false); // Relaxed criteria should respect normal filters.
-    setUsedRelaxedCriteria(true);
-    // useEffect will handle reloading from page 0.
-    // Toast message for relaxCriteria is now handled inside loadOffers if pageToLoad === 0
-  };
-
+  // ─── Load More handler ─────────────────────────
   const handleLoadMore = () => {
     if (!isFetchingNextPage && hasMore) {
-      setIsFetchingNextPage(true);
       const nextPage = currentPage + 1;
-      setCurrentPage(nextPage); // Update current page state
-      // Call loadOffers with the new page, respecting current filter states
+      setCurrentPage(nextPage);
       loadOffers(nextPage, ignoreFilter, usedRelaxedCriteria);
     }
   };
 
-  if (hasError && offers.length === 0) { // Only show full error card if no offers are displayed
+  // ─── Refresh & filter toggles ───────────────────
+  const refreshOffers = async () => {
+    if (!tripId) return;
+    setIsRefreshing(true);
+    try {
+      await loadOffers(0, ignoreFilter, usedRelaxedCriteria);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleOverrideSearch = () => {
+    setIgnoreFilter(true);
+    setUsedRelaxedCriteria(false);
+  };
+
+  const handleRelaxCriteria = async () => {
+    if (!tripId) return;
+    setIsRefreshing(true);
+    try {
+      await loadOffers(0, false, true);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // ─── Initial load & re-load on filter change ────
+  useEffect(() => {
+    if (tripId) {
+      setCurrentPage(0);
+      setOffers([]);
+      setHasMore(true);
+      setTripDetails(null);
+      loadOffers(0, ignoreFilter, usedRelaxedCriteria);
+    }
+  }, [tripId, ignoreFilter, usedRelaxedCriteria]);
+
+  // ─── Error state (when no offers at all) ───────
+  if (hasError && offers.length === 0) {
     return (
-      <TripErrorCard 
-        message={errorMessage} 
-        onOverrideSearch={handleOverrideSearch} 
-        showOverrideButton={!ignoreFilter && errorMessage.toLowerCase().includes("no offers")}
+      <TripErrorCard
+        message={errorMessage}
+        onOverrideSearch={handleOverrideSearch}
+        showOverrideButton={
+          !ignoreFilter && errorMessage.toLowerCase().includes("no offers")
+        }
         onRelaxCriteria={handleRelaxCriteria}
-        showRelaxButton={!usedRelaxedCriteria && errorMessage.toLowerCase().includes("no offers")}
+        showRelaxButton={
+          !usedRelaxedCriteria && errorMessage.toLowerCase().includes("no offers")
+        }
       />
     );
   }
 
+  // ─── Main UI ────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
-      {/* Trip Summary Card */}
+      {/* Trip Summary */}
       {tripDetails && (
         <Card className="w-full max-w-5xl mb-6">
           <CardHeader>
@@ -236,8 +206,15 @@ export default function TripOffers() {
             <div>
               <p className="text-sm font-medium text-gray-500">Travel Window</p>
               <p>
-                {formatDate(new Date(tripDetails.earliest_departure), "MMM d, yyyy")} –{" "}
-                {formatDate(new Date(tripDetails.latest_departure), "MMM d, yyyy")}
+                {formatDate(
+                  new Date(tripDetails.earliest_departure),
+                  "MMM d, yyyy"
+                )}{" "}
+                –{" "}
+                {formatDate(
+                  new Date(tripDetails.latest_departure),
+                  "MMM d, yyyy"
+                )}
               </p>
             </div>
             <div>
@@ -250,13 +227,16 @@ export default function TripOffers() {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Budget</p>
-              <p>${tripDetails.budget}{usedRelaxedCriteria && " (up to +20% with relaxed criteria)"}</p>
+              <p>
+                ${tripDetails.budget}
+                {usedRelaxedCriteria && " (up to +20% with relaxed criteria)"}
+              </p>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Offers Header */}
+      {/* Header with filter & refresh buttons */}
       <Card className="w-full max-w-5xl mb-6">
         <CardHeader className="flex justify-between items-center">
           <div>
@@ -269,8 +249,8 @@ export default function TripOffers() {
           </div>
           <div className="flex gap-2">
             {!usedRelaxedCriteria && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleRelaxCriteria}
                 disabled={isRefreshing || (isLoading && offers.length === 0)}
               >
@@ -278,16 +258,16 @@ export default function TripOffers() {
               </Button>
             )}
             {!ignoreFilter && (
-              <Button 
-                variant="outline" 
-                onClick={handleOverrideSearch} 
+              <Button
+                variant="outline"
+                onClick={handleOverrideSearch}
                 disabled={isRefreshing || (isLoading && offers.length === 0)}
               >
                 Search Any Duration
               </Button>
             )}
-            <Button 
-              onClick={refreshOffers} 
+            <Button
+              onClick={refreshOffers}
               disabled={isRefreshing || (isLoading && offers.length === 0)}
             >
               {isRefreshing ? "Refreshing..." : "Refresh Offers"}
@@ -296,50 +276,52 @@ export default function TripOffers() {
         </CardHeader>
       </Card>
 
-      {isLoading && offers.length === 0 ? ( // Show main loader only if it's initial load and no offers yet
+      {/* Offer list, loader, and “Load More” */}
+      {isLoading && offers.length === 0 ? (
         <TripOffersLoading />
       ) : (
         <div className="w-full max-w-5xl space-y-6">
           {offers.length > 0 ? (
             <>
-              {offers.map((offer) => <TripOfferCard key={offer.id} offer={offer} />)}
-              {hasMore && !isFetchingNextPage && (
+              {offers.map((offer) => (
+                <TripOfferCard key={offer.id} offer={offer} />
+              ))}
+
+              {hasMore && (
                 <div className="text-center mt-8">
-                  <Button onClick={handleLoadMore} disabled={isFetchingNextPage}>
-                    Load More Offers
-                  </Button>
-                </div>
-              )}
-              {isFetchingNextPage && (
-                <div className="text-center mt-8">
-                  <p>Loading more offers...</p> {/* Or a spinner */}
+                  {isFetchingNextPage ? (
+                    <p>Loading more offers…</p>
+                  ) : (
+                    <Button
+                      onClick={handleLoadMore}
+                      disabled={isFetchingNextPage}
+                    >
+                      Load More Offers
+                    </Button>
+                  )}
                 </div>
               )}
             </>
           ) : (
-            // "No offers found" card (existing logic)
             <Card className="p-6 text-center">
-              <p className="mb-4">No offers found that match your criteria.</p>
+              <p className="mb-4">
+                No offers found that match your criteria.
+              </p>
               <p className="text-sm text-gray-500">
-                {usedRelaxedCriteria 
-                  ? "We tried with relaxed criteria but still couldn't find any offers. Try adjusting your destination or dates."
-                  : ignoreFilter 
-                    ? "Try adjusting your budget or destination, or click Refresh Offers."
-                    : "Try one of the search options above or adjust your trip criteria."}
+                {usedRelaxedCriteria
+                  ? "We tried with relaxed criteria but still couldn’t find any offers. Try adjusting your dates or budget."
+                  : ignoreFilter
+                  ? "Try adjusting your dates or budget, or click Refresh Offers."
+                  : "Try one of the search options above or adjust your trip criteria."}
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
                 {!usedRelaxedCriteria && (
-                  <Button 
-                    onClick={handleRelaxCriteria} 
-                    variant="secondary"
-                  >
+                  <Button onClick={handleRelaxCriteria} variant="secondary">
                     Try Relaxed Criteria
                   </Button>
                 )}
                 {!ignoreFilter && (
-                  <Button 
-                    onClick={handleOverrideSearch}
-                  >
+                  <Button onClick={handleOverrideSearch}>
                     Search Any Duration
                   </Button>
                 )}

@@ -47,7 +47,7 @@ async function createNotification(
 // Helper function to process booking requests
 async function processBookingRequest(orderId: string) {
   try {
-    console.log(`Processing booking request: ${orderId}`);
+    console.log(`[STRIPE-WEBHOOK] Processing booking request: ${orderId}`);
     
     // Update booking request status
     const { data: request, error: requestError } = await supabase
@@ -61,11 +61,11 @@ async function processBookingRequest(orderId: string) {
       .single();
       
     if (requestError || !request) {
-      console.error("Error updating booking request:", requestError);
+      console.error("[STRIPE-WEBHOOK] Error updating booking request:", requestError);
       return false;
     }
     
-    console.log(`Updated booking request status to pending_booking: ${orderId}`);
+    console.log(`[STRIPE-WEBHOOK] Updated booking request status to pending_booking: ${orderId}`);
     
     // Create notification for payment confirmation
     await createNotification(request.user_id, "payment_received", {
@@ -74,9 +74,21 @@ async function processBookingRequest(orderId: string) {
       flightInfo: `${request.offer_data?.airline} ${request.offer_data?.flight_number}`
     });
     
+    // Invoke process-booking function
+    console.log(`[STRIPE-WEBHOOK] Invoking process-booking for booking request: ${orderId}`);
+    const { data: processResult, error: processError } = await supabase.functions.invoke("process-booking", {
+      body: { bookingRequestId: orderId }
+    });
+    
+    if (processError) {
+      console.error(`[STRIPE-WEBHOOK] Error invoking process-booking:`, processError);
+      return false;
+    }
+    
+    console.log(`[STRIPE-WEBHOOK] Process-booking result:`, processResult);
     return true;
   } catch (err) {
-    console.error("Error processing booking request:", err);
+    console.error("[STRIPE-WEBHOOK] Error processing booking request:", err);
     return false;
   }
 }
@@ -96,7 +108,7 @@ serve(async (req: Request) => {
     const sig = req.headers.get("stripe-signature");
     
     if (!sig || !endpointSecret) {
-      console.error("Missing signature or webhook secret");
+      console.error("[STRIPE-WEBHOOK] Missing signature or webhook secret");
       return new Response(
         JSON.stringify({ error: "Missing signature or webhook secret" }),
         {
@@ -112,9 +124,9 @@ serve(async (req: Request) => {
     let event: Stripe.Event;
     try {
       event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
-      console.log(`✅ Webhook verified: ${event.type}`);
+      console.log(`[STRIPE-WEBHOOK] ✅ Webhook verified: ${event.type}`);
     } catch (err) {
-      console.error(`⚠️ Webhook signature verification failed:`, err);
+      console.error(`[STRIPE-WEBHOOK] ⚠️ Webhook signature verification failed:`, err);
       return new Response(
         JSON.stringify({ error: "Invalid signature" }),
         {
@@ -132,10 +144,12 @@ serve(async (req: Request) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.user_id;
-        const orderId = session.metadata?.order_id; // This is now the booking_request_id
+        const orderId = session.metadata?.order_id; // This is the booking_request_id
+        
+        console.log(`[STRIPE-WEBHOOK] Processing completed checkout session for user ${userId}, orderId: ${orderId}, mode: ${session.mode}`);
         
         if (!userId) {
-          console.error("Missing user_id in session metadata");
+          console.error("[STRIPE-WEBHOOK] Missing user_id in session metadata");
           return new Response(
             JSON.stringify({ error: "Missing user_id in metadata" }),
             {
@@ -148,8 +162,6 @@ serve(async (req: Request) => {
           );
         }
 
-        console.log(`Processing completed checkout session for user ${userId}, mode: ${session.mode}`);
-        
         if (session.mode === "setup") {
           // Handle setup mode - save new payment method
           const setupIntentId = session.setup_intent as string;
@@ -157,7 +169,7 @@ serve(async (req: Request) => {
             throw new Error("Missing setup intent ID");
           }
           
-          console.log(`Retrieving setup intent: ${setupIntentId}`);
+          console.log(`[STRIPE-WEBHOOK] Retrieving setup intent: ${setupIntentId}`);
           const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
           
           if (!setupIntent.payment_method) {
@@ -165,7 +177,7 @@ serve(async (req: Request) => {
           }
           
           const pm = await stripe.paymentMethods.retrieve(setupIntent.payment_method as string);
-          console.log(`Retrieved payment method: ${pm.id}`);
+          console.log(`[STRIPE-WEBHOOK] Retrieved payment method: ${pm.id}`);
           
           // First unset any existing default payment methods
           const { error: updateError } = await supabase
@@ -174,7 +186,7 @@ serve(async (req: Request) => {
             .eq("user_id", userId);
             
           if (updateError) {
-            console.error("Error unsetting default payment methods:", updateError);
+            console.error("[STRIPE-WEBHOOK] Error unsetting default payment methods:", updateError);
           }
           
           // Now insert the new payment method
@@ -194,7 +206,7 @@ serve(async (req: Request) => {
             .single();
             
           if (insertError) {
-            console.error("Error inserting payment method:", insertError);
+            console.error("[STRIPE-WEBHOOK] Error inserting payment method:", insertError);
             throw new Error(`Failed to save payment method: ${insertError.message}`);
           }
           
@@ -206,16 +218,30 @@ serve(async (req: Request) => {
             timestamp: new Date().toISOString()
           });
           
-          console.log(`✅ Payment method ${pm.id} saved for user ${userId}`);
+          console.log(`[STRIPE-WEBHOOK] ✅ Payment method ${pm.id} saved for user ${userId}`);
         } else if (session.mode === "payment") {
           // Handle payment mode - process booking request or complete order
           if (orderId) {
             // Handle new booking flow with booking_requests
-            console.log(`Processing payment for booking request ${orderId}`);
+            console.log(`[STRIPE-WEBHOOK] Processing payment for booking request ${orderId}`);
+            
+            // First update the checkout session ID
+            const { error: updateSessionError } = await supabase
+              .from("booking_requests")
+              .update({ 
+                checkout_session_id: session.id,
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", orderId);
+              
+            if (updateSessionError) {
+              console.error(`[STRIPE-WEBHOOK] Error updating checkout session ID:`, updateSessionError);
+            }
+            
             const success = await processBookingRequest(orderId);
             
             if (!success) {
-              console.error(`Failed to process booking request: ${orderId}`);
+              console.error(`[STRIPE-WEBHOOK] Failed to process booking request: ${orderId}`);
             }
           } else {
             // Handle legacy flow (this is the old code path for orders)
@@ -226,7 +252,7 @@ serve(async (req: Request) => {
               throw new Error("Missing required metadata for payment completion");
             }
             
-            console.log(`Processing legacy payment with trip request ${tripRequestId}`);
+            console.log(`[STRIPE-WEBHOOK] Processing legacy payment with trip request ${tripRequestId}`);
             
             // 1. Update the order status to completed
             const { error: orderError } = await supabase
@@ -238,7 +264,7 @@ serve(async (req: Request) => {
               .eq("id", orderId);
               
             if (orderError) {
-              console.error("Error updating order:", orderError);
+              console.error("[STRIPE-WEBHOOK] Error updating order:", orderError);
               throw new Error(`Failed to update order: ${orderError.message}`);
             }
             
@@ -249,13 +275,12 @@ serve(async (req: Request) => {
                 user_id: userId,
                 trip_request_id: tripRequestId,
                 flight_offer_id: flightOfferId,
-                order_id: orderId,
               })
               .select()
               .single();
               
             if (bookingError) {
-              console.error("Error creating booking:", bookingError);
+              console.error("[STRIPE-WEBHOOK] Error creating booking:", bookingError);
               throw new Error(`Failed to create booking: ${bookingError.message}`);
             }
             
@@ -267,7 +292,7 @@ serve(async (req: Request) => {
               timestamp: new Date().toISOString()
             });
             
-            console.log(`✅ Order ${orderId} completed and booking created`);
+            console.log(`[STRIPE-WEBHOOK] ✅ Order ${orderId} completed and booking created`);
           }
         }
         break;
@@ -275,7 +300,7 @@ serve(async (req: Request) => {
       
       // Handle other event types as needed
       default:
-        console.log(`⚠️ Unhandled event type: ${event.type}`);
+        console.log(`[STRIPE-WEBHOOK] ⚠️ Unhandled event type: ${event.type}`);
     }
 
     // Return a success response to Stripe
@@ -290,7 +315,7 @@ serve(async (req: Request) => {
       }
     );
   } catch (error) {
-    console.error("stripe-webhook error:", error);
+    console.error("[STRIPE-WEBHOOK] stripe-webhook error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
