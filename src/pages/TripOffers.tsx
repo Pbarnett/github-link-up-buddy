@@ -52,7 +52,8 @@ export default function TripOffers() {
     return tripDays >= minDuration && tripDays <= maxDuration;
   };
 
-  const loadOffers = async (overrideFilter = false, relaxCriteria = false) => {
+  // Modified to include currentPage for pagination
+  const loadOffers = async (currentPage = 0, overrideFilter = false, relaxCriteria = false) => {
     // console.log("[flight-search-ui] Loading offers with overrideFilter =", overrideFilter, "relaxCriteria =", relaxCriteria); // Removed
     setIsLoading(true);
     setHasError(false);
@@ -71,10 +72,11 @@ export default function TripOffers() {
       }
 
       // 1) Invoke the edge function - this MUST happen first
+      // OPTIMIZATION TODO: Consider if this edge function can return the first page of offers directly to reduce round trips.
       // console.log("[flight-search-ui] about to invoke flight-search edge function"); // Removed
       const { data: invokeData, error: invokeError } =
         await supabase.functions.invoke("flight-search", {
-          body: { 
+          body: {
             tripRequestId: tripId,
             relaxedCriteria: relaxCriteria  // Pass this flag to the edge function
           },
@@ -117,11 +119,13 @@ export default function TripOffers() {
 
       // 3) Fetch the newly-written flight_offers
       // console.log("[flight-search-ui] querying flight_offers for trip:", tripId); // Removed
+      const pageSize = 20; // Define page size for pagination
       const { data: rows, error: fetchError } = await supabase
         .from("flight_offers")
         .select("*")
         .eq("trip_request_id", tripId)
-        .order("price");
+        .order("price")
+        .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1); // Add .range()
       
       if (fetchError) throw fetchError;
       
@@ -138,8 +142,11 @@ export default function TripOffers() {
         return;
       }
       
+      
+      // OPTIMIZATION TODO: Move this duration validation to the server-side (edge function or database query) if possible.
       // Apply client-side duration filter as a safety net
       // Skip it if we're in override mode
+      let offersToSet = rows; // Default to rows from DB
       if (!overrideFilter && tripData) {
         const validOffers = rows.filter(offer => 
           validateOfferDuration(offer, tripData.min_duration, tripData.max_duration)
@@ -157,9 +164,9 @@ export default function TripOffers() {
           });
         }
         
-        setOffers(validOffers);
+        offersToSet = validOffers; // Use filtered offers
         
-        if (validOffers.length === 0) {
+        if (validOffers.length === 0 && rows.length > 0) { // If filtering resulted in zero offers but there were some initially
           // No offers were found that match our criteria
           toast({
             title: "Duration filter applied",
@@ -167,17 +174,20 @@ export default function TripOffers() {
             variant: "destructive",
           });
         }
-      } else {
-        // No filter in override mode
-        setOffers(rows);
-        
-        if (overrideFilter) {
+      } else if (overrideFilter) {
           toast({
             title: "Search without duration filter",
             description: `Showing all ${rows.length} available offers regardless of trip duration.`,
           });
-        }
       }
+
+      // Adjust how offers are set based on currentPage
+      if (currentPage === 0) {
+        setOffers(offersToSet);
+      } else {
+        setOffers(prevOffers => [...prevOffers, ...offersToSet]);
+      }
+
     } catch (err: any) {
       setHasError(true);
       setErrorMessage(err.message || "Something went wrong loading offers");
