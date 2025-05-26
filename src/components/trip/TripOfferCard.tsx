@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,8 @@ export interface OfferProps {
   duration: string;
 }
 
-const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
+// Renamed original component
+const TripOfferCardComponent = ({ offer }: { offer: OfferProps }) => {
   const navigate = useNavigate();
 
   const handleSelect = () => {
@@ -98,5 +100,8 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
     </Card>
   );
 };
+
+// Memoize the component
+const TripOfferCard = React.memo(TripOfferCardComponent);
 
 export default TripOfferCard;
