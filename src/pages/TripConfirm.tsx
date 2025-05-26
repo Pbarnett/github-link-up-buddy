@@ -295,41 +295,41 @@ const TripConfirm = () => {
     setIsConfirming(true);
     setError(null);
 
-    try {
-      console.log(
-        "[TripConfirm] Invoking create-booking-request with:", 
-        { userId, offerId: offer.id, bookingRequestId }
-      );
+try {
+  console.log(
+    "[TripConfirm] Invoking create-booking-request with:",
+    { userId, offerId: offer.id, bookingRequestId }
+  );
 
-      const res = await supabase.functions.invoke<{ url: string }>(
-        "create-booking-request",
-        { body: { userId, offerId: offer.id, bookingRequestId } }
-      );
-      
-      console.log("[TripConfirm] Create-booking-request response:", res);
-      
-      if (res.error) {
-        console.error("[TripConfirm] Edge function error:", res.error);
-        throw new Error(res.error.message || "Failed to create booking request");
-      }
-      
-      if (!res.data || !res.data.url) {
-        console.error("[TripConfirm] No checkout URL received:", res.data);
-        throw new Error("No checkout URL received from server");
-      }
-      
-      console.log("[TripConfirm] Redirecting to Stripe checkout:", res.data.url);
-      window.location.href = res.data.url;
-    } catch (err: any) {
-      console.error("[TripConfirm] Exception during confirmation:", err);
-      setError(err.message || "There was a problem setting up the booking");
-      toast({
-        title: "Booking Failed",
-        description: err.message || "There was a problem setting up your booking. Please try again.",
-        variant: "destructive",
-      });
-      setIsConfirming(false);
-    }
+  const { data, error: fnError } = await supabase.functions.invoke<{
+    url: string;
+  }>("create-booking-request", {
+    body: { userId, offerId: offer.id, bookingRequestId },
+  });
+
+  if (fnError) {
+    console.error("[TripConfirm] Edge function error:", fnError);
+    throw new Error(fnError.message || "Failed to create booking request");
+  }
+
+  if (!data?.url) {
+    console.error("[TripConfirm] No checkout URL received:", data);
+    throw new Error("No checkout URL received from server");
+  }
+
+  console.log("[TripConfirm] Redirecting to Stripe checkout:", data.url);
+  window.location.href = data.url;
+} catch (err: any) {
+  console.error("[TripConfirm] Exception during confirmation:", err);
+  const errorMessage = err.message || "There was a problem setting up the booking";
+  setError(errorMessage);
+  toast({
+    title: "Booking Failed",
+    description: errorMessage,
+    variant: "destructive",
+  });
+  setIsConfirming(false);
+}
   };
 
   // Show booking status if we're returning from checkout
