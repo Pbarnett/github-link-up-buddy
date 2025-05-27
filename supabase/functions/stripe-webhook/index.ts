@@ -1,305 +1,227 @@
-
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey, Stripe-Signature",
+const cryptoProvider = Stripe.createSubtleCryptoProvider();
+
+// Helper logging function for debugging
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-  apiVersion: "2023-10-16",
-});
+serve(async (request) => {
+  const signature = request.headers.get("Stripe-Signature");
 
-const endpointSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";
-
-// Initialize Supabase client
-const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Helper function to create notifications
-async function createNotification(
-  userId: string,
-  type: string,
-  payload: Record<string, any>
-) {
-  try {
-    const { error } = await supabase
-      .from("notifications")
-      .insert({
-        user_id: userId,
-        type,
-        payload,
-        created_at: new Date().toISOString()
-      });
-      
-    if (error) {
-      console.error("Error creating notification:", error);
-    }
-  } catch (err) {
-    console.error("Exception creating notification:", err);
+  // First we need to verify the webhook signature
+  if (!signature) {
+    logStep("ERROR: No Stripe signature found");
+    return new Response("Webhook signature verification failed", { status: 400 });
   }
-}
 
-// Helper function to process booking requests
-async function processBookingRequest(orderId: string) {
+  const body = await request.text();
+  const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    apiVersion: "2023-10-16",
+    httpClient: Stripe.createFetchHttpClient(),
+  });
+
+  let receivedEvent: Stripe.Event;
   try {
-    console.log(`Processing booking request: ${orderId}`);
-    
-    // Update booking request status
-    const { data: request, error: requestError } = await supabase
-      .from("booking_requests")
-      .update({ 
-        status: "pending_booking",
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", orderId)
-      .select("user_id, offer_id, offer_data")
-      .single();
-      
-    if (requestError || !request) {
-      console.error("Error updating booking request:", requestError);
-      return false;
-    }
-    
-    console.log(`Updated booking request status to pending_booking: ${orderId}`);
-    
-    // Create notification for payment confirmation
-    await createNotification(request.user_id, "payment_received", {
-      bookingRequestId: orderId,
-      timestamp: new Date().toISOString(),
-      flightInfo: `${request.offer_data?.airline} ${request.offer_data?.flight_number}`
-    });
-    
-    return true;
+    receivedEvent = await stripe.webhooks.constructEventAsync(
+      body,
+      signature,
+      Deno.env.get("STRIPE_WEBHOOK_SECRET") || "",
+      undefined,
+      cryptoProvider
+    );
+    logStep("Webhook signature verified", { eventType: receivedEvent.type });
   } catch (err) {
-    console.error("Error processing booking request:", err);
-    return false;
-  }
-}
-
-serve(async (req: Request) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders,
+    logStep("ERROR: Webhook signature verification failed", { error: err.message });
+    return new Response(`Webhook signature verification failed: ${err.message}`, {
+      status: 400,
     });
   }
 
-  try {
-    // Verify webhook signature
-    const payload = await req.text();
-    const sig = req.headers.get("stripe-signature");
-    
-    if (!sig || !endpointSecret) {
-      console.error("Missing signature or webhook secret");
-      return new Response(
-        JSON.stringify({ error: "Missing signature or webhook secret" }),
-        {
-          status: 400,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-    
-    let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
-      console.log(`✅ Webhook verified: ${event.type}`);
-    } catch (err) {
-      console.error(`⚠️ Webhook signature verification failed:`, err);
-      return new Response(
-        JSON.stringify({ error: "Invalid signature" }),
-        {
-          status: 400,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
+  // Use the service role key to bypass RLS for administrative updates
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
+  );
 
-    // Process the event based on its type
-    switch (event.type) {
+  try {
+    switch (receivedEvent.type) {
       case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.user_id;
-        const orderId = session.metadata?.order_id; // This is now the booking_request_id
-        
-        if (!userId) {
-          console.error("Missing user_id in session metadata");
-          return new Response(
-            JSON.stringify({ error: "Missing user_id in metadata" }),
-            {
-              status: 400,
-              headers: {
-                ...corsHeaders,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+        const session = receivedEvent.data.object as Stripe.Checkout.Session;
+        logStep("Processing checkout.session.completed", { sessionId: session.id });
+
+        // Find the booking request for this session
+        const { data: bookingRequest, error: fetchError } = await supabaseClient
+          .from('booking_requests')
+          .select('*')
+          .eq('checkout_session_id', session.id)
+          .single();
+
+        if (fetchError || !bookingRequest) {
+          logStep("ERROR: Booking request not found", { sessionId: session.id });
+          throw new Error(`Booking request not found for session: ${session.id}`);
         }
 
-        console.log(`Processing completed checkout session for user ${userId}, mode: ${session.mode}`);
-        
-        if (session.mode === "setup") {
-          // Handle setup mode - save new payment method
-          const setupIntentId = session.setup_intent as string;
-          if (!setupIntentId) {
-            throw new Error("Missing setup intent ID");
-          }
-          
-          console.log(`Retrieving setup intent: ${setupIntentId}`);
-          const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
-          
-          if (!setupIntent.payment_method) {
-            throw new Error("Setup intent has no payment method");
-          }
-          
-          const pm = await stripe.paymentMethods.retrieve(setupIntent.payment_method as string);
-          console.log(`Retrieved payment method: ${pm.id}`);
-          
-          // First unset any existing default payment methods
-          const { error: updateError } = await supabase
-            .from("payment_methods")
-            .update({ is_default: false })
-            .eq("user_id", userId);
-            
-          if (updateError) {
-            console.error("Error unsetting default payment methods:", updateError);
-          }
-          
-          // Now insert the new payment method
-          const { error: insertError, data: insertedMethod } = await supabase
-            .from("payment_methods")
+        logStep("Booking request found", { id: bookingRequest.id, currentStatus: bookingRequest.status });
+
+        // Update status to pending_booking
+        await supabaseClient
+          .from('booking_requests')
+          .update({ status: 'pending_booking' })
+          .eq('id', bookingRequest.id);
+        logStep("Updated status to pending_booking");
+
+        // Update status to processing
+        await supabaseClient
+          .from('booking_requests')
+          .update({ status: 'processing' })
+          .eq('id', bookingRequest.id);
+        logStep("Updated status to processing");
+
+        try {
+          // Create the booking record
+          const { data: booking, error: bookingError } = await supabaseClient
+            .from('bookings')
             .insert({
-              user_id: userId,
-              stripe_pm_id: pm.id,
-              brand: pm.card?.brand,
-              last4: pm.card?.last4,
-              exp_month: pm.card?.exp_month,
-              exp_year: pm.card?.exp_year,
-              is_default: true,
-              nickname: session.metadata?.nickname || null,
+              user_id: bookingRequest.user_id,
+              trip_request_id: bookingRequest.offer_id, // This might need adjustment based on your schema
+              flight_offer_id: bookingRequest.offer_id,
             })
             .select()
             .single();
-            
-          if (insertError) {
-            console.error("Error inserting payment method:", insertError);
-            throw new Error(`Failed to save payment method: ${insertError.message}`);
+
+          if (bookingError) {
+            throw new Error(`Failed to create booking: ${bookingError.message}`);
           }
+          logStep("Booking created successfully", { bookingId: booking.id });
+
+          // Update status to done
+          await supabaseClient
+            .from('booking_requests')
+            .update({ 
+              status: 'done',
+              processed_at: new Date().toISOString()
+            })
+            .eq('id', bookingRequest.id);
+          logStep("Updated status to done");
+
+        } catch (bookingError: any) {
+          logStep("Booking creation failed", { error: bookingError.message });
           
-          // Create notification for new payment method
-          await createNotification(userId, "payment_method_added", {
-            paymentMethodId: insertedMethod.id,
-            brand: pm.card?.brand,
-            last4: pm.card?.last4,
-            timestamp: new Date().toISOString()
-          });
-          
-          console.log(`✅ Payment method ${pm.id} saved for user ${userId}`);
-        } else if (session.mode === "payment") {
-          // Handle payment mode - process booking request or complete order
-          if (orderId) {
-            // Handle new booking flow with booking_requests
-            console.log(`Processing payment for booking request ${orderId}`);
-            const success = await processBookingRequest(orderId);
-            
-            if (!success) {
-              console.error(`Failed to process booking request: ${orderId}`);
-            }
-          } else {
-            // Handle legacy flow (this is the old code path for orders)
-            const tripRequestId = session.metadata?.trip_request_id;
-            const flightOfferId = session.metadata?.flight_offer_id;
-            
-            if (!tripRequestId || !flightOfferId) {
-              throw new Error("Missing required metadata for payment completion");
-            }
-            
-            console.log(`Processing legacy payment with trip request ${tripRequestId}`);
-            
-            // 1. Update the order status to completed
-            const { error: orderError } = await supabase
-              .from("orders")
-              .update({ 
-                status: "completed", 
-                updated_at: new Date().toISOString() 
-              })
-              .eq("id", orderId);
-              
-            if (orderError) {
-              console.error("Error updating order:", orderError);
-              throw new Error(`Failed to update order: ${orderError.message}`);
-            }
-            
-            // 2. Create a booking linked to this order
-            const { error: bookingError, data: booking } = await supabase
-              .from("bookings")
-              .insert({
-                user_id: userId,
-                trip_request_id: tripRequestId,
-                flight_offer_id: flightOfferId,
-                order_id: orderId,
-              })
-              .select()
-              .single();
-              
-            if (bookingError) {
-              console.error("Error creating booking:", bookingError);
-              throw new Error(`Failed to create booking: ${bookingError.message}`);
-            }
-            
-            // Create notification for booking
-            await createNotification(userId, "booking_success", {
-              bookingId: booking.id,
-              flightOfferId,
-              orderId,
-              timestamp: new Date().toISOString()
-            });
-            
-            console.log(`✅ Order ${orderId} completed and booking created`);
-          }
+          // Update status to failed
+          await supabaseClient
+            .from('booking_requests')
+            .update({ 
+              status: 'failed',
+              error: bookingError.message,
+              processed_at: new Date().toISOString()
+            })
+            .eq('id', bookingRequest.id);
+
+          throw bookingError;
         }
+
         break;
       }
-      
-      // Handle other event types as needed
+
+      case "setup_intent.succeeded": {
+        const setupIntent = receivedEvent.data.object as Stripe.SetupIntent;
+        logStep("Processing setup_intent.succeeded", { setupIntentId: setupIntent.id });
+
+        if (!setupIntent.customer || !setupIntent.payment_method) {
+          logStep("ERROR: Missing customer or payment_method in setup_intent");
+          throw new Error("Missing customer or payment_method in setup_intent");
+        }
+
+        const customerId = setupIntent.customer as string;
+        const paymentMethodId = setupIntent.payment_method as string;
+
+        // Retrieve payment method details
+        const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
+        logStep("Payment method retrieved", { paymentMethodId, type: paymentMethod.type });
+
+        if (paymentMethod.type !== "card" || !paymentMethod.card) {
+          throw new Error("Only card payment methods are supported");
+        }
+
+        // Find user by Stripe customer ID
+        const { data: existingMethod } = await supabaseClient
+          .from("payment_methods")
+          .select("user_id")
+          .eq("stripe_customer_id", customerId)
+          .limit(1)
+          .single();
+
+        let userId = existingMethod?.user_id;
+
+        if (!userId) {
+          // If no existing payment method, try to find user by email
+          const customer = await stripe.customers.retrieve(customerId);
+          if ("email" in customer && customer.email) {
+            const { data: profile } = await supabaseClient
+              .from("profiles")
+              .select("id")
+              .eq("email", customer.email)
+              .single();
+            userId = profile?.id;
+          }
+        }
+
+        if (!userId) {
+          throw new Error("Could not find user for this payment method");
+        }
+
+        // Set all existing payment methods for this user as non-default
+        await supabaseClient
+          .from("payment_methods")
+          .update({ is_default: false })
+          .eq("user_id", userId);
+
+        // Insert new payment method
+        const { error: insertError } = await supabaseClient
+          .from("payment_methods")
+          .insert({
+            user_id: userId,
+            stripe_customer_id: customerId,
+            stripe_pm_id: paymentMethodId,
+            brand: paymentMethod.card.brand,
+            last4: paymentMethod.card.last4,
+            exp_month: paymentMethod.card.exp_month,
+            exp_year: paymentMethod.card.exp_year,
+            is_default: true,
+          });
+
+        if (insertError) {
+          logStep("ERROR: Failed to insert payment method", { error: insertError });
+          throw insertError;
+        }
+
+        logStep("Payment method saved successfully");
+        break;
+      }
+
       default:
-        console.log(`⚠️ Unhandled event type: ${event.type}`);
+        logStep("Unhandled event type", { eventType: receivedEvent.type });
+        break;
     }
 
-    // Return a success response to Stripe
-    return new Response(
-      JSON.stringify({ received: true }),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  } catch (error) {
-    console.error("stripe-webhook error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    return new Response(JSON.stringify({ received: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep("ERROR in webhook processing", { message: errorMessage });
+    
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 });
