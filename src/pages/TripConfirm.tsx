@@ -11,7 +11,7 @@ import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
 import { formatDuration } from "@/utils/formatDuration";
-import type { RealtimePostgresUpdatePayload } from "@supabase/supabase-js";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 // Extended interface to include new database fields
 interface ExtendedOffer extends OfferProps {
@@ -193,16 +193,25 @@ const TripConfirm = () => {
     
     fetchBookingRequest();
     
-    // Subscribe to booking status updates using the simplified table subscription
-    const subscription = supabase
-      .from(`booking_requests:checkout_session_id=eq.${sessionId}`)
-      .on('UPDATE', (payload: RealtimePostgresUpdatePayload<Tables<'booking_requests'>>) => {
-        updateBookingStatusMessage(payload.new.status);
-      })
+    // Subscribe to booking status updates using the correct channel-based API
+    const channel = supabase
+      .channel(`booking-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'booking_requests',
+          filter: `checkout_session_id=eq.${sessionId}`,
+        },
+        (payload: RealtimePostgresChangesPayload<{ status: string }>) => {
+          updateBookingStatusMessage(payload.new.status);
+        }
+      )
       .subscribe();
       
     return () => {
-      supabase.removeSubscription(subscription);
+      supabase.removeChannel(channel);
     };
   }, [sessionId, bookingProcessingInvoked]);
   
