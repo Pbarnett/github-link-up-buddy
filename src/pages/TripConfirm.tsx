@@ -10,20 +10,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
-import { RealtimeChannel } from "@supabase/supabase-js";
+import { RealtimeChannel, RealtimePostgresChangesPayload } from "@supabase/supabase-js"; // Added RealtimePostgresChangesPayload
 
-type BookingRequestPayload = {
-  new: Tables<'booking_requests'>;
-  old: Tables<'booking_requests'>;
-  // Include other properties from the Supabase payload if necessary,
-  // but 'new' and 'old' are the most critical for this use case.
-  // For example: commit_timestamp: string, errors: any[], table: string, schema: string, type: string
-  commit_timestamp: string;
-  errors: any[] | null;
-  table: string;
-  schema: string;
-  type: 'INSERT' | 'UPDATE' | 'DELETE';
-};
+// Removed custom BookingRequestPayload type definition
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -163,7 +152,7 @@ const TripConfirm = () => {
         schema: 'public',
         table: 'booking_requests',
         filter: `checkout_session_id=eq.${sessionId}`,
-      }, (payload: BookingRequestPayload) => {
+      }, (payload: RealtimePostgresChangesPayload<Tables<'booking_requests'>>) => { // Updated payload type
         // console.log('[trip-confirm] booking status updated:', payload); // Commented out
         updateBookingStatusMessage(payload.new.status);
       })
