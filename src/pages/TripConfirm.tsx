@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
+
 import { formatDuration } from "@/utils/formatDuration";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
@@ -20,6 +21,7 @@ interface ExtendedOffer extends OfferProps {
   stops: number;
   layover_airports: string[] | null;
 }
+ main
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -211,6 +213,7 @@ const TripConfirm = () => {
           }
         }
       )
+ main
       .subscribe();
       
     return () => {
