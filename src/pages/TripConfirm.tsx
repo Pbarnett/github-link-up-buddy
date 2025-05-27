@@ -204,8 +204,11 @@ const TripConfirm = () => {
           table: 'booking_requests',
           filter: `checkout_session_id=eq.${sessionId}`,
         },
-        (payload: RealtimePostgresChangesPayload<{ status: string }>) => {
-          updateBookingStatusMessage(payload.new.status);
+        (payload: RealtimePostgresChangesPayload<Tables<'booking_requests'>>) => {
+          // Safely access the status with type checking
+          if (payload.new && 'status' in payload.new && payload.new.status) {
+            updateBookingStatusMessage(payload.new.status);
+          }
         }
       )
       .subscribe();
