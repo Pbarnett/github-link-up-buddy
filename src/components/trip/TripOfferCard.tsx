@@ -9,14 +9,19 @@ import { useNavigate } from "react-router-dom";
 
 export interface OfferProps {
   id: string;
-  price: number;
   airline: string;
   flight_number: string;
+  price: number;
   departure_date: string;
   departure_time: string;
   return_date: string;
   return_time: string;
   duration: string;
+  // New optional fields for backward compatibility
+  auto_book?: boolean;
+  booking_url?: string | null;
+  stops?: number;
+  layover_airports?: string[] | null;
 }
 
 // Renamed original component
