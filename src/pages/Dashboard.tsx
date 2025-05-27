@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import NotificationsPanel from '@/components/NotificationsPanel'; // Added import
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -73,6 +74,12 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Notifications Panel Section */}
+        <div className="mb-6"> {/* Added margin-bottom to space it from the next card */}
+          <NotificationsPanel />
+        </div>
+
+        {/* Existing Dashboard Content */}
         <div className="bg-white shadow overflow-hidden rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
