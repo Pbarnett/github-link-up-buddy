@@ -109,15 +109,16 @@ const TripConfirm = () => {
           if (processError) {
             throw processError;
           }
-          // Success of invoke doesn't mean booking is complete, just that processing was accepted.
-          // The existing fetchBookingRequest and realtime subscription will update status.
-          // A toast here could confirm that the finalization step has started.
+          // Success path: Booking processing initiated successfully by the edge function.
+          // The actual booking status ('done' or 'failed') will still come via realtime or subsequent fetch.
+          // However, per instructions, we immediately update UI to 'done' and show success toast.
+          updateBookingStatusMessage("done"); 
           toast({
-            title: "Processing Booking",
-            description: "Your booking is being finalized. Status will update shortly.",
+            title: "Booking Confirmed!",
+            description: "Your flight booking has been successfully processed. Redirecting to dashboard...",
+            variant: "default", 
           });
-          // Optionally, call fetchBookingRequest() again here if you want an immediate status pull
-          // after process-booking, otherwise rely on the existing call and realtime.
+          // Note: The actual redirect to dashboard is handled by updateBookingStatusMessage("done")
 
         } catch (err: any) {
           setError(err.message || "An error occurred while finalizing your booking.");
@@ -226,54 +227,53 @@ const TripConfirm = () => {
     setIsConfirming(true);
     setError(null);
 
-    try {
-      // Assuming 'tripId' from the URL search parameter 'id' is the intended bookingRequestId.
-      // This 'id' is currently parsed as offer.id. If 'bookingRequestId' needs to be the 
-      // actual trip_request.id, then the navigation to this page or the data available 
-      // to this component needs to be adjusted to provide the correct trip_request_id.
-      const tripIdFromParams = searchParams.get("id"); 
+    try { // Outer try for the finally block
+      try { // Inner try for the invoke call and error handling
+        // Assuming 'tripId' from the URL search parameter 'id' is the intended bookingRequestId.
+        // This 'id' is currently parsed as offer.id. If 'bookingRequestId' needs to be the 
+        // actual trip_request.id, then the navigation to this page or the data available 
+        // to this component needs to be adjusted to provide the correct trip_request_id.
+        const tripIdFromParams = searchParams.get("id"); 
 
-      // Call the create-booking-request edge function
-      const res = await supabase.functions.invoke<{ url: string }>("create-booking-request", {
-        body: { 
-          userId, 
-          offerId: offer!.id, // offer is checked for null just before this block
-          // Assuming 'bookingRequestId' corresponds to the 'tripId' (trip_request_id) for this context.
-          // Per instructions, using searchParams.get("id") for bookingRequestId.
-          // If 'create-booking-request' generates the booking_request_id, this field might not be needed here.
-          bookingRequestId: tripIdFromParams
+        // Call the create-booking-request edge function
+        const res = await supabase.functions.invoke<{ url: string }>("create-booking-request", {
+          body: { 
+            userId, 
+            offerId: offer!.id, // offer is checked for null just before this block
+            // Assuming 'bookingRequestId' corresponds to the 'tripId' (trip_request_id) for this context.
+            // Per instructions, using searchParams.get("id") for bookingRequestId.
+            // If 'create-booking-request' generates the booking_request_id, this field might not be needed here.
+            bookingRequestId: tripIdFromParams
+          }
+        });
+        
+        if (res.error || !res.data?.url) {
+          throw new Error(res.error?.message ?? "No URL found in response");
         }
-      });
-      
-      if (res.error) {
-        throw new Error(res.error.message || "Failed to create booking request");
-      }
-      
-      if (!res.data || !res.data.url) {
-        throw new Error("No checkout URL received from server");
-      }
-      
-      // Redirect to Stripe checkout
-      window.location.href = res.data.url;
-    } catch (e: unknown) {
-      let errorMessage = "There was a problem setting up your booking. Please try again.";
-      if (e instanceof Error) {
-        errorMessage = e.message || errorMessage;
-      } else if (typeof e === 'string') {
-        errorMessage = e || errorMessage;
-      }
-      // If e is an object with a message property (common for Supabase errors not strictly an Error instance)
-      else if (typeof e === 'object' && e !== null && 'message' in e && typeof (e as any).message === 'string') {
-        errorMessage = (e as any).message || errorMessage;
-      }
+        
+        // If we reach here, it's a success with a URL
+        window.location.href = res.data.url;
+      } catch (e: unknown) {
+        let errorMessage = "There was a problem setting up your booking. Please try again.";
+        if (e instanceof Error) {
+          errorMessage = e.message; // Use the thrown error message directly
+        } else if (typeof e === 'string') {
+          errorMessage = e; // Use string error directly
+        }
+        // If e is an object with a message property (common for Supabase errors not strictly an Error instance)
+        else if (typeof e === 'object' && e !== null && 'message' in e && typeof (e as any).message === 'string') {
+           errorMessage = (e as any).message || errorMessage;
+        }
 
-
-      setError(errorMessage);
-      toast({
-        title: "Booking Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+        setError(errorMessage);
+        toast({
+          title: "Booking Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        // setIsConfirming(false) moved to finally
+      }
+    } finally {
       setIsConfirming(false);
     }
   };
