@@ -20,8 +20,8 @@ export function usePaymentMethods() {
         
         return data || [];
       } catch (error) {
-        console.error("Error fetching payment methods:", error);
-        throw error;
+        console.error("Error fetching payment methods:", error); // Preserving this console.error
+        throw error; // Ensure error is re-thrown for useQuery to handle
       }
     }
   });
