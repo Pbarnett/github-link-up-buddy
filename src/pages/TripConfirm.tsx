@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2, AlertCircle } from "lucide-react";
+import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2, AlertCircle, Plane } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
@@ -10,18 +10,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
-import { RealtimeChannel, RealtimePostgresChangesPayload } from "@supabase/supabase-js"; // Added RealtimePostgresChangesPayload
 
-// Removed custom BookingRequestPayload type definition
+import { formatDuration } from "@/utils/formatDuration";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+
+// Extended interface to include new database fields
+interface ExtendedOffer extends OfferProps {
+  auto_book: boolean;
+  booking_url: string | null;
+  stops: number;
+  layover_airports: string[] | null;
+}
+ main
 
 const TripConfirm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [offer, setOffer] = useState<OfferProps | null>(null);
+  const [offer, setOffer] = useState<ExtendedOffer | null>(null);
   const [hasError, setHasError] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bookingStatus, setBookingStatus] = useState<string | null>(null);
+  const [loadingFullOffer, setLoadingFullOffer] = useState(false);
   const { user, userId, loading: userLoading } = useCurrentUser();
   const searchParams = new URLSearchParams(location.search);
   const sessionId = searchParams.get('session_id');
@@ -66,9 +76,9 @@ const TripConfirm = () => {
         throw new Error("Incomplete flight information");
       }
 
-      setOffer(parsedOffer);
+      // Fetch full offer details from database
+      fetchFullOfferDetails(parsedOffer.id);
     } catch (error) {
-      // console.error("Error parsing offer details:", error); // Removed, existing toast handles this
       setHasError(true);
       toast({
         title: "Error",
@@ -78,17 +88,61 @@ const TripConfirm = () => {
     }
   }, [location.search, sessionId]);
 
+  const fetchFullOfferDetails = async (offerId: string) => {
+    setLoadingFullOffer(true);
+    try {
+      const { data: fullOffer, error } = await supabase
+        .from('flight_offers')
+        .select('*')
+        .eq('id', offerId)
+        .single();
+
+      if (error || !fullOffer) {
+        throw new Error('Could not fetch flight details');
+      }
+
+      // Transform database result to our extended offer interface
+      const extendedOffer: ExtendedOffer = {
+        id: fullOffer.id,
+        airline: fullOffer.airline,
+        flight_number: fullOffer.flight_number,
+        price: Number(fullOffer.price),
+        departure_date: fullOffer.departure_date,
+        departure_time: fullOffer.departure_time,
+        return_date: fullOffer.return_date,
+        return_time: fullOffer.return_time,
+        duration: fullOffer.duration,
+        auto_book: fullOffer.auto_book,
+        booking_url: fullOffer.booking_url,
+        stops: fullOffer.stops,
+        layover_airports: fullOffer.layover_airports,
+      };
+
+      setOffer(extendedOffer);
+    } catch (error) {
+      console.error('Error fetching full offer details:', error);
+      setHasError(true);
+      toast({
+        title: "Error",
+        description: "Could not load flight details. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingFullOffer(false);
+    }
+  };
+
   // Subscribe to booking status updates if we have a session ID
   useEffect(() => {
     if (!sessionId) {
-      setBookingProcessingInvoked(false); // Reset if sessionId disappears
+      setBookingProcessingInvoked(false);
       return;
     }
 
     const invokeProcessBooking = async () => {
       if (!bookingProcessingInvoked) {
-        setBookingProcessingInvoked(true); // Mark as attempted immediately
-        setBookingStatus("Finalizing your booking details..."); // Initial status update
+        setBookingProcessingInvoked(true);
+        setBookingStatus("Finalizing your booking details...");
 
         try {
           const { error: processError } = await supabase.functions.invoke("process-booking", {
@@ -98,20 +152,17 @@ const TripConfirm = () => {
           if (processError) {
             throw processError;
           }
-          // Success path: Booking processing initiated successfully by the edge function.
-          // The actual booking status ('done' or 'failed') will still come via realtime or subsequent fetch.
-          // However, per instructions, we immediately update UI to 'done' and show success toast.
+          
           updateBookingStatusMessage("done"); 
           toast({
             title: "Booking Confirmed!",
             description: "Your flight booking has been successfully processed. Redirecting to dashboard...",
             variant: "default", 
           });
-          // Note: The actual redirect to dashboard is handled by updateBookingStatusMessage("done")
 
         } catch (err: any) {
           setError(err.message || "An error occurred while finalizing your booking.");
-          updateBookingStatusMessage("failed"); // Set a failed status
+          updateBookingStatusMessage("failed");
           toast({
             title: "Booking Finalization Error",
             description: err.message || "Could not finalize your booking. Please check for updates or contact support.",
@@ -121,7 +172,7 @@ const TripConfirm = () => {
       }
     };
 
-    invokeProcessBooking(); // Call the async function
+    invokeProcessBooking();
     
     // Try to find the booking request with this session ID
     const fetchBookingRequest = async () => {
@@ -144,22 +195,29 @@ const TripConfirm = () => {
     
     fetchBookingRequest();
     
-    // Subscribe to booking status updates using v2 channel API
+    // Subscribe to booking status updates using the correct channel-based API
     const channel = supabase
-      .channel(`checkout:${sessionId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'booking_requests',
-        filter: `checkout_session_id=eq.${sessionId}`,
-      }, (payload: RealtimePostgresChangesPayload<Tables<'booking_requests'>>) => { // Updated payload type
-        // console.log('[trip-confirm] booking status updated:', payload); // Commented out
-        updateBookingStatusMessage(payload.new.status);
-      })
+      .channel(`booking-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'booking_requests',
+          filter: `checkout_session_id=eq.${sessionId}`,
+        },
+        (payload: RealtimePostgresChangesPayload<Tables<'booking_requests'>>) => {
+          // Safely access the status with type checking
+          if (payload.new && 'status' in payload.new && payload.new.status) {
+            updateBookingStatusMessage(payload.new.status);
+          }
+        }
+      )
+ main
       .subscribe();
       
     return () => {
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [sessionId, bookingProcessingInvoked]);
   
@@ -194,6 +252,18 @@ const TripConfirm = () => {
     navigate('/trip/offers');
   };
 
+  const handleContinueToAirline = () => {
+    if (offer?.booking_url) {
+      window.open(offer.booking_url, '_blank');
+    } else {
+      toast({
+        title: "Error",
+        description: "Booking URL not available. Please try again or contact support.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const onConfirm = async () => {
     if (!offer || !offer.id) {
       toast({
@@ -216,22 +286,15 @@ const TripConfirm = () => {
     setIsConfirming(true);
     setError(null);
 
-    try { // Outer try for the finally block
-      try { // Inner try for the invoke call and error handling
-        // Assuming 'tripId' from the URL search parameter 'id' is the intended bookingRequestId.
-        // This 'id' is currently parsed as offer.id. If 'bookingRequestId' needs to be the 
-        // actual trip_request.id, then the navigation to this page or the data available 
-        // to this component needs to be adjusted to provide the correct trip_request_id.
+    try {
+      try {
         const tripIdFromParams = searchParams.get("id"); 
 
         // Call the create-booking-request edge function
         const res = await supabase.functions.invoke<{ url: string }>("create-booking-request", {
           body: { 
             userId, 
-            offerId: offer!.id, // offer is checked for null just before this block
-            // Assuming 'bookingRequestId' corresponds to the 'tripId' (trip_request_id) for this context.
-            // Per instructions, using searchParams.get("id") for bookingRequestId.
-            // If 'create-booking-request' generates the booking_request_id, this field might not be needed here.
+            offerId: offer!.id,
             bookingRequestId: tripIdFromParams
           }
         });
@@ -245,11 +308,10 @@ const TripConfirm = () => {
       } catch (e: unknown) {
         let errorMessage = "There was a problem setting up your booking. Please try again.";
         if (e instanceof Error) {
-          errorMessage = e.message; // Use the thrown error message directly
+          errorMessage = e.message;
         } else if (typeof e === 'string') {
-          errorMessage = e; // Use string error directly
+          errorMessage = e;
         }
-        // If e is an object with a message property (common for Supabase errors not strictly an Error instance)
         else if (typeof e === 'object' && e !== null && 'message' in e && typeof (e as any).message === 'string') {
            errorMessage = (e as any).message || errorMessage;
         }
@@ -260,7 +322,6 @@ const TripConfirm = () => {
           description: errorMessage,
           variant: "destructive",
         });
-        // setIsConfirming(false) moved to finally
       }
     } finally {
       setIsConfirming(false);
@@ -337,7 +398,7 @@ const TripConfirm = () => {
     );
   }
 
-  if (userLoading || !offer) {
+  if (userLoading || !offer || loadingFullOffer) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
         <div className="animate-pulse">
@@ -403,17 +464,39 @@ const TripConfirm = () => {
             </div>
           </div>
           
-          {/* Duration */}
-          <div className="flex items-center">
-            <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
-            <span className="text-sm text-gray-500">Flight duration: {offer.duration}</span>
+          {/* Enhanced Flight Details */}
+          <div className="space-y-4 border-b pb-4">
+            {/* Duration */}
+            <div className="flex items-center">
+              <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
+              <span className="text-sm text-gray-500">
+                Flight duration: {formatDuration(offer.duration)}
+              </span>
+            </div>
+            
+            {/* Stops and Layovers */}
+            <div className="flex items-center">
+              <Plane className="h-4 w-4 mr-2 text-gray-500" />
+              <span className="text-sm text-gray-500">
+                {offer.stops === 0 
+                  ? 'Direct flight' 
+                  : `${offer.stops} stop${offer.stops > 1 ? 's' : ''}${
+                      offer.layover_airports && offer.layover_airports.length > 0 
+                        ? ` (${offer.layover_airports.join(', ')})` 
+                        : ''
+                    }`
+                }
+              </span>
+            </div>
           </div>
           
           {/* Notes */}
           <div className="bg-gray-50 p-4 rounded-md">
             <p className="text-sm text-gray-500">
-              By confirming this booking, you agree to the terms and conditions of the airline.
-              This booking is non-refundable after 24 hours.
+              {offer.auto_book 
+                ? "By confirming this booking, you agree to the terms and conditions of the airline. This booking is non-refundable after 24 hours."
+                : "You will be redirected to the airline's website to complete your booking. Please review their terms and conditions before purchasing."
+              }
             </p>
           </div>
         </CardContent>
@@ -421,17 +504,29 @@ const TripConfirm = () => {
           <Button onClick={handleCancel} variant="outline" disabled={isConfirming}>
             <X className="mr-2 h-4 w-4" /> Cancel
           </Button>
-          <Button onClick={onConfirm} disabled={isConfirming || !!error}>
-            {isConfirming ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing…
-              </>
-            ) : (
-              <>
-                <Check className="mr-2 h-4 w-4" /> Pay & Book
-              </>
-            )}
-          </Button>
+          
+          {/* Conditional Button Based on auto_book */}
+          {offer.auto_book ? (
+            <Button onClick={onConfirm} disabled={isConfirming || !!error}>
+              {isConfirming ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing…
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" /> Pay & Book
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button 
+              onClick={handleContinueToAirline}
+              disabled={!offer.booking_url}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <PlaneTakeoff className="mr-2 h-4 w-4" /> Continue to Airline
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </div>

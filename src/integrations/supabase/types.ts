@@ -1,5 +1,10 @@
-/** Collapse the recursive Json union to `unknown` to prevent TS recursion errors */
-export type Json = unknown;
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
   public: {
@@ -8,37 +13,43 @@ export type Database = {
         Row: {
           attempts: number
           auto: boolean
+          checkout_session_id: string | null
           created_at: string
           error: string | null
           id: string
           offer_data: Json
           offer_id: string
           processed_at: string | null
-          status: string
+          status: Database["public"]["Enums"]["booking_request_status"]
+          traveler_data: Json | null
           user_id: string
         }
         Insert: {
           attempts?: number
           auto?: boolean
+          checkout_session_id?: string | null
           created_at?: string
           error?: string | null
           id?: string
           offer_data: Json
           offer_id: string
           processed_at?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["booking_request_status"]
+          traveler_data?: Json | null
           user_id: string
         }
         Update: {
           attempts?: number
           auto?: boolean
+          checkout_session_id?: string | null
           created_at?: string
           error?: string | null
           id?: string
           offer_data?: Json
           offer_id?: string
           processed_at?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["booking_request_status"]
+          traveler_data?: Json | null
           user_id?: string
         }
         Relationships: [
@@ -138,41 +149,53 @@ export type Database = {
       flight_offers: {
         Row: {
           airline: string
+          auto_book: boolean
+          booking_url: string | null
           created_at: string
           departure_date: string
           departure_time: string
           duration: string
           flight_number: string
           id: string
+          layover_airports: string[] | null
           price: number
           return_date: string
           return_time: string
+          stops: number
           trip_request_id: string
         }
         Insert: {
           airline: string
+          auto_book?: boolean
+          booking_url?: string | null
           created_at?: string
           departure_date: string
           departure_time: string
           duration: string
           flight_number: string
           id?: string
+          layover_airports?: string[] | null
           price: number
           return_date: string
           return_time: string
+          stops?: number
           trip_request_id: string
         }
         Update: {
           airline?: string
+          auto_book?: boolean
+          booking_url?: string | null
           created_at?: string
           departure_date?: string
           departure_time?: string
           duration?: string
           flight_number?: string
           id?: string
+          layover_airports?: string[] | null
           price?: number
           return_date?: string
           return_time?: string
+          stops?: number
           trip_request_id?: string
         }
         Relationships: [
@@ -187,6 +210,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          booking_request_id: string | null
           created_at: string
           id: string
           is_read: boolean
@@ -195,6 +219,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          booking_request_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -203,6 +228,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          booking_request_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -210,7 +236,15 @@ export type Database = {
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_booking_request_id_fkey"
+            columns: ["booking_request_id"]
+            isOneToOne: false
+            referencedRelation: "booking_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {
@@ -285,6 +319,7 @@ export type Database = {
           is_default: boolean
           last4: string
           nickname: string | null
+          stripe_customer_id: string | null
           stripe_pm_id: string
           updated_at: string
           user_id: string
@@ -298,6 +333,7 @@ export type Database = {
           is_default?: boolean
           last4: string
           nickname?: string | null
+          stripe_customer_id?: string | null
           stripe_pm_id: string
           updated_at?: string
           user_id: string
@@ -311,9 +347,40 @@ export type Database = {
           is_default?: boolean
           last4?: string
           nickname?: string | null
+          stripe_customer_id?: string | null
           stripe_pm_id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -373,6 +440,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_reminder_candidates: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          booking_request_id: string
+          user_id: string
+          phone: string
+          trip_details: Json
+          departure_date: string
+          departure_time: string
+        }[]
+      }
       rpc_auto_book_match: {
         Args: {
           p_match_id: string
@@ -383,7 +461,13 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      booking_request_status:
+        | "new"
+        | "pending_payment"
+        | "pending_booking"
+        | "processing"
+        | "done"
+        | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -498,6 +582,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      booking_request_status: [
+        "new",
+        "pending_payment",
+        "pending_booking",
+        "processing",
+        "done",
+        "failed",
+      ],
+    },
   },
 } as const

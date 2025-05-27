@@ -30,9 +30,6 @@ export function usePaymentMethods() {
     paymentMethods: query.data,
     loading: query.isLoading,
     error: query.error,
-    refetch: query.refetch
-    // Add any other properties from 'query' that components might need,
-    // e.g., isFetching, isError, etc., if they were used.
-    // For now, only map the ones specified in the user's error analysis.
+    refetch: query.refetch,
   };
 }
