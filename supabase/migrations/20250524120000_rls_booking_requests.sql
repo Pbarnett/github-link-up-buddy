@@ -1,8 +1,7 @@
 -- Enable Row Level Security on booking_requests
-ALTER TABLE public.booking_requests
-  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.booking_requests ENABLE ROW LEVEL SECURITY;
 
--- Drop any old policies so we can re-create cleanly
+-- Drop existing policies if they exist (prevents duplication errors)
 DROP POLICY IF EXISTS select_own_booking_requests ON public.booking_requests;
 DROP POLICY IF EXISTS insert_booking_requests ON public.booking_requests;
 DROP POLICY IF EXISTS update_booking_request_status_only ON public.booking_requests;
@@ -27,7 +26,7 @@ CREATE POLICY update_booking_request_status_only
   USING ( auth.jwt() ->> 'role' = 'service_role' )
   WITH CHECK ( auth.jwt() ->> 'role' = 'service_role' );
 
--- Prevent users from deleting requests entirely
+-- Prevent users from deleting requests
 CREATE POLICY no_delete_booking_requests
   ON public.booking_requests
   FOR DELETE
