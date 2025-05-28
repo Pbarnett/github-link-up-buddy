@@ -351,6 +351,8 @@ SidebarInput.displayName = "SidebarInput"
 const SidebarHeader = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
+import NotificationsPanel from "@/components/NotificationsPanel"; // Added import
+
 >(({ className, ...props }, ref) => {
   return (
     <div
@@ -358,7 +360,21 @@ const SidebarHeader = React.forwardRef<
       data-sidebar="header"
       className={cn("flex flex-col gap-2 p-2", className)}
       {...props}
-    />
+    >
+      {/* User Avatar and Notifications Panel Container */}
+      <div className="flex items-center justify-between p-2 group-data-[collapsible=icon]:hidden">
+        {/* Conceptual User Avatar Placeholder */}
+        <div 
+          title="User Avatar Placeholder" 
+          className="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0" // Added dark mode bg and shrink
+        />
+        {/* Notifications Panel */}
+        <div className="ml-2"> {/* Added margin for spacing */}
+          <NotificationsPanel />
+        </div>
+      </div>
+      {/* Existing children of SidebarHeader would go here if any, or this div can be the sole content */}
+    </div>
   )
 })
 SidebarHeader.displayName = "SidebarHeader"
@@ -402,7 +418,7 @@ const SidebarContent = React.forwardRef<
       ref={ref}
       data-sidebar="content"
       className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
+        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-y-auto group-data-[collapsible=icon]:overflow-x-hidden", // Changed overflow for collapsed state
         className
       )}
       {...props}
