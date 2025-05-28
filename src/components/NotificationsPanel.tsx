@@ -1,6 +1,10 @@
 import React from 'react'
+import { Link } from 'react-router-dom' // Added import
 import { Badge } from '@/components/ui/badge'
 import { useNotifications } from '@/hooks/useNotifications'
+
+// Assuming notification object 'n' has 'id', 'message', and potentially 'trip_request_id' as direct properties.
+// If 'trip_request_id' is nested (e.g., n.data.trip_request_id), the access below needs adjustment.
 
 export default function NotificationsPanel() {
   const { data: notifications = [], isLoading, error } = useNotifications()
@@ -29,12 +33,16 @@ export default function NotificationsPanel() {
         <ul className="mt-2 space-y-2">
           {notifications.map((n) => (
             <li key={n.id} className="border-b last:border-b-0 py-1">
-              <a
-                href={`/trip/offers?id=\${n.trip_request_id}`}
-                className="block hover:underline text-sm text-blue-600 hover:text-blue-800"
-              >
-                {n.message}
-              </a>
+              {n.trip_request_id ? (
+                <Link
+                  to={`/trip/offers?tripRequestId=${n.trip_request_id}`}
+                  className="block hover:underline text-sm text-blue-600 hover:text-blue-800"
+                >
+                  {n.message}
+                </Link>
+              ) : (
+                <span className="block text-sm text-gray-700">{n.message}</span>
+              )}
             </li>
           ))}
         </ul>
