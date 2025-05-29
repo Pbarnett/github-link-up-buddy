@@ -15,8 +15,8 @@ interface MockOffer {
 }
 
 interface MockTripRequest {
-  id: number;
-  user_id: string;
+  id: string; // Changed to string for UUID
+  user_id: string; // Assuming this is UUID, already string
   best_price: number | null;
   budget: number | null;
   auto_book: boolean;
@@ -91,8 +91,8 @@ describe('Scheduler Flight Search - Auto-Booking Logic', () => {
     });
 
   it('1. Successful Auto-Booking: offer within budget', async () => {
-    const tripId = 1;
-    const userId = 'user-123';
+    const tripId = 'trip-uuid-1'; // Changed to string UUID
+    const userId = 'user-uuid-123'; // Assuming user_id is also UUID string
     const mockTripRequest: MockTripRequest = {
       id: tripId,
       user_id: userId,
@@ -111,35 +111,48 @@ describe('Scheduler Flight Search - Auto-Booking Logic', () => {
       airline: 'TestAir',
       flight_number: 'TA123',
     };
-    const bookingRequestId = 'br-001';
+    const bookingRequestId = 'br-uuid-001'; // Changed to string UUID
 
     // Mock fetching trip requests
     mockSupabaseFrom.mockImplementation((tableName) => {
         if (tableName === 'trip_requests') {
             return { 
                 select: mockSupabaseSelect.mockReturnThis(), 
-                eq: vi.fn().mockResolvedValueOnce({ data: [mockTripRequest], error: null }) // For fetching trip request
+                eq: vi.fn((col, val) => { // Ensure this eq matches the string tripId
+                    if (col === 'auto_book' && val === true) { // The initial query
+                        return { data: [mockTripRequest], error: null };
+                    }
+                    return { data: [], error: null }; // Default for other .eq calls on trip_requests
+                }) 
             };
         }
         if (tableName === 'bookings') { // For checking existing bookings
             return { 
                 select: mockSupabaseSelect.mockReturnThis(), 
-                eq: vi.fn((col, val) => { // Simulate two .eq() calls
-                    if (col === 'trip_request_id' && val === tripId) return { eq: vi.fn().mockReturnThis() };
-                    if (col === 'status' && val === 'booked') return { eq: vi.fn().mockReturnThis() }; // This was missing, now it's explicit.
-                    return { eq: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) };
-                }).mockReturnThis(), // Ensure the first eq returns this
-                limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) 
+                eq: vi.fn((col, val) => { 
+                    // First .eq is for trip_request_id
+                    if (col === 'trip_request_id' && val === tripId) {
+                        // Return 'this' for the chaining of the second .eq for status
+                        return { eq: vi.fn().mockReturnThis() };
+                    }
+                    // Second .eq is for status, then limit
+                    if (col === 'status' && val === 'booked') {
+                        return { limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) };
+                    }
+                    // Fallback for unexpected .eq calls on bookings
+                    return { limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) };
+                }).mockReturnThis(), 
+                limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) // Default for direct .limit()
             };
         }
         if (tableName === 'booking_requests') { // For insert and update
              return {
                 insert: mockSupabaseInsert.mockImplementation(() => ({
                     select: vi.fn().mockReturnThis(),
-                    single: vi.fn().mockResolvedValueOnce({ data: { id: bookingRequestId }, error: null })
+                    single: vi.fn().mockResolvedValueOnce({ data: { id: bookingRequestId }, error: null }) // bookingRequestId is string
                 })),
-                update: mockSupabaseUpdate.mockReturnThis(),
-                eq: mockSupabaseEq.mockReturnThis(), // For update
+                update: mockSupabaseUpdate.mockReturnThis(), // for .update({ status: 'failed', ...})
+                eq: mockSupabaseEq.mockReturnThis(), // for .eq('id', bookingRequestId)
             };
         }
         return { select: vi.fn().mockReturnThis(), insert: vi.fn().mockReturnThis(), update: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), limit: vi.fn().mockReturnThis(), single: vi.fn().mockReturnThis() };
@@ -199,10 +212,10 @@ describe('Scheduler Flight Search - Auto-Booking Logic', () => {
   });
 
   it('2. No Suitable Offer Found: all offers over budget', async () => {
-    const tripId = 2;
+    const tripId = 'trip-uuid-2'; // Changed to string UUID
     const mockTripRequest: MockTripRequest = {
       id: tripId,
-      user_id: 'user-456',
+      user_id: 'user-uuid-456',
       best_price: null,
       budget: 300,
       auto_book: true,
@@ -218,13 +231,22 @@ describe('Scheduler Flight Search - Auto-Booking Logic', () => {
         if (tableName === 'trip_requests') {
             return { 
                 select: mockSupabaseSelect.mockReturnThis(), 
-                eq: vi.fn().mockResolvedValueOnce({ data: [mockTripRequest], error: null })
+                eq: vi.fn((col, val) => {
+                     if (col === 'auto_book' && val === true) {
+                        return { data: [mockTripRequest], error: null };
+                    }
+                    return { data: [], error: null };
+                })
             };
         }
         if (tableName === 'bookings') {
-            return { 
+             return { 
                 select: mockSupabaseSelect.mockReturnThis(), 
-                eq: vi.fn().mockReturnThis(), // chained eq
+                eq: vi.fn((col, val) => { 
+                    if (col === 'trip_request_id' && val === tripId) return { eq: vi.fn().mockReturnThis() };
+                    if (col === 'status' && val === 'booked') return { limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) };
+                    return { limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) };
+                }).mockReturnThis(),
                 limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) 
             };
         }
@@ -244,19 +266,30 @@ describe('Scheduler Flight Search - Auto-Booking Logic', () => {
   });
 
   it('3. Trip Already Booked: safeguard test', async () => {
-    const tripId = 3;
+    const tripId = 'trip-uuid-3'; // Changed to string UUID
     const mockTripRequest: MockTripRequest = {
       id: tripId,
-      user_id: 'user-789',
+      user_id: 'user-uuid-789',
       auto_book: true,
-      // ... other fields
-    } as MockTripRequest; // Cast to avoid filling all fields for this test
+      origin_location_code: 'SFO', // Added missing required fields
+      destination_location_code: 'JFK',
+      departure_date: '2024-12-01',
+      return_date: null,
+      adults: 1,
+      best_price: null, // Added missing fields
+      budget: null,     // Added missing fields
+    };
 
     mockSupabaseFrom.mockImplementation((tableName) => {
         if (tableName === 'trip_requests') {
             return { 
                 select: mockSupabaseSelect.mockReturnThis(), 
-                eq: vi.fn().mockResolvedValueOnce({ data: [mockTripRequest], error: null })
+                eq: vi.fn((col, val) => {
+                    if (col === 'auto_book' && val === true) {
+                        return { data: [mockTripRequest], error: null };
+                    }
+                    return { data: [], error: null };
+                })
             };
         }
         if (tableName === 'bookings') { // Simulate existing booking
@@ -264,10 +297,10 @@ describe('Scheduler Flight Search - Auto-Booking Logic', () => {
                 select: mockSupabaseSelect.mockReturnThis(), 
                 eq: vi.fn((col, val) => { 
                     if (col === 'trip_request_id' && val === tripId) return { eq: vi.fn().mockReturnThis() };
-                    if (col === 'status' && val === 'booked') return { eq: vi.fn().mockReturnThis() };
-                    return { eq: vi.fn().mockReturnThis(), limit: vi.fn().mockResolvedValueOnce({ data: [{ id: 'existing-booking-001' }], error: null }) };
+                    if (col === 'status' && val === 'booked') return { limit: vi.fn().mockResolvedValueOnce({ data: [{ id: 'existing-booking-uuid-001' }], error: null }) };
+                    return { limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) };
                 }).mockReturnThis(),
-                limit: vi.fn().mockResolvedValueOnce({ data: [{ id: 'existing-booking-001' }], error: null }) 
+                limit: vi.fn().mockResolvedValueOnce({ data: [{ id: 'existing-booking-uuid-001' }], error: null }) 
             };
         }
         return { select: vi.fn().mockReturnThis(), insert: vi.fn().mockReturnThis(), update: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), limit: vi.fn().mockReturnThis(), single: vi.fn().mockReturnThis() };
@@ -285,27 +318,36 @@ describe('Scheduler Flight Search - Auto-Booking Logic', () => {
 
 
   it('4. RPC Call Failure Simulation', async () => {
-    const tripId = 4;
-    const userId = 'user-rpc-fail';
+    const tripId = 'trip-uuid-4'; // Changed to string UUID
+    const userId = 'user-uuid-rpc-fail';
     const mockTripRequest: MockTripRequest = {
       id: tripId, user_id: userId, best_price: null, budget: 200, auto_book: true,
       origin_location_code: 'SFO', destination_location_code: 'LAX', departure_date: '2024-10-01', return_date: null, adults: 1,
     };
-    const mockOffer: MockOffer = { id: 'offer-004', price: 180 }; // Suitable offer
-    const bookingRequestId = 'br-rpc-fail';
+    const mockOffer: MockOffer = { id: 'offer-uuid-004', price: 180 }; // Suitable offer
+    const bookingRequestId = 'br-uuid-rpc-fail'; // Changed to string UUID
     const rpcErrorMessage = 'RPC failed deliberately';
 
     mockSupabaseFrom.mockImplementation((tableName) => {
         if (tableName === 'trip_requests') {
             return { 
                 select: mockSupabaseSelect.mockReturnThis(), 
-                eq: vi.fn().mockResolvedValueOnce({ data: [mockTripRequest], error: null }) 
+                eq: vi.fn((col, val) => {
+                    if (col === 'auto_book' && val === true) {
+                        return { data: [mockTripRequest], error: null };
+                    }
+                    return { data: [], error: null };
+                }) 
             };
         }
         if (tableName === 'bookings') { 
             return { 
                 select: mockSupabaseSelect.mockReturnThis(), 
-                eq: vi.fn().mockReturnThis(),
+                eq: vi.fn((col, val) => { 
+                    if (col === 'trip_request_id' && val === tripId) return { eq: vi.fn().mockReturnThis() };
+                    if (col === 'status' && val === 'booked') return { limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) };
+                    return { limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) };
+                }).mockReturnThis(),
                 limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) 
             };
         }
@@ -313,9 +355,9 @@ describe('Scheduler Flight Search - Auto-Booking Logic', () => {
              return {
                 insert: mockSupabaseInsert.mockImplementation(() => ({
                     select: vi.fn().mockReturnThis(),
-                    single: vi.fn().mockResolvedValueOnce({ data: { id: bookingRequestId }, error: null })
+                    single: vi.fn().mockResolvedValueOnce({ data: { id: bookingRequestId }, error: null }) // bookingRequestId is string
                 })),
-                update: mockSupabaseUpdate.mockReturnThis(), // For the 'failed' status update
+                update: mockSupabaseUpdate.mockReturnThis(), 
                 eq: mockSupabaseEq.mockReturnThis(), 
             };
         }
@@ -364,26 +406,35 @@ describe('Scheduler Flight Search - Auto-Booking Logic', () => {
   });
 
   it('5. Successful Auto-Booking: offer cheaper than best_price, no budget set', async () => {
-    const tripId = 5;
-    const userId = 'user-nobudget';
+    const tripId = 'trip-uuid-5'; // Changed to string UUID
+    const userId = 'user-uuid-nobudget';
     const mockTripRequest: MockTripRequest = {
       id: tripId, user_id: userId, best_price: 600, budget: null, auto_book: true,
       origin_location_code: 'AMS', destination_location_code: 'BCN', departure_date: '2024-11-20', return_date: '2024-11-28', adults: 1,
     };
-    const mockOffer: MockOffer = { id: 'offer-005', price: 550 }; // Cheaper than best_price
-    const bookingRequestId = 'br-nobudget';
+    const mockOffer: MockOffer = { id: 'offer-uuid-005', price: 550 }; // Cheaper than best_price
+    const bookingRequestId = 'br-uuid-nobudget'; // Changed to string UUID
 
     mockSupabaseFrom.mockImplementation((tableName) => {
         if (tableName === 'trip_requests') {
             return { 
                 select: mockSupabaseSelect.mockReturnThis(), 
-                eq: vi.fn().mockResolvedValueOnce({ data: [mockTripRequest], error: null })
+                eq: vi.fn((col, val) => {
+                    if (col === 'auto_book' && val === true) {
+                        return { data: [mockTripRequest], error: null };
+                    }
+                    return { data: [], error: null };
+                })
             };
         }
         if (tableName === 'bookings') { 
             return { 
                 select: mockSupabaseSelect.mockReturnThis(), 
-                eq: vi.fn().mockReturnThis(),
+                eq: vi.fn((col, val) => { 
+                    if (col === 'trip_request_id' && val === tripId) return { eq: vi.fn().mockReturnThis() };
+                    if (col === 'status' && val === 'booked') return { limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) };
+                    return { limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) };
+                }).mockReturnThis(),
                 limit: vi.fn().mockResolvedValueOnce({ data: [], error: null }) 
             };
         }
@@ -391,10 +442,10 @@ describe('Scheduler Flight Search - Auto-Booking Logic', () => {
              return {
                 insert: mockSupabaseInsert.mockImplementation(() => ({
                     select: vi.fn().mockReturnThis(),
-                    single: vi.fn().mockResolvedValueOnce({ data: { id: bookingRequestId }, error: null })
+                    single: vi.fn().mockResolvedValueOnce({ data: { id: bookingRequestId }, error: null }) // bookingRequestId is string
                 })),
                 update: mockSupabaseUpdate.mockReturnThis(),
-                eq: mockSupabaseEq.mockReturnThis(),
+                eq: mockSupabaseEq.mockReturnThis(), 
             };
         }
         return { select: vi.fn().mockReturnThis(), insert: vi.fn().mockReturnThis(), update: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), limit: vi.fn().mockReturnThis(), single: vi.fn().mockReturnThis() };
