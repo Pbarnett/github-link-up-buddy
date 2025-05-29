@@ -22,20 +22,20 @@ vi.mock('@/components/ui/badge', () => ({
 describe('NotificationsPanel UI', () => {
   const mockNotificationsData = [
     { 
-      id: '11111111-1111-1111-1111-111111111111', // Changed to UUID string
+      id: '11111111-1111-1111-1111-111111111111', 
       message: "Your flight to JFK has been auto-booked!", 
-      trip_request_id: '22222222-2222-2222-2222-222222222222', // Changed to UUID string
-      type: 'auto_booking_success', // Added for completeness, though not directly asserted
-      data: { some: 'payload' },    // Added for completeness
+      trip_request_id: '22222222-2222-2222-2222-222222222222', 
+      type: 'auto_booking_success', 
+      data: { some: 'payload' },    
       created_at: new Date().toISOString(),
       is_read: false,
     },
     { 
-      id: '33333333-3333-3333-3333-333333333333', // Changed to UUID string
+      id: '33333333-3333-3333-3333-333333333333', 
       message: "System update complete.", 
       trip_request_id: null, 
-      type: 'system_message', // Added for completeness
-      data: { info: 'details' },   // Added for completeness
+      type: 'system_message', 
+      data: { info: 'details' },   
       created_at: new Date().toISOString(),
       is_read: true,
     },
@@ -117,7 +117,7 @@ describe('NotificationsPanel UI', () => {
 
   it('should display loading state', () => {
     (useNotifications as vi.Mock).mockReturnValue({
-      data: [], // Or mockNotificationsData, data doesn't matter for loading state
+      data: [], 
       isLoading: true,
       error: null,
     });
@@ -132,7 +132,7 @@ describe('NotificationsPanel UI', () => {
   it('should display error state', () => {
     const errorMessage = 'Failed to fetch notifications';
     (useNotifications as vi.Mock).mockReturnValue({
-      data: [], // Or mockNotificationsData
+      data: [], 
       isLoading: false,
       error: { message: errorMessage },
     });
@@ -141,8 +141,7 @@ describe('NotificationsPanel UI', () => {
         <NotificationsPanel />
       </MemoryRouter>
     );
-    // Use a regex to match part of the error message, as the full string might be "Error loading notifications: Failed to fetch notifications"
-    expect(screen.getByText((content, element) => content.startsWith('Error loading notifications:') && content.includes(errorMessage))).toBeInTheDocument();
+    expect(screen.getByText((content, _element) => content.startsWith('Error loading notifications:') && content.includes(errorMessage))).toBeInTheDocument();
   });
 });
 ```
