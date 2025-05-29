@@ -2,9 +2,10 @@ import { SupabaseClient, createClient, PostgrestError } from '@supabase/supabase
 import { vi, describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 
 // Define interfaces for the data we'll be working with to ensure type safety
+// These should ideally align with src/integrations/supabase/types.ts after its update
 interface TripRequest {
-  id: number;
-  user_id: string;
+  id: string; // Changed to string for UUID
+  user_id: string; // Assuming this is UUID, already string
   origin_location_code: string;
   destination_location_code: string;
   departure_date: string;
@@ -17,11 +18,11 @@ interface TripRequest {
 }
 
 interface BookingRequest {
-  id: number;
-  user_id: string;
-  trip_request_id: number;
+  id: string; // Changed to string for UUID
+  user_id: string; // Assuming UUID
+  trip_request_id: string; // Changed to string for UUID FK
   offer_id: string;
-  offer_data: Record<string, any>; // JSONB, structure depends on Offer interface
+  offer_data: Record<string, any>; 
   auto: boolean;
   status: string;
   error_message?: string | null;
@@ -29,10 +30,10 @@ interface BookingRequest {
 }
 
 interface Booking {
-    id: number;
-    trip_request_id: number;
-    user_id: string;
-    booking_request_id: number;
+    id: number; // Assuming bookings.id (PK) is still BIGINT serial
+    trip_request_id: string; // Changed to string for UUID FK
+    user_id: string; // Assuming UUID
+    booking_request_id: string; // Changed to string for UUID FK
     flight_details: Record<string, any>;
     price: number;
     source: string;
@@ -41,9 +42,9 @@ interface Booking {
 }
 
 interface Notification {
-    id: number;
-    user_id: string;
-    trip_request_id: number;
+    id: number; // Assuming notifications.id (PK) is still BIGINT serial
+    user_id: string; // Assuming UUID
+    trip_request_id: string; // Changed to string for UUID FK
     type: string;
     message: string;
     data: Record<string, any>;
@@ -53,10 +54,10 @@ interface Notification {
 
 describe('RPC: rpc_auto_book_match', () => {
   let supabase: SupabaseClient;
-  const testUserId = '00000000-0000-0000-0000-000000000001'; // Example test user from previous tests
+  const testUserId = '00000000-0000-0000-0000-000000000001'; 
 
-  let tripRequestIdsToDelete: number[] = [];
-  let bookingRequestIdsToDelete: number[] = [];
+  let tripRequestIdsToDelete: string[] = []; // Changed to string[] for UUIDs
+  let bookingRequestIdsToDelete: string[] = []; // Changed to string[] for UUIDs
 
   beforeAll(async () => {
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -193,10 +194,13 @@ describe('RPC: rpc_auto_book_match', () => {
   it('should update booking_requests to failed if RPC encounters an error (e.g., invalid trip_request_id)', async () => {
     // 1. Arrange: Create booking_requests with an invalid trip_request_id
     const invalidTripRequestId = 999999; // Assume this does not exist
-    // No need to add invalidTripRequestId to tripRequestIdsToDelete as it's not created.
+    // No need to add invalidTripRequestId to tripRequestIdsToDelete as it's not created,
+    // and it's a number, not a UUID string, so it wouldn't match a UUID PK anyway.
+    // For this test, we'll use a validly formatted but non-existent UUID.
+    const nonExistentTripRequestIdUUID = 'a1a1a1a1-b2b2-c3c3-d4d4-e5e5e5e5e5e5';
     
     const offerData = { 
-        id: "offer-rpc-fail-test",
+        id: "offer-rpc-fail-test-uuid",
         price: 100.00, 
         airline: 'FailAir', 
         flight_number: 'FA000' 
@@ -205,7 +209,7 @@ describe('RPC: rpc_auto_book_match', () => {
       .from('booking_requests')
       .insert({ 
         user_id: testUserId, 
-        trip_request_id: invalidTripRequestId, 
+        trip_request_id: nonExistentTripRequestIdUUID, // Use non-existent UUID string
         offer_id: offerData.id, 
         offer_data: offerData, 
         auto: true, 
@@ -216,11 +220,10 @@ describe('RPC: rpc_auto_book_match', () => {
 
     expect(bookReqErr, `Booking Request Insert Error (Fail Case): ${bookReqErr?.message}`).toBeNull();
     expect(bookReqData).toBeDefined();
-    const bookReq = bookReqData as BookingRequest;
+    const bookReq = bookReqData as BookingRequest; // ID will be string (UUID)
     bookingRequestIdsToDelete.push(bookReq.id);
 
     // 2. Act: Call the RPC
-    // The RPC itself handles the exception and updates the table, so it shouldn't throw a JS error here.
     const { error: rpcError } = await supabase.rpc('rpc_auto_book_match', { p_booking_request_id: bookReq.id });
     expect(rpcError, `RPC Call Error (Fail Case - should be null if RPC handles error internally): ${rpcError?.message}`).toBeNull();
 
@@ -230,7 +233,8 @@ describe('RPC: rpc_auto_book_match', () => {
     expect(updatedBookReq).toBeDefined();
     expect(updatedBookReq!.status).toBe('failed');
     expect(updatedBookReq!.error_message).not.toBeNull();
-    expect(updatedBookReq!.error_message).toContain(`Associated trip request ID ${invalidTripRequestId} not found`);
+    // The error message from RPC uses the UUID format now.
+    expect(updatedBookReq!.error_message).toContain(`Associated trip request ID ${nonExistentTripRequestIdUUID} not found`);
     
     // Assert no booking created
     const { data: bookings, error: bookingsErr } = await supabase.from('bookings').select('*').eq('booking_request_id', bookReq.id);
@@ -241,7 +245,7 @@ describe('RPC: rpc_auto_book_match', () => {
     const { data: notifications, error: notificationsErr } = await supabase
       .from('notifications')
       .select('*')
-      .eq('data->>booking_request_id', bookReq.id.toString()) // Check via data field
+      .eq('data->>booking_request_id', bookReq.id) // bookReq.id is already string (UUID)
       .eq('type', 'auto_booking_success');
     expect(notificationsErr, `Fetch Notifications Error (Fail Case): ${notificationsErr?.message}`).toBeNull();
     expect(notifications).toHaveLength(0);
