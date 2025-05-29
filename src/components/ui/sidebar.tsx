@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import NotificationsPanel from "@/components/NotificationsPanel"; // Moved import here
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -351,8 +352,7 @@ SidebarInput.displayName = "SidebarInput"
 const SidebarHeader = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
-import NotificationsPanel from "@/components/NotificationsPanel"; // Added import
-
+// Misplaced import removed from here
 >(({ className, ...props }, ref) => {
   return (
     <div
