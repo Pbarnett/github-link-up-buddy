@@ -1,6 +1,10 @@
-// TODO: Regenerate types from schema after migrations are stable.
-/** Collapse the recursive Json union to `unknown` to prevent TS recursion errors */
-export type Json = unknown;
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
   public: {
@@ -9,153 +13,156 @@ export type Database = {
         Row: {
           attempts: number
           auto: boolean
+          checkout_session_id: string | null
           created_at: string
-          // error: string | null // Removed: superseded by error_message
-          error_message?: string | null // Added
-          id: string // Assuming this is UUID, represented as string
+          error_message: string | null
+          id: string
           offer_data: Json
           offer_id: string
           processed_at: string | null
-          status: string
-          trip_request_id?: string | null // Added: UUID FK
-          updated_at?: string // Added: TIMESTAMPTZ
-          user_id: string // Assuming this is UUID
+          status: Database["public"]["Enums"]["booking_request_status"]
+          traveler_data: Json | null
+          trip_request_id: string | null
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
           attempts?: number
           auto?: boolean
+          checkout_session_id?: string | null
           created_at?: string
-          // error?: string | null // Removed
-          error_message?: string | null // Added
-          id?: string // Assuming UUID
+          error_message?: string | null
+          id?: string
           offer_data: Json
           offer_id: string
           processed_at?: string | null
-          status?: string
-          trip_request_id?: string | null // Added
-          updated_at?: string // Added
-          user_id: string // Assuming UUID
+          status?: Database["public"]["Enums"]["booking_request_status"]
+          traveler_data?: Json | null
+          trip_request_id?: string | null
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
           attempts?: number
           auto?: boolean
+          checkout_session_id?: string | null
           created_at?: string
-          // error?: string | null // Removed
-          error_message?: string | null // Added
-          id?: string // Assuming UUID
+          error_message?: string | null
+          id?: string
           offer_data?: Json
           offer_id?: string
           processed_at?: string | null
-          status?: string
-          trip_request_id?: string | null // Added
-          updated_at?: string // Added
-          user_id?: string // Assuming UUID
+          status?: Database["public"]["Enums"]["booking_request_status"]
+          traveler_data?: Json | null
+          trip_request_id?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "booking_requests_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
-            referencedRelation: "flight_offers" // Assuming flight_offers.id is string (UUID or text)
+            referencedRelation: "flight_offers"
             referencedColumns: ["id"]
           },
-          { // Added Relationship for trip_request_id
-            foreignKeyName: "booking_requests_trip_request_id_fkey" 
+          {
+            foreignKeyName: "booking_requests_trip_request_id_fkey"
             columns: ["trip_request_id"]
             isOneToOne: false
             referencedRelation: "trip_requests"
-            referencedColumns: ["id"] // Assuming trip_requests.id is string (UUID)
-          }
+            referencedColumns: ["id"]
+          },
         ]
       }
       bookings: {
         Row: {
           booked_at: string
-          booking_request_id?: string | null // Added: UUID FK
-          flight_details?: Json // Added: JSONB
-          // flight_offer_id: string // Assuming superseded by booking_request_id logic
-          id: string // Assuming this is UUID, represented as string
-          price?: number // Added: NUMERIC
-          source?: string // Added
-          status?: string // Added
-          trip_request_id: string // Assuming UUID FK
-          user_id: string // Assuming UUID
+          booking_request_id: string | null
+          flight_details: Json | null
+          flight_offer_id: string
+          id: string
+          price: number | null
+          source: string | null
+          status: string | null
+          trip_request_id: string
+          user_id: string
         }
         Insert: {
           booked_at?: string
-          booking_request_id?: string | null // Added
-          flight_details?: Json // Added
-          // flight_offer_id: string 
-          id?: string // Assuming UUID
-          price?: number // Added
-          source?: string // Added
-          status?: string // Added
-          trip_request_id: string // Assuming UUID
-          user_id: string // Assuming UUID
+          booking_request_id?: string | null
+          flight_details?: Json | null
+          flight_offer_id: string
+          id?: string
+          price?: number | null
+          source?: string | null
+          status?: string | null
+          trip_request_id: string
+          user_id: string
         }
         Update: {
           booked_at?: string
-          booking_request_id?: string | null // Added
-          flight_details?: Json // Added
-          // flight_offer_id?: string
-          id?: string // Assuming UUID
-          price?: number // Added
-          source?: string // Added
-          status?: string // Added
-          trip_request_id?: string // Assuming UUID
-          user_id?: string // Assuming UUID
+          booking_request_id?: string | null
+          flight_details?: Json | null
+          flight_offer_id?: string
+          id?: string
+          price?: number | null
+          source?: string | null
+          status?: string | null
+          trip_request_id?: string
+          user_id?: string
         }
         Relationships: [
-          // { // Assuming this FK is removed or managed via booking_request_id -> offer_data
-          //   foreignKeyName: "bookings_flight_offer_id_fkey"
-          //   columns: ["flight_offer_id"]
-          //   isOneToOne: false
-          //   referencedRelation: "flight_offers"
-          //   referencedColumns: ["id"]
-          // },
+          {
+            foreignKeyName: "bookings_booking_request_id_fkey"
+            columns: ["booking_request_id"]
+            isOneToOne: false
+            referencedRelation: "booking_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_flight_offer_id_fkey"
+            columns: ["flight_offer_id"]
+            isOneToOne: false
+            referencedRelation: "flight_offers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookings_trip_request_id_fkey"
             columns: ["trip_request_id"]
             isOneToOne: false
             referencedRelation: "trip_requests"
-            referencedColumns: ["id"] // Assuming trip_requests.id is string (UUID)
+            referencedColumns: ["id"]
           },
-          { // Added Relationship for booking_request_id
-            foreignKeyName: "bookings_booking_request_id_fkey"
-            columns: ["booking_request_id"]
-            isOneToOne: false // Can be one-to-one if a booking_request results in only one booking
-            referencedRelation: "booking_requests"
-            referencedColumns: ["id"] // Assuming booking_requests.id is string (UUID)
-          }
         ]
       }
-      flight_matches: { // Assuming no changes here as per prompt, but IDs would be string for UUIDs
+      flight_matches: {
         Row: {
           created_at: string
           depart_at: string
-          flight_offer_id: string // Assuming UUID
-          id: string // Assuming UUID
+          flight_offer_id: string
+          id: string
           notified: boolean
           price: number
-          trip_request_id: string // Assuming UUID
+          trip_request_id: string
         }
         Insert: {
           created_at?: string
           depart_at: string
-          flight_offer_id: string // Assuming UUID
-          id?: string // Assuming UUID
+          flight_offer_id: string
+          id?: string
           notified?: boolean
           price: number
-          trip_request_id: string // Assuming UUID
+          trip_request_id: string
         }
         Update: {
           created_at?: string
           depart_at?: string
-          flight_offer_id?: string // Assuming UUID
-          id?: string // Assuming UUID
+          flight_offer_id?: string
+          id?: string
           notified?: boolean
           price?: number
-          trip_request_id?: string // Assuming UUID
+          trip_request_id?: string
         }
         Relationships: [
           {
@@ -174,45 +181,57 @@ export type Database = {
           },
         ]
       }
-      flight_offers: { // Assuming no changes here as per prompt, but IDs would be string for UUIDs
+      flight_offers: {
         Row: {
           airline: string
+          auto_book: boolean
+          booking_url: string | null
           created_at: string
           departure_date: string
           departure_time: string
           duration: string
           flight_number: string
-          id: string // Assuming UUID
+          id: string
+          layover_airports: string[] | null
           price: number
           return_date: string
           return_time: string
-          trip_request_id: string // Assuming UUID
+          stops: number
+          trip_request_id: string
         }
         Insert: {
           airline: string
+          auto_book?: boolean
+          booking_url?: string | null
           created_at?: string
           departure_date: string
           departure_time: string
           duration: string
           flight_number: string
-          id?: string // Assuming UUID
+          id?: string
+          layover_airports?: string[] | null
           price: number
           return_date: string
           return_time: string
-          trip_request_id: string // Assuming UUID
+          stops?: number
+          trip_request_id: string
         }
         Update: {
           airline?: string
+          auto_book?: boolean
+          booking_url?: string | null
           created_at?: string
           departure_date?: string
           departure_time?: string
           duration?: string
           flight_number?: string
-          id?: string // Assuming UUID
+          id?: string
+          layover_airports?: string[] | null
           price?: number
           return_date?: string
           return_time?: string
-          trip_request_id?: string // Assuming UUID
+          stops?: number
+          trip_request_id?: string
         }
         Relationships: [
           {
@@ -226,93 +245,100 @@ export type Database = {
       }
       notifications: {
         Row: {
+          booking_request_id: string | null
           created_at: string
-          data?: Json | null // Added: JSONB
-          id: string // Assuming UUID
+          data: Json | null
+          id: string
           is_read: boolean
-          message?: string // Added
-          // payload: Json | null // Removed
-          trip_request_id?: string | null // Added: UUID FK
+          message: string | null
+          trip_request_id: string | null
           type: string
-          user_id: string // Assuming UUID
+          user_id: string
         }
         Insert: {
+          booking_request_id?: string | null
           created_at?: string
-          data?: Json | null // Added
-          id?: string // Assuming UUID
+          data?: Json | null
+          id?: string
           is_read?: boolean
-          message?: string // Added
-          // payload?: Json | null // Removed
-          trip_request_id?: string | null // Added
+          message?: string | null
+          trip_request_id?: string | null
           type: string
-          user_id: string // Assuming UUID
+          user_id: string
         }
         Update: {
+          booking_request_id?: string | null
           created_at?: string
-          data?: Json | null // Added
-          id?: string // Assuming UUID
+          data?: Json | null
+          id?: string
           is_read?: boolean
-          message?: string // Added
-          // payload?: Json | null // Removed
-          trip_request_id?: string | null // Added
+          message?: string | null
+          trip_request_id?: string | null
           type?: string
-          user_id?: string // Assuming UUID
+          user_id?: string
         }
         Relationships: [
-            { // Added Relationship for trip_request_id
+          {
+            foreignKeyName: "notifications_booking_request_id_fkey"
+            columns: ["booking_request_id"]
+            isOneToOne: false
+            referencedRelation: "booking_requests"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_trip_request_id_fkey"
             columns: ["trip_request_id"]
             isOneToOne: false
             referencedRelation: "trip_requests"
-            referencedColumns: ["id"] // Assuming trip_requests.id is string (UUID)
-          }
+            referencedColumns: ["id"]
+          },
         ]
       }
-      orders: { // Assuming booking_request_id becomes string (UUID)
+      orders: {
         Row: {
           amount: number
-          booking_request_id: string | null // Assuming UUID
+          booking_request_id: string | null
           checkout_session_id: string | null
           created_at: string
           currency: string
           description: string | null
           error_message: string | null
-          id: string // Assuming UUID
-          match_id: string // Assuming UUID
+          id: string
+          match_id: string
           payment_intent_id: string
           status: string | null
           updated_at: string | null
-          user_id: string // Assuming UUID
+          user_id: string
         }
         Insert: {
           amount: number
-          booking_request_id?: string | null // Assuming UUID
+          booking_request_id?: string | null
           checkout_session_id?: string | null
           created_at?: string
           currency?: string
           description?: string | null
           error_message?: string | null
-          id?: string // Assuming UUID
-          match_id: string // Assuming UUID
+          id?: string
+          match_id: string
           payment_intent_id: string
           status?: string | null
           updated_at?: string | null
-          user_id: string // Assuming UUID
+          user_id: string
         }
         Update: {
           amount?: number
-          booking_request_id?: string | null // Assuming UUID
+          booking_request_id?: string | null
           checkout_session_id?: string | null
           created_at?: string
           currency?: string
           description?: string | null
           error_message?: string | null
-          id?: string // Assuming UUID
-          match_id?: string // Assuming UUID
+          id?: string
+          match_id?: string
           payment_intent_id?: string
           status?: string | null
           updated_at?: string | null
-          user_id?: string // Assuming UUID
+          user_id?: string
         }
         Relationships: [
           {
@@ -331,137 +357,185 @@ export type Database = {
           },
         ]
       }
-      payment_methods: { // Assuming no changes here as per prompt, but IDs would be string for UUIDs
+      payment_methods: {
         Row: {
           brand: string
           created_at: string
           exp_month: number
           exp_year: number
-          id: string // Assuming UUID
+          id: string
           is_default: boolean
           last4: string
           nickname: string | null
+          stripe_customer_id: string | null
           stripe_pm_id: string
           updated_at: string
-          user_id: string // Assuming UUID
+          user_id: string
         }
         Insert: {
           brand: string
           created_at?: string
           exp_month: number
           exp_year: number
-          id?: string // Assuming UUID
+          id?: string
           is_default?: boolean
           last4: string
           nickname?: string | null
+          stripe_customer_id?: string | null
           stripe_pm_id: string
           updated_at?: string
-          user_id: string // Assuming UUID
+          user_id: string
         }
         Update: {
           brand?: string
           created_at?: string
           exp_month?: number
           exp_year?: number
-          id?: string // Assuming UUID
+          id?: string
           is_default?: boolean
           last4?: string
           nickname?: string | null
+          stripe_customer_id?: string | null
           stripe_pm_id?: string
           updated_at?: string
-          user_id?: string // Assuming UUID
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
       trip_requests: {
         Row: {
-          // auto_book_enabled: boolean // Removed: Renamed to auto_book
-          auto_book?: boolean // Added: Renamed from auto_book_enabled
-          budget: number | null // Changed to allow NULL based on some test cases
+          adults: number | null
+          auto_book: boolean
+          best_price: number | null
+          budget: number
           created_at: string
-          departure_airports?: string[] // Kept as is
-          departure_date?: string | null // Added: DATE
-          destination_airport?: string | null // Kept as is
-          destination_location_code?: string | null // Added
-          earliest_departure?: string // Kept as is, type could be DATE or TIMESTAMPTZ string
-          id: string // Assuming UUID
+          departure_airports: string[]
+          departure_date: string | null
+          destination_airport: string | null
+          destination_location_code: string | null
+          earliest_departure: string
+          id: string
           last_checked_at: string | null
-          latest_departure?: string // Kept as is, type could be DATE or TIMESTAMPTZ string
-          max_duration?: number // Kept as is
-          max_price?: number | null // Kept as is
-          min_duration?: number // Kept as is
-          origin_location_code?: string | null // Added
+          latest_departure: string
+          max_duration: number
+          max_price: number | null
+          min_duration: number
+          origin_location_code: string | null
           preferred_payment_method_id: string | null
-          return_date?: string | null // Added: DATE
-          user_id: string // Assuming UUID
-          adults?: number // Added
-          best_price?: number | null // Added based on scheduler logic
-          updated_at?: string // Added based on scheduler logic
+          return_date: string | null
+          user_id: string
         }
         Insert: {
-          // auto_book_enabled?: boolean // Removed
-          auto_book?: boolean // Added
-          budget?: number | null // Changed
+          adults?: number | null
+          auto_book?: boolean
+          best_price?: number | null
+          budget: number
           created_at?: string
           departure_airports?: string[]
-          departure_date?: string | null // Added
+          departure_date?: string | null
           destination_airport?: string | null
-          destination_location_code?: string | null // Added
-          earliest_departure?: string
-          id?: string // Assuming UUID
+          destination_location_code?: string | null
+          earliest_departure: string
+          id?: string
           last_checked_at?: string | null
-          latest_departure?: string
+          latest_departure: string
           max_duration?: number
           max_price?: number | null
           min_duration?: number
-          origin_location_code?: string | null // Added
+          origin_location_code?: string | null
           preferred_payment_method_id?: string | null
-          return_date?: string | null // Added
-          user_id: string // Assuming UUID
-          adults?: number // Added
-          best_price?: number | null // Added
-          updated_at?: string // Added
+          return_date?: string | null
+          user_id: string
         }
         Update: {
-          // auto_book_enabled?: boolean // Removed
-          auto_book?: boolean // Added
-          budget?: number | null // Changed
+          adults?: number | null
+          auto_book?: boolean
+          best_price?: number | null
+          budget?: number
           created_at?: string
           departure_airports?: string[]
-          departure_date?: string | null // Added
+          departure_date?: string | null
           destination_airport?: string | null
-          destination_location_code?: string | null // Added
+          destination_location_code?: string | null
           earliest_departure?: string
-          id?: string // Assuming UUID
+          id?: string
           last_checked_at?: string | null
           latest_departure?: string
           max_duration?: number
           max_price?: number | null
           min_duration?: number
-          origin_location_code?: string | null // Added
+          origin_location_code?: string | null
           preferred_payment_method_id?: string | null
-          return_date?: string | null // Added
-          user_id?: string // Assuming UUID
-          adults?: number // Added
-          best_price?: number | null // Added
-          updated_at?: string // Added
+          return_date?: string | null
+          user_id?: string
         }
-        Relationships: [] // Assuming no new FKs added directly to trip_requests in this change
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_reminder_candidates: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          booking_request_id: string
+          user_id: string
+          phone: string
+          trip_details: Json
+          departure_date: string
+          departure_time: string
+        }[]
+      }
       rpc_auto_book_match: {
-        Args: { // Updated Args
-          p_booking_request_id: string // Changed from p_match_id, type string for UUID
-        }
-        Returns: Record<string, unknown> // Assuming VOID or simple status return
+        Args:
+          | { p_booking_request_id: string }
+          | {
+              p_match_id: string
+              p_payment_intent_id: string
+              p_currency?: string
+            }
+        Returns: Record<string, unknown>
       }
     }
     Enums: {
-      [_ in never]: never
+      booking_request_status:
+        | "new"
+        | "pending_payment"
+        | "pending_booking"
+        | "processing"
+        | "done"
+        | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -576,6 +650,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      booking_request_status: [
+        "new",
+        "pending_payment",
+        "pending_booking",
+        "processing",
+        "done",
+        "failed",
+      ],
+    },
   },
 } as const

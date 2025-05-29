@@ -1,35 +1,36 @@
+
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 
 export interface Notification {
   id: string
   user_id: string
-  trip_request_id: string
+  trip_request_id: string | null
   type: string
   message: string
   data: any
-  read: boolean
+  is_read: boolean
   created_at: string
 }
 
 export function useNotifications() {
-  const { data, error, isLoading } = useQuery<Notification[], Error>(
-    ['notifications'],
-    async () => {
-      const user = supabase.auth.user()
+  const { data, error, isLoading } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
       const { data: notes, error } = await supabase
-        .from<Notification>('notifications')
+        .from('notifications')
         .select('*')
         .eq('user_id', user.id)
-        .eq('read', false)
+        .eq('is_read', false)
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return notes
+      return notes as Notification[]
     }
-  )
+  })
 
   return { data, error, isLoading }
 }
