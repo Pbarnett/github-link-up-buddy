@@ -140,8 +140,8 @@ describe('Supabase Edge Function: process-booking', () => {
     expect(mockSupabaseRpc).toHaveBeenCalledWith('rpc_auto_book_match', {
       p_booking_request_id: bookingRequestId,
     });
-    expect(mockSupabaseUpdate).toHaveBeenCalledWith({ status: 'failed', updated_at: expect.any(String), error_message: `RPC Error: ${rpcErrorMessage}` });
-    expect(mockSupabaseEq).toHaveBeenCalledWith('checkout_session_id', sessionId);
+    expect(mockSupabaseUpdate).toHaveBeenCalledWith({ status: 'failed', updated_at: expect.any(String), error_message: rpcErrorMessage }); // Raw message for DB
+    expect(mockSupabaseEq).toHaveBeenCalledWith('id', bookingRequestId); // Filter by booking_request_id
   });
 
   it('should return error if sessionId is missing', async () => {
@@ -177,7 +177,11 @@ describe('Supabase Edge Function: process-booking', () => {
   it('should handle Stripe API errors gracefully', async () => {
     const sessionId = 'cs_test_stripe_error_123';
     const stripeErrorMessage = 'Stripe API is down';
-    mockRetrieveCheckoutSession.mockRejectedValueOnce(new Error(stripeErrorMessage));
+    // Mock StripeError object as the actual Stripe SDK might throw
+    const stripeError = new Error(stripeErrorMessage) as any;
+    stripeError.type = 'StripeConnectionError'; // Example Stripe error type
+    mockRetrieveCheckoutSession.mockRejectedValueOnce(stripeError);
+
 
     const request = createMockRequest({ sessionId });
     const response = await handler(request);
@@ -188,7 +192,7 @@ describe('Supabase Edge Function: process-booking', () => {
     expect(mockRetrieveCheckoutSession).toHaveBeenCalledWith(sessionId);
     expect(mockSupabaseRpc).not.toHaveBeenCalled();
     // Depending on desired logic, you might still want to update status to failed
-    expect(mockSupabaseUpdate).toHaveBeenCalledWith({ status: 'failed', updated_at: expect.any(String), error_message: `Stripe Error: ${stripeErrorMessage}` });
+    expect(mockSupabaseUpdate).toHaveBeenCalledWith({ status: 'failed', updated_at: expect.any(String), error_message: stripeErrorMessage }); // Raw message for DB
     expect(mockSupabaseEq).toHaveBeenCalledWith('checkout_session_id', sessionId);
   });
 });
@@ -223,44 +227,72 @@ const processBookingIndex = {
       const supabaseAdmin = (await import('@supabase/supabase-js')).createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
       
       let bookingRequestId: string | null = null;
-      let errorMessage: string | null = null;
-      let errorStatus = 500;
+      let responseErrorMessage: string | null = null;
+      let dbErrorMessage: string | null = null;
+      let errorStatus = 500; // Default error status
 
       try {
         const session = await stripe.checkout.sessions.retrieve(sessionId);
         bookingRequestId = session.metadata?.booking_request_id || null;
 
         if (session.payment_status !== 'paid') {
-          errorMessage = 'Payment not completed';
+          dbErrorMessage = 'Payment not completed';
+          responseErrorMessage = 'Payment not completed';
           errorStatus = 400;
-          throw new Error(errorMessage);
+          await supabaseAdmin
+            .from('booking_requests')
+            .update({ status: 'failed', updated_at: new Date().toISOString(), error_message: dbErrorMessage })
+            .eq('checkout_session_id', sessionId);
+          throw new Error(responseErrorMessage); 
         }
 
         if (!bookingRequestId) {
-          errorMessage = 'Missing booking_request_id in Stripe session metadata';
+          dbErrorMessage = 'Missing booking_request_id in Stripe session metadata';
+          responseErrorMessage = dbErrorMessage;
           errorStatus = 400;
-          throw new Error(errorMessage);
+          await supabaseAdmin
+            .from('booking_requests')
+            .update({ status: 'failed', updated_at: new Date().toISOString(), error_message: dbErrorMessage })
+            .eq('checkout_session_id', sessionId);
+          throw new Error(responseErrorMessage);
         }
 
         // Call RPC to perform the booking match
+        // Assume rpc_auto_book_match itself handles setting its related booking_request to 'failed' on internal error
         const { error: rpcError } = await supabaseAdmin.rpc('rpc_auto_book_match', {
           p_booking_request_id: bookingRequestId,
         });
 
         if (rpcError) {
-          errorMessage = `RPC Error: ${rpcError.message}`;
-          throw new Error(errorMessage);
+          dbErrorMessage = rpcError.message; // Raw message for DB
+          responseErrorMessage = `RPC Error: ${rpcError.message}`; // Prefixed for response
+          errorStatus = 500;
+          // The RPC is expected to handle its own errors and update the booking_request status.
+          // However, if the RPC call *itself* fails in a way that it doesn't update the status,
+          // or if we want to ensure our desired error_message is set:
+          await supabaseAdmin
+            .from('booking_requests')
+            .update({ status: 'failed', updated_at: new Date().toISOString(), error_message: dbErrorMessage })
+            .eq('id', bookingRequestId);
+          throw new Error(responseErrorMessage);
         }
 
         // Update booking request status to 'done'
         const { error: updateError } = await supabaseAdmin
           .from('booking_requests')
           .update({ status: 'done', updated_at: new Date().toISOString() })
-          .eq('checkout_session_id', sessionId); // or .eq('id', bookingRequestId) - depends on which ID is more reliable here
+          .eq('checkout_session_id', sessionId); // Test expects filter by checkout_session_id for 'done'
 
         if (updateError) {
-          errorMessage = `DB Update Error: ${updateError.message}`;
-          throw new Error(errorMessage);
+          dbErrorMessage = updateError.message;
+          responseErrorMessage = `DB Update Error: ${dbErrorMessage}`;
+          errorStatus = 500;
+          // Attempt to mark as failed if 'done' update failed
+          await supabaseAdmin
+            .from('booking_requests')
+            .update({ status: 'failed', updated_at: new Date().toISOString(), error_message: dbErrorMessage })
+            .eq('id', bookingRequestId); // Use bookingRequestId as we should have it here
+          throw new Error(responseErrorMessage);
         }
 
         return new Response(JSON.stringify({ success: true }), {
@@ -270,36 +302,36 @@ const processBookingIndex = {
 
       } catch (e: any) {
         console.error('process-booking error:', e.message);
-        if (!errorMessage) { // General error
-            errorMessage = e.message;
-        }
-        // Attempt to update booking status to 'failed' even if other steps failed
-        // Use bookingRequestId if available, otherwise sessionId might be the only link
-        const updateId = bookingRequestId || (sessionId && `checkout_session_id:${sessionId}`); // A bit of a hack for id if BRID not found
         
-        // Determine a reliable field to .eq on for failure update
-        // If we got the booking_request_id, use it, otherwise use checkout_session_id
-        const filterColumn = bookingRequestId ? 'id' : 'checkout_session_id';
-        const filterValue = bookingRequestId || sessionId;
+        if (!responseErrorMessage) { // Error was not one of the explicitly handled ones above
+          dbErrorMessage = e.message;
+          if (e.type && typeof e.type === 'string' && e.type.startsWith('Stripe')) {
+            responseErrorMessage = `Stripe Error: ${e.message}`;
+          } else {
+            responseErrorMessage = e.message; // For other unexpected errors like RPC direct throw
+          }
+          errorStatus = (e as any).status || 500; // Use original error's status if available
 
-        if (filterValue) { // Only update if we have some ID
+          // Attempt to update booking_requests to 'failed'
+          const updateKey = bookingRequestId ? 'id' : 'checkout_session_id';
+          const updateValue = bookingRequestId || sessionId;
+        
+          if (updateValue) {
             const { error: failUpdateError } = await supabaseAdmin
-            .from('booking_requests')
-            .update({ status: 'failed', updated_at: new Date().toISOString(), error_message: e.message })
-            .eq(filterColumn, filterValue);
-        
+              .from('booking_requests')
+              .update({ status: 'failed', updated_at: new Date().toISOString(), error_message: dbErrorMessage })
+              .eq(updateKey, updateValue);
             if (failUpdateError) {
-                console.error('Failed to update booking to failed status:', failUpdateError.message);
-                // Potentially append this error to the main error message
-                errorMessage += ` | Also failed to update status to failed: ${failUpdateError.message}`;
+                console.error(`Failed to update booking status to failed for ${updateKey} ${updateValue}: ${failUpdateError.message}`);
+                // Optionally append to responseErrorMessage if critical
             }
-        } else {
-             console.error('No ID available to update booking status to failed.');
+          }
         }
+        // If responseErrorMessage was already set (e.g. "Payment not completed", "RPC Error: ..."), use it directly.
+        // The errorStatus would have also been set.
 
-
-        return new Response(JSON.stringify({ error: errorMessage || 'An unexpected error occurred' }), {
-          status: errorStatus,
+        return new Response(JSON.stringify({ error: responseErrorMessage || 'An unexpected error occurred' }), {
+          status: errorStatus, // Use the errorStatus set in the specific block or by the catch
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
