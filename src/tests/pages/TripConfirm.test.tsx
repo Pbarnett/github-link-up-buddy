@@ -157,7 +157,7 @@ describe("TripConfirm Page", () => {
 
       expect(await screen.findByText(/Processing…/i)).toBeInTheDocument();
       
-      await waitFor(()_ => {
+      await waitFor(() => { // Corrected arrow function syntax
         expect(mockToast).toHaveBeenCalledWith({
           title: "Booking Failed",
           description: "Network Error",
