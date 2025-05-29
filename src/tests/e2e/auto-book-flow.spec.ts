@@ -5,8 +5,9 @@ import { vi, describe, it, expect, beforeAll, beforeEach, afterEach } from 'vite
 // import { TripRequest, Booking, Notification, BookingRequest } from '@/integrations/supabase/types';
 
 // Define interfaces for the data we'll be working with to ensure type safety
+// These should ideally align with src/integrations/supabase/types.ts after its update
 interface TripRequest {
-  id: number;
+  id: string; // Changed to string for UUID
   user_id: string;
   origin_location_code: string;
   destination_location_code: string;
@@ -21,47 +22,47 @@ interface TripRequest {
 }
 
 interface BookingRequest {
-  id: number;
+  id: string; // Changed to string for UUID
   user_id: string;
-  trip_request_id: number;
-  offer_id: string; // Assuming this comes from flight-search offer.id
+  trip_request_id: string; // Changed to string for UUID FK
+  offer_id: string; 
   offer_data: any; 
   auto: boolean;
   status: string; 
-  error_message: string | null;
+  error_message?: string | null; // Made optional to align with DB schema (TEXT allows NULL)
   created_at?: string;
   updated_at?: string;
 }
 
 interface Booking {
-  id: number;
+  id: number; // Assuming bookings.id (PK) is still BIGINT serial
   user_id: string;
-  trip_request_id: number;
-  booking_request_id: number;
-  flight_details: any; 
-  price: number;
-  source: string; 
-  status: string; 
+  trip_request_id: string; // Changed to string for UUID FK
+  booking_request_id: string; // Changed to string for UUID FK
+  flight_details?: any; // Added optional based on schema
+  price?: number; // Added optional based on schema
+  source?: string; // Added optional based on schema
+  status?: string; // Added optional based on schema
   booked_at?: string;
 }
 
 interface Notification {
-  id: number;
+  id: number; // Assuming notifications.id (PK) is still BIGINT serial
   user_id: string;
-  trip_request_id: number;
+  trip_request_id: string; // Changed to string for UUID FK
   type: string; 
-  message: string;
-  data: any;
-  read?: boolean;
+  message?: string; // Added optional based on schema (TEXT allows NULL)
+  data?: any; // Added optional based on schema (JSONB allows NULL)
+  read?: boolean; 
   created_at?: string;
 }
 
 
 describe('E2E: Full Auto-Book Flow (Scheduler -> RPC -> DB)', () => {
   let supabase: SupabaseClient;
-  const testUserId = '00000000-0000-0000-0000-000000000002'; // A distinct test user ID
+  const testUserId = '00000000-0000-0000-0000-000000000002'; 
 
-  let tripRequestId: number | undefined; // Use undefined to indicate it may not be set
+  let tripRequestId: string | undefined; // Changed to string for UUID
   let initialBestPrice: number | null;
   let budget: number | null;
   let expectedBookPrice: number;
@@ -151,7 +152,7 @@ describe('E2E: Full Auto-Book Flow (Scheduler -> RPC -> DB)', () => {
 
     expect(tripError, `Trip request insert error: ${tripError?.message}`).toBeNull();
     expect(tripRequestData, 'Trip request data is null/undefined after insert').toBeDefined();
-    tripRequestId = tripRequestData!.id;
+    tripRequestId = tripRequestData!.id as string; // id from DB is UUID string
 
     // 2. Invoke the Edge Function (scheduler-flight-search)
     console.log(`Invoking scheduler-flight-search for trip ID: ${tripRequestId}...`);

@@ -22,23 +22,22 @@ vi.mock('@/components/ui/badge', () => ({
 describe('NotificationsPanel UI', () => {
   const mockNotificationsData = [
     { 
-      id: 'notif1', 
+      id: '11111111-1111-1111-1111-111111111111', // Changed to UUID string
       message: "Your flight to JFK has been auto-booked!", 
-      trip_request_id: 'trip123', 
-      // Add other potential fields if your component uses them, though not strictly needed for these tests
-      // type: 'auto_booking_success', 
-      // created_at: new Date().toISOString(), 
-      // read: false, 
-      // data: {} 
+      trip_request_id: '22222222-2222-2222-2222-222222222222', // Changed to UUID string
+      type: 'auto_booking_success', // Added for completeness, though not directly asserted
+      data: { some: 'payload' },    // Added for completeness
+      created_at: new Date().toISOString(),
+      is_read: false,
     },
     { 
-      id: 'notif2', 
+      id: '33333333-3333-3333-3333-333333333333', // Changed to UUID string
       message: "System update complete.", 
       trip_request_id: null, 
-      // type: 'system_message', 
-      // created_at: new Date().toISOString(), 
-      // read: false, 
-      // data: {} 
+      type: 'system_message', // Added for completeness
+      data: { info: 'details' },   // Added for completeness
+      created_at: new Date().toISOString(),
+      is_read: true,
     },
   ];
 

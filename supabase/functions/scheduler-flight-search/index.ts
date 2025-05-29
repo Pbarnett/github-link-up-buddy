@@ -22,8 +22,8 @@ interface Offer {
 
 // Define the structure of a TripRequest object we expect from the database
 interface TripRequest {
-  id: number; // This is trip_request_id in other contexts
-  user_id: string;
+  id: string; // Changed to string for UUID
+  user_id: string; // Assuming this is UUID, already string
   best_price: number | null;
   budget: number | null;
   auto_book: boolean;
@@ -198,35 +198,35 @@ serve(async (req: Request) => {
               .from('booking_requests')
               .insert({
                 user_id: trip.user_id,
-                offer_id: bestOfferForAutoBook.id,
-                offer_data: bestOfferForAutoBook, // Store the whole offer
-                trip_request_id: trip.id,
+                offer_id: bestOfferForAutoBook.id, 
+                offer_data: bestOfferForAutoBook, 
+                trip_request_id: trip.id, // trip.id is now string (UUID)
                 auto: true,
-                status: 'processing', // Initial status
+                status: 'processing', 
               })
-              .select('id')
+              .select('id') // booking_requests.id is UUID, so newBookingRequest.id will be string
               .single();
 
             if (createBookingRequestError) {
               console.error(`[TripID: ${trip.id}] Error creating booking_requests entry:`, createBookingRequestError.message);
-              // Continue to price drop logic if applicable, as auto-book failed here
-            } else if (newBookingRequest) {
-              console.log(`[TripID: ${trip.id}] Booking request ${newBookingRequest.id} created. Attempting RPC call.`);
+            } else if (newBookingRequest && newBookingRequest.id) { // Ensure newBookingRequest.id is truthy
+              console.log(`[TripID: ${trip.id}] Booking request ${newBookingRequest.id} (UUID) created. Attempting RPC call.`);
               
               // 8. Call rpc_auto_book_match
+              // p_booking_request_id now expects a UUID (string)
               const { error: rpcError, data: rpcData } = await supabaseClient.rpc(
                 'rpc_auto_book_match',
-                { p_booking_request_id: newBookingRequest.id }
+                { p_booking_request_id: newBookingRequest.id as string } // newBookingRequest.id is already string if PK is UUID
               );
 
               // 9. Handle RPC Response
               if (rpcError) {
                 console.error(`[TripID: ${trip.id}] RPC rpc_auto_book_match failed for booking_request ${newBookingRequest.id}:`, rpcError.message);
+                // booking_requests.id is UUID (string) for .eq filter
                 await supabaseClient
                   .from('booking_requests')
-                  .update({ status: 'failed', error_message: rpcError.message })
-                  .eq('id', newBookingRequest.id);
-                // Auto-booking failed, proceed to price drop logic if a cheaper offer was found
+                  .update({ status: 'failed', error_message: rpcError.message, updated_at: new Date().toISOString() })
+                  .eq('id', newBookingRequest.id as string);
               } else {
                 // Assuming RPC success means booking was made (or attempted and status updated by RPC)
                 // The RPC is expected to create the 'bookings' record and a notification.
@@ -238,8 +238,9 @@ serve(async (req: Request) => {
                 if (trip.best_price === null || bestOfferForAutoBook.price < trip.best_price) {
                   const { error: updateTripError } = await supabaseClient
                     .from("trip_requests")
+                    // trip.id is string (UUID) for .eq filter
                     .update({ best_price: bestOfferForAutoBook.price, updated_at: new Date().toISOString() })
-                    .eq("id", trip.id);
+                    .eq("id", trip.id); 
                   if (updateTripError) {
                     console.error(`[TripID: ${trip.id}] Error updating best_price after auto-book:`, updateTripError.message);
                   } else {
@@ -311,6 +312,7 @@ serve(async (req: Request) => {
                 // This is crucial so we don't notify again for the same price unless it drops further
                 const { error: updateError } = await supabaseClient
                   .from("trip_requests")
+                  // trip.id is string (UUID) for .eq filter
                   .update({ best_price: offer.price, updated_at: new Date().toISOString() })
                   .eq("id", trip.id);
 
