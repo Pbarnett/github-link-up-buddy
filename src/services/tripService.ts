@@ -27,7 +27,7 @@ const createTrip = async (
     min_duration: formData.min_duration || 3,
     max_duration: formData.max_duration || 6,
     // Include auto-booking fields
-    auto_book_enabled: formData.auto_book_enabled || false,
+    auto_book: formData.auto_book || false,
     max_price: formData.max_price || null,
     preferred_payment_method_id: formData.preferred_payment_method_id || null
   };
