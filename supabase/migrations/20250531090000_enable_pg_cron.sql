@@ -15,7 +15,7 @@ CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA extensions;
 -- GRANT SELECT ON cron.job TO supabase_admin; -- To view scheduled jobs
 -- GRANT INSERT, UPDATE, DELETE ON cron.job TO supabase_admin; -- To manage jobs
 -- However, typically the 'postgres' user (which Supabase uses for admin tasks) handles cron.
-GRANT USAGE ON SCHEMA cron TO postgres; 
+GRANT USAGE ON SCHEMA cron TO postgres;
 
 -- Additionally, to allow the postgres user (or other admin roles) to view and manage jobs,
 -- they might need specific privileges on tables within the cron schema if default privileges are not sufficient.

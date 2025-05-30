@@ -87,7 +87,7 @@ describe('TripRequestForm Conditional Validation', () => {
     await user.type(screen.getByLabelText(/Min Duration/i), '3');
     await user.type(screen.getByLabelText(/Max Duration/i), '7');
     await user.type(screen.getByLabelText(/Budget/i), '1200');
-    
+
     // For departure/destination, using custom inputs
     await user.type(screen.getByPlaceholderText('Enter departure airport code (e.g. JFK)'), 'LAX');
     await user.type(screen.getByPlaceholderText('Enter destination (e.g. Paris, London)'), 'CDG');
@@ -111,7 +111,7 @@ describe('TripRequestForm Conditional Validation', () => {
 
     const submitButton = screen.getByRole('button', { name: /Create Trip Request/i });
     await user.click(submitButton);
-    
+
     expect(await screen.findByText("Maximum price and payment method are required for auto-booking", {}, {timeout: 5000})).toBeInTheDocument();
     expect(createTripRequest).not.toHaveBeenCalled();
   });
@@ -122,11 +122,11 @@ describe('TripRequestForm Conditional Validation', () => {
     const user = userEvent.setup();
 
     const autoBookSwitch = screen.getByRole('switch', { name: /Enable Auto-Booking/i });
-    await user.click(autoBookSwitch); 
+    await user.click(autoBookSwitch);
 
     const maxPriceInput = await screen.findByLabelText(/Maximum Price/i);
     await user.type(maxPriceInput, '1500');
-    
+
     // Ensure payment method is not selected (it defaults to placeholder)
     const paymentMethodSelectTrigger = screen.getByRole('combobox', { name: /Payment Method/i });
     // Check placeholder is there
@@ -135,11 +135,11 @@ describe('TripRequestForm Conditional Validation', () => {
 
     const submitButton = screen.getByRole('button', { name: /Create Trip Request/i });
     await user.click(submitButton);
-    
+
     expect(await screen.findByText("Maximum price and payment method are required for auto-booking", {}, {timeout: 5000})).toBeInTheDocument();
     expect(createTripRequest).not.toHaveBeenCalled();
   });
-  
+
   it('Test Case 1c: form submits if auto_book is ON, and max_price AND payment method are provided', async () => {
     renderTripRequestForm();
     await fillBasicFields();
@@ -155,7 +155,7 @@ describe('TripRequestForm Conditional Validation', () => {
     await user.click(paymentMethodSelectTrigger);
     const paymentOption = await screen.findByText(/Visa •••• 4242/i);
     await user.click(paymentOption);
-    
+
     const submitButton = screen.getByRole('button', { name: /Create Trip Request/i });
     await user.click(submitButton);
 
@@ -179,7 +179,7 @@ describe('TripRequestForm Conditional Validation', () => {
     await user.click(paymentMethodSelectTrigger);
     const paymentOption = await screen.findByText(/Visa •••• 4242/i);
     await user.click(paymentOption);
-    
+
     // Need to wait for re-render after selection that might trigger schema re-evaluation
     await waitFor(async () => {
       const maxPriceInput = screen.getByLabelText(/Maximum Price/i);
@@ -188,7 +188,7 @@ describe('TripRequestForm Conditional Validation', () => {
       // For now, we'll check if it's visible as a proxy for being part of the "required group".
       expect(maxPriceInput).toBeVisible();
       // To actually test aria-required, the component would need to set it.
-      // expect(maxPriceInput).toHaveAttribute('aria-required', 'true'); 
+      // expect(maxPriceInput).toHaveAttribute('aria-required', 'true');
       // This specific assertion might fail if not explicitly implemented.
     });
   });
@@ -211,9 +211,9 @@ describe('TripRequestForm Conditional Validation', () => {
     await waitFor(() => {
       expect(createTripRequest).toHaveBeenCalled();
     });
-    
+
     expect(screen.queryByText("Maximum price and payment method are required for auto-booking")).toBeNull();
-    
+
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('/trip/confirmation'));
     });

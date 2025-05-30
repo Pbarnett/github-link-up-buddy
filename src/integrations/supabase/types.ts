@@ -60,7 +60,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           { // Added Relationship for trip_request_id
-            foreignKeyName: "booking_requests_trip_request_id_fkey" 
+            foreignKeyName: "booking_requests_trip_request_id_fkey"
             columns: ["trip_request_id"]
             isOneToOne: false
             referencedRelation: "trip_requests"
@@ -85,7 +85,7 @@ export type Database = {
           booked_at?: string
           booking_request_id?: string | null // Added
           flight_details?: Json // Added
-          // flight_offer_id: string 
+          // flight_offer_id: string
           id?: string // Assuming UUID
           price?: number // Added
           source?: string // Added
