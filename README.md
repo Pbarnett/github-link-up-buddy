@@ -1,3 +1,37 @@
+# GitHub Link Up Buddy
+
+## Setup Instructions
+
+### Setting Up Test Payment Method
+
+To test auto-booking functionality, you need to set up a test payment method:
+
+1. Make sure your environment variables are set up:
+   - `NEXT_PUBLIC_SUPABASE_URL` or `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `STRIPE_SECRET_KEY`
+
+2. Run the setup script:
+   ```
+   npm run setup-test-payment
+   ```
+
+   This script:
+   - Creates a Stripe test customer for your test user
+   - Creates a test payment method with Stripe's test card
+   - Saves the payment method in your database
+   - Sets it as the default payment method
+
+3. The script is idempotent, so it's safe to run multiple times.
+
+### Troubleshooting
+
+If you encounter issues with the setup script:
+
+- Ensure your test user exists in the database with ID `00000000-0000-0000-0000-000000000001`
+- Check that your Stripe API key is valid and has the necessary permissions
+- Verify that your Supabase connection is working correctly
+
 
 # Supabase Auth Demo
 
