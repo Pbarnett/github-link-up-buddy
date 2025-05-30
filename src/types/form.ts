@@ -15,7 +15,7 @@ export interface ExtendedTripFormValues extends TripFormValues {
   departure_airports?: string[];
   destination_airport?: string;
   // Auto-booking fields
-  auto_book?: boolean;
+  auto_book?: boolean; // Renamed from auto_book_enabled
   max_price?: number | null;
   preferred_payment_method_id?: string | null;
 }
@@ -52,7 +52,7 @@ export const tripFormSchema = z.object({
   destination_airport: z.string().optional(),
   destination_other: z.string().optional(),
   // Auto-booking fields
-  auto_book: z.boolean().default(false),
+  auto_book: z.boolean().default(false), // Renamed from auto_book_enabled
   max_price: z.coerce.number().min(100).max(10000).optional().nullable(),
   preferred_payment_method_id: z.string().optional().nullable(),
 }).refine((data) => data.latestDeparture > data.earliestDeparture, {
@@ -75,7 +75,7 @@ export const tripFormSchema = z.object({
   path: ["destination_airport"],
 }).refine((data) => {
   // If auto-booking is enabled, max_price and payment method must be provided
-  if (data.auto_book) {
+  if (data.auto_book) { // Renamed from data.auto_book_enabled
     return !!data.max_price && !!data.preferred_payment_method_id;
   }
   return true;
@@ -91,7 +91,7 @@ export type FormValues = z.infer<typeof tripFormSchema>;
 export interface TripRequestResult {
   tripRequest: {
     id: string;
-    auto_book?: boolean;
+    auto_book?: boolean; // Renamed from auto_book_enabled
   };
   offers: any[];
   offersCount: number;
