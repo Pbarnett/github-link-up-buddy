@@ -213,4 +213,5 @@ export const sessionSecurity = {
   validateSessionAge: (createdAt: Date, maxAge: number = 24 * 60 * 60 * 1000): boolean => {
     return (Date.now() - createdAt.getTime()) <= maxAge;
   }
+};
 
