@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2, AlertCircle } from "lucide-react";
+import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2, AlertCircle, InfoIcon } from "lucide-react"; // Added InfoIcon
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert"; // Added Alert imports
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
@@ -23,12 +24,15 @@ const TripConfirm = () => {
   const [error, setError] = useState<string | null>(null);
   const [bookingStatus, setBookingStatus] = useState<string | null>(null);
   const { user, userId, loading: userLoading } = useCurrentUser();
-  const searchParams = new URLSearchParams(location.search);
+  const searchParams = new URLSearchParams(location.search); // searchParams already declared here, reuse
   const sessionId = searchParams.get('session_id');
   const [bookingProcessingInvoked, setBookingProcessingInvoked] = useState(false);
+  const [isAutoBookingTrip, setIsAutoBookingTrip] = useState<boolean>(false); // Added state
+  const [isLoadingTripData, setIsLoadingTripData] = useState<boolean>(false); // Added state
 
   useEffect(() => {
     // Parse query parameters
+    // const searchParams = new URLSearchParams(location.search); // Already declared above
     try {
       if (sessionId) {
         // We're returning from Stripe checkout, show booking status
@@ -67,8 +71,54 @@ const TripConfirm = () => {
       }
 
       setOffer(parsedOffer);
+
+      // Fetch trip data to check for auto_book status
+      if (parsedOffer.id && !sessionId) { // Only fetch if not returning from Stripe and offer is valid
+        const fetchTripData = async () => {
+          setIsLoadingTripData(true);
+          try {
+            // Step 1: Fetch the flight_offer using parsedOffer.id to get trip_request_id
+            const { data: offerRecord, error: offerError } = await supabase
+              .from('flight_offers') 
+              .select('trip_request_id')
+              .eq('id', parsedOffer.id) 
+              .single();
+
+            if (offerError || !offerRecord) {
+              console.error('Error fetching flight offer to get trip_request_id:', offerError?.message);
+              setIsLoadingTripData(false);
+              return;
+            }
+
+            const tripRequestId = offerRecord.trip_request_id;
+            if (!tripRequestId) {
+              console.error('No trip_request_id found for this offer.');
+              setIsLoadingTripData(false);
+              return;
+            }
+
+            // Step 2: Fetch the trip_requests record using trip_request_id
+            const { data: tripRequest, error: tripRequestError } = await supabase
+              .from('trip_requests')
+              .select('auto_book') 
+              .eq('id', tripRequestId) 
+              .single();
+            
+            if (tripRequestError) {
+              console.error('Error fetching trip request details:', tripRequestError.message);
+            } else if (tripRequest) {
+              setIsAutoBookingTrip(tripRequest.auto_book || false);
+            }
+          } catch (e) {
+            console.error('Unexpected error fetching trip data:', e);
+          } finally {
+            setIsLoadingTripData(false);
+          }
+        };
+        fetchTripData();
+      }
+
     } catch (error) {
-      // console.error("Error parsing offer details:", error); // Removed, existing toast handles this
       setHasError(true);
       toast({
         title: "Error",
@@ -76,7 +126,7 @@ const TripConfirm = () => {
         variant: "destructive",
       });
     }
-  }, [location.search, sessionId]);
+  }, [location.search, sessionId, supabase]); // Added supabase to dependency array
 
   // Subscribe to booking status updates if we have a session ID
   useEffect(() => {
@@ -357,6 +407,21 @@ const TripConfirm = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Loading Trip Data Indicator */}
+          {isLoadingTripData && (
+            <div className="p-4 text-center text-gray-500">Loading trip details...</div>
+          )}
+
+          {/* Auto-booking Banner */}
+          {!isLoadingTripData && isAutoBookingTrip && (
+            <Alert variant="info" className="mb-4 bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300">
+              <InfoIcon className="h-5 w-5" />
+              <AlertDescription className="font-semibold">
+                Auto-booking in progress… This flight will be booked automatically if it meets your criteria.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Security Error Message */}
           {error && (
             <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md flex items-start">
