@@ -69,7 +69,7 @@ serve(async (req: Request) => {
       const { data: many, error } = await supabaseClient
         .from("trip_requests")
         .select("*")
-        .eq("auto_book_enabled", true);
+        .eq("auto_book", true);
         
       if (error) {
         throw new Error(`Failed to fetch trip requests: ${error.message}`);
