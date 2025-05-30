@@ -17,15 +17,15 @@ ALTER TABLE public.bookings
 -- Alter notifications table
 ALTER TABLE public.notifications
   ADD COLUMN IF NOT EXISTS trip_request_id UUID REFERENCES public.trip_requests(id), -- Ensuring type is UUID
-  ADD COLUMN IF NOT EXISTS message TEXT, 
+  ADD COLUMN IF NOT EXISTS message TEXT,
   ADD COLUMN IF NOT EXISTS data JSONB;
 
 -- Alter trip_requests table
 ALTER TABLE public.trip_requests
   ADD COLUMN IF NOT EXISTS origin_location_code TEXT,
   ADD COLUMN IF NOT EXISTS destination_location_code TEXT,
-  ADD COLUMN IF NOT EXISTS departure_date DATE, 
-  ADD COLUMN IF NOT EXISTS return_date DATE,   
+  ADD COLUMN IF NOT EXISTS departure_date DATE,
+  ADD COLUMN IF NOT EXISTS return_date DATE,
   ADD COLUMN IF NOT EXISTS adults INT DEFAULT 1;
 
 -- Handle renaming of auto_book_enabled to auto_book
@@ -40,7 +40,7 @@ BEGIN
     END IF;
   ELSIF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'trip_requests' AND column_name = 'auto_book') THEN
     RAISE NOTICE 'Adding column "auto_book" to table "trip_requests" as neither "auto_book" nor "auto_book_enabled" exist.';
-    ALTER TABLE public.trip_requests ADD COLUMN auto_book BOOLEAN; 
+    ALTER TABLE public.trip_requests ADD COLUMN auto_book BOOLEAN;
   ELSE
     RAISE NOTICE 'Column "auto_book" already exists on "trip_requests". "auto_book_enabled" not found. No action taken for auto_book column.';
   END IF;

@@ -153,7 +153,7 @@ serve(async (req: Request) => {
 
         if (searchError) {
           console.error(`[TripID: ${trip.id}] Error invoking flight-search:`, searchError.message);
-          continue; 
+          continue;
         }
 
         const offers = flightSearchResult?.offers;
@@ -198,11 +198,11 @@ serve(async (req: Request) => {
               .from('booking_requests')
               .insert({
                 user_id: trip.user_id,
-                offer_id: bestOfferForAutoBook.id, 
-                offer_data: bestOfferForAutoBook, 
+                offer_id: bestOfferForAutoBook.id,
+                offer_data: bestOfferForAutoBook,
                 trip_request_id: trip.id, // trip.id is now string (UUID)
                 auto: true,
-                status: 'processing', 
+                status: 'processing',
               })
               .select('id') // booking_requests.id is UUID, so newBookingRequest.id will be string
               .single();
@@ -211,7 +211,7 @@ serve(async (req: Request) => {
               console.error(`[TripID: ${trip.id}] Error creating booking_requests entry:`, createBookingRequestError.message);
             } else if (newBookingRequest && newBookingRequest.id) { // Ensure newBookingRequest.id is truthy
               console.log(`[TripID: ${trip.id}] Booking request ${newBookingRequest.id} (UUID) created. Attempting RPC call.`);
-              
+
               // 8. Call rpc_auto_book_match
               // p_booking_request_id now expects a UUID (string)
               const { error: rpcError, data: rpcData } = await supabaseClient.rpc(
@@ -240,7 +240,7 @@ serve(async (req: Request) => {
                     .from("trip_requests")
                     // trip.id is string (UUID) for .eq filter
                     .update({ best_price: bestOfferForAutoBook.price, updated_at: new Date().toISOString() })
-                    .eq("id", trip.id); 
+                    .eq("id", trip.id);
                   if (updateTripError) {
                     console.error(`[TripID: ${trip.id}] Error updating best_price after auto-book:`, updateTripError.message);
                   } else {
@@ -273,15 +273,15 @@ serve(async (req: Request) => {
           for (const offer of offers) {
             if (typeof offer.price !== 'number' || isNaN(offer.price)) {
               console.warn(`[TripID: ${trip.id}] Invalid price for offer ${offer.id} during price drop check. Skipping.`);
-              continue; 
+              continue;
             }
 
             if (offer.price < currentBestPriceForRun) {
               console.log(`[TripID: ${trip.id}] Cheaper offer found for notification: New price ${offer.price} < Current best ${currentBestPriceForRun}`);
-              
+
               const flightIdentifier = offer.flight_number || (offer.airline ? `${offer.airline} flight` : 'selected flight');
               const notificationMessage = `New lower price found: $${offer.price.toFixed(2)} for ${flightIdentifier}.`;
-              
+
               const { error: notificationError } = await supabaseClient
                 .from("notifications")
                 .insert({
@@ -289,9 +289,9 @@ serve(async (req: Request) => {
                   trip_request_id: trip.id,
                   type: "price_drop",
                   message: notificationMessage,
-                  data: { 
-                    offerId: offer.id, 
-                    newPrice: offer.price, 
+                  data: {
+                    offerId: offer.id,
+                    newPrice: offer.price,
                     oldPrice: currentBestPriceForRun,
                     airline: offer.airline,
                     flightNumber: offer.flight_number,
@@ -307,7 +307,7 @@ serve(async (req: Request) => {
               } else {
                 notificationsCreated++;
                 console.log(`[TripID: ${trip.id}] Price drop notification created for offer ${offer.id}.`);
-                
+
                 // Update trip_requests.best_price for the current trip.id
                 // This is crucial so we don't notify again for the same price unless it drops further
                 const { error: updateError } = await supabaseClient
@@ -335,9 +335,9 @@ serve(async (req: Request) => {
     } // End of for (const trip of tripRequests)
 
     // 5. Return a summary response
-    const responseBody = { 
-      notified: notificationsCreated, 
-      tripsProcessed, 
+    const responseBody = {
+      notified: notificationsCreated,
+      tripsProcessed,
       autoBookingsCreated,
       message: `Scheduler finished. Trips processed: ${tripsProcessed}, Notifications created: ${notificationsCreated}, Auto-bookings created: ${autoBookingsCreated}`
     };

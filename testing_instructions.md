@@ -41,8 +41,8 @@ You can insert `trip_requests` records using the Supabase Dashboard (SQL Editor 
     *   **SQL Example:**
         ```sql
         INSERT INTO public.trip_requests (user_id, origin_location_code, destination_location_code, departure_date, return_date, adults, budget, best_price, auto_book, updated_at)
-        VALUES 
-        ('your-actual-test-user-id', 'LHR', 'JFK', '2024-12-01', '2024-12-10', 1, 500.00, 550.00, true, NOW()); 
+        VALUES
+        ('your-actual-test-user-id', 'LHR', 'JFK', '2024-12-01', '2024-12-10', 1, 500.00, 550.00, true, NOW());
         -- Ensure departure_date is in the future & flight-search can find offers for these params.
         -- Budget is 500, best_price (if set) is higher.
         ```
@@ -66,14 +66,14 @@ You can insert `trip_requests` records using the Supabase Dashboard (SQL Editor 
     *   **SQL Example (Offer over budget, not booked by auto-booker if criteria not met):**
         ```sql
         INSERT INTO public.trip_requests (user_id, origin_location_code, destination_location_code, departure_date, return_date, adults, budget, best_price, auto_book, updated_at)
-        VALUES 
+        VALUES
         ('your-actual-test-user-id', 'CDG', 'LAX', '2024-11-15', '2024-11-25', 1, 300.00, null, true, NOW());
         -- Budget is 300. Assume offers will be > 300.
         ```
     *   **SQL Example (Offer under `best_price`, no budget set - should book):**
         ```sql
         INSERT INTO public.trip_requests (user_id, origin_location_code, destination_location_code, departure_date, return_date, adults, budget, best_price, auto_book, updated_at)
-        VALUES 
+        VALUES
         ('your-actual-test-user-id', 'AMS', 'BCN', '2024-11-20', '2024-11-28', 1, null, 600.00, true, NOW());
         -- No budget. best_price is 600. Expect offers < 600.
         ```
@@ -86,7 +86,7 @@ You can insert `trip_requests` records using the Supabase Dashboard (SQL Editor 
             ```sql
             INSERT INTO public.bookings (trip_request_id, user_id, booking_request_id, flight_details, price, source, status, booked_at)
             VALUES
-            (existing_booked_trip_id, 'your-actual-test-user-id', null, '{"message": "Manual test booking"}', 0.00, 'manual', 'booked', NOW()); 
+            (existing_booked_trip_id, 'your-actual-test-user-id', null, '{"message": "Manual test booking"}', 0.00, 'manual', 'booked', NOW());
             -- booking_request_id can be null for manually created ones
             ```
         3.  When the scheduler runs, it should skip this `trip_requests` record.
