@@ -16,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import NotificationsPanel from "@/components/NotificationsPanel"; // Moved import here
+import NotificationsPanel from "@/components/NotificationsPanel"
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -352,7 +352,6 @@ SidebarInput.displayName = "SidebarInput"
 const SidebarHeader = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
-// Misplaced import removed from here
 >(({ className, ...props }, ref) => {
   return (
     <div
@@ -366,14 +365,13 @@ const SidebarHeader = React.forwardRef<
         {/* Conceptual User Avatar Placeholder */}
         <div 
           title="User Avatar Placeholder" 
-          className="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0" // Added dark mode bg and shrink
+          className="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0"
         />
         {/* Notifications Panel */}
-        <div className="ml-2"> {/* Added margin for spacing */}
+        <div className="ml-2">
           <NotificationsPanel />
         </div>
       </div>
-      {/* Existing children of SidebarHeader would go here if any, or this div can be the sole content */}
     </div>
   )
 })
@@ -418,7 +416,7 @@ const SidebarContent = React.forwardRef<
       ref={ref}
       data-sidebar="content"
       className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-y-auto group-data-[collapsible=icon]:overflow-x-hidden", // Changed overflow for collapsed state
+        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-y-auto group-data-[collapsible=icon]:overflow-x-hidden",
         className
       )}
       {...props}
