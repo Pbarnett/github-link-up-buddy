@@ -56,7 +56,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    target: 'es2024',
+    target: 'ESNext',
     modulePreload: true,
     minify: 'terser',
     cssMinify: true,
@@ -72,7 +72,7 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     include: ['react', 'react-dom'],
     esbuildOptions: {
-      target: 'es2024'
+      target: 'ESNext'
     }
   }
 }));
