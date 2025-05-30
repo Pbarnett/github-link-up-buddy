@@ -28,13 +28,13 @@ interface AutoBookingSectionProps {
 
 const AutoBookingSection = ({ control, watch }: AutoBookingSectionProps) => {
   const { paymentMethods, loading, error } = usePaymentMethods();
-  const autoBookEnabled = watch("auto_book_enabled");
+  const autoBook = watch("auto_book"); // Changed variable name and watched field name
 
   return (
     <div className="space-y-4">
       <FormField
         control={control}
-        name="auto_book_enabled"
+        name="auto_book" // Changed field name
         render={({ field }) => (
           <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
             <div className="space-y-0.5">
@@ -53,7 +53,7 @@ const AutoBookingSection = ({ control, watch }: AutoBookingSectionProps) => {
         )}
       />
 
-      {autoBookEnabled && (
+      {autoBook && ( // Changed conditional variable
         <>
           <TripNumberField 
             name="max_price"
