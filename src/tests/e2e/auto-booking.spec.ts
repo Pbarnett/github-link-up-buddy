@@ -1,5 +1,5 @@
 import { SupabaseClient, createClient, PostgrestError } from '@supabase/supabase-js';
-// import { vi, describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest'; // Assuming vitest is used based on other tests
+import { vi, describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest'; // Uncommented Vitest import
 
 // Define simple interfaces for test data (can be expanded or imported from actual types)
 // These should ideally align with src/integrations/supabase/types.ts after its update
@@ -55,7 +55,7 @@ interface Notification {
 }
 
 
-describe('End-to-End: Scheduler Auto-Booking Flow', () => {
+describe('Auto-booking E2E', () => { // Changed describe block name
   let supabase: SupabaseClient;
   const testUserId = '00000000-0000-0000-0000-000000000001'; 
   let tripRequestIdsToDelete: string[] = []; // Changed to string[] for UUIDs
