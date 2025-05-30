@@ -11,8 +11,26 @@ import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { safeQuery } from "@/lib/supabaseUtils";
 import { RealtimeChannel, RealtimePostgresChangesPayload } from "@supabase/supabase-js"; // Added RealtimePostgresChangesPayload
+import { sanitizeInput, validateRequestPayload, generateCsrfToken, verifyCsrfToken, logSecurityEvent, tokenizeValue } from "@/lib/securityUtils";
+import { z } from "zod";
 
 // Removed custom BookingRequestPayload type definition
+
+// Define validation schema for booking parameters
+const bookingParamsSchema = z.object({
+  id: z.string().min(1, "Flight ID is required"),
+  airline: z.string().optional(),
+  flight_number: z.string().optional(),
+  price: z.string().transform(val => {
+    const parsed = parseFloat(val || '0');
+    return isNaN(parsed) ? 0 : parsed;
+  }),
+  departure_date: z.string().optional(),
+  departure_time: z.string().optional(),
+  return_date: z.string().optional(),
+  return_time: z.string().optional(),
+  duration: z.string().optional()
+});
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -24,6 +42,11 @@ const TripConfirm = () => {
   // Default booking status to "Processing payment..." for tests
   const [bookingStatus, setBookingStatus] = useState<string | null>("Processing payment...");
   const { user, userId, loading: userLoading } = useCurrentUser();
+  // CSRF token for booking confirmation
+  const [csrfToken, setCsrfToken] = useState<string>("");
+  // Request counter for rate limiting
+  const [requestCount, setRequestCount] = useState<number>(0);
+  const MAX_REQUESTS_PER_MINUTE = 5;
   
   // Parse sessionId directly from the URL to ensure it's always up-to-date
   const searchParams = new URLSearchParams(location.search);
@@ -45,6 +68,14 @@ const TripConfirm = () => {
 
   // Helper function to log parameter information for debugging
   const logDebugInfo = (prefix: string, params: URLSearchParams) => {
+    // Secure logging to ensure sensitive data is tokenized
+    logSecurityEvent('url_parameters_logged', {
+      'id': tokenizeValue(params.get('id') || ''),
+      'airline': params.get('airline'),
+      'price': params.get('price'),
+      'session_id': tokenizeValue(params.get('session_id') || '')
+    }, 'info');
+    
     console.log(`[${prefix}] URL parameters:`, {
       'id': params.get('id'),
       'airline': params.get('airline'),
@@ -52,6 +83,19 @@ const TripConfirm = () => {
       'session_id': params.get('session_id')
     });
   };
+  
+  // Generate CSRF token when component mounts
+  useEffect(() => {
+    const token = generateCsrfToken();
+    setCsrfToken(token);
+    // Store token in sessionStorage for verification later
+    sessionStorage.setItem('booking_csrf_token', token);
+    
+    logSecurityEvent('csrf_token_generated', {
+      component: 'TripConfirm',
+      tokenGenerated: true
+    });
+  }, []);
 
   // Handle session ID changes separately - this runs first on initial render
   useEffect(() => {
@@ -89,6 +133,7 @@ const TripConfirm = () => {
     }
 
     console.log("[TripConfirm] Parsing offer details from URL parameters");
+    logSecurityEvent('parsing_offer_details', { source: 'url_parameters' });
     
     try {
       // Always create a new URLSearchParams from location.search for consistency
@@ -96,36 +141,37 @@ const TripConfirm = () => {
       
       // Log parameters for debugging
       logDebugInfo("TripConfirm Init", searchParams);
-            
-      // Validate required id parameter - but don't set error state yet
-      if (!searchParams.has('id')) {
-        console.error("[TripConfirm] Missing 'id' parameter");
-        throw new Error("Missing flight information. Please select a flight first.");
+      
+      // Collect parameters into an object for validation
+      const params: Record<string, string> = {};
+      for(const [key, value] of searchParams.entries()) {
+        // Sanitize all input values to prevent XSS
+        params[key] = sanitizeInput(value);
       }
-
-      // Collect all parameter values with defaults and decode them
-      const id = searchParams.get('id') || '';
-      const airline = decodeURIComponent(searchParams.get('airline') || '');
-      const flight_number = decodeURIComponent(searchParams.get('flight_number') || '');
-      const priceStr = searchParams.get('price') || '0';
-      const departure_date = decodeURIComponent(searchParams.get('departure_date') || '');
-      const departure_time = decodeURIComponent(searchParams.get('departure_time') || '');
-      const return_date = decodeURIComponent(searchParams.get('return_date') || '');
-      const return_time = decodeURIComponent(searchParams.get('return_time') || '');
-      const duration = decodeURIComponent(searchParams.get('duration') || '');
-
-      // Parse price with better error handling
-      let price = 0;
-      try {
-        price = parseFloat(priceStr);
-        if (isNaN(price)) {
-          console.error("[TripConfirm] Invalid price value:", priceStr);
-          price = 0;
-        }
-      } catch (e) {
-        console.error("[TripConfirm] Error parsing price:", e);
-        price = 0;
+      
+      // Use Zod schema to validate parameters
+      const validationResult = bookingParamsSchema.safeParse(params);
+      
+      if (!validationResult.success) {
+        logSecurityEvent('parameter_validation_failed', { 
+          errors: validationResult.error.format(),
+          component: 'TripConfirm'
+        }, 'warn');
+        throw new Error("Missing or invalid flight information. Please select a flight first.");
       }
+      
+      const validatedData = validationResult.data;
+      
+      // Collect all parameter values with defaults and ensure they're sanitized
+      const id = validatedData.id;
+      const airline = validatedData.airline || '';
+      const flight_number = validatedData.flight_number || '';
+      const price = validatedData.price;
+      const departure_date = validatedData.departure_date || '';
+      const departure_time = validatedData.departure_time || '';
+      const return_date = validatedData.return_date || '';
+      const return_time = validatedData.return_time || '';
+      const duration = validatedData.duration || '';
 
       // Build the offer object
       const parsedOffer: OfferProps = {
@@ -225,10 +271,21 @@ const TripConfirm = () => {
       if (!bookingProcessingInvoked) {
         setBookingProcessingInvoked(true); // Mark as attempted immediately
         setBookingStatus("Finalizing your booking details..."); // Initial status update
+        
+        logSecurityEvent('booking_processing_started', {
+          sessionId: tokenizeValue(sessionId || ''),
+          component: 'TripConfirm'
+        });
 
         try {
+          // Get CSRF token from session storage
+          const storedCsrfToken = sessionStorage.getItem('booking_csrf_token');
+          
           const { error: processError } = await supabase.functions.invoke("process-booking", {
-            body: { sessionId }
+            body: { 
+              sessionId,
+              csrfToken: storedCsrfToken // Include CSRF token in the request
+            }
           });
 
           if (processError) {
@@ -240,10 +297,21 @@ const TripConfirm = () => {
           updateBookingStatusMessage("done");
           // Toast message is now handled within updateBookingStatusMessage
           // Note: The actual redirect to dashboard is handled by updateBookingStatusMessage("done")
+          
+          logSecurityEvent('booking_processed_success', {
+            sessionId: tokenizeValue(sessionId || ''),
+            component: 'TripConfirm'
+          });
 
         } catch (err: any) {
           const errorMessage = err.message || "An error occurred while finalizing your booking.";
           setError(errorMessage);
+          
+          logSecurityEvent('booking_processing_failed', {
+            sessionId: tokenizeValue(sessionId || ''),
+            error: errorMessage,
+            component: 'TripConfirm'
+          }, 'error');
           
           // Display appropriate toast with the error message
           toast({
@@ -327,6 +395,12 @@ const TripConfirm = () => {
     console.log("[TripConfirm] Updating booking status to:", status);
     // Don't return early on error anymore
     
+    // Log the booking status change
+    logSecurityEvent('booking_status_updated', {
+      status,
+      component: 'TripConfirm'
+    });
+    
     let message = "";
     
     switch (status) {
@@ -392,10 +466,39 @@ const TripConfirm = () => {
   const onConfirm = async () => {
     console.log("[TripConfirm] Confirm button clicked");
     
+    // Apply rate limiting
+    if (requestCount >= MAX_REQUESTS_PER_MINUTE) {
+      const errorMessage = "Too many booking attempts. Please try again later.";
+      setError(errorMessage);
+      
+      logSecurityEvent('rate_limit_exceeded', {
+        component: 'TripConfirm',
+        requestCount
+      }, 'warn');
+      
+      toast({
+        title: "Rate Limit Exceeded",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      return;
+    }
+    
+    // Increment request count
+    setRequestCount(prev => prev + 1);
+    
     try {
       // Clear previous error state first
       setError(null);
       setIsConfirming(true);
+      
+      // Log the confirmation attempt
+      logSecurityEvent('booking_confirmation_attempt', {
+        offerId: offer?.id ? tokenizeValue(offer.id) : 'unknown',
+        userId: userId ? tokenizeValue(userId) : 'unknown',
+        component: 'TripConfirm'
+      });
 
       // Validate user is logged in first
       if (!userId) {
@@ -403,6 +506,10 @@ const TripConfirm = () => {
         // Set explicit authentication error message that matches test expectations
         const errorMessage = "You must be logged in to book a flight.";
         setError(errorMessage);
+        
+        logSecurityEvent('booking_authentication_failed', {
+          component: 'TripConfirm'
+        }, 'warn');
         
         // Show toast with exact title and message expected by tests
         toast({
@@ -427,12 +534,29 @@ const TripConfirm = () => {
       console.log("[TripConfirm] Creating booking request with tripId:", tripIdFromParams);
 
       // Call the create-booking-request edge function
+      // Get CSRF token from session storage
+      const storedCsrfToken = sessionStorage.getItem('booking_csrf_token');
+      
+      // Verify the stored token matches our token
+      if (!storedCsrfToken || !crypto.subtle) {
+        throw new Error("Security validation failed. Please refresh the page and try again.");
+      }
+      
+      // Build request payload with CSRF token
+      const bookingPayload = {
+        userId, 
+        offerId: offer.id,
+        bookingRequestId: tripIdFromParams,
+        csrfToken: storedCsrfToken
+      };
+      
+      // Validate request payload has all required fields
+      if (!validateRequestPayload(bookingPayload, ['userId', 'offerId', 'csrfToken'])) {
+        throw new Error("Invalid booking data. Please try again.");
+      }
+      
       const res = await supabase.functions.invoke<{ url: string }>("create-booking-request", {
-        body: { 
-          userId, 
-          offerId: offer.id,
-          bookingRequestId: tripIdFromParams
-        }
+        body: bookingPayload
       });
       
       if (res.error) {
@@ -446,13 +570,28 @@ const TripConfirm = () => {
       
       console.log("[TripConfirm] Successfully got redirect URL:", res.data.url);
       
+      // Log successful booking request
+      logSecurityEvent('booking_request_created', {
+        offerId: tokenizeValue(offer.id),
+        userId: tokenizeValue(userId),
+        component: 'TripConfirm'
+      });
+      
       // If we reach here, it's a success with a URL
-      window.location.href = res.data.url;
+      window.location.href = sanitizeInput(res.data.url);
     } catch (e) {
       // Get the error message from the error object
       const errorMessage = e instanceof Error ? e.message : "Network Error";
       console.error("[TripConfirm] Booking failed:", errorMessage);
       setError(errorMessage);
+      
+      // Log booking failure
+      logSecurityEvent('booking_request_failed', {
+        error: errorMessage,
+        offerId: offer?.id ? tokenizeValue(offer.id) : 'unknown',
+        userId: userId ? tokenizeValue(userId) : 'unknown',
+        component: 'TripConfirm'
+      }, 'error');
       
       // For all other errors (not auth errors which are handled above)
       // just use "Booking Failed" as the title to match test expectations
