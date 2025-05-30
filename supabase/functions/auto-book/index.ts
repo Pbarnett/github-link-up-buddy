@@ -128,7 +128,7 @@ serve(async (req: Request) => {
         trip_requests(
           user_id,
           preferred_payment_method_id,
-          auto_book_enabled
+          auto_book
         ),
         flight_offers(
           airline,
@@ -140,7 +140,7 @@ serve(async (req: Request) => {
         )
       `)
       .eq("notified", false)
-      .eq("trip_requests.auto_book_enabled", true)
+      .eq("trip_requests.auto_book", true)
       .order("created_at", { ascending: true });
     
     if (matchError) {
