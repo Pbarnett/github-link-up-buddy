@@ -25,10 +25,10 @@ interface BookingRequest {
   id: string; // Changed to string for UUID
   user_id: string;
   trip_request_id: string; // Changed to string for UUID FK
-  offer_id: string; 
-  offer_data: any; 
+  offer_id: string;
+  offer_data: any;
   auto: boolean;
-  status: string; 
+  status: string;
   error_message?: string | null; // Made optional to align with DB schema (TEXT allows NULL)
   created_at?: string;
   updated_at?: string;
@@ -50,17 +50,17 @@ interface Notification {
   id: number; // Assuming notifications.id (PK) is still BIGINT serial
   user_id: string;
   trip_request_id: string; // Changed to string for UUID FK
-  type: string; 
+  type: string;
   message?: string; // Added optional based on schema (TEXT allows NULL)
   data?: any; // Added optional based on schema (JSONB allows NULL)
-  read?: boolean; 
+  read?: boolean;
   created_at?: string;
 }
 
 
 describe('E2E: Full Auto-Book Flow (Scheduler -> RPC -> DB)', () => {
   let supabase: SupabaseClient;
-  const testUserId = '00000000-0000-0000-0000-000000000002'; 
+  const testUserId = '00000000-0000-0000-0000-000000000002';
 
   let tripRequestId: string | undefined; // Changed to string for UUID
   let initialBestPrice: number | null;
@@ -77,14 +77,14 @@ describe('E2E: Full Auto-Book Flow (Scheduler -> RPC -> DB)', () => {
     supabase = createClient(supabaseUrl, supabaseServiceKey);
     console.log(`E2E Test User ID: ${testUserId}. Ensure this user exists or RLS allows operations.`);
   });
-  
+
   beforeEach(async () => {
     // Clean up data from previous runs for this specific testUserId or tripRequestId
     if (tripRequestId) {
       console.log(`Cleaning up data for tripRequestId: ${tripRequestId}`);
       // Delete notifications first (might reference bookings or booking_requests if data field is used that way)
       await supabase.from('notifications').delete().eq('trip_request_id', tripRequestId);
-      
+
       // Find booking_requests associated with the trip_request_id to delete related bookings
       const { data: bookingRequests, error: brDelErr } = await supabase
         .from('booking_requests')
@@ -99,14 +99,14 @@ describe('E2E: Full Auto-Book Flow (Scheduler -> RPC -> DB)', () => {
           await supabase.from('bookings').delete().in('booking_request_id', bookingRequestIds);
         }
       }
-      
+
       await supabase.from('booking_requests').delete().eq('trip_request_id', tripRequestId);
       await supabase.from('trip_requests').delete().eq('id', tripRequestId);
       console.log(`Cleanup complete for tripRequestId: ${tripRequestId}`);
       tripRequestId = undefined; // Reset
     }
   });
-  
+
   // Optional: afterAll to clean any remaining test data for this user
   afterAll(async () => {
     if (tripRequestId) { // If a test failed mid-way and beforeEach didn't catch it
@@ -121,7 +121,7 @@ describe('E2E: Full Auto-Book Flow (Scheduler -> RPC -> DB)', () => {
         await supabase.from('trip_requests').delete().eq('id', tripRequestId);
     }
     // Consider a more general cleanup for the testUserId if tests are strictly isolated by user
-    // await supabase.from('trip_requests').delete().eq('user_id', testUserId); 
+    // await supabase.from('trip_requests').delete().eq('user_id', testUserId);
     // (ensure cascading deletes or manual cleanup of related tables if doing this)
   });
 
@@ -139,7 +139,7 @@ describe('E2E: Full Auto-Book Flow (Scheduler -> RPC -> DB)', () => {
       .from('trip_requests')
       .insert({
         user_id: testUserId,
-        origin_location_code: 'PAR', 
+        origin_location_code: 'PAR',
         destination_location_code: 'ROM',
         departure_date: departureDate,
         return_date: returnDate,
@@ -177,7 +177,7 @@ describe('E2E: Full Auto-Book Flow (Scheduler -> RPC -> DB)', () => {
     expect(brError, `Error fetching booking_requests: ${brError?.message}`).toBeNull();
     expect(bookingRequests, 'Booking requests array is null/undefined').toBeDefined();
     expect(bookingRequests!.length, `Expected 1 booking request, found ${bookingRequests!.length}. Data: ${JSON.stringify(bookingRequests)}`).toBe(1);
-    
+
     const bookingRequest = bookingRequests![0];
     expect(bookingRequest.auto, 'booking_requests.auto should be true').toBe(true);
     expect(bookingRequest.status, `booking_requests.status should be 'done', was '${bookingRequest.status}'`).toBe('done');
@@ -192,7 +192,7 @@ describe('E2E: Full Auto-Book Flow (Scheduler -> RPC -> DB)', () => {
     expect(bError, `Error fetching bookings: ${bError?.message}`).toBeNull();
     expect(bookings, 'Bookings array is null/undefined').toBeDefined();
     expect(bookings!.length, `Expected 1 booking, found ${bookings!.length}. Data: ${JSON.stringify(bookings)}`).toBe(1);
-    
+
     const booking = bookings![0];
     expect(booking.source, `bookings.source should be 'auto', was '${booking.source}'`).toBe('auto');
     expect(booking.status, `bookings.status should be 'booked', was '${booking.status}'`).toBe('booked');
@@ -209,7 +209,7 @@ describe('E2E: Full Auto-Book Flow (Scheduler -> RPC -> DB)', () => {
     expect(nError, `Error fetching notifications: ${nError?.message}`).toBeNull();
     expect(notifications, 'Notifications array is null/undefined').toBeDefined();
     expect(notifications!.length, `Expected 1 notification, found ${notifications!.length}. Data: ${JSON.stringify(notifications)}`).toBe(1);
-    
+
     const notification = notifications![0];
     expect(notification.user_id, `Notification user_id mismatch`).toBe(testUserId);
     // Message format as per rpc_auto_book_match

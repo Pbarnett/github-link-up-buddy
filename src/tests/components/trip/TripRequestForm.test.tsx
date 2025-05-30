@@ -82,7 +82,7 @@ describe('TripRequestForm Auto-Booking Tests', () => {
     await user.type(screen.getByLabelText(/Min Duration/i), '3');
     await user.type(screen.getByLabelText(/Max Duration/i), '7');
     await user.type(screen.getByLabelText(/Budget/i), '1200');
-    
+
     await user.type(screen.getByPlaceholderText('Enter departure airport code (e.g. JFK)'), 'LAX');
     await user.type(screen.getByPlaceholderText('Enter destination (e.g. Paris, London)'), 'CDG');
   };
@@ -105,7 +105,7 @@ describe('TripRequestForm Auto-Booking Tests', () => {
 
     const submitButton = screen.getByRole('button', { name: /Create Trip Request/i });
     await user.click(submitButton);
-    
+
     expect(await screen.findByText("Maximum price and payment method are required for auto-booking", {}, {timeout: 5000})).toBeInTheDocument();
     expect(createTripRequest).not.toHaveBeenCalled();
   });
@@ -116,19 +116,20 @@ describe('TripRequestForm Auto-Booking Tests', () => {
     const user = userEvent.setup();
 
     const autoBookSwitch = screen.getByRole('switch', { name: /Enable Auto-Booking/i });
-    await user.click(autoBookSwitch); 
+    await user.click(autoBookSwitch);
 
     const maxPriceInput = await screen.findByLabelText(/Maximum Price/i);
     await user.type(maxPriceInput, '1500');
 
     const submitButton = screen.getByRole('button', { name: /Create Trip Request/i });
     await user.click(submitButton);
-    
+
     expect(await screen.findByText("Maximum price and payment method are required for auto-booking", {}, {timeout: 5000})).toBeInTheDocument();
     expect(createTripRequest).not.toHaveBeenCalled();
   });
   
   it('submits successfully if auto_book is ON and both max_price and payment method are provided', async () => {
+
     renderTripRequestForm();
     await fillBasicFields();
     const user = userEvent.setup();
@@ -143,7 +144,7 @@ describe('TripRequestForm Auto-Booking Tests', () => {
     await user.click(paymentMethodSelectTrigger);
     const paymentOption = await screen.findByText(/Visa •••• 4242/i);
     await user.click(paymentOption);
-    
+
     const submitButton = screen.getByRole('button', { name: /Create Trip Request/i });
     await user.click(submitButton);
 
@@ -153,7 +154,9 @@ describe('TripRequestForm Auto-Booking Tests', () => {
     expect(screen.queryByText("Maximum price and payment method are required for auto-booking")).toBeNull();
   });
 
+
   it('submits successfully when auto-booking is OFF and max_price/payment method are empty', async () => {
+
     renderTripRequestForm();
     await fillBasicFields();
     const user = userEvent.setup();
@@ -170,9 +173,9 @@ describe('TripRequestForm Auto-Booking Tests', () => {
     await waitFor(() => {
       expect(createTripRequest).toHaveBeenCalled();
     });
-    
+
     expect(screen.queryByText("Maximum price and payment method are required for auto-booking")).toBeNull();
-    
+
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('/trip/offers'));
     });

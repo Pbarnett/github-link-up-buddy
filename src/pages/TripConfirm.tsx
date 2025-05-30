@@ -79,9 +79,9 @@ const TripConfirm = () => {
           try {
             // Step 1: Fetch the flight_offer using parsedOffer.id to get trip_request_id
             const { data: offerRecord, error: offerError } = await supabase
-              .from('flight_offers') 
+              .from('flight_offers')
               .select('trip_request_id')
-              .eq('id', parsedOffer.id) 
+              .eq('id', parsedOffer.id)
               .single();
 
             if (offerError || !offerRecord) {
@@ -100,10 +100,10 @@ const TripConfirm = () => {
             // Step 2: Fetch the trip_requests record using trip_request_id
             const { data: tripRequest, error: tripRequestError } = await supabase
               .from('trip_requests')
-              .select('auto_book') 
-              .eq('id', tripRequestId) 
+              .select('auto_book')
+              .eq('id', tripRequestId)
               .single();
-            
+
             if (tripRequestError) {
               console.error('Error fetching trip request details:', tripRequestError.message);
             } else if (tripRequest) {

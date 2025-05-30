@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION public.rpc_auto_book_match(p_booking_request_id UUID) -- Changed parameter type to UUID
-RETURNS VOID 
+RETURNS VOID
 LANGUAGE plpgsql
-SECURITY DEFINER 
+SECURITY DEFINER
 AS $$
 DECLARE
   v_booking_request public.booking_requests%ROWTYPE; -- If booking_requests.id is UUID, this will be UUID
@@ -12,10 +12,10 @@ DECLARE
   v_flight_price NUMERIC;
   v_airline TEXT;
   v_flight_number TEXT;
-  v_origin_code TEXT;        
-  v_destination_code TEXT;   
+  v_origin_code TEXT;
+  v_destination_code TEXT;
   v_notification_message TEXT;
-  v_trip_details RECORD;     
+  v_trip_details RECORD;
 BEGIN
   -- 1. Fetch the booking_requests row using the UUID parameter
   SELECT * INTO v_booking_request
@@ -31,7 +31,7 @@ BEGIN
   v_trip_request_id := v_booking_request.trip_request_id; -- This is now UUID from booking_requests table
 
   -- Fetch origin and destination from the associated trip_requests table
-  SELECT origin_location_code, destination_location_code 
+  SELECT origin_location_code, destination_location_code
   INTO v_trip_details
   FROM public.trip_requests
   WHERE id = v_trip_request_id; -- Comparing with v_trip_request_id (UUID)
@@ -39,7 +39,7 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Associated trip request ID % not found for booking request ID %', v_trip_request_id, p_booking_request_id;
   END IF;
-  
+
   v_origin_code := v_trip_details.origin_location_code;
   v_destination_code := v_trip_details.destination_location_code;
 
@@ -76,10 +76,10 @@ BEGIN
   -- Using new column names as per 20250530120000_align_schema_auto_booking.sql
   v_notification_message := FORMAT(
     'We auto-booked your flight from %s to %s with %s (%s) for $%s!',
-    COALESCE(v_origin_code, 'N/A'), 
-    COALESCE(v_destination_code, 'N/A'), 
-    COALESCE(v_airline, 'N/A'), 
-    COALESCE(v_flight_number, 'N/A'), 
+    COALESCE(v_origin_code, 'N/A'),
+    COALESCE(v_destination_code, 'N/A'),
+    COALESCE(v_airline, 'N/A'),
+    COALESCE(v_flight_number, 'N/A'),
     TO_CHAR(v_flight_price, 'FM999,990.00')
   );
 
@@ -104,14 +104,14 @@ BEGIN
       'flight_number', v_flight_number,
       'origin', v_origin_code,
       'destination', v_destination_code,
-      'original_offer_data', v_offer_data 
+      'original_offer_data', v_offer_data
     )
   );
 
   -- 4. Update booking_requests.status to 'done'
   -- Using new column names as per 20250530120000_align_schema_auto_booking.sql
   UPDATE public.booking_requests
-  SET status = 'done', updated_at = NOW(), error_message = NULL 
+  SET status = 'done', updated_at = NOW(), error_message = NULL
   WHERE id = p_booking_request_id; -- Comparing with p_booking_request_id (UUID)
 
 EXCEPTION

@@ -66,6 +66,7 @@ export type Database = {
             referencedRelation: "flight_offers"
             referencedColumns: ["id"]
           },
+
           {
             foreignKeyName: "booking_requests_trip_request_id_fkey"
             columns: ["trip_request_id"]
@@ -99,6 +100,7 @@ export type Database = {
           status?: string | null
           trip_request_id: string
           user_id: string
+
         }
         Update: {
           booked_at?: string

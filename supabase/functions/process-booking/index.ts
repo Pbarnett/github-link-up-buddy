@@ -94,7 +94,7 @@ serve(async (req: Request) => {
           .eq('checkout_session_id', sessionId);
         throw new Error(responseErrorMessage);
       }
-      
+
       const { data: bookingRequestData, error: brError } = await supabaseAdmin
         .from('booking_requests')
         .select('status')
@@ -114,9 +114,9 @@ serve(async (req: Request) => {
           headers,
         });
       }
-      
-      const { error: rpcErr } = await supabaseAdmin.rpc('rpc_auto_book_match', { 
-        p_booking_request_id: bookingRequestId 
+
+      const { error: rpcErr } = await supabaseAdmin.rpc('rpc_auto_book_match', {
+        p_booking_request_id: bookingRequestId
       });
 
       if (rpcErr) {
@@ -135,7 +135,7 @@ serve(async (req: Request) => {
       const { error: updateErr } = await supabaseAdmin
         .from('booking_requests')
         .update({ status: 'done', updated_at: new Date().toISOString(), error_message: null })
-        .eq('checkout_session_id', sessionId); 
+        .eq('checkout_session_id', sessionId);
 
       if (updateErr) {
         dbErrorMessage = updateErr.message;
@@ -157,20 +157,20 @@ serve(async (req: Request) => {
 
     } catch (e: any) { // Catches errors from inner try block or direct Stripe API errors
       console.error(`Error processing booking for session ${sessionId}, br_id ${bookingRequestId}: ${e.message}`);
-      
-      if (!responseErrorMessage) { 
+
+      if (!responseErrorMessage) {
         dbErrorMessage = e.message;
         if (e.type && typeof e.type === 'string' && e.type.startsWith('Stripe')) {
           responseErrorMessage = `Stripe Error: ${e.message}`;
         } else { // Includes errors from RPC calls that might not have been caught by `if (rpcErr)`
-          responseErrorMessage = e.message; 
+          responseErrorMessage = e.message;
         }
-        errorStatus = (e as any).status || 500; 
+        errorStatus = (e as any).status || 500;
       }
-      
+
       const updateKey = bookingRequestId ? 'id' : 'checkout_session_id';
       const updateValue = bookingRequestId || sessionId;
-    
+
       if (updateValue) {
         const {data: currentBrStatus} = await supabaseAdmin.from('booking_requests').select('status, error_message').eq(updateKey, updateValue).single();
         // Only update if not already 'failed' with the same message, or if it's a different error.
@@ -186,13 +186,13 @@ serve(async (req: Request) => {
             }
         }
       }
-      
+
       return new Response(JSON.stringify({ error: responseErrorMessage || 'An unexpected error occurred' }), {
         status: errorStatus,
         headers,
       });
     }
-  } catch (e: any) { 
+  } catch (e: any) {
     // This catches very early errors, like req.json() if it wasn't caught, or other setup issues
     console.error('Outer critical error in process-booking:', e.message);
     return new Response(JSON.stringify({ error: 'Server Error: Critical processing failure.' }), {
