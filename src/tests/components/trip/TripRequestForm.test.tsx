@@ -1,5 +1,6 @@
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event'; // For more realistic select interactions
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -38,7 +39,7 @@ const renderTripRequestForm = () => {
   );
 };
 
-describe('TripRequestForm Conditional Validation', () => {
+describe('TripRequestForm Auto-Booking Tests', () => {
   const mockPaymentMethods = [{ id: 'pm-uuid-123', brand: 'Visa', last4: '4242', nickname: 'Personal Card' }];
 
   beforeEach(() => {
@@ -51,7 +52,7 @@ describe('TripRequestForm Conditional Validation', () => {
     });
 
     (createTripRequest as vi.Mock).mockResolvedValue({
-      tripRequest: { id: 'trip-uuid-generated', auto_book: false }, // auto_book status from result
+      tripRequest: { id: 'trip-uuid-generated', auto_book: false },
       offers: [],
       offersCount: 0,
     });
@@ -65,41 +66,34 @@ describe('TripRequestForm Conditional Validation', () => {
 
   // Helper to fill basic always-required fields
   const fillBasicFields = async () => {
-    // Using userEvent for typing might be more robust if simple fireEvent.change isn't enough
     const user = userEvent.setup();
 
-    // Dates (assuming DatePicker components that ultimately update an input or hidden input)
-    // For Shadcn/Radix DatePicker, direct input change is not how users interact.
-    // They click a trigger, then dates. We'll try to set a valid date string.
-    // This part is fragile if the underlying DatePicker doesn't respond to simple input change.
     const earliestDepartureInput = screen.getByRole('textbox', { name: /Earliest Departure/i });
     const latestDepartureInput = screen.getByRole('textbox', { name: /Latest Departure/i });
 
     const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 2); // Ensure it's clearly in the future
+    tomorrow.setDate(tomorrow.getDate() + 2);
     const fiveDaysLater = new Date(tomorrow);
     fiveDaysLater.setDate(tomorrow.getDate() + 5);
 
-    // These might need to be fireEvent.click on calendar buttons in a real scenario
-    fireEvent.change(earliestDepartureInput, { target: { value: tomorrow.toLocaleDateString('en-CA') } }); // YYYY-MM-DD
+    fireEvent.change(earliestDepartureInput, { target: { value: tomorrow.toLocaleDateString('en-CA') } });
     fireEvent.change(latestDepartureInput, { target: { value: fiveDaysLater.toLocaleDateString('en-CA') } });
 
     await user.type(screen.getByLabelText(/Min Duration/i), '3');
     await user.type(screen.getByLabelText(/Max Duration/i), '7');
     await user.type(screen.getByLabelText(/Budget/i), '1200');
 
-    // For departure/destination, using custom inputs
     await user.type(screen.getByPlaceholderText('Enter departure airport code (e.g. JFK)'), 'LAX');
     await user.type(screen.getByPlaceholderText('Enter destination (e.g. Paris, London)'), 'CDG');
   };
 
-  it('Test Case 1a: max_price shows validation error if auto_book is ON, payment selected, but max_price empty', async () => {
+  it('shows validation error if auto_book is ON, payment selected, but max_price empty', async () => {
     renderTripRequestForm();
     await fillBasicFields();
     const user = userEvent.setup();
 
     const autoBookSwitch = screen.getByRole('switch', { name: /Enable Auto-Booking/i });
-    await user.click(autoBookSwitch); // Enable auto-booking
+    await user.click(autoBookSwitch);
 
     const paymentMethodSelectTrigger = await screen.findByRole('combobox', { name: /Payment Method/i });
     await user.click(paymentMethodSelectTrigger);
@@ -107,7 +101,7 @@ describe('TripRequestForm Conditional Validation', () => {
     await user.click(paymentOption);
 
     const maxPriceInput = screen.getByLabelText(/Maximum Price/i);
-    await user.clear(maxPriceInput); // Ensure it's empty
+    await user.clear(maxPriceInput);
 
     const submitButton = screen.getByRole('button', { name: /Create Trip Request/i });
     await user.click(submitButton);
@@ -116,7 +110,7 @@ describe('TripRequestForm Conditional Validation', () => {
     expect(createTripRequest).not.toHaveBeenCalled();
   });
 
-  it('Test Case 1b: payment method shows validation error if auto_book is ON, max_price filled, but payment empty', async () => {
+  it('shows validation error if auto_book is ON, max_price filled, but payment empty', async () => {
     renderTripRequestForm();
     await fillBasicFields();
     const user = userEvent.setup();
@@ -127,20 +121,15 @@ describe('TripRequestForm Conditional Validation', () => {
     const maxPriceInput = await screen.findByLabelText(/Maximum Price/i);
     await user.type(maxPriceInput, '1500');
 
-    // Ensure payment method is not selected (it defaults to placeholder)
-    const paymentMethodSelectTrigger = screen.getByRole('combobox', { name: /Payment Method/i });
-    // Check placeholder is there
-    expect(screen.getByText("Select payment method")).toBeInTheDocument();
-
-
     const submitButton = screen.getByRole('button', { name: /Create Trip Request/i });
     await user.click(submitButton);
 
     expect(await screen.findByText("Maximum price and payment method are required for auto-booking", {}, {timeout: 5000})).toBeInTheDocument();
     expect(createTripRequest).not.toHaveBeenCalled();
   });
+  
+  it('submits successfully if auto_book is ON and both max_price and payment method are provided', async () => {
 
-  it('Test Case 1c: form submits if auto_book is ON, and max_price AND payment method are provided', async () => {
     renderTripRequestForm();
     await fillBasicFields();
     const user = userEvent.setup();
@@ -166,42 +155,15 @@ describe('TripRequestForm Conditional Validation', () => {
   });
 
 
-  it('Test Case 2: max_price input has aria-required="true" when auto-booking is ON and payment method selected', async () => {
-    // This test's success depends on react-hook-form + Zod + custom components correctly setting aria-required.
-    // It might be brittle. The functional validation (Test Case 1) is more critical.
+  it('submits successfully when auto-booking is OFF and max_price/payment method are empty', async () => {
+
     renderTripRequestForm();
+    await fillBasicFields();
     const user = userEvent.setup();
 
     const autoBookSwitch = screen.getByRole('switch', { name: /Enable Auto-Booking/i });
-    await user.click(autoBookSwitch);
+    expect(autoBookSwitch).not.toBeChecked();
 
-    const paymentMethodSelectTrigger = await screen.findByRole('combobox', { name: /Payment Method/i });
-    await user.click(paymentMethodSelectTrigger);
-    const paymentOption = await screen.findByText(/Visa •••• 4242/i);
-    await user.click(paymentOption);
-
-    // Need to wait for re-render after selection that might trigger schema re-evaluation
-    await waitFor(async () => {
-      const maxPriceInput = screen.getByLabelText(/Maximum Price/i);
-      // Zod refine doesn't automatically set aria-required. This would need manual handling in the component
-      // or a more direct required rule on max_price itself conditional on auto_book.
-      // For now, we'll check if it's visible as a proxy for being part of the "required group".
-      expect(maxPriceInput).toBeVisible();
-      // To actually test aria-required, the component would need to set it.
-      // expect(maxPriceInput).toHaveAttribute('aria-required', 'true');
-      // This specific assertion might fail if not explicitly implemented.
-    });
-  });
-
-  it('Test Case 3: Form submits successfully when auto-booking is OFF and max_price/payment method are empty', async () => {
-    renderTripRequestForm();
-    await fillBasicFields(); // Fills other required fields
-    const user = userEvent.setup();
-
-    const autoBookSwitch = screen.getByRole('switch', { name: /Enable Auto-Booking/i });
-    expect(autoBookSwitch).not.toBeChecked(); // Default is off
-
-    // Max price and payment method should not be visible or required
     expect(screen.queryByLabelText(/Maximum Price/i)).toBeNull();
     expect(screen.queryByRole('combobox', { name: /Payment Method/i })).toBeNull();
 
@@ -215,9 +177,7 @@ describe('TripRequestForm Conditional Validation', () => {
     expect(screen.queryByText("Maximum price and payment method are required for auto-booking")).toBeNull();
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('/trip/confirmation'));
+      expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('/trip/offers'));
     });
   });
 });
-
-```

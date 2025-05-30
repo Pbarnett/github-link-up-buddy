@@ -40,7 +40,7 @@ const TripRequestForm = () => {
       destination_airport: "",
       destination_other: "",
       // Auto-booking defaults
-      auto_book_enabled: false,
+      auto_book: false,
       max_price: null,
       preferred_payment_method_id: null,
     },
@@ -88,7 +88,7 @@ const TripRequestForm = () => {
       departure_airports: departureAirports,
       destination_airport: destinationAirport,
       // Add auto-booking fields
-      auto_book_enabled: data.auto_book_enabled,
+      auto_book: data.auto_book,
       max_price: data.max_price,
       preferred_payment_method_id: data.preferred_payment_method_id,
     };
@@ -109,7 +109,7 @@ const TripRequestForm = () => {
     toast({
       title: "Trip request submitted",
       description: `Your trip request has been submitted with ${result.offersCount} flight offers!${
-        result.tripRequest.auto_book_enabled ? ' Auto-booking is enabled.' : ''
+        result.tripRequest.auto_book ? ' Auto-booking is enabled.' : ''
       }`,
     });
     
@@ -225,7 +225,7 @@ const TripRequestForm = () => {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Searching...
                   </>
-                ) : "Submit"}
+                ) : "Create Trip Request"}
               </Button>
             </div>
           </form>
