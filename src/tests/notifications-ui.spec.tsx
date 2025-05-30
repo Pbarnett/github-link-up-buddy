@@ -21,21 +21,21 @@ vi.mock('@/components/ui/badge', () => ({
 
 describe('NotificationsPanel UI', () => {
   const mockNotificationsData = [
-    { 
-      id: '11111111-1111-1111-1111-111111111111', 
-      message: "Your flight to JFK has been auto-booked!", 
-      trip_request_id: '22222222-2222-2222-2222-222222222222', 
-      type: 'auto_booking_success', 
-      data: { some: 'payload' },    
+    {
+      id: '11111111-1111-1111-1111-111111111111',
+      message: "Your flight to JFK has been auto-booked!",
+      trip_request_id: '22222222-2222-2222-2222-222222222222',
+      type: 'auto_booking_success',
+      data: { some: 'payload' },
       created_at: new Date().toISOString(),
       is_read: false,
     },
-    { 
-      id: '33333333-3333-3333-3333-333333333333', 
-      message: "System update complete.", 
-      trip_request_id: null, 
-      type: 'system_message', 
-      data: { info: 'details' },   
+    {
+      id: '33333333-3333-3333-3333-333333333333',
+      message: "System update complete.",
+      trip_request_id: null,
+      type: 'system_message',
+      data: { info: 'details' },
       created_at: new Date().toISOString(),
       is_read: true,
     },
@@ -97,10 +97,10 @@ describe('NotificationsPanel UI', () => {
     expect(plainTextMessage).toBeInTheDocument();
     // Check that the parent of the plain text message is not an anchor tag
     // The component renders it inside a <li><span>...</span></li>
-    expect(plainTextMessage.closest('a')).toBeNull(); 
+    expect(plainTextMessage.closest('a')).toBeNull();
     expect(plainTextMessage.tagName).toBe('SPAN'); // As per current implementation
   });
-  
+
   it('should display "No new notifications" when there are no notifications', () => {
     (useNotifications as vi.Mock).mockReturnValue({
       data: [],
@@ -117,7 +117,7 @@ describe('NotificationsPanel UI', () => {
 
   it('should display loading state', () => {
     (useNotifications as vi.Mock).mockReturnValue({
-      data: [], 
+      data: [],
       isLoading: true,
       error: null,
     });
@@ -132,7 +132,7 @@ describe('NotificationsPanel UI', () => {
   it('should display error state', () => {
     const errorMessage = 'Failed to fetch notifications';
     (useNotifications as vi.Mock).mockReturnValue({
-      data: [], 
+      data: [],
       isLoading: false,
       error: { message: errorMessage },
     });

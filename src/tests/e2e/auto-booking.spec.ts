@@ -23,10 +23,10 @@ interface BookingRequest {
   user_id: string;
   trip_request_id: string; // Changed to string for UUID FK
   offer_id: string;
-  offer_data: any; 
+  offer_data: any;
   auto: boolean;
-  status: string; 
-  error_message?: string | null; 
+  status: string;
+  error_message?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -36,10 +36,10 @@ interface Booking {
   user_id: string;
   trip_request_id: string; // Changed to string for UUID FK
   booking_request_id: string; // Changed to string for UUID FK
-  flight_details?: any; 
-  price?: number; 
-  source?: string; 
-  status?: string; 
+  flight_details?: any;
+  price?: number;
+  source?: string;
+  status?: string;
   booked_at?: string;
 }
 
@@ -47,9 +47,9 @@ interface Notification {
   id: number; // Assuming notifications.id (PK) is still BIGINT serial
   user_id: string;
   trip_request_id: string; // Changed to string for UUID FK
-  type: string; 
-  message?: string; 
-  data?: any; 
+  type: string;
+  message?: string;
+  data?: any;
   read?: boolean;
   created_at?: string;
 }
@@ -57,7 +57,7 @@ interface Notification {
 
 describe('Auto-booking E2E', () => { // Changed describe block name
   let supabase: SupabaseClient;
-  const testUserId = '00000000-0000-0000-0000-000000000001'; 
+  const testUserId = '00000000-0000-0000-0000-000000000001';
   let tripRequestIdsToDelete: string[] = []; // Changed to string[] for UUIDs
 
   beforeAll(async () => {
@@ -88,12 +88,12 @@ describe('Auto-booking E2E', () => { // Changed describe block name
       await supabase.from('booking_requests').delete().eq('trip_request_id', currentTripRequestId);
       await supabase.from('trip_requests').delete().eq('id', currentTripRequestId);
       console.log(`Cleanup complete for tripRequestId: ${currentTripRequestId}`);
-      currentTripRequestId = undefined; 
+      currentTripRequestId = undefined;
     }
   });
-  
+
   afterAll(async () => {
-      if (currentTripRequestId) { 
+      if (currentTripRequestId) {
         console.warn(`Performing afterAll cleanup for potentially orphaned tripRequestId: ${currentTripRequestId}`);
         await supabase.from('notifications').delete().eq('trip_request_id', currentTripRequestId);
         const { data: bookingRequests } = await supabase.from('booking_requests').select('id').eq('trip_request_id', currentTripRequestId);
@@ -109,18 +109,18 @@ describe('Auto-booking E2E', () => { // Changed describe block name
   it('should successfully auto-book a flight when conditions are met', async () => {
     const initialBestPrice = 700;
     const budget = 600;
-    const expectedBookPrice = 550; 
+    const expectedBookPrice = 550;
 
     const departureDate = new Date();
-    departureDate.setDate(departureDate.getDate() + 90); 
+    departureDate.setDate(departureDate.getDate() + 90);
     const returnDate = new Date(departureDate);
-    returnDate.setDate(returnDate.getDate() + 7); 
+    returnDate.setDate(returnDate.getDate() + 7);
 
     const { data: tripRequestData, error: tripError } = await supabase
       .from('trip_requests')
       .insert({
         user_id: testUserId,
-        origin_location_code: 'LHR', 
+        origin_location_code: 'LHR',
         destination_location_code: 'JFK',
         departure_date: departureDate.toISOString().split('T')[0],
         return_date: returnDate.toISOString().split('T')[0],
@@ -137,7 +137,7 @@ describe('Auto-booking E2E', () => { // Changed describe block name
     expect(tripRequestData).toBeDefined();
     const tripRequest = tripRequestData as TripRequest;
     currentTripRequestId = tripRequest.id; // tripRequest.id is already string (UUID from DB)
-    tripRequestIdsToDelete.push(currentTripRequestId); 
+    tripRequestIdsToDelete.push(currentTripRequestId);
 
     const { data: existingBookingsBefore, error: existingBookingsErrorBefore } = await supabase
         .from('bookings')
@@ -148,14 +148,14 @@ describe('Auto-booking E2E', () => { // Changed describe block name
 
     console.log(`Invoking scheduler-flight-search for trip ID: ${currentTripRequestId}...`);
     const { data: schedulerResponse, error: invokeError } = await supabase.functions.invoke('scheduler-flight-search', {});
-    
+
     if (invokeError) {
         console.error("Scheduler function invocation error:", invokeError.message);
     }
     expect(invokeError).toBeNull();
     console.log("Scheduler response:", schedulerResponse);
 
-    await new Promise(resolve => setTimeout(resolve, 5000)); 
+    await new Promise(resolve => setTimeout(resolve, 5000));
 
     const { data: bookingRequests, error: brError } = await supabase
       .from('booking_requests')
@@ -167,7 +167,7 @@ describe('Auto-booking E2E', () => { // Changed describe block name
     expect(bookingRequests).toHaveLength(1);
     const bookingRequest = bookingRequests![0];
     expect(bookingRequest.auto).toBe(true);
-    expect(bookingRequest.status).toBe('done'); 
+    expect(bookingRequest.status).toBe('done');
     expect(bookingRequest.offer_data?.price).toBe(expectedBookPrice);
 
     const { data: bookings, error: bError } = await supabase
@@ -196,7 +196,7 @@ describe('Auto-booking E2E', () => { // Changed describe block name
     const notification = notifications![0];
     expect(notification.user_id).toBe(testUserId);
     // Ensuring template literals here are correctly terminated
-    expect(notification.message, `Notification message incorrect. Got: "${notification.message}"`).toContain(`from LHR to JFK`); 
+    expect(notification.message, `Notification message incorrect. Got: "${notification.message}"`).toContain(`from LHR to JFK`);
     expect(notification.message, `Notification message price incorrect. Got: "${notification.message}"`).toContain(`$${expectedBookPrice.toFixed(2)}!`);
     expect(notification.data?.booking_id).toBe(booking.id);
 
@@ -210,7 +210,7 @@ describe('Auto-booking E2E', () => { // Changed describe block name
     expect(utrError).toBeNull();
     const updatedTripRequest = updatedTripRequestData as TripRequest;
     expect(updatedTripRequest!.best_price).toBe(expectedBookPrice);
-    
-  }, 15000); 
+
+  }, 15000);
 });
 ```

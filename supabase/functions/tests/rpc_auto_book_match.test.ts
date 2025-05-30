@@ -22,7 +22,7 @@ interface BookingRequest {
   user_id: string; // Assuming UUID
   trip_request_id: string; // Changed to string for UUID FK
   offer_id: string;
-  offer_data: Record<string, any>; 
+  offer_data: Record<string, any>;
   auto: boolean;
   status: string;
   error_message?: string | null;
@@ -54,7 +54,7 @@ interface Notification {
 
 describe('RPC: rpc_auto_book_match', () => {
   let supabase: SupabaseClient;
-  const testUserId = '00000000-0000-0000-0000-000000000001'; 
+  const testUserId = '00000000-0000-0000-0000-000000000001';
 
   let tripRequestIdsToDelete: string[] = []; // Changed to string[] for UUIDs
   let bookingRequestIdsToDelete: string[] = []; // Changed to string[] for UUIDs
@@ -67,7 +67,7 @@ describe('RPC: rpc_auto_book_match', () => {
       throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set for RPC tests');
     }
     supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
+
     // Ensure test user exists (optional, but good for consistency if other tests rely on it)
     // This is a simplified check. In a real setup, ensure this user has necessary permissions or RLS is bypassed.
     const { data: user, error: userError } = await supabase.from('users').select('id').eq('id', testUserId).maybeSingle();
@@ -110,27 +110,27 @@ describe('RPC: rpc_auto_book_match', () => {
     // 1. Arrange: Create trip_requests and booking_requests
     const { data: tripReqData, error: tripReqErr } = await supabase
       .from('trip_requests')
-      .insert({ 
-        user_id: testUserId, 
-        origin_location_code: 'LAX', 
-        destination_location_code: 'JFK', 
-        departure_date: '2024-12-01', 
+      .insert({
+        user_id: testUserId,
+        origin_location_code: 'LAX',
+        destination_location_code: 'JFK',
+        departure_date: '2024-12-01',
         auto_book: true,
         adults: 1, // Assuming adults is required by trip_requests
       })
       .select()
       .single();
-    
+
     expect(tripReqErr, `Trip Request Insert Error: ${tripReqErr?.message}`).toBeNull();
     expect(tripReqData).toBeDefined();
     const tripReq = tripReqData as TripRequest;
     tripRequestIdsToDelete.push(tripReq.id);
 
-    const offerData = { 
+    const offerData = {
         id: "offer-rpc-success-test", // from Offer interface
-        price: 250.75, 
-        airline: 'TestAir', 
-        flight_number: 'TA200', 
+        price: 250.75,
+        airline: 'TestAir',
+        flight_number: 'TA200',
         departure_time: "10:00",
         arrival_time: "18:00",
         departure_date: "2024-12-01",
@@ -139,13 +139,13 @@ describe('RPC: rpc_auto_book_match', () => {
 
     const { data: bookReqData, error: bookReqErr } = await supabase
       .from('booking_requests')
-      .insert({ 
-        user_id: testUserId, 
-        trip_request_id: tripReq.id, 
-        offer_id: offerData.id, 
-        offer_data: offerData, 
-        auto: true, 
-        status: 'processing' 
+      .insert({
+        user_id: testUserId,
+        trip_request_id: tripReq.id,
+        offer_id: offerData.id,
+        offer_data: offerData,
+        auto: true,
+        status: 'processing'
       })
       .select()
       .single();
@@ -198,22 +198,22 @@ describe('RPC: rpc_auto_book_match', () => {
     // and it's a number, not a UUID string, so it wouldn't match a UUID PK anyway.
     // For this test, we'll use a validly formatted but non-existent UUID.
     const nonExistentTripRequestIdUUID = 'a1a1a1a1-b2b2-c3c3-d4d4-e5e5e5e5e5e5';
-    
-    const offerData = { 
+
+    const offerData = {
         id: "offer-rpc-fail-test-uuid",
-        price: 100.00, 
-        airline: 'FailAir', 
-        flight_number: 'FA000' 
+        price: 100.00,
+        airline: 'FailAir',
+        flight_number: 'FA000'
     };
     const { data: bookReqData, error: bookReqErr } = await supabase
       .from('booking_requests')
-      .insert({ 
-        user_id: testUserId, 
+      .insert({
+        user_id: testUserId,
         trip_request_id: nonExistentTripRequestIdUUID, // Use non-existent UUID string
-        offer_id: offerData.id, 
-        offer_data: offerData, 
-        auto: true, 
-        status: 'processing' 
+        offer_id: offerData.id,
+        offer_data: offerData,
+        auto: true,
+        status: 'processing'
       })
       .select()
       .single();
@@ -235,7 +235,7 @@ describe('RPC: rpc_auto_book_match', () => {
     expect(updatedBookReq!.error_message).not.toBeNull();
     // The error message from RPC uses the UUID format now.
     expect(updatedBookReq!.error_message).toContain(`Associated trip request ID ${nonExistentTripRequestIdUUID} not found`);
-    
+
     // Assert no booking created
     const { data: bookings, error: bookingsErr } = await supabase.from('bookings').select('*').eq('booking_request_id', bookReq.id);
     expect(bookingsErr, `Fetch Bookings Error (Fail Case): ${bookingsErr?.message}`).toBeNull();

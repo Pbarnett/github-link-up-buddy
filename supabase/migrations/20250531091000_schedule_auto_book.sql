@@ -54,7 +54,7 @@ FROM cron.job
 WHERE jobname = 'auto_book_runner';
 
 -- To check run details/logs:
-SELECT * 
+SELECT *
 FROM cron.job_run_details
 WHERE jobname = 'auto_book_runner'
 ORDER BY start_time DESC

@@ -15,7 +15,7 @@ DECLARE
   test_user_id UUID := '00000000-0000-0000-0000-000000000001'; -- Fixed test user UUID
   test_trip_request_id_success UUID := 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
   test_booking_request_id_success UUID := 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
-  
+
   test_booking_request_id_fail_rpc UUID := 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33';
   invalid_trip_request_id_for_rpc_fail UUID := 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44'; -- Non-existent
 
@@ -36,16 +36,16 @@ BEGIN
 
   -- 1.1 Setup Trip Request
   INSERT INTO public.trip_requests (
-    id, user_id, origin_location_code, destination_location_code, 
+    id, user_id, origin_location_code, destination_location_code,
     departure_date, return_date, adults, auto_book, budget, best_price, updated_at
-  ) 
+  )
   VALUES (
-    test_trip_request_id_success, test_user_id, 'LAX', 'JFK', 
+    test_trip_request_id_success, test_user_id, 'LAX', 'JFK',
     '2024-12-01'::DATE, '2024-12-10'::DATE, 1, true, 350.00, 400.00, NOW()
   )
-  ON CONFLICT (id) DO UPDATE SET 
-      user_id = EXCLUDED.user_id, 
-      origin_location_code = EXCLUDED.origin_location_code, 
+  ON CONFLICT (id) DO UPDATE SET
+      user_id = EXCLUDED.user_id,
+      origin_location_code = EXCLUDED.origin_location_code,
       destination_location_code = EXCLUDED.destination_location_code,
       departure_date = EXCLUDED.departure_date,
       return_date = EXCLUDED.return_date,
@@ -57,23 +57,23 @@ BEGIN
 
   -- 1.2 Setup Booking Request
   v_offer_data_success := '{ "id": "test-offer-uuid-123", "price": 299.99, "airline": "TestAirways", "flight_number": "TA-UUID-101", "departure_date": "2024-12-01", "departure_time": "10:00", "arrival_time": "13:00", "return_date": "2024-12-10", "duration": "5h" }'::jsonb;
-  
+
   INSERT INTO public.booking_requests (
-    id, user_id, trip_request_id, offer_id, offer_data, auto, status, 
+    id, user_id, trip_request_id, offer_id, offer_data, auto, status,
     error_message, created_at, updated_at
   )
   VALUES (
-    test_booking_request_id_success, test_user_id, test_trip_request_id_success, 
-    v_offer_data_success->>'id', v_offer_data_success, 
+    test_booking_request_id_success, test_user_id, test_trip_request_id_success,
+    v_offer_data_success->>'id', v_offer_data_success,
     true, 'processing', NULL, NOW(), NOW()
   )
-  ON CONFLICT (id) DO UPDATE SET 
-      user_id = EXCLUDED.user_id, 
+  ON CONFLICT (id) DO UPDATE SET
+      user_id = EXCLUDED.user_id,
       trip_request_id = EXCLUDED.trip_request_id,
       offer_id = EXCLUDED.offer_id,
       offer_data = EXCLUDED.offer_data,
-      status = 'processing', 
-      error_message = NULL,  
+      status = 'processing',
+      error_message = NULL,
       updated_at = NOW();
 
   RAISE NOTICE 'Executing RPC public.rpc_auto_book_match(%) for success case...', test_booking_request_id_success;
@@ -82,25 +82,25 @@ BEGIN
 
   -- 1.4 Assert Outcomes
   RAISE NOTICE 'Asserting booking_request status is done...';
-  PERFORM 
-      CASE 
+  PERFORM
+      CASE
           WHEN (SELECT COUNT(*) FROM public.booking_requests WHERE id = test_booking_request_id_success AND status = 'done' AND error_message IS NULL) = 1 THEN RAISE NOTICE 'SUCCESS: Booking request ID % status is done.', test_booking_request_id_success;
-          ELSE RAISE EXCEPTION 'FAIL: Booking request ID % status not "done" or error_message not null. Status: %, Error: %', 
+          ELSE RAISE EXCEPTION 'FAIL: Booking request ID % status not "done" or error_message not null. Status: %, Error: %',
                                test_booking_request_id_success,
-                               (SELECT status FROM public.booking_requests WHERE id = test_booking_request_id_success), 
+                               (SELECT status FROM public.booking_requests WHERE id = test_booking_request_id_success),
                                (SELECT error_message FROM public.booking_requests WHERE id = test_booking_request_id_success);
       END;
 
   RAISE NOTICE 'Asserting booking was created correctly...';
   SELECT b.id INTO v_new_booking_id_check FROM public.bookings b WHERE b.booking_request_id = test_booking_request_id_success;
-  PERFORM 
-      CASE 
-          WHEN (SELECT COUNT(*) FROM public.bookings 
-                WHERE booking_request_id = test_booking_request_id_success 
+  PERFORM
+      CASE
+          WHEN (SELECT COUNT(*) FROM public.bookings
+                WHERE booking_request_id = test_booking_request_id_success
                 AND trip_request_id = test_trip_request_id_success
                 AND user_id = test_user_id
-                AND source = 'auto' 
-                AND status = 'booked' 
+                AND source = 'auto'
+                AND status = 'booked'
                 AND price = (v_offer_data_success->>'price')::NUMERIC
                 AND flight_details->>'airline' = (v_offer_data_success->>'airline')
                ) = 1 THEN RAISE NOTICE 'SUCCESS: Booking for request ID % created correctly.', test_booking_request_id_success;
@@ -109,12 +109,12 @@ BEGIN
 
   RAISE NOTICE 'Asserting notification was created correctly...';
   SELECT data INTO v_notification_data_check FROM public.notifications WHERE trip_request_id = test_trip_request_id_success AND type = 'auto_booking_success' LIMIT 1;
-  PERFORM 
-      CASE 
-          WHEN (SELECT COUNT(*) FROM public.notifications 
-                WHERE trip_request_id = test_trip_request_id_success 
+  PERFORM
+      CASE
+          WHEN (SELECT COUNT(*) FROM public.notifications
+                WHERE trip_request_id = test_trip_request_id_success
                 AND user_id = test_user_id
-                AND type = 'auto_booking_success' 
+                AND type = 'auto_booking_success'
                 AND message LIKE '%flight from LAX to JFK with TestAirways (TA-UUID-101) for $299.99!%'
                 AND (data->>'booking_id')::BIGINT = v_new_booking_id_check
                 AND (data->>'booking_request_id')::UUID = test_booking_request_id_success
@@ -123,7 +123,7 @@ BEGIN
                 AND data->>'airline' = (v_offer_data_success->>'airline')
                 AND data->>'original_offer_data' = v_offer_data_success
                ) = 1 THEN RAISE NOTICE 'SUCCESS: Notification for trip ID % created correctly.', test_trip_request_id_success;
-          ELSE RAISE EXCEPTION 'FAIL: Notification for trip ID % not created or has incorrect details. Message: %, Data: %', 
+          ELSE RAISE EXCEPTION 'FAIL: Notification for trip ID % not created or has incorrect details. Message: %, Data: %',
                                test_trip_request_id_success,
                                (SELECT message FROM public.notifications WHERE trip_request_id = test_trip_request_id_success AND type = 'auto_booking_success' LIMIT 1),
                                v_notification_data_check; -- Show fetched data for debugging
@@ -137,17 +137,17 @@ BEGIN
   -- 2.1 Setup Booking Request with invalid trip_request_id
   v_offer_data_fail := '{ "id": "test-offer-uuid-fail", "price": 100.00, "airline": "FailAir", "flight_number": "FA000" }'::jsonb;
   INSERT INTO public.booking_requests (
-    id, user_id, trip_request_id, offer_id, offer_data, auto, status, 
+    id, user_id, trip_request_id, offer_id, offer_data, auto, status,
     error_message, created_at, updated_at
   )
   VALUES (
-    test_booking_request_id_fail_rpc, test_user_id, invalid_trip_request_id_for_rpc_fail, 
-    v_offer_data_fail->>'id', v_offer_data_fail, 
+    test_booking_request_id_fail_rpc, test_user_id, invalid_trip_request_id_for_rpc_fail,
+    v_offer_data_fail->>'id', v_offer_data_fail,
     true, 'processing', NULL, NOW(), NOW()
   )
-  ON CONFLICT (id) DO UPDATE SET 
-      user_id = EXCLUDED.user_id, 
-      trip_request_id = invalid_trip_request_id_for_rpc_fail, 
+  ON CONFLICT (id) DO UPDATE SET
+      user_id = EXCLUDED.user_id,
+      trip_request_id = invalid_trip_request_id_for_rpc_fail,
       offer_id = EXCLUDED.offer_id,
       offer_data = EXCLUDED.offer_data,
       status = 'processing',
@@ -160,16 +160,16 @@ BEGIN
 
   -- 2.3 Assert Outcomes for Failure Case
   RAISE NOTICE 'Asserting booking_request status is "failed" with correct error message...';
-  PERFORM 
-      CASE 
-          WHEN (SELECT COUNT(*) FROM public.booking_requests 
-                WHERE id = test_booking_request_id_fail_rpc 
-                AND status = 'failed' 
-                AND error_message LIKE 'Associated trip request ID ' || invalid_trip_request_id_for_rpc_fail || ' not found%') = 1 
+  PERFORM
+      CASE
+          WHEN (SELECT COUNT(*) FROM public.booking_requests
+                WHERE id = test_booking_request_id_fail_rpc
+                AND status = 'failed'
+                AND error_message LIKE 'Associated trip request ID ' || invalid_trip_request_id_for_rpc_fail || ' not found%') = 1
           THEN RAISE NOTICE 'SUCCESS: Booking request ID % status is "failed" with correct error message.', test_booking_request_id_fail_rpc;
-          ELSE RAISE EXCEPTION 'FAIL: Booking request ID % status not "failed" or error_message incorrect. Status: %, Error: %', 
+          ELSE RAISE EXCEPTION 'FAIL: Booking request ID % status not "failed" or error_message incorrect. Status: %, Error: %',
                                test_booking_request_id_fail_rpc,
-                               (SELECT status FROM public.booking_requests WHERE id = test_booking_request_id_fail_rpc), 
+                               (SELECT status FROM public.booking_requests WHERE id = test_booking_request_id_fail_rpc),
                                (SELECT error_message FROM public.booking_requests WHERE id = test_booking_request_id_fail_rpc);
       END;
 

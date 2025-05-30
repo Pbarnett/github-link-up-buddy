@@ -15,7 +15,7 @@ WHERE payload IS NOT NULL AND data IS NULL;
 -- Regarding the 'message' column:
 -- The 'align_schema_auto_booking.sql' migration added a 'message' TEXT column.
 -- The primary goal here is to migrate 'payload' to 'data'.
--- If existing 'payload' objects contained a text field suitable for the 'message' column 
+-- If existing 'payload' objects contained a text field suitable for the 'message' column
 -- (e.g., payload->>'messageText' or payload->>'summary'), an additional update could be:
 -- UPDATE public.notifications
 -- SET message = COALESCE(message, payload->>'messageText', payload->>'summary', 'Notification details from payload.')
