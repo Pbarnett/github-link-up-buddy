@@ -126,6 +126,7 @@ describe('E2E: Full Auto-Book Flow (Scheduler -> RPC -> DB)', () => {
   });
 
   it('should complete the auto-booking flow: scheduler invokes RPC, updates DB, and creates notifications', async () => {
+    console.log('E2E TEST RUNNING: auto-book-flow.spec.ts');
     // 1. Seed Data
     initialBestPrice = 800;
     budget = 650;
