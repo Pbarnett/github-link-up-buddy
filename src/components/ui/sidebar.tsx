@@ -363,7 +363,6 @@ const SidebarHeader = React.forwardRef<
       {/* User Avatar and Notifications Panel Container */}
       <div className="flex items-center justify-between p-2 group-data-[collapsible=icon]:hidden">
         {/* Conceptual User Avatar Placeholder */}
-
         <div 
           title="User Avatar Placeholder" 
           className="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0"

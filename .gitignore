@@ -10,22 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-
-# Environment files
-.env
-.env.*
-!.env.example
-!.env.template
 *.local
-.local/
-.cache/
-
-# Secrets and keys
-*.pem
-*.key
-*.cert
-*.password
-*.secret
 
 # Editor directories and files
 .vscode/*
@@ -37,6 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-*.swp
-*.swo
 /supabase/.temp/
+
+# Environment files
+/.env.local
+/.env*
