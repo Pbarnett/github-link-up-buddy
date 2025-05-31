@@ -129,7 +129,6 @@ describe('TripRequestForm Auto-Booking Tests', () => {
   });
   
   it('submits successfully if auto_book is ON and both max_price and payment method are provided', async () => {
-
     renderTripRequestForm();
     await fillBasicFields();
     const user = userEvent.setup();
@@ -154,9 +153,7 @@ describe('TripRequestForm Auto-Booking Tests', () => {
     expect(screen.queryByText("Maximum price and payment method are required for auto-booking")).toBeNull();
   });
 
-
   it('submits successfully when auto-booking is OFF and max_price/payment method are empty', async () => {
-
     renderTripRequestForm();
     await fillBasicFields();
     const user = userEvent.setup();
