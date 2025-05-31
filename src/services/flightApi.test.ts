@@ -91,13 +91,17 @@ describe("OAuth Token Management", () => {
 
   const fetchTokenForTest = async () => {
     const now = Date.now();
-    if (mockToken && now < mockTokenExpires - 60000) return mockToken;
+    // Check if token exists and is not about to expire (has more than 60 seconds left)
+    if (mockToken && now < mockTokenExpires - 60000) {
+      return mockToken;
+    }
     
+    // If we get here, we need a new token
     mockFetchCounter++;
     // Simulate token fetch response
     const response = {
       access_token: `mock-token-${mockFetchCounter}`,
-      expires_in: 1800 // 30 minutes
+      expires_in: 3600 // 60 minutes - increased for test stability
     };
     
     mockToken = response.access_token;
@@ -138,15 +142,15 @@ describe("OAuth Token Management", () => {
     await fetchTokenForTest();
     expect(mockFetchCounter).toBe(1);
     
-    // Advance time to just past expiration minus safety buffer
-    vi.advanceTimersByTime(1800 * 1000 - 59000); // Just under the 1-minute buffer
+    // Advance time to a point clearly within the safe window
+    vi.advanceTimersByTime(3000 * 1000); // 3000 seconds, still 600s before expiry
     
     // Should still use cached token
     await fetchTokenForTest();
     expect(mockFetchCounter).toBe(1);
     
     // Now advance past the buffer
-    vi.advanceTimersByTime(2000); // 2 more seconds
+    vi.advanceTimersByTime(550 * 1000); // 550 more seconds, now within the 60s buffer
     
     // Should fetch new token
     const newToken = await fetchTokenForTest();

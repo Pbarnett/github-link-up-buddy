@@ -35,8 +35,8 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
         }
         
         const back = backItin.segments.slice(-1)[0];
-        if (!back?.departure?.at) {
-          console.log("Skipping offer with missing return departure time");
+        if (!back?.departure?.at || !back?.arrival?.at) {
+          console.log("Skipping offer with missing return times");
           return [];
         }
         
@@ -56,7 +56,7 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
           departure_date: departureDate,
           departure_time: out.departure.at.split("T")[1].slice(0,5),
           return_date: returnDate,
-          return_time: back.departure.at.split("T")[1].slice(0,5),
+          return_time: back.arrival.at.split("T")[1].slice(0,5),
           duration: offer.itineraries[0].duration,
           price: parseFloat(offer.price.total),
         }];
