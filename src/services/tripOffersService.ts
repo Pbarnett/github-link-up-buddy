@@ -13,13 +13,21 @@ export interface Offer {
   duration: string;
 }
 
-export const fetchTripOffers = async (tripId: string): Promise<Offer[]> => {
+export const fetchTripOffers = async (
+  tripId: string,
+  page: number = 0,
+  pageSize: number = 20
+): Promise<{ offers: Offer[]; total: number }> => {
   try {
-    // Fetch real offers from the database for this trip
-    const { data, error } = await supabase
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error, count } = await supabase
       .from("flight_offers")
-      .select("*")
-      .eq("trip_request_id", tripId);
+      .select("*", { count: "exact" })
+      .eq("trip_request_id", tripId)
+      .order("price", { ascending: true })
+      .range(from, to);
     
     if (error) {
       console.error("Error fetching trip offers:", error);
@@ -28,11 +36,10 @@ export const fetchTripOffers = async (tripId: string): Promise<Offer[]> => {
     
     if (!data || data.length === 0) {
       console.log("No offers found for trip ID:", tripId);
-      return [];
+      return { offers: [], total: 0 };
     }
-    
-    // Map the database response to our Offer interface
-    return data.map((item: any) => ({
+
+    const offers = data.map((item: any) => ({
       id: item.id,
       price: Number(item.price),
       airline: item.airline,
@@ -43,9 +50,11 @@ export const fetchTripOffers = async (tripId: string): Promise<Offer[]> => {
       return_time: item.return_time,
       duration: item.duration,
     }));
+
+    return { offers, total: count || offers.length };
   } catch (error) {
     console.error("Error in fetchTripOffers:", error);
     // Return an empty array rather than throwing to make the UI more resilient
-    return [];
+    return { offers: [], total: 0 };
   }
 };
