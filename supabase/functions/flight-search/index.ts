@@ -117,6 +117,7 @@ serve(async (req: Request) => {
     let processedRequests = 0;
     let totalMatchesInserted = 0;
     const details = [];
+    const allOffers: any[] = [];
     
     // Process each trip request
     for (const request of requests) {
@@ -388,9 +389,9 @@ serve(async (req: Request) => {
         if (matchesToInsert.length > 0) {
           const { data: insertedMatches, error: matchesError, count: matchCount } = await supabaseClient
             .from("flight_matches")
-            .upsert(matchesToInsert, { 
+            .upsert(matchesToInsert, {
               onConflict: ["trip_request_id", "flight_offer_id"],
-              ignoreDuplicates: true 
+              ignoreDuplicates: true
             })
             .select("id");
           
@@ -406,6 +407,9 @@ serve(async (req: Request) => {
           newInserts = matchCount || 0;
           totalMatchesInserted += newInserts;
         }
+
+        // Collect offers to return in the response
+        allOffers.push(...savedOffers);
         
         // Add to details array with successful processing info
         details.push({ 
@@ -448,7 +452,13 @@ serve(async (req: Request) => {
         relaxedCriteriaUsed: relaxedCriteria,
         diagnosticMode,
         environment: environmentInfo,
-        details
+        details,
+        offers: allOffers,
+        pagination: {
+          totalFilteredOffers: allOffers.length,
+          currentPage: 0,
+          pageSize: allOffers.length
+        }
       }),
       {
         status: 200,
@@ -468,12 +478,13 @@ serve(async (req: Request) => {
     const totalDurationMs = Date.now() - functionStartTime;
     
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message,
         requestsProcessed: 0,
         matchesInserted: 0,
         totalDurationMs,
-        details: []
+        details: [],
+        offers: []
       }),
       {
         status: 500,
