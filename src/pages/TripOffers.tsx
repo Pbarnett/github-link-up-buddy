@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Offer } from "@/services/tripOffersService";
@@ -15,6 +15,7 @@ import { format as formatDate } from "date-fns";
 import TripOfferCard from "@/components/trip/TripOfferCard";
 import TripOffersLoading from "@/components/trip/TripOffersLoading";
 import TripErrorCard from "@/components/trip/TripErrorCard";
+import { Progress } from "@/components/ui/progress";
 
 interface TripDetails {
   earliest_departure: string;
@@ -41,6 +42,9 @@ export default function TripOffers() {
   const [currentPage, setCurrentPage] = useState(0);
   const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [searchDuration, setSearchDuration] = useState(0);
+  const refreshIntervalRef = useRef<number | null>(null);
+  const searchStartTimeRef = useRef<number>(Date.now());
 
   // Client-side validateOfferDuration is removed.
 
@@ -164,12 +168,60 @@ export default function TripOffers() {
     if (tripId) { // Ensure tripId is present before attempting to load.
         setCurrentPage(0); 
         setOffers([]); 
-        setHasMore(true); 
+        setHasMore(true);
+        setSearchDuration(0);
+        searchStartTimeRef.current = Date.now();
         setTripDetails(null); // Force re-fetch of trip details for new filter sets
         loadOffers(0, ignoreFilter, usedRelaxedCriteria);
+        
+        // Setup auto-refresh for polling new offers
+        startAutoRefresh();
     }
+    
+    // Cleanup function to clear the interval when component unmounts or tripId changes
+    return () => {
+      stopAutoRefresh();
+    };
   // ignoreFilter and usedRelaxedCriteria changes will trigger a page 0 reload.
   }, [tripId, ignoreFilter, usedRelaxedCriteria]); 
+  
+  // Setup auto-refresh interval
+  const startAutoRefresh = () => {
+    // Clear any existing interval first
+    stopAutoRefresh();
+    
+    // Set a new interval - refresh every 10 seconds
+    refreshIntervalRef.current = window.setInterval(() => {
+      // Only auto-refresh if we're not already loading or refreshing
+      if (!isLoading && !isRefreshing && !isFetchingNextPage) {
+        // Update search duration for progress indicator
+        const currentDuration = Math.min(100, Math.floor((Date.now() - searchStartTimeRef.current) / 600));
+        setSearchDuration(currentDuration);
+        
+        console.log("Auto-refreshing offers...");
+        refreshOffers();
+        
+        // If we've found offers or search has been going for over a minute, slow down the refresh rate
+        if (offers.length > 0 || currentDuration >= 100) {
+          console.log("Slowing down refresh rate...");
+          stopAutoRefresh();
+          refreshIntervalRef.current = window.setInterval(() => {
+            if (!isLoading && !isRefreshing && !isFetchingNextPage) {
+              refreshOffers();
+            }
+          }, 30000); // Slow down to every 30 seconds once we have results
+        }
+      }
+    }, 10000); // Initial polling every 10 seconds
+  };
+  
+  // Clean up the interval
+  const stopAutoRefresh = () => {
+    if (refreshIntervalRef.current !== null) {
+      window.clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+    }
+  };
 
 
   const refreshOffers = async () => {
@@ -261,11 +313,11 @@ export default function TripOffers() {
         <CardHeader className="flex justify-between items-center">
           <div>
             <CardTitle>Trip Offers</CardTitle>
-            <CardDescription>
-              {isLoading && offers.length === 0
-                ? "Loading offers…"
-                : `${offers.length} offers found for your trip`}
-            </CardDescription>
+              <CardDescription>
+                {isLoading && offers.length === 0
+                  ? "Searching for flights in the background..."
+                  : `${offers.length} offers found for your trip`}
+              </CardDescription>
           </div>
           <div className="flex gap-2">
             {!usedRelaxedCriteria && (
@@ -297,7 +349,19 @@ export default function TripOffers() {
       </Card>
 
       {isLoading && offers.length === 0 ? ( // Show main loader only if it's initial load and no offers yet
-        <TripOffersLoading />
+        <div className="w-full max-w-5xl space-y-4">
+          <TripOffersLoading />
+          <div className="text-center text-gray-600">
+            <p>Flight search in progress...</p>
+            <p className="text-sm mt-1">This may take up to a minute. Results will appear automatically.</p>
+          </div>
+          <div className="w-full max-w-5xl px-4">
+            <Progress value={searchDuration} className="h-2 w-full" />
+            <p className="text-xs text-center mt-1 text-gray-500">
+              {searchDuration < 100 ? "Searching for the best flights..." : "Search nearly complete..."}
+            </p>
+          </div>
+        </div>
       ) : (
         <div className="w-full max-w-5xl space-y-6">
           {offers.length > 0 ? (
@@ -319,8 +383,18 @@ export default function TripOffers() {
           ) : (
             // "No offers found" card (existing logic)
             <Card className="p-6 text-center">
-              <p className="mb-4">No offers found that match your criteria.</p>
+              <p className="mb-4">No offers found yet. Flight search is still in progress.</p>
               <p className="text-sm text-gray-500">
+                Flight searches run asynchronously and may take a minute to complete.
+                Results will appear automatically as they become available.
+              </p>
+              <div className="mt-4 mb-4">
+                <Progress value={searchDuration} className="h-2 w-full" />
+                <p className="text-xs text-center mt-1 text-gray-500">
+                  {searchDuration < 100 ? "Searching for the best flights..." : "Search nearly complete..."}
+                </p>
+              </div>
+              <p className="text-sm text-gray-500 mt-4">
                 {usedRelaxedCriteria 
                   ? "We tried with relaxed criteria but still couldn't find any offers. Try adjusting your destination or dates."
                   : ignoreFilter 
