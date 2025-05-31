@@ -375,7 +375,6 @@ export async function searchOffers(
     for (const originOffers of originResults) {
       allRawOffers.push(...originOffers);
     }
-  }
 
   // First tier fallback: If no results found with all origins, try with just the first origin as a last resort
   if (allRawOffers.length === 0 && params.origin.length > 1) {
@@ -944,7 +943,6 @@ export async function searchOffers(
   console.log(`[flight-search] Found ${durationFilteredOffers.length} offers for trip ${tripRequestId}`);
   const api = { data: durationFilteredOffers };
   return transformAmadeusToOffers(api, tripRequestId, params);
-arams);
 }
 
 // Helper to calculate a return date based on departure and duration
