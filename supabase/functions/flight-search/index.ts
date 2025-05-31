@@ -31,6 +31,9 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Start performance tracking for the entire function
+    const functionStartTime = Date.now();
+    
     // Parse request body with improved error handling
     let tripRequestId: string | null = null;
     let body: any = {};
@@ -38,9 +41,6 @@ serve(async (req: Request) => {
     let diagnosticMode = false;
     let maxSearchTimeMs = 30000; // Default 30 second timeout for searches
     let bypassFilters = false; // Special flag to bypass filtering
-    let page = 0;
-    let pageSize = 20;
-    let retrieveMode = false; // New flag to determine if we're retrieving vs processing
     
     if (req.method === "POST") {
       try {
@@ -48,19 +48,12 @@ serve(async (req: Request) => {
         tripRequestId = body.tripRequestId || null;
         relaxedCriteria = body.relaxedCriteria === true;
         diagnosticMode = body.diagnosticMode === true;
-        bypassFilters = body.bypassFilters === true;
-        page = body.page || 0;
-        pageSize = body.pageSize || 20;
-        
-        // If called with tripRequestId and pagination params, it's a retrieval request
-        retrieveMode = tripRequestId && (body.page !== undefined || body.pageSize !== undefined);
+        bypassFilters = body.bypassFilters === true; // Add bypass option
         
         // Allow overriding the max search time
         if (body.maxSearchTimeMs && typeof body.maxSearchTimeMs === 'number') {
           maxSearchTimeMs = Math.min(60000, Math.max(5000, body.maxSearchTimeMs));
         }
-        
-        console.log(`[flight-search] Mode: ${retrieveMode ? 'RETRIEVE' : 'PROCESS'}`);
         
         if (relaxedCriteria) {
           console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
@@ -79,91 +72,7 @@ serve(async (req: Request) => {
       }
     }
     
-    // RETRIEVAL MODE: Return stored offers for frontend display
-    if (retrieveMode && tripRequestId) {
-      console.log(`[flight-search] RETRIEVE MODE: Fetching stored offers for trip ${tripRequestId}, page ${page}, pageSize ${pageSize}`);
-      
-      // Get trip details for filtering
-      const { data: tripDetails, error: tripError } = await supabaseClient
-        .from("trip_requests")
-        .select("min_duration, max_duration, budget")
-        .eq("id", tripRequestId)
-        .single();
-      
-      if (tripError) {
-        throw new Error(`Failed to fetch trip details: ${tripError.message}`);
-      }
-      
-      // Build query for stored offers
-      let query = supabaseClient
-        .from("flight_offers")
-        .select("*")
-        .eq("trip_request_id", tripRequestId)
-        .order("price", { ascending: true });
-      
-      // Apply filtering unless bypassed or relaxed
-      if (!bypassFilters && !relaxedCriteria && tripDetails) {
-        if (tripDetails.budget) {
-          query = query.lte("price", tripDetails.budget);
-        }
-      }
-      
-      // Apply pagination
-      const from = page * pageSize;
-      const to = from + pageSize - 1;
-      query = query.range(from, to);
-      
-      const { data: offers, error: offersError, count } = await supabaseClient
-        .from("flight_offers")
-        .select("*", { count: 'exact' })
-        .eq("trip_request_id", tripRequestId)
-        .order("price", { ascending: true })
-        .range(from, to);
-      
-      if (offersError) {
-        throw new Error(`Failed to fetch stored offers: ${offersError.message}`);
-      }
-      
-      const totalDurationMs = Date.now() - functionStartTime;
-      
-      console.log(`[flight-search] RETRIEVE MODE: Found ${offers?.length || 0} offers (page ${page}, total: ${count})`);
-      
-      return new Response(
-        JSON.stringify({
-          requestsProcessed: 0,
-          matchesInserted: 0,
-          totalDurationMs,
-          relaxedCriteriaUsed: relaxedCriteria,
-          diagnosticMode,
-          mode: 'retrieve',
-          details: [{
-            tripRequestId,
-            matchesFound: offers?.length || 0,
-            mode: 'retrieve_stored'
-          }],
-          offers: offers || [],
-          pagination: {
-            totalFilteredOffers: count || 0,
-            currentPage: page,
-            pageSize: pageSize,
-            hasMore: count ? (page + 1) * pageSize < count : false
-          }
-        }),
-        {
-          status: 200,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-            "X-Flight-Search-Version": "2.1.0",
-            "X-Search-Duration-Ms": totalDurationMs.toString(),
-            "X-Search-Mode": "retrieve"
-          },
-        }
-      );
-    }
-    
-    // PROCESSING MODE: Existing logic for searching new offers
-    console.log(`[flight-search] PROCESSING MODE: Invoked${tripRequestId ? ` for ${tripRequestId}` : ' for auto-book enabled trips'}`);
+    console.log(`[flight-search] Invoked${tripRequestId ? ` for ${tripRequestId}` : ' for auto-book enabled trips'}`);
     console.log(`[flight-search] Search timeout set to ${maxSearchTimeMs}ms`);
     
     // Detect environment type
@@ -208,7 +117,6 @@ serve(async (req: Request) => {
     let processedRequests = 0;
     let totalMatchesInserted = 0;
     const details = [];
-    const allOffers: any[] = [];
     
     // Process each trip request
     for (const request of requests) {
@@ -480,9 +388,9 @@ serve(async (req: Request) => {
         if (matchesToInsert.length > 0) {
           const { data: insertedMatches, error: matchesError, count: matchCount } = await supabaseClient
             .from("flight_matches")
-            .upsert(matchesToInsert, {
+            .upsert(matchesToInsert, { 
               onConflict: ["trip_request_id", "flight_offer_id"],
-              ignoreDuplicates: true
+              ignoreDuplicates: true 
             })
             .select("id");
           
@@ -498,9 +406,6 @@ serve(async (req: Request) => {
           newInserts = matchCount || 0;
           totalMatchesInserted += newInserts;
         }
-
-        // Collect offers to return in the response
-        allOffers.push(...savedOffers);
         
         // Add to details array with successful processing info
         details.push({ 
@@ -542,24 +447,16 @@ serve(async (req: Request) => {
         totalDurationMs,
         relaxedCriteriaUsed: relaxedCriteria,
         diagnosticMode,
-        mode: 'process',
         environment: environmentInfo,
-        details,
-        offers: allOffers,
-        pagination: {
-          totalFilteredOffers: allOffers.length,
-          currentPage: 0,
-          pageSize: allOffers.length
-        }
+        details
       }),
       {
         status: 200,
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",
-          "X-Flight-Search-Version": "2.1.0",
-          "X-Search-Duration-Ms": totalDurationMs.toString(),
-          "X-Search-Mode": "process"
+          "X-Flight-Search-Version": "2.0.0", // Add version for tracking
+          "X-Search-Duration-Ms": totalDurationMs.toString()
         },
       }
     );
@@ -571,13 +468,12 @@ serve(async (req: Request) => {
     const totalDurationMs = Date.now() - functionStartTime;
     
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
         error: error.message,
         requestsProcessed: 0,
         matchesInserted: 0,
         totalDurationMs,
-        details: [],
-        offers: []
+        details: []
       }),
       {
         status: 500,

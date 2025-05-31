@@ -71,7 +71,6 @@ The application integrates with the Amadeus Flight API for real flight searches.
 - Supabase Secrets: same three values must be added to Edge Function Secrets
 - Rate limit: The Amadeus API has rate limits of approximately 1 request/second, 50 requests/minute
 - Throttling & retry logic is built into our implementation
-- Date range for test environment: when `AMADEUS_BASE_URL` points to the test API, only travel dates in 2025-2026 are accepted. The `flight-search` function adjusts out-of-range dates automatically, but results may be limited.
 
 ### Retry Logic
 The application implements exponential backoff for API requests:
