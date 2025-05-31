@@ -16,7 +16,7 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      '**/supabase/**',
+      // Removed '**/supabase/**' to allow testing supabase functions
       // Ensure old e2e test patterns that might have been here are removed
       // For example, if there was an '**/e2e-tests/**' or specific '*.e2e.ts' exclusions
     ],
