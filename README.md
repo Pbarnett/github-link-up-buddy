@@ -30,6 +30,7 @@ cd <repository-name>
 ```bash
 pnpm install
 ```
+   - In the Codex environment this step is performed automatically by `.codex/setup.sh` during setup.
 
 3. Create a `.env` file from the example:
 ```bash
