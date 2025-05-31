@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Offer } from "@/services/tripOffersService";
+import { fetchTripOffers, Offer } from "@/services/tripOffersService";
 import {
   Card,
   CardHeader,
@@ -87,27 +87,8 @@ export default function TripOffers() {
           throw new Error("Trip details are not available to send to the server for filtering.");
       }
       
-      // The 'flight-search' edge function is now the source of truth for offers.
-      // It handles pagination and filtering based on the parameters passed.
-      const { data: invokeResponse, error: invokeError } = await supabase.functions.invoke<{
-        offers: Offer[];
-        pagination: { totalFilteredOffers: number; currentPage: number; pageSize: number };
-      }>("flight-search", {
-        body: {
-          tripRequestId: tripId,
-          relaxedCriteria: relaxCriteria,
-          page: pageToLoad,
-          pageSize: pageSize,
-          minDuration: overrideFilter ? undefined : currentTripDetails.min_duration,
-          maxDuration: overrideFilter ? undefined : currentTripDetails.max_duration,
-          maxPrice: overrideFilter ? undefined : currentTripDetails.budget
-        },
-      });
-
-      if (invokeError) throw invokeError;
-
-      const newOffers = invokeResponse?.offers || [];
-      const paginationData = invokeResponse?.pagination;
+      const { offers: newOffers, total } = await fetchTripOffers(tripId, pageToLoad, pageSize);
+      const paginationData = { totalFilteredOffers: total, currentPage: pageToLoad, pageSize };
 
       // Update usedRelaxedCriteria state based on the actual criteria used for this load.
       // This is important for reflecting the state accurately in the UI and subsequent calls.
