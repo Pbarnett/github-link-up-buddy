@@ -105,10 +105,10 @@ const TripRequestForm = () => {
 
   // Navigate to the confirmation page with the trip ID
   const navigateToConfirmation = (result: TripRequestResult): void => {
-    // Show success toast with count of offers saved
+    // Show success toast informing the user about asynchronous flight search
     toast({
       title: "Trip request submitted",
-      description: `Your trip request has been submitted with ${result.offersCount} flight offers!${
+      description: `Your trip request has been submitted successfully. Flight search is now in progress.${
         result.tripRequest.auto_book ? ' Auto-booking is enabled.' : ''
       }`,
     });
@@ -139,8 +139,8 @@ const TripRequestForm = () => {
       
       // Display an initial toast notification
       toast({
-        title: "Searching for flights",
-        description: "Please wait while we search for flights matching your criteria...",
+        title: "Processing your request",
+        description: "Creating your trip request and initiating flight search...",
       });
       
       // Step 2: Transform form data

@@ -58,54 +58,29 @@ export const createTripRequest = async (
   // Create the trip request
   const tripRequest = await createTrip(userId, formData);
   
-  try {
-    // Invoke the flight-search edge function directly for this trip
-    console.log(`Invoking flight-search function for trip request ${tripRequest.id}`);
-    const { data: fsData, error: fsError } = await supabase.functions.invoke<{
-      requestsProcessed: number;
-      matchesInserted: number;
-      totalDurationMs: number;
-      details: any[];
-    }>("flight-search", {
-      body: { tripRequestId: tripRequest.id }
-    });
-    
-    if (fsError) {
-      console.error("Error invoking flight-search function:", fsError);
+  // Fire-and-forget the flight search function
+  console.log(`Invoking flight-search function for trip request ${tripRequest.id} (asynchronously)`);
+  supabase.functions.invoke<{
+    requestsProcessed: number;
+    matchesInserted: number;
+    totalDurationMs: number;
+    details: any[];
+  }>("flight-search", {
+    body: { tripRequestId: tripRequest.id }
+  }).then(({ data, error }) => {
+    if (error) {
+      console.error("Error invoking flight-search function:", error);
     } else {
-      console.log("Flight search completed:", fsData);
-      // Show information about the search results
-      if (fsData.matchesInserted > 0) {
-        toast({
-          title: "Flight search completed",
-          description: `Found ${fsData.matchesInserted} potential flight matches`,
-        });
-      }
+      console.log("Flight search completed:", data);
     }
-  } catch (invocationError) {
+  }).catch(invocationError => {
     console.error("Failed to invoke flight-search function:", invocationError);
-    // We don't throw here to allow the flow to continue even if search fails
-    toast({
-      title: "Warning",
-      description: "We couldn't search for flights automatically. Please refresh the offers page.",
-      variant: "destructive",
-    });
-  }
+  });
   
-  // Fetch the newly created offers
-  const { data: offers, error: offersError } = await supabase
-    .from("flight_offers")
-    .select("*")
-    .eq("trip_request_id", tripRequest.id)
-    .order("price", { ascending: true });
-  
-  if (offersError) {
-    console.error("Error fetching offers:", offersError);
-  }
-  
+  // Return only the trip request data
   return {
     tripRequest,
-    offers: offers || [],
-    offersCount: offers?.length || 0
+    offers: [], // No offers available immediately
+    offersCount: 0
   };
 };
