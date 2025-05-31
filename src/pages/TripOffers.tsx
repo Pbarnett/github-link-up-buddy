@@ -27,7 +27,8 @@ interface TripDetails {
 
 export default function TripOffers() {
   const [searchParams] = useSearchParams();
-  const tripId = searchParams.get("id");
+  // Support both legacy `tripRequestId` and new `id` query param names
+  const tripId = searchParams.get("id") || searchParams.get("tripRequestId");
   const location = useLocation();
   const navigate = useNavigate();
 
