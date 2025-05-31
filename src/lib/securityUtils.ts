@@ -149,7 +149,6 @@ export const verifyCsrfToken = (
   if (!requestToken || !sessionToken) {
     return false;
   }
-  
   // Use timing-safe comparison to prevent timing attacks
   return crypto.timingSafeEqual(
     Buffer.from(requestToken),
@@ -214,4 +213,3 @@ export const sessionSecurity = {
     return (Date.now() - createdAt.getTime()) <= maxAge;
   }
 };
-
