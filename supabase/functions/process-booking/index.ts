@@ -201,4 +201,3 @@ serve(async (req: Request) => {
     });
   }
 });
-```
