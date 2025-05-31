@@ -11,16 +11,14 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/tests/setup.ts'],
-    include: [
-      '**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', // Default pattern
-      'src/tests/e2e/**/*.spec.ts', // Ensure E2E specs are included
-      'src/tests/e2e/**/*.test.ts'  // And E2E tests if named that way
-    ],
+    // Default include pattern is ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}']
+    // This will correctly include files like src/tests/e2e/**/*.spec.ts
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
       '**/supabase/**',
-      // Comments from previous version removed for clarity as include is now explicit
+      // Ensure old e2e test patterns that might have been here are removed
+      // For example, if there was an '**/e2e-tests/**' or specific '*.e2e.ts' exclusions
     ],
     env: {
       SUPABASE_URL: 'http://localhost:54321',
