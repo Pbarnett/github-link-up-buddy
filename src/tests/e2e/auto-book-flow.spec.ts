@@ -231,4 +231,3 @@ describe('E2E: Full Auto-Book Flow (Scheduler -> RPC -> DB)', () => {
     expect(updatedTripRequest!.best_price, `trip_requests.best_price should be updated to ${expectedBookPrice}, was ${updatedTripRequest!.best_price}`).toBe(expectedBookPrice);
   }, 20000); // Increased timeout for full E2E flow
 });
-```

@@ -144,4 +144,3 @@ describe('NotificationsPanel UI', () => {
     expect(screen.getByText((content, _element) => content.startsWith('Error loading notifications:') && content.includes(errorMessage))).toBeInTheDocument();
   });
 });
-```
