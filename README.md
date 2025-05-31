@@ -80,7 +80,7 @@ Flight searches now run asynchronously in the background:
 - **Immediate Response**: The user is redirected to the offers page immediately, without waiting for search results
 - **Dynamic Updates**: The offers page will automatically check for and display new flight offers as they become available
 - **Processing Time**: Flight search may take up to a minute to complete, depending on API response times and complexity
-- **Refresh Mechanism**: Users can manually refresh the offers page or wait for automatic updates
+- **Refresh Mechanism**: The offers page polls the database for new results every few seconds. Users can also refresh manually.
 
 This approach provides a more responsive user experience by:
 - Eliminating waiting time after trip creation
