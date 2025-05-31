@@ -203,7 +203,10 @@ describe('RPC: rpc_auto_book_match', () => {
         id: "offer-rpc-fail-test-uuid",
         price: 100.00,
         airline: 'FailAir',
-        flight_number: 'FA000'
+        flight_number: 'FA000',
+        departure_time: "10:00",
+        arrival_time: "18:00",
+        departure_date: "2024-12-01"
     };
     const { data: bookReqData, error: bookReqErr } = await supabase
       .from('booking_requests')
@@ -251,4 +254,3 @@ describe('RPC: rpc_auto_book_match', () => {
     expect(notifications).toHaveLength(0);
   }, 10000); // Timeout for DB operations
 });
-```
