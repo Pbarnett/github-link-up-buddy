@@ -8,6 +8,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert"; // Added Alert imports
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
+
 import { Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { RealtimePostgresChangesPayload } from "@supabase/supabase-js"; // Added RealtimePostgresChangesPayload
