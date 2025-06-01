@@ -94,5 +94,5 @@ export interface TripRequestResult {
     auto_book?: boolean;
   };
   offers: any[];
-  offersCount: number;
+  matchesInserted: number;
 }
