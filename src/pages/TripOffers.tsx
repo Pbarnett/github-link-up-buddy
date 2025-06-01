@@ -32,11 +32,10 @@ export default function TripOffers() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const locationState = location.state as { offers?: Offer[] } | null;
-  const initialOffers = locationState?.offers ?? [];
-  const [offers, setOffers] = useState<Offer[]>(initialOffers);
+  const initOffers = (location.state as { offers?: Offer[] })?.offers || [];
+  const [offers, setOffers] = useState<Offer[]>(initOffers);
   const [tripDetails, setTripDetails] = useState<TripDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(initialOffers.length === 0);
+  const [isLoading, setIsLoading] = useState(initOffers.length === 0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -158,7 +157,7 @@ export default function TripOffers() {
         searchStartTimeRef.current = Date.now();
         setTripDetails(null);
 
-        if (initialLoadRef.current && initialOffers.length > 0) {
+        if (initialLoadRef.current && initOffers.length > 0) {
           startAutoRefresh();
         } else {
           setOffers([]);
