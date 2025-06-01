@@ -14,6 +14,7 @@ export interface Notification {
 }
 
 export function useNotifications() {
+
   const { data, error, isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
@@ -28,9 +29,10 @@ export function useNotifications() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
+
       return notes
     }
   })
 
-  return { data, error, isLoading }
+  return { data, error, isLoading: isPending }
 }

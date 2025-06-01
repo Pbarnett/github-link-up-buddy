@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { logger } from './logger';
 import { AppError } from './errorUtils';
 import { LogContext } from './types';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 
 // Environment validation
 export const environmentSchema = z.object({
@@ -150,7 +151,7 @@ export const verifyCsrfToken = (
     return false;
   }
   // Use timing-safe comparison to prevent timing attacks
-  return crypto.timingSafeEqual(
+  return timingSafeEqual(
     Buffer.from(requestToken),
     Buffer.from(sessionToken)
   );
@@ -167,7 +168,7 @@ export const logSecurityEvent = (
     action: event,
     ...details,
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
+    environment: process.env['NODE_ENV']
   };
   
   switch (level) {
@@ -200,11 +201,11 @@ export const isValidIpAddress = (ip: string): boolean => {
 // Session security utilities
 export const sessionSecurity = {
   generateSessionId: (): string => {
-    return crypto.randomBytes(32).toString('hex');
+    return randomBytes(32).toString('hex');
   },
   
   rotateSessionId: (currentId: string): string => {
-    const newId = crypto.randomBytes(32).toString('hex');
+    const newId = randomBytes(32).toString('hex');
     logSecurityEvent('session_rotation', { oldId: tokenizeValue(currentId) });
     return newId;
   },
