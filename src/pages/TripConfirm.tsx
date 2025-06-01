@@ -8,6 +8,8 @@ import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert"; // Added Alert imports
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
+
+import { Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { RealtimePostgresChangesPayload } from "@supabase/supabase-js"; // Added RealtimePostgresChangesPayload
 import { sanitizeInput, validateRequestPayload, generateCsrfToken, logSecurityEvent, tokenizeValue } from "@/lib/securityUtils";
@@ -40,9 +42,9 @@ const TripConfirm = () => {
   const [error, setError] = useState<string | null>(null);
   // Default booking status to "Processing payment..." for tests
   const [bookingStatus, setBookingStatus] = useState<string | null>("Processing payment...");
-  const { user, userId, loading: userLoading } = useCurrentUser();
+  const { userId, loading: userLoading } = useCurrentUser();
   // CSRF token for booking confirmation
-  const [csrfToken, setCsrfToken] = useState<string>("");
+  const [, setCsrfToken] = useState<string>("");
   // Request counter for rate limiting
   const [requestCount, setRequestCount] = useState<number>(0);
   const MAX_REQUESTS_PER_MINUTE = 5;
@@ -419,8 +421,12 @@ const TripConfirm = () => {
           table: 'booking_requests',
           filter: `checkout_session_id=eq.${sessionId}`,
         }, (payload: RealtimePostgresChangesPayload<Tables<'booking_requests'>>) => {
-          console.log('[TripConfirm] Booking status updated:', payload.new.status);
-          updateBookingStatusMessage(payload.new.status);
+          if (payload.new && typeof payload.new.status === 'string') {
+            console.log('[TripConfirm] Booking status updated:', payload.new.status);
+            updateBookingStatusMessage(payload.new.status);
+          } else {
+            console.warn('[TripConfirm] Received booking update with missing or invalid status:', payload);
+          }
         })
         .subscribe();
     } else {
@@ -823,10 +829,10 @@ const TripConfirm = () => {
           {/* Airline and Flight Number */}
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <h3 className="text-xl font-semibold" data-testid="airline-name">{offer.airline}</h3>
-              <Badge variant="outline" className="ml-2">{offer.flight_number}</Badge>
+              <h3 className="text-xl font-semibold" data-testid="airline-name">{offer?.airline}</h3>
+              <Badge variant="outline" className="ml-2">{offer?.flight_number}</Badge>
             </div>
-            <p className="text-2xl font-bold" data-testid="offer-price">${offer.price}</p>
+            <p className="text-2xl font-bold" data-testid="offer-price">${offer?.price}</p>
           </div>
           
           {/* Flight Details */}
@@ -836,11 +842,11 @@ const TripConfirm = () => {
               <h4 className="font-medium">Departure</h4>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{new Date(offer.departure_date).toLocaleDateString()}</span>
+                <span>{offer?.departure_date ? new Date(offer.departure_date).toLocaleDateString() : 'N/A'}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{offer.departure_time}</span>
+                <span>{offer?.departure_time || 'N/A'}</span>
               </div>
             </div>
             
@@ -849,11 +855,11 @@ const TripConfirm = () => {
               <h4 className="font-medium">Return</h4>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{new Date(offer.return_date).toLocaleDateString()}</span>
+                <span>{offer?.return_date ? new Date(offer.return_date).toLocaleDateString() : 'N/A'}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{offer.return_time}</span>
+                <span>{offer?.return_time || 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -861,7 +867,7 @@ const TripConfirm = () => {
           {/* Duration */}
           <div className="flex items-center">
             <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
-            <span className="text-sm text-gray-500">Flight duration: {offer.duration}</span>
+            <span className="text-sm text-gray-500">Flight duration: {offer?.duration || 'N/A'}</span>
           </div>
           
           {/* Notes */}
