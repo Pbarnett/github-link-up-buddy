@@ -3,9 +3,10 @@ import { memo } from "react";
 import { Control } from "react-hook-form";
 // FormDescription is not used, so it can be removed if desired.
 import TripDateField from "../TripDateField";
+import { FormValues } from "@/types/form";
 
 interface DateRangeSectionProps {
-  control: Control<any>;
+  control: Control<FormValues>;
 }
 
 // Renamed original component

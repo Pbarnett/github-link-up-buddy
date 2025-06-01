@@ -1,12 +1,15 @@
 
+import React from "react";
 import { Control } from "react-hook-form";
 import TripNumberField from "../TripNumberField";
+import { FormValues } from "@/types/form";
 
 interface BudgetSectionProps {
-  control: Control<any>;
+  control: Control<FormValues>;
 }
 
-const BudgetSection = ({ control }: BudgetSectionProps) => {
+// Renamed original component for memoization
+const BudgetSectionComponent = ({ control }: BudgetSectionProps) => {
   return (
     <TripNumberField 
       name="budget"
@@ -19,4 +22,6 @@ const BudgetSection = ({ control }: BudgetSectionProps) => {
   );
 };
 
+// Memoized component for export
+const BudgetSection = React.memo(BudgetSectionComponent);
 export default BudgetSection;

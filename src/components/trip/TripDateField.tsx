@@ -18,12 +18,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { FormValues } from "@/types/form";
 
 interface TripDateFieldProps {
   name: "earliestDeparture" | "latestDeparture";
   label: string;
   description: string;
-  control: Control<any>;
+  control: Control<FormValues>;
 }
 
 // Renamed original component
