@@ -1,5 +1,5 @@
 
-import React from "react";
+import { memo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,6 +102,6 @@ const TripOfferCardComponent = ({ offer }: { offer: OfferProps }) => {
 };
 
 // Memoize the component
-const TripOfferCard = React.memo(TripOfferCardComponent);
+const TripOfferCard = memo(TripOfferCardComponent);
 
 export default TripOfferCard;
