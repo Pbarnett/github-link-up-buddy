@@ -54,7 +54,7 @@ describe('TripRequestForm Auto-Booking Tests', () => {
     (createTripRequest as vi.Mock).mockResolvedValue({
       tripRequest: { id: 'trip-uuid-generated', auto_book: false },
       offers: [],
-      offersCount: 0,
+      matchesInserted: 0,
     });
 
     (usePaymentMethods as vi.Mock).mockReturnValue({
