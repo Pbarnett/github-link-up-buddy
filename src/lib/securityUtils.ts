@@ -168,7 +168,7 @@ export const logSecurityEvent = (
     action: event,
     ...details,
     timestamp: new Date().toISOString(),
-    environment: process.env['NODE_ENV']
+    environment: import.meta.env['NODE_ENV']
   };
   
   switch (level) {
