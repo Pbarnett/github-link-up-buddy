@@ -2,7 +2,7 @@ import { LogLevel, LogContext, LogEntry } from './types';
 
 class Logger {
   private static instance: Logger;
-  private logLevel: LogLevel = process.env['NODE_ENV'] === 'production' ? LogLevel.INFO : LogLevel.DEBUG;
+  private logLevel: LogLevel = import.meta.env['NODE_ENV'] === 'production' ? LogLevel.INFO : LogLevel.DEBUG;
 
   private constructor() {}
 

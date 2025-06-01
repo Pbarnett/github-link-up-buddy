@@ -8,11 +8,10 @@ import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert"; // Added Alert imports
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
-import { TablesInsert, Tables } from "@/integrations/supabase/types";
+import { Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { safeQuery } from "@/lib/supabaseUtils";
-import { RealtimeChannel, RealtimePostgresChangesPayload } from "@supabase/supabase-js"; // Added RealtimePostgresChangesPayload
-import { sanitizeInput, validateRequestPayload, generateCsrfToken, verifyCsrfToken, logSecurityEvent, tokenizeValue } from "@/lib/securityUtils";
+import { RealtimePostgresChangesPayload } from "@supabase/supabase-js"; // Added RealtimePostgresChangesPayload
+import { sanitizeInput, validateRequestPayload, generateCsrfToken, logSecurityEvent, tokenizeValue } from "@/lib/securityUtils";
 import { z } from "zod";
 
 // Removed custom BookingRequestPayload type definition
@@ -42,9 +41,9 @@ const TripConfirm = () => {
   const [error, setError] = useState<string | null>(null);
   // Default booking status to "Processing payment..." for tests
   const [bookingStatus, setBookingStatus] = useState<string | null>("Processing payment...");
-  const { user, userId, loading: userLoading } = useCurrentUser();
+  const { userId, loading: userLoading } = useCurrentUser();
   // CSRF token for booking confirmation
-  const [csrfToken, setCsrfToken] = useState<string>("");
+  const [, setCsrfToken] = useState<string>("");
   // Request counter for rate limiting
   const [requestCount, setRequestCount] = useState<number>(0);
   const MAX_REQUESTS_PER_MINUTE = 5;
