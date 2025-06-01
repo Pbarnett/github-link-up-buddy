@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 function WalletPage() {
   const stripeKey = import.meta.env['VITE_STRIPE_PUBLIC_KEY'];
-  const { paymentMethods, error: paymentMethodsError, loading, refetch } = usePaymentMethods();
+  const { paymentMethods, error: paymentMethodsError, loading } = usePaymentMethods();
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string|null>(null);
