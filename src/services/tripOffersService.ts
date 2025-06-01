@@ -22,7 +22,9 @@ const MAX_PAGE_SIZE = 100;
 const MIN_PRICE = 1;
 const MAX_PRICE = 100000; // $100k as sanity check
 const AIRLINE_CODE_REGEX = /^[A-Z0-9]{2,3}$/;
-const FLIGHT_NUMBER_REGEX = /^[A-Z0-9]{2,3}\d{1,4}[A-Z]?$/;
+// Flight numbers returned by the edge function are numeric without the airline
+// prefix (e.g. "1234"), so allow 1-4 digits with an optional trailing letter.
+const FLIGHT_NUMBER_REGEX = /^\d{1,4}[A-Z]?$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
