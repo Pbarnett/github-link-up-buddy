@@ -26,7 +26,7 @@ import { Loader2 } from "lucide-react";
 const TripRequestForm = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, userId, loading: userLoading, error: userError } = useCurrentUser();
+  const { userId, loading: userLoading, error: userError } = useCurrentUser();
   
   // Initialize form with React Hook Form and Zod resolver
   const form = useForm<FormValues>({
@@ -89,8 +89,8 @@ const TripRequestForm = () => {
       destination_airport: destinationAirport,
       // Add auto-booking fields
       auto_book: data.auto_book,
-      max_price: data.max_price,
-      preferred_payment_method_id: data.preferred_payment_method_id,
+      max_price: data.max_price || null,
+      preferred_payment_method_id: data.preferred_payment_method_id || null,
     };
   };
 
