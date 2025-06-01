@@ -83,10 +83,10 @@ function isValidFlightNumber(flightNumber: string): boolean {
   return FLIGHT_NUMBER_REGEX.test(flightNumber);
 }
 
-// Validate duration format (e.g., "2h 30m" or "PT2H30M")
+// Validate duration format (e.g., "2h 30m" or "PT4H15M")
 function isValidDuration(duration: string): boolean {
   // Accept both human-readable and ISO 8601 duration formats
-  return /^(\d+h\s*\d*m?|PT\d+H\d*M?)$/.test(duration);
+  return /^(PT((\d+H)(\d+M)?|(\d+M)))|\d+h(?:\s*\d+m)?$/.test(duration);
 }
 
 // Validate offer data
