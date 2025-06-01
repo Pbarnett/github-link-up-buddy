@@ -22,7 +22,8 @@ const MAX_PAGE_SIZE = 100;
 const MIN_PRICE = 1;
 const MAX_PRICE = 100000; // $100k as sanity check
 const AIRLINE_CODE_REGEX = /^[A-Z0-9]{2,3}$/;
-const FLIGHT_NUMBER_REGEX = /^[A-Z0-9]{2,3}\d{1,4}[A-Z]?$/;
+// Updated to handle both numeric flight numbers and alphanumeric codes
+const FLIGHT_NUMBER_REGEX = /^[A-Z0-9]{1,8}$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -73,24 +74,100 @@ function isValidTime(time: string): boolean {
   return TIME_REGEX.test(time);
 }
 
-// Validate airline code
+// Validate airline code - made more flexible
 function isValidAirline(airline: string): boolean {
-  return AIRLINE_CODE_REGEX.test(airline);
+  // Accept both standard IATA codes and longer airline names/codes
+  return /^[A-Z0-9]{2,10}$/i.test(airline);
 }
 
-// Validate flight number
+// Validate flight number - made more flexible
 function isValidFlightNumber(flightNumber: string): boolean {
-  return FLIGHT_NUMBER_REGEX.test(flightNumber);
+  // Accept alphanumeric flight numbers up to 8 characters
+  return /^[A-Z0-9]{1,8}$/i.test(flightNumber);
 }
 
-// Validate duration format (e.g., "2h 30m" or "PT4H15M")
+
+// Updated duration validation to handle ISO 8601 format
 function isValidDuration(duration: string): boolean {
-  // Accept both human-readable and ISO 8601 duration formats
-  return /^(PT((\d+H)(\d+M)?|(\d+M)))|\d+h(?:\s*\d+m)?$/.test(duration);
+  // Accept ISO 8601 duration format (PT1H13M) and human-readable format (1h 13m)
+  return /^(PT\d+H\d*M?|\d+h\s*\d*m?)$/i.test(duration);
 }
 
-// Validate offer data
+// Diagnostic function to track validation failures by category
+// This helps identify which validation rules are most frequently failing
+export const validationFailureStats = {
+  missingFields: 0,
+  invalidPrice: 0,
+  invalidDepartureDate: 0,
+  invalidReturnDate: 0,
+  invalidDepartureTime: 0,
+  invalidReturnTime: 0,
+  invalidAirline: 0,
+  invalidFlightNumber: 0,
+  invalidDuration: 0,
+  totalProcessed: 0,
+  totalRejected: 0,
+  
+  // Reset stats
+  reset() {
+    this.missingFields = 0;
+    this.invalidPrice = 0;
+    this.invalidDepartureDate = 0;
+    this.invalidReturnDate = 0;
+    this.invalidDepartureTime = 0;
+    this.invalidReturnTime = 0;
+    this.invalidAirline = 0;
+    this.invalidFlightNumber = 0;
+    this.invalidDuration = 0;
+    this.totalProcessed = 0;
+    this.totalRejected = 0;
+  },
+  
+  // Get summary of validation failures
+  getSummary() {
+    return {
+      totalProcessed: this.totalProcessed,
+      totalRejected: this.totalRejected,
+      acceptRate: this.totalProcessed > 0 
+        ? ((this.totalProcessed - this.totalRejected) / this.totalProcessed * 100).toFixed(2) + '%' 
+        : 'N/A',
+      failuresByType: {
+        missingFields: this.missingFields,
+        invalidPrice: this.invalidPrice,
+        invalidDepartureDate: this.invalidDepartureDate,
+        invalidReturnDate: this.invalidReturnDate,
+        invalidDepartureTime: this.invalidDepartureTime,
+        invalidReturnTime: this.invalidReturnTime,
+        invalidAirline: this.invalidAirline,
+        invalidFlightNumber: this.invalidFlightNumber,
+        invalidDuration: this.invalidDuration
+      }
+    };
+  }
+};
+
+/**
+ * Detailed diagnostic logging for the offer pipeline
+ * Helps track where offers are being lost without modifying the actual processing logic
+ */
+export function diagnosePipeline(tripId: string, stage: string, data: any, details?: any): void {
+  console.log(`[DIAGNOSE:${tripId}] ${stage}: ${
+    Array.isArray(data) 
+      ? `${data.length} items` 
+      : typeof data === 'object' && data !== null 
+        ? Object.keys(data).join(', ') 
+        : data
+  }`);
+  
+  if (details) {
+    console.log(`[DIAGNOSE:${tripId}] Details:`, 
+      typeof details === 'object' ? JSON.stringify(details).substring(0, 300) + '...' : details);
+  }
+}
+
+// Updated validate offer data with enhanced diagnostics and relaxed rules
 function validateOffer(offer: any): offer is Offer {
+  validationFailureStats.totalProcessed++;
   const validationErrors: string[] = [];
 
   // Check required fields
@@ -102,50 +179,61 @@ function validateOffer(offer: any): offer is Offer {
   
   const missing = required.filter(field => !offer[field]);
   if (missing.length > 0) {
+    validationFailureStats.missingFields++;
     validationErrors.push(`Missing required fields: ${missing.join(', ')}`);
+    validationFailureStats.totalRejected++;
+    console.warn(`[tripOffersService] Offer validation failed - missing fields:`, missing, 'offer:', offer);
     return false;
   }
 
   // Validate price
   if (!isValidPrice(offer.price)) {
+    validationFailureStats.invalidPrice++;
     validationErrors.push(`Invalid price: ${offer.price}`);
   }
 
   // Validate dates and times
   if (!isValidDate(offer.departure_date)) {
+    validationFailureStats.invalidDepartureDate++;
     validationErrors.push(`Invalid departure date: ${offer.departure_date}`);
   }
   if (!isValidDate(offer.return_date)) {
+    validationFailureStats.invalidReturnDate++;
     validationErrors.push(`Invalid return date: ${offer.return_date}`);
   }
   if (!isValidTime(offer.departure_time)) {
+    validationFailureStats.invalidDepartureTime++;
     validationErrors.push(`Invalid departure time: ${offer.departure_time}`);
   }
   if (!isValidTime(offer.return_time)) {
+    validationFailureStats.invalidReturnTime++;
     validationErrors.push(`Invalid return time: ${offer.return_time}`);
   }
 
-  // Validate airline and flight number
+  // Validate airline and flight number with relaxed rules
   if (!isValidAirline(offer.airline)) {
+    validationFailureStats.invalidAirline++;
     validationErrors.push(`Invalid airline code: ${offer.airline}`);
   }
   if (!isValidFlightNumber(offer.flight_number)) {
+    validationFailureStats.invalidFlightNumber++;
     validationErrors.push(`Invalid flight number: ${offer.flight_number}`);
   }
 
-  // Validate duration
+  // Validate duration with updated rules
   if (!isValidDuration(offer.duration)) {
+    validationFailureStats.invalidDuration++;
     validationErrors.push(`Invalid duration format: ${offer.duration}`);
   }
 
   if (validationErrors.length > 0) {
-    console.warn(`[tripOffersService] Offer validation failed:`, validationErrors);
+    validationFailureStats.totalRejected++;
+    console.warn(`[tripOffersService] Offer validation failed:`, validationErrors, 'offer sample:', JSON.stringify(offer).substring(0, 200));
     return false;
   }
 
   return true;
 }
-
 
 /**
  * Check if any flight offers exist for a specific trip
@@ -171,6 +259,114 @@ export const checkTripOffersExist = async (tripId: string): Promise<boolean> => 
     console.log(`[tripOffersService] Trip ${sanitizedTripId} has offers: ${exists} (count: ${count})`);
     return exists;
   }, `checkTripOffersExist(${sanitizedTripId})`);
+};
+
+/**
+ * Diagnostic function to analyze offer pipeline for a specific trip
+ * This provides a detailed breakdown of where offers are being lost
+ * @param tripId The trip request ID to analyze
+ * @param bypassFilters Set to true to see raw data without validation filtering
+ * @returns Full diagnostic report including validation statistics
+ */
+export const diagnoseOfferPipeline = async (
+  tripId: string,
+  bypassFilters: boolean = false
+): Promise<any> => {
+  const sanitizedTripId = sanitizeString(tripId);
+  console.log(`[tripOffersService] 🔍 DIAGNOSTIC: Analyzing offer pipeline for trip ${sanitizedTripId}`);
+  diagnosePipeline(sanitizedTripId, "DIAGNOSIS_START", "Beginning pipeline diagnosis");
+  
+  // Reset validation stats
+  validationFailureStats.reset();
+  
+  try {
+    // Step 1: Check if any offers exist at all
+    const offersExist = await checkTripOffersExist(sanitizedTripId);
+    diagnosePipeline(sanitizedTripId, "STEP_1_EXISTS_CHECK", offersExist ? "Offers exist" : "No offers found");
+    
+    if (!offersExist) {
+      return {
+        tripId: sanitizedTripId,
+        stage: "existence_check",
+        result: "FAILURE",
+        message: "No flight offers found in the database for this trip"
+      };
+    }
+    
+    // Step 2: Get raw database data
+    const rawData = await debugInspectTripOffers(sanitizedTripId);
+    diagnosePipeline(sanitizedTripId, "STEP_2_RAW_DATA", `Retrieved ${rawData.length} raw offers`);
+    
+    if (!rawData || rawData.length === 0) {
+      return {
+        tripId: sanitizedTripId,
+        stage: "data_retrieval",
+        result: "FAILURE",
+        message: "No data returned from database despite existence check passing"
+      };
+    }
+    
+    // Step 3: Transform data
+    const transformedData = rawData.map(item => ({
+      id: item.id,
+      price: Number(item.price),
+      airline: item.airline,
+      flight_number: item.flight_number,
+      departure_date: item.departure_date,
+      departure_time: item.departure_time,
+      return_date: item.return_date,
+      return_time: item.return_time,
+      duration: item.duration,
+    }));
+    
+    diagnosePipeline(sanitizedTripId, "STEP_3_TRANSFORMED", `Transformed ${transformedData.length} offers`);
+    
+    // Step 4: Validate offers (but don't filter if bypass is enabled)
+    // We still run validation to collect stats, but we'll return all data if bypassing
+    const validatedOffers = bypassFilters 
+      ? transformedData.map(offer => { validateOffer(offer); return offer; })
+      : transformedData.filter(validateOffer);
+    
+    const validationSummary = validationFailureStats.getSummary();
+    diagnosePipeline(
+      sanitizedTripId, 
+      "STEP_4_VALIDATION", 
+      `${bypassFilters ? "Validation bypassed" : `${validatedOffers.length}/${transformedData.length} passed validation`}`,
+      validationSummary
+    );
+    
+    // Complete diagnostic results
+    return {
+      tripId: sanitizedTripId,
+      pipelineStages: {
+        existence: { passed: true, count: rawData.length },
+        rawData: { count: rawData.length, sample: rawData.length > 0 ? rawData[0] : null },
+        transformation: { count: transformedData.length },
+        validation: { 
+          passed: validatedOffers.length,
+          failed: transformedData.length - validatedOffers.length,
+          acceptRate: validationSummary.acceptRate,
+          bypassApplied: bypassFilters,
+          failureStats: validationSummary.failuresByType
+        }
+      },
+      finalResult: {
+        offersAvailable: validatedOffers.length > 0,
+        count: validatedOffers.length,
+        offers: validatedOffers.slice(0, 5) // Return just a few samples
+      },
+      recommendations: []
+    };
+  } catch (error) {
+    console.error(`[tripOffersService] Error during pipeline diagnosis:`, error);
+    return {
+      tripId: sanitizedTripId,
+      stage: "diagnosis",
+      result: "ERROR",
+      error: error.message,
+      stack: error.stack
+    };
+  }
 };
 
 /**
@@ -213,6 +409,9 @@ export const fetchTripOffers = async (
 
   console.log(`[tripOffersService] Fetching offers for trip ID: ${sanitizedTripId}, page: ${validatedPage}, pageSize: ${validatedPageSize}`);
   
+  // Reset validation stats for this fetch operation
+  validationFailureStats.reset();
+  
   return withRetry(async () => {
     const from = validatedPage * validatedPageSize;
     const to = from + validatedPageSize - 1;
@@ -221,6 +420,7 @@ export const fetchTripOffers = async (
 
     const offersExist = await checkTripOffersExist(sanitizedTripId);
     if (!offersExist) {
+      diagnosePipeline(sanitizedTripId, "EXISTENCE_CHECK", "No offers found in database");
       console.log(`[tripOffersService] No offers found for trip ID: ${sanitizedTripId} (pre-check)`);
       return { offers: [], total: 0 };
     }
@@ -234,6 +434,10 @@ export const fetchTripOffers = async (
     
     if (error) {
       const pgError = error as PostgrestError;
+      diagnosePipeline(sanitizedTripId, "DATABASE_ERROR", pgError.message, {
+        code: pgError.code,
+        details: pgError.details
+      });
       console.error(`[tripOffersService] Database error fetching trip offers: ${pgError.code} - ${pgError.message}`, {
         tripId: sanitizedTripId,
         details: pgError.details,
@@ -243,35 +447,50 @@ export const fetchTripOffers = async (
     }
     
     if (!data || data.length === 0) {
+      diagnosePipeline(sanitizedTripId, "EMPTY_RESULT", `No offers in range ${from}-${to}`);
       console.log(`[tripOffersService] No offers found for trip ID: ${sanitizedTripId} in range ${from}-${to}`);
       
       const totalCount = await getTripOffersCount(sanitizedTripId);
       if (totalCount > 0) {
+        diagnosePipeline(sanitizedTripId, "PAGINATION_ISSUE", 
+          `Trip has ${totalCount} total offers, but none in requested range ${from}-${to}`);
         console.log(`[tripOffersService] NOTE: Trip ${sanitizedTripId} has ${totalCount} total offers, but none in the requested range`);
       }
       
       return { offers: [], total: 0 };
     }
 
+    diagnosePipeline(sanitizedTripId, "RAW_DATA_RECEIVED", data.length, {
+      sampleFields: data[0] ? Object.keys(data[0]) : 'no data',
+      sampleData: data[0] ? JSON.stringify(data[0]).substring(0, 100) : 'no sample'
+    });
     console.log(`[tripOffersService] Found ${data.length} offers for trip ID: ${sanitizedTripId}, total count: ${count}`);
 
     // Transform and validate offers
-    const offers = data
-      .map(item => ({
-        id: item.id,
-        price: Number(item.price),
-        airline: item.airline,
-        flight_number: item.flight_number,
-        departure_date: item.departure_date,
-        departure_time: item.departure_time,
-        return_date: item.return_date,
-        return_time: item.return_time,
-        duration: item.duration,
-      }))
-      .filter(validateOffer);
+    const transformedData = data.map(item => ({
+      id: item.id,
+      price: Number(item.price),
+      airline: item.airline,
+      flight_number: item.flight_number,
+      departure_date: item.departure_date,
+      departure_time: item.departure_time,
+      return_date: item.return_date,
+      return_time: item.return_time,
+      duration: item.duration,
+    }));
+    
+    diagnosePipeline(sanitizedTripId, "TRANSFORMED_DATA", transformedData.length);
+    
+    const offers = transformedData.filter(validateOffer);
 
     if (offers.length < data.length) {
+      const validationSummary = validationFailureStats.getSummary();
+      diagnosePipeline(sanitizedTripId, "VALIDATION_RESULTS", 
+        `${offers.length}/${data.length} offers passed validation (${validationSummary.acceptRate} accepted)`, 
+        validationSummary.failuresByType);
       console.warn(`[tripOffersService] Some offers failed validation: ${data.length - offers.length} invalid offers`);
+    } else {
+      diagnosePipeline(sanitizedTripId, "VALIDATION_RESULTS", "All offers passed validation");
     }
 
     return { offers, total: count || offers.length };
