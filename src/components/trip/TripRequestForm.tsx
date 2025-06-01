@@ -114,7 +114,7 @@ const TripRequestForm = () => {
     });
     
     // Navigate to the offers page with the trip ID
-    navigate(`/trip/offers?id=${result.tripRequest.id}`);
+    navigate(`/trip/offers?id=${result.tripRequest.id}`, { state: { offers: result.offers } });
   };
 
   // Main form submission handler that orchestrates the process
