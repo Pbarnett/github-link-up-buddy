@@ -22,9 +22,8 @@ const MAX_PAGE_SIZE = 100;
 const MIN_PRICE = 1;
 const MAX_PRICE = 100000; // $100k as sanity check
 const AIRLINE_CODE_REGEX = /^[A-Z0-9]{2,3}$/;
-// Flight numbers returned by the edge function are numeric without the airline
-// prefix (e.g. "1234"), so allow 1-4 digits with an optional trailing letter.
-const FLIGHT_NUMBER_REGEX = /^\d{1,4}[A-Z]?$/;
+// Updated to handle both numeric flight numbers and alphanumeric codes
+const FLIGHT_NUMBER_REGEX = /^[A-Z0-9]{1,8}$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -75,27 +74,26 @@ function isValidTime(time: string): boolean {
   return TIME_REGEX.test(time);
 }
 
-// Validate airline code
+// Validate airline code - made more flexible
 function isValidAirline(airline: string): boolean {
-  return AIRLINE_CODE_REGEX.test(airline);
+  // Accept both standard IATA codes and longer airline names/codes
+  return /^[A-Z0-9]{2,10}$/i.test(airline);
 }
 
-// Validate flight number
+// Validate flight number - made more flexible
 function isValidFlightNumber(flightNumber: string): boolean {
-  return FLIGHT_NUMBER_REGEX.test(flightNumber);
+  // Accept alphanumeric flight numbers up to 8 characters
+  return /^[A-Z0-9]{1,8}$/i.test(flightNumber);
 }
 
-// Validate duration format (e.g., "2h 30m" or "PT2H30M")
+// Updated duration validation to handle ISO 8601 format
 function isValidDuration(duration: string): boolean {
-  // Accept both human-readable and ISO 8601 duration formats
-  return /^(\d+h\s*\d*m?|PT\d+H\d*M?)$/.test(duration);
+  // Accept ISO 8601 duration format (PT1H13M) and human-readable format (1h 13m)
+  return /^(PT\d+H\d*M?|\d+h\s*\d*m?)$/i.test(duration);
 }
 
-
-/**
- * Diagnostic function to track validation failures by category
- * This helps identify which validation rules are most frequently failing
- */
+// Diagnostic function to track validation failures by category
+// This helps identify which validation rules are most frequently failing
 export const validationFailureStats = {
   missingFields: 0,
   invalidPrice: 0,
@@ -166,7 +164,7 @@ export function diagnosePipeline(tripId: string, stage: string, data: any, detai
   }
 }
 
-// Validate offer data with enhanced diagnostics
+// Updated validate offer data with enhanced diagnostics and relaxed rules
 function validateOffer(offer: any): offer is Offer {
   validationFailureStats.totalProcessed++;
   const validationErrors: string[] = [];
@@ -183,6 +181,7 @@ function validateOffer(offer: any): offer is Offer {
     validationFailureStats.missingFields++;
     validationErrors.push(`Missing required fields: ${missing.join(', ')}`);
     validationFailureStats.totalRejected++;
+    console.warn(`[tripOffersService] Offer validation failed - missing fields:`, missing, 'offer:', offer);
     return false;
   }
 
@@ -210,7 +209,7 @@ function validateOffer(offer: any): offer is Offer {
     validationErrors.push(`Invalid return time: ${offer.return_time}`);
   }
 
-  // Validate airline and flight number
+  // Validate airline and flight number with relaxed rules
   if (!isValidAirline(offer.airline)) {
     validationFailureStats.invalidAirline++;
     validationErrors.push(`Invalid airline code: ${offer.airline}`);
@@ -220,7 +219,7 @@ function validateOffer(offer: any): offer is Offer {
     validationErrors.push(`Invalid flight number: ${offer.flight_number}`);
   }
 
-  // Validate duration
+  // Validate duration with updated rules
   if (!isValidDuration(offer.duration)) {
     validationFailureStats.invalidDuration++;
     validationErrors.push(`Invalid duration format: ${offer.duration}`);
@@ -228,13 +227,12 @@ function validateOffer(offer: any): offer is Offer {
 
   if (validationErrors.length > 0) {
     validationFailureStats.totalRejected++;
-    console.warn(`[tripOffersService] Offer validation failed:`, validationErrors);
+    console.warn(`[tripOffersService] Offer validation failed:`, validationErrors, 'offer sample:', JSON.stringify(offer).substring(0, 200));
     return false;
   }
 
   return true;
 }
-
 
 /**
  * Check if any flight offers exist for a specific trip
