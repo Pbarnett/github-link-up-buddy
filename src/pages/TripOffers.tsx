@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +32,13 @@ export default function TripOffers() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Add debugging logs
+  console.log("[TripOffers] Component mounted");
+  console.log("[TripOffers] Current URL:", window.location.href);
+  console.log("[TripOffers] Trip ID from params:", tripId);
+  console.log("[TripOffers] All search params:", Object.fromEntries(searchParams.entries()));
+  console.log("[TripOffers] Location state:", location.state);
+
   const initOffers = (location.state as { offers?: Offer[] })?.offers || [];
   const [offers, setOffers] = useState<Offer[]>(initOffers);
   const [tripDetails, setTripDetails] = useState<TripDetails | null>(null);
@@ -49,7 +55,24 @@ export default function TripOffers() {
   const refreshIntervalRef = useRef<number | null>(null);
   const searchStartTimeRef = useRef<number>(Date.now());
 
+  // Add debugging for state changes
+  useEffect(() => {
+    console.log("[TripOffers] Offers state updated:", offers.length, "offers");
+  }, [offers]);
+
+  useEffect(() => {
+    console.log("[TripOffers] Loading state:", { isLoading, isRefreshing, hasError });
+  }, [isLoading, isRefreshing, hasError]);
+
+  // Add a simple test button to navigate to a known trip
+  const handleTestNavigation = () => {
+    console.log("[TripOffers] Testing navigation to known trip");
+    navigate("/trip/offers?id=8a92e9d4-3c47-4b96-9af7-b4fd57344288");
+  };
+
   const loadOffers = async (pageToLoad = 0, overrideFilter = false, relaxCriteria = false) => {
+    console.log("[TripOffers] loadOffers called with:", { pageToLoad, overrideFilter, relaxCriteria, tripId });
+    
     if (pageToLoad === 0) {
       setIsLoading(true);
     } else {
@@ -61,6 +84,7 @@ export default function TripOffers() {
 
     try {
       if (!tripId) {
+        console.log("[TripOffers] No trip ID provided, setting error");
         setHasError(true);
         setErrorMessage("No trip ID provided");
         if (pageToLoad === 0) setIsLoading(false); else setIsFetchingNextPage(false);
@@ -70,11 +94,14 @@ export default function TripOffers() {
       // Fetch trip details if not already available. This is crucial for filters.
       let currentTripDetails = tripDetails;
       if (!currentTripDetails) { // Fetch if tripDetails is null
+        console.log("[TripOffers] Fetching trip details for trip:", tripId);
         const { data: fetchedTripData, error: tripError } = await supabase
           .from("trip_requests")
           .select("min_duration,max_duration,budget,earliest_departure,latest_departure")
           .eq("id", tripId)
           .single();
+
+        console.log("[TripOffers] Trip details fetch result:", { fetchedTripData, tripError });
 
         if (tripError || !fetchedTripData) {
           throw tripError || new Error("No trip data found for this ID.");
@@ -150,9 +177,9 @@ export default function TripOffers() {
       }
 
     } catch (err: any) {
+      console.error(`[TripOffers] Error loading offers:`, err);
       setHasError(true);
       setErrorMessage(err.message || "Something went wrong loading offers");
-      console.error(`[TripOffers] Error loading offers:`, err);
       toast({ title: "Error Loading Flight Offers", description: err.message || "An unexpected error occurred while trying to load flight offers. Please try again.", variant: "destructive" });
       setHasMore(false);
     } finally {
@@ -165,6 +192,8 @@ export default function TripOffers() {
   const initialLoadRef = useRef(true);
 
   useEffect(() => {
+    console.log("[TripOffers] Main useEffect triggered with tripId:", tripId);
+    
     if (tripId) {
         setCurrentPage(0);
         setHasMore(true);
@@ -173,13 +202,17 @@ export default function TripOffers() {
         setTripDetails(null);
 
         if (initialLoadRef.current && initOffers.length > 0) {
+          console.log("[TripOffers] Using initial offers from location state");
           startAutoRefresh();
         } else {
+          console.log("[TripOffers] Loading offers from API");
           setOffers([]);
           loadOffers(0, ignoreFilter, usedRelaxedCriteria);
         }
 
         initialLoadRef.current = false;
+    } else {
+      console.log("[TripOffers] No tripId provided, not loading offers");
     }
     
     // Cleanup function to clear the interval when component unmounts or tripId changes
@@ -279,6 +312,35 @@ export default function TripOffers() {
     });
   };
 
+  // If no tripId, show a helpful message instead of an error
+  if (!tripId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>No Trip Selected</CardTitle>
+            <CardDescription>
+              You need to select a trip to view offers.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Current URL: {window.location.href}
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => navigate("/dashboard")}>
+                Go to Dashboard
+              </Button>
+              <Button variant="outline" onClick={handleTestNavigation}>
+                Test with Sample Trip
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (hasError && offers.length === 0) { // Only show full error card if no offers are displayed
     return (
       <TripErrorCard 
@@ -293,6 +355,22 @@ export default function TripOffers() {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
+      {/* Debug Info Card */}
+      <Card className="w-full max-w-5xl mb-4 bg-yellow-50">
+        <CardHeader>
+          <CardTitle className="text-sm">Debug Info</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xs space-y-1">
+            <p><strong>Trip ID:</strong> {tripId}</p>
+            <p><strong>Offers Count:</strong> {offers.length}</p>
+            <p><strong>Loading:</strong> {isLoading.toString()}</p>
+            <p><strong>Has Error:</strong> {hasError.toString()}</p>
+            <p><strong>URL:</strong> {window.location.href}</p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Trip Summary Card */}
       {tripDetails && (
         <Card className="w-full max-w-5xl mb-6">
