@@ -4,7 +4,26 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Import the flight API service (edge version) with explicit fetchToken
 import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
-import type { TablesInsert } from "../../../src/integrations/supabase/types";
+// Define the type for inserting into the flight_offers table here so that the
+// edge function is self contained. Deno cannot resolve paths outside this
+// directory.
+export interface FlightOfferInsert {
+  airline: string;
+  auto_book?: boolean;
+  booking_url?: string | null;
+  created_at?: string;
+  departure_date: string;
+  departure_time: string;
+  duration: string;
+  flight_number: string;
+  id?: string;
+  layover_airports?: string[] | null;
+  price: number;
+  return_date: string;
+  return_time: string;
+  stops?: number;
+  trip_request_id: string;
+}
 
 // Set up CORS headers
 const corsHeaders = {
@@ -116,7 +135,7 @@ serve(async (req: Request) => {
     let processedRequests = 0;
     let totalMatchesInserted = 0;
     const details = [];
-    const allOffers: TablesInsert<"flight_offers">[] = [];
+    const allOffers: FlightOfferInsert[] = [];
     
     // Process each trip request
     for (const request of requests) {
@@ -262,7 +281,7 @@ serve(async (req: Request) => {
           const searchPromise = searchOffers(searchParams, request.id);
           
           // Create a race between the search and a timeout
-          const timeoutPromise = new Promise<TablesInsert<"flight_offers">[]>((_, reject) => {
+          const timeoutPromise = new Promise<FlightOfferInsert[]>((_, reject) => {
             setTimeout(() => reject(new Error(`Search timed out after ${maxSearchTimeMs}ms`)), maxSearchTimeMs);
           });
           
@@ -378,7 +397,7 @@ serve(async (req: Request) => {
         // Merge generated IDs with full offer data for return payload
         try {
           for (let i = 0; i < savedOffers.length; i++) {
-            const fullOffer = { ...filteredOffers[i], id: savedOffers[i].id } as TablesInsert<"flight_offers">;
+            const fullOffer = { ...filteredOffers[i], id: savedOffers[i].id } as FlightOfferInsert;
             allOffers.push(fullOffer);
           }
         } catch (mergeErr) {
