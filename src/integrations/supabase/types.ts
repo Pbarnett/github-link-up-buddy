@@ -436,6 +436,7 @@ export type Database = {
         Row: {
           adults: number | null
           auto_book: boolean
+          auto_book_enabled: boolean
           best_price: number | null
           budget: number
           created_at: string
@@ -458,6 +459,7 @@ export type Database = {
         Insert: {
           adults?: number | null
           auto_book?: boolean
+          auto_book_enabled?: boolean
           best_price?: number | null
           budget: number
           created_at?: string
@@ -480,6 +482,7 @@ export type Database = {
         Update: {
           adults?: number | null
           auto_book?: boolean
+          auto_book_enabled?: boolean
           best_price?: number | null
           budget?: number
           created_at?: string
