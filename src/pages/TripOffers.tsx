@@ -32,9 +32,10 @@ export default function TripOffers() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [offers, setOffers] = useState<Offer[]>([]);
+  const initialOffers = (location.state as { offers?: Offer[] })?.offers || [];
+  const [offers, setOffers] = useState<Offer[]>(initialOffers);
   const [tripDetails, setTripDetails] = useState<TripDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(initialOffers.length === 0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -148,13 +149,18 @@ export default function TripOffers() {
   // Main useEffect for loading offers when tripId or primary filters change.
   useEffect(() => {
     if (tripId) { // Ensure tripId is present before attempting to load.
-        setCurrentPage(0); 
-        setOffers([]); 
-        setHasMore(true);
-        setSearchDuration(0);
-        searchStartTimeRef.current = Date.now();
-        setTripDetails(null); // Force re-fetch of trip details for new filter sets
-        loadOffers(0, ignoreFilter, usedRelaxedCriteria);
+        setCurrentPage(0);
+        if (initialOffers.length === 0) {
+          setOffers([]);
+          setHasMore(true);
+          setSearchDuration(0);
+          searchStartTimeRef.current = Date.now();
+          setTripDetails(null); // Force re-fetch of trip details for new filter sets
+          loadOffers(0, ignoreFilter, usedRelaxedCriteria);
+        } else {
+          setHasMore(false);
+          setIsLoading(false);
+        }
         
         // Setup auto-refresh for polling new offers
         startAutoRefresh();

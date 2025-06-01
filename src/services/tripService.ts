@@ -52,35 +52,33 @@ const createTrip = async (
 
 // Function to create trip request
 export const createTripRequest = async (
-  userId: string, 
+  userId: string,
   formData: ExtendedTripFormValues
 ): Promise<TripRequestResult> => {
   // Create the trip request
   const tripRequest = await createTrip(userId, formData);
-  
-  // Fire-and-forget the flight search function
-  console.log(`Invoking flight-search function for trip request ${tripRequest.id} (asynchronously)`);
-  supabase.functions.invoke<{
-    requestsProcessed: number;
+
+  // Invoke the flight-search function and wait for the response
+  const { data, error } = await supabase.functions.invoke<{
+    offers: TablesInsert<"flight_offers">[];
     matchesInserted: number;
+    requestsProcessed: number;
     totalDurationMs: number;
     details: any[];
   }>("flight-search", {
     body: { tripRequestId: tripRequest.id }
-  }).then(({ data, error }) => {
-    if (error) {
-      console.error("Error invoking flight-search function:", error);
-    } else {
-      console.log("Flight search completed:", data);
-    }
-  }).catch(invocationError => {
-    console.error("Failed to invoke flight-search function:", invocationError);
   });
-  
-  // Return only the trip request data
+
+  if (error) {
+    console.error("Error invoking flight-search function:", error);
+  }
+
+  const offers = data?.offers ?? [];
+  const offersCount = data?.matchesInserted ?? 0;
+
   return {
     tripRequest,
-    offers: [], // No offers available immediately
-    offersCount: 0
+    offers,
+    offersCount
   };
 };
