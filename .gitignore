@@ -27,3 +27,6 @@ dist-ssr
 # Environment files
 /.env.local
 /.env*
+
+# Bun
+bun.lockb
