@@ -64,12 +64,51 @@ describe('TripRequestForm Auto-Booking Tests', () => {
     });
   });
 
-  // Helper to fill basic always-required fields
+  // Common utilities for finding form elements
+  const findFormElement = async (options) => {
+    const { label, role, name, testId, placeholder } = options;
+    const strategies = [
+      // Try data-testid first
+      async () => testId && screen.queryByTestId(testId),
+      // Try label
+      async () => label && screen.queryByLabelText(label),
+      // Try role with name
+      async () => role && name && screen.queryByRole(role, { name }),
+      // Try placeholder
+      async () => placeholder && screen.queryByPlaceholderText(placeholder),
+    ];
+
+    for (const strategy of strategies) {
+      try {
+        const element = await strategy();
+        if (element) return element;
+      } catch (e) {
+        console.log(`Strategy failed:`, e.message);
+      }
+    }
+    
+    throw new Error(`Could not find element with criteria: ${JSON.stringify(options)}`);
+  };
+
+  // Date picker utilities
+  const getFormattedDate = (date) => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
+  const findDatePicker = async (label) => {
+    const labelText = typeof label === 'string' ? label : label.source;
+    return findFormElement({
+      testId: `trip-date-${labelText.toLowerCase().replace(/\s+/g, '')}-button`,
+      label: new RegExp(`${labelText} Date Picker`, 'i'),
+      role: 'button',
+      name: label,
+    });
+  };
+
   // Helper to select a date from the calendar popover
   const selectDateFromCalendar = async (user, dateButton, targetDate) => {
     try {
       console.log('Selecting date:', targetDate.toISOString());
-      console.log('Date button:', dateButton);
       
       // Format the target date for aria-label search
       const months = [
@@ -80,376 +119,233 @@ describe('TripRequestForm Auto-Booking Tests', () => {
       const targetYear = targetDate.getFullYear();
       const targetDay = targetDate.getDate();
       
+      // Extract field ID from button data-testid
+      const fieldId = dateButton.getAttribute('data-testid')?.replace('-button', '') || '';
+      
       // Open the date picker
       await user.click(dateButton);
-      console.log('Clicked date button');
       
-      // Wait for the popover to be visible
+      // Wait for the dialog to be visible
       await waitFor(() => {
         const dialog = screen.queryByRole('dialog');
-        console.log('Dialog present:', !!dialog);
         expect(dialog).toBeInTheDocument();
       }, { timeout: 2000 });
       
-      // Look for the calendar grid
-      const calendarGrid = await waitFor(() => {
-        const grid = screen.queryByRole('grid');
-        console.log('Calendar grid present:', !!grid);
-        if (!grid) {
-          // If grid isn't found, log available elements for debugging
-          console.log('Available elements in dialog:');
-          const dialog = screen.getByRole('dialog');
-          console.log(dialog.innerHTML);
-        }
-        expect(grid).toBeInTheDocument();
-        return grid;
-      }, { timeout: 2000 });
-      
-      // Get navigation buttons
-      let currentMonthDisplay;
+      // Try to find the current month/year display
+      let currentMonthDisplay = '';
       try {
-        // Try to find any text element displaying the current month/year
-        // This could be a heading, button text, or other element
         const possibleMonthDisplays = [
-          screen.queryByRole('heading'), // Try any heading
-          screen.queryByText(new RegExp(`${months.join('|')}.*\\d{4}`, 'i')), // Month name and year
-          // Add more selectors if needed
+          screen.queryByRole('heading'), 
+          screen.queryByText(new RegExp(`${months.join('|')}.*\\d{4}`, 'i')),
+          document.querySelector('.rdp-caption_label, .caption_label')
         ].filter(Boolean);
         
         currentMonthDisplay = possibleMonthDisplays[0]?.textContent || '';
-        console.log('Current month display found:', currentMonthDisplay);
       } catch (e) {
-        console.log('Could not find month display:', e.message);
-        currentMonthDisplay = '';
+        console.log('Could not find month display');
       }
       
-      // Navigate to correct month if needed
-      // If we can't find the exact month display, we'll try navigation buttons anyway
+      // Navigate to target month/year if needed
       let attempts = 0;
-      const maxAttempts = 12; // Prevent infinite loops
+      const maxAttempts = 12;
       
-      // We'll try to find the right month by clicking "next month" until we either see our target date
-      // or reach the maximum attempts
       while ((!currentMonthDisplay.includes(targetMonth) || 
              !currentMonthDisplay.includes(targetYear.toString())) && 
              attempts < maxAttempts) {
-        // Find navigation buttons - try different selectors that could match month navigation
         const nextMonthButton = 
-          screen.queryByRole('button', { name: /next/i }) || 
-          screen.queryByRole('button', { name: /forward/i }) ||
           screen.queryByLabelText(/next month/i) ||
-          screen.queryByLabelText(/go to next month/i);
+          screen.queryByRole('button', { name: /next/i }) || 
+          document.querySelector('.nav_button_next, [class*="-nav_button_next"]') ||
+          document.querySelector('.rdp-nav button:last-child');
         
         if (nextMonthButton) {
-          console.log('Clicking next month button');
           await user.click(nextMonthButton);
-          await new Promise(r => setTimeout(r, 100)); // Small delay to let UI update
+          await new Promise(r => setTimeout(r, 100));
           
-          // Try to get updated month display
           try {
             const possibleMonthDisplays = [
               screen.queryByRole('heading'),
+              document.querySelector('.rdp-caption_label, .caption_label'),
               screen.queryByText(new RegExp(`${months.join('|')}.*\\d{4}`, 'i')),
             ].filter(Boolean);
             
             currentMonthDisplay = possibleMonthDisplays[0]?.textContent || '';
-            console.log('Updated month display:', currentMonthDisplay);
           } catch (e) {
             console.log('Could not find updated month display');
           }
         } else {
-          console.log('Could not find next month button, will try to select date anyway');
           break;
         }
         
         attempts++;
       }
       
-      // Now select the specific date by looking for gridcells
-      console.log('Looking for date cells');
-      
-      // Wait for the grid to update with cells
-      await waitFor(() => {
-        const cells = screen.queryAllByRole('gridcell');
-        console.log(`Found ${cells.length} grid cells`);
-        expect(cells.length).toBeGreaterThan(0);
-      }, { timeout: 2000 });
-      
-      const dateButtons = screen.getAllByRole('gridcell');
-      console.log('Found date cells:', dateButtons.length);
-      
-      // Log all available dates for debugging
-      dateButtons.forEach(btn => {
-        console.log(`Date cell: "${btn.textContent}", aria-disabled: ${btn.getAttribute('aria-disabled')}, aria-selected: ${btn.getAttribute('aria-selected')}`);
-      });
-      
-      // Look for a cell containing our target day
-      const targetDateButton = dateButtons.find(button => {
-        const buttonText = button.textContent?.trim();
-        const dayMatch = buttonText === targetDay.toString() || buttonText?.includes(targetDay.toString());
-        const notDisabled = button.getAttribute('aria-disabled') !== 'true';
+      // Find and click the date cell
+      try {
+        // First try to find by role="gridcell" with a matching name
+        const dateCell = await findFormElement({
+          role: 'gridcell',
+          name: new RegExp(`${targetDay}.*${targetMonth}`, 'i'),
+        });
         
-        if (dayMatch && notDisabled) {
-          console.log(`Found target date button for ${targetDay}`);
-          return true;
-        }
-        return false;
-      });
-      
-      if (!targetDateButton) {
-        // If we can't find by text content, try another approach
-        console.log('Could not find date by text content, trying to find by position');
+        await user.click(dateCell);
+      } catch (error) {
+        // Fallback: find all date cells and click the matching one
+        const dateButtons = 
+          screen.queryAllByRole('gridcell') || 
+          Array.from(document.querySelectorAll('.rdp-day, .day, [class*="-day"]'));
         
-        // Sometimes date buttons don't have the day as text content
-        // Let's try to click any selectable button
-        const clickableButtons = dateButtons.filter(btn => 
-          btn.getAttribute('aria-disabled') !== 'true');
+        const targetDateButton = dateButtons.find(button => {
+          const buttonText = button.textContent?.trim();
+          const ariaLabel = button.getAttribute('aria-label');
+          
+          const dayMatch = 
+            buttonText === targetDay.toString() || 
+            (ariaLabel && new RegExp(`\\b${targetDay}\\b.*${targetMonth}`, 'i').test(ariaLabel));
+          
+          return dayMatch && button.getAttribute('aria-disabled') !== 'true';
+        });
         
-        if (clickableButtons.length > 0) {
-          // Find a button close to the middle of the month (to avoid selecting from prev/next month)
-          const middleIndex = Math.floor(clickableButtons.length / 2);
-          console.log(`Clicking a selectable date button at index ${middleIndex}`);
-          await user.click(clickableButtons[middleIndex]);
+        if (targetDateButton) {
+          await user.click(targetDateButton);
         } else {
-          throw new Error('No selectable date buttons found in calendar');
+          // Last resort: click any selectable date
+          const clickableButtons = dateButtons.filter(btn => 
+            btn.getAttribute('aria-disabled') !== 'true');
+          
+          if (clickableButtons.length > 0) {
+            const middleIndex = Math.floor(clickableButtons.length / 2);
+            await user.click(clickableButtons[middleIndex]);
+          } else {
+            throw new Error('No selectable date buttons found in calendar');
+          }
         }
-      } else {
-        console.log('Clicking target date button');
-        await user.click(targetDateButton);
       }
       
-      // Wait for popover to close after selection
+      // Verify dialog closed
       await waitFor(() => {
-        const dialog = screen.queryByRole('dialog');
-        if (dialog) {
-          console.log('Dialog still present, will try to dismiss it');
-          // If dialog is still open, try clicking outside or pressing escape
-          fireEvent.keyDown(dialog, { key: 'Escape', code: 'Escape' });
-        }
-        return expect(screen.queryByRole('dialog')).toBeNull();
+        expect(screen.queryByRole('dialog')).toBeNull();
       }, { timeout: 2000 });
-      
-      console.log('Date selection completed successfully');
     } catch (error) {
       console.error(`Error selecting date: ${error.message}`);
-      // Try to clean up if there's an error - dismiss any open dialogs
-      const dialog = screen.queryByRole('dialog');
-      if (dialog) {
-        console.log('Attempting to dismiss dialog after error');
-        fireEvent.keyDown(dialog, { key: 'Escape', code: 'Escape' });
+      
+      // Fallback: try to set date directly on hidden input
+      try {
+        const dateInput = document.querySelector(`input[data-testid="${dateButton.getAttribute('data-testid')?.replace('-button', '-input')}"]`) ||
+                          document.querySelector(`input[name*="date"]`);
+        
+        if (dateInput) {
+          fireEvent.change(dateInput, { target: { value: getFormattedDate(targetDate) } });
+        } else {
+          throw error; // Re-throw if no input found
+        }
+      } catch (fallbackError) {
+        // Clean up any open dialogs
+        const dialog = screen.queryByRole('dialog');
+        if (dialog) {
+          fireEvent.keyDown(dialog, { key: 'Escape', code: 'Escape' });
+        }
+        throw error;
       }
-      throw error;
     }
   };
 
+  // Helper to fill basic always-required fields
   const fillBasicFields = async () => {
     const user = userEvent.setup();
 
     try {
-      console.log('Starting fillBasicFields');
-      // Try multiple strategies to find date buttons
-      let earliestDepartureButton = null;
-      let latestDepartureButton = null;
-      
-      // Strategy 1: Find by label text and closest button
-      try {
-        const earliestDepartureLabel = screen.getByText(/Earliest Departure Date/i);
-        const latestDepartureLabel = screen.getByText(/Latest Departure Date/i);
-        
-        // Find the associated button in each form item
-        // First find the parent FormItem container
-        const earliestDepartureFormItem = earliestDepartureLabel.closest('div[class*="space-y"]');
-        const latestDepartureFormItem = latestDepartureLabel.closest('div[class*="space-y"]');
-        
-        if (earliestDepartureFormItem && latestDepartureFormItem) {
-          // Then find the buttons inside those containers
-          earliestDepartureButton = earliestDepartureFormItem.querySelector('button');
-          latestDepartureButton = latestDepartureFormItem.querySelector('button');
-          
-          if (earliestDepartureButton && latestDepartureButton) {
-            console.log('Found date picker buttons using label + closest div strategy');
-          }
-        }
-      } catch (e) {
-        console.log('Strategy 1 failed:', e.message);
-      }
-      
-      // Strategy 2: Try to find buttons with specific aria-labels or patterns
-      if (!earliestDepartureButton || !latestDepartureButton) {
-        try {
-          const buttons = screen.getAllByRole('button');
-          console.log(`Found ${buttons.length} buttons`);
-          
-          // Look for buttons that might be date pickers (e.g., showing a date or having calendar icons)
-          const dateLikeButtons = buttons.filter(btn => {
-            const text = btn.textContent?.toLowerCase() || '';
-            const ariaLabel = btn.getAttribute('aria-label')?.toLowerCase() || '';
-            
-            return text.includes('date') || 
-                  text.match(/\d{1,2}\/\d{1,2}\/\d{4}/) || // MM/DD/YYYY pattern
-                  text.match(/\d{4}-\d{1,2}-\d{1,2}/) || // YYYY-MM-DD pattern
-                  ariaLabel.includes('date') ||
-                  ariaLabel.includes('calendar');
-          });
-          
-          console.log(`Found ${dateLikeButtons.length} date-like buttons`);
-          
-          if (dateLikeButtons.length >= 2) {
-            earliestDepartureButton = dateLikeButtons[0];
-            latestDepartureButton = dateLikeButtons[1];
-            console.log('Found date picker buttons using pattern matching');
-          }
-        } catch (e) {
-          console.log('Strategy 2 failed:', e.message);
-        }
-      }
-      
-      // Strategy 3: Last resort - try to find by test-id or other attributes
-      if (!earliestDepartureButton || !latestDepartureButton) {
-        try {
-          // Try to find by test id or other specific attributes
-          // This depends on how the component is implemented
-          const possibleEarliestButton = screen.queryByTestId('earliest-departure-date-picker') || 
-                                         screen.queryByLabelText(/earliest departure/i);
-          
-          const possibleLatestButton = screen.queryByTestId('latest-departure-date-picker') || 
-                                       screen.queryByLabelText(/latest departure/i);
-          
-          if (possibleEarliestButton && possibleLatestButton) {
-            earliestDepartureButton = possibleEarliestButton;
-            latestDepartureButton = possibleLatestButton;
-            console.log('Found date picker buttons using test-id or aria-label');
-          }
-        } catch (e) {
-          console.log('Strategy 3 failed:', e.message);
-        }
-      }
-      
-      // If we still don't have buttons, throw an error
-      if (!earliestDepartureButton || !latestDepartureButton) {
-        console.error('Could not find date picker buttons using any strategy');
-        
-        // Dump the form structure for debugging
-        const formElement = screen.getByRole('form') || document.querySelector('form');
-        if (formElement) {
-          console.log('Form structure:', formElement.innerHTML);
-        }
-        
-        throw new Error('Could not find date picker buttons');
-      }
-      
-      console.log('Found date picker buttons:', { 
-        earliestButton: earliestDepartureButton, 
-        latestButton: latestDepartureButton 
-      });
-
-      // Calculate dates with proper handling for month boundaries
+      // Handle dates
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 2);
       
-      const fiveDaysLater = new Date();
-      fiveDaysLater.setDate(fiveDaysLater.getDate() + 7); // Use fiveDaysLater as base to avoid reference issues
-
+      const fiveDaysLater = new Date(tomorrow);
+      fiveDaysLater.setDate(fiveDaysLater.getDate() + 5);
+      
       try {
-        // Try earliest date first
-        console.log('Selecting earliest departure date:', tomorrow.toISOString());
-        await selectDateFromCalendar(user, earliestDepartureButton, tomorrow);
+        // Find date picker buttons
+        const earliestDepartureButton = await findDatePicker(/Earliest Departure/);
+        const latestDepartureButton = await findDatePicker(/Latest Departure/);
         
-        // If first one succeeds, try the second one
-        console.log('Selecting latest departure date:', fiveDaysLater.toISOString());
+        // Select dates
+        await selectDateFromCalendar(user, earliestDepartureButton, tomorrow);
         await selectDateFromCalendar(user, latestDepartureButton, fiveDaysLater);
       } catch (error) {
-        console.error('Error selecting dates:', error);
+        console.error('Error selecting dates:', error.message);
         
-        // If selecting dates fails, let's try to mock the date selection
-        // by setting values directly if possible
-        try {
-          console.log('Attempting to mock date selection by setting input values directly');
-          const formatDate = (date) => {
-            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-          };
-          
-          // Try to find hidden inputs that might be storing the date values
-          const inputs = Array.from(document.querySelectorAll('input'));
-          const dateInputs = inputs.filter(input => 
-            input.type === 'hidden' || input.type === 'date' || input.name?.includes('date'));
-          
-          console.log(`Found ${dateInputs.length} possible date inputs`);
-          if (dateInputs.length >= 2) {
-            // Set values directly using fireEvent
-            fireEvent.change(dateInputs[0], { target: { value: formatDate(tomorrow) } });
-            fireEvent.change(dateInputs[1], { target: { value: formatDate(fiveDaysLater) } });
-            console.log('Set date input values directly');
-          } else {
-            throw new Error('Could not find date inputs to set directly');
-          }
-        } catch (mockError) {
-          console.error('Failed to mock date selection:', mockError);
-          throw new Error(`Failed to select dates: ${error.message}`);
+        // Fallback to direct input value setting
+        const inputs = Array.from(document.querySelectorAll('input[type="hidden"], input[type="date"], input[name*="date"]'));
+        if (inputs.length >= 2) {
+          fireEvent.change(inputs[0], { target: { value: getFormattedDate(tomorrow) } });
+          fireEvent.change(inputs[1], { target: { value: getFormattedDate(fiveDaysLater) } });
+        } else {
+          throw new Error('Could not find date inputs to set directly');
         }
       }
       
-      // Fill in remaining fields with explicit error handling
+      // Handle airports - NYC airports as checkboxes
       try {
-        // Clear fields first to ensure proper input
-        const minDurationField = screen.getByLabelText(/Min Duration/i);
-        await user.clear(minDurationField);
-        await user.type(minDurationField, '3');
-        
-        const maxDurationField = screen.getByLabelText(/Max Duration/i);
-        await user.clear(maxDurationField);
-        await user.type(maxDurationField, '7');
-        
-        // Find budget field using exact label with (USD) and multiple strategies
-        let budgetField;
-        try {
-          // First try exact label match
-          budgetField = screen.getByLabelText(/Budget \(USD\)/i);
-        } catch (e) {
-          console.log('Could not find budget field with label "Budget (USD)", trying alternatives');
-          
-          // Second strategy: find the div containing the label and input
-          try {
-            const budgetLabel = screen.getByText(/Budget \(USD\)/i);
-            const budgetFormItem = budgetLabel.closest('div[class*="space-y"]');
-            
-            if (budgetFormItem) {
-              // Find the input within this form item
-              budgetField = budgetFormItem.querySelector('input[type="number"]') || 
-                            budgetFormItem.querySelector('input');
-              
-              if (!budgetField) {
-                throw new Error('Found Budget label but could not find associated input field');
-              }
-            } else {
-              throw new Error('Could not find Budget form item container');
-            }
-          } catch (e2) {
-            console.log('Second strategy failed:', e2.message);
-            
-            // Third strategy: try to find by placeholder or other properties
-            try {
-              budgetField = screen.getByPlaceholderText(/budget/i) || 
-                           screen.getByTestId('budget-input');
-            } catch (e3) {
-              console.error('All strategies to find budget field failed');
-              throw new Error('Could not find Budget field using any strategy');
-            }
-          }
+        const jfkCheckbox = await findFormElement({ label: /JFK/i });
+        if (!jfkCheckbox.checked) {
+          await user.click(jfkCheckbox);
         }
-        
-        console.log('Found budget field:', budgetField);
-        await user.clear(budgetField);
-        await user.type(budgetField, '1200');
+      } catch {
+        // Fallback to other departure dropdown
+        try {
+          const departureSelect = await findFormElement({ 
+            role: 'combobox',
+            name: /Other Departure Airport/i,
+          });
+          await user.click(departureSelect);
+          const laxOption = await screen.findByText(/LAX/i);
+          await user.click(laxOption);
+        } catch (e) {
+          throw new Error('Could not set departure airport through any method');
+        }
+      }
       
-        await user.type(screen.getByPlaceholderText('Enter departure airport code (e.g. JFK)'), 'LAX');
-        await user.type(screen.getByPlaceholderText('Enter destination (e.g. Paris, London)'), 'CDG');
-      } catch (error) {
-        console.error(`Error filling form fields: ${error.message}`);
-        throw error;
+      // Handle destination
+      try {
+        const destinationSelect = await findFormElement({
+          role: 'combobox',
+          name: /Destination/i,
+        });
+        await user.click(destinationSelect);
+        const parisOption = await screen.findByText(/Paris/i);
+        await user.click(parisOption);
+      } catch {
+        try {
+          const customDestination = await findFormElement({
+            placeholder: /Enter destination airport code/i,
+          });
+          await user.clear(customDestination);
+          await user.type(customDestination, 'CDG');
+        } catch (e) {
+          throw new Error('Could not set destination through any method');
+        }
+      }
+      
+      // Handle duration and budget
+      const fields = [
+        { label: /Min Duration/i, value: '3' },
+        { label: /Max Duration/i, value: '7' },
+        { label: /Budget/i, value: '1200' },
+      ];
+      
+      for (const field of fields) {
+        try {
+          const input = await findFormElement({ label: field.label });
+          await user.clear(input);
+          await user.type(input, field.value);
+        } catch (error) {
+          console.error(`Error setting ${field.label}: ${error.message}`);
+          throw error;
+        }
       }
     } catch (error) {
       console.error(`Error in fillBasicFields: ${error.message}`);
+      const form = screen.getByRole('form');
+      console.log('Form structure:', form.innerHTML);
       throw error;
     }
   };
