@@ -4,7 +4,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Import the flight API service (edge version) with explicit fetchToken
 import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
+ zjdk3l-codex/investigate-and-fix-flight-search-response-issue
 import type { TablesInsert } from "../../../src/integrations/supabase/types";
+
 
 // Set up CORS headers
 const corsHeaders = {
