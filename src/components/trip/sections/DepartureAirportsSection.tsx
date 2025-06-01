@@ -38,7 +38,7 @@ const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) =>
                     <Checkbox
                       checked={field.value?.includes(airport.id)}
                       onCheckedChange={(checked) => {
-                        const updatedValue = checked
+                        const updatedValue = checked === true
                           ? [...(field.value || []), airport.id]
                           : (field.value || []).filter((value: string) => value !== airport.id);
                         field.onChange(updatedValue);

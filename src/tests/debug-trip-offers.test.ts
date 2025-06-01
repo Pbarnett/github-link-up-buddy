@@ -52,7 +52,7 @@ describe('Trip offers from real data', () => {
     // Verify our validation works for all offers
     let validCount = 0;
     let invalidCount = 0;
-    let invalidDurations: string[] = [];
+    const invalidDurations: string[] = [];
     
     result.offers.forEach(offer => {
       if (isValidDuration(offer.duration)) {
