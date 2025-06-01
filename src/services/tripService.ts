@@ -57,8 +57,9 @@ export const createTripRequest = async (
 ): Promise<TripRequestResult> => {
   // Create the trip request
   const tripRequest = await createTrip(userId, formData);
-
-  // Invoke the flight-search function and wait for the response
+  
+  // Invoke the flight-search function and await the results
+  console.log(`Invoking flight-search function for trip request ${tripRequest.id}`);
   const { data, error } = await supabase.functions.invoke<{
     offers: TablesInsert<"flight_offers">[];
     matchesInserted: number;
@@ -73,6 +74,7 @@ export const createTripRequest = async (
     console.error("Error invoking flight-search function:", error);
   }
 
+  // Return the trip request with any immediate offers from the function
   const offers = data?.offers ?? [];
   const offersCount = data?.matchesInserted ?? 0;
 
