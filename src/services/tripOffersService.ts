@@ -86,6 +86,7 @@ function isValidFlightNumber(flightNumber: string): boolean {
   return /^[A-Z0-9]{1,8}$/i.test(flightNumber);
 }
 
+
 // Updated duration validation to handle ISO 8601 format
 function isValidDuration(duration: string): boolean {
   // Accept ISO 8601 duration format (PT1H13M) and human-readable format (1h 13m)
