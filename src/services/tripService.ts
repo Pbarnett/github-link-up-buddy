@@ -52,7 +52,7 @@ const createTrip = async (
 
 // Function to create trip request
 export const createTripRequest = async (
-  userId: string, 
+  userId: string,
   formData: ExtendedTripFormValues
 ): Promise<TripRequestResult> => {
   // Create the trip request
@@ -63,6 +63,9 @@ export const createTripRequest = async (
   const { data, error } = await supabase.functions.invoke<{
     offers: TablesInsert<"flight_offers">[];
     matchesInserted: number;
+    requestsProcessed: number;
+    totalDurationMs: number;
+    details: any[];
   }>("flight-search", {
     body: { tripRequestId: tripRequest.id }
   });
@@ -72,9 +75,12 @@ export const createTripRequest = async (
   }
 
   // Return the trip request with any immediate offers from the function
+  const offers = data?.offers ?? [];
+  const offersCount = data?.matchesInserted ?? 0;
+
   return {
     tripRequest,
-    offers: data?.offers ?? [],
-    offersCount: data?.matchesInserted ?? 0
+    offers,
+    offersCount
   };
 };
