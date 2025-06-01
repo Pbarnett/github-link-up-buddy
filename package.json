@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "diagnose-offers": "ts-node scripts/diagnoseTripOffers.ts",
     "test:date": "vitest supabase/functions/flight-search/flightApi.edge.test.ts",
     "dev": "vite",
     "build": "vite build",
@@ -89,6 +90,7 @@
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
     "terser": "^5.29.2",
+    "ts-node": "^10.9.2",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1",
