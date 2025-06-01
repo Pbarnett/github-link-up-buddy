@@ -8,11 +8,9 @@ import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert"; // Added Alert imports
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
-import { TablesInsert, Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { safeQuery } from "@/lib/supabaseUtils";
-import { RealtimeChannel, RealtimePostgresChangesPayload } from "@supabase/supabase-js"; // Added RealtimePostgresChangesPayload
-import { sanitizeInput, validateRequestPayload, generateCsrfToken, verifyCsrfToken, logSecurityEvent, tokenizeValue } from "@/lib/securityUtils";
+import { RealtimePostgresChangesPayload } from "@supabase/supabase-js"; // Added RealtimePostgresChangesPayload
+import { sanitizeInput, validateRequestPayload, generateCsrfToken, logSecurityEvent, tokenizeValue } from "@/lib/securityUtils";
 import { z } from "zod";
 
 // Removed custom BookingRequestPayload type definition
