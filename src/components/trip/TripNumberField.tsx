@@ -1,4 +1,4 @@
-
+import React from "react";
 import { Control } from "react-hook-form";
 import {
   FormControl,
@@ -9,25 +9,22 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { FormValues } from "@/types/form";
 
-// Define the allowed field names as an enum for better extensibility
-export enum TripNumberFieldName {
-  Budget = "budget",
-  MinDuration = "min_duration",
-  MaxDuration = "max_duration",
-  MaxPrice = "max_price"
-}
+// Type for numeric field names in FormValues
+type NumericFormField = Extract<keyof FormValues, 'budget' | 'min_duration' | 'max_duration' | 'max_price'>;
 
 interface TripNumberFieldProps {
-  name: TripNumberFieldName | string; // Allow string to keep compatibility
+  name: NumericFormField;
   label: string;
   description: string;
   placeholder: string;
   prefix?: string;
-  control: Control<any>;
+  control: Control<FormValues>;
 }
 
-const TripNumberField = ({
+// Component implementation
+const TripNumberFieldComponent = ({
   name, 
   label, 
   description, 
@@ -73,4 +70,6 @@ const TripNumberField = ({
   );
 };
 
+// Memoized component for export
+const TripNumberField = React.memo(TripNumberFieldComponent);
 export default TripNumberField;
