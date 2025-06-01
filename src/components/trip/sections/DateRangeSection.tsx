@@ -1,9 +1,7 @@
 
-import React from "react"; // Added React import
+import { memo } from "react";
 import { Control } from "react-hook-form";
-// FormDescription is not used, so it can be removed if desired, but not strictly necessary for this task.
-// For now, I will leave it as the instructions only focus on React.memo.
-import { FormDescription } from "@/components/ui/form"; 
+// FormDescription is not used, so it can be removed if desired.
 import TripDateField from "../TripDateField";
 
 interface DateRangeSectionProps {
@@ -32,5 +30,5 @@ const DateRangeSectionComponent = ({ control }: DateRangeSectionProps) => {
 };
 
 // Memoized component for export
-const DateRangeSection = React.memo(DateRangeSectionComponent);
+const DateRangeSection = memo(DateRangeSectionComponent);
 export default DateRangeSection;

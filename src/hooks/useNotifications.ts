@@ -13,23 +13,29 @@ export interface Notification {
 }
 
 export function useNotifications() {
-  const { data, error, isLoading } = useQuery<Notification[], Error>(
-    ['notifications'],
-    async () => {
-      const user = supabase.auth.user()
+  const {
+    data,
+    error,
+    isPending,
+  } = useQuery<Notification[], Error>({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
       const { data: notes, error } = await supabase
-        .from<Notification>('notifications')
+        .from('notifications')
         .select('*')
         .eq('user_id', user.id)
         .eq('read', false)
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return notes
-    }
-  )
+      return notes as Notification[]
+    },
+  })
 
-  return { data, error, isLoading }
+  return { data, error, isLoading: isPending }
 }

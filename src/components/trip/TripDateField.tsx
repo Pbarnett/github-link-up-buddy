@@ -1,4 +1,4 @@
-import React from "react"; // Added React import
+import { memo } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { Control } from "react-hook-form"; // Removed Controller as it's not used
@@ -97,5 +97,5 @@ const TripDateFieldComponent = ({ name, label, description, control }: TripDateF
 };
 
 // Memoized component for export
-const TripDateField = React.memo(TripDateFieldComponent);
+const TripDateField = memo(TripDateFieldComponent);
 export default TripDateField;
