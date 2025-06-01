@@ -6,8 +6,8 @@ import type { Database } from './types';
 // Make sure to add these to your .env.local file:
 // VITE_SUPABASE_URL=your_supabase_url
 // VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const SUPABASE_URL = import.meta.env['VITE_SUPABASE_URL'] as string;
+const SUPABASE_ANON_KEY = import.meta.env['VITE_SUPABASE_ANON_KEY'] as string;
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
