@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchTripOffers, Offer } from "@/services/tripOffersService";
+import { fetchTripOffers, Offer, diagnoseOfferPipeline } from "@/services/tripOffersService";
 import {
   Card,
   CardHeader,
@@ -48,8 +49,6 @@ export default function TripOffers() {
   const refreshIntervalRef = useRef<number | null>(null);
   const searchStartTimeRef = useRef<number>(Date.now());
 
-  // Client-side validateOfferDuration is removed.
-
   const loadOffers = async (pageToLoad = 0, overrideFilter = false, relaxCriteria = false) => {
     if (pageToLoad === 0) {
       setIsLoading(true);
@@ -89,8 +88,24 @@ export default function TripOffers() {
           throw new Error("Trip details are not available to send to the server for filtering.");
       }
       
+      console.log(`[TripOffers] Loading offers for trip ${tripId}, page ${pageToLoad}`);
+      
       const { offers: newOffers, total } = await fetchTripOffers(tripId, pageToLoad, pageSize);
       const paginationData = { totalFilteredOffers: total, currentPage: pageToLoad, pageSize };
+
+      console.log(`[TripOffers] Loaded ${newOffers.length} offers, total: ${total}`);
+
+      // If no offers found on initial load, run diagnostics
+      if (newOffers.length === 0 && pageToLoad === 0) {
+        console.log(`[TripOffers] No offers found, running diagnostics...`);
+        const diagnostics = await diagnoseOfferPipeline(tripId, false);
+        console.log(`[TripOffers] Diagnostics results:`, diagnostics);
+        
+        if (diagnostics.pipelineStages?.validation?.failed > 0) {
+          console.warn(`[TripOffers] Validation is filtering out ${diagnostics.pipelineStages.validation.failed} offers!`);
+          console.warn(`[TripOffers] Failure breakdown:`, diagnostics.pipelineStages.validation.failureStats);
+        }
+      }
 
       // Update usedRelaxedCriteria state based on the actual criteria used for this load.
       // This is important for reflecting the state accurately in the UI and subsequent calls.
@@ -98,7 +113,6 @@ export default function TripOffers() {
       if (pageToLoad === 0) {
         setUsedRelaxedCriteria(relaxCriteria);
       }
-
 
       if (pageToLoad === 0) { // Only show these toasts on initial load/refresh
         if (relaxCriteria) {
@@ -118,7 +132,7 @@ export default function TripOffers() {
       if (newOffers.length === 0 && pageToLoad === 0) {
         toast({
           title: "No flight offers found",
-          description: "Try relaxing your search criteria or refreshing.",
+          description: "Try refreshing or check the console for diagnostic information.",
           variant: "destructive",
         });
         setOffers([]);
@@ -138,6 +152,7 @@ export default function TripOffers() {
     } catch (err: any) {
       setHasError(true);
       setErrorMessage(err.message || "Something went wrong loading offers");
+      console.error(`[TripOffers] Error loading offers:`, err);
       toast({ title: "Error Loading Flight Offers", description: err.message || "An unexpected error occurred while trying to load flight offers. Please try again.", variant: "destructive" });
       setHasMore(false);
     } finally {
@@ -212,7 +227,6 @@ export default function TripOffers() {
     }
   };
 
-
   const refreshOffers = async () => {
     if (!tripId) return;
     setIsRefreshing(true); 
@@ -251,6 +265,18 @@ export default function TripOffers() {
       // Call loadOffers with the new page, respecting current filter states
       loadOffers(nextPage, ignoreFilter, usedRelaxedCriteria);
     }
+  };
+
+  const handleDebugDiagnose = async () => {
+    if (!tripId) return;
+    console.log(`[TripOffers] Running full diagnostic for trip ${tripId}...`);
+    const diagnostics = await diagnoseOfferPipeline(tripId, false);
+    console.log(`[TripOffers] Full diagnostics:`, diagnostics);
+    
+    toast({
+      title: "Diagnostic Results",
+      description: `Check console for detailed diagnostic information. Found ${diagnostics.finalResult?.count || 0} valid offers.`,
+    });
   };
 
   if (hasError && offers.length === 0) { // Only show full error card if no offers are displayed
@@ -327,6 +353,13 @@ export default function TripOffers() {
                 Search Any Duration
               </Button>
             )}
+            <Button 
+              variant="outline"
+              onClick={handleDebugDiagnose}
+              disabled={isRefreshing || (isLoading && offers.length === 0)}
+            >
+              Debug
+            </Button>
             <Button 
               onClick={refreshOffers} 
               disabled={isRefreshing || (isLoading && offers.length === 0)}
@@ -406,6 +439,12 @@ export default function TripOffers() {
                     Search Any Duration
                   </Button>
                 )}
+                <Button 
+                  onClick={handleDebugDiagnose}
+                  variant="outline"
+                >
+                  Run Diagnostics
+                </Button>
               </div>
             </Card>
           )}
