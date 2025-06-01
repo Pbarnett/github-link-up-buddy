@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { usePaymentMethods, PaymentMethod } from "@/hooks/usePaymentMethods";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { safeQuery } from "@/lib/supabaseUtils";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 
