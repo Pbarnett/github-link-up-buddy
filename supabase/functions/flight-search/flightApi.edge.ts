@@ -2,7 +2,26 @@
 // This file is specifically for Supabase Edge Functions
 // It contains Deno-specific code that shouldn't be imported by client-side code
 
-import type { TablesInsert } from "../../../src/integrations/supabase/types";
+// Supabase type for inserting into the flight_offers table.  Defined here to
+// avoid importing from the src directory which isn't available in the Deno
+// runtime used by Edge Functions.
+export interface FlightOfferInsert {
+  airline: string;
+  auto_book?: boolean;
+  booking_url?: string | null;
+  created_at?: string;
+  departure_date: string;
+  departure_time: string;
+  duration: string;
+  flight_number: string;
+  id?: string;
+  layover_airports?: string[] | null;
+  price: number;
+  return_date: string;
+  return_time: string;
+  stops?: number;
+  trip_request_id: string;
+}
 
 export interface FlightSearchParams {
   origin: string[];
@@ -137,7 +156,7 @@ async function withRetry<T>(
 export async function searchOffers(
   params: FlightSearchParams,
   tripRequestId: string
-): Promise<TablesInsert<"flight_offers">[]> {
+): Promise<FlightOfferInsert[]> {
   console.log(`[flight-search] Starting searchOffers for trip ${tripRequestId}`);
   
   const startTime = Date.now();
@@ -986,7 +1005,7 @@ function dedupOffers(allOffers: any[]): any[] {
 }
 
 // Transform Amadeus response to our format with detailed diagnostics
-export function transformAmadeusToOffers(api: any, tripRequestId: string, params?: FlightSearchParams): TablesInsert<"flight_offers">[] {
+export function transformAmadeusToOffers(api: any, tripRequestId: string, params?: FlightSearchParams): FlightOfferInsert[] {
   // Handle empty response
   if (!api.data || !Array.isArray(api.data) || api.data.length === 0) {
     console.log("[flight-search] No data to transform");
