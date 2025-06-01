@@ -28,5 +28,6 @@ dist-ssr
 /.env.local
 /.env*
 
-# Bun
+# Bun lock file (binary)
 bun.lockb
+**/bun.lockb
