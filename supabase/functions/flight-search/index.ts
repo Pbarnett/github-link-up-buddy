@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Import the flight API service (edge version) with explicit fetchToken
 import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
+import type { TablesInsert } from "@/integrations/supabase/types";
 
 // Set up CORS headers
 const corsHeaders = {
@@ -117,6 +118,7 @@ serve(async (req: Request) => {
     let processedRequests = 0;
     let totalMatchesInserted = 0;
     const details = [];
+    const allOffers: TablesInsert<"flight_offers">[] = [];
     
     // Process each trip request
     for (const request of requests) {
@@ -365,7 +367,7 @@ serve(async (req: Request) => {
         
         if (!savedOffers || savedOffers.length === 0) {
           console.log(`[flight-search] No offers were saved for request ${request.id}. This could be due to duplicates.`);
-          details.push({ 
+          details.push({
             tripRequestId: request.id,
             matchesFound: 0,
             offersGenerated: offers.length,
@@ -373,6 +375,16 @@ serve(async (req: Request) => {
             error: "No offers were saved to the database"
           });
           continue;
+        }
+
+        // Merge generated IDs with full offer data for return payload
+        try {
+          for (let i = 0; i < savedOffers.length; i++) {
+            const fullOffer = { ...filteredOffers[i], id: savedOffers[i].id } as TablesInsert<"flight_offers">;
+            allOffers.push(fullOffer);
+          }
+        } catch (mergeErr) {
+          console.error(`[flight-search] Error preparing return offers for request ${request.id}:`, mergeErr);
         }
         
         // Create flight matches for each saved offer
@@ -448,7 +460,8 @@ serve(async (req: Request) => {
         relaxedCriteriaUsed: relaxedCriteria,
         diagnosticMode,
         environment: environmentInfo,
-        details
+        details,
+        offers: allOffers
       }),
       {
         status: 200,
@@ -468,12 +481,13 @@ serve(async (req: Request) => {
     const totalDurationMs = Date.now() - functionStartTime;
     
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message,
         requestsProcessed: 0,
         matchesInserted: 0,
         totalDurationMs,
-        details: []
+        details: [],
+        offers: []
       }),
       {
         status: 500,
