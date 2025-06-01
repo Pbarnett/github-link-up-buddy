@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -41,7 +41,18 @@ export default function Dashboard() {
         console.error('[Dashboard] Error fetching trip requests:', error)
       } else {
         console.log('[Dashboard] Fetched trip requests:', data)
-        setTripRequests(data || [])
+        // Map the data to match our interface
+        const mappedData = (data || []).map(trip => ({
+          id: trip.id,
+          earliest_departure: trip.earliest_departure,
+          latest_departure: trip.latest_departure,
+          budget: trip.budget,
+          destination_airport: trip.destination_airport || 'Unknown',
+          created_at: trip.created_at,
+          min_duration: trip.min_duration,
+          max_duration: trip.max_duration
+        }))
+        setTripRequests(mappedData)
       }
       setIsLoading(false)
     }

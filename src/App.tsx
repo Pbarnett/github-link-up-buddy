@@ -1,19 +1,12 @@
 
-import React, { lazy, Suspense } from "react"; // Added lazy and Suspense
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index"; // Eagerly loaded
-// import Login from "./pages/Login"; // Changed to lazy
-// import Dashboard from "./pages/Dashboard"; // Changed to lazy
-// import TripNew from "./pages/TripNew"; // Changed to lazy
-// import TripOffers from "./pages/TripOffers"; // Changed to lazy
-// import TripConfirm from "./pages/TripConfirm"; // Changed to lazy
-// import Profile from "./pages/Profile"; // Changed to lazy
-// import Wallet from "./pages/Wallet"; // Changed to lazy
+import Index from "./pages/Index";
 import AuthGuard from "./components/AuthGuard";
-import NotFound from "./pages/NotFound"; // Eagerly loaded
+import NotFound from "./pages/NotFound";
 
 // Lazy load page components
 const Login = lazy(() => import("./pages/Login"));
@@ -32,7 +25,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <BrowserRouter>
-          <Suspense fallback={<div>Loading page...</div>}> {/* Suspense wrapper added */}
+          <Suspense fallback={<div>Loading page...</div>}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
@@ -84,7 +77,6 @@ const App = () => {
                   </AuthGuard>
                 }
               />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
