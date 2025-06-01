@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchTripOffers, Offer, diagnoseOfferPipeline } from "@/services/tripOffersService";
+import { fetchTripOffers, Offer } from "@/services/tripOffersService";
 import {
   Card,
   CardHeader,
@@ -32,17 +32,11 @@ export default function TripOffers() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Add debugging logs
-  console.log("[TripOffers] Component mounted");
-  console.log("[TripOffers] Current URL:", window.location.href);
-  console.log("[TripOffers] Trip ID from params:", tripId);
-  console.log("[TripOffers] All search params:", Object.fromEntries(searchParams.entries()));
-  console.log("[TripOffers] Location state:", location.state);
-
-  const initOffers = (location.state as { offers?: Offer[] })?.offers || [];
-  const [offers, setOffers] = useState<Offer[]>(initOffers);
+  const locationState = location.state as { offers?: Offer[] } | null;
+  const initialOffers = locationState?.offers ?? [];
+  const [offers, setOffers] = useState<Offer[]>(initialOffers);
   const [tripDetails, setTripDetails] = useState<TripDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(initOffers.length === 0);
+  const [isLoading, setIsLoading] = useState(initialOffers.length === 0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -55,24 +49,9 @@ export default function TripOffers() {
   const refreshIntervalRef = useRef<number | null>(null);
   const searchStartTimeRef = useRef<number>(Date.now());
 
-  // Add debugging for state changes
-  useEffect(() => {
-    console.log("[TripOffers] Offers state updated:", offers.length, "offers");
-  }, [offers]);
+  // Client-side validateOfferDuration is removed.
 
-  useEffect(() => {
-    console.log("[TripOffers] Loading state:", { isLoading, isRefreshing, hasError });
-  }, [isLoading, isRefreshing, hasError]);
-
-  // Add a simple test button to navigate to a known trip
-  const handleTestNavigation = () => {
-    console.log("[TripOffers] Testing navigation to known trip");
-    navigate("/trip/offers?id=8a92e9d4-3c47-4b96-9af7-b4fd57344288");
-  };
-
-  const loadOffers = async (pageToLoad = 0, overrideFilter = false, relaxCriteria = false) => {
-    console.log("[TripOffers] loadOffers called with:", { pageToLoad, overrideFilter, relaxCriteria, tripId });
-    
+  const loadOffers = useCallback(async (pageToLoad = 0, overrideFilter = false, relaxCriteria = false) => {
     if (pageToLoad === 0) {
       setIsLoading(true);
     } else {
@@ -84,7 +63,6 @@ export default function TripOffers() {
 
     try {
       if (!tripId) {
-        console.log("[TripOffers] No trip ID provided, setting error");
         setHasError(true);
         setErrorMessage("No trip ID provided");
         if (pageToLoad === 0) setIsLoading(false); else setIsFetchingNextPage(false);
@@ -94,14 +72,11 @@ export default function TripOffers() {
       // Fetch trip details if not already available. This is crucial for filters.
       let currentTripDetails = tripDetails;
       if (!currentTripDetails) { // Fetch if tripDetails is null
-        console.log("[TripOffers] Fetching trip details for trip:", tripId);
         const { data: fetchedTripData, error: tripError } = await supabase
           .from("trip_requests")
           .select("min_duration,max_duration,budget,earliest_departure,latest_departure")
           .eq("id", tripId)
           .single();
-
-        console.log("[TripOffers] Trip details fetch result:", { fetchedTripData, tripError });
 
         if (tripError || !fetchedTripData) {
           throw tripError || new Error("No trip data found for this ID.");
@@ -115,24 +90,8 @@ export default function TripOffers() {
           throw new Error("Trip details are not available to send to the server for filtering.");
       }
       
-      console.log(`[TripOffers] Loading offers for trip ${tripId}, page ${pageToLoad}`);
-      
       const { offers: newOffers, total } = await fetchTripOffers(tripId, pageToLoad, pageSize);
       const paginationData = { totalFilteredOffers: total, currentPage: pageToLoad, pageSize };
-
-      console.log(`[TripOffers] Loaded ${newOffers.length} offers, total: ${total}`);
-
-      // If no offers found on initial load, run diagnostics
-      if (newOffers.length === 0 && pageToLoad === 0) {
-        console.log(`[TripOffers] No offers found, running diagnostics...`);
-        const diagnostics = await diagnoseOfferPipeline(tripId, false);
-        console.log(`[TripOffers] Diagnostics results:`, diagnostics);
-        
-        if (diagnostics.pipelineStages?.validation?.failed > 0) {
-          console.warn(`[TripOffers] Validation is filtering out ${diagnostics.pipelineStages.validation.failed} offers!`);
-          console.warn(`[TripOffers] Failure breakdown:`, diagnostics.pipelineStages.validation.failureStats);
-        }
-      }
 
       // Update usedRelaxedCriteria state based on the actual criteria used for this load.
       // This is important for reflecting the state accurately in the UI and subsequent calls.
@@ -140,6 +99,7 @@ export default function TripOffers() {
       if (pageToLoad === 0) {
         setUsedRelaxedCriteria(relaxCriteria);
       }
+
 
       if (pageToLoad === 0) { // Only show these toasts on initial load/refresh
         if (relaxCriteria) {
@@ -159,7 +119,7 @@ export default function TripOffers() {
       if (newOffers.length === 0 && pageToLoad === 0) {
         toast({
           title: "No flight offers found",
-          description: "Try refreshing or check the console for diagnostic information.",
+          description: "Try relaxing your search criteria or refreshing.",
           variant: "destructive",
         });
         setOffers([]);
@@ -176,24 +136,22 @@ export default function TripOffers() {
         setHasMore(newOffers.length === pageSize);
       }
 
-    } catch (err: any) {
-      console.error(`[TripOffers] Error loading offers:`, err);
+    } catch (err: unknown) {
       setHasError(true);
-      setErrorMessage(err.message || "Something went wrong loading offers");
-      toast({ title: "Error Loading Flight Offers", description: err.message || "An unexpected error occurred while trying to load flight offers. Please try again.", variant: "destructive" });
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong loading offers";
+      setErrorMessage(errorMessage);
+      toast({ title: "Error Loading Flight Offers", description: errorMessage, variant: "destructive" });
       setHasMore(false);
     } finally {
       if (pageToLoad === 0) setIsLoading(false);
       setIsFetchingNextPage(false);
     }
-  };
+  }, [tripId, tripDetails]);
   
   // Main useEffect for loading offers when tripId or primary filters change.
   const initialLoadRef = useRef(true);
 
   useEffect(() => {
-    console.log("[TripOffers] Main useEffect triggered with tripId:", tripId);
-    
     if (tripId) {
         setCurrentPage(0);
         setHasMore(true);
@@ -201,18 +159,14 @@ export default function TripOffers() {
         searchStartTimeRef.current = Date.now();
         setTripDetails(null);
 
-        if (initialLoadRef.current && initOffers.length > 0) {
-          console.log("[TripOffers] Using initial offers from location state");
+        if (initialLoadRef.current && initialOffers.length > 0) {
           startAutoRefresh();
         } else {
-          console.log("[TripOffers] Loading offers from API");
           setOffers([]);
           loadOffers(0, ignoreFilter, usedRelaxedCriteria);
         }
 
         initialLoadRef.current = false;
-    } else {
-      console.log("[TripOffers] No tripId provided, not loading offers");
     }
     
     // Cleanup function to clear the interval when component unmounts or tripId changes
@@ -220,15 +174,40 @@ export default function TripOffers() {
       stopAutoRefresh();
     };
   // ignoreFilter and usedRelaxedCriteria changes will trigger a page 0 reload.
-  }, [tripId, ignoreFilter, usedRelaxedCriteria]); 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripId, ignoreFilter, usedRelaxedCriteria, initialOffers.length]); 
   
-  // Setup auto-refresh interval
-  const startAutoRefresh = () => {
+  // Clean up the interval
+  const stopAutoRefresh = useCallback(() => {
+    if (refreshIntervalRef.current !== null) {
+      window.clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+    }
+  }, []);
+  
+  // Refresh offers function - must be defined before startAutoRefresh 
+  const refreshOffers = useCallback(async () => {
+    if (!tripId) return;
+    setIsRefreshing(true); 
+    setCurrentPage(0);
+    setOffers([]);
+    setHasMore(true);
+    setTripDetails(null); // Force re-fetch of trip details
+    try {
+      // When refreshing, use the current state of ignoreFilter and usedRelaxedCriteria
+      await loadOffers(0, ignoreFilter, usedRelaxedCriteria); 
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [tripId, ignoreFilter, usedRelaxedCriteria, loadOffers]);
+  
+  // Setup auto-refresh interval - defined after its dependencies
+  const startAutoRefresh = useCallback(() => {
     // Clear any existing interval first
     stopAutoRefresh();
     
-    // Set a new interval - refresh every 10 seconds
-    refreshIntervalRef.current = window.setInterval(() => {
+    // Define the refresh function that will be used in both intervals
+    const refreshWithCheck = () => {
       // Only auto-refresh if we're not already loading or refreshing
       if (!isLoading && !isRefreshing && !isFetchingNextPage) {
         // Update search duration for progress indicator
@@ -242,38 +221,14 @@ export default function TripOffers() {
         if (offers.length > 0 || currentDuration >= 100) {
           console.log("Slowing down refresh rate...");
           stopAutoRefresh();
-          refreshIntervalRef.current = window.setInterval(() => {
-            if (!isLoading && !isRefreshing && !isFetchingNextPage) {
-              refreshOffers();
-            }
-          }, 30000); // Slow down to every 30 seconds once we have results
+          refreshIntervalRef.current = window.setInterval(refreshWithCheck, 30000); // Slow down to every 30 seconds
         }
       }
-    }, 10000); // Initial polling every 10 seconds
-  };
-  
-  // Clean up the interval
-  const stopAutoRefresh = () => {
-    if (refreshIntervalRef.current !== null) {
-      window.clearInterval(refreshIntervalRef.current);
-      refreshIntervalRef.current = null;
-    }
-  };
+    };
 
-  const refreshOffers = async () => {
-    if (!tripId) return;
-    setIsRefreshing(true); 
-    setCurrentPage(0);
-    setOffers([]);
-    setHasMore(true);
-    setTripDetails(null); // Force re-fetch of trip details
-    try {
-      // When refreshing, use the current state of ignoreFilter and usedRelaxedCriteria
-      await loadOffers(0, ignoreFilter, usedRelaxedCriteria); 
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
+    // Set initial interval - refresh every 10 seconds
+    refreshIntervalRef.current = window.setInterval(refreshWithCheck, 10000);
+  }, [isLoading, isRefreshing, isFetchingNextPage, offers.length, refreshOffers, stopAutoRefresh]);
   
   const handleOverrideSearch = () => {
     setIgnoreFilter(true); 
@@ -300,47 +255,6 @@ export default function TripOffers() {
     }
   };
 
-  const handleDebugDiagnose = async () => {
-    if (!tripId) return;
-    console.log(`[TripOffers] Running full diagnostic for trip ${tripId}...`);
-    const diagnostics = await diagnoseOfferPipeline(tripId, false);
-    console.log(`[TripOffers] Full diagnostics:`, diagnostics);
-    
-    toast({
-      title: "Diagnostic Results",
-      description: `Check console for detailed diagnostic information. Found ${diagnostics.finalResult?.count || 0} valid offers.`,
-    });
-  };
-
-  // If no tripId, show a helpful message instead of an error
-  if (!tripId) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>No Trip Selected</CardTitle>
-            <CardDescription>
-              You need to select a trip to view offers.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Current URL: {window.location.href}
-            </p>
-            <div className="flex flex-col gap-2">
-              <Button onClick={() => navigate("/dashboard")}>
-                Go to Dashboard
-              </Button>
-              <Button variant="outline" onClick={handleTestNavigation}>
-                Test with Sample Trip
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   if (hasError && offers.length === 0) { // Only show full error card if no offers are displayed
     return (
       <TripErrorCard 
@@ -355,22 +269,6 @@ export default function TripOffers() {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
-      {/* Debug Info Card */}
-      <Card className="w-full max-w-5xl mb-4 bg-yellow-50">
-        <CardHeader>
-          <CardTitle className="text-sm">Debug Info</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-xs space-y-1">
-            <p><strong>Trip ID:</strong> {tripId}</p>
-            <p><strong>Offers Count:</strong> {offers.length}</p>
-            <p><strong>Loading:</strong> {isLoading.toString()}</p>
-            <p><strong>Has Error:</strong> {hasError.toString()}</p>
-            <p><strong>URL:</strong> {window.location.href}</p>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Trip Summary Card */}
       {tripDetails && (
         <Card className="w-full max-w-5xl mb-6">
@@ -431,13 +329,6 @@ export default function TripOffers() {
                 Search Any Duration
               </Button>
             )}
-            <Button 
-              variant="outline"
-              onClick={handleDebugDiagnose}
-              disabled={isRefreshing || (isLoading && offers.length === 0)}
-            >
-              Debug
-            </Button>
             <Button 
               onClick={refreshOffers} 
               disabled={isRefreshing || (isLoading && offers.length === 0)}
@@ -517,12 +408,6 @@ export default function TripOffers() {
                     Search Any Duration
                   </Button>
                 )}
-                <Button 
-                  onClick={handleDebugDiagnose}
-                  variant="outline"
-                >
-                  Run Diagnostics
-                </Button>
               </div>
             </Card>
           )}

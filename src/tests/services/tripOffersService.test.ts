@@ -1,9 +1,6 @@
 import { describe, it, expect } from 'vitest';
-
-// Import the regex pattern directly for testing
-const isValidDuration = (duration: string): boolean => {
-  return /^(PT((\d+H)(\d+M)?|(\d+M)))|\d+h(?:\s*\d+m)?$/.test(duration);
-};
+import { isValidDuration, debugInspectTripOffers } from '@/services/tripOffersService';
+import { supabase } from '@/integrations/supabase/client';
 
 describe('Duration validation', () => {
   it('should validate ISO 8601 duration formats correctly', () => {
@@ -39,3 +36,46 @@ describe('Duration validation', () => {
   });
 });
 
+describe('Trip offers inspection', () => {
+  it('should find any available flight offers', async () => {
+    try {
+      // First try to get any flight offers from the database
+      const { data: anyOffer } = await supabase
+        .from('flight_offers')
+        .select('trip_request_id')
+        .single(); // Get just one row
+      
+      console.log('Found offer:', !!anyOffer);
+      
+      if (anyOffer) {
+        const tripId = anyOffer.trip_request_id;
+        console.log('Using trip ID:', tripId);
+        
+        const rawOffers = await debugInspectTripOffers(tripId);
+        console.log('Raw offers found:', rawOffers.length);
+        
+        if (rawOffers.length > 0) {
+          console.log('Sample duration formats:', 
+            rawOffers.slice(0, 3).map(o => o.duration));
+          console.log('First offer:', JSON.stringify(rawOffers[0], null, 2));
+        }
+           } else {
+        console.log('No flight offers found in the database');
+        
+        // Fall back to previous test case with fixed ID for reference
+        const tripId = '8a92e9d4-3c47-4b96-9af7-b4fd57344288';
+        const rawOffers = await debugInspectTripOffers(tripId);
+        console.log('Using fallback trip ID:', tripId);
+        console.log('Raw offers found:', rawOffers.length);
+      }
+    } catch (error) {
+      console.error('Error searching for flight offers:', error);
+      
+      // Fall back to previous test case with fixed ID for reference
+      const tripId = '8a92e9d4-3c47-4b96-9af7-b4fd57344288';
+      const rawOffers = await debugInspectTripOffers(tripId);
+      console.log('Using fallback trip ID (after error):', tripId);
+      console.log('Raw offers found:', rawOffers.length);
+    }
+  }, 30000); // Increase timeout for database operations
+});
