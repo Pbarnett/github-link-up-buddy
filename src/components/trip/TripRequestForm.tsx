@@ -89,7 +89,6 @@ const TripRequestForm = () => {
       destination_airport: destinationAirport,
       // Add auto-booking fields
       auto_book: data.auto_book,
-65veya-codex/fix-edge-function-import-issue
       max_price: data.max_price ?? null,
       preferred_payment_method_id: data.preferred_payment_method_id ?? null,
     };

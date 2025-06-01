@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { logger } from './logger';
 import { AppError } from './errorUtils';
 import { LogContext } from './types';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
 
 // Environment validation
 export const environmentSchema = z.object({
@@ -150,11 +149,10 @@ export const verifyCsrfToken = (
   if (!requestToken || !sessionToken) {
     return false;
   }
-  // Use timing-safe comparison to prevent timing attacks
-  return timingSafeEqual(
-    Buffer.from(requestToken),
-    Buffer.from(sessionToken)
-  );
+  // Client-side CSRF token verification typically doesn't require timing-safe comparison.
+  // The primary defense is ensuring the token matches.
+  // Server-side verification, if applicable, should handle timing safety.
+  return requestToken === sessionToken;
 };
 
 // Comprehensive security event logging with enhanced context
@@ -199,13 +197,21 @@ export const isValidIpAddress = (ip: string): boolean => {
 };
 
 // Session security utilities
+
+// Helper function for generating a browser-compatible random hex string
+const generateBrowserRandomHex = (bytes: number): string => {
+  const array = new Uint8Array(bytes);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
 export const sessionSecurity = {
   generateSessionId: (): string => {
-    return randomBytes(32).toString('hex');
+    return generateBrowserRandomHex(32);
   },
   
   rotateSessionId: (currentId: string): string => {
-    const newId = randomBytes(32).toString('hex');
+    const newId = generateBrowserRandomHex(32);
     logSecurityEvent('session_rotation', { oldId: tokenizeValue(currentId) });
     return newId;
   },
