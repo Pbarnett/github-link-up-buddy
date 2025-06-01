@@ -1,5 +1,11 @@
 ### Testing Instructions for Auto-Booking Feature
 
+Before running any linting or test commands, install dependencies with:
+
+```bash
+pnpm install
+```
+
 These instructions describe how to test the auto-booking functionality within the `scheduler-flight-search` Supabase edge function.
 
 **1. Prerequisites:**

@@ -2,7 +2,7 @@
 // This file is specifically for Supabase Edge Functions
 // It contains Deno-specific code that shouldn't be imported by client-side code
 
-import type { TablesInsert } from "@/integrations/supabase/types";
+import type { TablesInsert } from "../../../src/integrations/supabase/types";
 
 export interface FlightSearchParams {
   origin: string[];
