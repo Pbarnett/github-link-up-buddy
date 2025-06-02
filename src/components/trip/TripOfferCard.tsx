@@ -6,6 +6,15 @@ import { PlaneTakeoff, Calendar, Clock, ExternalLink } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 
+// Lookups
+import { airportNames } from "@/data/airportLookup";
+import { airlineNames } from "@/data/airlineLookup";
+
+// Utils
+import { combineDateTime } from "@/utils/combineDateTime";
+import { formatLocalDateTime } from "@/utils/formatDateTime";
+import { parseDuration } from "@/utils/parseDuration";
+
 export interface OfferProps {
   id: string;
   price: number;
@@ -17,10 +26,42 @@ export interface OfferProps {
   return_time: string;
   duration: string;
   booking_url?: string;
+  // New optional fields for enhanced display
+  carrier_code?: string;
+  origin_airport?: string;
+  destination_airport?: string;
 }
 
 const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
   const navigate = useNavigate();
+
+  // 1. Determine the IATA carrier code
+  const rawFlightNum = offer.flight_number || "";
+  const extractedCarrier = rawFlightNum.match(/^([A-Z]{1,3})/)?.[1] || "";
+  const carrierCode = offer.carrier_code || extractedCarrier.toUpperCase();
+
+  // 2. Determine friendly airline name
+  const friendlyAirline = 
+    (carrierCode && airlineNames[carrierCode]) || offer.airline;
+
+  // 3. Airport display with fallbacks
+  const originLabel =
+    (offer.origin_airport && airportNames[offer.origin_airport]) || offer.origin_airport || "";
+  const destLabel =
+    (offer.destination_airport && airportNames[offer.destination_airport]) || offer.destination_airport || "";
+
+  // 4. Combine date + time into ISO strings
+  const departureISO = combineDateTime(offer.departure_date, offer.departure_time);
+  const returnISO = combineDateTime(offer.return_date, offer.return_time);
+
+  // 5. Convert to local, 12-hour format
+  const depLocal = formatLocalDateTime(departureISO);
+  const retLocal = formatLocalDateTime(returnISO);
+
+  // 6. Parse duration if ISO format, otherwise show as-is
+  const humanDuration = offer.duration.startsWith("PT")
+    ? parseDuration(offer.duration)
+    : offer.duration;
 
   const handleSelect = () => {
     if (offer.booking_url) {
@@ -72,9 +113,20 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
       <div className="flex flex-col md:flex-row">
         <div className="p-6 flex-1">
           <div className="flex items-center mb-4">
-            <h3 className="text-xl font-semibold">{offer.airline}</h3>
+            <h3 className="text-xl font-semibold">
+              {friendlyAirline}
+              {offer.flight_number ? ` flight ${offer.flight_number}` : ""}
+            </h3>
             <Badge variant="outline" className="ml-2">{offer.flight_number}</Badge>
           </div>
+          
+          {/* Route display if we have airport codes */}
+          {(originLabel || destLabel) && (
+            <div className="text-sm text-gray-700 mb-3">
+              <span className="font-medium">{originLabel || "Origin"}</span> → {" "}
+              <span className="font-medium">{destLabel || "Destination"}</span>
+            </div>
+          )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Departure Info */}
@@ -82,11 +134,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
               <h4 className="text-sm font-medium text-gray-500">Departure</h4>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{new Date(offer.departure_date).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{offer.departure_time}</span>
+                <span>{depLocal}</span>
               </div>
             </div>
             
@@ -95,18 +143,14 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
               <h4 className="text-sm font-medium text-gray-500">Return</h4>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{new Date(offer.return_date).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{offer.return_time}</span>
+                <span>{retLocal}</span>
               </div>
             </div>
           </div>
           
           <div className="mt-4 flex items-center">
             <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
-            <span className="text-sm text-gray-500">Flight duration: {offer.duration}</span>
+            <span className="text-sm text-gray-500">Flight duration: {humanDuration}</span>
           </div>
         </div>
         <div className="bg-gray-50 p-6 flex flex-col justify-center items-center md:items-end">
@@ -119,7 +163,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
           >
             {offer.booking_url ? (
               <>
-                Book on {offer.airline}
+                Book on {carrierCode || offer.airline}
                 <ExternalLink className="ml-2 h-4 w-4" />
               </>
             ) : (
