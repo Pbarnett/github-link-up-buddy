@@ -298,7 +298,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
             mode="range"
             defaultMonth={dateRange?.from}
             selected={dateRange}
-            onSelect={onDateRangeChange}
+            onSelect={(range, _selectedDay, _activeModifiers, _e) => onDateRangeChange(range)}
             numberOfMonths={2}
             pagedNavigation
             className="border-0 rounded-md"
