@@ -24,7 +24,13 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
 
   const handleSelect = () => {
     if (offer.booking_url) {
-      console.log(`External booking link clicked for offer ID: ${offer.id}, URL: ${offer.booking_url}`);
+      console.log(`[ANALYTICS] External booking clicked:`, {
+        offerId: offer.id,
+        airline: offer.airline,
+        price: offer.price,
+        bookingUrl: offer.booking_url,
+        timestamp: new Date().toISOString()
+      });
       
       toast({
         title: "Redirecting to " + offer.airline,
