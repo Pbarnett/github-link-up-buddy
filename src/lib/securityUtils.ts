@@ -3,6 +3,29 @@ import { z } from 'zod';
 import { logger } from './logger';
 import { AppError } from './errorUtils';
 import { LogContext } from './types';
+// Use Web Crypto API for randomness, available in modern browsers and Node >=17
+// Simple timing-safe equality check to avoid pulling in node:crypto's timingSafeEqual
+const safeEqual = (a: string, b: string): boolean => {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    return false;
+  }
+  let result = 0;
+  for (let i = 0; i < bufA.length; i++) {
+    result |= bufA[i] ^ bufB[i];
+  }
+  return result === 0;
+};
+
+const generateRandomHex = (size: number): string => {
+  const bytes = new Uint8Array(size);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+};
+
 
 // Environment validation
 export const environmentSchema = z.object({
@@ -152,18 +175,8 @@ export const verifyCsrfToken = (
     logger.warn('CSRF token verification failed: Missing token(s).');
     return false;
   }
-
-
-  if (requestToken.length !== sessionToken.length) {
-    logger.warn('CSRF token verification failed: Token length mismatch.');
-    return false;
-  }
-
-  const isValid = requestToken === sessionToken;
-  if (!isValid) {
-    logger.warn('CSRF token verification failed: Token mismatch.');
-  }
-  return isValid;
+  // Use timing-safe comparison to prevent timing attacks
+  return safeEqual(requestToken, sessionToken);
 
 };
 
@@ -217,12 +230,11 @@ const generateBrowserRandomHex = (bytes: number): string => {
 
 export const sessionSecurity = {
   generateSessionId: (): string => {
-
-    return generateBrowserRandomHex(32);
+    return generateRandomHex(32);
   },
   
   rotateSessionId: (currentId: string): string => {
-    const newId = generateBrowserRandomHex(32);
+    const newId = generateRandomHex(32);
 
     logSecurityEvent('session_rotation', { oldId: tokenizeValue(currentId) });
     return newId;
