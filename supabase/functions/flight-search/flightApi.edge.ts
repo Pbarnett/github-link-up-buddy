@@ -567,6 +567,8 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
         const retDate = new Date(returnDate);
         const tripDays = Math.round((retDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24));
         
+        const bookingLink = offer.pricingOptions?.agents?.[0]?.deepLink || offer.deepLink || null;
+
         return [{
           trip_request_id: tripRequestId,
           airline: out.carrierCode,
@@ -577,6 +579,7 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
           return_time: back.departure.at.split("T")[1].slice(0,5),
           duration: offer.itineraries[0].duration,
           price: parseFloat(offer.price.total),
+          booking_url: bookingLink,
         }];
       } catch (err) {
         console.error("[flight-search] Error transforming individual offer:", err);
