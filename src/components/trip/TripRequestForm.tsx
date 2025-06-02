@@ -122,11 +122,15 @@ const TripRequestForm = () => {
 
     if (error) throw error;
 
+    // Ensure tripRequest is not null before accessing its properties,
+    // although `single()` should throw if it's null and no error occurred.
+    // However, for type safety with TypeScript, it's good practice.
+    if (!tripRequest) {
+      throw new Error("Failed to create trip request or retrieve its data.");
+    }
+
     return {
-      tripRequest: {
-        id: tripRequest.id,
-        auto_book_enabled: tripRequest.auto_book_enabled,
-      },
+      tripRequest: tripRequest, // Use the full object from Supabase
       offersCount: 0, // Will be updated when flight search runs
     };
   };
