@@ -225,7 +225,8 @@ const TripConfirm = () => {
           offer_id: offer.id,
           offer_data: offer,
           traveler_data: data,
-          status: 'new'
+          status: 'new',
+          user_id: userId // Add this line
         })
         .select()
         .single();
