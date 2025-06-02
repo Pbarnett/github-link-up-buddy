@@ -12,6 +12,10 @@ export interface Offer {
   return_time: string;
   duration: string;
   booking_url?: string;
+  // Enhanced fields for better display
+  carrier_code?: string;
+  origin_airport?: string;
+  destination_airport?: string;
 }
 
 export const fetchTripOffers = async (tripId: string): Promise<Offer[]> => {
@@ -44,6 +48,9 @@ export const fetchTripOffers = async (tripId: string): Promise<Offer[]> => {
       return_time: item.return_time,
       duration: item.duration,
       booking_url: item.booking_url,
+      carrier_code: item.carrier_code,
+      origin_airport: item.origin_airport,
+      destination_airport: item.destination_airport,
     }));
   } catch (error) {
     console.error("Error in fetchTripOffers:", error);

@@ -26,7 +26,7 @@ export interface OfferProps {
   return_time: string;
   duration: string;
   booking_url?: string;
-  // New optional fields for enhanced display
+  // Enhanced fields for better display
   carrier_code?: string;
   origin_airport?: string;
   destination_airport?: string;
@@ -38,17 +38,21 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
   // 1. Determine the IATA carrier code
   const rawFlightNum = offer.flight_number || "";
   const extractedCarrier = rawFlightNum.match(/^([A-Z]{1,3})/)?.[1] || "";
-  const carrierCode = offer.carrier_code || extractedCarrier.toUpperCase();
+  const carrierCode = offer.carrier_code || extractedCarrier.toUpperCase() || offer.airline;
 
   // 2. Determine friendly airline name
   const friendlyAirline = 
-    (carrierCode && airlineNames[carrierCode]) || offer.airline;
+    (carrierCode && airlineNames[carrierCode]) || offer.airline || carrierCode;
 
   // 3. Airport display with fallbacks
   const originLabel =
-    (offer.origin_airport && airportNames[offer.origin_airport]) || offer.origin_airport || "";
+    (offer.origin_airport && airportNames[offer.origin_airport]) || 
+    offer.origin_airport || 
+    "Origin";
   const destLabel =
-    (offer.destination_airport && airportNames[offer.destination_airport]) || offer.destination_airport || "";
+    (offer.destination_airport && airportNames[offer.destination_airport]) || 
+    offer.destination_airport || 
+    "Destination";
 
   // 4. Combine date + time into ISO strings
   const departureISO = combineDateTime(offer.departure_date, offer.departure_time);
@@ -74,7 +78,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
       });
       
       toast({
-        title: "Redirecting to " + offer.airline,
+        title: "Redirecting to " + friendlyAirline,
         description: "Opening airline website to complete your booking...",
         duration: 3000,
       });
@@ -104,7 +108,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
     
     toast({
       title: "Flight Selected",
-      description: `You've selected ${offer.airline} flight ${offer.flight_number} for booking.`,
+      description: `You've selected ${friendlyAirline} flight ${offer.flight_number} for booking.`,
     });
   };
 
@@ -121,10 +125,10 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
           </div>
           
           {/* Route display if we have airport codes */}
-          {(originLabel || destLabel) && (
+          {(offer.origin_airport || offer.destination_airport) && (
             <div className="text-sm text-gray-700 mb-3">
-              <span className="font-medium">{originLabel || "Origin"}</span> → {" "}
-              <span className="font-medium">{destLabel || "Destination"}</span>
+              <span className="font-medium">{originLabel}</span> → {" "}
+              <span className="font-medium">{destLabel}</span>
             </div>
           )}
           
@@ -163,7 +167,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
           >
             {offer.booking_url ? (
               <>
-                Book on {carrierCode || offer.airline}
+                Book on {carrierCode || friendlyAirline}
                 <ExternalLink className="ml-2 h-4 w-4" />
               </>
             ) : (
