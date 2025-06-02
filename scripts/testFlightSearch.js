@@ -1,3 +1,4 @@
+
 #!/usr/bin/env node
 
 /**
@@ -11,24 +12,20 @@
  * TRIP_REQUEST_ID environment variable or exit with an error.
  */
 
-import { execSync } from 'child_process';
-import { createClient } from '@supabase/supabase-js';
-import { config } from 'dotenv';
+const { execSync } = require('child_process');
+const { createClient } = require('@supabase/supabase-js');
 
-// Load environment variables from .env.local
-config({ path: '.env.local' });
+// Get Supabase URL and anon key from environment or .env file
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
-// Get Supabase URL and service role key from environment
-const SUPABASE_URL = process.env.SUPABASE_PROJECT_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('Error: SUPABASE_PROJECT_URL and SUPABASE_SERVICE_ROLE_KEY environment variables are required');
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('Error: SUPABASE_URL and SUPABASE_ANON_KEY environment variables are required');
   process.exit(1);
 }
 
 // Create Supabase client
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Get trip request ID from command line or environment
 const tripRequestId = process.argv[2] || process.env.TRIP_REQUEST_ID;

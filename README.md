@@ -30,7 +30,6 @@ cd <repository-name>
 ```bash
 pnpm install
 ```
-   - In the Codex environment this step is performed automatically by `.codex/setup.sh` during setup.
 
 3. Create a `.env` file from the example:
 ```bash
@@ -72,21 +71,6 @@ The application integrates with the Amadeus Flight API for real flight searches.
 - Supabase Secrets: same three values must be added to Edge Function Secrets
 - Rate limit: The Amadeus API has rate limits of approximately 1 request/second, 50 requests/minute
 - Throttling & retry logic is built into our implementation
-
-### Asynchronous Flight Search
-
-Flight searches now run asynchronously in the background:
-
-- **Background Processing**: When a trip request is created, the flight search process is initiated in the background
-- **Immediate Response**: The user is redirected to the offers page immediately, without waiting for search results
-- **Dynamic Updates**: The offers page will automatically check for and display new flight offers as they become available
-- **Processing Time**: Flight search may take up to a minute to complete, depending on API response times and complexity
-- **Refresh Mechanism**: The offers page polls the database for new results every few seconds. Users can also refresh manually.
-
-This approach provides a more responsive user experience by:
-- Eliminating waiting time after trip creation
-- Allowing users to start reviewing offers as soon as they become available
-- Supporting more complex searches without UI blocking
 
 ### Retry Logic
 The application implements exponential backoff for API requests:

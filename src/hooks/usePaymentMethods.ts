@@ -7,7 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 export type PaymentMethod = Database["public"]["Tables"]["payment_methods"]["Row"];
 
 export function usePaymentMethods() {
-  const query = useQuery<PaymentMethod[], Error>({
+  return useQuery<PaymentMethod[], Error>({
     queryKey: ["payment_methods"],
     queryFn: async () => {
       try {
@@ -20,19 +20,9 @@ export function usePaymentMethods() {
         
         return data || [];
       } catch (error) {
-        console.error("Error fetching payment methods:", error); // Preserving this console.error
-        throw error; // Ensure error is re-thrown for useQuery to handle
+        console.error("Error fetching payment methods:", error);
+        throw error;
       }
     }
   });
-
-  return {
-    paymentMethods: query.data,
-    loading: query.isLoading,
-    error: query.error,
-    refetch: query.refetch
-    // Add any other properties from 'query' that components might need,
-    // e.g., isFetching, isError, etc., if they were used.
-    // For now, only map the ones specified in the user's error analysis.
-  };
 }

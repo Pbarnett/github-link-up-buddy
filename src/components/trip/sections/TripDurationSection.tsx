@@ -1,13 +1,12 @@
-import React from "react";
+
 import { Control } from "react-hook-form";
 import TripNumberField from "../TripNumberField";
-import { FormValues } from "@/types/form";
 
 interface TripDurationSectionProps {
-  control: Control<FormValues>;
+  control: Control<any>;
 }
 
-const TripDurationSectionComponent = ({ control }: TripDurationSectionProps) => {
+const TripDurationSection = ({ control }: TripDurationSectionProps) => {
   return (
     <div className="grid grid-cols-2 gap-4">
       <TripNumberField 
@@ -28,8 +27,5 @@ const TripDurationSectionComponent = ({ control }: TripDurationSectionProps) => 
     </div>
   );
 };
-
-// Memoized component for export
-const TripDurationSection = React.memo(TripDurationSectionComponent);
 
 export default TripDurationSection;

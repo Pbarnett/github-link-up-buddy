@@ -1,5 +1,4 @@
 
-import { memo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,12 +18,11 @@ export interface OfferProps {
   duration: string;
 }
 
-// Renamed original component
-const TripOfferCardComponent = ({ offer }: { offer: OfferProps }) => {
+const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
   const navigate = useNavigate();
 
   const handleSelect = () => {
-    // console.log('Selected offer', offer.id); // Removed
+    console.log('Selected offer', offer.id);
     
     // Create query parameters from the offer
     const params = new URLSearchParams();
@@ -100,8 +98,5 @@ const TripOfferCardComponent = ({ offer }: { offer: OfferProps }) => {
     </Card>
   );
 };
-
-// Memoize the component
-const TripOfferCard = memo(TripOfferCardComponent);
 
 export default TripOfferCard;

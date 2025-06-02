@@ -1,7 +1,8 @@
 {
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json" }
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
     "baseUrl": ".",
@@ -11,8 +12,8 @@
     "noImplicitAny": false,
     "noUnusedParameters": false,
     "skipLibCheck": true,
-            "allowJs": true,
-            "noUnusedLocals": false,
-            "strictNullChecks": true
+    "allowJs": true,
+    "noUnusedLocals": false,
+    "strictNullChecks": false
   }
 }

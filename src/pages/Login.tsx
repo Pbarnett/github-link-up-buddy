@@ -152,7 +152,7 @@ const Login = () => {
       // }); // Removed
       
       // Now sign in with Google OAuth with explicit parameters
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin + '/dashboard',

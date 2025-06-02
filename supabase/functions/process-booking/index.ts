@@ -1,203 +1,209 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import Stripe from "https://esm.sh/stripe@14.21.0"; // Using a fixed recent version
-
-// Critical Environment Variable Checks
-const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY");
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-if (!STRIPE_SECRET_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("FATAL: Missing critical environment variables (Stripe or Supabase keys/URL). Function cannot start.");
-  // In a real Deno deploy, this throw might not be caught by the serve wrapper,
-  // but it will prevent the function from being served if env vars are missing at startup.
-  throw new Error("Missing critical environment variables. Function cannot start.");
-}
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { bookWithAmadeus } from "../lib/amadeus.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey",
 };
 
-serve(async (req: Request) => {
-  // Immediately handle OPTIONS preflight
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL") as string,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string
+);
 
-  // Initialize outside main try-catch if they are needed for generic error responses with CORS
-  const headers = { ...corsHeaders, "Content-Type": "application/json" };
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+async function processBookingRequest(bookingRequest: any) {
+  console.log(`[PROCESS-BOOKING] Processing booking request ${bookingRequest.id}`);
+  
   try {
-    if (req.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
-        status: 405,
-        headers,
-      });
-    }
+    // Mark as processing
+    await supabase
+      .from("booking_requests")
+      .update({ 
+        status: "processing",
+        processed_at: new Date().toISOString()
+      })
+      .eq("id", bookingRequest.id);
 
-    let sessionId: string | undefined;
-    try {
-      const body = await req.json();
-      if (typeof body !== 'object' || body === null) {
-        throw new Error("Invalid JSON body."); // Will be caught by outer catch
-      }
-      sessionId = body.sessionId;
-      if (!sessionId || typeof sessionId !== 'string') {
-        return new Response(JSON.stringify({ error: "Missing or invalid sessionId in request body" }), {
-          status: 400,
-          headers,
-        });
-      }
-    } catch (_parseError) {
-      // This catches req.json() failures or the explicit throw above
-      return new Response(JSON.stringify({ error: "Bad Request: Invalid JSON body" }), {
-        status: 400,
-        headers,
-      });
-    }
-
-    const stripe = new Stripe(STRIPE_SECRET_KEY!, { // Non-null assertion due to check at startup
-      apiVersion: "2023-10-16",
-      httpClient: Stripe.createFetchHttpClient(),
-    });
-    const supabaseAdmin: SupabaseClient = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
-
-    let bookingRequestId: string | null = null;
-    let responseErrorMessage: string = '';
-    let dbErrorMessage: string = '';
-    let errorStatus: number = 500;
-
-    try {
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
-      bookingRequestId = session.metadata?.booking_request_id || null;
-
-      if (session.payment_status !== 'paid') {
-        dbErrorMessage = 'Payment not completed';
-        responseErrorMessage = dbErrorMessage;
-        errorStatus = 400;
-        await supabaseAdmin
-          .from('booking_requests')
-          .update({ status: 'failed', updated_at: new Date().toISOString(), error_message: dbErrorMessage })
-          .eq('checkout_session_id', sessionId);
-        throw new Error(responseErrorMessage); // Caught by the catch block below this inner try
-      }
-
-      if (!bookingRequestId) {
-        dbErrorMessage = 'Missing booking_request_id in Stripe session metadata';
-        responseErrorMessage = dbErrorMessage;
-        errorStatus = 400;
-        await supabaseAdmin
-          .from('booking_requests')
-          .update({ status: 'failed', updated_at: new Date().toISOString(), error_message: dbErrorMessage })
-          .eq('checkout_session_id', sessionId);
-        throw new Error(responseErrorMessage);
-      }
-
-      const { data: bookingRequestData, error: brError } = await supabaseAdmin
-        .from('booking_requests')
-        .select('status')
-        .eq('id', bookingRequestId) // bookingRequestId is UUID string
+    console.log("[PROCESS-BOOKING] Calling Amadeus booking with offer data:", bookingRequest.offer_data);
+    
+    // Get traveler data from the booking request
+    const travelerData = bookingRequest.traveler_data || {
+      firstName: "John",
+      lastName: "Doe",
+      email: "john.doe@example.com"
+    };
+    
+    // Call Amadeus booking API
+    const amadeusResult = await bookWithAmadeus(bookingRequest.offer_data, travelerData);
+    
+    if (amadeusResult.success) {
+      // Create booking record
+      const { data: booking, error: bookingError } = await supabase
+        .from("bookings")
+        .insert({
+          user_id: bookingRequest.user_id,
+          trip_request_id: bookingRequest.offer_data.trip_request_id || null,
+          flight_offer_id: bookingRequest.offer_id,
+        })
+        .select()
         .single();
 
-      if (brError && brError.code !== 'PGRST116') { // PGRST116: row not found / more than one row
-        dbErrorMessage = `DB Error checking booking request: ${brError.message}`;
-        responseErrorMessage = "Database error while checking booking request."; // Generic for client
-        errorStatus = 500;
-        throw new Error(dbErrorMessage); // Internal log gets detailed, client gets generic
-      }
+      if (bookingError) throw bookingError;
 
-      if (bookingRequestData && bookingRequestData.status === 'done') {
-        return new Response(JSON.stringify({ success: true, message: 'Booking already processed' }), {
-          status: 200,
-          headers,
-        });
-      }
+      // Update booking request to completed
+      await supabase
+        .from("booking_requests")
+        .update({ 
+          status: "done",
+          processed_at: new Date().toISOString()
+        })
+        .eq("id", bookingRequest.id);
 
-      const { error: rpcErr } = await supabaseAdmin.rpc('rpc_auto_book_match', {
-        p_booking_request_id: bookingRequestId
-      });
+      // Send booking confirmation email
+      supabase.functions
+        .invoke("send-booking-confirmation", { 
+          body: { booking_request_id: bookingRequest.id } 
+        })
+        .catch(console.error);
 
-      if (rpcErr) {
-        dbErrorMessage = rpcErr.message;
-        responseErrorMessage = `RPC Error: ${rpcErr.message}`;
-        errorStatus = 500;
-        // RPC is expected to update its own status, but we ensure it if RPC call itself errors before/after RPC logic
-        await supabaseAdmin
-          .from('booking_requests')
-          .update({ status: 'failed', updated_at: new Date().toISOString(), error_message: dbErrorMessage })
-          .eq('id', bookingRequestId);
-        throw new Error(responseErrorMessage);
-      }
-
-      // Test Case 1 expects update to 'done' to be filtered by checkout_session_id.
-      const { error: updateErr } = await supabaseAdmin
-        .from('booking_requests')
-        .update({ status: 'done', updated_at: new Date().toISOString(), error_message: null })
-        .eq('checkout_session_id', sessionId);
-
-      if (updateErr) {
-        dbErrorMessage = updateErr.message;
-        responseErrorMessage = `DB Update Error: ${dbErrorMessage}`;
-        errorStatus = 500;
-        if(bookingRequestId){ // Should have bookingRequestId here
-             await supabaseAdmin
-            .from('booking_requests')
-            .update({ status: 'failed', updated_at: new Date().toISOString(), error_message: dbErrorMessage })
-            .eq('id', bookingRequestId);
-        }
-        throw new Error(responseErrorMessage);
-      }
-
-      return new Response(JSON.stringify({ success: true }), {
-        status: 200,
-        headers,
-      });
-
-    } catch (e: any) { // Catches errors from inner try block or direct Stripe API errors
-      console.error(`Error processing booking for session ${sessionId}, br_id ${bookingRequestId}: ${e.message}`);
-
-      if (!responseErrorMessage) {
-        dbErrorMessage = e.message;
-        if (e.type && typeof e.type === 'string' && e.type.startsWith('Stripe')) {
-          responseErrorMessage = `Stripe Error: ${e.message}`;
-        } else { // Includes errors from RPC calls that might not have been caught by `if (rpcErr)`
-          responseErrorMessage = e.message;
-        }
-        errorStatus = (e as any).status || 500;
-      }
-
-      const updateKey = bookingRequestId ? 'id' : 'checkout_session_id';
-      const updateValue = bookingRequestId || sessionId;
-
-      if (updateValue) {
-        const {data: currentBrStatus} = await supabaseAdmin.from('booking_requests').select('status, error_message').eq(updateKey, updateValue).single();
-        // Only update if not already 'failed' with the same message, or if it's a different error.
-        if(!currentBrStatus || currentBrStatus.status !== 'failed' || currentBrStatus.error_message !== dbErrorMessage){
-             const {error: finalUpdateError} = await supabaseAdmin
-            .from('booking_requests')
-            .update({ status: 'failed', updated_at: new Date().toISOString(), error_message: dbErrorMessage })
-            .eq(updateKey, updateValue);
-            if (finalUpdateError) {
-                console.error(`CRITICAL: Failed to update booking status to failed for ${updateKey} ${updateValue}: ${finalUpdateError.message}`);
-                // Prepend to ensure client gets original error if this fails
-                responseErrorMessage = `Original error: ${responseErrorMessage}. Additionally, failed to update status to 'failed': ${finalUpdateError.message}`;
-            }
-        }
-      }
-
-      return new Response(JSON.stringify({ error: responseErrorMessage || 'An unexpected error occurred' }), {
-        status: errorStatus,
-        headers,
-      });
+      console.log(`[PROCESS-BOOKING] ✅ Booking request ${bookingRequest.id} completed successfully`);
+      return { success: true, bookingId: booking.id, amadeusData: amadeusResult };
+    } else {
+      throw new Error(amadeusResult.error || "Amadeus booking failed");
     }
-  } catch (e: any) {
-    // This catches very early errors, like req.json() if it wasn't caught, or other setup issues
-    console.error('Outer critical error in process-booking:', e.message);
-    return new Response(JSON.stringify({ error: 'Server Error: Critical processing failure.' }), {
-        status: 500,
-        headers, // Ensure CORS headers are sent even for these early errors
-    });
+  } catch (error) {
+    console.error(`[PROCESS-BOOKING] ❌ Booking request ${bookingRequest.id} failed:`, error);
+    
+    const attempts = (bookingRequest.attempts || 0) + 1;
+    const shouldRetry = attempts < 3;
+    
+    await supabase
+      .from("booking_requests")
+      .update({ 
+        status: shouldRetry ? "pending_booking" : "failed",
+        error: error.message,
+        attempts: attempts,
+        processed_at: new Date().toISOString()
+      })
+      .eq("id", bookingRequest.id);
+
+    // Send booking failure email if final failure
+    if (!shouldRetry) {
+      supabase.functions
+        .invoke("send-booking-failed", { 
+          body: { booking_request_id: bookingRequest.id } 
+        })
+        .catch(console.error);
+    }
+
+    return { success: false, error: error.message, attempts };
+  }
+}
+
+serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
+  try {
+    console.log("[PROCESS-BOOKING] Processing request...");
+    
+    const body = await req.json();
+    console.log("[PROCESS-BOOKING] Request body:", body);
+    
+    let bookingRequests = [];
+    
+    if (body.bookingRequestId) {
+      // Single booking request processing
+      console.log(`[PROCESS-BOOKING] Processing specific booking request: ${body.bookingRequestId}`);
+      
+      const { data: request, error } = await supabase
+        .from("booking_requests")
+        .select("*")
+        .eq("id", body.bookingRequestId)
+        .single();
+        
+      if (error) {
+        console.error("[PROCESS-BOOKING] Error fetching booking request:", error);
+        throw error;
+      }
+      
+      if (!request) {
+        throw new Error(`Booking request ${body.bookingRequestId} not found`);
+      }
+      
+      bookingRequests = [request];
+    } else if (body.sessionId) {
+      // Handle session-based lookup (for direct invocation from TripConfirm)
+      console.log(`[PROCESS-BOOKING] Processing by session ID: ${body.sessionId}`);
+      
+      const { data: requests, error } = await supabase
+        .from("booking_requests")
+        .select("*")
+        .eq("checkout_session_id", body.sessionId)
+        .eq("status", "pending_booking");
+        
+      if (error) {
+        console.error("[PROCESS-BOOKING] Error fetching booking requests by session:", error);
+        throw error;
+      }
+      
+      bookingRequests = requests || [];
+    } else {
+      // Batch processing of pending requests
+      console.log("[PROCESS-BOOKING] Processing all pending booking requests...");
+      
+      const { data: requests, error } = await supabase
+        .from("booking_requests")
+        .select("*")
+        .eq("status", "pending_booking")
+        .lt("attempts", 3)
+        .order("created_at", { ascending: true })
+        .limit(5);
+
+      if (error) throw error;
+      bookingRequests = requests || [];
+    }
+
+    if (bookingRequests.length === 0) {
+      console.log("[PROCESS-BOOKING] No booking requests found to process");
+      return new Response(
+        JSON.stringify({ message: "No pending requests", processed: 0 }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[PROCESS-BOOKING] Found ${bookingRequests.length} booking requests to process`);
+    const results = [];
+
+    for (const request of bookingRequests) {
+      const result = await processBookingRequest(request);
+      results.push({ id: request.id, ...result });
+      
+      // Add delay between requests to avoid overwhelming external APIs
+      if (bookingRequests.length > 1) {
+        await sleep(1000);
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        message: "Booking processing completed", 
+        processed: results.length,
+        results 
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("[PROCESS-BOOKING] process-booking error:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 });

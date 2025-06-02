@@ -1,7 +1,7 @@
-import { memo } from "react";
+
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { Control } from "react-hook-form"; // Removed Controller as it's not used
+import { Control, Controller } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -18,21 +18,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { FormValues } from "@/types/form";
 
 interface TripDateFieldProps {
   name: "earliestDeparture" | "latestDeparture";
   label: string;
   description: string;
-  control: Control<FormValues>;
+  control: Control<any>;
 }
 
-// Renamed original component
-const TripDateFieldComponent = ({ name, label, description, control }: TripDateFieldProps) => {
-  // Generate a unique ID for this field for more reliable testing
-  const fieldId = `trip-date-${name}`;
-  const buttonLabel = `${label} Date Picker`;
-  
+const TripDateField = ({ name, label, description, control }: TripDateFieldProps) => {
   return (
     <FormField
       control={control}
@@ -49,42 +43,27 @@ const TripDateFieldComponent = ({ name, label, description, control }: TripDateF
                     "w-full pl-3 text-left font-normal",
                     !field.value && "text-muted-foreground"
                   )}
-                  aria-label={buttonLabel}
-                  data-testid={`${fieldId}-button`}
-                  id={fieldId}
                 >
                   {field.value ? (
                     format(field.value, "PPP")
                   ) : (
-                    <span>Select {label.toLowerCase()} date</span>
+                    <span>Select date</span>
                   )}
                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                 </Button>
               </FormControl>
             </PopoverTrigger>
-            <PopoverContent 
-              className="w-auto p-0" 
-              align="start"
-              role="dialog"
-              aria-label={`${label} Calendar`}
-              data-testid={`${fieldId}-calendar-popover`}
-            >
-              <div 
-                role="application"
-                aria-label={`${label} Calendar`}
-              >
-                <Calendar
-                  mode="single"
-                  selected={field.value}
-                  onSelect={field.onChange as (date: Date | undefined) => void}
-                  disabled={(date) =>
-                    date < new Date(new Date().setHours(0, 0, 0, 0))
-                  }
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                  data-testid={`${fieldId}-calendar`}
-                />
-              </div>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={field.value}
+                onSelect={field.onChange}
+                disabled={(date) =>
+                  date < new Date(new Date().setHours(0, 0, 0, 0))
+                }
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
             </PopoverContent>
           </Popover>
           <FormDescription>
@@ -97,6 +76,4 @@ const TripDateFieldComponent = ({ name, label, description, control }: TripDateF
   );
 };
 
-// Memoized component for export
-const TripDateField = memo(TripDateFieldComponent);
 export default TripDateField;
