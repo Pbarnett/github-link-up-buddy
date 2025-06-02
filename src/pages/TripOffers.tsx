@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from "react";
+
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchTripOffers, Offer } from "@/services/tripOffersService";
@@ -30,7 +31,6 @@ export default function TripOffers() {
   // Support both legacy `tripRequestId` and new `id` query param names
   const tripId = searchParams.get("id") || searchParams.get("tripRequestId");
   const location = useLocation();
-  const navigate = useNavigate();
 
   const locationState = location.state as { offers?: Offer[] } | null;
   const initialOffers = locationState?.offers ?? [];
