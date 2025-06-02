@@ -1,5 +1,6 @@
 
 import { z } from "zod";
+import { Tables } from "@/integrations/supabase/types";
 
 // Base trip form values interface for core trip parameters
 export interface TripFormValues {
@@ -89,9 +90,7 @@ export type FormValues = z.infer<typeof tripFormSchema>;
 
 // Interface for trip request creation result - simplified to match actual response
 export interface TripRequestResult {
-  tripRequest: {
-    id: string;
-    auto_book_enabled?: boolean;
-  };
+  tripRequest: Tables<"trip_requests">;
+  offers: Tables<"flight_offers">[];
   offersCount: number;
 }

@@ -222,7 +222,6 @@ const TripConfirm = () => {
       const { data: bookingRequest, error: bookingError } = await supabase
         .from("booking_requests")
         .insert({
-          user_id: userId,
           offer_id: offer.id,
           offer_data: offer,
           traveler_data: data,
