@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PlaneTakeoff, Calendar, Clock, ExternalLink } from "lucide-react";
+import { PlaneTakeoff, ExternalLink } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -113,55 +113,44 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
   };
 
   return (
-    <Card key={offer.id} className="overflow-hidden hover:shadow-md transition-shadow">
-      <div className="flex flex-col md:flex-row">
-        <div className="p-6 flex-1">
-          <div className="flex items-center mb-4">
-            <h3 className="text-xl font-semibold">
-              {friendlyAirline}
-              {offer.flight_number ? ` flight ${offer.flight_number}` : ""}
-            </h3>
-            <Badge variant="outline" className="ml-2">{offer.flight_number}</Badge>
-          </div>
-          
-          {/* Route display if we have airport codes */}
-          {(offer.origin_airport || offer.destination_airport) && (
-            <div className="text-sm text-gray-700 mb-3">
-              <span className="font-medium">{originLabel}</span> → {" "}
-              <span className="font-medium">{destLabel}</span>
-            </div>
-          )}
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Departure Info */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-500">Departure</h4>
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{depLocal}</span>
-              </div>
-            </div>
-            
-            {/* Return Info */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-500">Return</h4>
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{retLocal}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-4 flex items-center">
-            <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
-            <span className="text-sm text-gray-500">Flight duration: {humanDuration}</span>
-          </div>
+    <Card key={offer.id} className="bg-white shadow-lg rounded-lg p-6 flex flex-col gap-4 hover:shadow-xl transition-shadow">
+      {/* Header Row: Flight Info & Dates */}
+      <div className="flex justify-between items-start">
+        {/* Left: Flight Number & Airline */}
+        <div className="flex flex-col">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {friendlyAirline} flight {offer.flight_number}
+          </h2>
         </div>
-        <div className="bg-gray-50 p-6 flex flex-col justify-center items-center md:items-end">
-          <p className="text-3xl font-bold mb-2">${offer.price}</p>
-          <p className="text-sm text-gray-500 mb-4">Round trip per person</p>
+
+        {/* Right: Departure → Return */}
+        <div className="text-right flex flex-col">
+          <p className="text-lg font-semibold text-gray-800">
+            {depLocal} → {retLocal}
+          </p>
+          <p className="text-sm text-gray-500">Departure ↔ Return</p>
+        </div>
+      </div>
+
+      {/* Middle Row: Route & Price/Book */}
+      <div className="flex justify-between items-center">
+        {/* Left: Route */}
+        <p className="text-base font-medium text-gray-700">
+          {originLabel} → {destLabel}
+          {(offer.origin_airport || offer.destination_airport) && (
+            <span className="text-sm text-gray-500 ml-1">
+              ({offer.origin_airport} → {offer.destination_airport})
+            </span>
+          )}
+        </p>
+
+        {/* Right: Price + Book Button */}
+        <div className="flex flex-col items-end gap-2">
+          <span className="text-2xl font-bold text-gray-900">
+            ${offer.price}
+          </span>
           <Button 
-            className="w-full md:w-auto" 
+            className="px-4 py-2 text-sm font-semibold" 
             onClick={handleSelect}
             variant={offer.booking_url ? "default" : "outline"}
           >
@@ -175,6 +164,12 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
             )}
           </Button>
         </div>
+      </div>
+
+      {/* Footer Row: Duration */}
+      <div className="flex items-center text-gray-500 text-sm">
+        <PlaneTakeoff className="w-5 h-5 mr-1 text-gray-400" />
+        <span>Flight duration: {humanDuration}</span>
       </div>
     </Card>
   );
