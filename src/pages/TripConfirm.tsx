@@ -426,10 +426,15 @@ const TripConfirm = () => {
           table: 'booking_requests',
           filter: `checkout_session_id=eq.${sessionId}`,
         }, (payload: RealtimePostgresChangesPayload<Tables<'booking_requests'>>) => {
-          if (payload.new && 'status' in payload.new && typeof payload.new.status === 'string') {
-            console.log('[TripConfirm] Booking status updated:', payload.new.status);
-            updateBookingStatusMessage(payload.new.status);
-
+          const newData = payload.new;
+          if (newData && 
+              typeof newData === 'object' && 
+              'status' in newData && 
+              typeof newData.status === 'string') {
+            console.log('[TripConfirm] Booking status updated:', newData.status);
+            updateBookingStatusMessage(newData.status);
+          } else {
+            console.warn('[TripConfirm] Received invalid booking status update:', payload);
           }
         })
         .subscribe();
