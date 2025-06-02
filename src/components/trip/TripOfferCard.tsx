@@ -24,13 +24,24 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
 
   const handleSelect = () => {
     if (offer.booking_url) {
-      console.log(`External booking link clicked for offer ID: ${offer.id}, URL: ${offer.booking_url}`);
-      console.log('Opening external booking URL:', offer.booking_url);
-      window.open(offer.booking_url, '_blank');
-      toast({
-        title: "Redirecting to Airline",
-        description: `You are being redirected to ${offer.airline} to complete your booking.`,
+      console.log(`[ANALYTICS] External booking clicked:`, {
+        offerId: offer.id,
+        airline: offer.airline,
+        price: offer.price,
+        bookingUrl: offer.booking_url,
+        timestamp: new Date().toISOString()
       });
+      
+      toast({
+        title: "Redirecting to " + offer.airline,
+        description: "Opening airline website to complete your booking...",
+        duration: 3000,
+      });
+
+      setTimeout(() => {
+        window.open(offer.booking_url, '_blank');
+      }, 500);
+
       return;
     }
 
@@ -51,7 +62,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
     
     toast({
       title: "Flight Selected",
-      description: `You've selected ${offer.airline} flight ${offer.flight_number} for internal review.`,
+      description: `You've selected ${offer.airline} flight ${offer.flight_number} for booking.`,
     });
   };
 
@@ -100,9 +111,19 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
         <div className="bg-gray-50 p-6 flex flex-col justify-center items-center md:items-end">
           <p className="text-3xl font-bold mb-2">${offer.price}</p>
           <p className="text-sm text-gray-500 mb-4">Round trip per person</p>
-          <Button className="w-full md:w-auto" onClick={handleSelect}>
-            {offer.booking_url ? `Book on ${offer.airline}` : "Select This Flight"}
-            {offer.booking_url && <ExternalLink className="ml-2 h-4 w-4" />}
+          <Button 
+            className="w-full md:w-auto" 
+            onClick={handleSelect}
+            variant={offer.booking_url ? "default" : "outline"}
+          >
+            {offer.booking_url ? (
+              <>
+                Book on {offer.airline}
+                <ExternalLink className="ml-2 h-4 w-4" />
+              </>
+            ) : (
+              "Select This Flight"
+            )}
           </Button>
         </div>
       </div>
