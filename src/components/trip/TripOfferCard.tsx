@@ -38,6 +38,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
         duration: 3000,
       });
 
+      // Redirect immediately to the airline website for external bookings
       setTimeout(() => {
         window.open(offer.booking_url, '_blank');
       }, 500);
@@ -45,7 +46,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
       return;
     }
 
-    // Current logic for internal booking
+    // Internal booking flow - navigate to confirmation page
     console.log('Selected offer for internal booking:', offer.id);
     const params = new URLSearchParams();
     params.set('id', offer.id);
