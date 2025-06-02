@@ -1,5 +1,6 @@
 import React from "react";
-import { Control } from "react-hook-form";
+import { Control, FieldValues, Path } from "react-hook-form";
+import { Input, InputProps } from "@/components/ui/input";
 import {
   FormControl,
   FormDescription,
@@ -8,7 +9,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { FormValues } from "@/types/form";
 
 // Type for numeric field names in FormValues
@@ -40,37 +40,33 @@ const TripNumberFieldComponent = ({
         <FormItem>
           <FormLabel>{label}</FormLabel>
           <FormControl>
-            {prefix ? (
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <span className="text-gray-500">{prefix}</span>
-                </div>
-                <Input
-                  type="number"
-                  placeholder={placeholder}
-                  className="pl-7"
-                  {...field}
-                  value={field.value?.toString() ?? ''}
-                  onChange={(e) =>
-                    field.onChange(
-                      e.target.value === '' ? null : Number(e.target.value)
-                    )
-                  }
-                />
-              </div>
-            ) : (
-              <Input
-                type="number"
-                placeholder={placeholder}
-                {...field}
-                value={field.value?.toString() ?? ''}
-                onChange={(e) =>
+            {(() => {
+              // Create a typed input props object
+              const inputProps: InputProps = {
+                type: "number",
+                placeholder,
+                value: (field.value as number | null)?.toString() ?? '',
+                onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
                   field.onChange(
                     e.target.value === '' ? null : Number(e.target.value)
                   )
-                }
-              />
-            )}
+              };
+              
+              // Return either a prefixed input or a regular input
+              return prefix ? (
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <span className="text-gray-500">{prefix}</span>
+                  </div>
+                  <Input
+                    {...inputProps}
+                    className="pl-7"
+                  />
+                </div>
+              ) : (
+                <Input {...inputProps} />
+              );
+            })()}
           </FormControl>
           <FormDescription>
             {description}
