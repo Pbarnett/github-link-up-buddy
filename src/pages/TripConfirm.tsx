@@ -13,9 +13,13 @@ import { Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { RealtimePostgresChangesPayload } from "@supabase/supabase-js"; // Added RealtimePostgresChangesPayload
 import { sanitizeInput, validateRequestPayload, generateCsrfToken, logSecurityEvent, tokenizeValue } from "@/lib/securityUtils";
+// Removed verifyCsrfToken as it's not used
 import { z } from "zod";
 
 // Removed custom BookingRequestPayload type definition
+// Removed TablesInsert as it's not used
+// Removed safeQuery as it's not used
+// Removed RealtimeChannel as it's not used
 
 // Define validation schema for booking parameters
 const bookingParamsSchema = z.object({
@@ -653,7 +657,7 @@ const TripConfirm = () => {
       toast({
         title: "Booking Failed",
         description: errorMessage,
-        variant: "destructive",
+        variant: "default",
       });
     } finally {
       setIsConfirming(false);
@@ -842,7 +846,7 @@ const TripConfirm = () => {
               <h4 className="font-medium">Departure</h4>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{offer?.departure_date ? new Date(offer.departure_date).toLocaleDateString() : 'N/A'}</span>
+                <span>{offer?.departure_date ? new Date(offer?.departure_date).toLocaleDateString() : 'N/A'}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-gray-500" />
@@ -855,7 +859,7 @@ const TripConfirm = () => {
               <h4 className="font-medium">Return</h4>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{offer?.return_date ? new Date(offer.return_date).toLocaleDateString() : 'N/A'}</span>
+                <span>{offer?.return_date ? new Date(offer?.return_date).toLocaleDateString() : 'N/A'}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-gray-500" />
