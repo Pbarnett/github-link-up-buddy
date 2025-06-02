@@ -3,8 +3,10 @@ import { z } from 'zod';
 import { logger } from './logger';
 import { AppError } from './errorUtils';
 import { LogContext } from './types';
-// Use Web Crypto API for randomness, available in modern browsers and Node >=17
-// Simple timing-safe equality check to avoid pulling in node:crypto's timingSafeEqual
+// Use Web Crypto API for randomness and timing-safe comparisons
+
+// Simple timing-safe equality check without Node's crypto
+
 const safeEqual = (a: string, b: string): boolean => {
   const bufA = Buffer.from(a);
   const bufB = Buffer.from(b);
@@ -232,7 +234,7 @@ export const sessionSecurity = {
   generateSessionId: (): string => {
     return generateRandomHex(32);
   },
-  
+
   rotateSessionId: (currentId: string): string => {
     const newId = generateRandomHex(32);
 
