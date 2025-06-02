@@ -414,17 +414,32 @@ const TripConfirm = () => {
 
     // Only attempt to subscribe if channel is properly initialized
     if (channel) {
-      channel
-        .on('postgres_changes', {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'booking_requests',
-          filter: `checkout_session_id=eq.${sessionId}`,
-        }, (payload: RealtimePostgresChangesPayload<Tables<'booking_requests'>>) => {
-          console.log('[TripConfirm] Booking status updated:', payload.new.status);
-          updateBookingStatusMessage(payload.new.status);
-        })
-        .subscribe();
+        channel
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'booking_requests',
+              filter: `checkout_session_id=eq.${sessionId}`,
+            },
+            (
+              payload: RealtimePostgresChangesPayload<Tables<'booking_requests'>>,
+            ) => {
+              if (
+                payload.new &&
+                'status' in payload.new &&
+                typeof payload.new.status === 'string'
+              ) {
+                console.log(
+                  '[TripConfirm] Booking status updated:',
+                  payload.new.status,
+                );
+                updateBookingStatusMessage(payload.new.status);
+              }
+            },
+          )
+          .subscribe();
     } else {
       console.error("[TripConfirm] Failed to create channel - channel object is undefined");
     }
@@ -805,8 +820,8 @@ const TripConfirm = () => {
           )}
 
           {/* Auto-booking Banner */}
-          {!isLoadingTripData && isAutoBookingTrip && (
-            <Alert variant="info" className="mb-4 bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300">
+            {!isLoadingTripData && isAutoBookingTrip && (
+              <Alert variant="default" className="mb-4 bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300">
               <InfoIcon className="h-5 w-5" />
               <AlertDescription className="font-semibold">
                 Auto-booking in progress… This flight will be booked automatically if it meets your criteria.
