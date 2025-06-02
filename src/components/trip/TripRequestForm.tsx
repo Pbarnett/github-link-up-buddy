@@ -12,7 +12,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 
 // Import type definitions
-import { FormValues, tripFormSchema, ExtendedTripFormValues, TripRequestResult } from "@/types/form";
+import { FormValues, tripFormSchema, ExtendedTripFormValues } from "@/types/form";
 
 // Import the section components
 import DateRangeSection from "./sections/DateRangeSection";
@@ -95,7 +95,7 @@ const TripRequestForm = () => {
   };
 
   // Submit the trip request to the API
-  const submitTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestResult> => {
+  const submitTripRequest = async (formData: ExtendedTripFormValues) => {
     if (!userId) {
       throw new Error("You must be logged in to create a trip request.");
     }
@@ -122,31 +122,25 @@ const TripRequestForm = () => {
 
     if (error) throw error;
 
-    // Ensure tripRequest is not null before accessing its properties,
-    // although `single()` should throw if it's null and no error occurred.
-    // However, for type safety with TypeScript, it's good practice.
     if (!tripRequest) {
       throw new Error("Failed to create trip request or retrieve its data.");
     }
 
-    return {
-      tripRequest: tripRequest, // Use the full object from Supabase
-      offersCount: 0, // Will be updated when flight search runs
-    };
+    return tripRequest;
   };
 
   // Navigate to the confirmation page with the trip ID
-  const navigateToConfirmation = (result: TripRequestResult): void => {
+  const navigateToConfirmation = (tripRequest: any): void => {
     // Show success toast with count of offers saved
     toast({
       title: "Trip request submitted",
       description: `Your trip request has been submitted!${
-        result.tripRequest.auto_book_enabled ? ' Auto-booking is enabled.' : ''
+        tripRequest.auto_book_enabled ? ' Auto-booking is enabled.' : ''
       }`,
     });
     
     // Navigate to the offers page with the trip ID
-    navigate(`/trip/offers?id=${result.tripRequest.id}`);
+    navigate(`/trip/offers?id=${tripRequest.id}`);
   };
 
   // Main form submission handler that orchestrates the process
@@ -179,10 +173,10 @@ const TripRequestForm = () => {
       const transformedData = transformFormData(data);
       
       // Step 3: Submit trip request
-      const result = await submitTripRequest(transformedData);
+      const tripRequest = await submitTripRequest(transformedData);
       
       // Step 4: Navigate to confirmation page
-      navigateToConfirmation(result);
+      navigateToConfirmation(tripRequest);
       
     } catch (error: any) {
       console.error("Error submitting trip request:", error);
