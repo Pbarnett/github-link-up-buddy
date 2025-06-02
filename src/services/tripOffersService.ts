@@ -311,7 +311,8 @@ export const debugInspectTripOffers = async (tripId: string): Promise<any[]> => 
     
     console.log(`[tripOffersService] DEBUG: Found ${data?.length || 0} raw offers for trip ${sanitizedTripId}`);
     
-    if (data && data[0]) {
+    if (data && data.length > 0) {
+
       console.log(
         `[tripOffersService] DEBUG: First offer structure:`,
         Object.keys(data[0]).join(', ')
