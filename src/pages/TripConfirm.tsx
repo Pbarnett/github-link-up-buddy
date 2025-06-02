@@ -458,7 +458,12 @@ const TripConfirm = () => {
   
   const updateBookingStatusMessage = (status: string) => {
     console.log("[TripConfirm] Updating booking status to:", status);
-    // Don't return early on error anymore
+    
+    // Validate status is a non-empty string
+    if (!status || typeof status !== 'string') {
+      console.warn('[TripConfirm] Invalid status received:', status);
+      return;
+    }
 
     // Log the booking status change
     logSecurityEvent('booking_status_updated', {
@@ -468,7 +473,8 @@ const TripConfirm = () => {
 
     let message = "";
 
-    switch (status) {
+    // Use toLowerCase for case-insensitive comparison
+    switch (status.toLowerCase()) {
       case 'pending_payment':
         message = "Waiting for payment confirmation...";
         break;
