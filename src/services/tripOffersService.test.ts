@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabase } from '@/integrations/supabase/client'
 // Added isValidDuration to imports
-import { fetchTripOffers, checkTripOffersExist, getTripOffersCount, debugInspectTripOffers, isValidDuration } from './tripOffersService'
+// Removed checkTripOffersExist, getTripOffersCount as they are unused
+import { fetchTripOffers, debugInspectTripOffers, isValidDuration } from './tripOffersService'
 
 // Mock the Supabase client
 vi.mock('@/integrations/supabase/client', () => {

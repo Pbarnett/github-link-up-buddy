@@ -147,12 +147,27 @@ export const verifyCsrfToken = (
   sessionToken: string | null | undefined
 ): boolean => {
   if (!requestToken || !sessionToken) {
+    logger.warn('CSRF token verification failed: Missing token(s).');
     return false;
   }
-  // Client-side CSRF token verification typically doesn't require timing-safe comparison.
-  // The primary defense is ensuring the token matches.
-  // Server-side verification, if applicable, should handle timing safety.
-  return requestToken === sessionToken;
+
+  // Basic length check for performance and to avoid unnecessary computation
+  if (requestToken.length !== sessionToken.length) {
+    logger.warn('CSRF token verification failed: Token length mismatch.');
+    return false;
+  }
+
+  // Constant-time comparison to mitigate timing attacks
+  let mismatch = 0;
+  for (let i = 0; i < requestToken.length; i++) {
+    mismatch |= requestToken.charCodeAt(i) ^ sessionToken.charCodeAt(i);
+  }
+
+  const isValid = mismatch === 0;
+  if (!isValid) {
+    logger.warn('CSRF token verification failed: Token mismatch.');
+  }
+  return isValid;
 };
 
 // Comprehensive security event logging with enhanced context
@@ -166,7 +181,7 @@ export const logSecurityEvent = (
     action: event,
     ...details,
     timestamp: new Date().toISOString(),
-    environment: import.meta.env['NODE_ENV']
+    environment: import.meta.env.NODE_ENV
   };
   
   switch (level) {
