@@ -11,6 +11,7 @@ export interface Offer {
   return_date: string;
   return_time: string;
   duration: string;
+  booking_url?: string;
 }
 
 export const fetchTripOffers = async (tripId: string): Promise<Offer[]> => {
@@ -42,6 +43,7 @@ export const fetchTripOffers = async (tripId: string): Promise<Offer[]> => {
       return_date: item.return_date,
       return_time: item.return_time,
       duration: item.duration,
+      booking_url: item.booking_url,
     }));
   } catch (error) {
     console.error("Error in fetchTripOffers:", error);
