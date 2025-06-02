@@ -186,13 +186,16 @@ export type Database = {
           airline: string
           auto_book: boolean
           booking_url: string | null
+          carrier_code: string | null
           created_at: string
           departure_date: string
           departure_time: string
+          destination_airport: string | null
           duration: string
           flight_number: string
           id: string
           layover_airports: string[] | null
+          origin_airport: string | null
           price: number
           return_date: string
           return_time: string
@@ -203,13 +206,16 @@ export type Database = {
           airline: string
           auto_book?: boolean
           booking_url?: string | null
+          carrier_code?: string | null
           created_at?: string
           departure_date: string
           departure_time: string
+          destination_airport?: string | null
           duration: string
           flight_number: string
           id?: string
           layover_airports?: string[] | null
+          origin_airport?: string | null
           price: number
           return_date: string
           return_time: string
@@ -220,13 +226,16 @@ export type Database = {
           airline?: string
           auto_book?: boolean
           booking_url?: string | null
+          carrier_code?: string | null
           created_at?: string
           departure_date?: string
           departure_time?: string
+          destination_airport?: string | null
           duration?: string
           flight_number?: string
           id?: string
           layover_airports?: string[] | null
+          origin_airport?: string | null
           price?: number
           return_date?: string
           return_time?: string
