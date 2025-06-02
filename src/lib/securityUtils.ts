@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 import { logger } from './logger';
 import { AppError } from './errorUtils';
@@ -137,11 +138,12 @@ export const authHelpers = {
   }
 };
 
-// Enhanced CSRF protection with timing-safe comparison
+// Enhanced CSRF protection with browser-safe comparison
 export const generateCsrfToken = (): string => {
   return crypto.randomUUID();
 };
 
+// Simple string comparison for browser environment
 export const verifyCsrfToken = (
   requestToken: string | null | undefined,
   sessionToken: string | null | undefined
@@ -151,19 +153,12 @@ export const verifyCsrfToken = (
     return false;
   }
 
-  // Basic length check for performance and to avoid unnecessary computation
   if (requestToken.length !== sessionToken.length) {
     logger.warn('CSRF token verification failed: Token length mismatch.');
     return false;
   }
 
-  // Constant-time comparison to mitigate timing attacks
-  let mismatch = 0;
-  for (let i = 0; i < requestToken.length; i++) {
-    mismatch |= requestToken.charCodeAt(i) ^ sessionToken.charCodeAt(i);
-  }
-
-  const isValid = mismatch === 0;
+  const isValid = requestToken === sessionToken;
   if (!isValid) {
     logger.warn('CSRF token verification failed: Token mismatch.');
   }
@@ -181,7 +176,7 @@ export const logSecurityEvent = (
     action: event,
     ...details,
     timestamp: new Date().toISOString(),
-    environment: import.meta.env.NODE_ENV
+    environment: import.meta.env['NODE_ENV']
   };
   
   switch (level) {
@@ -210,8 +205,6 @@ export const isValidIpAddress = (ip: string): boolean => {
   
   return ipv4Regex.test(ip) || ipv6Regex.test(ip);
 };
-
-// Session security utilities
 
 // Helper function for generating a browser-compatible random hex string
 const generateBrowserRandomHex = (bytes: number): string => {

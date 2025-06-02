@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { Link } from "react-router-dom";
@@ -8,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 
 function WalletPage() {
-  const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+  const stripeKey = import.meta.env['VITE_STRIPE_PUBLIC_KEY'];
   const { paymentMethods, error: paymentMethodsError, loading } = usePaymentMethods();
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
@@ -20,7 +21,7 @@ function WalletPage() {
       setIsUpdating(id);
       
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/set-default-payment-method`,
+        `${import.meta.env['VITE_SUPABASE_URL']}/functions/v1/set-default-payment-method`,
         {
           method: "POST",
           headers: { 
@@ -58,7 +59,7 @@ function WalletPage() {
       setIsUpdating(id);
       
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-payment-method`,
+        `${import.meta.env['VITE_SUPABASE_URL']}/functions/v1/delete-payment-method`,
         {
           method: "POST",
           headers: { 
@@ -165,7 +166,7 @@ function WalletPage() {
                     setIsCreating(true);
                     try {
                       const res = await fetch(
-                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-session`,
+                        `${import.meta.env['VITE_SUPABASE_URL']}/functions/v1/create-setup-session`,
                         {
                           method: "POST",
                           headers: { 
