@@ -9,6 +9,7 @@ import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import TravelerDataForm, { TravelerData } from "@/components/TravelerDataForm";
+import { TablesInsert } from "@/integrations/supabase/types";
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -267,15 +268,17 @@ const TripConfirm = () => {
     setError(null);
 
     try {
+      const bookingRequestData: TablesInsert<"booking_requests"> = {
+        offer_data: offer,
+        offer_id: offer.id,
+        traveler_data: data,
+        status: 'new',
+        user_id: userId 
+      };
+
       const { data: bookingRequest, error: bookingError } = await supabase
         .from("booking_requests")
-        .insert({
-          offer_data: offer,
-          offer_id: offer.id,
-          traveler_data: data,
-          status: 'new',
-          user_id: userId 
-        })
+        .insert(bookingRequestData)
         .select()
         .single();
 
