@@ -50,7 +50,7 @@ const TripNumberFieldComponent = ({
                   placeholder={placeholder}
                   className="pl-7"
                   {...field}
-                  value={field.value ?? ''}
+                  value={field.value?.toString() ?? ''}
                   onChange={(e) =>
                     field.onChange(
                       e.target.value === '' ? null : Number(e.target.value)
@@ -63,7 +63,7 @@ const TripNumberFieldComponent = ({
                 type="number"
                 placeholder={placeholder}
                 {...field}
-                value={field.value ?? ''}
+                value={field.value?.toString() ?? ''}
                 onChange={(e) =>
                   field.onChange(
                     e.target.value === '' ? null : Number(e.target.value)

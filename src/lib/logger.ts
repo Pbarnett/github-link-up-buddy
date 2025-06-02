@@ -46,7 +46,7 @@ class Logger {
       timestamp: new Date().toISOString(),
       level,
       message: this.formatMessage(message, context),
-      context: context || undefined,
+      context: context ?? undefined,
       error: data ? this.formatError(data) : undefined,
     };
   }
