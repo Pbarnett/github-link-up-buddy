@@ -12,7 +12,7 @@ import NotFound from "./pages/NotFound";
 const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const TripNew = lazy(() => import("./pages/TripNew"));
-const TripOffers = lazy(() => import("./pages/TripOffers"));
+const TripOffers = lazy(() => import("./pages/TripOffersPage"));
 const TripConfirm = lazy(() => import("./pages/TripConfirm"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Wallet = lazy(() => import("./pages/Wallet"));
