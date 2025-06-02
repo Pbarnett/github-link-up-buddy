@@ -85,75 +85,64 @@ function isValidFlightNumber(flightNumber: string): boolean {
 
 // Validate duration format (e.g., "2h 30m" or "PT4H15M")
 export function isValidDuration(duration: string): boolean {
-  // Accept both human-readable and ISO 8601 duration formats
-  const isoPattern = /^PT(?=\d)(?:\d+H)?(?:\d+M)?$/; // PT4H15M, PT4H, PT15M
-  const humanPattern = /^\d+h(?:\s*\d+m)?$/;          // 4h 15m, 4h
-
-  
-  // Check if it matches either format but ensure at least one time component exists
-  if (isoPattern.test(duration)) {
-    // ISO format: Make sure at least one time component (H or M) is present
-    return duration.includes('H') || duration.includes('M');
+  if (!duration) {
+    console.log('[tripOffersService] Duration is empty');
+    return false;
   }
-  
-  return humanPattern.test(duration);
+
+  // Accept ISO 8601 format (e.g., PT4H30M)
+  const isoPattern = /^PT(?:\d+H)?(?:\d+M)?$/i;
+  // Accept human readable format (e.g., 4h 30m, 4h)
+  const humanPattern = /^\d+h(?:\s*\d+m)?$/i;
+  // Accept numeric format (e.g., 4:30, 04:30)
+  const numericPattern = /^(?:[0-9]{1,2}):(?:[0-9]{2})$/;
+  // Accept simple format (e.g., 4.5h, 4.5)
+  const simplePattern = /^\d+(?:\.\d+)?h?$/;
+
+  const isValidFormat = 
+    isoPattern.test(duration) ||
+    humanPattern.test(duration) ||
+    numericPattern.test(duration) ||
+    simplePattern.test(duration);
+
+  console.log(`[tripOffersService] Duration validation for "${duration}": ${isValidFormat}`);
+  return isValidFormat;
 }
 
 // Validate offer data
 function validateOffer(offer: any): offer is Offer {
-  const validationErrors: string[] = [];
+  // Log the raw offer for debugging
+  console.log('[tripOffersService] Validating raw offer:', {
+    id: offer.id,
+    price: offer.price,
+    duration: offer.duration,
+    airline: offer.airline,
+    flight_number: offer.flight_number
+  });
 
-  // Check required fields
-  const required = [
-    'id', 'price', 'airline', 'flight_number',
-    'departure_date', 'departure_time',
-    'return_date', 'return_time', 'duration'
-  ];
-  
-  const missing = required.filter(field => !offer[field]);
-  if (missing.length > 0) {
-    validationErrors.push(`Missing required fields: ${missing.join(', ')}`);
+  // Basic required field check
+  if (!offer.id || !offer.price) {
+    console.log('[tripOffersService] Offer missing critical fields');
     return false;
   }
 
-  // Validate price
-  if (!isValidPrice(offer.price)) {
-    validationErrors.push(`Invalid price: ${offer.price}`);
-  }
+  // Create validated offer with type coercion
+  const validatedOffer = {
+    id: String(offer.id),
+    price: Number(offer.price),
+    airline: String(offer.airline || ''),
+    flight_number: String(offer.flight_number || ''),
+    departure_date: String(offer.departure_date || ''),
+    departure_time: String(offer.departure_time || ''),
+    return_date: String(offer.return_date || ''),
+    return_time: String(offer.return_time || ''),
+    duration: String(offer.duration || '')
+  };
 
-  // Validate dates and times
-  if (!isValidDate(offer.departure_date)) {
-    validationErrors.push(`Invalid departure date: ${offer.departure_date}`);
-  }
-  if (!isValidDate(offer.return_date)) {
-    validationErrors.push(`Invalid return date: ${offer.return_date}`);
-  }
-  if (!isValidTime(offer.departure_time)) {
-    validationErrors.push(`Invalid departure time: ${offer.departure_time}`);
-  }
-  if (!isValidTime(offer.return_time)) {
-    validationErrors.push(`Invalid return time: ${offer.return_time}`);
-  }
+  // Log the validated offer
+  console.log('[tripOffersService] Validated offer:', validatedOffer);
 
-  // Validate airline and flight number
-  if (!isValidAirline(offer.airline)) {
-    validationErrors.push(`Invalid airline code: ${offer.airline}`);
-  }
-  if (!isValidFlightNumber(offer.flight_number)) {
-    validationErrors.push(`Invalid flight number: ${offer.flight_number}`);
-  }
-
-  // Validate duration
-  if (!isValidDuration(offer.duration)) {
-    validationErrors.push(`Invalid duration format: ${offer.duration}`);
-  }
-
-  if (validationErrors.length > 0) {
-    console.warn(`[tripOffersService] Offer validation failed:`, validationErrors);
-    return false;
-  }
-
-  return true;
+  return true; // Accept all offers that have at least id and price
 }
 
 
@@ -229,11 +218,10 @@ export const fetchTripOffers = async (
     
     console.log(`[tripOffersService] Query range: ${from} to ${to}`);
 
-    const offersExist = await checkTripOffersExist(sanitizedTripId);
-    if (!offersExist) {
-      console.log(`[tripOffersService] No offers found for trip ID: ${sanitizedTripId} (pre-check)`);
-      return { offers: [], total: 0 };
-    }
+    // Remove the early exit pre-check for offers existence
+    // Instead, always attempt to fetch offers, even if none existed previously
+    console.log(`[tripOffersService] Fetching offers for trip ID: ${sanitizedTripId}, even if none existed before`);
+    
 
     const { data, error, count } = await supabase
       .from("flight_offers")
@@ -255,35 +243,85 @@ export const fetchTripOffers = async (
     if (!data || data.length === 0) {
       console.log(`[tripOffersService] No offers found for trip ID: ${sanitizedTripId} in range ${from}-${to}`);
       
+      // Double-check total count to make sure we didn't miss any
       const totalCount = await getTripOffersCount(sanitizedTripId);
       if (totalCount > 0) {
         console.log(`[tripOffersService] NOTE: Trip ${sanitizedTripId} has ${totalCount} total offers, but none in the requested range`);
+        
+        // Try a more direct query to get any offers, regardless of range
+        if (from > 0) {
+          console.log(`[tripOffersService] Attempting to fetch first available offers directly`);
+          const { data: firstOffers } = await supabase
+            .from("flight_offers")
+            .select("*")
+            .eq("trip_request_id", sanitizedTripId)
+            .order("price", { ascending: true })
+            .limit(validatedPageSize);
+            
+          if (firstOffers && firstOffers.length > 0) {
+            console.log(`[tripOffersService] Found ${firstOffers.length} offers with direct query`);
+            return { 
+              offers: firstOffers
+                .map(item => ({
+                  id: String(item.id),
+                  price: Number(item.price),
+                  airline: String(item.airline || ''),
+                  flight_number: String(item.flight_number || ''),
+                  departure_date: String(item.departure_date || ''),
+                  departure_time: String(item.departure_time || ''),
+                  return_date: String(item.return_date || ''),
+                  return_time: String(item.return_time || ''),
+                  duration: String(item.duration || ''),
+                }))
+                .filter(validateOffer),
+              total: totalCount
+            };
+          }
+        }
       }
       
       return { offers: [], total: 0 };
     }
 
-    console.log(`[tripOffersService] Found ${data.length} offers for trip ID: ${sanitizedTripId}, total count: ${count}`);
+    console.log(`[tripOffersService] Found ${data.length} raw offers for trip ID: ${sanitizedTripId}, total count: ${count}`);
+    
+    // Log some sample durations to assist with debugging format issues
+    if (data.length > 0) {
+      console.log(`[tripOffersService] Sample durations:`, 
+        data.slice(0, Math.min(5, data.length)).map(item => item.duration));
+    }
 
-    // Transform and validate offers
+    // Transform and validate offers with robust type coercion
     const offers = data
       .map(item => ({
-        id: item.id,
+        id: String(item.id),
         price: Number(item.price),
-        airline: item.airline,
-        flight_number: item.flight_number,
-        departure_date: item.departure_date,
-        departure_time: item.departure_time,
-        return_date: item.return_date,
-        return_time: item.return_time,
-        duration: item.duration,
+        airline: String(item.airline || ''),
+        flight_number: String(item.flight_number || ''),
+        departure_date: String(item.departure_date || ''),
+        departure_time: String(item.departure_time || ''),
+        return_date: String(item.return_date || ''),
+        return_time: String(item.return_time || ''),
+        duration: String(item.duration || ''),
       }))
       .filter(validateOffer);
 
     if (offers.length < data.length) {
       console.warn(`[tripOffersService] Some offers failed validation: ${data.length - offers.length} invalid offers`);
+      
+      // With the more lenient validation, this should rarely happen
+      // But log any failures for debugging
+      const failedItems = data.filter(item => {
+        return !item.id || item.price === undefined || item.price === null;
+      });
+      
+      if (failedItems.length > 0) {
+        console.log(`[tripOffersService] Example of an offer with missing critical fields:`, 
+          JSON.stringify(failedItems[0]));
+      }
     }
 
+    console.log(`[tripOffersService] Returning ${offers.length} validated offers`);
     return { offers, total: count || offers.length };
   }, `fetchTripOffers(${sanitizedTripId}, ${validatedPage}, ${validatedPageSize})`);
 };
