@@ -1,8 +1,9 @@
+
 import { LogLevel, LogContext, LogEntry } from './types';
 
 class Logger {
   private static instance: Logger;
-  private logLevel: LogLevel = import.meta.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.DEBUG;
+  private logLevel: LogLevel = import.meta.env['NODE_ENV'] === 'production' ? LogLevel.INFO : LogLevel.DEBUG;
 
   private constructor() {}
 
@@ -45,7 +46,7 @@ class Logger {
       timestamp: new Date().toISOString(),
       level,
       message: this.formatMessage(message, context),
-      context: context ? context : undefined,
+      context: context || undefined,
       error: data ? this.formatError(data) : undefined,
     };
   }
