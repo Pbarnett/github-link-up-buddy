@@ -2,7 +2,30 @@ import { z } from 'zod';
 import { logger } from './logger';
 import { AppError } from './errorUtils';
 import { LogContext } from './types';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+// Use Web Crypto API for randomness and timing-safe comparisons
+
+// Simple timing-safe equality check without Node's crypto
+const safeEqual = (a: string, b: string): boolean => {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    return false;
+  }
+  let result = 0;
+  for (let i = 0; i < bufA.length; i++) {
+    result |= bufA[i] ^ bufB[i];
+  }
+  return result === 0;
+};
+
+const generateRandomHex = (size: number): string => {
+  const bytes = new Uint8Array(size);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+};
+
 
 // Environment validation
 export const environmentSchema = z.object({
@@ -151,10 +174,7 @@ export const verifyCsrfToken = (
     return false;
   }
   // Use timing-safe comparison to prevent timing attacks
-  return timingSafeEqual(
-    Buffer.from(requestToken),
-    Buffer.from(sessionToken)
-  );
+  return safeEqual(requestToken, sessionToken);
 };
 
 // Comprehensive security event logging with enhanced context
@@ -201,11 +221,11 @@ export const isValidIpAddress = (ip: string): boolean => {
 // Session security utilities
 export const sessionSecurity = {
   generateSessionId: (): string => {
-    return randomBytes(32).toString('hex');
+    return generateRandomHex(32);
   },
-  
+
   rotateSessionId: (currentId: string): string => {
-    const newId = randomBytes(32).toString('hex');
+    const newId = generateRandomHex(32);
     logSecurityEvent('session_rotation', { oldId: tokenizeValue(currentId) });
     return newId;
   },
