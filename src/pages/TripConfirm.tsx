@@ -271,6 +271,7 @@ const TripConfirm = () => {
         .from("booking_requests")
         .insert({
           offer_data: offer,
+          offer_id: offer.id,
           traveler_data: data,
           status: 'new',
           user_id: userId 
