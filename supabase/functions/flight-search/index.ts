@@ -136,10 +136,10 @@ serve(async (req: Request) => {
           continue;
         }
         
-        // Create search params from the trip request
+        // Create search params from the trip request - use ONLY the exact destination specified
         const searchParams: FlightSearchParams = {
           origin: request.departure_airports,
-          destination: request.destination_airport,
+          destination: request.destination_airport, // Use exact destination only, no nearby airports
           earliestDeparture: new Date(request.earliest_departure),
           latestDeparture: new Date(request.latest_departure),
           minDuration: relaxedCriteria ? 1 : request.min_duration, // Relax min duration if requested
@@ -149,7 +149,7 @@ serve(async (req: Request) => {
         };
         
         // Log search parameters for debugging
-        console.log(`[flight-search] Search params:`, JSON.stringify({
+        console.log(`[flight-search] Search params (exact destination only):`, JSON.stringify({
           origin: searchParams.origin,
           destination: searchParams.destination,
           earliestDeparture: searchParams.earliestDeparture.toISOString(),
@@ -157,7 +157,8 @@ serve(async (req: Request) => {
           minDuration: searchParams.minDuration,
           maxDuration: searchParams.maxDuration,
           budget: searchParams.budget,
-          relaxedCriteria: relaxedCriteria
+          relaxedCriteria: relaxedCriteria,
+          exactDestinationOnly: true
         }, null, 2));
         
         let token;
@@ -175,28 +176,38 @@ serve(async (req: Request) => {
         try {
           // Use the enhanced API to get flight offers with multiple search strategies
           offers = await searchOffers(searchParams, request.id);
-          console.log(`[flight-search] Request ${request.id}: Found ${offers.length} transformed offers from API`);
+          console.log(`[flight-search] Request ${request.id}: Found ${offers.length} transformed offers from API (exact destination only)`);
         } catch (apiError) {
           console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
           continue;
         }
         
+        // Filter offers to ensure they match the EXACT destination airport only
+        const exactDestinationOffers = offers.filter(offer => {
+          const offerDestination = offer.destination_airport;
+          const requestedDestination = request.destination_airport;
+          return offerDestination === requestedDestination;
+        });
+        
+        console.log(`[flight-search] Request ${request.id}: Filtered from ${offers.length} to ${exactDestinationOffers.length} offers matching exact destination ${request.destination_airport}`);
+        
         // Filter offers based on max_price (if specified)
         // If max_price is null, no filtering is applied (treat as "no filter")
         const filteredOffers = request.max_price === null 
-          ? offers 
-          : offers.filter(offer => offer.price <= request.max_price);
+          ? exactDestinationOffers 
+          : exactDestinationOffers.filter(offer => offer.price <= request.max_price);
         
-        console.log(`[flight-search] Request ${request.id}: Generated ${offers.length} offers, filtered to ${filteredOffers.length} by max price`);
+        console.log(`[flight-search] Request ${request.id}: Generated ${exactDestinationOffers.length} exact destination offers, filtered to ${filteredOffers.length} by max price`);
         
         if (filteredOffers.length === 0) {
           details.push({ 
             tripRequestId: request.id, 
             matchesFound: 0, 
             offersGenerated: offers.length,
+            exactDestinationOffers: exactDestinationOffers.length,
             offersFiltered: 0,
-            error: "No matching offers after filtering"
+            error: "No matching offers for exact destination after filtering"
           });
           continue;
         }
@@ -226,6 +237,7 @@ serve(async (req: Request) => {
             tripRequestId: request.id,
             matchesFound: 0,
             offersGenerated: offers.length,
+            exactDestinationOffers: exactDestinationOffers.length,
             offersInserted: 0,
             error: "No offers were saved to the database"
           });
@@ -269,11 +281,13 @@ serve(async (req: Request) => {
           tripRequestId: request.id, 
           matchesFound: newInserts,
           offersGenerated: offers.length,
+          exactDestinationOffers: exactDestinationOffers.length,
           offersFiltered: filteredOffers.length,
-          relaxedCriteria: relaxedCriteria
+          relaxedCriteria: relaxedCriteria,
+          exactDestinationOnly: true
         });
         
-        console.log(`[flight-search] Request ${request.id}: fetched ${offers.length} offers → ${newInserts} new matches`);
+        console.log(`[flight-search] Request ${request.id}: fetched ${offers.length} offers → ${exactDestinationOffers.length} exact destination → ${newInserts} new matches`);
       } catch (requestError) {
         // Catch any errors in processing this specific trip request
         console.error(`[flight-search] Failed to process request ${request.id}: ${requestError.message}`);
@@ -295,6 +309,7 @@ serve(async (req: Request) => {
         matchesInserted: totalMatchesInserted,
         totalDurationMs,
         relaxedCriteriaUsed: relaxedCriteria,
+        exactDestinationOnly: true,
         details
       }),
       {
