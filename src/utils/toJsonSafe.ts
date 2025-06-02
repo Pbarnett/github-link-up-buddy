@@ -13,17 +13,17 @@ export function toJsonSafe(value: unknown): Json {
     typeof value === "number" ||
     typeof value === "boolean"
   ) {
-    return value;
+    return value as Json;
   }
 
   // 2. Date → ISO string
   if (value instanceof Date) {
-    return value.toISOString();
+    return value.toISOString() as Json;
   }
 
   // 3. Array → map over elements
   if (Array.isArray(value)) {
-    return value.map((el) => toJsonSafe(el)) as Json[];
+    return (value.map((el) => toJsonSafe(el)) as unknown) as Json;
   }
 
   // 4. Plain object → recurse on each entry
@@ -34,10 +34,10 @@ export function toJsonSafe(value: unknown): Json {
       if (val === undefined) continue;
       plain[key] = toJsonSafe(val);
     }
-    return plain;
+    return plain as Json;
   }
 
   // 5. Anything else (function, Map, Set) – convert to null
   // In our domain, we shouldn't hit these, but just in case:
-  return null;
+  return null as Json;
 }
