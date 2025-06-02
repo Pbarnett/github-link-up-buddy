@@ -39,7 +39,7 @@ async function withRetry<T>(
     try {
       return await operation();
     } catch (error) {
-      lastError = error;
+      lastError = error instanceof Error ? error : new Error(String(error));
       console.error(`[tripOffersService] ${operationName} failed (attempt ${attempt}/${maxRetries}):`, error);
       
       if (attempt < maxRetries) {
