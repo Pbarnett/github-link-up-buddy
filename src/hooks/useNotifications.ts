@@ -15,7 +15,7 @@ export interface Notification {
 
 export function useNotifications() {
 
-  const { data, error } = useQuery({
+  const { data, error, isPending } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -34,5 +34,5 @@ export function useNotifications() {
     }
   })
 
-  return { data, error, isLoading: false }
+  return { data, error, isLoading: isPending }
 }
