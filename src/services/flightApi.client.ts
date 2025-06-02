@@ -44,11 +44,6 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
         const departureDate = out.departure.at.split("T")[0];
         const returnDate = back.departure.at.split("T")[0];
         
-        // Calculate trip duration to ensure it meets requirements
-        const outDate = new Date(departureDate);
-        const retDate = new Date(returnDate);
-        const tripDays = Math.round((retDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24));
-        
         return [{
           trip_request_id: tripRequestId,
           airline: out.carrierCode,
