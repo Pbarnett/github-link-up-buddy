@@ -40,8 +40,7 @@ export default function TripOffers() {
   const locationState = location.state as { offers?: Offer[] } | null;
   const initialOffers = locationState?.offers ?? [];
   const [offers, setOffers] = useState<Offer[]>(initialOffers);
-  const [tripDetails, setTripDetails] = useState<TripDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(initialOffers.length === 0);
+  const [isLoading, setIsLoading] = useState(true); // Start as loading by default
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -53,19 +52,46 @@ export default function TripOffers() {
   const [searchDuration, setSearchDuration] = useState(0);
   const refreshIntervalRef = useRef<number | null>(null);
   const searchStartTimeRef = useRef<number>(Date.now());
+  
+  // Add debug logging for state changes
+  useEffect(() => {
+    console.log('[TripOffers] Current offers state:', {
+      offersCount: offers.length,
+      isLoading,
+      hasError,
+      firstOffer: offers[0]
+    });
+  }, [offers, isLoading, hasError]);
 
   // Client-side validateOfferDuration is removed.
 
   const loadOffers = useCallback(async (pageToLoad = 0, overrideFilter = false, relaxCriteria = false) => {
-    if (pageToLoad === 0) {
+    console.log('[TripOffers] Loading offers:', {
+      pageToLoad,
+      overrideFilter,
+      relaxCriteria,
+      currentOffersCount: offers.length
+    });
+
+    // Don't show loading if we already have offers
+    if (pageToLoad === 0 && offers.length === 0) {
       setIsLoading(true);
-    } else {
+    } else if (pageToLoad > 0) {
       setIsFetchingNextPage(true);
     }
     setHasError(false);
 
     const pageSize = 20;
 
+    console.log('loadOffers debug - before fetch:', {
+      pageToLoad,
+      overrideFilter,
+      relaxCriteria,
+      currentOffersCount: offers.length,
+      isLoading,
+      hasError
+    });
+    
     try {
       if (!tripId) {
         setHasError(true);
@@ -91,12 +117,44 @@ export default function TripOffers() {
       }
       
       // If tripDetails are still null (e.g. initial fetch failed before, or for some other reason), we cannot proceed.
-      if (!currentTripDetails) {
-          throw new Error("Trip details are not available to send to the server for filtering.");
-      }
+      // Even if trip details are missing, we should still try to fetch offers
+      // The backend service should apply default filtering if needed
+      console.log('[TripOffers] Trip details available:', !!currentTripDetails);
       
       const { offers: newOffers, total } = await fetchTripOffers(tripId, pageToLoad, pageSize);
+      console.log('[TripOffers] Received offers:', {
+        newOffersCount: newOffers.length,
+        total,
+        firstNewOffer: newOffers[0]
+      });
+      
+      console.log('loadOffers debug - after fetch:', {
+        newOffersCount: newOffers.length,
+        total,
+        firstOffer: newOffers[0],
+        isLoading,
+        hasError
+      });
+      
+      // Update offers without clearing existing ones first
+      if (pageToLoad === 0) {
+        setOffers(newOffers);
+      } else {
+        setOffers(prev => [...prev, ...newOffers]);
+      }
+      
+      // Update pagination data
       const paginationData = { totalFilteredOffers: total, currentPage: pageToLoad, pageSize };
+      setHasMore((pageToLoad + 1) * pageSize < total);
+      
+      // If we found offers, slow down the refresh rate
+      if (newOffers.length > 0 && refreshIntervalRef.current) {
+        stopAutoRefresh();
+        refreshIntervalRef.current = window.setInterval(() => {
+          // Only check for new offers every 30 seconds once we have results
+          refreshWithCheck();
+        }, 30000);
+      }
 
       // Update usedRelaxedCriteria state based on the actual criteria used for this load.
       // This is important for reflecting the state accurately in the UI and subsequent calls.
@@ -121,34 +179,33 @@ export default function TripOffers() {
         }
       }
       
-      if (newOffers.length === 0 && pageToLoad === 0) {
-        toast({
-          title: "No flight offers found",
-          description: "Try relaxing your search criteria or refreshing.",
-          variant: "destructive",
-        });
-        setOffers([]);
-      } else if (pageToLoad === 0) {
-        setOffers(newOffers);
-      } else {
-        setOffers(prevOffers => [...prevOffers, ...newOffers]);
-      }
-
-      if (paginationData) {
-        setHasMore((paginationData.currentPage + 1) * paginationData.pageSize < paginationData.totalFilteredOffers);
-      } else {
-        // Fallback if paginationData is not available from the server
-        setHasMore(newOffers.length === pageSize);
+      // Show toast notifications based on results
+      if (pageToLoad === 0) {
+        // Show a toast only if no offers were found
+        if (newOffers.length === 0) {
+          toast({
+            title: "No flight offers found",
+            description: "Try relaxing your search criteria or refreshing.",
+            variant: "destructive",
+          });
+        } else {
+          // If offers were found, show a success toast
+          toast({
+            title: "Flight offers found",
+            description: `Found ${newOffers.length} flight offers matching your criteria.`,
+          });
+        }
       }
 
     } catch (err: unknown) {
+      console.error('Error loading offers:', err);
       setHasError(true);
       const errorMessage = err instanceof Error ? err.message : "Something went wrong loading offers";
       setErrorMessage(errorMessage);
       toast({ title: "Error Loading Flight Offers", description: errorMessage, variant: "destructive" });
       setHasMore(false);
     } finally {
-      if (pageToLoad === 0) setIsLoading(false);
+      setIsLoading(false);
       setIsFetchingNextPage(false);
     }
   }, [tripId, tripDetails]);
@@ -158,6 +215,25 @@ export default function TripOffers() {
 
   useEffect(() => {
     if (tripId) {
+        // Debug logs to help trace issues
+        console.log('Debug: Initial load triggered', {
+          tripId,
+          budget,
+          initialOffersCount,
+          departureDateParam,
+          returnDateParam,
+          autoBook
+        });
+        
+        console.log('Initial load debug:', {
+          tripId,
+          isLoading,
+          offersCount: offers.length,
+          hasError,
+          errorMessage,
+          tripDetails
+        });
+        
         // Validate parameters
         if (budget <= 0) {
           console.warn('Invalid or missing budget parameter:', budget);
@@ -181,12 +257,18 @@ export default function TripOffers() {
         searchStartTimeRef.current = Date.now();
         setTripDetails(null);
 
-        if (initialLoadRef.current && initialOffers.length > 0) {
-          startAutoRefresh();
+        // Don't clear existing offers to avoid flickering, unless they're stale
+        if (offers.length > 0 && isRefreshing) {
+          // Keep the existing offers during a refresh
+          loadOffers(0, ignoreFilter, usedRelaxedCriteria);
         } else {
+          // Clear any existing offers for a fresh load
           setOffers([]);
           loadOffers(0, ignoreFilter, usedRelaxedCriteria);
         }
+        
+        // Then start the auto-refresh for continuous updates
+        startAutoRefresh();
 
         initialLoadRef.current = false;
     } else if (initialLoadRef.current) {
@@ -247,7 +329,7 @@ export default function TripOffers() {
     if (!tripId) return;
     setIsRefreshing(true); 
     setCurrentPage(0);
-    setOffers([]);
+    // Don't clear offers during refresh to avoid flickering
     setHasMore(true);
     
     // First try to use URL parameters for trip details if available
@@ -275,24 +357,50 @@ export default function TripOffers() {
     const refreshWithCheck = () => {
       // Only auto-refresh if we're not already loading or refreshing
       if (!isLoading && !isRefreshing && !isFetchingNextPage) {
+        console.log('Auto-refresh check - current state:', {
+          offersCount: offers.length,
+          isLoading,
+          isRefreshing,
+          isFetchingNextPage,
+          hasError
+        });
         // Update search duration for progress indicator
         const currentDuration = Math.min(100, Math.floor((Date.now() - searchStartTimeRef.current) / 600));
         setSearchDuration(currentDuration);
         
         console.log("Auto-refreshing offers...");
-        refreshOffers();
         
-        // If we've found offers or search has been going for over a minute, slow down the refresh rate
-        if (offers.length > 0 || currentDuration >= 100) {
-          console.log("Slowing down refresh rate...");
-          stopAutoRefresh();
-          refreshIntervalRef.current = window.setInterval(refreshWithCheck, 30000); // Slow down to every 30 seconds
-        }
+        // First check directly if offers exist before performing a full refresh
+        supabase
+          .from("flight_offers")
+          .select("*", { count: "exact", head: true })
+          .eq("trip_request_id", tripId || '')
+          .then(({ count }) => {
+            console.log(`Auto-refresh found ${count || 0} offers in database`);
+            
+            // Only do a full refresh if either:
+            // 1. We don't have any offers locally but they exist in DB
+            // 2. It's been less than a minute and we're still actively searching
+            if ((offers.length === 0 && count && count > 0) || currentDuration < 100) {
+              refreshOffers();
+            }
+            
+            // If we've found offers or search has been going for over a minute, slow down the refresh rate
+            if (offers.length > 0 || currentDuration >= 100) {
+              console.log("Slowing down refresh rate...");
+              stopAutoRefresh();
+              refreshIntervalRef.current = window.setInterval(refreshWithCheck, 30000); // Slow down to every 30 seconds
+            }
+          })
+          .catch(err => {
+            console.error("Error in auto-refresh check:", err);
+            refreshOffers(); // Fall back to full refresh on error
+          });
       }
     };
 
     // Set initial interval - refresh every 10 seconds
-    refreshIntervalRef.current = window.setInterval(refreshWithCheck, 10000);
+    refreshIntervalRef.current = window.setInterval(refreshWithCheck, 5000); // Start with a faster refresh rate
   }, [isLoading, isRefreshing, isFetchingNextPage, offers.length, refreshOffers, stopAutoRefresh]);
   
   const handleOverrideSearch = () => {
@@ -321,6 +429,13 @@ export default function TripOffers() {
   };
 
   if (hasError && offers.length === 0) { // Only show full error card if no offers are displayed
+    console.error('Debug: Error state reached', {
+      errorMessage,
+      tripId,
+      offersLength: offers.length,
+      tripDetails
+    });
+    
     return (
       <TripErrorCard 
         message={errorMessage} 
@@ -332,6 +447,15 @@ export default function TripOffers() {
     );
   }
 
+  console.log('Render debug:', {
+    isLoading,
+    offersCount: offers.length,
+    hasError,
+    errorMessage,
+    hasMore,
+    isFetchingNextPage
+  });
+  
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
       {/* Trip Summary Card */}
@@ -404,40 +528,50 @@ export default function TripOffers() {
         </CardHeader>
       </Card>
 
-      {isLoading && offers.length === 0 ? ( // Show main loader only if it's initial load and no offers yet
-        <div className="w-full max-w-5xl space-y-4">
-          <TripOffersLoading />
-          <div className="text-center text-gray-600">
-            <p>Flight search in progress...</p>
-            <p className="text-sm mt-1">This may take up to a minute. Results will appear automatically.</p>
-          </div>
-          <div className="w-full max-w-5xl px-4">
-            <Progress value={searchDuration} className="h-2 w-full" />
-            <p className="text-xs text-center mt-1 text-gray-500">
-              {searchDuration < 100 ? "Searching for the best flights..." : "Search nearly complete..."}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="w-full max-w-5xl space-y-6">
-          {offers.length > 0 ? (
-            <>
-              {offers.map((offer) => <TripOfferCard key={offer.id} offer={offer} />)}
-              {hasMore && !isFetchingNextPage && (
-                <div className="text-center mt-8">
-                  <Button onClick={handleLoadMore} disabled={isFetchingNextPage}>
-                    Load More Offers
-                  </Button>
-                </div>
-              )}
-              {isFetchingNextPage && (
-                <div className="text-center mt-8">
-                  <p>Loading more offers...</p> {/* Or a spinner */}
-                </div>
-              )}
-            </>
-          ) : (
-            // "No offers found" card (existing logic)
+      {/* Main content area */}
+      <div className="w-full max-w-5xl space-y-4">
+        {/* Show loading state only when no offers are available */}
+        {isLoading && offers.length === 0 && (
+          <>
+            <TripOffersLoading />
+            <div className="text-center text-gray-600">
+              <p>Flight search in progress...</p>
+              <p className="text-sm mt-1">This may take up to a minute. Results will appear automatically.</p>
+            </div>
+            <div className="w-full max-w-5xl px-4">
+              <Progress value={searchDuration} className="h-2 w-full" />
+              <p className="text-xs text-center mt-1 text-gray-500">
+                {searchDuration < 100 ? "Searching for the best flights..." : "Search nearly complete..."}
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* Show offers if we have them, regardless of loading state */}
+        {offers.length > 0 && (
+          <>
+            <h2 className="text-xl font-semibold mb-4">Found {offers.length} flights for your trip</h2>
+            {offers.map((offer) => (
+              <TripOfferCard key={offer.id} offer={offer} />
+            ))}
+            {hasMore && !isFetchingNextPage && (
+              <div className="text-center mt-8">
+                <Button onClick={handleLoadMore} disabled={isFetchingNextPage}>
+                  Load More Offers
+                </Button>
+              </div>
+            )}
+            {isFetchingNextPage && (
+              <div className="text-center mt-8">
+                <p>Loading more offers...</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Show "no offers" message only if not loading and no offers */}
+        {!isLoading && offers.length === 0 && (
+            // "No offers found" card
             <Card className="p-6 text-center">
               <p className="mb-4">
                 {initialOffersCount > 0 
@@ -448,6 +582,60 @@ export default function TripOffers() {
                 Flight searches run asynchronously and may take a minute to complete.
                 Results will appear automatically as they become available.
               </p>
+              
+              {searchDuration >= 100 && offers.length === 0 && (
+                <div className="mt-6 p-4 bg-amber-50 rounded-md border border-amber-200">
+                  <h3 className="text-amber-800 font-medium">No flights found</h3>
+                  <p className="text-sm text-amber-700 mt-1">
+                    The search completed but no flights were found matching your criteria. This could be due to:
+                  </p>
+                  <ul className="text-sm text-amber-700 list-disc list-inside mt-2">
+                    <li>Limited flight availability for your selected dates</li>
+                    <li>Destination may have limited service</li>
+                    <li>Budget constraints may be too restrictive</li>
+                    <li>Duration requirements may be too specific</li>
+                  </ul>
+                  <p className="text-sm text-amber-700 mt-2">
+                    Trip ID: {tripId}
+                  </p>
+                  <div className="mt-4">
+                    <p className="text-sm text-amber-700">Would you like to try:</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <Button 
+                        variant="outline" 
+                        className="bg-amber-100 hover:bg-amber-200 border-amber-300"
+                        onClick={() => {
+                          const newBudget = Math.round((budget || 1000) * 1.25); // 25% higher budget
+                          // Construct a new trip request with higher budget
+                          toast({
+                            title: "Increasing budget",
+                            description: `Trying again with a budget of $${newBudget}`,
+                          });
+                          // This will trigger a re-search with the higher budget
+                          setIgnoreFilter(true);
+                          refreshOffers();
+                        }}
+                      >
+                        Increase Budget
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="bg-amber-100 hover:bg-amber-200 border-amber-300"
+                        onClick={() => {
+                          toast({
+                            title: "Expanding date range",
+                            description: "Trying again with a wider date range",
+                          });
+                          // This would ideally expand the date range in the trip request
+                          handleRelaxCriteria();
+                        }}
+                      >
+                        Expand Date Range
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="mt-4 mb-4">
                 <Progress value={searchDuration} className="h-2 w-full" />
                 <p className="text-xs text-center mt-1 text-gray-500">
@@ -481,7 +669,3 @@ export default function TripOffers() {
             </Card>
           )}
         </div>
-      )}
-    </div>
-  );
-}
