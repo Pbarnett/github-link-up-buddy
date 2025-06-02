@@ -39,7 +39,7 @@ async function withRetry<T>(
     try {
       return await operation();
     } catch (error) {
-      lastError = error;
+      lastError = error instanceof Error ? error : new Error(String(error));
       console.error(`[tripOffersService] ${operationName} failed (attempt ${attempt}/${maxRetries}):`, error);
       
       if (attempt < maxRetries) {
@@ -88,6 +88,7 @@ export function isValidDuration(duration: string): boolean {
   // Accept both human-readable and ISO 8601 duration formats
   const isoPattern = /^PT(?=\d)(?:\d+H)?(?:\d+M)?$/; // PT4H15M, PT4H, PT15M
   const humanPattern = /^\d+h(?:\s*\d+m)?$/;          // 4h 15m, 4h
+
   
   // Check if it matches either format but ensure at least one time component exists
   if (isoPattern.test(duration)) {
@@ -311,6 +312,7 @@ export const debugInspectTripOffers = async (tripId: string): Promise<any[]> => 
     console.log(`[tripOffersService] DEBUG: Found ${data?.length || 0} raw offers for trip ${sanitizedTripId}`);
     
     if (data && data.length > 0) {
+
       console.log(
         `[tripOffersService] DEBUG: First offer structure:`,
         Object.keys(data[0]).join(', ')
@@ -322,6 +324,7 @@ export const debugInspectTripOffers = async (tripId: string): Promise<any[]> => 
       );
     } else {
       console.log(`[tripOffersService] DEBUG: First offer structure:`, 'No data');
+
     }
     
     return data || [];
