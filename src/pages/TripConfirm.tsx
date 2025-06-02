@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import TravelerDataForm, { TravelerData } from "@/components/TravelerDataForm";
 import { TablesInsert } from "@/integrations/supabase/types";
+import { toJsonSafe } from "@/utils/toJsonSafe";
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -269,9 +270,9 @@ const TripConfirm = () => {
 
     try {
       const bookingRequestData: TablesInsert<"booking_requests"> = {
-        offer_data: offer,
+        offer_data: toJsonSafe(offer),
         offer_id: offer.id,
-        traveler_data: data,
+        traveler_data: toJsonSafe(data),
         status: 'new',
         user_id: userId 
       };
