@@ -4,26 +4,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Import the flight API service (edge version) with explicit fetchToken
 import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
-// Define the type for inserting into the flight_offers table here so that the
-// edge function is self contained. Deno cannot resolve paths outside this
-// directory.
-export interface FlightOfferInsert {
-  airline: string;
-  auto_book?: boolean;
-  booking_url?: string | null;
-  created_at?: string;
-  departure_date: string;
-  departure_time: string;
-  duration: string;
-  flight_number: string;
-  id?: string;
-  layover_airports?: string[] | null;
-  price: number;
-  return_date: string;
-  return_time: string;
-  stops?: number;
-  trip_request_id: string;
-}
 
 // Set up CORS headers
 const corsHeaders = {
@@ -51,53 +31,22 @@ serve(async (req: Request) => {
   }
 
   try {
-    
-    // Parse request body with improved error handling
+    // Parse request body for optional tripRequestId
     let tripRequestId: string | null = null;
     let body: any = {};
     let relaxedCriteria = false;
-    let diagnosticMode = false;
-    let maxSearchTimeMs = 30000; // Default 30 second timeout for searches
-    let bypassFilters = false; // Special flag to bypass filtering
     
     if (req.method === "POST") {
-      try {
-        body = await req.json();
-        tripRequestId = body.tripRequestId || null;
-        relaxedCriteria = body.relaxedCriteria === true;
-        diagnosticMode = body.diagnosticMode === true;
-        bypassFilters = body.bypassFilters === true; // Add bypass option
-        
-        // Allow overriding the max search time
-        if (body.maxSearchTimeMs && typeof body.maxSearchTimeMs === 'number') {
-          maxSearchTimeMs = Math.min(60000, Math.max(5000, body.maxSearchTimeMs));
-        }
-        
-        if (relaxedCriteria) {
-          console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
-        }
-        
-        if (diagnosticMode) {
-          console.log(`[flight-search] DIAGNOSTIC MODE ENABLED - extra logging will be included`);
-        }
-        
-        if (bypassFilters) {
-          console.log(`[flight-search] BYPASS FILTERS ENABLED - all validation filters will be skipped`);
-        }
-      } catch (parseError) {
-        console.error(`[flight-search] Error parsing request body:`, parseError);
-        throw new Error(`Invalid request body: ${parseError.message}`);
+      body = await req.json();
+      tripRequestId = body.tripRequestId || null;
+      relaxedCriteria = body.relaxedCriteria === true;
+      
+      if (relaxedCriteria) {
+        console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
       }
     }
     
     console.log(`[flight-search] Invoked${tripRequestId ? ` for ${tripRequestId}` : ' for auto-book enabled trips'}`);
-    console.log(`[flight-search] Search timeout set to ${maxSearchTimeMs}ms`);
-    
-    // Detect environment type
-    const isTestEnvironment = Deno.env.get("AMADEUS_BASE_URL")?.includes("test");
-    if (isTestEnvironment) {
-      console.log(`[flight-search] ⚠️ USING TEST ENVIRONMENT - LIMITED RESULTS EXPECTED`);
-    }
     
     // Build the query based on whether tripRequestId is provided
     let requests;
@@ -120,8 +69,7 @@ serve(async (req: Request) => {
       const { data: many, error } = await supabaseClient
         .from("trip_requests")
         .select("*")
-        .eq("auto_book", true)
-        .order('latest_departure', { ascending: true });
+        .eq("auto_book_enabled", true);
         
       if (error) {
         throw new Error(`Failed to fetch trip requests: ${error.message}`);
@@ -135,7 +83,6 @@ serve(async (req: Request) => {
     let processedRequests = 0;
     let totalMatchesInserted = 0;
     const details = [];
-    const allOffers: FlightOfferInsert[] = [];
     
     // Process each trip request
     for (const request of requests) {
@@ -190,63 +137,15 @@ serve(async (req: Request) => {
         }
         
         // Create search params from the trip request
-        // Validate dates before creating search params
-        const rawEarliestDeparture = new Date(request.earliest_departure);
-        const rawLatestDeparture = new Date(request.latest_departure);
-        
-        // Validate that the dates are valid JavaScript Date objects
-        if (isNaN(rawEarliestDeparture.getTime()) || isNaN(rawLatestDeparture.getTime())) {
-          console.error(`[flight-search] Invalid date format for request ${request.id}: earliest=${request.earliest_departure}, latest=${request.latest_departure}`);
-          details.push({ 
-            tripRequestId: request.id, 
-            matchesFound: 0, 
-            error: "Invalid date format in request" 
-          });
-          continue;
-        }
-        
-        // Handle date adjustment for test environment
-        let earliestDeparture = rawEarliestDeparture;
-        let latestDeparture = rawLatestDeparture;
-        let dateAdjusted = false;
-        
-        if (isTestEnvironment) {
-          // Define the valid test environment date range (2025-2026)
-          const testEnvMinDate = new Date('2025-01-01');
-          const testEnvMaxDate = new Date('2026-12-31');
-          
-          // Check if dates are outside the valid test range
-          if (earliestDeparture < testEnvMinDate || earliestDeparture > testEnvMaxDate || 
-              latestDeparture < testEnvMinDate || latestDeparture > testEnvMaxDate) {
-            
-            console.log(`[flight-search] ⚠️ Adjusting dates for test environment compatibility. Original dates: earliest=${earliestDeparture.toISOString()}, latest=${latestDeparture.toISOString()}`);
-            
-            // Calculate the number of days between earliest and latest departure
-            const daySpan = Math.floor((latestDeparture.getTime() - earliestDeparture.getTime()) / (24 * 60 * 60 * 1000));
-            
-            // Set earliest departure to a valid date in 2025
-            earliestDeparture = new Date('2025-06-01');
-            
-            // Maintain the original day span, but cap it to prevent going beyond the valid range
-            const maxDaySpan = Math.min(daySpan, 180); // Cap at 6 months to stay in range
-            latestDeparture = new Date(earliestDeparture.getTime() + (maxDaySpan * 24 * 60 * 60 * 1000));
-            
-            dateAdjusted = true;
-            console.log(`[flight-search] Adjusted dates for test environment: earliest=${earliestDeparture.toISOString()}, latest=${latestDeparture.toISOString()}`);
-          }
-        }
-        
-        // Create search params from the trip request (with potentially adjusted dates)
         const searchParams: FlightSearchParams = {
           origin: request.departure_airports,
           destination: request.destination_airport,
-          earliestDeparture: earliestDeparture,
-          latestDeparture: latestDeparture,
+          earliestDeparture: new Date(request.earliest_departure),
+          latestDeparture: new Date(request.latest_departure),
           minDuration: relaxedCriteria ? 1 : request.min_duration, // Relax min duration if requested
           maxDuration: relaxedCriteria ? 30 : request.max_duration, // Relax max duration if requested
           budget: relaxedCriteria ? Math.ceil(request.budget * 1.2) : request.budget, // Increase budget by 20% if relaxed
-          maxConnections: 2, // reasonable default
-          bypassFilters: bypassFilters // Pass through bypass flag from request
+          maxConnections: 2 // reasonable default
         };
         
         // Log search parameters for debugging
@@ -258,10 +157,7 @@ serve(async (req: Request) => {
           minDuration: searchParams.minDuration,
           maxDuration: searchParams.maxDuration,
           budget: searchParams.budget,
-          relaxedCriteria: relaxedCriteria,
-          bypassFilters: bypassFilters,
-          dateAdjusted: dateAdjusted,
-          isTestEnvironment: isTestEnvironment
+          relaxedCriteria: relaxedCriteria
         }, null, 2));
         
         let token;
@@ -277,72 +173,14 @@ serve(async (req: Request) => {
         
         let offers;
         try {
-          // Add a timeout to the search to prevent hanging
-          const searchPromise = searchOffers(searchParams, request.id);
-          
-          // Create a race between the search and a timeout
-          const timeoutPromise = new Promise<FlightOfferInsert[]>((_, reject) => {
-            setTimeout(() => reject(new Error(`Search timed out after ${maxSearchTimeMs}ms`)), maxSearchTimeMs);
-          });
-          
-          // Use the search result, or fail if it times out
-          offers = await Promise.race([searchPromise, timeoutPromise]);
-          
-          // The bypassFilters flag has already been passed in the searchParams object
-          if (bypassFilters) {
-            console.log(`[flight-search] Using bypassFilters flag for API search`);
-          }
-          
-          // Add date adjustment info to logs
-          if (dateAdjusted) {
-            console.log(`[flight-search] Request ${request.id}: Using adjusted dates for test environment compatibility`);
-          }
+          // Use the enhanced API to get flight offers with multiple search strategies
+          offers = await searchOffers(searchParams, request.id);
           console.log(`[flight-search] Request ${request.id}: Found ${offers.length} transformed offers from API`);
-          
-          // If in diagnostic mode and no offers were found, add more details
-          if (diagnosticMode && offers.length === 0) {
-          console.log(`[flight-search] DIAGNOSTIC: No offers found for request ${request.id} with params:`, JSON.stringify(searchParams, null, 2));
+        } catch (apiError) {
+          console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
+          details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
+          continue;
         }
-      } catch (apiError) {
-        console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
-        
-        // Enhanced error handling for date-related errors
-        let errorMessage = `API error: ${apiError.message}`;
-        let suggestedAction = "";
-        
-        // Check for common date-related error messages
-        if (apiError.message.includes("date in past") || 
-            apiError.message.includes("Date is in the past") ||
-            apiError.message.toLowerCase().includes("past date")) {
-          errorMessage = "API Error: Departure date is in the past";
-          suggestedAction = isTestEnvironment ? 
-            "For test environment, use dates between 2025-2026" : 
-            "Please select a future departure date";
-        } else if (apiError.message.includes("too far") || 
-                   apiError.message.includes("future date") || 
-                   apiError.message.includes("advance booking")) {
-          errorMessage = "API Error: Date is too far in the future";
-          suggestedAction = isTestEnvironment ? 
-            "For test environment, use dates between 2025-2026" : 
-            "Please select a date within the allowed booking window";
-        } else if (isTestEnvironment && (
-            apiError.message.includes("date") || 
-            apiError.message.includes("Date") || 
-            apiError.message.includes("time"))) {
-          errorMessage = "API Error: Possible date format or range issue";
-          suggestedAction = "In test environment, only dates in 2025-2026 are accepted";
-        }
-        
-        details.push({ 
-          tripRequestId: request.id, 
-          matchesFound: 0, 
-          error: errorMessage,
-          suggestedAction: suggestedAction,
-          dateAdjusted: dateAdjusted,
-          searchParams: diagnosticMode ? searchParams : undefined
-        });
-        continue;
-      }
         
         // Filter offers based on max_price (if specified)
         // If max_price is null, no filtering is applied (treat as "no filter")
@@ -384,7 +222,7 @@ serve(async (req: Request) => {
         
         if (!savedOffers || savedOffers.length === 0) {
           console.log(`[flight-search] No offers were saved for request ${request.id}. This could be due to duplicates.`);
-          details.push({
+          details.push({ 
             tripRequestId: request.id,
             matchesFound: 0,
             offersGenerated: offers.length,
@@ -392,16 +230,6 @@ serve(async (req: Request) => {
             error: "No offers were saved to the database"
           });
           continue;
-        }
-
-        // Merge generated IDs with full offer data for return payload
-        try {
-          for (let i = 0; i < savedOffers.length; i++) {
-            const fullOffer = { ...filteredOffers[i], id: savedOffers[i].id } as FlightOfferInsert;
-            allOffers.push(fullOffer);
-          }
-        } catch (mergeErr) {
-          console.error(`[flight-search] Error preparing return offers for request ${request.id}:`, mergeErr);
         }
         
         // Create flight matches for each saved offer
@@ -460,14 +288,6 @@ serve(async (req: Request) => {
     // Calculate total duration
     const totalDurationMs = Date.now() - functionStartTime;
     
-    // Add additional diagnostic information about environment
-    const environmentInfo = {
-      isTestEnvironment,
-      apiBase: Deno.env.get("AMADEUS_BASE_URL"),
-      clientIdPrefix: Deno.env.get("AMADEUS_CLIENT_ID")?.substring(0, 3) + '***',
-      validTestDateRange: isTestEnvironment ? '2025-01-01 to 2026-12-31' : 'N/A'
-    };
-    
     // Return enhanced summary with performance metrics
     return new Response(
       JSON.stringify({
@@ -475,18 +295,13 @@ serve(async (req: Request) => {
         matchesInserted: totalMatchesInserted,
         totalDurationMs,
         relaxedCriteriaUsed: relaxedCriteria,
-        diagnosticMode,
-        environment: environmentInfo,
-        details,
-        offers: allOffers
+        details
       }),
       {
         status: 200,
         headers: {
           ...corsHeaders,
           "Content-Type": "application/json",
-          "X-Flight-Search-Version": "2.0.0", // Add version for tracking
-          "X-Search-Duration-Ms": totalDurationMs.toString()
         },
       }
     );
@@ -498,13 +313,12 @@ serve(async (req: Request) => {
     const totalDurationMs = Date.now() - functionStartTime;
     
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
         error: error.message,
         requestsProcessed: 0,
         matchesInserted: 0,
         totalDurationMs,
-        details: [],
-        offers: []
+        details: []
       }),
       {
         status: 500,

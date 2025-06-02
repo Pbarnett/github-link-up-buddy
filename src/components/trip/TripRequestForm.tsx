@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "@/components/ui/use-toast";
-import { logSecurityEvent } from "@/lib/securityUtils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,17 +26,7 @@ import { Loader2 } from "lucide-react";
 const TripRequestForm = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { userId, loading: userLoading, error: userError } = useCurrentUser();
-  
-  // Handle navigation errors
-  const handleNavigationError = (error: unknown) => {
-    console.error('Navigation error:', error);
-    toast({
-      title: "Navigation Error",
-      description: "There was a problem viewing your trip offers. Please try again.",
-      variant: "destructive",
-    });
-  };
+  const { user, userId, loading: userLoading, error: userError } = useCurrentUser();
   
   // Initialize form with React Hook Form and Zod resolver
   const form = useForm<FormValues>({
@@ -51,7 +40,7 @@ const TripRequestForm = () => {
       destination_airport: "",
       destination_other: "",
       // Auto-booking defaults
-      auto_book: false,
+      auto_book_enabled: false,
       max_price: null,
       preferred_payment_method_id: null,
     },
@@ -99,9 +88,9 @@ const TripRequestForm = () => {
       departure_airports: departureAirports,
       destination_airport: destinationAirport,
       // Add auto-booking fields
-      auto_book: data.auto_book,
-      max_price: data.max_price ?? null,
-      preferred_payment_method_id: data.preferred_payment_method_id ?? null,
+      auto_book_enabled: data.auto_book_enabled,
+      max_price: data.max_price,
+      preferred_payment_method_id: data.preferred_payment_method_id,
     };
   };
 
@@ -116,47 +105,16 @@ const TripRequestForm = () => {
 
   // Navigate to the confirmation page with the trip ID
   const navigateToConfirmation = (result: TripRequestResult): void => {
-    // Show success toast informing the user about asynchronous flight search
+    // Show success toast with count of offers saved
     toast({
       title: "Trip request submitted",
-      description: `Your trip request has been submitted successfully. Flight search is now in progress.${
-        result.tripRequest.auto_book ? ' Auto-booking is enabled.' : ''
+      description: `Your trip request has been submitted with ${result.offersCount} flight offers!${
+        result.tripRequest.auto_book_enabled ? ' Auto-booking is enabled.' : ''
       }`,
     });
-
-    // Build URL parameters with all necessary data
-    const params = new URLSearchParams({
-      id: result.tripRequest.id,
-      auto_book: result.tripRequest.auto_book ? 'true' : 'false',
-      budget: result.tripRequest.budget.toString(),
-      departure: result.tripRequest.earliest_departure,
-      return: result.tripRequest.latest_departure,
-      initial_offers: result.offers.length.toString()
-    });
-
-    // Log the navigation attempt
-    logSecurityEvent('trip_navigation_attempt', {
-      tripId: result.tripRequest.id,
-      destination: '/trip/offers'
-    });
-
-    // Navigate with comprehensive error handling
-    try {
-      // Force a clean navigation without state
-      window.location.href = `/trip/offers?${params.toString()}`;
-    } catch (error) {
-      console.error('Navigation error:', error);
-      handleNavigationError(error);
-      
-      // Fallback navigation
-      try {
-        navigate(`/trip/offers?${params.toString()}`, { replace: true });
-      } catch (fallbackError) {
-        console.error('Fallback navigation failed:', fallbackError);
-        // Last resort: direct URL change
-        window.location.replace(`/trip/offers?${params.toString()}`);
-      }
-    }
+    
+    // Navigate to the offers page with the trip ID
+    navigate(`/trip/offers?id=${result.tripRequest.id}`);
   };
 
   // Main form submission handler that orchestrates the process
@@ -181,8 +139,8 @@ const TripRequestForm = () => {
       
       // Display an initial toast notification
       toast({
-        title: "Processing your request",
-        description: "Creating your trip request and initiating flight search...",
+        title: "Searching for flights",
+        description: "Please wait while we search for flights matching your criteria...",
       });
       
       // Step 2: Transform form data
@@ -195,7 +153,12 @@ const TripRequestForm = () => {
       navigateToConfirmation(result);
       
     } catch (error: any) {
-      toast({ title: "Submission Failed", description: error.message || "Could not submit your trip request. Please try again.", variant: "destructive" });
+      console.error("Error submitting trip request:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit trip request. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -267,7 +230,7 @@ const TripRequestForm = () => {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Searching...
                   </>
-                ) : "Create Trip Request"}
+                ) : "Submit"}
               </Button>
             </div>
           </form>

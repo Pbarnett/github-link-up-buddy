@@ -4,16 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "diagnose-offers": "ts-node scripts/diagnoseTripOffers.ts",
-    "test:date": "vitest supabase/functions/flight-search/flightApi.edge.test.ts",
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest",
-    "test:e2e": "playwright test",
-    "test:all": "npm run test && npm run test:e2e"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -66,17 +61,12 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
+    "vitest": "^3.1.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@eslint/js": "^9.28.0",
-    "@originjs/vite-plugin-federation": "^1.3.5",
-    "@playwright/test": "^1.52.0",
-    "@rollup/plugin-wasm": "^6.2.2",
+    "@eslint/js": "^9.9.0",
     "@tailwindcss/typography": "^0.5.15",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -89,13 +79,8 @@
     "lovable-tagger": "^1.1.7",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
-    "terser": "^5.29.2",
-    "ts-node": "^10.9.2",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1",
-    "vite-plugin-pwa": "^0.19.2",
-    "vitest": "^3.1.4"
-  },
-  "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977"
+    "vite": "^5.4.1"
+  }
 }

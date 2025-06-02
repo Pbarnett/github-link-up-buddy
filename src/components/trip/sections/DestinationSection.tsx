@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Control, UseFormWatch } from "react-hook-form";
 import { 
   FormControl, 
@@ -11,14 +11,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { POPULAR_DESTINATIONS } from "@/data/airports";
-import { FormValues } from "@/types/form";
 
 interface DestinationSectionProps {
-  control: Control<FormValues>;
-  watch: UseFormWatch<FormValues>;
+  control: Control<any>;
+  watch: UseFormWatch<any>;
 }
 
-const DestinationSectionComponent = ({ control, watch }: DestinationSectionProps) => {
+const DestinationSection = ({ control, watch }: DestinationSectionProps) => {
   // Watch the destination_airport value to conditionally disable the custom field
   const selectedDestination = watch("destination_airport");
   
@@ -32,9 +31,9 @@ const DestinationSectionComponent = ({ control, watch }: DestinationSectionProps
           <FormItem>
             <FormLabel>Destination</FormLabel>
             <FormDescription>Select a popular destination.</FormDescription>
-                <Select
-                  value={field.value ?? ''}
-                  onValueChange={field.onChange}
+            <Select 
+              onValueChange={field.onChange} 
+              value={field.value || undefined}
             >
               <FormControl>
                 <SelectTrigger>
@@ -76,8 +75,5 @@ const DestinationSectionComponent = ({ control, watch }: DestinationSectionProps
     </div>
   );
 };
-
-// Memoized component for export
-const DestinationSection = React.memo(DestinationSectionComponent);
 
 export default DestinationSection;

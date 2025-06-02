@@ -87,20 +87,17 @@ describe("OAuth Token Management", () => {
   let mockToken: string | undefined = undefined;
   let mockTokenExpires = 0;
   let mockFetchCounter = 0;
+  const baseUrl = "https://test.api.amadeus.com";
 
   const fetchTokenForTest = async () => {
     const now = Date.now();
-    // Check if token exists and is not about to expire (has more than 60 seconds left)
-    if (mockToken && now < mockTokenExpires - 60000) {
-      return mockToken;
-    }
+    if (mockToken && now < mockTokenExpires - 60000) return mockToken;
     
-    // If we get here, we need a new token
     mockFetchCounter++;
     // Simulate token fetch response
     const response = {
       access_token: `mock-token-${mockFetchCounter}`,
-      expires_in: 3600 // 60 minutes - increased for test stability
+      expires_in: 1800 // 30 minutes
     };
     
     mockToken = response.access_token;
@@ -141,15 +138,15 @@ describe("OAuth Token Management", () => {
     await fetchTokenForTest();
     expect(mockFetchCounter).toBe(1);
     
-    // Advance time to a point clearly within the safe window
-    vi.advanceTimersByTime(3000 * 1000); // 3000 seconds, still 600s before expiry
+    // Advance time to just past expiration minus safety buffer
+    vi.advanceTimersByTime(1800 * 1000 - 59000); // Just under the 1-minute buffer
     
     // Should still use cached token
     await fetchTokenForTest();
     expect(mockFetchCounter).toBe(1);
     
     // Now advance past the buffer
-    vi.advanceTimersByTime(550 * 1000); // 550 more seconds, now within the 60s buffer
+    vi.advanceTimersByTime(2000); // 2 more seconds
     
     // Should fetch new token
     const newToken = await fetchTokenForTest();
@@ -162,7 +159,8 @@ describe("Retry Logic", () => {
   // Mock implementation of withRetry
   async function withRetryForTest<T>(
     fn: () => Promise<T>,
-    maxAttempts: number = 3
+    maxAttempts: number = 3,
+    baseDelayMs: number = 100
   ): Promise<T> {
     let attempts = 0;
     

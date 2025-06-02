@@ -1,16 +1,13 @@
 
-import { memo } from "react";
 import { Control } from "react-hook-form";
-// FormDescription is not used, so it can be removed if desired.
+import { FormDescription } from "@/components/ui/form";
 import TripDateField from "../TripDateField";
-import { FormValues } from "@/types/form";
 
 interface DateRangeSectionProps {
-  control: Control<FormValues>;
+  control: Control<any>;
 }
 
-// Renamed original component
-const DateRangeSectionComponent = ({ control }: DateRangeSectionProps) => {
+const DateRangeSection = ({ control }: DateRangeSectionProps) => {
   return (
     <div className="space-y-6">
       <TripDateField 
@@ -30,6 +27,4 @@ const DateRangeSectionComponent = ({ control }: DateRangeSectionProps) => {
   );
 };
 
-// Memoized component for export
-const DateRangeSection = memo(DateRangeSectionComponent);
 export default DateRangeSection;

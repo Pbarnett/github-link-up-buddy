@@ -16,7 +16,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import NotificationsPanel from "@/components/NotificationsPanel"
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -359,20 +358,7 @@ const SidebarHeader = React.forwardRef<
       data-sidebar="header"
       className={cn("flex flex-col gap-2 p-2", className)}
       {...props}
-    >
-      {/* User Avatar and Notifications Panel Container */}
-      <div className="flex items-center justify-between p-2 group-data-[collapsible=icon]:hidden">
-        {/* Conceptual User Avatar Placeholder */}
-        <div 
-          title="User Avatar Placeholder" 
-          className="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0"
-        />
-        {/* Notifications Panel */}
-        <div className="ml-2">
-          <NotificationsPanel />
-        </div>
-      </div>
-    </div>
+    />
   )
 })
 SidebarHeader.displayName = "SidebarHeader"
@@ -416,7 +402,7 @@ const SidebarContent = React.forwardRef<
       ref={ref}
       data-sidebar="content"
       className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-y-auto group-data-[collapsible=icon]:overflow-x-hidden",
+        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
         className
       )}
       {...props}
