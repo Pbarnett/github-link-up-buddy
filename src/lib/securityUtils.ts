@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 import { logger } from './logger';
 import { AppError } from './errorUtils';
@@ -24,6 +25,7 @@ const generateRandomHex = (size: number): string => {
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 };
+
 
 // Environment validation
 export const environmentSchema = z.object({
@@ -159,20 +161,23 @@ export const authHelpers = {
   }
 };
 
-// Enhanced CSRF protection with timing-safe comparison
+// Enhanced CSRF protection with browser-safe comparison
 export const generateCsrfToken = (): string => {
   return crypto.randomUUID();
 };
 
+// Simple string comparison for browser environment
 export const verifyCsrfToken = (
   requestToken: string | null | undefined,
-  sessionToken: string | null | undefined
+  sessionToken: string | null | undefined,
 ): boolean => {
   if (!requestToken || !sessionToken) {
+    logger.warn('CSRF token verification failed: Missing token(s).');
     return false;
   }
   // Use timing-safe comparison to prevent timing attacks
   return safeEqual(requestToken, sessionToken);
+
 };
 
 // Comprehensive security event logging with enhanced context
@@ -186,7 +191,7 @@ export const logSecurityEvent = (
     action: event,
     ...details,
     timestamp: new Date().toISOString(),
-    environment: process.env['NODE_ENV']
+    environment: import.meta.env['NODE_ENV']
   };
   
   switch (level) {
@@ -216,7 +221,13 @@ export const isValidIpAddress = (ip: string): boolean => {
   return ipv4Regex.test(ip) || ipv6Regex.test(ip);
 };
 
-// Session security utilities
+// Helper function for generating a browser-compatible random hex string
+const generateBrowserRandomHex = (bytes: number): string => {
+  const array = new Uint8Array(bytes);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
 export const sessionSecurity = {
   generateSessionId: (): string => {
     return generateRandomHex(32);
@@ -224,6 +235,7 @@ export const sessionSecurity = {
   
   rotateSessionId: (currentId: string): string => {
     const newId = generateRandomHex(32);
+
     logSecurityEvent('session_rotation', { oldId: tokenizeValue(currentId) });
     return newId;
   },

@@ -8,14 +8,18 @@ import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert"; // Added Alert imports
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
-import { TablesInsert, Tables } from "@/integrations/supabase/types";
+
+import { Tables } from "@/integrations/supabase/types";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { safeQuery } from "@/lib/supabaseUtils";
-import { RealtimeChannel, RealtimePostgresChangesPayload } from "@supabase/supabase-js"; // Added RealtimePostgresChangesPayload
-import { sanitizeInput, validateRequestPayload, generateCsrfToken, verifyCsrfToken, logSecurityEvent, tokenizeValue } from "@/lib/securityUtils";
+import { RealtimePostgresChangesPayload } from "@supabase/supabase-js"; // Added RealtimePostgresChangesPayload
+import { sanitizeInput, validateRequestPayload, generateCsrfToken, logSecurityEvent, tokenizeValue } from "@/lib/securityUtils";
+// Removed verifyCsrfToken as it's not used
 import { z } from "zod";
 
 // Removed custom BookingRequestPayload type definition
+// Removed TablesInsert as it's not used
+// Removed safeQuery as it's not used
+// Removed RealtimeChannel as it's not used
 
 // Define validation schema for booking parameters
 const bookingParamsSchema = z.object({
@@ -42,9 +46,9 @@ const TripConfirm = () => {
   const [error, setError] = useState<string | null>(null);
   // Default booking status to "Processing payment..." for tests
   const [bookingStatus, setBookingStatus] = useState<string | null>("Processing payment...");
-  const { user, userId, loading: userLoading } = useCurrentUser();
+  const { userId, loading: userLoading } = useCurrentUser();
   // CSRF token for booking confirmation
-  const [csrfToken, setCsrfToken] = useState<string>("");
+  const [, setCsrfToken] = useState<string>("");
   // Request counter for rate limiting
   const [requestCount, setRequestCount] = useState<number>(0);
   const MAX_REQUESTS_PER_MINUTE = 5;
@@ -414,6 +418,7 @@ const TripConfirm = () => {
 
     // Only attempt to subscribe if channel is properly initialized
     if (channel) {
+
       channel
         .on('postgres_changes', {
           event: 'UPDATE',
@@ -424,9 +429,11 @@ const TripConfirm = () => {
           if (payload.new && 'status' in payload.new && typeof payload.new.status === 'string') {
             console.log('[TripConfirm] Booking status updated:', payload.new.status);
             updateBookingStatusMessage(payload.new.status);
+
           }
         })
         .subscribe();
+
     } else {
       console.error("[TripConfirm] Failed to create channel - channel object is undefined");
     }
@@ -651,7 +658,7 @@ const TripConfirm = () => {
       toast({
         title: "Booking Failed",
         description: errorMessage,
-        variant: "destructive",
+        variant: "default",
       });
     } finally {
       setIsConfirming(false);
@@ -809,6 +816,7 @@ const TripConfirm = () => {
           {/* Auto-booking Banner */}
           {!isLoadingTripData && isAutoBookingTrip && (
             <Alert variant="default" className="mb-4 bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300">
+
               <InfoIcon className="h-5 w-5" />
               <AlertDescription className="font-semibold">
                 Auto-booking in progress… This flight will be booked automatically if it meets your criteria.
@@ -827,10 +835,10 @@ const TripConfirm = () => {
           {/* Airline and Flight Number */}
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <h3 className="text-xl font-semibold" data-testid="airline-name">{offer.airline}</h3>
-              <Badge variant="outline" className="ml-2">{offer.flight_number}</Badge>
+              <h3 className="text-xl font-semibold" data-testid="airline-name">{offer?.airline}</h3>
+              <Badge variant="outline" className="ml-2">{offer?.flight_number}</Badge>
             </div>
-            <p className="text-2xl font-bold" data-testid="offer-price">${offer.price}</p>
+            <p className="text-2xl font-bold" data-testid="offer-price">${offer?.price}</p>
           </div>
           
           {/* Flight Details */}
@@ -840,11 +848,11 @@ const TripConfirm = () => {
               <h4 className="font-medium">Departure</h4>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{new Date(offer.departure_date).toLocaleDateString()}</span>
+                <span>{offer?.departure_date ? new Date(offer?.departure_date).toLocaleDateString() : 'N/A'}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{offer.departure_time}</span>
+                <span>{offer?.departure_time || 'N/A'}</span>
               </div>
             </div>
             
@@ -853,11 +861,11 @@ const TripConfirm = () => {
               <h4 className="font-medium">Return</h4>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{new Date(offer.return_date).toLocaleDateString()}</span>
+                <span>{offer?.return_date ? new Date(offer?.return_date).toLocaleDateString() : 'N/A'}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{offer.return_time}</span>
+                <span>{offer?.return_time || 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -865,7 +873,7 @@ const TripConfirm = () => {
           {/* Duration */}
           <div className="flex items-center">
             <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
-            <span className="text-sm text-gray-500">Flight duration: {offer.duration}</span>
+            <span className="text-sm text-gray-500">Flight duration: {offer?.duration || 'N/A'}</span>
           </div>
           
           {/* Notes */}
