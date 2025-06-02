@@ -146,12 +146,13 @@ export const generateCsrfToken = (): string => {
 // Simple string comparison for browser environment
 export const verifyCsrfToken = (
   requestToken: string | null | undefined,
-  sessionToken: string | null | undefined
+  sessionToken: string | null | undefined,
 ): boolean => {
   if (!requestToken || !sessionToken) {
     logger.warn('CSRF token verification failed: Missing token(s).');
     return false;
   }
+
 
   if (requestToken.length !== sessionToken.length) {
     logger.warn('CSRF token verification failed: Token length mismatch.');
@@ -163,6 +164,7 @@ export const verifyCsrfToken = (
     logger.warn('CSRF token verification failed: Token mismatch.');
   }
   return isValid;
+
 };
 
 // Comprehensive security event logging with enhanced context
@@ -215,11 +217,13 @@ const generateBrowserRandomHex = (bytes: number): string => {
 
 export const sessionSecurity = {
   generateSessionId: (): string => {
+
     return generateBrowserRandomHex(32);
   },
   
   rotateSessionId: (currentId: string): string => {
     const newId = generateBrowserRandomHex(32);
+
     logSecurityEvent('session_rotation', { oldId: tokenizeValue(currentId) });
     return newId;
   },

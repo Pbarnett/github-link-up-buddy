@@ -15,6 +15,6 @@ export interface LogEntry {
   timestamp: string;
   level: LogLevel;
   message: string;
-  context?: LogContext;
+  context?: LogContext | undefined;
   error?: Error | unknown;
 }
