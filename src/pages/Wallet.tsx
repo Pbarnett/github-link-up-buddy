@@ -1,16 +1,16 @@
+
 import { useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import { Link } from "react-router-dom";
 import { usePaymentMethods, PaymentMethod } from "@/hooks/usePaymentMethods";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { safeQuery } from "@/lib/supabaseUtils";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 
 function WalletPage() {
   const stripeKey = import.meta.env['VITE_STRIPE_PUBLIC_KEY'];
-  const { paymentMethods, error: paymentMethodsError, loading, refetch } = usePaymentMethods();
+  const { paymentMethods, error: paymentMethodsError, loading } = usePaymentMethods();
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string|null>(null);

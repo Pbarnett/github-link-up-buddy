@@ -87,7 +87,6 @@ describe("OAuth Token Management", () => {
   let mockToken: string | undefined = undefined;
   let mockTokenExpires = 0;
   let mockFetchCounter = 0;
-  const baseUrl = "https://test.api.amadeus.com";
 
   const fetchTokenForTest = async () => {
     const now = Date.now();
@@ -163,8 +162,7 @@ describe("Retry Logic", () => {
   // Mock implementation of withRetry
   async function withRetryForTest<T>(
     fn: () => Promise<T>,
-    maxAttempts: number = 3,
-    baseDelayMs: number = 100
+    maxAttempts: number = 3
   ): Promise<T> {
     let attempts = 0;
     
