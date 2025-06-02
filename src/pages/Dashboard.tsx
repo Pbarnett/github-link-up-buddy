@@ -15,7 +15,7 @@ interface BookingRequest {
   status: string;
   created_at: string;
   processed_at: string | null;
-  error: string | null;
+  error_message: string | null;
   attempts: number;
   offer_data: any;
 }
@@ -209,7 +209,7 @@ const Dashboard = () => {
         .update({ 
           status: 'pending_booking',
           attempts: 0,
-          error: null
+          error_message: null
         })
         .eq('id', requestId);
 
@@ -379,17 +379,17 @@ const Dashboard = () => {
                               <p className="text-sm text-gray-500">
                                 Created {new Date(request.created_at).toLocaleDateString()}
                               </p>
-                              {request.error && (
+                              {request.error_message && (
                                 <div className="flex items-center space-x-2 mt-1">
                                   <p className="text-sm text-red-600 truncate max-w-xs">
-                                    {request.error.substring(0, 50)}...
+                                    {request.error_message.substring(0, 50)}...
                                   </p>
                                   <Dialog>
                                     <DialogTrigger asChild>
                                       <Button 
                                         variant="ghost" 
                                         size="sm"
-                                        onClick={() => setSelectedError(request.error)}
+                                        onClick={() => setSelectedError(request.error_message)}
                                         className="p-1 h-auto"
                                       >
                                         <Eye className="h-3 w-3" />
@@ -404,7 +404,7 @@ const Dashboard = () => {
                                       </DialogHeader>
                                       <div className="mt-4">
                                         <pre className="whitespace-pre-wrap text-sm bg-gray-100 p-4 rounded max-h-96 overflow-y-auto">
-                                          {request.error}
+                                          {request.error_message}
                                         </pre>
                                       </div>
                                     </DialogContent>
