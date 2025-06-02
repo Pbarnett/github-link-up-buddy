@@ -1,0 +1,27 @@
+
+export const airlineNames: Record<string, string> = {
+  B6: "JetBlue",
+  DL: "Delta Air Lines",
+  AA: "American Airlines",
+  UA: "United Airlines",
+  WN: "Southwest Airlines",
+  AS: "Alaska Airlines",
+  F9: "Frontier Airlines",
+  NK: "Spirit Airlines",
+  G4: "Allegiant Air",
+  SY: "Sun Country Airlines",
+  AC: "Air Canada",
+  WS: "WestJet",
+  VS: "Virgin Atlantic",
+  BA: "British Airways",
+  LH: "Lufthansa",
+  AF: "Air France",
+  KL: "KLM",
+  EK: "Emirates",
+  QR: "Qatar Airways",
+  TK: "Turkish Airlines",
+  JL: "Japan Airlines",
+  NH: "ANA",
+  CX: "Cathay Pacific",
+  SQ: "Singapore Airlines"
+};
