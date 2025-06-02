@@ -1,4 +1,3 @@
-
 // This file is specifically for Supabase Edge Functions
 // It contains Deno-specific code that shouldn't be imported by client-side code
 
@@ -97,6 +96,47 @@ async function withRetry<T>(
       await new Promise((r) => setTimeout(r, delay));
     }
   }
+}
+
+// ——————————————————————————————————————————
+// Placeholder booking URL generator
+// ——————————————————————————————————————————
+function generatePlaceholderBookingUrl(
+  airlineCode: string,
+  origin: string,
+  destination: string,
+  departureDate: string,
+  returnDate: string
+): string {
+  // Map airline codes to their website domains
+  const airlineWebsites: Record<string, string> = {
+    'DL': 'delta.com',
+    'AA': 'aa.com', 
+    'UA': 'united.com',
+    'WN': 'southwest.com',
+    'B6': 'jetblue.com',
+    'AS': 'alaskaair.com',
+    'NK': 'spirit.com',
+    'F9': 'flyfrontier.com',
+    'G4': 'allegiantair.com',
+    'SY': 'sun-air.com',
+    'HA': 'hawaiianairlines.com',
+    'VX': 'virginamerica.com',
+  };
+
+  const website = airlineWebsites[airlineCode] || `${airlineCode.toLowerCase()}-airlines.com`;
+  
+  // Create a basic booking URL with common parameters
+  const params = new URLSearchParams({
+    from: origin,
+    to: destination,
+    departure: departureDate,
+    return: returnDate,
+    passengers: '1',
+    ref: 'external-booking-placeholder'
+  });
+
+  return `https://www.${website}/booking?${params.toString()}`;
 }
 
 // ——————————————————————————————————————————
@@ -567,7 +607,24 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
         const retDate = new Date(returnDate);
         const tripDays = Math.round((retDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24));
         
-        const bookingLink = offer.pricingOptions?.agents?.[0]?.deepLink || offer.deepLink || null;
+        // Try to get real booking link from Amadeus first
+        const realBookingLink = offer.pricingOptions?.agents?.[0]?.deepLink || offer.deepLink || null;
+        
+        let bookingLink = realBookingLink;
+        
+        // Generate placeholder booking URL if no real link available
+        if (!realBookingLink) {
+          bookingLink = generatePlaceholderBookingUrl(
+            out.carrierCode,
+            out.departure.iataCode,
+            out.arrival.iataCode, 
+            departureDate,
+            returnDate
+          );
+          console.log(`[flight-search] Generated placeholder booking URL for ${out.carrierCode}: ${bookingLink}`);
+        } else {
+          console.log(`[flight-search] Using real Amadeus booking link for ${out.carrierCode}: ${realBookingLink}`);
+        }
 
         return [{
           trip_request_id: tripRequestId,
