@@ -32,9 +32,9 @@ const DestinationSectionComponent = ({ control, watch }: DestinationSectionProps
           <FormItem>
             <FormLabel>Destination</FormLabel>
             <FormDescription>Select a popular destination.</FormDescription>
-            <Select 
-              onValueChange={field.onChange} 
-              value={field.value || undefined}
+            <Select
+              onValueChange={field.onChange}
+              value={field.value || ''}
             >
               <FormControl>
                 <SelectTrigger>
