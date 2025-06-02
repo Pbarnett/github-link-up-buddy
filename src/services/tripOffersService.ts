@@ -39,7 +39,7 @@ async function withRetry<T>(
     try {
       return await operation();
     } catch (error) {
-      lastError = error;
+      lastError = error instanceof Error ? error : new Error(String(error));
       console.error(`[tripOffersService] ${operationName} failed (attempt ${attempt}/${maxRetries}):`, error);
       
       if (attempt < maxRetries) {
@@ -86,8 +86,12 @@ function isValidFlightNumber(flightNumber: string): boolean {
 // Validate duration format (e.g., "2h 30m" or "PT4H15M")
 export function isValidDuration(duration: string): boolean {
   // Accept both human-readable and ISO 8601 duration formats
-  const isoPattern = /^PT(?=\d)(?:\d+H)?(?:\d+M)?$/; // PT4H15M, PT4H, PT15M
+
+
+  const isoPattern = /^PT(\d+H)?(\d+M)?$/; // PT4H15M, PT4H, PT15M
   const humanPattern = /^\d+h(?:\s*\d+m)?$/;          // 4h 15m, 4h
+
+
   
   // Check if it matches either format but ensure at least one time component exists
   if (isoPattern.test(duration)) {
