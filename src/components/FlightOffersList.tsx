@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useFlightOffers } from '@/hooks/useFlightOffers';
 import { TripOfferCard } from '@/components/trip/TripOfferCard';
+import { useEffect } from 'react';
 
 interface FlightOffersListProps {
   tripId: string;
@@ -20,8 +21,25 @@ export function FlightOffersList({ tripId, className = '' }: FlightOffersListPro
     refetchInterval: 5000
   });
 
+  // Add debug logging
+  useEffect(() => {
+    console.group('[FlightOffersList] State update');
+    console.log('Current state:', {
+      tripId,
+      isLoading,
+      isError,
+      hasData: !!data,
+      offersCount: data?.offers.length || 0
+    });
+    if (isError) {
+      console.error('Error:', error);
+    }
+    console.groupEnd();
+  }, [tripId, isLoading, isError, data, error]);
+
   // Loading state
   if (isLoading && (!data || data.offers.length === 0)) {
+    console.log('[FlightOffersList] Showing loading state');
     return (
       <div className="w-full max-w-5xl space-y-4">
         <Card className="p-6">
@@ -39,6 +57,7 @@ export function FlightOffersList({ tripId, className = '' }: FlightOffersListPro
 
   // Error state
   if (isError) {
+    console.log('[FlightOffersList] Showing error state:', error);
     return (
       <Card className="p-6 text-center">
         <p className="text-red-500">Error loading flight offers: {error.message}</p>
@@ -48,8 +67,13 @@ export function FlightOffersList({ tripId, className = '' }: FlightOffersListPro
 
   // No offers found
   if (!data || data.offers.length === 0) {
-    const searchCompleted = window.localStorage.getItem(`flight_search_${tripId}_completed`);
-    const searchInserted = window.localStorage.getItem(`flight_search_${tripId}_inserted`);
+    const searchCompleted = localStorage.getItem(`flight_search_${tripId}_completed`);
+    const searchInserted = localStorage.getItem(`flight_search_${tripId}_inserted`);
+
+    console.log('[FlightOffersList] No offers state:', {
+      searchCompleted,
+      searchInserted
+    });
 
     if (searchCompleted === 'true' && searchInserted === '0') {
       return (
@@ -69,6 +93,7 @@ export function FlightOffersList({ tripId, className = '' }: FlightOffersListPro
   }
 
   // Display offers
+  console.log('[FlightOffersList] Rendering offers:', data.offers.length);
   return (
     <div className={`space-y-4 ${className}`}>
       <h2 className="text-xl font-semibold">Found {data.total} flights for your trip</h2>
