@@ -29,8 +29,14 @@ export default function TripOffers() {
   const [searchParams] = useSearchParams();
   // Support both legacy `tripRequestId` and new `id` query param names
   const tripId = searchParams.get("id") || searchParams.get("tripRequestId");
+  const autoBook = searchParams.get("auto_book") === 'true';
+  const budget = Number(searchParams.get("budget")) || 0;
+  const initialOffersCount = Number(searchParams.get("initial_offers")) || 0;
+  const departureDateParam = searchParams.get("departure");
+  const returnDateParam = searchParams.get("return");
   const location = useLocation();
-
+  
+  // Still use location.state as fallback for backward compatibility
   const locationState = location.state as { offers?: Offer[] } | null;
   const initialOffers = locationState?.offers ?? [];
   const [offers, setOffers] = useState<Offer[]>(initialOffers);
@@ -152,6 +158,23 @@ export default function TripOffers() {
 
   useEffect(() => {
     if (tripId) {
+        // Validate parameters
+        if (budget <= 0) {
+          console.warn('Invalid or missing budget parameter:', budget);
+        }
+        
+        if (initialOffersCount < 0) {
+          console.warn('Invalid initial offers count:', initialOffersCount);
+        }
+        
+        // If departure and return dates are available, log them for debugging
+        if (departureDateParam && returnDateParam) {
+          console.log('Travel window from URL:', departureDateParam, 'to', returnDateParam);
+        }
+        
+        // If auto_book is specified, log it
+        console.log('Auto-book setting from URL:', autoBook);
+        
         setCurrentPage(0);
         setHasMore(true);
         setSearchDuration(0);
@@ -166,6 +189,13 @@ export default function TripOffers() {
         }
 
         initialLoadRef.current = false;
+    } else if (initialLoadRef.current) {
+        // No trip ID provided, show error toast
+        toast({
+          title: "Invalid Request",
+          description: "No trip ID provided. Please try creating a new trip request.",
+          variant: "destructive",
+        });
     }
     
     // Cleanup function to clear the interval when component unmounts or tripId changes
@@ -183,6 +213,34 @@ export default function TripOffers() {
       refreshIntervalRef.current = null;
     }
   }, []);
+
+  // Function to prefill trip details from URL parameters if available
+  const buildInitialTripDetails = useCallback((): Partial<TripDetails> | null => {
+    if (!tripId) return null;
+    
+    const details: Partial<TripDetails> = {};
+    
+    if (budget > 0) {
+      details.budget = budget;
+    }
+    
+    if (departureDateParam && returnDateParam) {
+      try {
+        // Validate dates
+        const departureDate = new Date(departureDateParam);
+        const returnDate = new Date(returnDateParam);
+        
+        if (!isNaN(departureDate.getTime()) && !isNaN(returnDate.getTime())) {
+          details.earliest_departure = departureDateParam;
+          details.latest_departure = returnDateParam;
+        }
+      } catch (e) {
+        console.warn('Invalid date parameters in URL');
+      }
+    }
+    
+    return Object.keys(details).length > 0 ? details : null;
+  }, [tripId, budget, departureDateParam, returnDateParam]);
   
   // Refresh offers function - must be defined before startAutoRefresh 
   const refreshOffers = useCallback(async () => {
@@ -191,7 +249,15 @@ export default function TripOffers() {
     setCurrentPage(0);
     setOffers([]);
     setHasMore(true);
-    setTripDetails(null); // Force re-fetch of trip details
+    
+    // First try to use URL parameters for trip details if available
+    const initialDetails = buildInitialTripDetails();
+    if (initialDetails) {
+      setTripDetails(initialDetails as TripDetails);
+    } else {
+      setTripDetails(null); // Force re-fetch of trip details if no URL params
+    }
+    
     try {
       // When refreshing, use the current state of ignoreFilter and usedRelaxedCriteria
       await loadOffers(0, ignoreFilter, usedRelaxedCriteria); 
@@ -373,7 +439,11 @@ export default function TripOffers() {
           ) : (
             // "No offers found" card (existing logic)
             <Card className="p-6 text-center">
-              <p className="mb-4">No offers found yet. Flight search is still in progress.</p>
+              <p className="mb-4">
+                {initialOffersCount > 0 
+                  ? `Initial search found ${initialOffersCount} offers. Searching for more options...` 
+                  : "No offers found yet. Flight search is still in progress."}
+              </p>
               <p className="text-sm text-gray-500">
                 Flight searches run asynchronously and may take a minute to complete.
                 Results will appear automatically as they become available.
