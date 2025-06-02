@@ -1,30 +1,8 @@
+
 import { z } from 'zod';
 import { logger } from './logger';
 import { AppError } from './errorUtils';
 import { LogContext } from './types';
-// Use Web Crypto API for randomness, available in modern browsers and Node >=17
-
-// Simple timing-safe equality check to avoid pulling in node:crypto's timingSafeEqual
-const safeEqual = (a: string, b: string): boolean => {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) {
-    return false;
-  }
-  let result = 0;
-  for (let i = 0; i < bufA.length; i++) {
-    result |= bufA[i] ^ bufB[i];
-  }
-  return result === 0;
-};
-
-const generateRandomHex = (size: number): string => {
-  const bytes = new Uint8Array(size);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-};
 
 // Environment validation
 export const environmentSchema = z.object({
@@ -160,20 +138,33 @@ export const authHelpers = {
   }
 };
 
-// Enhanced CSRF protection with timing-safe comparison
+// Enhanced CSRF protection with browser-safe comparison
 export const generateCsrfToken = (): string => {
   return crypto.randomUUID();
 };
 
+// Simple string comparison for browser environment
 export const verifyCsrfToken = (
   requestToken: string | null | undefined,
   sessionToken: string | null | undefined,
 ): boolean => {
   if (!requestToken || !sessionToken) {
+    logger.warn('CSRF token verification failed: Missing token(s).');
     return false;
   }
-  // Use timing-safe comparison to prevent timing attacks
-  return safeEqual(requestToken, sessionToken);
+
+
+  if (requestToken.length !== sessionToken.length) {
+    logger.warn('CSRF token verification failed: Token length mismatch.');
+    return false;
+  }
+
+  const isValid = requestToken === sessionToken;
+  if (!isValid) {
+    logger.warn('CSRF token verification failed: Token mismatch.');
+  }
+  return isValid;
+
 };
 
 // Comprehensive security event logging with enhanced context
@@ -187,7 +178,7 @@ export const logSecurityEvent = (
     action: event,
     ...details,
     timestamp: new Date().toISOString(),
-    environment: process.env['NODE_ENV']
+    environment: import.meta.env['NODE_ENV']
   };
   
   switch (level) {
@@ -217,14 +208,22 @@ export const isValidIpAddress = (ip: string): boolean => {
   return ipv4Regex.test(ip) || ipv6Regex.test(ip);
 };
 
-// Session security utilities
+// Helper function for generating a browser-compatible random hex string
+const generateBrowserRandomHex = (bytes: number): string => {
+  const array = new Uint8Array(bytes);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
 export const sessionSecurity = {
   generateSessionId: (): string => {
-    return generateRandomHex(32);
+
+    return generateBrowserRandomHex(32);
   },
   
   rotateSessionId: (currentId: string): string => {
-    const newId = generateRandomHex(32);
+    const newId = generateBrowserRandomHex(32);
+
     logSecurityEvent('session_rotation', { oldId: tokenizeValue(currentId) });
     return newId;
   },
