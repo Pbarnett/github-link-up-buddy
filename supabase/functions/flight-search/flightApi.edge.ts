@@ -519,7 +519,7 @@ export async function searchOffers(
         console.log(`[flight-search] Found ${relaxedOffers.length} offers with relaxed duration filter`);
         // Transform Amadeus response to our database format
         const api = { data: relaxedOffers };
-        return transformAmadeusToOffers(api, tripRequestId);
+        return transformAmadeusToOffers(api, tripRequestId, params.origin[0], params.destination!);
       }
     }
     
@@ -529,7 +529,7 @@ export async function searchOffers(
   // Transform Amadeus response to our database format
   console.log(`[flight-search] Found ${durationFilteredOffers.length} offers for trip ${tripRequestId}`);
   const api = { data: durationFilteredOffers };
-  return transformAmadeusToOffers(api, tripRequestId);
+  return transformAmadeusToOffers(api, tripRequestId, params.origin[0], params.destination!);
 }
 
 // Helper to calculate a return date based on departure and duration
@@ -572,8 +572,13 @@ function dedupOffers(allOffers: any[]): any[] {
   );
 }
 
-// Transform Amadeus response to our format
-export function transformAmadeusToOffers(api: any, tripRequestId: string): TablesInsert<"flight_offers">[] {
+// Transform Amadeus response to our format with enhanced fields
+export function transformAmadeusToOffers(
+  api: any, 
+  tripRequestId: string, 
+  primaryOrigin: string, 
+  destination: string
+): TablesInsert<"flight_offers">[] {
   // Handle empty response
   if (!api.data || !Array.isArray(api.data) || api.data.length === 0) {
     console.log("[flight-search] No data to transform");
@@ -598,14 +603,16 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
           return [];
         }
         
+        // Extract carrier code from segment data
+        const carrierCode = out.carrierCode || "";
+        
+        // Extract origin and destination from segment data
+        const originAirport = out.departure?.iataCode || primaryOrigin;
+        const destinationAirport = out.arrival?.iataCode || destination;
+        
         // Get outbound and return dates
         const departureDate = out.departure.at.split("T")[0];
         const returnDate = back.departure.at.split("T")[0];
-        
-        // Calculate trip duration for a final check (belt and suspenders)
-        const outDate = new Date(departureDate);
-        const retDate = new Date(returnDate);
-        const tripDays = Math.round((retDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24));
         
         // Try to get real booking link from Amadeus first
         const realBookingLink = offer.pricingOptions?.agents?.[0]?.deepLink || offer.deepLink || null;
@@ -615,20 +622,23 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
         // Generate placeholder booking URL if no real link available
         if (!realBookingLink) {
           bookingLink = generatePlaceholderBookingUrl(
-            out.carrierCode,
-            out.departure.iataCode,
-            out.arrival.iataCode, 
+            carrierCode,
+            originAirport,
+            destinationAirport, 
             departureDate,
             returnDate
           );
-          console.log(`[flight-search] Generated placeholder booking URL for ${out.carrierCode}: ${bookingLink}`);
+          console.log(`[flight-search] Generated placeholder booking URL for ${carrierCode}: ${bookingLink}`);
         } else {
-          console.log(`[flight-search] Using real Amadeus booking link for ${out.carrierCode}: ${realBookingLink}`);
+          console.log(`[flight-search] Using real Amadeus booking link for ${carrierCode}: ${realBookingLink}`);
         }
 
         return [{
           trip_request_id: tripRequestId,
-          airline: out.carrierCode,
+          airline: carrierCode,
+          carrier_code: carrierCode,
+          origin_airport: originAirport,
+          destination_airport: destinationAirport,
           flight_number: out.number,
           departure_date: departureDate,
           departure_time: out.departure.at.split("T")[1].slice(0,5),
