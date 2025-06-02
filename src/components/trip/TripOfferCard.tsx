@@ -16,6 +16,7 @@ export interface OfferProps {
   return_date: string;
   return_time: string;
   duration: string;
+  booking_url?: string;
 }
 
 const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
