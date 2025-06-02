@@ -421,8 +421,10 @@ const TripConfirm = () => {
           table: 'booking_requests',
           filter: `checkout_session_id=eq.${sessionId}`,
         }, (payload: RealtimePostgresChangesPayload<Tables<'booking_requests'>>) => {
-          console.log('[TripConfirm] Booking status updated:', payload.new.status);
-          updateBookingStatusMessage(payload.new.status);
+          if (payload.new && 'status' in payload.new && typeof payload.new.status === 'string') {
+            console.log('[TripConfirm] Booking status updated:', payload.new.status);
+            updateBookingStatusMessage(payload.new.status);
+          }
         })
         .subscribe();
     } else {
@@ -806,7 +808,7 @@ const TripConfirm = () => {
 
           {/* Auto-booking Banner */}
           {!isLoadingTripData && isAutoBookingTrip && (
-            <Alert variant="info" className="mb-4 bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300">
+            <Alert variant="default" className="mb-4 bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300">
               <InfoIcon className="h-5 w-5" />
               <AlertDescription className="font-semibold">
                 Auto-booking in progress… This flight will be booked automatically if it meets your criteria.
