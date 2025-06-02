@@ -50,6 +50,12 @@ const TripNumberFieldComponent = ({
                   placeholder={placeholder}
                   className="pl-7"
                   {...field}
+                  value={field.value ?? ''}
+                  onChange={(e) =>
+                    field.onChange(
+                      e.target.value === '' ? null : Number(e.target.value)
+                    )
+                  }
                 />
               </div>
             ) : (
@@ -57,6 +63,12 @@ const TripNumberFieldComponent = ({
                 type="number"
                 placeholder={placeholder}
                 {...field}
+                value={field.value ?? ''}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === '' ? null : Number(e.target.value)
+                  )
+                }
               />
             )}
           </FormControl>
