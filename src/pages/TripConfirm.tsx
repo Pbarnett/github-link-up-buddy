@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -23,9 +22,50 @@ const TripConfirm = () => {
   const [travelerData, setTravelerData] = useState<TravelerData | null>(null);
   const [bookingRequestId, setBookingRequestId] = useState<string | null>(null);
   const [isSavingTravelerData, setIsSavingTravelerData] = useState(false);
+  const [isCheckingOffer, setIsCheckingOffer] = useState(false);
   const { user, userId, loading: userLoading } = useCurrentUser();
   const searchParams = new URLSearchParams(location.search);
   const sessionId = searchParams.get('session_id');
+
+  // Check if offer has external booking URL and redirect if needed
+  const checkOfferForExternalBooking = async (offerId: string) => {
+    setIsCheckingOffer(true);
+    try {
+      const { data: offerData, error } = await supabase
+        .from("flight_offers")
+        .select("booking_url, airline")
+        .eq("id", offerId)
+        .single();
+
+      if (error) {
+        console.error("[TripConfirm] Error fetching offer details:", error);
+        return false;
+      }
+
+      if (offerData?.booking_url) {
+        console.log("[TripConfirm] Offer has external booking URL, redirecting...");
+        toast({
+          title: "Redirecting to " + offerData.airline,
+          description: "This flight should be booked directly with the airline.",
+          duration: 3000,
+        });
+        
+        setTimeout(() => {
+          window.open(offerData.booking_url, '_blank');
+          navigate('/trip/offers');
+        }, 1000);
+        
+        return true;
+      }
+      
+      return false;
+    } catch (err) {
+      console.error("[TripConfirm] Exception checking offer:", err);
+      return false;
+    } finally {
+      setIsCheckingOffer(false);
+    }
+  };
 
   useEffect(() => {
     console.log("[TripConfirm] Component mounted with location:", location.search);
@@ -94,7 +134,15 @@ const TripConfirm = () => {
         throw new Error("Incomplete flight information");
       }
 
-      setOffer(parsedOffer);
+      // Check if this offer should be booked externally
+      const checkExternalBooking = async () => {
+        const shouldRedirect = await checkOfferForExternalBooking(parsedOffer.id);
+        if (!shouldRedirect) {
+          setOffer(parsedOffer);
+        }
+      };
+
+      checkExternalBooking();
     } catch (error: any) {
       console.error("[TripConfirm] Error parsing offer details:", error);
       setHasError(true);
@@ -104,7 +152,7 @@ const TripConfirm = () => {
         variant: "destructive",
       });
     }
-  }, [location.search, sessionId]);
+  }, [location.search, sessionId, navigate]);
 
   // Subscribe to booking status updates if we have a session ID
   useEffect(() => {
@@ -221,6 +269,7 @@ const TripConfirm = () => {
     try {
       const { data: bookingRequest, error: bookingError } = await supabase
         .from("booking_requests")
+
         .insert([{ // Wrap the object in an array
           offer_id: offer.id,
           offer_data: offer,
@@ -396,11 +445,14 @@ const TripConfirm = () => {
     );
   }
 
-  if (userLoading || !offer) {
+  if (userLoading || !offer || isCheckingOffer) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-        <div className="animate-pulse">
-          <p className="text-gray-500">Loading flight details...</p>
+        <div className="animate-pulse flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <p className="text-gray-500">
+            {isCheckingOffer ? "Checking booking options..." : "Loading flight details..."}
+          </p>
         </div>
       </div>
     );

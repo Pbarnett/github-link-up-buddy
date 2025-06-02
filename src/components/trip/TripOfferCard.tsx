@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PlaneTakeoff, Calendar, Clock } from "lucide-react";
+import { PlaneTakeoff, Calendar, Clock, ExternalLink } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -23,9 +23,31 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
   const navigate = useNavigate();
 
   const handleSelect = () => {
-    console.log('Selected offer', offer.id);
-    
-    // Create query parameters from the offer
+    if (offer.booking_url) {
+      console.log(`[ANALYTICS] External booking clicked:`, {
+        offerId: offer.id,
+        airline: offer.airline,
+        price: offer.price,
+        bookingUrl: offer.booking_url,
+        timestamp: new Date().toISOString()
+      });
+      
+      toast({
+        title: "Redirecting to " + offer.airline,
+        description: "Opening airline website to complete your booking...",
+        duration: 3000,
+      });
+
+      // Redirect immediately to the airline website for external bookings
+      setTimeout(() => {
+        window.open(offer.booking_url, '_blank');
+      }, 500);
+
+      return;
+    }
+
+    // Internal booking flow - navigate to confirmation page
+    console.log('Selected offer for internal booking:', offer.id);
     const params = new URLSearchParams();
     params.set('id', offer.id);
     params.set('airline', offer.airline);
@@ -37,12 +59,11 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
     params.set('return_time', offer.return_time);
     params.set('duration', offer.duration);
     
-    // Navigate to confirm page with offer details in query string
     navigate(`/trip/confirm?${params.toString()}`);
     
     toast({
       title: "Flight Selected",
-      description: `You've selected ${offer.airline} flight ${offer.flight_number}`,
+      description: `You've selected ${offer.airline} flight ${offer.flight_number} for booking.`,
     });
   };
 
@@ -91,8 +112,19 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
         <div className="bg-gray-50 p-6 flex flex-col justify-center items-center md:items-end">
           <p className="text-3xl font-bold mb-2">${offer.price}</p>
           <p className="text-sm text-gray-500 mb-4">Round trip per person</p>
-          <Button className="w-full md:w-auto" onClick={handleSelect}>
-            Select This Flight
+          <Button 
+            className="w-full md:w-auto" 
+            onClick={handleSelect}
+            variant={offer.booking_url ? "default" : "outline"}
+          >
+            {offer.booking_url ? (
+              <>
+                Book on {offer.airline}
+                <ExternalLink className="ml-2 h-4 w-4" />
+              </>
+            ) : (
+              "Select This Flight"
+            )}
           </Button>
         </div>
       </div>
