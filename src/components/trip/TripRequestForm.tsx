@@ -8,8 +8,8 @@ import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
-import { createTripRequest } from "@/services/tripService";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { supabase } from "@/integrations/supabase/client";
 
 // Import type definitions
 import { FormValues, tripFormSchema, ExtendedTripFormValues, TripRequestResult } from "@/types/form";
@@ -100,7 +100,35 @@ const TripRequestForm = () => {
       throw new Error("You must be logged in to create a trip request.");
     }
     
-    return await createTripRequest(userId, formData);
+    const tripRequestData = {
+      user_id: userId,
+      destination_airport: formData.destination_airport,
+      departure_airports: formData.departure_airports || [],
+      earliest_departure: formData.earliestDeparture.toISOString(),
+      latest_departure: formData.latestDeparture.toISOString(),
+      min_duration: formData.min_duration,
+      max_duration: formData.max_duration,
+      budget: formData.budget,
+      auto_book_enabled: formData.auto_book_enabled || false,
+      max_price: formData.max_price,
+      preferred_payment_method_id: formData.preferred_payment_method_id,
+    };
+
+    const { data: tripRequest, error } = await supabase
+      .from("trip_requests")
+      .insert([tripRequestData])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      tripRequest: {
+        id: tripRequest.id,
+        auto_book_enabled: tripRequest.auto_book_enabled,
+      },
+      offersCount: 0, // Will be updated when flight search runs
+    };
   };
 
   // Navigate to the confirmation page with the trip ID
@@ -108,7 +136,7 @@ const TripRequestForm = () => {
     // Show success toast with count of offers saved
     toast({
       title: "Trip request submitted",
-      description: `Your trip request has been submitted with ${result.offersCount} flight offers!${
+      description: `Your trip request has been submitted!${
         result.tripRequest.auto_book_enabled ? ' Auto-booking is enabled.' : ''
       }`,
     });
@@ -139,8 +167,8 @@ const TripRequestForm = () => {
       
       // Display an initial toast notification
       toast({
-        title: "Searching for flights",
-        description: "Please wait while we search for flights matching your criteria...",
+        title: "Creating trip request",
+        description: "Please wait while we create your trip request...",
       });
       
       // Step 2: Transform form data
@@ -228,7 +256,7 @@ const TripRequestForm = () => {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Searching...
+                    Creating...
                   </>
                 ) : "Submit"}
               </Button>

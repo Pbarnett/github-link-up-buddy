@@ -87,12 +87,11 @@ export const tripFormSchema = z.object({
 // Form values type derived from the schema
 export type FormValues = z.infer<typeof tripFormSchema>;
 
-// Interface for trip request creation result
+// Interface for trip request creation result - simplified to match actual response
 export interface TripRequestResult {
   tripRequest: {
     id: string;
     auto_book_enabled?: boolean;
   };
-  offers: any[];
   offersCount: number;
 }
