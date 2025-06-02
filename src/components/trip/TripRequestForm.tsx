@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "@/components/ui/use-toast";
+import { logSecurityEvent } from "@/lib/securityUtils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,16 @@ const TripRequestForm = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { userId, loading: userLoading, error: userError } = useCurrentUser();
+  
+  // Handle navigation errors
+  const handleNavigationError = (error: unknown) => {
+    console.error('Navigation error:', error);
+    toast({
+      title: "Navigation Error",
+      description: "There was a problem viewing your trip offers. Please try again.",
+      variant: "destructive",
+    });
+  };
   
   // Initialize form with React Hook Form and Zod resolver
   const form = useForm<FormValues>({
@@ -113,8 +124,39 @@ const TripRequestForm = () => {
       }`,
     });
 
-    // Navigate to the offers page with the trip ID and any immediate offers
-    navigate(`/trip/offers?id=${result.tripRequest.id}`, { state: { offers: result.offers } });
+    // Build URL parameters with all necessary data
+    const params = new URLSearchParams({
+      id: result.tripRequest.id,
+      auto_book: result.tripRequest.auto_book ? 'true' : 'false',
+      budget: result.tripRequest.budget.toString(),
+      departure: result.tripRequest.earliest_departure,
+      return: result.tripRequest.latest_departure,
+      initial_offers: result.offers.length.toString()
+    });
+
+    // Log the navigation attempt
+    logSecurityEvent('trip_navigation_attempt', {
+      tripId: result.tripRequest.id,
+      destination: '/trip/offers'
+    });
+
+    // Navigate with comprehensive error handling
+    try {
+      // Force a clean navigation without state
+      window.location.href = `/trip/offers?${params.toString()}`;
+    } catch (error) {
+      console.error('Navigation error:', error);
+      handleNavigationError(error);
+      
+      // Fallback navigation
+      try {
+        navigate(`/trip/offers?${params.toString()}`, { replace: true });
+      } catch (fallbackError) {
+        console.error('Fallback navigation failed:', fallbackError);
+        // Last resort: direct URL change
+        window.location.replace(`/trip/offers?${params.toString()}`);
+      }
+    }
   };
 
   // Main form submission handler that orchestrates the process
