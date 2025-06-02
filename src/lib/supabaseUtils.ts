@@ -1,5 +1,6 @@
 
 import {
+  PostgrestError,
   PostgrestResponse,
   PostgrestSingleResponse,
   PostgrestMaybeSingleResponse

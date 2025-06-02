@@ -15,15 +15,13 @@ export type Database = {
           auto: boolean
           checkout_session_id: string | null
           created_at: string
-          error_message: string | null
+          error: string | null
           id: string
           offer_data: Json
           offer_id: string
           processed_at: string | null
           status: Database["public"]["Enums"]["booking_request_status"]
           traveler_data: Json | null
-          trip_request_id: string | null
-          updated_at: string | null
           user_id: string
         }
         Insert: {
@@ -31,15 +29,13 @@ export type Database = {
           auto?: boolean
           checkout_session_id?: string | null
           created_at?: string
-          error_message?: string | null
+          error?: string | null
           id?: string
           offer_data: Json
           offer_id: string
           processed_at?: string | null
           status?: Database["public"]["Enums"]["booking_request_status"]
           traveler_data?: Json | null
-          trip_request_id?: string | null
-          updated_at?: string | null
           user_id: string
         }
         Update: {
@@ -47,15 +43,13 @@ export type Database = {
           auto?: boolean
           checkout_session_id?: string | null
           created_at?: string
-          error_message?: string | null
+          error?: string | null
           id?: string
           offer_data?: Json
           offer_id?: string
           processed_at?: string | null
           status?: Database["public"]["Enums"]["booking_request_status"]
           traveler_data?: Json | null
-          trip_request_id?: string | null
-          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -66,60 +60,31 @@ export type Database = {
             referencedRelation: "flight_offers"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "booking_requests_trip_request_id_fkey"
-            columns: ["trip_request_id"]
-            isOneToOne: false
-            referencedRelation: "trip_requests"
-            referencedColumns: ["id"]
-          },
         ]
       }
       bookings: {
         Row: {
           booked_at: string
-          booking_request_id: string | null
-          flight_details: Json | null
           flight_offer_id: string
           id: string
-          price: number | null
-          source: string | null
-          status: string | null
           trip_request_id: string
           user_id: string
         }
         Insert: {
           booked_at?: string
-          booking_request_id?: string | null
-          flight_details?: Json | null
           flight_offer_id: string
           id?: string
-          price?: number | null
-          source?: string | null
-          status?: string | null
           trip_request_id: string
           user_id: string
         }
         Update: {
           booked_at?: string
-          booking_request_id?: string | null
-          flight_details?: Json | null
           flight_offer_id?: string
           id?: string
-          price?: number | null
-          source?: string | null
-          status?: string | null
           trip_request_id?: string
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "bookings_booking_request_id_fkey"
-            columns: ["booking_request_id"]
-            isOneToOne: false
-            referencedRelation: "booking_requests"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "bookings_flight_offer_id_fkey"
             columns: ["flight_offer_id"]
@@ -184,53 +149,41 @@ export type Database = {
       flight_offers: {
         Row: {
           airline: string
-          auto_book: boolean
-          booking_url: string | null
           created_at: string
           departure_date: string
           departure_time: string
           duration: string
           flight_number: string
           id: string
-          layover_airports: string[] | null
           price: number
           return_date: string
           return_time: string
-          stops: number
           trip_request_id: string
         }
         Insert: {
           airline: string
-          auto_book?: boolean
-          booking_url?: string | null
           created_at?: string
           departure_date: string
           departure_time: string
           duration: string
           flight_number: string
           id?: string
-          layover_airports?: string[] | null
           price: number
           return_date: string
           return_time: string
-          stops?: number
           trip_request_id: string
         }
         Update: {
           airline?: string
-          auto_book?: boolean
-          booking_url?: string | null
           created_at?: string
           departure_date?: string
           departure_time?: string
           duration?: string
           flight_number?: string
           id?: string
-          layover_airports?: string[] | null
           price?: number
           return_date?: string
           return_time?: string
-          stops?: number
           trip_request_id?: string
         }
         Relationships: [
@@ -247,33 +200,27 @@ export type Database = {
         Row: {
           booking_request_id: string | null
           created_at: string
-          data: Json | null
           id: string
           is_read: boolean
-          message: string | null
-          trip_request_id: string | null
+          payload: Json | null
           type: string
           user_id: string
         }
         Insert: {
           booking_request_id?: string | null
           created_at?: string
-          data?: Json | null
           id?: string
           is_read?: boolean
-          message?: string | null
-          trip_request_id?: string | null
+          payload?: Json | null
           type: string
           user_id: string
         }
         Update: {
           booking_request_id?: string | null
           created_at?: string
-          data?: Json | null
           id?: string
           is_read?: boolean
-          message?: string | null
-          trip_request_id?: string | null
+          payload?: Json | null
           type?: string
           user_id?: string
         }
@@ -283,13 +230,6 @@ export type Database = {
             columns: ["booking_request_id"]
             isOneToOne: false
             referencedRelation: "booking_requests"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_trip_request_id_fkey"
-            columns: ["trip_request_id"]
-            isOneToOne: false
-            referencedRelation: "trip_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -434,16 +374,11 @@ export type Database = {
       }
       trip_requests: {
         Row: {
-          adults: number | null
-          auto_book: boolean
           auto_book_enabled: boolean
-          best_price: number | null
           budget: number
           created_at: string
           departure_airports: string[]
-          departure_date: string | null
           destination_airport: string | null
-          destination_location_code: string | null
           earliest_departure: string
           id: string
           last_checked_at: string | null
@@ -451,22 +386,15 @@ export type Database = {
           max_duration: number
           max_price: number | null
           min_duration: number
-          origin_location_code: string | null
           preferred_payment_method_id: string | null
-          return_date: string | null
           user_id: string
         }
         Insert: {
-          adults?: number | null
-          auto_book?: boolean
           auto_book_enabled?: boolean
-          best_price?: number | null
           budget: number
           created_at?: string
           departure_airports?: string[]
-          departure_date?: string | null
           destination_airport?: string | null
-          destination_location_code?: string | null
           earliest_departure: string
           id?: string
           last_checked_at?: string | null
@@ -474,22 +402,15 @@ export type Database = {
           max_duration?: number
           max_price?: number | null
           min_duration?: number
-          origin_location_code?: string | null
           preferred_payment_method_id?: string | null
-          return_date?: string | null
           user_id: string
         }
         Update: {
-          adults?: number | null
-          auto_book?: boolean
           auto_book_enabled?: boolean
-          best_price?: number | null
           budget?: number
           created_at?: string
           departure_airports?: string[]
-          departure_date?: string | null
           destination_airport?: string | null
-          destination_location_code?: string | null
           earliest_departure?: string
           id?: string
           last_checked_at?: string | null
@@ -497,9 +418,7 @@ export type Database = {
           max_duration?: number
           max_price?: number | null
           min_duration?: number
-          origin_location_code?: string | null
           preferred_payment_method_id?: string | null
-          return_date?: string | null
           user_id?: string
         }
         Relationships: []
@@ -521,13 +440,11 @@ export type Database = {
         }[]
       }
       rpc_auto_book_match: {
-        Args:
-          | { p_booking_request_id: string }
-          | {
-              p_match_id: string
-              p_payment_intent_id: string
-              p_currency?: string
-            }
+        Args: {
+          p_match_id: string
+          p_payment_intent_id: string
+          p_currency?: string
+        }
         Returns: Record<string, unknown>
       }
     }

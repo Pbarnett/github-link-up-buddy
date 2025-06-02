@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Control } from "react-hook-form";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { 
@@ -26,14 +27,14 @@ interface AutoBookingSectionProps {
 }
 
 const AutoBookingSection = ({ control, watch }: AutoBookingSectionProps) => {
-  const { paymentMethods, loading, error } = usePaymentMethods();
-  const autoBook = watch("auto_book"); // Changed variable name and watched field name
+  const { data: paymentMethods, isLoading } = usePaymentMethods();
+  const autoBookEnabled = watch("auto_book_enabled");
 
   return (
     <div className="space-y-4">
       <FormField
         control={control}
-        name="auto_book" // Changed field name
+        name="auto_book_enabled"
         render={({ field }) => (
           <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
             <div className="space-y-0.5">
@@ -52,7 +53,7 @@ const AutoBookingSection = ({ control, watch }: AutoBookingSectionProps) => {
         )}
       />
 
-      {autoBook && ( // Changed conditional variable
+      {autoBookEnabled && (
         <>
           <TripNumberField 
             name="max_price"
@@ -70,7 +71,7 @@ const AutoBookingSection = ({ control, watch }: AutoBookingSectionProps) => {
               <FormItem>
                 <FormLabel>Payment Method</FormLabel>
                 <Select
-                  disabled={loading || !!error || !paymentMethods || paymentMethods.length === 0}
+                  disabled={isLoading || !paymentMethods || paymentMethods.length === 0}
                   onValueChange={field.onChange}
                   value={field.value || ""}
                 >
@@ -95,15 +96,7 @@ const AutoBookingSection = ({ control, watch }: AutoBookingSectionProps) => {
             )}
           />
 
-          {error && (
-            <Alert variant="destructive">
-              <CircleAlertIcon className="h-4 w-4" />
-              <AlertDescription>
-                Error loading payment methods: {error.message}
-              </AlertDescription>
-            </Alert>
-          )}
-          {(!error && !loading && (!paymentMethods || paymentMethods.length === 0)) && (
+          {(!paymentMethods || paymentMethods.length === 0) && (
             <Alert variant="destructive">
               <CircleAlertIcon className="h-4 w-4" />
               <AlertDescription>

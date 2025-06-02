@@ -22,12 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-/supabase/.temp/
-
-# Environment files
-/.env.local
-/.env*
-
-# Bun lock file (binary)
-bun.lockb
-**/bun.lockb
