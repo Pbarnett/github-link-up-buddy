@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState, useMemo } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Offer } from "@/services/tripOffersService";
 import {
@@ -323,18 +322,35 @@ export default function TripOffers() {
         </Card>
       )}
 
-      {/* Offers Header */}
-      <Card className="w-full max-w-5xl mb-6">
-        <CardHeader className="flex justify-between items-center">
-          <div>
-            <CardTitle>Trip Offers</CardTitle>
-            <CardDescription>
-              {isLoading
-                ? "Loading offers…"
-                : `${offers.length} offers found for your trip`}
-            </CardDescription>
-          </div>
-          <div className="flex gap-2">
+      <div className="w-full max-w-5xl">
+        {/* Back to Search Link */}
+        <div className="mb-6">
+          <Link
+            to="/trip/new"
+            className="inline-flex items-center space-x-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+            aria-label="Return to search form"
+          >
+            <svg
+              className="w-4 h-4 transform rotate-180 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+            <span>Back to Search</span>
+          </Link>
+        </div>
+
+        {/* Hidden action buttons for error handling - only show when needed */}
+        {(hasError || offers.length === 0) && !isLoading && (
+          <div className="mb-6 flex gap-2">
             {!usedRelaxedCriteria && (
               <Button 
                 variant="outline" 
@@ -360,46 +376,36 @@ export default function TripOffers() {
               {isRefreshing ? "Refreshing..." : "Refresh Offers"}
             </Button>
           </div>
-        </CardHeader>
-      </Card>
+        )}
 
-      {isLoading ? (
-        <TripOffersLoading />
-      ) : (
-        <div className="w-full max-w-5xl space-y-6">
-          {offers.length > 0 ? (
-            offers.map((offer) => <TripOfferCard key={offer.id} offer={offer} />)
-          ) : (
-            <Card className="p-6 text-center">
-              <p className="mb-4">No offers found that match your criteria.</p>
-              <p className="text-sm text-gray-500">
-                {usedRelaxedCriteria 
-                  ? "We tried with relaxed criteria but still couldn't find any offers. Try adjusting your destination or dates."
-                  : ignoreFilter 
-                    ? "Try adjusting your budget or destination, or click Refresh Offers."
-                    : "Try one of the search options above or adjust your trip criteria."}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
-                {!usedRelaxedCriteria && (
-                  <Button 
-                    onClick={handleRelaxCriteria} 
-                    variant="secondary"
-                  >
-                    Try Relaxed Criteria
-                  </Button>
-                )}
-                {!ignoreFilter && (
-                  <Button 
-                    onClick={handleOverrideSearch}
-                  >
-                    Search Any Duration
-                  </Button>
-                )}
-              </div>
-            </Card>
-          )}
-        </div>
-      )}
+        {/* Optional offer count */}
+        {!isLoading && offers.length > 0 && (
+          <div className="mb-4 text-sm text-gray-600">
+            {offers.length} flight offer{offers.length !== 1 ? "s" : ""} found
+          </div>
+        )}
+
+        {isLoading ? (
+          <TripOffersLoading />
+        ) : (
+          <div className="space-y-6">
+            {offers.length > 0 ? (
+              offers.map((offer) => <TripOfferCard key={offer.id} offer={offer} />)
+            ) : (
+              <Card className="p-6 text-center">
+                <p className="mb-4">No offers found that match your criteria.</p>
+                <p className="text-sm text-gray-500">
+                  {usedRelaxedCriteria 
+                    ? "We tried with relaxed criteria but still couldn't find any offers. Try adjusting your destination or dates."
+                    : ignoreFilter 
+                      ? "Try adjusting your budget or destination, or click Refresh Offers."
+                      : "Try one of the search options above or adjust your trip criteria."}
+                </p>
+              </Card>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
