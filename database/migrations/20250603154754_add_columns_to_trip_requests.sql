@@ -1,3 +1,0 @@
-ALTER TABLE trip_requests
-ADD COLUMN nonstop_required BOOLEAN NOT NULL DEFAULT TRUE,
-ADD COLUMN baggage_included_required BOOLEAN NOT NULL DEFAULT FALSE;
