@@ -294,7 +294,7 @@ export default function TripOffers() {
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
       {/* Trip Summary Card - Enhanced with subtle shadow and border */}
       {tripDetails && (
-        <Card className="w-full max-w-5xl mb-6 shadow-sm border-b border-gray-200">
+        <Card className="w-full max-w-5xl mb-6 bg-white rounded-lg pt-6 pb-4 px-6 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors">
           <CardHeader>
             <CardTitle>Your trip request details</CardTitle>
           </CardHeader>
@@ -348,11 +348,14 @@ export default function TripOffers() {
             <span className="ml-1">Back to Search</span>
           </Link>
 
-          {/* OFFERS COUNT */}
+          {/* DIVIDER DOT + OFFERS COUNT */}
           {!isLoading && offers.length > 0 && (
-            <p className="text-sm text-gray-600 mt-2 sm:mt-0">
-              {offers.length} flight offer{offers.length !== 1 ? "s" : ""} found
-            </p>
+            <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+              <span className="text-gray-300 text-base hidden sm:inline">•</span>
+              <span className="text-sm text-gray-700">
+                {offers.length} flight offer{offers.length !== 1 ? "s" : ""} found
+              </span>
+            </div>
           )}
         </div>
 
