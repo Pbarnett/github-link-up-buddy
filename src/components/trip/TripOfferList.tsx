@@ -1,0 +1,44 @@
+import React from "react";
+import { Offer } from "@/services/tripOffersService";
+import TripOfferCard from "@/components/trip/TripOfferCard";
+import TripOffersLoading from "@/components/trip/TripOffersLoading";
+import { Card } from "@/components/ui/card";
+
+interface TripOfferListProps {
+  offers: Offer[];
+  isLoading: boolean;
+  usedRelaxedCriteria: boolean;
+  ignoreFilter: boolean;
+}
+
+const TripOfferList: React.FC<TripOfferListProps> = ({
+  offers,
+  isLoading,
+  usedRelaxedCriteria,
+  ignoreFilter,
+}) => {
+  if (isLoading) {
+    return <TripOffersLoading />;
+  }
+
+  return (
+    <div className="space-y-4">
+      {offers.length > 0 ? (
+        offers.map((offer) => <TripOfferCard key={offer.id} offer={offer} />)
+      ) : (
+        <Card className="p-6 text-center">
+          <p className="mb-4">No offers found that match your criteria.</p>
+          <p className="text-sm text-gray-500">
+            {usedRelaxedCriteria
+              ? "We tried with relaxed criteria but still couldn't find any offers. Try adjusting your destination or dates."
+              : ignoreFilter
+              ? "Try adjusting your budget or destination, or click Refresh Offers."
+              : "Try one of the search options above or adjust your trip criteria."}
+          </p>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+export default TripOfferList;
