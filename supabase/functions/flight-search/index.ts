@@ -127,7 +127,7 @@ serve(async (req: Request) => {
           continue;
         }
         
-        if (!request.destination_airport) {
+        if (!request.destination_location_code) {
           console.error(`[flight-search] No destination airport specified for request ${request.id}`);
           details.push({ 
             tripRequestId: request.id, 
@@ -140,7 +140,7 @@ serve(async (req: Request) => {
         // Create search params from the trip request - use ONLY the exact destination specified
         const searchParams: FlightSearchParams = {
           origin: request.departure_airports,
-          destination: request.destination_airport, // Use exact destination only, no nearby airports
+          destination: request.destination_location_code, // Use exact destination only, no nearby airports
           earliestDeparture: new Date(request.earliest_departure),
           latestDeparture: new Date(request.latest_departure),
           minDuration: relaxedCriteria ? 1 : request.min_duration, // Relax min duration if requested
@@ -187,11 +187,11 @@ serve(async (req: Request) => {
         // Filter offers to ensure they match the EXACT destination airport only
         const exactDestinationOffers = offers.filter(offer => {
           const offerDestination = offer.destination_airport;
-          const requestedDestination = request.destination_airport;
+          const requestedDestination = request.destination_location_code;
           return offerDestination === requestedDestination;
         });
         
-        console.log(`[flight-search] Request ${request.id}: Filtered from ${offers.length} to ${exactDestinationOffers.length} offers matching exact destination ${request.destination_airport}`);
+        console.log(`[flight-search] Request ${request.id}: Filtered from ${offers.length} to ${exactDestinationOffers.length} offers matching exact destination ${request.destination_location_code}`);
         
         // Filter offers based on max_price (if specified)
         // If max_price is null, no filtering is applied (treat as "no filter")
