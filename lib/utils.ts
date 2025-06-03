@@ -13,4 +13,3 @@ export function decideSeatPreference(
   // TODO: Jules will fill in the actual parsing of offer.seat_map or offer.fare_details.
   return "MIDDLE"; // placeholder so our smoke test always picks "MIDDLE"
 }
-
