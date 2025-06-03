@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -117,81 +118,93 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
   };
 
   return (
-    <Card key={offer.id} className="bg-white shadow-lg rounded-lg p-6 flex flex-col gap-4 hover:shadow-xl transition-shadow">
-      {/* Header Row: Flight Info & Dates */}
-      <div className="flex justify-between items-start">
-        {/* Left: Flight Number & Airline */}
-        <div className="flex flex-col">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {friendlyAirline} flight {offer.flight_number}
-          </h2>
-        </div>
+    <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col md:flex-row justify-between hover:shadow-md transition-shadow">
+      {/* LEFT SIDE: Flight Details */}
+      <div className="flex-1 space-y-1">
+        {/* Airline + Flight Number */}
+        <h2 className="text-xl font-semibold text-gray-900">
+          {friendlyAirline} flight {offer.flight_number}
+        </h2>
 
-        {/* Right: Departure → Return */}
-        <div className="text-right flex flex-col">
-          <p className="text-lg font-medium text-gray-800">
-            {depLocal} → {retLocal}
-          </p>
-          <p className="text-sm text-gray-500">Departure ↔ Return</p>
-        </div>
-      </div>
-
-      {/* Middle Block: Route & Duration */}
-      <div className="flex flex-col gap-2">
         {/* Route */}
-        <p className="text-lg font-medium text-gray-900">
-          {originLabel} → {destLabel}
-          {(offer.origin_airport || offer.destination_airport) && (
-            <span className="text-base text-gray-500 ml-1">
-              ({offer.origin_airport} → {offer.destination_airport})
-            </span>
-          )}
+        <p className="mt-1 text-gray-700 text-base">
+          {originLabel} ({offer.origin_airport}) → {destLabel} ({offer.destination_airport})
         </p>
 
-        {/* Duration */}
-        <div className="flex items-center text-gray-500 text-sm mt-2">
-          <PlaneTakeoff className="w-4 h-4 mr-2 text-gray-400" />
-          <span>Flight duration: {humanDuration}</span>
+        {/* Dates */}
+        <div className="mt-2">
+          <p className="text-gray-700 text-base font-medium flex items-center">
+            <svg
+              className="w-5 h-5 mr-2 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M8 7V3m8 4V3m-9 8h10m-9 4h9m-9 4h9M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            {depLocal} → {retLocal}
+          </p>
+          <p className="text-xs text-gray-400 ml-7">Departure ↔ Return</p>
         </div>
-      </div>
 
-      {/* Divider */}
-      <div className="border-t border-gray-200 pt-4">
-        {/* Bottom Band: Trip Length + Price + Booking Button */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-4">
-          <div className="flex items-center sm:gap-6 gap-4 flex-col sm:flex-row sm:items-baseline">
-            {/* Trip Length */}
-            <div className="flex items-center">
-              <Calendar className="w-5 h-5 mr-2 text-gray-500" />
-              <span className="text-2xl sm:text-2xl font-semibold text-gray-900">
-                {tripDays} {tripDays === 1 ? 'Day' : 'Days'}
-              </span>
-            </div>
-
-            {/* Price */}
-            <span className="text-3xl sm:text-3xl font-bold text-gray-900">
-              ${offer.price}
-            </span>
-          </div>
-
-          {/* Book Button */}
-          <Button 
-            className="px-5 py-3 text-sm font-semibold bg-blue-800 hover:bg-blue-900 focus:ring-2 focus:ring-blue-300 rounded-md shadow-sm sm:ml-auto" 
-            onClick={handleSelect}
-            variant={offer.booking_url ? "default" : "outline"}
+        {/* Flight Duration */}
+        <p className="mt-2 text-gray-500 flex items-center">
+          <svg
+            className="w-5 h-5 mr-2 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            {offer.booking_url ? (
-              <>
-                Book on {carrierCode || friendlyAirline}
-                <ExternalLink className="ml-2 h-5 w-5" />
-              </>
-            ) : (
-              "Select This Flight"
-            )}
-          </Button>
-        </div>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          Flight duration: {humanDuration}
+        </p>
       </div>
-    </Card>
+
+      {/* RIGHT SIDE: Price, Days, & Booking */}
+      <div className="mt-4 md:mt-0 md:ml-6 flex flex-col items-end space-y-2">
+        {/* Trip Length (Days) */}
+        <p className="text-xl font-semibold text-gray-700">{tripDays} Days</p>
+
+        {/* Price */}
+        <p className="text-3xl font-bold text-gray-900">${offer.price.toFixed(2)}</p>
+
+        {/* "Book on X" Button */}
+        <button
+          onClick={handleSelect}
+          className="mt-2 inline-flex items-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label={`Book on ${friendlyAirline} (flight ${offer.flight_number})`}
+        >
+          Book on {carrierCode || friendlyAirline}
+          <svg
+            className="inline-block w-4 h-4 ml-1 -mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M14 3l7 7m0 0l-7 7m7-7H3"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
   );
 };
 
