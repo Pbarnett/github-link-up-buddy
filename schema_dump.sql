@@ -52,15 +52,15 @@ BEGIN
   FROM booking_requests br
   JOIN profiles p ON p.id = br.user_id
 
-  WHERE 
+  WHERE
     br.status = 'done'
     AND p.phone IS NOT NULL
-    AND (br.offer_data->>'departure_date')::date BETWEEN 
-      (CURRENT_DATE + INTERVAL '23 hours')::date AND 
+    AND (br.offer_data->>'departure_date')::date BETWEEN
+      (CURRENT_DATE + INTERVAL '23 hours')::date AND
       (CURRENT_DATE + INTERVAL '25 hours')::date
     AND NOT EXISTS (
-      SELECT 1 FROM notifications n 
-      WHERE n.booking_request_id = br.id 
+      SELECT 1 FROM notifications n
+      WHERE n.booking_request_id = br.id
       AND n.type = 'reminder'
     );
 END;
@@ -102,10 +102,10 @@ DECLARE
   v_flight_price NUMERIC;
   v_airline TEXT;
   v_flight_number TEXT;
-  v_origin_code TEXT;        
-  v_destination_code TEXT;   
+  v_origin_code TEXT;
+  v_destination_code TEXT;
   v_notification_message TEXT;
-  v_trip_details RECORD;     
+  v_trip_details RECORD;
 
 BEGIN
   -- 1. Fetch the booking_requests row using the UUID parameter
@@ -123,7 +123,7 @@ BEGIN
 
   -- Fetch origin and destination from the associated trip_requests table
 
-  SELECT origin_location_code, destination_location_code 
+  SELECT origin_location_code, destination_location_code
 
   INTO v_trip_details
   FROM public.trip_requests
@@ -168,10 +168,10 @@ BEGIN
   v_notification_message := FORMAT(
     'We auto-booked your flight from %s to %s with %s (%s) for $%s!',
 
-    COALESCE(v_origin_code, 'N/A'), 
-    COALESCE(v_destination_code, 'N/A'), 
-    COALESCE(v_airline, 'N/A'), 
-    COALESCE(v_flight_number, 'N/A'), 
+    COALESCE(v_origin_code, 'N/A'),
+    COALESCE(v_destination_code, 'N/A'),
+    COALESCE(v_airline, 'N/A'),
+    COALESCE(v_flight_number, 'N/A'),
 
     TO_CHAR(v_flight_price, 'FM999,990.00')
   );
@@ -198,7 +198,7 @@ BEGIN
       'origin', v_origin_code,
       'destination', v_destination_code,
 
-      'original_offer_data', v_offer_data 
+      'original_offer_data', v_offer_data
 
     )
   );
@@ -206,7 +206,7 @@ BEGIN
   -- 4. Update booking_requests.status to 'done'
   UPDATE public.booking_requests
 
-  SET status = 'done', updated_at = NOW(), error_message = NULL 
+  SET status = 'done', updated_at = NOW(), error_message = NULL
 
   WHERE id = p_booking_request_id;
 
@@ -269,22 +269,22 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Flight offer not found' USING ERRCODE = 'P0002';
   END IF;
-  
+
   -- Build a safe description
-  SELECT 
-    'Flight ' || v_flight_offer.airline || ' ' || v_flight_offer.flight_number || 
+  SELECT
+    'Flight ' || v_flight_offer.airline || ' ' || v_flight_offer.flight_number ||
     ': ' || v_flight_offer.departure_date || ' to ' || v_flight_offer.return_date
   INTO v_description;
-  
+
   -- Check if already booked (prevent double-booking)
-  PERFORM 1 
-  FROM orders 
+  PERFORM 1
+  FROM orders
   WHERE match_id = p_match_id;
-  
+
   IF FOUND THEN
     RAISE EXCEPTION 'Flight match already booked' USING ERRCODE = 'P0003';
   END IF;
-  
+
   -- Insert order record
   INSERT INTO orders (
     user_id,
@@ -327,13 +327,13 @@ BEGIN
   SET auto_book_enabled = FALSE
   WHERE id = v_match.trip_request_id;
 
-  
+
   -- Return the IDs for reference
-  SELECT 
+  SELECT
     v_order_id AS order_id,
     v_booking_id AS booking_id
   INTO v_result;
-  
+
 
   RETURN v_result;
 EXCEPTION
