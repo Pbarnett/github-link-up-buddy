@@ -1,2 +1,0 @@
-ALTER TABLE flight_offers
-ADD COLUMN baggage_included BOOLEAN NOT NULL DEFAULT FALSE;
