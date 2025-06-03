@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,11 +10,17 @@ import { Form } from "@/components/ui/form";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { FormValues, tripFormSchema, ExtendedTripFormValues } from "@/types/form";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { TripRequestFromDB } from "@/hooks/useTripOffers";
 import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
-import TripParametersSection from "./sections/TripParametersSection";
+import { useIsMobile } from "@/hooks/use-mobile";
+import DateRangeField from "./DateRangeField";
+import DurationRangeField from "./DurationRangeField";
+import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
+import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
+import AdvancedOptionsPanel from "./AdvancedOptionsPanel";
+import StickyFormActions from "./StickyFormActions";
 import BookingMethodSection from "./sections/BookingMethodSection";
 
 interface TripRequestFormProps {
@@ -42,6 +47,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { userId } = useCurrentUser();
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const isMobile = useIsMobile();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(tripFormSchema),
@@ -270,34 +276,62 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       </div>
     </div>
   ) : (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 w-full max-w-2xl">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Plan Your Trip</h1>
-          <p className="text-gray-600 mt-1">Enter the parameters for your trip below.</p>
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm mx-auto w-full max-w-6xl">
+        {/* Header with back link */}
+        <div className="p-6 pb-4 border-b border-gray-100">
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard")}
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            New Search
+          </button>
+          <div>
+            <h1 className={`font-bold text-gray-900 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
+              Plan Your Trip
+            </h1>
+            <p className="text-gray-600 mt-1">Enter the parameters for your trip below.</p>
+          </div>
         </div>
 
         <FormProvider {...form}>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <TripParametersSection control={form.control} watch={form.watch} />
-              <BookingMethodSection control={form.control} />
+            <form onSubmit={form.handleSubmit(onSubmit)} className="p-6">
+              {/* Responsive Grid Layout */}
+              <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2 lg:gap-8'}`}>
+                {/* Left Column */}
+                <div className={`space-y-${isMobile ? '6' : '4 lg:space-y-3'}`}>
+                  <EnhancedDestinationSection control={form.control} watch={form.watch} />
+                  <DateRangeField control={form.control} />
+                  <EnhancedBudgetSection control={form.control} />
+                </div>
 
-              <div className="pt-6 border-t border-gray-200">
+                {/* Right Column */}
+                <div className={`space-y-${isMobile ? '6' : '4 lg:space-y-3'}`}>
+                  <DurationRangeField control={form.control} />
+                  <AdvancedOptionsPanel control={form.control} watch={form.watch} />
+                  <BookingMethodSection control={form.control} />
+                </div>
+              </div>
+
+              {/* Regular Form Actions (Mobile + fallback) */}
+              <div className="pt-8 border-t border-gray-200 mt-8">
                 <div className="flex flex-col sm:flex-row justify-end gap-4">
                   <Button 
                     type="button" 
                     variant="outline" 
                     onClick={() => navigate("/dashboard")} 
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3"
+                    className="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 h-11"
                   >
                     Cancel
                   </Button>
                   <Button 
                     type="submit" 
                     disabled={isSubmitting || !isFormValid} 
-                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 font-medium disabled:opacity-50 min-w-[160px]"
+                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-medium disabled:opacity-50 min-w-[160px] h-11"
                   >
                     {isSubmitting ? (
                       <>
@@ -311,6 +345,14 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
             </form>
           </Form>
         </FormProvider>
+
+        {/* Sticky Actions for Desktop */}
+        <StickyFormActions
+          isSubmitting={isSubmitting}
+          isFormValid={isFormValid}
+          buttonText={buttonText}
+          onSubmit={form.handleSubmit(onSubmit)}
+        />
       </div>
     </div>
   );
