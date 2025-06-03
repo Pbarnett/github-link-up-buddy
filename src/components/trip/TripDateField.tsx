@@ -1,7 +1,7 @@
 
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { Control, Controller } from "react-hook-form";
+import { Control } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -33,14 +33,14 @@ const TripDateField = ({ name, label, description, control }: TripDateFieldProps
       name={name}
       render={({ field }) => (
         <FormItem className="flex flex-col">
-          <FormLabel>{label}</FormLabel>
+          <FormLabel className="text-sm font-medium text-gray-900">{label}</FormLabel>
           <Popover>
             <PopoverTrigger asChild>
               <FormControl>
                 <Button
                   variant={"outline"}
                   className={cn(
-                    "w-full pl-3 text-left font-normal",
+                    "w-full pl-3 text-left font-normal border-gray-300 hover:bg-gray-50",
                     !field.value && "text-muted-foreground"
                   )}
                 >
@@ -53,7 +53,7 @@ const TripDateField = ({ name, label, description, control }: TripDateFieldProps
                 </Button>
               </FormControl>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 bg-white z-50" align="start">
               <Calendar
                 mode="single"
                 selected={field.value}
@@ -62,11 +62,11 @@ const TripDateField = ({ name, label, description, control }: TripDateFieldProps
                   date < new Date(new Date().setHours(0, 0, 0, 0))
                 }
                 initialFocus
-                className={cn("p-3 pointer-events-auto")}
+                className="p-3"
               />
             </PopoverContent>
           </Popover>
-          <FormDescription>
+          <FormDescription className="text-xs text-gray-500">
             {description}
           </FormDescription>
           <FormMessage />

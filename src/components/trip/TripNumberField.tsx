@@ -41,7 +41,7 @@ const TripNumberField = ({
       name={name}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{label}</FormLabel>
+          <FormLabel className="text-sm font-medium text-gray-900">{label}</FormLabel>
           <FormControl>
             {prefix ? (
               <div className="relative">
@@ -63,7 +63,7 @@ const TripNumberField = ({
               />
             )}
           </FormControl>
-          <FormDescription>
+          <FormDescription className="text-xs text-gray-500">
             {description}
           </FormDescription>
           <FormMessage />
