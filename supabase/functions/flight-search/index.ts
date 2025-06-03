@@ -221,22 +221,20 @@ serve(async (req: Request) => {
 
         console.log(`[flight-search] Request ${request.id}: Generated ${exactDestinationOffers.length} exact destination offers, filtered to ${priceFilteredOffers.length} by max price`);
 
-        // Decide seat preference and filter offers based on trip requirements (nonstop, baggage)
+        // --- Start of new filtering logic ---
         const finalFilteredOffers = [];
         for (const offer of priceFilteredOffers) {
-          // Condition 1: Nonstop requirement
-          // The offer's `nonstop_match` field should be true if request.nonstop_required is true.
-          // If nonstop is not required, any offer (nonstop or with stops) is fine.
+          // Apply nonstop_required filter
           // It's assumed `offer.nonstop_match` is a boolean indicating if the offer is non-stop.
+          // `request.nonstop_required` is from the trip_requests table.
           if (request.nonstop_required === true && offer.nonstop_match !== true) {
             console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to nonstop mismatch. Request nonstop: ${request.nonstop_required}, Offer nonstop: ${offer.nonstop_match}`);
             continue;
           }
 
-          // Condition 2: Baggage requirement
-          // The offer's `baggage_included` field should be true if request.baggage_included_required is true.
-          // If baggage is not required, any offer (with or without baggage) is fine.
+          // Apply baggage_included_required filter
           // It's assumed `offer.baggage_included` is a boolean.
+          // `request.baggage_included_required` is from the trip_requests table.
           if (request.baggage_included_required === true && offer.baggage_included !== true) {
             console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to baggage mismatch. Request baggage: ${request.baggage_included_required}, Offer baggage: ${offer.baggage_included}`);
             continue;
@@ -244,7 +242,7 @@ serve(async (req: Request) => {
 
           const seatType = decideSeatPreference(offer, request); // `request` is the trip here
           if (seatType === null) {
-            console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to null seatType (max_price: ${request.max_price})`);
+            console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to null seatType (max_price: ${request.max_price}).`);
             continue;
           }
 
@@ -252,13 +250,15 @@ serve(async (req: Request) => {
           finalFilteredOffers.push({
             ...offer, // Spread the original offer
             selected_seat_type: seatType,
-            // baggage_included and nonstop_match are already on the offer object from searchOffers or defaults
+            // Ensure baggage_included and nonstop_match are part of the offer object by now,
+            // potentially defaulted if not provided by searchOffers.
             baggage_included: offer.baggage_included !== undefined ? offer.baggage_included : false,
             nonstop_match: offer.nonstop_match !== undefined ? offer.nonstop_match : false,
-            trip_request_id: request.id, // This is correct
+            trip_request_id: request.id,
             notified: false, // Default for new offers
           });
         }
+        // --- End of new filtering logic ---
 
         console.log(`[flight-search] Request ${request.id}: ${priceFilteredOffers.length} offers after price filter, ${finalFilteredOffers.length} offers after ALL filters (seat, nonstop, baggage).`);
 
@@ -268,7 +268,7 @@ serve(async (req: Request) => {
             matchesFound: 0,
             offersGenerated: offers.length,
             exactDestinationOffers: exactDestinationOffers.length,
-            offersFiltered: priceFilteredOffers.length, // Count after price filter
+            offersFiltered: priceFilteredOffers.length,
             offersAfterAllFilters: 0,
             error: "No matching offers after all filters (seat, nonstop, baggage)"
           });
@@ -301,9 +301,10 @@ serve(async (req: Request) => {
             matchesFound: 0,
             offersGenerated: offers.length,
             exactDestinationOffers: exactDestinationOffers.length,
-            offersFiltered: priceFilteredOffers.length, // Report count before seat preference
-            offersInserted: 0, // After seat preference and DB insert
-            error: "No offers were saved to the database (after seat preference)"
+            offersFiltered: priceFilteredOffers.length,
+            offersAfterAllFilters: finalFilteredOffers.length,
+            offersInserted: 0,
+            error: "No offers were saved to the database (after all filters)"
           });
           continue;
         }
@@ -344,12 +345,11 @@ serve(async (req: Request) => {
         details.push({ 
           tripRequestId: request.id, 
           matchesFound: newInserts,
-          offersGenerated: offers.length, // Total raw offers from Amadeus
-          exactDestinationOffers: exactDestinationOffers.length, // Offers matching exact destination
-          offersFiltered: priceFilteredOffers.length, // Offers after price filter
-          offersAfterSeatPreference: finalFilteredOffers.length, // This name is now a bit misleading, it's after all filters
-          offersAfterAllFilters: finalFilteredOffers.length, // More accurate name
-          offersInsertedToDB: savedOffers.length, // Actual offers inserted
+          offersGenerated: offers.length,
+          exactDestinationOffers: exactDestinationOffers.length,
+          offersFiltered: priceFilteredOffers.length,
+          offersAfterAllFilters: finalFilteredOffers.length,
+          offersInsertedToDB: savedOffers.length,
           relaxedCriteria: relaxedCriteria,
           exactDestinationOnly: true
         });
