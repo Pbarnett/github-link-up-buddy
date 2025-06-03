@@ -126,12 +126,15 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
           {friendlyAirline} flight {offer.flight_number}
         </h2>
 
-        {/* Route */}
+        {/* Route - Enhanced with bold city names */}
         <p className="mt-1 text-gray-700 text-base">
-          {originLabel} ({offer.origin_airport}) → {destLabel} ({offer.destination_airport})
+          <span className="font-medium">{originLabel}</span>
+          <span className="text-gray-500"> ({offer.origin_airport}) → </span>
+          <span className="font-medium">{destLabel}</span>
+          <span className="text-gray-500"> ({offer.destination_airport})</span>
         </p>
 
-        {/* Dates */}
+        {/* Dates - Consolidated into one line */}
         <div className="mt-2">
           <p className="text-gray-700 text-base font-medium flex items-center">
             <svg
@@ -149,8 +152,8 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
               />
             </svg>
             {depLocal} → {retLocal}
+            <span className="ml-2 text-xs text-gray-400">Departure ↔ Return</span>
           </p>
-          <p className="text-xs text-gray-400 ml-7">Departure ↔ Return</p>
         </div>
 
         {/* Flight Duration */}
@@ -173,23 +176,25 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
         </p>
       </div>
 
-      {/* RIGHT SIDE: Price, Days, & Booking */}
-      <div className="mt-4 md:mt-0 md:ml-6 flex flex-col items-end space-y-2">
-        {/* Trip Length (Days) */}
-        <p className="text-xl font-semibold text-gray-700">{tripDays} Days</p>
+      {/* RIGHT SIDE: Days Pill, Price, & Booking - Horizontally aligned */}
+      <div className="mt-4 md:mt-0 md:ml-6 flex flex-wrap items-center justify-end gap-6">
+        {/* Days Pill - Enhanced with blue background */}
+        <span className="inline-block bg-blue-50 text-blue-700 text-lg font-semibold rounded-full px-3 py-1">
+          {tripDays} Days
+        </span>
 
         {/* Price */}
-        <p className="text-3xl font-bold text-gray-900">${offer.price.toFixed(2)}</p>
+        <span className="text-3xl font-bold text-gray-900">${offer.price.toFixed(2)}</span>
 
-        {/* "Book on X" Button */}
+        {/* "Book on X" Button - Enhanced alignment */}
         <button
           onClick={handleSelect}
-          className="mt-2 inline-flex items-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="inline-flex items-center px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label={`Book on ${friendlyAirline} (flight ${offer.flight_number})`}
         >
           Book on {carrierCode || friendlyAirline}
           <svg
-            className="inline-block w-4 h-4 ml-1 -mt-0.5"
+            className="w-4 h-4 ml-1 -mt-0.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
