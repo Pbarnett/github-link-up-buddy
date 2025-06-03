@@ -28,3 +28,4 @@ USING (true);
 
 -- Grant necessary permissions
 GRANT SELECT ON flight_offers TO authenticated, anon;
+
