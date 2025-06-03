@@ -16,12 +16,12 @@ import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
 import { useIsMobile } from "@/hooks/use-mobile";
 import DateRangeField from "./DateRangeField";
-import DurationRangeField from "./DurationRangeField";
 import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
-import AdvancedOptionsPanel from "./AdvancedOptionsPanel";
+import DepartureAirportsSection from "./sections/DepartureAirportsSection";
+import TripDurationInputs from "./sections/TripDurationInputs";
+import AutoBookingToggle from "./sections/AutoBookingToggle";
 import StickyFormActions from "./StickyFormActions";
-import BookingMethodSection from "./sections/BookingMethodSection";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -302,23 +302,23 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
               {/* Responsive Grid Layout */}
               <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2 lg:gap-8'}`}>
                 {/* Left Column */}
-                <div className={`space-y-${isMobile ? '6' : '4 lg:space-y-3'}`}>
+                <div className="space-y-6 bg-white rounded-lg border border-gray-100 p-6">
                   <EnhancedDestinationSection control={form.control} watch={form.watch} />
+                  <DepartureAirportsSection control={form.control} />
                   <DateRangeField control={form.control} />
                   <EnhancedBudgetSection control={form.control} />
+                  <TripDurationInputs control={form.control} />
                 </div>
 
                 {/* Right Column */}
-                <div className={`space-y-${isMobile ? '6' : '4 lg:space-y-3'}`}>
-                  <DurationRangeField control={form.control} />
-                  <AdvancedOptionsPanel control={form.control} watch={form.watch} />
-                  <BookingMethodSection control={form.control} />
+                <div className="space-y-6 bg-white rounded-lg border border-gray-100 p-6">
+                  <AutoBookingToggle control={form.control} />
                 </div>
               </div>
 
-              {/* Regular Form Actions (Mobile + fallback) */}
+              {/* Form Actions */}
               <div className="pt-8 border-t border-gray-200 mt-8">
-                <div className="flex flex-col sm:flex-row justify-end gap-4">
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
                   <Button 
                     type="button" 
                     variant="outline" 
