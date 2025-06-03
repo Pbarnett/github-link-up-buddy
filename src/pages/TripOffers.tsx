@@ -292,9 +292,9 @@ export default function TripOffers() {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
-      {/* Trip Summary Card - Show immediately if we have data */}
+      {/* Trip Summary Card - Enhanced with subtle shadow and border */}
       {tripDetails && (
-        <Card className="w-full max-w-5xl mb-6">
+        <Card className="w-full max-w-5xl mb-6 shadow-sm border-b border-gray-200">
           <CardHeader>
             <CardTitle>Your trip request details</CardTitle>
           </CardHeader>
@@ -323,11 +323,12 @@ export default function TripOffers() {
       )}
 
       <div className="w-full max-w-5xl">
-        {/* Back to Search Link */}
-        <div className="mb-6">
+        {/* Combined Back to Search Link & Offer Count */}
+        <div className="mb-4 flex flex-wrap items-center justify-between">
+          {/* BACK TO SEARCH */}
           <Link
             to="/trip/new"
-            className="inline-flex items-center space-x-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+            className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
             aria-label="Return to search form"
           >
             <svg
@@ -344,8 +345,15 @@ export default function TripOffers() {
                 d="M9 5l7 7-7 7"
               />
             </svg>
-            <span>Back to Search</span>
+            <span className="ml-1">Back to Search</span>
           </Link>
+
+          {/* OFFERS COUNT */}
+          {!isLoading && offers.length > 0 && (
+            <p className="text-sm text-gray-600 mt-2 sm:mt-0">
+              {offers.length} flight offer{offers.length !== 1 ? "s" : ""} found
+            </p>
+          )}
         </div>
 
         {/* Hidden action buttons for error handling - only show when needed */}
@@ -378,17 +386,10 @@ export default function TripOffers() {
           </div>
         )}
 
-        {/* Optional offer count */}
-        {!isLoading && offers.length > 0 && (
-          <div className="mb-4 text-sm text-gray-600">
-            {offers.length} flight offer{offers.length !== 1 ? "s" : ""} found
-          </div>
-        )}
-
         {isLoading ? (
           <TripOffersLoading />
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {offers.length > 0 ? (
               offers.map((offer) => <TripOfferCard key={offer.id} offer={offer} />)
             ) : (
