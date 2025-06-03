@@ -3,7 +3,8 @@ ALTER TABLE trip_requests
 ADD COLUMN IF NOT EXISTS nonstop_required BOOLEAN NOT NULL DEFAULT TRUE,
 ADD COLUMN IF NOT EXISTS baggage_included_required BOOLEAN NOT NULL DEFAULT FALSE;
 
--- Add column to flight_offers table  
+-- Add column to flight_offers table
+
 ALTER TABLE flight_offers
 ADD COLUMN IF NOT EXISTS baggage_included BOOLEAN NOT NULL DEFAULT FALSE;
 
