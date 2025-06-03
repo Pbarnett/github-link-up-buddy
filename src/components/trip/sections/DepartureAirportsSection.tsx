@@ -1,4 +1,3 @@
-
 import { Control } from "react-hook-form";
 import { 
   FormControl, 
@@ -9,8 +8,8 @@ import {
   FormMessage 
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { NYC_AIRPORTS, MAJOR_AIRPORTS } from "@/data/airports";
+import { Input } from "@/components/ui/input";
+import { NYC_AIRPORTS } from "@/data/airports";
 
 interface DepartureAirportsSectionProps {
   control: Control<any>;
@@ -18,16 +17,16 @@ interface DepartureAirportsSectionProps {
 
 const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* NYC Airports Checkboxes */}
       <FormField
         control={control}
         name="nyc_airports"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">NYC Area Airports</FormLabel>
-            <FormDescription className="text-xs text-gray-500">
-              Select the NYC area airports you can depart from.
+            <FormLabel className="text-base lg:text-lg font-semibold text-gray-900">Departure Airports</FormLabel>
+            <FormDescription className="text-sm text-gray-600">
+              Select NYC area airports you can depart from.
             </FormDescription>
             <div className="flex flex-wrap gap-2 mt-2">
               {NYC_AIRPORTS.map((airport) => (
@@ -56,33 +55,23 @@ const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) =>
         )}
       />
       
-      {/* Other Departure Airport Dropdown */}
+      {/* Other Departure Airport Text Field */}
       <FormField
         control={control}
         name="other_departure_airport"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">Other Departure Airport</FormLabel>
-            <FormDescription className="text-xs text-gray-500">
-              If you're not departing from NYC, select another airport.
+            <FormLabel className="text-sm font-medium text-gray-900">Other Departure Airport (IATA code)</FormLabel>
+            <FormDescription className="text-sm text-gray-600">
+              If you're not departing from NYC, enter another airport code (e.g., BOS, PHL).
             </FormDescription>
-            <Select 
-              onValueChange={field.onChange} 
-              value={field.value || undefined}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select another airport (optional)" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent className="max-h-64 overflow-auto bg-white z-50">
-                {MAJOR_AIRPORTS.map((airport) => (
-                  <SelectItem key={airport.id} value={airport.id}>
-                    {airport.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              <Input 
+                placeholder="e.g., BOS" 
+                className="h-11 border-gray-300"
+                {...field} 
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
