@@ -683,3 +683,10 @@ export const Constants = {
     },
   },
 } as const
+
+// Added by subtask - verify correctness and completeness for RPC parameters
+export type RpcAutoBookMatchParams = {
+  p_match_id: string; // For UUID
+  p_payment_intent_id?: string | null;
+  p_currency?: string | null;
+};
