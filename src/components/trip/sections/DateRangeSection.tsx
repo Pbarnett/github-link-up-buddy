@@ -1,6 +1,5 @@
 
 import { Control } from "react-hook-form";
-import { FormDescription } from "@/components/ui/form";
 import TripDateField from "../TripDateField";
 
 interface DateRangeSectionProps {
@@ -9,7 +8,7 @@ interface DateRangeSectionProps {
 
 const DateRangeSection = ({ control }: DateRangeSectionProps) => {
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <TripDateField 
         name="earliestDeparture"
         label="Earliest Departure Date"

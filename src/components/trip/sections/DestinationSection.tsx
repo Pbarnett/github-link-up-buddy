@@ -22,15 +22,15 @@ const DestinationSection = ({ control, watch }: DestinationSectionProps) => {
   const selectedDestination = watch("destination_airport");
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Destination Airport Dropdown */}
       <FormField
         control={control}
         name="destination_airport"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Destination</FormLabel>
-            <FormDescription>Select a popular destination.</FormDescription>
+            <FormLabel className="text-sm font-medium text-gray-900">Destination</FormLabel>
+            <FormDescription className="text-xs text-gray-500">Select a popular destination.</FormDescription>
             <Select 
               onValueChange={field.onChange} 
               value={field.value || undefined}
@@ -40,7 +40,7 @@ const DestinationSection = ({ control, watch }: DestinationSectionProps) => {
                   <SelectValue placeholder="Select destination" />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent className="max-h-64 overflow-auto">
+              <SelectContent className="max-h-64 overflow-auto bg-white z-50">
                 {POPULAR_DESTINATIONS.map((airport) => (
                   <SelectItem key={airport.id} value={airport.id}>
                     {airport.label}
@@ -59,13 +59,16 @@ const DestinationSection = ({ control, watch }: DestinationSectionProps) => {
         name="destination_other"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Other Destination</FormLabel>
-            <FormDescription>If your destination isn't listed above, enter it here.</FormDescription>
+            <FormLabel className="text-sm font-medium text-gray-900">Other Destination</FormLabel>
+            <FormDescription className="text-xs text-gray-500">
+              If your destination isn't listed above, enter it here.
+            </FormDescription>
             <FormControl>
               <Input 
                 placeholder="Enter destination airport code" 
                 {...field} 
                 disabled={!!selectedDestination}
+                className={selectedDestination ? "bg-gray-50 text-gray-400" : ""}
               />
             </FormControl>
             <FormMessage />
