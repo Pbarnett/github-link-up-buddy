@@ -60,3 +60,4 @@ if (!tripId) {
 }
 
 checkFlightOffers(tripId);
+
