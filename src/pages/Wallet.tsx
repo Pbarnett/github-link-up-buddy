@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 
 function WalletPage() {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const { data, error, isLoading, refetch } = usePaymentMethods();
   const { user } = useCurrentUser();
   const [isCreating, setIsCreating] = useState(false);
@@ -33,7 +34,7 @@ function WalletPage() {
       setIsUpdating(paymentMethod.id);
       
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/set-default-payment-method`,
+        `${supabaseUrl}/functions/v1/set-default-payment-method`,
         {
           method: "POST",
           headers: { 
@@ -101,7 +102,7 @@ function WalletPage() {
       setIsUpdating(paymentMethod.id);
       
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-payment-method`,
+        `${supabaseUrl}/functions/v1/delete-payment-method`,
         {
           method: "POST",
           headers: { 
@@ -212,7 +213,7 @@ function WalletPage() {
               </div>
             )}
 
-            {stripeKey && (
+            {stripeKey && supabaseUrl && (
               <>
                 <Button
                   disabled={isCreating}
@@ -221,7 +222,7 @@ function WalletPage() {
                     setIsCreating(true);
                     try {
                       const res = await fetch(
-                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-setup-session`, 
+                        `${supabaseUrl}/functions/v1/create-setup-session`, 
                         {
                           method: "POST",
                           headers: { 
