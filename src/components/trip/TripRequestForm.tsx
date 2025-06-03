@@ -11,16 +11,12 @@ import { Form } from "@/components/ui/form";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { FormValues, tripFormSchema, ExtendedTripFormValues } from "@/types/form";
-import DateRangeSection from "./sections/DateRangeSection";
-import BudgetSection from "./sections/BudgetSection";
-import TripDurationSection from "./sections/TripDurationSection";
-import DepartureAirportsSection from "./sections/DepartureAirportsSection";
-import DestinationSection from "./sections/DestinationSection";
-import AutoBookingSection from "./sections/AutoBookingSection";
 import { Loader2 } from "lucide-react";
 import { TripRequestFromDB } from "@/hooks/useTripOffers";
 import { PostgrestError } from "@supabase/supabase-js";
-import logger from "@/lib/logger"; // Import logger
+import logger from "@/lib/logger";
+import TripParametersSection from "./sections/TripParametersSection";
+import BookingMethodSection from "./sections/BookingMethodSection";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -44,7 +40,7 @@ const categorizeAirports = (airports: string[] | null | undefined): { nycAirport
 const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { userId } = useCurrentUser(); // Removed unused user, userLoading, userError
+  const { userId } = useCurrentUser();
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
   const form = useForm<FormValues>({
@@ -227,7 +223,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       });
       
       const transformedData = transformFormData(data);
-      let resultingTripRequest: TripRequestFromDB; // Typed variable
+      let resultingTripRequest: TripRequestFromDB;
 
       if (tripRequestId) {
         resultingTripRequest = await updateTripRequest(transformedData);
@@ -250,43 +246,73 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
     }
   };
 
-  // Removed userLoading and userError handling for brevity, assume it's handled by a layout component or similar
-  // if (userError && !userLoading) { ... }
-  
-  return isLoadingDetails ? (<div>Loading trip details...</div>) : (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle className="text-2xl">Plan Your Trip</CardTitle>
-        <CardDescription>Enter your trip preferences below.</CardDescription>
-      </CardHeader>
-      <CardContent>
+  // Check if required fields are filled for enabling submit button
+  const watchedFields = form.watch();
+  const isFormValid = Boolean(
+    watchedFields.earliestDeparture &&
+    watchedFields.latestDeparture &&
+    watchedFields.budget &&
+    watchedFields.min_duration &&
+    watchedFields.max_duration &&
+    ((watchedFields.nyc_airports && watchedFields.nyc_airports.length > 0) || watchedFields.other_departure_airport) &&
+    (watchedFields.destination_airport || watchedFields.destination_other)
+  );
+
+  const buttonText = watchedFields.auto_book_enabled 
+    ? (tripRequestId ? "Update Auto-Booking" : "Enable Auto-Booking")
+    : (tripRequestId ? "Update Trip Request" : "Search Now");
+
+  return isLoadingDetails ? (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="text-center">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+        <p className="text-gray-600">Loading trip details...</p>
+      </div>
+    </div>
+  ) : (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 w-full max-w-2xl">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Plan Your Trip</h1>
+          <p className="text-gray-600 mt-1">Enter the parameters for your trip below.</p>
+        </div>
+
         <FormProvider {...form}>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <DateRangeSection control={form.control} />
-              <BudgetSection control={form.control} />
-              <TripDurationSection control={form.control} />
-              <DepartureAirportsSection control={form.control} />
-              <DestinationSection control={form.control} watch={form.watch} />
-              <AutoBookingSection control={form.control} />
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <TripParametersSection control={form.control} watch={form.watch} />
+              <BookingMethodSection control={form.control} />
 
-              <div className="pt-4 flex justify-between">
-                <Button type="button" variant="outline" onClick={() => navigate("/dashboard")} disabled={isSubmitting}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting} className="min-w-[120px]">
-                  {isSubmitting ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {tripRequestId ? "Updating..." : "Creating..."}
-                    </>
-                  ) : (tripRequestId ? "Update Trip Request" : "Create Trip Request")}
-                </Button>
+              <div className="pt-6 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row justify-end gap-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => navigate("/dashboard")} 
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting || !isFormValid} 
+                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 font-medium disabled:opacity-50 min-w-[160px]"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {tripRequestId ? "Updating..." : "Processing..."}
+                      </>
+                    ) : buttonText}
+                  </Button>
+                </div>
               </div>
             </form>
           </Form>
         </FormProvider>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

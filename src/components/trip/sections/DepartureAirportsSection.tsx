@@ -1,3 +1,4 @@
+
 import { Control } from "react-hook-form";
 import { 
   FormControl, 
@@ -24,15 +25,15 @@ const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) =>
         name="nyc_airports"
         render={({ field }) => (
           <FormItem>
-            <div className="mb-4">
-              <FormLabel>NYC Area Airports</FormLabel>
-              <FormDescription>Select the NYC area airports you can depart from.</FormDescription>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
+            <FormLabel className="text-sm font-medium text-gray-900">NYC Area Airports</FormLabel>
+            <FormDescription className="text-xs text-gray-500">
+              Select the NYC area airports you can depart from.
+            </FormDescription>
+            <div className="flex flex-wrap gap-2 mt-2">
               {NYC_AIRPORTS.map((airport) => (
                 <FormItem
                   key={airport.id}
-                  className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"
+                  className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                   <FormControl>
                     <Checkbox
@@ -43,9 +44,10 @@ const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) =>
                           : (field.value || []).filter((value: string) => value !== airport.id);
                         field.onChange(updatedValue);
                       }}
+                      className="form-checkbox text-blue-600"
                     />
                   </FormControl>
-                  <FormLabel className="font-normal">{airport.label}</FormLabel>
+                  <FormLabel className="text-sm font-normal cursor-pointer">{airport.label}</FormLabel>
                 </FormItem>
               ))}
             </div>
@@ -60,8 +62,10 @@ const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) =>
         name="other_departure_airport"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Other Departure Airport</FormLabel>
-            <FormDescription>If you're not departing from NYC, select another airport.</FormDescription>
+            <FormLabel className="text-sm font-medium text-gray-900">Other Departure Airport</FormLabel>
+            <FormDescription className="text-xs text-gray-500">
+              If you're not departing from NYC, select another airport.
+            </FormDescription>
             <Select 
               onValueChange={field.onChange} 
               value={field.value || undefined}
@@ -71,7 +75,7 @@ const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) =>
                   <SelectValue placeholder="Select another airport (optional)" />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent className="max-h-64 overflow-auto">
+              <SelectContent className="max-h-64 overflow-auto bg-white z-50">
                 {MAJOR_AIRPORTS.map((airport) => (
                   <SelectItem key={airport.id} value={airport.id}>
                     {airport.label}
