@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Import the flight API service (edge version) with explicit fetchToken
 import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
-import { decideSeatPreference } from "../../../lib/utils";
+import { decideSeatPreference, offerIncludesCarryOnAndPersonal } from "../../lib/utils";
 
 // Set up CORS headers
 const corsHeaders = {
@@ -18,26 +18,6 @@ const supabaseClient = createClient(
   Deno.env.get("SUPABASE_URL") || "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
 );
-
-// TODO: Replace with actual implementation from the Amadeus API or other service
-function decideSeatPreference(offer: any, trip: any): string | null {
-  // Placeholder logic:
-  // - If an aisle or window seat is available and costs ≤ trip.max_price, pick that.
-  // - Otherwise, if only middle seats exist and upgrading to aisle/window exceeds trip.max_price, pick “MIDDLE.”
-  // - Otherwise, return null.
-  console.warn("decideSeatPreference is using placeholder logic. Replace with actual implementation.");
-  // Ensure trip.max_price is a number, default to Infinity if null or undefined
-  const maxPrice = typeof trip.max_price === 'number' ? trip.max_price : Infinity;
-
-  if (offer.price <= maxPrice) {
-    // Simulate some seat availability from offer properties
-    // These properties (hasAisleSeat, hasWindowSeat, hasMiddleSeat) need to be part of the 'offer' object structure
-    if (offer.hasAisleSeat) return "AISLE";
-    if (offer.hasWindowSeat) return "WINDOW";
-    if (offer.hasMiddleSeat) return "MIDDLE"; // Only pick middle if it's within budget and others aren't available
-  }
-  return null;
-}
 
 serve(async (req: Request) => {
   // Performance timing start
