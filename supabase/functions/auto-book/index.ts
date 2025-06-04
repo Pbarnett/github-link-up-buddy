@@ -1,6 +1,14 @@
 // Required imports for Supabase, Amadeus, Stripe, and local helpers
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import amadeus from '../lib/amadeus.ts'; // Assuming amadeus.ts exports the initialized SDK instance
+// Import HTTP-based Amadeus helper functions
+import {
+    getAmadeusAccessToken,
+    priceWithAmadeus,
+    bookWithAmadeus,
+    cancelAmadeusOrder,
+    TravelerData, // For constructing traveler payload
+    // BookingResponse, // If needed for type checking results
+} from '../lib/amadeus.ts';
 import { stripe } from '../lib/stripe.ts';   // Assuming stripe.ts exports the initialized SDK instance
 import { selectSeat } from '../lib/seatSelector.ts'; // Assuming seatSelector.ts exports selectSeat
 
@@ -15,6 +23,7 @@ interface TripRequest {
   return_date?: string; // Optional for one-way
   adults: number;
   nonstop_required: boolean;
+  travel_class?: string; // Added for priceWithAmadeus
   max_price: number; // Used as totalBudget for seat selection
   allow_middle_seat: boolean;
   traveler_data?: { // Assuming traveler_data might be a JSONB field or similar
@@ -25,9 +34,9 @@ interface TripRequest {
     email?: string;
     phone?: string;
     passportNumber?: string;
-    // passportExpiry?: string;
-    // nationality?: string;
-    // issuanceCountry?: string;
+    passportExpiry?: string; // Optional fields for documents
+    nationality?: string;    // Optional fields for documents
+    issuanceCountry?: string;// Optional fields for documents
   };
   // ... other trip fields
 }
@@ -46,6 +55,8 @@ Deno.serve(async (req: Request) => {
   let mainOperationSuccessful = false;
   let flightOrderIdForRollback: string | null = null;
   let capturedErrorObject: any = null; // Using 'any' for simplicity, can be 'Error | null'
+  let accessToken: string | null = null; // Scoped accessToken, initialized to null
+  let stripePaymentCapturedByAutoBook = false; // New flag
 
   // CORS headers (important for browser-based calls, though Edge Functions might be invoked server-side)
   const corsHeaders = {
@@ -99,173 +110,120 @@ Deno.serve(async (req: Request) => {
     console.log(`[AutoBook] Lock acquired. Booking Attempt ID: ${bookingAttemptId} for trip ID: ${trip.id}`);
 
     // --- BEGIN CORE AUTO-BOOKING LOGIC ---
-    // (Derived from previous subtasks, now integrated here)
 
-    // User object placeholder
+    // Get Amadeus Access Token
+    console.log("[AutoBook] Fetching Amadeus Access Token...");
+    accessToken = await getAmadeusAccessToken(); // Assign to scoped variable
+    if (!accessToken) {
+        throw new Error("Failed to retrieve Amadeus access token.");
+    }
+    console.log("[AutoBook] Amadeus Access Token acquired.");
+
+    // User object placeholder (remains the same)
     const user = {
         email: trip.traveler_data?.email || 'placeholder@example.com',
         phone: trip.traveler_data?.phone || '0000000000'
     };
     if (!trip.traveler_data?.email) console.warn(`[AutoBook] Using placeholder email for booking for trip ID: ${trip.id}`);
 
-    // 1. Search flight offers
-    console.log(`[AutoBook] Searching flight offers for trip ID: ${trip.id}`);
-    const searchRes = await amadeus.shopping.flightOffersSearch.get({
+    // 1. Search and Price Flight Offers (using HTTP helper)
+    console.log(`[AutoBook] Searching and pricing flight offers for trip ID: ${trip.id} via HTTP helper...`);
+    const pricedOffer = await priceWithAmadeus({
         originLocationCode: trip.origin_location_code,
         destinationLocationCode: trip.destination_location_code,
         departureDate: trip.departure_date,
         returnDate: trip.return_date,
         adults: trip.adults,
+        travelClass: trip.travel_class?.toUpperCase(),
         nonStop: trip.nonstop_required,
-        max: 5
-    }).catch(err => {
-        console.error(`[AutoBook] Amadeus flight search failed for trip ID: ${trip.id}`, err);
-        if (err.code === 429 || err.statusCode === 429) {
-            console.warn(`[AutoBook] Amadeus API rate limit hit (429). Retry logic needed for trip ID: ${trip.id}.`);
-        }
-        throw new Error(`Amadeus flight search failed: ${err.message}`);
-    });
-
-    const offers = searchRes.data;
-    if (!offers?.length) {
-        console.log(`[AutoBook] No flight offers found for trip ID: ${trip.id}`);
-        throw new Error('No flight offers found');
-    }
-    console.log(`[AutoBook] Found ${offers.length} flight offers for trip ID: ${trip.id}.`);
-
-    // 2. Price top offer(s)
-    let pricedOffer = null;
-    console.log(`[AutoBook] Attempting to price up to 3 offers for trip ID: ${trip.id}.`);
-    for (let i = 0; i < Math.min(offers.length, 3); i++) {
-        try {
-            console.log(`[AutoBook] Pricing offer ${i + 1} of ${Math.min(offers.length, 3)} for trip ID: ${trip.id}. Offer ID (if available): ${offers[i].id}`);
-            const priceRes = await amadeus.shopping.flightOffers.pricing.post(
-                JSON.stringify({ data: { type: 'flight-offers-pricing', flightOffers: [offers[i]] }})
-            );
-            pricedOffer = priceRes.data;
-            console.log(`[AutoBook] Successfully priced offer ${i + 1} for trip ID: ${trip.id}. Price: ${pricedOffer?.price?.total}`);
-            break;
-        } catch (e) {
-            console.warn(`[AutoBook] Pricing failed for offer ${i + 1} (ID: ${offers[i].id}) for trip ID: ${trip.id}. Error:`, e.description || e.message);
-            let isInvalidOfferError = false;
-            if (e.code === 422 || e.statusCode === 422) isInvalidOfferError = true;
-            else if (e.description && Array.isArray(e.description)) isInvalidOfferError = e.description.some(errDetail => String(errDetail.code).includes('422') || String(errDetail.status).includes('422'));
-            if (isInvalidOfferError) {
-                 console.log(`[AutoBook] Offer ${i + 1} is invalid (422). Trying next offer for trip ID: ${trip.id}.`);
-                continue;
-            }
-            throw new Error(`Amadeus pricing failed for offer ${offers[i].id}: ${e.message}`);
-        }
-    }
+        maxOffers: 3 // Corresponds to max: 3 in previous logic for pricing attempts
+    }, accessToken);
 
     if (!pricedOffer) {
-        console.log(`[AutoBook] Pricing failed for all top offers for trip ID: ${trip.id}.`);
-        throw new Error('Pricing failed for all offers');
+        console.log(`[AutoBook] No priceable flight offers found for trip ID: ${trip.id} via HTTP helper.`);
+        throw new Error('No priceable flight offers found via HTTP.');
     }
-    console.log(`[AutoBook] Successfully priced an offer for trip ID: ${trip.id}. Final Price: ${pricedOffer.price.total}`);
+    // pricedOffer from helper is already the confirmed priced offer data object
+    console.log(`[AutoBook] Successfully priced an offer for trip ID: ${trip.id} via HTTP. Offer ID (if available): ${pricedOffer.id}, Price: ${pricedOffer.price?.total}`);
 
-    // 3. Seat Map & Selection
-    console.log(`[AutoBook] Preparing for seat selection for priced offer ID: ${pricedOffer.id}, Trip ID: ${trip.id}`);
-    const baseFare = Number(pricedOffer.price.grandTotal || pricedOffer.price.total);
-    console.log(`[AutoBook] Base fare for seat selection: ${baseFare}. Total budget (trip.max_price): ${trip.max_price}`);
-    let chosenSeat: { seatNumber: string, seatType?: string, price?: number } | null = null;
+    // 2. Seat Map & Selection (Original SDK call replaced with conceptual HTTP fetch, to be bypassed next)
+    // console.log(`[AutoBook] Preparing for seat selection for priced offer ID: ${pricedOffer.id}, Trip ID: ${trip.id}`);
+    // const baseFare = Number(pricedOffer.price.grandTotal || pricedOffer.price.total); // Not needed if bypassing
+    // console.log(`[AutoBook] Base fare for seat selection: ${baseFare}. Total budget (trip.max_price): ${trip.max_price}`); // Not needed
 
-    try {
-        const flightOffersForSeatmap = pricedOffer.flightOffers || [pricedOffer];
-        console.log(`[AutoBook] Calling amadeus.shopping.seatMaps.get() for trip ID: ${trip.id}`);
-        const seatMapRes = await amadeus.shopping.seatMaps.get({
-            flightOffers: flightOffersForSeatmap
-        }).catch(err => {
-            console.warn(`[AutoBook] Amadeus seat map retrieval using .get() failed for Trip ID: ${trip.id}. Error:`, err.description || err.message, err);
-            return null;
-        });
+    // --- Seat Selection Temporarily Bypassed ---
+    console.log(`[AutoBook] Seat selection is temporarily bypassed for trip ID: ${trip.id}. Proceeding without seat selection.`);
+    const chosenSeat = null; // Explicitly null
+    const seatSelections: any[] = []; // Ensure this is an empty array
+    // --- End of Seat Selection Bypass ---
 
-        if (seatMapRes?.data?.length) {
-            console.log(`[AutoBook] Successfully retrieved ${seatMapRes.data.length} seat map(s) for Trip ID: ${trip.id}.`);
-            const seatMapForSelection = seatMapRes.data[0];
-            if (seatMapForSelection) {
-                 console.log(`[AutoBook] Processing seat map for selection. Trip ID: ${trip.id}. Base Fare: ${baseFare}, Total Budget: ${trip.max_price}, Allow Middle: ${trip.allow_middle_seat}`);
-                chosenSeat = selectSeat(seatMapForSelection, baseFare, trip.max_price, trip.allow_middle_seat);
-                if (chosenSeat) console.log(`[AutoBook] Seat selected: ${chosenSeat.seatNumber}, Type: ${chosenSeat.seatType}, Price: ${chosenSeat.price} for trip ID: ${trip.id}`);
-                else console.log(`[AutoBook] No seat selected by selectSeat helper for trip ID: ${trip.id}. Proceeding without seat selection.`);
-            } else console.log(`[AutoBook] First seat map data (seatMapRes.data[0]) was null or empty for Trip ID: ${trip.id}.`);
-        } else console.log(`[AutoBook] No seat map data returned or failed to retrieve for Trip ID: ${trip.id}. (seatMapRes: ${JSON.stringify(seatMapRes)})`);
-    } catch (seatmapError) {
-        console.warn(`[AutoBook] Outer error during seat map processing for Trip ID: ${trip.id}. Error:`, seatmapError.message);
-        chosenSeat = null;
-    }
+    // 3. Amadeus Flight Order Booking (using HTTP helper)
+    // The log below will correctly show 'None' for chosen seat due to the bypass.
+    console.log(`[AutoBook] Creating flight order via HTTP for trip ID: ${trip.id}. Chosen seat: ${chosenSeat ? chosenSeat.seatNumber : 'None'}`);
 
-    // 4. Amadeus Flight Order Booking
-    console.log(`[AutoBook] Creating flight order for trip ID: ${trip.id}. Chosen seat: ${chosenSeat ? chosenSeat.seatNumber : 'None'}`);
-    const offersForBooking = pricedOffer.flightOffers || [pricedOffer];
-    const flightOrderPayload = { /* ... constructed payload ... */
-        data: {
-            type: 'flight-order',
-            flightOffers: offersForBooking,
-            travelers: [{
-                id: '1',
-                dateOfBirth: trip.traveler_data?.dateOfBirth,
-                name: { firstName: trip.traveler_data?.firstName, lastName: trip.traveler_data?.lastName },
-                gender: trip.traveler_data?.gender?.toUpperCase() || 'MALE',
-                contact: {
-                    emailAddress: user.email,
-                    phones: user.phone ? [{ deviceType: 'MOBILE', countryCallingCode: '1', number: user.phone }] : []
-                },
-                documents: trip.traveler_data?.passportNumber ? [{
-                    documentType: 'PASSPORT', number: trip.traveler_data.passportNumber,
-                }] : undefined,
-                seatSelections: chosenSeat && chosenSeat.seatNumber && offersForBooking[0]?.itineraries?.[0]?.segments?.[0]?.id
-                ? [{ segmentId: offersForBooking[0].itineraries[0].segments[0].id, seatNumber: chosenSeat.seatNumber }] : []
-            }],
-            remarks: { general: [{ subType: 'GENERAL_MISCELLANEOUS', text: `Auto-booking for trip_request_id: ${trip.id}` }] },
-            ticketingAgreement: { option: 'DELAY_TO_CANCEL', delay: '6H' },
-            metadata: { clientBookingReference: trip.id }
-        }
+    const travelerDataPayload: TravelerData = {
+        firstName: trip.traveler_data?.firstName || "TestFirstName",
+        lastName: trip.traveler_data?.lastName || "TestLastName",
+        dateOfBirth: trip.traveler_data?.dateOfBirth, // Format YYYY-MM-DD
+        gender: (trip.traveler_data?.gender?.toUpperCase() as "MALE" | "FEMALE" | undefined) || "MALE",
+        email: user.email,
+        phone: user.phone,
+        documents: trip.traveler_data?.passportNumber ? [{
+            documentType: 'PASSPORT',
+            number: trip.traveler_data.passportNumber,
+            expiryDate: trip.traveler_data.passportExpiry,
+            nationality: trip.traveler_data.nationality,
+            issuanceCountry: trip.traveler_data.issuanceCountry,
+        }] : undefined,
     };
-    if (!flightOrderPayload.data.travelers[0].documents) delete flightOrderPayload.data.travelers[0].documents;
-    console.log(`[AutoBook] Flight order payload for trip ID ${trip.id} being sent.`); // Avoid logging full payload if too verbose or sensitive
 
-    const bookingRes = await amadeus.booking.flightOrders.post(JSON.stringify(flightOrderPayload));
+    const bookingResult = await bookWithAmadeus(
+        pricedOffer,         // The actual priced offer object from priceWithAmadeus
+        travelerDataPayload,
+        [],                  // Empty seatSelections array (seat bypass for next step)
+        accessToken
+    );
 
-    if (!bookingRes?.data || !(bookingRes.data.id || bookingRes.data.flightOrderId)) {
-        console.error('[AutoBook] Invalid booking response structure from Amadeus:', bookingRes);
-        throw new Error('Amadeus booking failed: Invalid response structure.');
+    if (!bookingResult.success || !bookingResult.bookingReference) { // Ensure bookingReference exists
+        console.error(`[AutoBook] Amadeus booking via HTTP failed for trip ID: ${trip.id}. Error: ${bookingResult.error}`);
+        throw new Error(bookingResult.error || 'Amadeus booking via HTTP failed.');
     }
-    flightOrderIdForRollback = bookingRes.data.id || bookingRes.data.flightOrderId; // CRITICAL: SET FOR ROLLBACK
-    const airlinePnr = bookingRes.data.associatedRecords?.[0]?.reference;
-    console.log(`[AutoBook] Flight order created. Order ID: ${flightOrderIdForRollback}, Airline PNR (if available): ${airlinePnr} for trip ID: ${trip.id}`);
-    const finalPrice = Number(bookingRes.data.flightOffers?.[0]?.price?.total || bookingRes.data.price?.total);
+
+    flightOrderIdForRollback = bookingResult.bookingReference; // Store for potential rollback
+    // Attempt to get final price from bookingResult.bookingData, fallback to pricedOffer.price.total
+    const bookingDataFinalPrice = bookingResult.bookingData?.flightOffers?.[0]?.price?.total || bookingResult.bookingData?.price?.total;
+    const finalPrice = Number(bookingDataFinalPrice || pricedOffer.price?.total);
+
     if (isNaN(finalPrice)) {
         console.error('[AutoBook] Could not determine final price from booking response:', bookingRes.data);
         throw new Error('Amadeus booking succeeded but final price is unclear.');
     }
     console.log(`[AutoBook] Final confirmed price: ${finalPrice} for trip ID: ${trip.id}`);
 
-    // 5. Stripe PaymentIntent Capture
+    // 5. Stripe PaymentIntent Capture (logic remains largely the same)
     console.log(`[AutoBook] Initiating Stripe payment capture for trip ID: ${trip.id}. Flight Order ID: ${flightOrderIdForRollback}`);
     const paymentIntentId = trip.payment_intent_id;
     if (!paymentIntentId) {
         console.error(`[AutoBook] Stripe PaymentIntent ID is missing for trip ID: ${trip.id}. Cannot capture payment.`);
-        // This error will be caught by the main catch, which will attempt Amadeus rollback using flightOrderIdForRollback
         throw new Error(`Stripe PaymentIntent ID is missing. Booking must be rolled back.`);
     }
     console.log(`[AutoBook] Found PaymentIntent ID: ${paymentIntentId} for trip ID: ${trip.id}.`);
     try {
         const capturedPaymentIntent = await stripe.paymentIntents.capture(paymentIntentId, {
-            amount_to_capture: Math.round(finalPrice * 100),
+            amount_to_capture: Math.round(finalPrice * 100), // Ensure finalPrice is correctly calculated
             idempotencyKey: `${paymentIntentId}-${flightOrderIdForRollback}`
         });
         if (capturedPaymentIntent.status !== 'succeeded') {
             throw new Error(`PaymentIntent capture did not succeed. Status: ${capturedPaymentIntent.status}`);
         }
-        console.log(`[AutoBook] Stripe PaymentIntent ${paymentIntentId} captured successfully for trip ID: ${trip.id}. Status: ${capturedPaymentIntent.status}.`);
+        stripePaymentCapturedByAutoBook = true; // Set flag here
+        console.log(`[AutoBook] Stripe PaymentIntent ${paymentIntentId} captured successfully by auto-book for trip ID: ${trip.id}. Status: ${capturedPaymentIntent.status}.`);
     } catch (stripeError) {
         console.error(`[AutoBook] Stripe payment capture failed for PI: ${paymentIntentId}, Trip ID: ${trip.id}. Error: ${stripeError.message}`);
-        // This error will be caught by the main catch, which will attempt Amadeus rollback using flightOrderIdForRollback
-        throw stripeError; // Re-throw to trigger main catch block's rollback
+        throw stripeError;
     }
 
-    // 6. Database Updates
+    // 6. Database Updates (logic remains largely the same, using updated airlinePnr if available)
     console.log(`[AutoBook] Updating database records for successful booking. Trip ID: ${trip.id}, Flight Order ID: ${flightOrderIdForRollback}`);
     try {
         const { error: bookingUpdateError } = await supabaseClient.from('bookings').update({
@@ -308,59 +266,55 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error(`[AutoBook] Main catch block error for Trip ID: ${trip?.id}. Error: ${error.message}`, error.stack);
     capturedErrorObject = error; // Store error for finally block
+    // mainOperationSuccessful remains false or is explicitly set if error occurs after it was true
 
-    if (flightOrderIdForRollback && !mainOperationSuccessful) { // Only rollback if main op didn't fully succeed (e.g. payment failed or DB update failed after payment)
-        // Check if the error is due to Stripe failure specifically, or missing PI
-        const isStripeRelatedFailure = error.message.includes('Stripe') || error.message.includes('PaymentIntent');
+    if (flightOrderIdForRollback && !mainOperationSuccessful) { // Check if Amadeus booking was made and operation didn't fully succeed
+        const isStripePaymentFailure = error.message.includes('Stripe PaymentIntent ID is missing') || error.message.includes('PaymentIntent capture did not succeed');
 
-        if (isStripeRelatedFailure) {
-            console.log(`[AutoBook] Attempting to cancel Amadeus booking ${flightOrderIdForRollback} due to payment-related failure for trip ID: ${trip?.id}.`);
+        if (isStripePaymentFailure) {
+            console.log(`[AutoBook] Attempting to cancel Amadeus booking ${flightOrderIdForRollback} via HTTP due to Stripe payment failure for trip ID: ${trip?.id}.`);
             try {
-                await amadeus.booking.flightOrders.cancel.post({ path: { flightOrderId: flightOrderIdForRollback } });
-                console.log(`[AutoBook] Amadeus booking ${flightOrderIdForRollback} cancelled successfully after payment failure.`);
+                if (!accessToken) { // Should ideally not happen if booking was made
+                    console.warn("[AutoBook] Amadeus accessToken is null in catch block, attempting to re-fetch for cancellation.");
+                    accessToken = await getAmadeusAccessToken();
+                }
+                if (accessToken) {
+                    const cancelOutcome = await cancelAmadeusOrder(flightOrderIdForRollback, accessToken);
+                    if (cancelOutcome.success) {
+                        console.log(`[AutoBook] Amadeus booking ${flightOrderIdForRollback} cancelled successfully via HTTP after Stripe payment failure.`);
+                    } else {
+                        console.error(`[AutoBook] CRITICAL: Failed to cancel Amadeus booking ${flightOrderIdForRollback} via HTTP after Stripe payment failure. Error: ${cancelOutcome.error}`);
+                    }
+                } else {
+                     console.error(`[AutoBook] CRITICAL: Cannot cancel Amadeus booking ${flightOrderIdForRollback} as accessToken could not be retrieved.`);
+                }
             } catch (cancelError) {
-                console.error(`[AutoBook] CRITICAL: Failed to cancel Amadeus booking ${flightOrderIdForRollback} after payment failure. Manual intervention required. Error:`, cancelError.message, cancelError.stack);
+                console.error(`[AutoBook] CRITICAL: Exception during Amadeus booking cancellation for ${flightOrderIdForRollback} via HTTP. Error:`, cancelError.message, cancelError.stack);
             }
-        } else {
-            // If error is not Stripe-related but flight order was created (e.g. subsequent DB update failed but before payment success was confirmed)
-            // This condition needs careful review. If payment was successful, we should NOT cancel.
-            // The current structure: Stripe errors are re-thrown. If DB update fails *after* successful payment,
-            // mainOperationSuccessful is FALSE. flightOrderIdForRollback is SET.
-            // This means we *would* cancel here. This is WRONG if payment was successful.
-            // Let's refine: only cancel if Stripe itself failed, or if paymentIntentId was missing.
-            // The nested try/catch for Stripe already handles its own rollback.
-            // This top-level catch should only roll back if flightOrderIdForRollback is set AND Stripe capture didn't succeed.
-            // The variable `mainOperationSuccessful` being false covers this if it's set correctly before Stripe.
-            // The problem is if DB update fails *after* successful Stripe capture. `mainOperationSuccessful` would be false.
-            //
-            // Refined logic for this main catch block rollback:
-            // The nested Stripe catch ALREADY attempts rollback for Stripe errors.
-            // So, this main catch rollback is primarily for:
-            // 1. Missing PaymentIntentID (flight order created, then PI check fails).
-            // 2. Errors *before* Stripe capture but *after* flight order creation.
-            // It should NOT roll back if Stripe succeeded and a *later* step (DB update) failed.
-            //
-            // The `isStripeRelatedFailure` check might be too broad if used to prevent rollback.
-            // Let's assume for now the primary rollback for payment issues is handled in the Stripe try-catch.
-            // This main catch rollback for `flightOrderIdForRollback` should be for errors like
-            // "missing paymentIntentId" specifically, or other pre-payment catastrophic failures
-            // *after* an order was made.
-            // The existing code for "missing paymentIntentId" already throws and should be caught here.
-            if (error.message.includes('Stripe PaymentIntent ID is missing')) {
-                 // This case is already handled inside the Stripe block by throwing, which should lead here.
-                 // The cancellation for this specific case is already attempted there.
-                 // To avoid double cancellation attempts, we rely on the Stripe block's throw.
-                 // If flightOrderIdForRollback is set and error is "Stripe PaymentIntent ID is missing",
-                 // cancellation was ALREADY attempted.
-                 console.log(`[AutoBook] Main catch: Not re-attempting Amadeus cancellation for missing PI, assumed handled by Stripe block for trip ID: ${trip?.id}`);
-            } else if (!error.message.includes('PaymentIntent capture did not succeed')) {
-                // This is for errors that occurred *after* Amadeus booking but *before* successful payment,
-                // and are *not* Stripe capture failures (which have their own rollback).
-                // E.g. an unexpected error between Amadeus booking and Stripe section.
-                console.warn(`[AutoBook] Main catch: Unhandled scenario for Amadeus rollback. flightOrderIdForRollback=${flightOrderIdForRollback}. Error: ${error.message}. Review logic. For trip ID: ${trip?.id}`);
-            }
+        } else if (error.message.includes('No priceable flight offers found') || error.message.includes('Amadeus flight search failed')) {
+            console.log(`[AutoBook] No Amadeus cancellation needed as booking was not created. Error: ${error.message}`);
+        }
+        // Note: If error occurred AFTER successful Stripe capture (e.g., during DB update),
+        // Amadeus cancellation should NOT happen here as payment was successful.
+        // The 'stripePaymentCapturedByAutoBook' flag will handle the refund attempt below.
+        // The condition '!mainOperationSuccessful' is key. If DB update fails, mainOperationSuccessful is false.
+    }
+
+    // --- NEW STRIPE REFUND LOGIC ---
+    if (stripePaymentCapturedByAutoBook && trip && trip.payment_intent_id) {
+        // This means Stripe capture was successful, but a subsequent step (like DB update) failed.
+        console.warn(`[AutoBook] Error occurred after Stripe payment capture for trip ID ${trip.id}. Attempting to refund Stripe payment ${trip.payment_intent_id}. Main Error: ${error.message}`);
+        try {
+            await stripe.refunds.create({
+                payment_intent: trip.payment_intent_id,
+                reason: 'application_error',
+            });
+            console.log(`[AutoBook] Stripe payment ${trip.payment_intent_id} for trip ID ${trip.id} refunded successfully due to post-capture error.`);
+        } catch (refundError) {
+            console.error(`[AutoBook] CRITICAL: Failed to refund Stripe payment ${trip.payment_intent_id} for trip ID ${trip.id} after a post-capture error. Manual intervention required. Refund Error:`, refundError.message);
         }
     }
+    // --- END NEW STRIPE REFUND LOGIC ---
 
 
     if (trip && trip.id) {
