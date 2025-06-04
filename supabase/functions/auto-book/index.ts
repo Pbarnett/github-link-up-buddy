@@ -423,14 +423,13 @@ Deno.serve(async (req: Request) => {
     }
     console.log(`[AutoBook] Found PaymentIntent ID: ${paymentIntentId} for trip ID: ${trip.id}.`);
     try {
-        const capturedPaymentIntent = await stripe.paymentIntents.capture(paymentIntentId, {
-            amount_to_capture: Math.round(finalPrice * 100), // Ensure finalPrice is correctly calculated
-            idempotencyKey: `${paymentIntentId}-${flightOrderIdForRollback}`
-        });
+        // Simplified Stripe capture call
+        const capturedPaymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
+
         if (capturedPaymentIntent.status !== 'succeeded') {
             throw new Error(`PaymentIntent capture did not succeed. Status: ${capturedPaymentIntent.status}`);
         }
-        stripePaymentCapturedByAutoBook = true; // Set flag here
+        stripePaymentCapturedByAutoBook = true;
         console.log(`[AutoBook] Stripe PaymentIntent ${paymentIntentId} captured successfully by auto-book for trip ID: ${trip.id}. Status: ${capturedPaymentIntent.status}.`);
 
         if (associatedBookingRequestId) {
@@ -445,31 +444,87 @@ Deno.serve(async (req: Request) => {
                 .eq('id', associatedBookingRequestId);
 
             if (updateBrError) {
-                console.error(`[AutoBook] CRITICAL: Failed to update booking_request ${associatedBookingRequestId} with payment_captured=true. Error: ${updateBrError.message}. Payment was captured. Manual reconciliation may be needed for booking_request status.`);
+                console.error(`[AutoBook] CRITICAL: Failed to update booking_request ${associatedBookingRequestId} with payment_captured=true. Error: ${updateBrError.message}. Payment was captured. Manual reconciliation may be needed.`);
                 throw new Error(`Failed to update booking_request ${associatedBookingRequestId} payment_captured flag: ${updateBrError.message}`);
             } else {
                 console.log(`[AutoBook] Successfully updated payment_captured for booking_request ID: ${associatedBookingRequestId}.`);
             }
         }
     } catch (stripeError) {
-        console.error(`[AutoBook] Stripe payment capture failed for PI: ${paymentIntentId}, Trip ID: ${trip.id}. Error: ${stripeError.message}`);
-        throw stripeError;
+        // Enhanced error handling for Stripe capture failure
+        console.error(`[AutoBook] Stripe payment capture failed for PI: ${paymentIntentId}, Trip ID: ${trip.id}. Error: ${stripeError.message}`, stripeError);
+
+        if (paymentIntentId && trip) {
+            try {
+                console.warn(`[AutoBook] Attempting to refund Stripe payment ${paymentIntentId} due to capture failure.`);
+                await stripe.refunds.create({
+                    payment_intent: paymentIntentId,
+                    reason: 'application_error'
+                });
+                console.log(`[AutoBook] Stripe payment ${paymentIntentId} refunded successfully after capture failure.`);
+            } catch (refundErr) {
+                console.error(`[AutoBook] CRITICAL: Refund attempt for ${paymentIntentId} failed after capture failure. Manual intervention likely required. Refund Error:`, refundErr.message);
+            }
+        }
+
+        if (associatedBookingRequestId && trip) {
+            console.log(`[AutoBook] Updating associated booking_request ${associatedBookingRequestId} to 'failed' due to Stripe capture error.`);
+            const { error: updateBrError } = await supabaseClient
+                .from('booking_requests')
+                .update({
+                    status: 'failed',
+                    error_message: `Stripe capture failed: ${stripeError.message}`.substring(0, 500),
+                    updated_at: new Date().toISOString(),
+                    payment_captured: false
+                })
+                .eq('id', associatedBookingRequestId);
+            if (updateBrError) {
+                console.error(`[AutoBook] Failed to update booking_request ${associatedBookingRequestId} to 'failed' after Stripe error:`, updateBrError.message);
+            }
+        }
+
+        if (trip && trip.user_id && sendNotificationUrl && serviceRoleKey) {
+            console.log(`[AutoBook] Sending 'booking_failed' notification due to Stripe capture error for trip ID: ${trip.id}`);
+            const failurePayload = {
+                trip_request_id: trip.id,
+                payment_intent_id: paymentIntentId, // Ensure paymentIntentId is defined in this scope
+                error: `Stripe capture failed: ${stripeError.message}`,
+            };
+            fetch(sendNotificationUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${serviceRoleKey}`,
+                    'Content-Type': 'application/json',
+                    'apikey': serviceRoleKey,
+                },
+                body: JSON.stringify({
+                    user_id: trip.user_id,
+                    type: 'booking_failed',
+                    payload: failurePayload,
+                }),
+            }).catch(notificationErr =>
+                console.error('[AutoBook] Booking_failed notification (after Stripe error) failed:', notificationErr.message)
+            );
+        }
+
+        throw new Error(`Stripe capture failed: ${stripeError.message}`); // Re-throw to trigger main error handling
     }
 
-    // 6. Database Updates (logic remains largely the same, using updated airlinePnr if available)
+    // 6. Database Updates
     console.log(`[AutoBook] Updating database records for successful booking. Trip ID: ${trip.id}, Flight Order ID: ${flightOrderIdForRollback}`);
     try {
         const { error: bookingUpdateError } = await supabaseClient.from('bookings').update({
-            status: 'booked', pnr: airlinePnr, price: finalPrice, // Use defined airlinePnr
-            selected_seat_number: chosenSeat?.seatNumber || null, selected_seat_info: chosenSeat || null,
+            status: 'booked', pnr: airlinePnr, price: finalPrice,
+            selected_seat_number: null, // Stubbed out chosenSeat
+            selected_seat_info: null,   // Stubbed out chosenSeat
             updated_at: new Date().toISOString(), amadeus_order_id: flightOrderIdForRollback
         }).eq('trip_request_id', trip.id).select().single();
         if (bookingUpdateError) throw new Error(`Failed to update 'bookings' table: ${bookingUpdateError.message}`);
 
         const { error: tripRequestUpdateError } = await supabaseClient.from('trip_requests').update({
             auto_book: false, status: 'booked', best_price: finalPrice,
-            last_checked_at: new Date().toISOString(), pnr: airlinePnr, // Use defined airlinePnr
-            selected_seat_number: chosenSeat?.seatNumber || null
+            last_checked_at: new Date().toISOString(), pnr: airlinePnr,
+            selected_seat_number: null // Stubbed out chosenSeat
         }).eq('id', trip.id).select().single();
         if (tripRequestUpdateError) throw new Error(`Failed to update 'trip_requests' table: ${tripRequestUpdateError.message}`);
 
