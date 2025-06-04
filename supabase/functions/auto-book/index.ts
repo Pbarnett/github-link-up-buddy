@@ -280,20 +280,99 @@ Deno.serve(async (req: Request) => {
     // pricedOffer from helper is already the confirmed priced offer data object
     console.log(`[AutoBook] Successfully priced an offer for trip ID: ${trip.id} via HTTP. Offer ID (if available): ${pricedOffer.id}, Price: ${pricedOffer.price?.total}`);
 
-    // 2. Seat Map & Selection (Original SDK call replaced with conceptual HTTP fetch, to be bypassed next)
-    // console.log(`[AutoBook] Preparing for seat selection for priced offer ID: ${pricedOffer.id}, Trip ID: ${trip.id}`);
-    // const baseFare = Number(pricedOffer.price.grandTotal || pricedOffer.price.total); // Not needed if bypassing
-    // console.log(`[AutoBook] Base fare for seat selection: ${baseFare}. Total budget (trip.max_price): ${trip.max_price}`); // Not needed
+    // 2. Conditional Seat Selection Logic
+    let seatSelections: Array<{ segmentId: string; seatNumber: string }> = [];
+    const enableSeatSelectionEnv = Deno.env.get('ENABLE_SEAT_SELECTION');
+    const enableSeatSelection = enableSeatSelectionEnv === 'true';
 
-    // --- Seat Selection Temporarily Bypassed ---
-    console.log(`[AutoBook] Seat selection is temporarily bypassed for trip ID: ${trip.id}. Proceeding without seat selection.`);
-    const chosenSeat = null; // Explicitly null
-    const seatSelections: any[] = []; // Ensure this is an empty array
-    // --- End of Seat Selection Bypass ---
+    console.log(`[AutoBook] Seat selection feature flag 'ENABLE_SEAT_SELECTION': ${enableSeatSelectionEnv} (parsed as: ${enableSeatSelection}) for trip ID: ${trip.id}`);
+
+    if (enableSeatSelection && pricedOffer && pricedOffer.id && accessToken) {
+        const amadeusBaseUrl = Deno.env.get('AMADEUS_BASE_URL');
+        const flightOfferIdForSeatmap = pricedOffer.id;
+
+        let baseFareForSeatSelection: number | null = null;
+        if (pricedOffer.price?.grandTotal) {
+            baseFareForSeatSelection = parseFloat(String(pricedOffer.price.grandTotal));
+        } else if (pricedOffer.price?.total) {
+            baseFareForSeatSelection = parseFloat(String(pricedOffer.price.total));
+        } else if (typeof pricedOffer.price === 'number') {
+             baseFareForSeatSelection = pricedOffer.price;
+        }
+        if (baseFareForSeatSelection !== null && isNaN(baseFareForSeatSelection)) baseFareForSeatSelection = null;
+
+
+        if (!amadeusBaseUrl) {
+            console.warn('[AutoBook] AMADEUS_BASE_URL not set. Skipping seat map fetch for trip ID:', trip.id);
+        } else if (baseFareForSeatSelection === null) {
+            console.warn(`[AutoBook] Base fare for seat selection could not be determined from pricedOffer.price (value: ${JSON.stringify(pricedOffer.price)}). Skipping selectSeat call for trip ID:`, trip.id);
+        } else {
+            console.log(`[AutoBook] Fetching seat map for flightOfferId: ${flightOfferIdForSeatmap}, Trip ID: ${trip.id}`);
+            try {
+                const seatMapResponse = await fetch(
+                    `${amadeusBaseUrl}/v1/shopping/seatmaps?flightOfferId=${encodeURIComponent(flightOfferIdForSeatmap)}`,
+                    { headers: { 'Authorization': `Bearer ${accessToken}` } }
+                );
+
+                if (!seatMapResponse.ok) {
+                    const errorText = await seatMapResponse.text().catch(() => `Status ${seatMapResponse.status}`);
+                    console.warn(`[AutoBook] Seat map fetch failed for trip ID ${trip.id}: ${seatMapResponse.status}. Error: ${errorText}`);
+                } else {
+                    const seatMapResJson = await seatMapResponse.json().catch(() => null);
+                    if (seatMapResJson?.data) {
+                        console.log(`[AutoBook] Seat map data received for trip ID: ${trip.id}.`);
+
+                        let seatMapInputForSelectSeat = null;
+                        if (Array.isArray(seatMapResJson.data)) {
+                             seatMapInputForSelectSeat = { flightSegments: seatMapResJson.data };
+                             console.log(`[AutoBook] Passing ${seatMapResJson.data.length} segment maps (wrapped) to selectSeat.`);
+                        } else if (typeof seatMapResJson.data === 'object' && seatMapResJson.data !== null) {
+                             seatMapInputForSelectSeat = seatMapResJson.data;
+                             console.log(`[AutoBook] Seat map data is an object, passing to selectSeat for trip ID: ${trip.id}.`);
+                        }
+
+                        if (seatMapInputForSelectSeat) {
+                            console.log(`[AutoBook] Calling selectSeat for trip ID: ${trip.id} with baseFare: ${baseFareForSeatSelection}, totalBudget: ${trip.max_price}`);
+                            const chosen = selectSeat(
+                                seatMapInputForSelectSeat,
+                                baseFareForSeatSelection,
+                                trip.max_price,
+                                trip.allow_middle_seat
+                            );
+
+                            if (chosen) {
+                                const firstSegmentId = pricedOffer.itineraries?.[0]?.segments?.[0]?.id;
+                                if (firstSegmentId) {
+                                    console.log(`[AutoBook] Seat selected: ${chosen.seatNumber}. Assigning to segment ID: ${firstSegmentId} for trip ID: ${trip.id}.`);
+                                    seatSelections = [{ segmentId: firstSegmentId, seatNumber: chosen.seatNumber }];
+                                } else {
+                                    console.warn(`[AutoBook] Could not determine segment ID for chosen seat from pricedOffer (trip ID: ${trip.id}). Proceeding without seat selection.`);
+                                }
+                            } else {
+                                console.log(`[AutoBook] No seat selected by selectSeat helper for trip ID: ${trip.id}.`);
+                            }
+                        } else {
+                            console.log(`[AutoBook] Processed seat map data is null or unsuitable for selectSeat for trip ID: ${trip.id}.`);
+                        }
+                    } else {
+                        console.log(`[AutoBook] No 'data' property in seat map JSON response or fetch failed for trip ID: ${trip.id}.`);
+                    }
+                }
+            } catch (fetchErr) {
+                console.warn(`[AutoBook] Error during seat map fetch or processing for trip ID ${trip.id}:`, fetchErr.message);
+            }
+        }
+    } else {
+        if (!enableSeatSelection) {
+            console.log(`[AutoBook] Seat selection is disabled by feature flag for trip ID: ${trip.id}.`);
+        } else {
+            console.log(`[AutoBook] Seat selection skipped due to missing pricedOffer, pricedOffer.id, or accessToken for trip ID: ${trip.id}.`);
+        }
+    }
+    // --- End Conditional Seat Selection ---
 
     // 3. Amadeus Flight Order Booking (using HTTP helper)
-    // The log below will correctly show 'None' for chosen seat due to the bypass.
-    console.log(`[AutoBook] Creating flight order via HTTP for trip ID: ${trip.id}. Chosen seat: ${chosenSeat ? chosenSeat.seatNumber : 'None'}`);
+    console.log(`[AutoBook] Creating flight order via HTTP for trip ID: ${trip.id}. Chosen seat(s): ${seatSelections.length > 0 ? JSON.stringify(seatSelections) : 'None'}`);
 
     const travelerDataPayload: TravelerData = {
         firstName: trip.traveler_data?.firstName || "TestFirstName",
@@ -312,9 +391,9 @@ Deno.serve(async (req: Request) => {
     };
 
     const bookingResult = await bookWithAmadeus(
-        pricedOffer,         // The actual priced offer object from priceWithAmadeus
+        pricedOffer,
         travelerDataPayload,
-        [],                  // Empty seatSelections array (seat bypass for next step)
+        seatSelections, // Pass the conditionally populated seatSelections array
         accessToken
     );
 
