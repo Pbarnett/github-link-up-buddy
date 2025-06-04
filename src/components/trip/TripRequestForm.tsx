@@ -22,6 +22,7 @@ import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import TripDurationInputs from "./sections/TripDurationInputs";
 import AutoBookingToggle from "./sections/AutoBookingToggle";
 import StickyFormActions from "./StickyFormActions";
+import FilterTogglesSection from "./sections/FilterTogglesSection"; // Single import retained
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -50,6 +51,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
   const isMobile = useIsMobile();
   
   const form = useForm<FormValues>({
+    // // WHEN LOADING EXISTING TRIP DATA (defaultValues): Ensure 'nonstop_required' and 'baggage_included_required' are handled (e.g., nonstop_required: tripData.nonstop_required ?? true)
     resolver: zodResolver(tripFormSchema),
     defaultValues: {
       min_duration: 3,
@@ -59,6 +61,8 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       other_departure_airport: "",
       destination_airport: "",
       destination_other: "",
+      nonstop_required: true, // Zod schema default
+      baggage_included_required: false, // Zod schema default
       auto_book_enabled: false,
       max_price: null,
       preferred_payment_method_id: null,
@@ -313,6 +317,8 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
                 {/* Right Column */}
                 <div className="space-y-6 bg-white rounded-lg border border-gray-100 p-6">
                   <AutoBookingToggle control={form.control} />
+              {/* --- Filter Toggles Section --- */}
+              <FilterTogglesSection control={form.control} isLoading={isSubmitting || isLoadingDetails} />
                 </div>
               </div>
 
