@@ -58,6 +58,15 @@ Deno.serve(async (req: Request) => {
   let accessToken: string | null = null; // Scoped accessToken, initialized to null
   let stripePaymentCapturedByAutoBook = false; // New flag
 
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error('[AutoBook] CRITICAL: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured for invoking other functions.');
+    // This would ideally prevent the function from even starting or return an immediate error.
+    // For now, subsequent fetch calls will fail if these are missing.
+  }
+  const sendNotificationUrl = `${supabaseUrl}/functions/v1/send-notification`;
+
   // CORS headers (important for browser-based calls, though Edge Functions might be invoked server-side)
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -253,6 +262,36 @@ Deno.serve(async (req: Request) => {
     console.log(`[AutoBook] Main operation successful for trip ID: ${trip.id}.`);
     // --- END CORE AUTO-BOOKING LOGIC ---
 
+    if (mainOperationSuccessful && trip && serviceRoleKey && sendNotificationUrl) {
+        console.log(`[AutoBook] Invoking send-notification for booking_success. Trip ID: ${trip.id}`);
+        // airlinePnr, flightOrderIdForRollback, finalPrice, pricedOffer should be available here
+        const successPayload = {
+            pnr: airlinePnr || flightOrderIdForRollback,
+            flight_details: `Flight from ${trip.origin_location_code} to ${trip.destination_location_code}`,
+            departure_datetime: pricedOffer?.itineraries?.[0]?.segments?.[0]?.departure?.at || trip.departure_date, // Best available departure
+            arrival_datetime: pricedOffer?.itineraries?.[0]?.segments?.[pricedOffer.itineraries[0].segments.length -1]?.arrival?.at, // Best available arrival
+            price: finalPrice,
+            airline: pricedOffer?.validatingAirlineCodes?.[0] || pricedOffer?.flightOffers?.[0]?.validatingAirlineCodes?.[0], // Best available airline
+            flight_number: pricedOffer?.itineraries?.[0]?.segments?.[0]?.carrierCode + pricedOffer?.itineraries?.[0]?.segments?.[0]?.number
+        };
+        fetch(sendNotificationUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${serviceRoleKey}`,
+                'Content-Type': 'application/json',
+                'apikey': serviceRoleKey
+            },
+            body: JSON.stringify({
+                user_id: trip.user_id,
+                type: 'booking_success',
+                payload: successPayload
+            })
+        }).then(async res => { // Made async to await res.text()
+            if (!res.ok) console.error('[AutoBook] send-notification call for success failed:', res.status, await res.text());
+            else console.log('[AutoBook] send-notification for success invoked.');
+        }).catch(err => console.error('[AutoBook] Error invoking send-notification for success:', err.message));
+    }
+
     return new Response(JSON.stringify({
       success: true,
       tripId: trip.id,
@@ -331,6 +370,41 @@ Deno.serve(async (req: Request) => {
         console.log(`[AutoBook] trip_requests status updated to 'failed' for trip ID: ${trip.id}`);
       } catch (dbError) {
         console.error(`[AutoBook] CRITICAL: Failed to update trip_requests status to 'failed' for trip ID: ${trip.id}. DB Error:`, dbError.message);
+      }
+
+      // Invoke send-notification for failure
+      if (trip.user_id && serviceRoleKey && sendNotificationUrl) {
+        console.log(`[AutoBook] Invoking send-notification for booking_failure. Trip ID: ${trip.id}`);
+        const failurePayload = {
+            trip_request_id: trip.id,
+            // pricedOffer might be null if error occurred before it was defined.
+            // Check if pricedOffer is in scope and defined before accessing its properties.
+            // For simplicity, assuming 'pricedOffer' variable exists in this catch scope,
+            // or it was declared at a higher scope. If it's only in try, it won't be accessible.
+            // Let's assume `pricedOffer` was declared at the top of the try block.
+            flight_offer_id: typeof pricedOffer !== 'undefined' && pricedOffer ? pricedOffer.id : null,
+            amadeus_order_id: flightOrderIdForRollback || null,
+            error: capturedErrorObject?.message || 'Unknown booking error',
+            origin: trip.origin_location_code,
+            destination: trip.destination_location_code,
+            departure_date: trip.departure_date
+        };
+        fetch(sendNotificationUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${serviceRoleKey}`,
+                'Content-Type': 'application/json',
+                'apikey': serviceRoleKey
+            },
+            body: JSON.stringify({
+                user_id: trip.user_id,
+                type: 'booking_failure',
+                payload: failurePayload
+            })
+        }).then(async res => { // Made async to await res.text()
+            if (!res.ok) console.error('[AutoBook] send-notification call for failure failed:', res.status, await res.text());
+            else console.log('[AutoBook] send-notification for failure invoked.');
+        }).catch(err => console.error('[AutoBook] Error invoking send-notification for failure:', err.message));
       }
     }
 
