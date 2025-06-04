@@ -118,6 +118,88 @@ Deno.serve(async (req: Request) => {
     bookingAttemptId = attemptData.id;
     console.log(`[AutoBook] Lock acquired. Booking Attempt ID: ${bookingAttemptId} for trip ID: ${trip.id}`);
 
+    // --- Traveler Data Validation ---
+    console.log(`[AutoBook] Validating traveler data for trip ID: ${trip.id}`);
+    const traveler = trip.traveler_data;
+    const missingFields: string[] = [];
+
+    if (!traveler?.firstName?.trim()) missingFields.push('firstName');
+    if (!traveler?.lastName?.trim()) missingFields.push('lastName');
+    if (!traveler?.email?.trim()) missingFields.push('email');
+
+    const originCountry = trip.origin_location_code?.slice(0, 2).toUpperCase();
+    const destCountry = trip.destination_location_code?.slice(0, 2).toUpperCase();
+    const isInternational = originCountry && destCountry && originCountry !== destCountry;
+
+    if (isInternational && !traveler?.passportNumber?.trim()) {
+        missingFields.push('passportNumber');
+    }
+
+    if (missingFields.length > 0) {
+        const errorMsg = `Missing or invalid traveler data: ${missingFields.join(', ')}`;
+        console.warn(`[AutoBook] Validation failed for trip ID ${trip.id}: ${errorMsg}`);
+
+        const { error: insertBookingReqError } = await supabaseClient
+            .from('booking_requests')
+            .insert({
+                trip_request_id: trip.id,
+                status: 'validation_failed',
+                error_message: errorMsg,
+                user_id: trip.user_id,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            });
+
+        if (insertBookingReqError) {
+            console.error(`[AutoBook] Failed to insert validation_failed record into booking_requests for trip ${trip.id}:`, insertBookingReqError.message);
+        } else {
+            console.log(`[AutoBook] Inserted validation_failed record into booking_requests for trip ${trip.id}.`);
+        }
+
+        if (trip.user_id && sendNotificationUrl && serviceRoleKey) {
+             console.log(`[AutoBook] Sending 'traveler_data_incomplete' notification for trip ID: ${trip.id}`);
+             fetch(sendNotificationUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${serviceRoleKey}`,
+                    'Content-Type': 'application/json',
+                    'apikey': serviceRoleKey,
+                },
+                body: JSON.stringify({
+                    user_id: trip.user_id,
+                    type: 'traveler_data_incomplete',
+                    payload: { missingFields, trip_request_id: trip.id },
+                }),
+            }).then(async res => {
+                if (!res.ok) console.error('[AutoBook] traveler_data_incomplete notification failed:', res.status, await res.text());
+                else console.log('[AutoBook] traveler_data_incomplete notification sent.');
+            }).catch(err =>
+                console.error('[AutoBook] Error sending traveler_data_incomplete notification:', err.message)
+            );
+        } else {
+            console.warn('[AutoBook] Cannot send traveler_data_incomplete notification due to missing user_id or Supabase config for functions.');
+        }
+
+        if (bookingAttemptId) {
+             await supabaseClient
+                .from('booking_attempts')
+                .update({
+                    status: 'failed',
+                    ended_at: new Date().toISOString(),
+                    error_message: `Validation failed: ${errorMsg}`.substring(0,500)
+                })
+                .eq('id', bookingAttemptId);
+        }
+
+        return new Response(JSON.stringify({ success: false, error: 'Traveler data validation failed.', details: errorMsg }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+    } else {
+        console.log(`[AutoBook] Traveler data validation passed for trip ID: ${trip.id}`);
+    }
+    // --- End Traveler Data Validation ---
+
     // --- BEGIN CORE AUTO-BOOKING LOGIC ---
 
     // Get Amadeus Access Token
@@ -199,12 +281,13 @@ Deno.serve(async (req: Request) => {
     }
 
     flightOrderIdForRollback = bookingResult.bookingReference; // Store for potential rollback
+    const airlinePnr = bookingResult.confirmationNumber || bookingResult.bookingReference; // Define airlinePnr correctly
     // Attempt to get final price from bookingResult.bookingData, fallback to pricedOffer.price.total
     const bookingDataFinalPrice = bookingResult.bookingData?.flightOffers?.[0]?.price?.total || bookingResult.bookingData?.price?.total;
     const finalPrice = Number(bookingDataFinalPrice || pricedOffer.price?.total);
 
     if (isNaN(finalPrice)) {
-        console.error('[AutoBook] Could not determine final price from booking response:', bookingRes.data);
+        console.error('[AutoBook] Could not determine final price from booking response. PricedOffer price: ' + pricedOffer?.price?.total + ', BookingResult data: ', bookingResult.bookingData);
         throw new Error('Amadeus booking succeeded but final price is unclear.');
     }
     console.log(`[AutoBook] Final confirmed price: ${finalPrice} for trip ID: ${trip.id}`);
@@ -236,7 +319,7 @@ Deno.serve(async (req: Request) => {
     console.log(`[AutoBook] Updating database records for successful booking. Trip ID: ${trip.id}, Flight Order ID: ${flightOrderIdForRollback}`);
     try {
         const { error: bookingUpdateError } = await supabaseClient.from('bookings').update({
-            status: 'booked', pnr: airlinePnr || flightOrderIdForRollback, price: finalPrice,
+            status: 'booked', pnr: airlinePnr, price: finalPrice, // Use defined airlinePnr
             selected_seat_number: chosenSeat?.seatNumber || null, selected_seat_info: chosenSeat || null,
             updated_at: new Date().toISOString(), amadeus_order_id: flightOrderIdForRollback
         }).eq('trip_request_id', trip.id).select().single();
@@ -244,7 +327,7 @@ Deno.serve(async (req: Request) => {
 
         const { error: tripRequestUpdateError } = await supabaseClient.from('trip_requests').update({
             auto_book: false, status: 'booked', best_price: finalPrice,
-            last_checked_at: new Date().toISOString(), pnr: airlinePnr || flightOrderIdForRollback,
+            last_checked_at: new Date().toISOString(), pnr: airlinePnr, // Use defined airlinePnr
             selected_seat_number: chosenSeat?.seatNumber || null
         }).eq('id', trip.id).select().single();
         if (tripRequestUpdateError) throw new Error(`Failed to update 'trip_requests' table: ${tripRequestUpdateError.message}`);
@@ -266,13 +349,16 @@ Deno.serve(async (req: Request) => {
         console.log(`[AutoBook] Invoking send-notification for booking_success. Trip ID: ${trip.id}`);
         // airlinePnr, flightOrderIdForRollback, finalPrice, pricedOffer should be available here
         const successPayload = {
-            pnr: airlinePnr || flightOrderIdForRollback,
+            pnr: airlinePnr, // Use defined airlinePnr
             flight_details: `Flight from ${trip.origin_location_code} to ${trip.destination_location_code}`,
             departure_datetime: pricedOffer?.itineraries?.[0]?.segments?.[0]?.departure?.at || trip.departure_date, // Best available departure
             arrival_datetime: pricedOffer?.itineraries?.[0]?.segments?.[pricedOffer.itineraries[0].segments.length -1]?.arrival?.at, // Best available arrival
             price: finalPrice,
             airline: pricedOffer?.validatingAirlineCodes?.[0] || pricedOffer?.flightOffers?.[0]?.validatingAirlineCodes?.[0], // Best available airline
-            flight_number: pricedOffer?.itineraries?.[0]?.segments?.[0]?.carrierCode + pricedOffer?.itineraries?.[0]?.segments?.[0]?.number
+            // Ensure carrierCode and number are present before concatenating
+            flight_number: pricedOffer?.itineraries?.[0]?.segments?.[0]?.carrierCode && pricedOffer?.itineraries?.[0]?.segments?.[0]?.number
+                           ? pricedOffer.itineraries[0].segments[0].carrierCode + pricedOffer.itineraries[0].segments[0].number
+                           : 'N/A'
         };
         fetch(sendNotificationUrl, {
             method: 'POST',
