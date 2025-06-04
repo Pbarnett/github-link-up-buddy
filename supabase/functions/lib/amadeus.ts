@@ -1,3 +1,10 @@
+const amadeusClientId = Deno.env.get("AMADEUS_CLIENT_ID");
+const amadeusClientSecret = Deno.env.get("AMADEUS_CLIENT_SECRET");
+if (!amadeusClientId || !amadeusClientSecret) {
+  console.error('Error: Missing Amadeus environment variables. AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET must be set.');
+  throw new Error('Edge Function: Missing Amadeus environment variables (AMADEUS_CLIENT_ID or AMADEUS_CLIENT_SECRET).');
+}
+
 
 // Amadeus booking integration wrapper
 
