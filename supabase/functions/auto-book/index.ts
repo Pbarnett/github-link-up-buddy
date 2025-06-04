@@ -57,6 +57,7 @@ Deno.serve(async (req: Request) => {
   let capturedErrorObject: any = null; // Using 'any' for simplicity, can be 'Error | null'
   let accessToken: string | null = null; // Scoped accessToken, initialized to null
   let stripePaymentCapturedByAutoBook = false; // New flag
+  let associatedBookingRequestId: string | null = null;
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -117,6 +118,48 @@ Deno.serve(async (req: Request) => {
     }
     bookingAttemptId = attemptData.id;
     console.log(`[AutoBook] Lock acquired. Booking Attempt ID: ${bookingAttemptId} for trip ID: ${trip.id}`);
+
+    // --- Check for existing booking_request and payment_captured status ---
+    if (trip && trip.id) {
+        console.log(`[AutoBook] Checking for existing booking_request for trip_request_id: ${trip.id} with status 'pending_payment'.`);
+        const { data: existingBR, error: brFetchError } = await supabaseClient
+            .from('booking_requests')
+            .select('id, payment_captured')
+            .eq('trip_request_id', trip.id)
+            .eq('status', 'pending_payment')
+            .maybeSingle();
+
+        if (brFetchError) {
+            console.warn(`[AutoBook] Error fetching existing booking_request for trip_request_id ${trip.id}:`, brFetchError.message);
+        }
+
+        if (existingBR) {
+            console.log(`[AutoBook] Found existing booking_request (ID: ${existingBR.id}) for trip_request_id: ${trip.id} with payment_captured: ${existingBR.payment_captured}`);
+            if (existingBR.payment_captured === true) {
+                console.log(`[AutoBook] Payment already captured for booking_request ${existingBR.id} (trip_request_id ${trip.id}). Aborting auto-book to prevent double processing.`);
+                if (bookingAttemptId) {
+                    await supabaseClient
+                        .from('booking_attempts')
+                        .update({
+                            status: 'completed_idempotent',
+                            ended_at: new Date().toISOString(),
+                            error_message: 'Payment already captured for associated booking_request.'
+                        })
+                        .eq('id', bookingAttemptId);
+                }
+                return new Response(JSON.stringify({ success: true, message: 'Payment already captured for this trip via a booking request. Auto-book processing stopped.' }), {
+                    status: 200,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+            } else {
+                associatedBookingRequestId = existingBR.id;
+                console.log(`[AutoBook] Associated booking_request ID ${associatedBookingRequestId} found, payment not yet captured. Will update this record after Stripe capture.`);
+            }
+        } else {
+            console.log(`[AutoBook] No existing booking_request in 'pending_payment' state found for trip_request_id: ${trip.id}. Proceeding with standard auto-book flow.`);
+        }
+    }
+    // --- End Check ---
 
     // --- Traveler Data Validation ---
     console.log(`[AutoBook] Validating traveler data for trip ID: ${trip.id}`);
@@ -310,6 +353,25 @@ Deno.serve(async (req: Request) => {
         }
         stripePaymentCapturedByAutoBook = true; // Set flag here
         console.log(`[AutoBook] Stripe PaymentIntent ${paymentIntentId} captured successfully by auto-book for trip ID: ${trip.id}. Status: ${capturedPaymentIntent.status}.`);
+
+        if (associatedBookingRequestId) {
+            console.log(`[AutoBook] Updating payment_captured to true for booking_request ID: ${associatedBookingRequestId}`);
+            const { error: updateBrError } = await supabaseClient
+                .from('booking_requests')
+                .update({
+                    payment_captured: true,
+                    status: 'processing_after_payment',
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', associatedBookingRequestId);
+
+            if (updateBrError) {
+                console.error(`[AutoBook] CRITICAL: Failed to update booking_request ${associatedBookingRequestId} with payment_captured=true. Error: ${updateBrError.message}. Payment was captured. Manual reconciliation may be needed for booking_request status.`);
+                throw new Error(`Failed to update booking_request ${associatedBookingRequestId} payment_captured flag: ${updateBrError.message}`);
+            } else {
+                console.log(`[AutoBook] Successfully updated payment_captured for booking_request ID: ${associatedBookingRequestId}.`);
+            }
+        }
     } catch (stripeError) {
         console.error(`[AutoBook] Stripe payment capture failed for PI: ${paymentIntentId}, Trip ID: ${trip.id}. Error: ${stripeError.message}`);
         throw stripeError;
