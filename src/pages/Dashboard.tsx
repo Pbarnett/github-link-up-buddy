@@ -327,117 +327,139 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Booking Requests with Tabs */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Booking Requests</CardTitle>
-              <CardDescription>
-                Track your flight booking requests and their status
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
-                  <TabsTrigger value="all" className="text-xs">
-                    All ({statusCounts.all})
-                  </TabsTrigger>
-                  <TabsTrigger value="pending_booking" className="text-xs">
-                    Pending ({statusCounts.pending_booking})
-                  </TabsTrigger>
-                  <TabsTrigger value="processing" className="text-xs">
-                    Processing ({statusCounts.processing})
-                  </TabsTrigger>
-                  <TabsTrigger value="done" className="text-xs">
-                    Done ({statusCounts.done})
-                  </TabsTrigger>
-                  <TabsTrigger value="failed" className="text-xs">
-                    Failed ({statusCounts.failed})
-                  </TabsTrigger>
-                  <TabsTrigger value="pending_payment" className="text-xs">
-                    Payment ({statusCounts.pending_payment})
-                  </TabsTrigger>
-                </TabsList>
-                
-                <div className="mt-6">
-                  {filteredRequests.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">
-                      {statusFilter === 'all' 
-                        ? 'No booking requests yet' 
-                        : `No ${statusFilter.replace('_', ' ')} requests`
-                      }
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {filteredRequests.map((request) => (
-                        <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            {getStatusIcon(request.status)}
-                            <div>
-                              <p className="font-medium">
-                                {request.offer_data?.airline} {request.offer_data?.flight_number}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Created {new Date(request.created_at).toLocaleDateString()}
-                              </p>
-                              {request.error_message && (
-                                <div className="flex items-center space-x-2 mt-1">
-                                  <p className="text-sm text-red-600 truncate max-w-xs">
-                                    {request.error_message.substring(0, 50)}...
-                                  </p>
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm"
-                                        onClick={() => setSelectedError(request.error_message)}
-                                        className="p-1 h-auto"
-                                      >
-                                        <Eye className="h-3 w-3" />
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="max-w-2xl">
-                                      <DialogHeader>
-                                        <DialogTitle>Error Details</DialogTitle>
-                                        <DialogDescription>
-                                          Booking request {request.id.slice(0, 8)} error information
-                                        </DialogDescription>
-                                      </DialogHeader>
-                                      <div className="mt-4">
-                                        <pre className="whitespace-pre-wrap text-sm bg-gray-100 p-4 rounded max-h-96 overflow-y-auto">
-                                          {request.error_message}
-                                        </pre>
-                                      </div>
-                                    </DialogContent>
-                                  </Dialog>
-                                </div>
+        {/* Main content area with new Tabs */}
+        <Tabs defaultValue="currentRequests" className="w-full mt-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="currentRequests">Current Booking Requests</TabsTrigger>
+            <TabsTrigger value="tripHistory">Trip History</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="currentRequests">
+            {/* Booking Requests with its own internal Tabs for filtering */}
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>Booking Requests</CardTitle>
+                <CardDescription>
+                  Track your flight booking requests and their status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+                    <TabsTrigger value="all" className="text-xs">
+                      All ({statusCounts.all})
+                    </TabsTrigger>
+                    <TabsTrigger value="pending_booking" className="text-xs">
+                      Pending ({statusCounts.pending_booking})
+                    </TabsTrigger>
+                    <TabsTrigger value="processing" className="text-xs">
+                      Processing ({statusCounts.processing})
+                    </TabsTrigger>
+                    <TabsTrigger value="done" className="text-xs">
+                      Done ({statusCounts.done})
+                    </TabsTrigger>
+                    <TabsTrigger value="failed" className="text-xs">
+                      Failed ({statusCounts.failed})
+                    </TabsTrigger>
+                    <TabsTrigger value="pending_payment" className="text-xs">
+                      Payment ({statusCounts.pending_payment})
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <div className="mt-6">
+                    {filteredRequests.length === 0 ? (
+                      <p className="text-gray-500 text-center py-8">
+                        {statusFilter === 'all'
+                          ? 'No booking requests yet'
+                          : `No ${statusFilter.replace('_', ' ')} requests`
+                        }
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
+                        {filteredRequests.map((request) => (
+                          <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              {getStatusIcon(request.status)}
+                              <div>
+                                <p className="font-medium">
+                                  {request.offer_data?.airline} {request.offer_data?.flight_number}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  Created {new Date(request.created_at).toLocaleDateString()}
+                                </p>
+                                {request.error_message && (
+                                  <div className="flex items-center space-x-2 mt-1">
+                                    <p className="text-sm text-red-600 truncate max-w-xs">
+                                      {request.error_message.substring(0, 50)}...
+                                    </p>
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => setSelectedError(request.error_message)}
+                                          className="p-1 h-auto"
+                                        >
+                                          <Eye className="h-3 w-3" />
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-2xl">
+                                        <DialogHeader>
+                                          <DialogTitle>Error Details</DialogTitle>
+                                          <DialogDescription>
+                                            Booking request {request.id.slice(0, 8)} error information
+                                          </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="mt-4">
+                                          <pre className="whitespace-pre-wrap text-sm bg-gray-100 p-4 rounded max-h-96 overflow-y-auto">
+                                            {request.error_message}
+                                          </pre>
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge variant={getStatusBadgeVariant(request.status)}>
+                                {request.status.replace('_', ' ')}
+                              </Badge>
+                              {request.status === 'failed' && request.attempts < 3 && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => retryBookingRequest(request.id)}
+                                >
+                                  Retry
+                                </Button>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge variant={getStatusBadgeVariant(request.status)}>
-                              {request.status.replace('_', ' ')}
-                            </Badge>
-                            {request.status === 'failed' && request.attempts < 3 && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => retryBookingRequest(request.id)}
-                              >
-                                Retry
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Tabs>
-            </CardContent>
-          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          {/* Trip Requests */}
+          <TabsContent value="tripHistory">
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>Past Bookings</CardTitle>
+                <CardDescription>Review your completed flight bookings.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {user && <TripHistory userId={user.id} />}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Recent Trip Requests card can remain separate or be moved into a tab if desired later */}
+        <div className="mt-8"> {/* Added margin-top for spacing if it's below the new Tabs */}
           <Card>
             <CardHeader>
               <CardTitle>Recent Trip Requests</CardTitle>
@@ -477,9 +499,8 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Trip History Section Added Here */}
-        <TripHistory />
-
+        {/* Old Trip History Section Removed From Here */}
+        {/* <TripHistory /> */}
       </div>
     </div>
   );
