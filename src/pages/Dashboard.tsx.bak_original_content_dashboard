@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye } from 'lucide-react';
-import TripHistory from '@/components/dashboard/TripHistory'; // Added import
 
 interface BookingRequest {
   id: string;
@@ -38,30 +37,30 @@ const Dashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedError, setSelectedError] = useState<string | null>(null);
-  
+
   // Track previous statuses for smart toast notifications
   const prevStatuses = useRef<Record<string, string>>({});
 
   useEffect(() => {
     const getUser = async () => {
       const { data, error } = await supabase.auth.getUser();
-      
+
       if (error) {
         console.error('Error fetching user:', error);
         setLoading(false);
         return;
       }
-      
+
       if (data?.user) {
         setUser(data.user);
         await loadDashboardData(data.user.id);
       }
-      
+
       setLoading(false);
     };
-    
+
     getUser();
-    
+
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -70,7 +69,7 @@ const Dashboard = () => {
         loadDashboardData(session.user.id);
       }
     });
-    
+
     return () => {
       authListener.subscription.unsubscribe();
     };
@@ -99,17 +98,17 @@ const Dashboard = () => {
         },
         (payload) => {
           console.log('Booking request change:', payload);
-          
+
           setBookingRequests(prev => {
             const bookingUpdate = payload.new as BookingRequest;
             const requestId = bookingUpdate.id;
             const oldStatus = prevStatuses.current[requestId];
             const newStatus = bookingUpdate.status;
-            
+
             // Enhanced toast notifications for meaningful transitions
             if (oldStatus && oldStatus !== newStatus) {
               const requestShortId = requestId.slice(0, 8);
-              
+
               if (oldStatus === 'processing' && newStatus === 'done') {
                 toast({
                   title: "🎉 Booking Confirmed!",
@@ -133,10 +132,10 @@ const Dashboard = () => {
                 });
               }
             }
-            
+
             // Update the previous status tracker
             prevStatuses.current[requestId] = newStatus;
-            
+
             // Update the list
             const existingIndex = prev.findIndex(r => r.id === requestId);
             if (existingIndex >= 0) {
@@ -207,7 +206,7 @@ const Dashboard = () => {
     try {
       const { error } = await supabase
         .from('booking_requests')
-        .update({ 
+        .update({
           status: 'pending_booking',
           attempts: 0,
           error_message: null
@@ -235,7 +234,7 @@ const Dashboard = () => {
     await loadDashboardData(user.id);
     setRefreshing(false);
   };
-  
+
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -298,7 +297,7 @@ const Dashboard = () => {
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/login" />;
   }
@@ -315,8 +314,8 @@ const Dashboard = () => {
             <p className="mt-2 text-lg text-gray-600">Hello, {user.email}</p>
           </div>
           <div className="flex gap-3">
-            <Button 
-              onClick={refreshData} 
+            <Button
+              onClick={refreshData}
               disabled={refreshing}
               variant="outline"
             >
@@ -358,12 +357,12 @@ const Dashboard = () => {
                     Payment ({statusCounts.pending_payment})
                   </TabsTrigger>
                 </TabsList>
-                
+
                 <div className="mt-6">
                   {filteredRequests.length === 0 ? (
                     <p className="text-gray-500 text-center py-8">
-                      {statusFilter === 'all' 
-                        ? 'No booking requests yet' 
+                      {statusFilter === 'all'
+                        ? 'No booking requests yet'
                         : `No ${statusFilter.replace('_', ' ')} requests`
                       }
                     </p>
@@ -387,8 +386,8 @@ const Dashboard = () => {
                                   </p>
                                   <Dialog>
                                     <DialogTrigger asChild>
-                                      <Button 
-                                        variant="ghost" 
+                                      <Button
+                                        variant="ghost"
                                         size="sm"
                                         onClick={() => setSelectedError(request.error_message)}
                                         className="p-1 h-auto"
@@ -458,7 +457,7 @@ const Dashboard = () => {
                             To: {trip.destination_airport || 'Any destination'}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {new Date(trip.earliest_departure).toLocaleDateString()} - 
+                            {new Date(trip.earliest_departure).toLocaleDateString()} -
                             {new Date(trip.latest_departure).toLocaleDateString()}
                           </p>
                           <p className="text-sm text-gray-500">
@@ -476,10 +475,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Trip History Section Added Here */}
-        <TripHistory />
-
       </div>
     </div>
   );
