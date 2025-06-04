@@ -1,4 +1,3 @@
-
 // supabase/functions/lib/seatSelector.ts
 
 export type SeatInfo = {
@@ -8,7 +7,7 @@ export type SeatInfo = {
 };
 
 /**
- * Given Amadeus seatMap JSON and the flight's base fare, select a seat under the trip's total budget.
+ * Given Amadeus seatMap JSON and the flight’s base fare, select a seat under the trip’s total budget.
  *
  * Priority order:
  *   1) AISLE
@@ -19,7 +18,7 @@ export type SeatInfo = {
  *                         Assumed to be an object with a `flightSegments` property, where each segment
  *                         has `decks`, each deck has `rows`, and each row has `seats`.
  * @param baseFare         The numeric base fare for the ticket (e.g. 450.00)
- * @param totalBudget      The user's max_price from trip_requests (e.g. 600.00)
+ * @param totalBudget      The user’s max_price from trip_requests (e.g. 600.00)
  * @param allowMiddle      If false, never consider MIDDLE seats
  * @returns                A SeatInfo object (seatNumber, seatType, price) or null if none qualify
  */
