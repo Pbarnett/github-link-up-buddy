@@ -518,12 +518,13 @@ const TripConfirm = () => {
         </div>
       </div>
     );
-  } else {
-    return (
-      <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
-        <div className="w-full max-w-3xl space-y-6">
-          {/* Flight Details Card */}
-          <Card>
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
+      <div className="w-full max-w-3xl space-y-6">
+        {/* Flight Details Card */}
+        <Card>
           <CardHeader>
             <CardTitle className="text-2xl">Confirm Your Flight</CardTitle>
             <CardDescription>
@@ -646,8 +647,8 @@ const TripConfirm = () => {
           </CardFooter>
         </Card>
       </div>
-    );
-  }
+    </div>
+  );
 };
 
 export default TripConfirm;
