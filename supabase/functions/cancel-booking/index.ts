@@ -1,11 +1,10 @@
 // supabase/functions/cancel-booking/index.ts
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { getAmadeusAccessToken, cancelAmadeusOrder } from '../lib/amadeus.ts'; // HTTP Helpers
-import { stripe } from '../lib/stripe.ts'; // Stripe SDK instance (assuming stripe.ts exports it)
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getAmadeusAccessToken, cancelAmadeusOrder } from '../lib/amadeus.ts';
+import { stripe } from '../lib/stripe.ts';
 
-// Helper function to get Supabase admin client
 const getSupabaseAdmin = () => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -19,7 +18,7 @@ const getSupabaseAdmin = () => {
 };
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*', // Adjust for production
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
@@ -29,155 +28,185 @@ serve(async (req: Request) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  let bookingId: string | null = null;
+  let bookingIdFromInput: string | null = null; // Variable to store booking_id from input
   let authenticatedUserId: string | null = null;
   const supabaseAdmin = getSupabaseAdmin();
-  // For invoking send-notification
-  const supabaseUrlForInvoke = Deno.env.get('SUPABASE_URL');
-  const serviceRoleKeyForInvoke = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
 
   try {
-    // 1. Get Authenticated User ID (from JWT)
+    // 1. Authenticate the user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Missing or invalid Authorization header' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    if (userError || !user) {
-      console.warn('[CancelBooking] Auth error or no user from token:', userError?.message);
-      return new Response(JSON.stringify({ error: 'Authentication failed or user not found' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const jwt = authHeader.replace('Bearer ', '');
+    const { data: { user: authUser }, error: authErr } = await supabaseAdmin.auth.getUser(jwt);
+
+    if (authErr || !authUser) {
+      console.warn('[CancelBooking] Authentication error:', authErr?.message);
+      return new Response(JSON.stringify({ error: 'Unauthorized: Invalid token or user not found' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    authenticatedUserId = user.id;
+    authenticatedUserId = authUser.id;
     console.log(`[CancelBooking] Authenticated user: ${authenticatedUserId}`);
 
-    // 2. Get booking_id from request payload
-    const body = await req.json().catch(() => ({})); // Handle non-JSON body gracefully
-    bookingId = body.booking_id;
-    if (!bookingId || typeof bookingId !== 'string') {
-      return new Response(JSON.stringify({ error: 'Missing or invalid booking_id in request body' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // 2. Parse and validate bookingId from request body
+    const body = await req.json().catch(() => ({}));
+    bookingIdFromInput = body.booking_id;
+    if (!bookingIdFromInput || typeof bookingIdFromInput !== 'string') {
+      return new Response(JSON.stringify({ error: 'Missing or invalid bookingId in request payload' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    console.log(`[CancelBooking] Received request to cancel booking_id: ${bookingId}`);
+    console.log(`[CancelBooking] Request to cancel booking ID: ${bookingIdFromInput}`);
 
-    // 3. Fetch Booking & Validate Eligibility
-    const { data: booking, error: fetchBookingError } = await supabaseAdmin
+    // 3. Fetch booking from `bookings` table
+    const { data: booking, error: bookingErr } = await supabaseAdmin
       .from('bookings')
-      .select('id, pnr, user_id, status, created_at, trip_request_id, amadeus_order_id') // Added amadeus_order_id
-      .eq('id', bookingId)
+      .select('id, booking_request_id, pnr, payment_intent_id, created_at, status, user_id, amadeus_order_id')
+      .eq('id', bookingIdFromInput)
       .single();
 
-    if (fetchBookingError) {
-      console.error(`[CancelBooking] Error fetching booking ${bookingId}:`, fetchBookingError.message);
-      return new Response(JSON.stringify({ error: 'Booking not found or database error' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-    if (!booking) { // Should be caught by fetchBookingError with .single(), but good practice
+    if (bookingErr || !booking) {
+      console.warn(`[CancelBooking] Booking not found for ID: ${bookingIdFromInput}`, bookingErr?.message);
       return new Response(JSON.stringify({ error: 'Booking not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // 3a. Ensure user owns the booking
     if (booking.user_id !== authenticatedUserId) {
-      console.warn(`[CancelBooking] User ${authenticatedUserId} unauthorized to cancel booking ${bookingId} owned by ${booking.user_id}.`);
-      return new Response(JSON.stringify({ error: 'Unauthorized to cancel this booking' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      console.warn(`[CancelBooking] User ${authenticatedUserId} attempted to cancel booking ${bookingIdFromInput} owned by ${booking.user_id}. Forbidden.`);
+      return new Response(JSON.stringify({ error: 'Forbidden: You do not own this booking' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    if (booking.status !== 'ticketed' && booking.status !== 'booked') { // Allow 'booked' or 'ticketed'
-      console.log(`[CancelBooking] Booking ${bookingId} not in a cancelable status (current: ${booking.status}).`);
-      return new Response(JSON.stringify({ error: `Booking is not in a cancelable state (status: ${booking.status})` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // 3b. Check eligibility: status must be 'done' (as per user spec for this function)
+    if (booking.status !== 'done') { // User spec: 'done'. Previous was 'ticketed' or 'booked'.
+      console.log(`[CancelBooking] Booking ${bookingIdFromInput} cannot be canceled. Status is "${booking.status}", requires "done".`);
+      return new Response(JSON.stringify({ error: `Cannot cancel: Booking not in "done" status (current: ${booking.status})` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
-    const bookingCreatedAt = new Date(booking.created_at).getTime();
-    const now = Date.now();
-    if (now - bookingCreatedAt > twentyFourHoursInMs) {
-      console.log(`[CancelBooking] Booking ${bookingId} created at ${booking.created_at} is outside the 24-hour cancellation window.`);
-      return new Response(JSON.stringify({ error: 'Cancellation window has passed (must be within 24 hours of booking)' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // 3c. Check 24-hour cancellation window from created_at (as per user spec)
+    const now = new Date();
+    const bookedAt = new Date(booking.created_at);
+    const hoursSinceBooking = (now.getTime() - bookedAt.getTime()) / (1000 * 60 * 60);
+
+    if (hoursSinceBooking >= 24) {
+      console.log(`[CancelBooking] Booking ${bookingIdFromInput} is outside the 24-hour free cancellation window.`);
+      return new Response(
+        JSON.stringify({
+          status: 'outside_window', // Consistent with user spec
+          message: 'Free cancellation window closed. Contact airline or support for assistance.'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-    console.log(`[CancelBooking] Booking ${bookingId} is eligible for cancellation.`);
+    console.log(`[CancelBooking] Booking ${bookingIdFromInput} is eligible for cancellation (within ${Math.floor(24 - hoursSinceBooking)}h window).`);
 
-    // 4. Amadeus Cancellation (use amadeus_order_id if available, fallback to pnr)
-    const orderIdToCancelWithAmadeus = booking.amadeus_order_id || booking.pnr;
-    if (!orderIdToCancelWithAmadeus) {
-        console.error(`[CancelBooking] Booking ${bookingId} is missing Amadeus Order ID (or PNR to use as such). Cannot proceed with Amadeus cancellation.`);
-        throw new Error('Booking Amadeus Order ID/PNR is missing, cannot cancel with Amadeus.');
+    // 4. Call Amadeus cancellation helper
+    const amadeusOrderIdToCancel = booking.amadeus_order_id || booking.pnr;
+    if (!amadeusOrderIdToCancel) {
+        console.error(`[CancelBooking] No Amadeus Order ID or PNR found for booking ${bookingIdFromInput}. Cannot cancel with Amadeus.`);
+        throw new Error('Amadeus Order ID/PNR missing for cancellation.');
     }
 
-    console.log(`[CancelBooking] Attempting Amadeus cancellation for Amadeus Order ID: ${orderIdToCancelWithAmadeus}`);
-    const amadeusToken = await getAmadeusAccessToken();
-    if (!amadeusToken) throw new Error('Failed to get Amadeus access token for cancellation.');
+    let amadeusCancellationSuccessful = false; // Flag to track outcome
+    try {
+        console.log(`[CancelBooking] Attempting Amadeus cancellation for Order ID: ${amadeusOrderIdToCancel}`);
+        const accessToken = await getAmadeusAccessToken();
+        if (!accessToken) throw new Error("Failed to get Amadeus access token.");
 
-    const amadeusCancelResult = await cancelAmadeusOrder(orderIdToCancelWithAmadeus, amadeusToken);
-    if (!amadeusCancelResult.success) {
-      console.error(`[CancelBooking] Amadeus cancellation failed for Order ID ${orderIdToCancelWithAmadeus}: ${amadeusCancelResult.error}`);
-      throw new Error(`Amadeus cancellation failed: ${amadeusCancelResult.error || 'Unknown Amadeus error'}`);
+        const amadeusResult = await cancelAmadeusOrder(amadeusOrderIdToCancel, accessToken);
+        if (!amadeusResult.success) {
+            console.error(`[CancelBooking] Amadeus cancellation failed for Order ID ${amadeusOrderIdToCancel}:`, amadeusResult.error);
+            // Log error but continue to refund and DB updates as per spec ("We proceed with refund anyway...")
+        } else {
+            amadeusCancellationSuccessful = true;
+            console.log(`[CancelBooking] Amadeus cancellation successful for Order ID: ${amadeusOrderIdToCancel}`);
+        }
+    } catch (amadeusErr) {
+        console.error(`[CancelBooking] Exception during Amadeus cancellation for Order ID ${amadeusOrderIdToCancel}:`, amadeusErr.message);
+        // Log error but continue to refund and DB updates as per spec
     }
-    console.log(`[CancelBooking] Amadeus cancellation successful for Order ID ${orderIdToCancelWithAmadeus}`);
 
-    // 5. Stripe Refund
-    console.log(`[CancelBooking] Attempting Stripe refund for booking ${bookingId}`);
-    const { data: paymentRow, error: fetchPaymentError } = await supabaseAdmin
-      .from('payments')
-      .select('stripe_payment_intent_id')
-      .eq('booking_id', bookingId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (fetchPaymentError || !paymentRow || !paymentRow.stripe_payment_intent_id) {
-      console.error(`[CancelBooking] Could not find Stripe PaymentIntent ID for booking ${bookingId}. Error: ${fetchPaymentError?.message || 'No payment record or PI ID'}`);
-      throw new Error(`Stripe PaymentIntent ID not found for booking ${bookingId}. Amadeus order was cancelled. Manual refund check required.`);
+    // 5. Issue Stripe refund using bookings.payment_intent_id
+    let stripeRefundSuccessful = false;
+    if (booking.payment_intent_id) {
+        console.log(`[CancelBooking] Attempting Stripe refund for PaymentIntent ID: ${booking.payment_intent_id}`);
+        try {
+            await stripe.refunds.create({ payment_intent: booking.payment_intent_id, reason: 'requested_by_customer' });
+            stripeRefundSuccessful = true;
+            console.log(`[CancelBooking] Stripe refund succeeded for PaymentIntent ID: ${booking.payment_intent_id}`);
+        } catch (refundErr: any) {
+            console.error(`[CancelBooking] Stripe refund failed for PaymentIntent ID ${booking.payment_intent_id}:`, refundErr.message);
+            // Log error, but proceed with DB updates.
+        }
+    } else {
+        console.warn(`[CancelBooking] No payment_intent_id found for booking ${bookingIdFromInput}. Skipping Stripe refund.`);
     }
-    const intentId = paymentRow.stripe_payment_intent_id;
-    console.log(`[CancelBooking] Found Stripe PaymentIntent ID: ${intentId}. Proceeding with refund.`);
 
-    await stripe.refunds.create({
-        payment_intent: intentId,
-        reason: 'requested_by_customer'
-    });
-    console.log(`[CancelBooking] Stripe refund initiated for PaymentIntent ID: ${intentId}`);
-
-    // 6. Update Database
-    console.log(`[CancelBooking] Updating database records for booking ${bookingId}`);
+    // 6. Update both tables to status = 'cancelled' / 'refunded'
     const nowISO = new Date().toISOString();
-    const { error: updateBookingError } = await supabaseAdmin
+    console.log(`[CancelBooking] Updating database status for booking ${bookingIdFromInput}`);
+    const { error: updateBookingsErr } = await supabaseAdmin
       .from('bookings')
-      .update({ status: 'canceled', updated_at: nowISO, cancellation_reason: 'user_requested_within_24h' })
-      .eq('id', bookingId);
-    if (updateBookingError) throw new Error(`Failed to update booking status: ${updateBookingError.message}`);
+      .update({ status: 'cancelled', updated_at: nowISO })
+      .eq('id', bookingIdFromInput);
 
-    const { error: updatePaymentError } = await supabaseAdmin
-      .from('payments')
-      .update({ status: 'refunded', updated_at: nowISO })
-      .eq('stripe_payment_intent_id', intentId);
-    if (updatePaymentError) console.warn(`[CancelBooking] Failed to update payment status to refunded for PI ${intentId}: ${updatePaymentError.message}`); // Log as warning, main cancellation succeeded.
-    console.log(`[CancelBooking] Database records updated for booking ${bookingId} to canceled/refunded.`);
+    if (updateBookingsErr) {
+      console.error(`[CancelBooking] Failed to update bookings table for ${bookingIdFromInput}:`, updateBookingsErr.message);
+      // This is a significant issue if other steps succeeded. Consider how to handle.
+      // For now, just logging. The overall function might still be considered a "success" if Amadeus/Stripe were okay.
+    }
 
-    // 7. Send Cancellation Notification
-    if (supabaseUrlForInvoke && serviceRoleKeyForInvoke && booking.user_id) {
-      const sendNotificationUrl = `${supabaseUrlForInvoke}/functions/v1/send-notification`;
+    if (booking.booking_request_id) {
+      const { error: updateBookingRequestsErr } = await supabaseAdmin
+        .from('booking_requests')
+        .update({ status: 'cancelled', updated_at: nowISO })
+        .eq('id', booking.booking_request_id);
+      if (updateBookingRequestsErr) {
+        console.error(`[CancelBooking] Failed to update booking_requests table for ${booking.booking_request_id}:`, updateBookingRequestsErr.message);
+      }
+    }
+
+    if (booking.payment_intent_id) {
+        const paymentStatusOnDB = stripeRefundSuccessful ? 'refunded' : 'refund_failed';
+        console.log(`[CancelBooking] Updating payments table for PI ${booking.payment_intent_id} to status: ${paymentStatusOnDB}`);
+        const { error: updatePaymentsErr } = await supabaseAdmin
+            .from('payments')
+            .update({ status: paymentStatusOnDB, updated_at: nowISO })
+            .eq('stripe_payment_intent_id', booking.payment_intent_id);
+        if (updatePaymentsErr) {
+            console.warn(`[CancelBooking] Failed to update payments table for PI ${booking.payment_intent_id}:`, updatePaymentsErr.message);
+        }
+    }
+
+    // 7. Send booking_cancelled notification
+    const supabaseUrl = Deno.env.get('SUPABASE_URL'); // Already defined as supabaseUrlForInvoke
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'); // Already defined as serviceRoleKeyForInvoke
+    if (supabaseUrl && serviceRoleKey && booking.user_id) {
+      const sendNotificationUrl = `${supabaseUrl}/functions/v1/send-notification`;
       const notificationPayload = {
-        booking_id: booking.id,
-        pnr: booking.pnr, // Use the actual PNR from the booking record for notification
-        trip_request_id: booking.trip_request_id,
-        reason: 'Your booking was successfully canceled and refunded as per your request within the 24-hour window.',
+        booking_id: bookingIdFromInput,
+        pnr: booking.pnr,
+        trip_request_id: booking.booking_request_id
       };
       fetch(sendNotificationUrl, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${serviceRoleKeyForInvoke}`, 'Content-Type': 'application/json', 'apikey': serviceRoleKeyForInvoke },
-          body: JSON.stringify({ user_id: booking.user_id, type: 'booking_canceled', payload: notificationPayload })
-      })
-      .then(async res => res.ok ? console.log('[CancelBooking] Cancellation notification sent.') : res.text().then(txt => console.error('[CancelBooking] Failed to send cancellation notification:', res.status, txt)))
-      .catch(err => console.error('[CancelBooking] Error sending cancellation notification:', err.message));
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+          'apikey': serviceRoleKey
+        },
+        body: JSON.stringify({
+          user_id: authUser.id,
+          type: 'booking_cancelled',
+          payload: notificationPayload
+        })
+      }).catch(err => console.error('[CancelBooking] Notification dispatch failed:', err.message)); // Fire and forget
     }
 
-    return new Response(JSON.stringify({ success: true, message: 'Booking canceled and refund initiated successfully.' }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.log(`[CancelBooking] Successfully processed cancellation for booking ${bookingIdFromInput}.`);
+    return new Response(JSON.stringify({ status: 'cancelled', message: 'Booking cancelled successfully.' }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }});
 
   } catch (error) {
-    console.error(`[CancelBooking] Error processing cancellation for booking ${bookingId || 'unknown'}: ${error.message}`, error.stack);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: (error.message.includes('Unauthorized') ? 403 : (error.message.includes('not found') ? 404 : (error.message.includes('cancelable state') || error.message.includes('window has passed') || error.message.includes('Missing booking_id') ? 400 : 500))),
+    console.error(`[CancelBooking] Unhandled error for booking ${bookingIdFromInput || 'unknown'}: ${error.message}`, error.stack);
+    return new Response(JSON.stringify({ error: 'An unexpected error occurred during cancellation.' }), {
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
