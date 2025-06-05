@@ -1,17 +1,31 @@
-[?25l
-    Select a project:
 
-  >  1. arfeomcrttfbfwgkkqwe [name: Parker Date, org: gmrgfgltpaoygrtcbdrj, region: us-east-1]
-    2. bfqbegafgmfthfdqsdfd [name: Dating, org: gmrgfgltpaoygrtcbdrj, region: us-east-2]
-    3. kcaedvghixjiwefrmyav [name: Parker Flight, org: gmrgfgltpaoygrtcbdrj, region: us-east-2]
-    4. bbonngdyfyfjqfhvoljl [name: Trip Whisper, org: gmrgfgltpaoygrtcbdrj, region: us-east-2]
+// This file contains the new Supabase types
+// It will be populated with the latest database schema types
 
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
-
-
-
-
-
-    ↑/k up • ↓/j down • / filter • q quit • ? more
-
-                                                                                               [0D[2K[?25h[?1002l[?1003l[?1006l
+export interface Database {
+  public: {
+    Tables: {
+      // Tables will be defined here when needed
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
