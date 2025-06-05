@@ -28,7 +28,7 @@ serve(async (req: Request) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // let bookingIdFromInput: string | null = null; // REMOVED
+  let bookingId: string | undefined; // Standardized bookingId
   let authenticatedUserId: string | null = null;
   const supabaseAdmin = getSupabaseAdmin();
 
@@ -55,7 +55,7 @@ serve(async (req: Request) => {
     } catch (e) {
         return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    const bookingId: string | undefined = body.booking_id; // Use bookingId directly
+    bookingId = body.booking_id;
     if (!bookingId || typeof bookingId !== 'string') {
       return new Response(JSON.stringify({ error: 'Missing or invalid bookingId in request payload' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
@@ -79,8 +79,20 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'Forbidden: You do not own this booking' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // 3b. Check eligibility: status must be 'ticketed'
-    if (booking.status !== 'ticketed') {
+    // --- REORDERED AND UPDATED ELIGIBILITY CHECKS ---
+    // 4. Add Early payment_intent_id Validation (User Step 5)
+    if (!booking.payment_intent_id) {
+      console.warn(`[CancelBooking] Booking ${bookingId} has no payment_intent_id; cannot issue Stripe refund or proceed with monetary-related cancellation aspects.`);
+      return new Response(
+        JSON.stringify({
+          error: "Cannot cancel: no payment_intent_id associated with this booking for refund processing.",
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 5. Enforce Status Check is "ticketed" (User Step 3, re-verified, part of User Step 6 sequence)
+    if (booking.status !== "ticketed") {
       console.log(`[CancelBooking] Booking ${bookingId} cannot be canceled. Status is "${booking.status}", requires "ticketed".`);
       return new Response(
         JSON.stringify({ error: `Cannot cancel: Booking not in "ticketed" status (current: ${booking.status})` }),
@@ -88,31 +100,30 @@ serve(async (req: Request) => {
       );
     }
 
-    // 3c. Check 24-hour cancellation window from created_at (as per user spec)
+    // 6. Enforce 24-Hour Window (User Step 6)
     const now = new Date();
     const bookedAt = new Date(booking.created_at);
     const hoursSinceBooking = (now.getTime() - bookedAt.getTime()) / (1000 * 60 * 60);
 
     if (hoursSinceBooking >= 24) {
-      console.log(`[CancelBooking] Booking ${bookingId} is outside the 24-hour free cancellation window.`);
+      console.warn(`[CancelBooking] Booking ${bookingId} is ${hoursSinceBooking.toFixed(2)}h old; cancellation window expired.`);
       return new Response(
-        JSON.stringify({
-          status: 'outside_window', // Consistent with user spec
-          message: 'Free cancellation window closed. Contact airline or support for assistance.'
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: "Cancellation window has closed (24 h elapsed)." }), // Changed from 200 to 400
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     console.log(`[CancelBooking] Booking ${bookingId} is eligible for cancellation (within ${Math.floor(24 - hoursSinceBooking)}h window).`);
+    // --- END OF ELIGIBILITY CHECKS ---
 
-    // 4. Call Amadeus cancellation helper
+
+    // Amadeus Cancellation (User Step 7 - logs error but continues)
     const amadeusOrderIdToCancel = booking.amadeus_order_id || booking.pnr;
     if (!amadeusOrderIdToCancel) {
-        console.error(`[CancelBooking] No Amadeus Order ID or PNR found for booking ${bookingId}. Cannot cancel with Amadeus.`);
-        throw new Error('Amadeus Order ID/PNR missing for cancellation.');
+        console.error(`[CancelBooking] No Amadeus Order ID or PNR found for booking ${bookingId}. This should have been caught earlier if status was 'ticketed'. Critical inconsistency.`);
+        throw new Error('Amadeus Order ID/PNR missing for cancellation despite ticketed status.');
     }
 
-    let amadeusCancellationSuccessful = false; // Flag to track outcome
+    let amadeusCancellationSuccessful = false;
     try {
         console.log(`[CancelBooking] Attempting Amadeus cancellation for Order ID: ${amadeusOrderIdToCancel}`);
         const accessToken = await getAmadeusAccessToken();
@@ -121,45 +132,43 @@ serve(async (req: Request) => {
         const amadeusResult = await cancelAmadeusOrder(amadeusOrderIdToCancel, accessToken);
         if (!amadeusResult.success) {
             console.error(`[CancelBooking] Amadeus cancellation failed for Order ID ${amadeusOrderIdToCancel}:`, amadeusResult.error);
-            // Log error but continue to refund and DB updates as per spec ("We proceed with refund anyway...")
         } else {
             amadeusCancellationSuccessful = true;
             console.log(`[CancelBooking] Amadeus cancellation successful for Order ID: ${amadeusOrderIdToCancel}`);
         }
     } catch (amadeusErr) {
         console.error(`[CancelBooking] Exception during Amadeus cancellation for Order ID ${amadeusOrderIdToCancel}:`, amadeusErr.message);
-        // Log error but continue to refund and DB updates as per spec
     }
 
-    // 5. Issue Stripe refund using bookings.payment_intent_id
-    let stripeRefundSuccessful = false;
-    if (booking.payment_intent_id) {
-        console.log(`[CancelBooking] Attempting Stripe refund for PaymentIntent ID: ${booking.payment_intent_id}`);
-        try {
-            await stripe.refunds.create({ payment_intent: booking.payment_intent_id, reason: 'requested_by_customer' });
-            stripeRefundSuccessful = true;
-            console.log(`[CancelBooking] Stripe refund succeeded for PaymentIntent ID: ${booking.payment_intent_id}`);
-        } catch (refundErr: any) {
-            console.error(`[CancelBooking] Stripe refund failed for PaymentIntent ID ${booking.payment_intent_id}:`, refundErr.message);
-            // Log error, but proceed with DB updates.
-        }
-    } else {
-        console.warn(`[CancelBooking] No payment_intent_id found for booking ${bookingId}. Skipping Stripe refund.`);
+    // Stripe Refund (User Step 7 - exits on failure)
+    // booking.payment_intent_id was already checked to exist earlier
+    console.log(`[CancelBooking] Attempting Stripe refund for PaymentIntent ID: ${booking.payment_intent_id}`);
+    try {
+        const stripeRefund = await stripe.refunds.create({ payment_intent: booking.payment_intent_id, reason: 'requested_by_customer' });
+        console.log(`[CancelBooking] Stripe refund succeeded for PI ${booking.payment_intent_id} (booking ${bookingId}), refund ID: ${stripeRefund.id}`);
+    } catch (stripeErr: any) {
+        console.error(`[CancelBooking] Stripe refund error for PI ${booking.payment_intent_id} (booking ${bookingId}): ${stripeErr.message}`);
+        return new Response( // Exit on Stripe refund failure
+            JSON.stringify({ error: "Stripe refund failed. Please contact support." }),
+            { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
     }
 
-    // 6. Update both tables to status = 'cancelled' / 'refunded'
+    // Conditional Database Update to "canceled" (User Step 8)
+    // If we reach here, Stripe refund either succeeded or was skipped (no PI - but we added PI check, so it must exist).
+    // Amadeus cancellation might have failed (logged) but we proceed as per spec.
+    console.log(`[CancelBooking] Updating database status for booking ${bookingId} to 'cancelled'.`);
     const nowISO = new Date().toISOString();
-    console.log(`[CancelBooking] Updating database status for booking ${bookingId}`);
+
     const { error: updateBookingsErr } = await supabaseAdmin
       .from('bookings')
       .update({ status: 'cancelled', updated_at: nowISO })
       .eq('id', bookingId);
-
     if (updateBookingsErr) {
       console.error(`[CancelBooking] Failed to update bookings table for ${bookingId}:`, updateBookingsErr.message);
-      // This is a significant issue if other steps succeeded. Consider how to handle.
-      // For now, just logging. The overall function might still be considered a "success" if Amadeus/Stripe were okay.
+      throw new Error(`Failed to update booking status after cancellation/refund: ${updateBookingsErr.message}`);
     }
+    console.log(`[CancelBooking] Booking ${bookingId} marked as "canceled" in database.`);
 
     if (booking.booking_request_id) {
       const { error: updateBookingRequestsErr } = await supabaseAdmin
@@ -168,23 +177,13 @@ serve(async (req: Request) => {
         .eq('id', booking.booking_request_id);
       if (updateBookingRequestsErr) {
         console.error(`[CancelBooking] Failed to update booking_requests table for ${booking.booking_request_id}:`, updateBookingRequestsErr.message);
+        // Log and continue, as main booking is cancelled.
       }
     }
 
-    // Update payments table status if refund was attempted/successful - REMOVED
-    // if (booking.payment_intent_id) {
-    //     const paymentStatusOnDB = stripeRefundSuccessful ? 'refunded' : 'refund_failed';
-    //     console.log(`[CancelBooking] Updating payments table for PI ${booking.payment_intent_id} to status: ${paymentStatusOnDB}`);
-    //     const { error: updatePaymentsErr } = await supabaseAdmin
-    //         .from('payments')
-    //         .update({ status: paymentStatusOnDB, updated_at: nowISO })
-    //         .eq('stripe_payment_intent_id', booking.payment_intent_id);
-    //     if (updatePaymentsErr) {
-    //         console.warn(`[CancelBooking] Failed to update payments table for PI ${booking.payment_intent_id}:`, updatePaymentsErr.message);
-    //     }
-    // }
+    // Payments table update was removed as per User Step 4 of this refactoring.
 
-    // 7. Send booking_cancelled notification
+    // Send notification
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     if (supabaseUrl && serviceRoleKey && booking.user_id) {
@@ -206,7 +205,7 @@ serve(async (req: Request) => {
           type: 'booking_cancelled',
           payload: notificationPayload
         })
-      }).catch(err => console.error('[CancelBooking] Notification dispatch failed:', err.message)); // Fire and forget
+      }).catch(err => console.error('[CancelBooking] Notification dispatch failed:', err.message));
     }
 
     console.log(`[CancelBooking] Successfully processed cancellation for booking ${bookingId}.`);
@@ -214,6 +213,9 @@ serve(async (req: Request) => {
 
   } catch (error) {
     console.error(`[CancelBooking] Unhandled error for booking ${bookingId || 'unknown'}: ${error.message}`, error.stack);
+    // Determine appropriate status code based on the error, if possible, or default to 500.
+    // The specific error returns (400, 401, 403, 404, 502) are handled inline.
+    // This catch is for truly unexpected errors or those thrown by failed DB updates after Amadeus/Stripe.
     return new Response(JSON.stringify({ error: 'An unexpected error occurred during cancellation.' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
