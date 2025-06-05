@@ -646,8 +646,8 @@ const TripConfirm = () => {
           </CardFooter>
         </Card>
       </div>
-    </div>
-  );
+    );
+  }
 };
 
 export default TripConfirm;
