@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Added Link import
-import { supabase } from '@/integrations/supabase/client'; // Corrected import
-// import { useCurrentUser } from '@/hooks/useCurrentUser'; // Removed
+import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
+import { useNavigate, Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast'; // Added useToast
+import { Loader2 } from 'lucide-react'; // Added Loader2
 // For now, using 'any'. Replace with a proper type for booking history items.
 // import { Tables } from '@/integrations/supabase/types'; // Example if you have this type
 
@@ -11,46 +12,78 @@ interface TripHistoryProps {
 }
 
 const TripHistory: React.FC<TripHistoryProps> = ({ userId }) => {
-  const [tripHistory, setTripHistory] = useState<any[]>([]); // Replace 'any' with your Booking type
+  const [tripHistory, setTripHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const navigate = useNavigate();
-  // const { userId: currentUserId } = useCurrentUser(); // Removed
+  const { toast } = useToast();
+  const [isCancelling, setIsCancelling] = useState<string | null>(null);
+
+  const fetchTripHistory = useCallback(async () => {
+    if (!userId || !supabase) {
+      setHistoryLoading(false);
+      if (!userId) console.warn("Trip History: User ID prop not available.");
+      if (!supabase) console.warn("Trip History: Supabase client not available.");
+      return;
+    }
+    try {
+      setHistoryLoading(true);
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('id, trip_request_id, pnr, price, selected_seat_number, created_at, status') // Added status
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching trip history from bookings:", error);
+        setHistoryError(error.message);
+      } else {
+        setTripHistory(data || []);
+      }
+    } catch (err: any) {
+      console.error("Unexpected error fetching trip history from bookings:", err);
+      setHistoryError(err.message || "An unexpected error occurred.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [userId, supabase]); // supabase is stable from client import
 
   useEffect(() => {
-    const fetchTripHistory = async () => {
-      if (!userId || !supabase) { // Use prop userId
-        setHistoryLoading(false);
-        if (!userId) console.warn("Trip History: User ID prop not available.");
-        if (!supabase) console.warn("Trip History: Supabase client not available.");
-        return;
-      }
-      try {
-        setHistoryLoading(true);
-        const { data, error } = await supabase
-          .from('bookings') // Changed table to 'bookings'
-          .select('id, trip_request_id, pnr, price, selected_seat_number, created_at') // Updated fields
-          .eq('user_id', userId) // Use prop userId for filtering
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error("Error fetching trip history from bookings:", error);
-          setHistoryError(error.message);
-        } else {
-          setTripHistory(data || []);
-        }
-      } catch (err: any) {
-        console.error("Unexpected error fetching trip history from bookings:", err);
-        setHistoryError(err.message || "An unexpected error occurred.");
-      } finally {
-        setHistoryLoading(false);
-      }
-    };
-
-    if (supabase && userId) { // Use prop userId in condition
+    if (userId) {
       fetchTripHistory();
     }
-  }, [supabase, userId]); // Add userId to dependency array
+  }, [userId, fetchTripHistory]);
+
+  const handleCancelBooking = async (bookingId: string) => {
+    setIsCancelling(bookingId);
+    try {
+      // supabase.auth.getSession() is not needed if functions.invoke uses user's JWT by default
+      const { error: invokeError, data: invokeData } = await supabase.functions.invoke('cancel-booking', {
+        body: { booking_id: bookingId },
+      });
+
+      if (invokeError) {
+        throw invokeError;
+      }
+
+      toast({
+        title: 'Booking Cancellation Initiated',
+        description: (invokeData as any)?.message || 'Your booking cancellation is being processed.'
+      });
+
+      setTimeout(() => fetchTripHistory(), 1000); // Refresh after a delay
+
+    } catch (err: any) {
+      console.error('[TripHistory] Cancel booking failed for ID', bookingId, ':', err.message);
+      toast({
+        title: 'Cancellation Failed',
+        description: err.message || 'Could not cancel the booking at this time.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsCancelling(null);
+    }
+  };
 
   if (historyLoading) {
     return <p>Loading trip history...</p>;
@@ -86,37 +119,69 @@ const TripHistory: React.FC<TripHistoryProps> = ({ userId }) => {
               <th scope="col" className="px-6 py-3">
                 Details
               </th>
+              <th scope="col" className="px-6 py-3">
+                Status / Actions
+              </th>
             </tr>
           </thead>
           <tbody>
-            {tripHistory.map((booking) => (
-              <tr
-                key={booking.id}
-                className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-              >
-                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                  {booking.pnr || 'N/A'}
-                </td>
-                <td className="px-6 py-4">
-                  {booking.price ? `$${Number(booking.price).toFixed(2)}` : 'N/A'}
-                </td>
-                <td className="px-6 py-4">
-                  {booking.selected_seat_number || 'Auto-assigned'}
-                </td>
-                <td className="px-6 py-4">
-                  {new Date(booking.created_at).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4">
-                  {booking.trip_request_id ? (
-                    <Button variant="link" asChild className="p-0 h-auto text-blue-600 hover:underline">
-                      <Link to={`/trip/confirm?tripId=${booking.trip_request_id}`}>View Details</Link>
-                    </Button>
-                  ) : (
-                    <span>N/A</span>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {tripHistory.map((booking) => {
+              const now = new Date();
+              const bookedAt = new Date(booking.created_at);
+              const hoursSinceBooking = (now.getTime() - bookedAt.getTime()) / (1000 * 60 * 60);
+              const canCancel = booking.status === 'ticketed' && hoursSinceBooking < 24;
+
+              return (
+                <tr
+                  key={booking.id}
+                  className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                >
+                  <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    {booking.pnr || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4">
+                    {booking.price ? `$${Number(booking.price).toFixed(2)}` : 'N/A'}
+                  </td>
+                  <td className="px-6 py-4">
+                    {booking.selected_seat_number || 'Auto-assigned'}
+                  </td>
+                  <td className="px-6 py-4">
+                    {new Date(booking.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4">
+                    {booking.trip_request_id ? (
+                      <Button variant="link" asChild className="p-0 h-auto text-blue-600 hover:underline">
+                        <Link to={`/trip/confirm?tripId=${booking.trip_request_id}`}>View Details</Link>
+                      </Button>
+                    ) : (
+                      <span>N/A</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    {canCancel ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCancelBooking(booking.id)}
+                        disabled={isCancelling === booking.id}
+                        className="text-xs"
+                      >
+                        {isCancelling === booking.id ? (
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        ) : null}
+                        Cancel ({Math.max(0, Math.floor(24 - hoursSinceBooking))}h left)
+                      </Button>
+                    ) : (
+                      <span className="text-sm text-gray-600 capitalize">
+                        {booking.status === 'ticketed' && hoursSinceBooking >= 24 ?
+                          'Confirmed (Window Closed)' :
+                          (booking.status ? booking.status.replace('_', ' ') : 'Unknown')}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
