@@ -36,9 +36,11 @@ const AutoBookingSection = ({ control }: AutoBookingSectionProps) => {
   const { toast } = useToast();
 
   const autoBookEnabled = watch("auto_book_enabled");
+  console.log("auto_booking_enabled watched value at definition:", autoBookEnabled);
   const selectedPaymentMethodId = watch("preferred_payment_method_id");
 
   const handleAutoBookToggle = async (enabled: boolean) => {
+    console.log("handleAutoBookToggle called with enabled:", enabled);
     if (enabled) {
       if (isLoadingTravelerInfo || isLoadingPaymentMethods) {
         toast({
@@ -46,6 +48,7 @@ const AutoBookingSection = ({ control }: AutoBookingSectionProps) => {
           description: "Please wait while we verify auto-booking eligibility.",
         });
         setValue("auto_book_enabled", false);
+        console.log("auto_booking_enabled after prerequisites setValue(false):", getValues().auto_book_enabled);
         return;
       }
 
@@ -67,10 +70,12 @@ const AutoBookingSection = ({ control }: AutoBookingSectionProps) => {
           variant: "destructive",
         });
         setValue("auto_book_enabled", false);
+        console.log("auto_booking_enabled after prerequisites setValue(false):", getValues().auto_book_enabled);
         return;
       }
     }
     setValue("auto_book_enabled", enabled, { shouldValidate: true });
+    console.log("auto_booking_enabled after setValue in toggle:", getValues().auto_book_enabled);
   };
 
   const showMissingTravelerInfoAlert = !isLoadingTravelerInfo && !hasTravelerInfo;
@@ -91,11 +96,16 @@ const AutoBookingSection = ({ control }: AutoBookingSectionProps) => {
               </FormDescription>
             </div>
             <FormControl>
+              {(() => { // IIFE to allow statement before expression
+                console.log("auto_booking_enabled field.value before Switch:", field.value);
+                return (
               <Switch
                 checked={field.value}
                 onCheckedChange={handleAutoBookToggle}
                 disabled={isLoadingTravelerInfo || isLoadingPaymentMethods}
               />
+                );
+              })()}
             </FormControl>
           </FormItem>
         )}
