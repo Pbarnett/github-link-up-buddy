@@ -15,6 +15,10 @@ export interface TripFormValues {
 export interface ExtendedTripFormValues extends TripFormValues {
   departure_airports?: string[];
   destination_airport?: string;
+  destination_location_code?: string; // Add this field
+  // Filter fields
+  nonstop_required?: boolean;
+  baggage_included_required?: boolean;
   // Auto-booking fields
   auto_book_enabled?: boolean;
   max_price?: number | null;
@@ -92,6 +96,11 @@ export const tripFormSchema = z.object({
       });
     }
   }
+
+  return true;
+}, {
+  message: "Maximum price and payment method are required for auto-booking",
+  path: ["preferred_payment_method_id"],
 });
 
 // Form values type derived from the schema
