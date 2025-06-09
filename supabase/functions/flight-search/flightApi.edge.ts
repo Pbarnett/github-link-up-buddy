@@ -1,10 +1,3 @@
-const amadeusClientId = Deno.env.get("AMADEUS_CLIENT_ID");
-const amadeusClientSecret = Deno.env.get("AMADEUS_CLIENT_SECRET");
-if (!amadeusClientId || !amadeusClientSecret) {
-  console.error('Error: Missing Amadeus environment variables. AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET must be set.');
-  throw new Error('Edge Function: Missing Amadeus environment variables (AMADEUS_CLIENT_ID or AMADEUS_CLIENT_SECRET).');
-}
-
 // This file is specifically for Supabase Edge Functions
 // It contains Deno-specific code that shouldn't be imported by client-side code
 
