@@ -1,6 +1,7 @@
+
 // src/tests/components/dashboard/TripHistory.test.tsx
 import { render, screen, waitFor } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed
 import { MemoryRouter } from 'react-router-dom'; // For <Link>
 
@@ -134,7 +135,8 @@ describe('TripHistory Component', () => {
       expect(detailsLink).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}`);
     });
     // Check that the mocked Link component was called with the correct `to` prop
-    const LinkMock = (await import('react-router-dom')).Link as MockedFunction<any>;
+    const { Link } = await import('react-router-dom');
+    const LinkMock = Link as unknown as MockedFunction<any>;
     expect(LinkMock).toHaveBeenCalledWith(
         expect.objectContaining({ to: `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}` }),
         expect.anything()

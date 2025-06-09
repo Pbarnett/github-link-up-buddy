@@ -1,6 +1,7 @@
+
 // src/tests/pages/Dashboard.test.tsx
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, afterEach, MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import Dashboard from '@/pages/Dashboard';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
@@ -98,7 +99,8 @@ describe('Dashboard Page', () => {
         (chain.limit as MockedFunction<any>).mockResolvedValue({ data: [], error: null });
       }
       // Mock the update chain to resolve successfully by default
-      (mockSupabaseUpdate.eq as MockedFunction<any>).mockResolvedValue({ error: null });
+      const mockEq = vi.fn().mockResolvedValue({ error: null });
+      (mockSupabaseUpdate as any).eq = mockEq;
 
       return chain;
     });

@@ -1,7 +1,7 @@
 -- 20250524_rls_booking_requests.sql
 
 -- Enable RLS
-DO $$ 
+DO $$
 BEGIN
   ALTER TABLE public.booking_requests ENABLE ROW LEVEL SECURITY;
 EXCEPTION WHEN others THEN
@@ -9,7 +9,7 @@ EXCEPTION WHEN others THEN
 END $$;
 
 -- Allow users to SELECT their own requests
-DO $$ 
+DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'booking_requests' AND policyname = 'select_own_booking_requests') THEN
     CREATE POLICY select_own_booking_requests ON public.booking_requests
@@ -19,7 +19,7 @@ BEGIN
 END $$;
 
 -- Allow users to INSERT new requests for themselves
-DO $$ 
+DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'booking_requests' AND policyname = 'insert_booking_requests') THEN
     CREATE POLICY insert_booking_requests ON public.booking_requests
@@ -29,7 +29,7 @@ BEGIN
 END $$;
 
 -- Allow service_role to update only the status column
-DO $$ 
+DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'booking_requests' AND policyname = 'update_booking_request_status_only') THEN
     CREATE POLICY update_booking_request_status_only ON public.booking_requests
@@ -40,7 +40,7 @@ BEGIN
 END $$;
 
 -- Prevent users from deleting requests
-DO $$ 
+DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'booking_requests' AND policyname = 'no_delete_booking_requests') THEN
     CREATE POLICY no_delete_booking_requests ON public.booking_requests
