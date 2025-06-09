@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -15,6 +14,9 @@ export interface TripFormValues {
 export interface ExtendedTripFormValues extends TripFormValues {
   departure_airports?: string[];
   destination_airport?: string;
+  // Filter fields
+  nonstop_required?: boolean;
+  baggage_included_required?: boolean;
   // Auto-booking fields
   auto_book_enabled?: boolean;
   max_price?: number | null;
