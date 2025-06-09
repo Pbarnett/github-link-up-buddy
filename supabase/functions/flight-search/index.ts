@@ -90,18 +90,6 @@ serve(async (req: Request) => {
         console.log(`[flight-search] Processing trip request ${request.id}`);
         processedRequests++;
         
-        // Update last_checked_at timestamp
-        const { error: updateError } = await supabaseClient
-          .from("trip_requests")
-          .update({ last_checked_at: new Date().toISOString() })
-          .eq("id", request.id);
-        
-        if (updateError) {
-          console.error(`[flight-search] Error updating last_checked_at for request ${request.id}: ${updateError.message}`);
-          details.push({ tripRequestId: request.id, matchesFound: 0, error: `Update error: ${updateError.message}` });
-          continue;
-        }
-        
         // Always delete existing flight offers for this trip to avoid stale data
         // CRITICAL: This must happen BEFORE we search for new offers
         console.log(`[flight-search] Deleting existing offers for trip ${request.id}`);
