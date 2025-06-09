@@ -1,2 +1,2 @@
-ALTER TABLE flight_offers
-ADD COLUMN baggage_included BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE public.flight_offers
+  ADD COLUMN IF NOT EXISTS baggage_included BOOLEAN NOT NULL DEFAULT FALSE;
