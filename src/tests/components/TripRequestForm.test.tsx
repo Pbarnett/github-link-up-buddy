@@ -109,24 +109,78 @@ describe('TripRequestForm - Submission Logic', () => {
     const mockToast = vi.fn();
     (toast as vi.Mock).mockReturnValue(mockToast); // Corrected toast mock
 
+    const mockToastFn = vi.fn();
+    (toast as vi.Mock).mockImplementation((options) => {
+        mockToastFn(options); // Capture toast options
+        return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() }; // Return structure expected by use-toast
+    });
+    const mockNavigate = useNavigate(); // Get the mocked navigate function instance
+
     render(
       <MemoryRouter>
         <TripRequestForm />
       </MemoryRouter>
     );
 
-    // Fill in the form (adjust field labels/roles as per actual component)
-    // Assuming standard input fields. If using custom components, adjust selectors.
-    await userEvent.type(screen.getByLabelText(/departure airport/i), 'SFO');
-    await userEvent.type(screen.getByLabelText(/destination airport/i), 'LAX');
-    // For date inputs, direct value setting might be needed if userEvent.type is problematic
-    fireEvent.change(screen.getByLabelText(/departure date/i), { target: { value: '2024-08-15' } });
-    fireEvent.change(screen.getByLabelText(/return date/i), { target: { value: '2024-08-20' } });
-    await userEvent.type(screen.getByLabelText(/number of travelers/i), '1');
+    // Fill in the form based on TripRequestForm.tsx structure
+    // EnhancedDestinationSection - Assuming a combobox for destination_airport
+    // For simplicity, let's assume there's an input field that can be typed into for destination_airport
+    // or that typing into a combobox input sets the value.
+    // A more robust way would be to find the combobox, open it, and select an option if it's a real combobox.
+    // Given EnhancedDestinationSection, it's likely a custom component.
+    // Let's assume typing 'LAX' into an input with a label containing 'Destination Airport Code' works.
+    // If it's a combobox, you might need to screen.getByRole('combobox', { name: /destination/i })
+    // then userEvent.type(combobox, 'LAX'), then potentially click a matching option.
+    // For this iteration, we'll assume a simpler input or that typing into combobox sets free text.
+    await userEvent.type(screen.getByRole('combobox', { name: /destination/i }), 'LAX');
+    // No, EnhancedDestinationSection has a specific input for the airport code:
+    // <Input {...field} placeholder="e.g., LAX, LHR, CDG" className="w-full" />
+    // This input is part of a form field registered with RHF. Its label might be implicit.
+    // Let's try finding by placeholder if label is not explicit or stable.
+    // A better way is to use the label if available from the <FormField name="destination_airport">
+    // Based on the RHF setup, it's likely linked to a label.
+    // The section title is "Where do you want to go?". The input itself might not have a direct visible label.
+    // Let's assume screen.getByPlaceholderText('e.g., LAX, LHR, CDG') is how we get destination_airport
+    // await userEvent.type(screen.getByPlaceholderText(/e\.g\.\, LAX, LHR, CDG/i), 'LAX');
+    // Actually, the combobox itself (from shadcn/ui) should be the input.
+    // The name for the combobox seems to be "Destination" due to <Legend>Destination</Legend> in EnhancedDestinationSection.
 
-    // Find the submit button - assuming it's a button with type="submit" or specific text
-    // Let's assume the button has text "Create Trip" or "Submit"
-    const submitButton = screen.getByRole('button', { name: /create trip/i }); // Adjust name if different
+    // DepartureAirportsSection - fill "Other departure airport"
+    // It has <Legend>Where are you flying from?</Legend>
+    // And an input with placeholder "e.g. SFO, BOS" for other_departure_airport
+    await userEvent.type(screen.getByPlaceholderText(/e\.g\. SFO, BOS/i), 'SFO');
+
+    // DateRangeField - "When do you want to travel?"
+    // It has two date pickers. Let's assume they have accessible names.
+    // Typically, these are complex. We'll try to set values directly.
+    // Let's assume the inputs for dates can be found by labels "Earliest departure date" and "Latest departure date"
+    // which are default labels in DateRangePicker.tsx used by DateRangeField.tsx
+    fireEvent.change(screen.getByLabelText(/earliest departure date/i), { target: { value: '2024-08-15' } });
+    fireEvent.change(screen.getByLabelText(/latest departure date/i), { target: { value: '2024-08-20' } });
+
+    // EnhancedBudgetSection - "What's your budget?"
+    // Input for budget, assume label "Budget" or similar. It uses InputWithSlider.
+    // The input inside InputWithSlider has id="budget" and type="number".
+    // Let's try to find it by role 'spinbutton' (for type number) or a label if one is associated.
+    // The <Label htmlFor="budget">Budget</Label> exists.
+    await userEvent.clear(screen.getByLabelText(/budget/i)); // Clear default value
+    await userEvent.type(screen.getByLabelText(/budget/i), '1200');
+
+
+    // TripDurationInputs - "How long is your trip?"
+    // "Minimum trip duration (days)" and "Maximum trip duration (days)"
+    // These are likely number inputs.
+    await userEvent.clear(screen.getByLabelText(/minimum trip duration/i));
+    await userEvent.type(screen.getByLabelText(/minimum trip duration/i), '5');
+    await userEvent.clear(screen.getByLabelText(/maximum trip duration/i));
+    await userEvent.type(screen.getByLabelText(/maximum trip duration/i), '10');
+
+    // Ensure auto_book_enabled is false so buttonText is "Search Now"
+    // Default is false, so no action needed unless it was changed by another test (unlikely with beforeEach clearMocks)
+
+    // Find the submit button. For a new form, default buttonText is "Search Now".
+    const submitButton = screen.getByRole('button', { name: /search now/i });
+    expect(submitButton).toBeEnabled(); // Should be enabled after filling required fields
     await userEvent.click(submitButton);
 
     // Verification
@@ -134,20 +188,32 @@ describe('TripRequestForm - Submission Logic', () => {
       expect(mockInsert).toHaveBeenCalledTimes(1);
     });
 
-    const submittedData = mockInsert.mock.calls[0][0][0]; // Get the first argument of the first call, which is the submitted object
+    const submittedPayload = mockInsert.mock.calls[0][0][0];
 
-    expect(submittedData).toHaveProperty('destination_airport', 'LAX');
-    expect(submittedData).toHaveProperty('destination_location_code', 'LAX'); // Key verification
-    expect(submittedData).toHaveProperty('departure_airport', 'SFO');
-    expect(submittedData).toHaveProperty('departure_date', '2024-08-15');
-    expect(submittedData).toHaveProperty('return_date', '2024-08-20');
-    expect(submittedData).toHaveProperty('num_travelers', 1); // Assuming the field name in schema is num_travelers
-    expect(submittedData).toHaveProperty('user_id', 'test-user-id');
+    expect(submittedPayload).toHaveProperty('destination_airport', 'LAX');
+    expect(submittedPayload).toHaveProperty('destination_location_code', 'LAX'); // Key verification
+    expect(submittedPayload).toHaveProperty('departure_airports', ['SFO']);
+    expect(submittedPayload.earliest_departure).toMatch(/^2024-08-15T\d{2}:\d{2}:\d{2}\.\d{3}Z$/); // Check date format
+    expect(submittedPayload.latest_departure).toMatch(/^2024-08-20T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    expect(submittedPayload).toHaveProperty('budget', 1200);
+    expect(submittedPayload).toHaveProperty('min_duration', 5);
+    expect(submittedPayload).toHaveProperty('max_duration', 10);
+    expect(submittedPayload).toHaveProperty('user_id', 'test-user-id');
+    expect(submittedPayload).toHaveProperty('nonstop_required', true); // Default
+    expect(submittedPayload).toHaveProperty('baggage_included_required', false); // Default
+    expect(submittedPayload).toHaveProperty('auto_book_enabled', false); // Default
 
     // Verify navigation and toast
     await waitFor(() => {
-      expect(useNavigate()()).toHaveBeenCalledTimes(1); // Check if navigate was called
-      // expect(toast().toast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Success' })); // Check toast
+      expect(mockNavigate).toHaveBeenCalledWith('/trip/offers?id=new-trip-id');
+    });
+    await waitFor(() => {
+      expect(mockToastFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Trip request submitted",
+          description: "Your trip request has been successfully submitted!",
+        })
+      );
     });
   });
 });
