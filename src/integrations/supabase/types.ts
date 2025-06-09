@@ -77,63 +77,36 @@ export type Database = {
       }
       bookings: {
         Row: {
-          amadeus_order_id: string | null
           booked_at: string
-          booking_attempt_id: string
           booking_request_id: string | null
-          email_reminder_sent: boolean
           flight_details: Json | null
           flight_offer_id: string
           id: string
-          one_hour_email_sent: boolean
-          one_hour_sms_sent: boolean
-          pnr: string | null
           price: number | null
-          seat_fee: number | null
-          second_reminder_scheduled_at: string | null
-          sms_reminder_sent: boolean
           source: string | null
           status: string | null
           trip_request_id: string
           user_id: string
         }
         Insert: {
-          amadeus_order_id?: string | null
           booked_at?: string
-          booking_attempt_id?: string
           booking_request_id?: string | null
-          email_reminder_sent?: boolean
           flight_details?: Json | null
           flight_offer_id: string
           id?: string
-          one_hour_email_sent?: boolean
-          one_hour_sms_sent?: boolean
-          pnr?: string | null
           price?: number | null
-          seat_fee?: number | null
-          second_reminder_scheduled_at?: string | null
-          sms_reminder_sent?: boolean
           source?: string | null
           status?: string | null
           trip_request_id: string
           user_id: string
         }
         Update: {
-          amadeus_order_id?: string | null
           booked_at?: string
-          booking_attempt_id?: string
           booking_request_id?: string | null
-          email_reminder_sent?: boolean
           flight_details?: Json | null
           flight_offer_id?: string
           id?: string
-          one_hour_email_sent?: boolean
-          one_hour_sms_sent?: boolean
-          pnr?: string | null
           price?: number | null
-          seat_fee?: number | null
-          second_reminder_scheduled_at?: string | null
-          sms_reminder_sent?: boolean
           source?: string | null
           status?: string | null
           trip_request_id?: string
@@ -212,7 +185,6 @@ export type Database = {
         Row: {
           airline: string
           auto_book: boolean
-          baggage_included: boolean
           booking_url: string | null
           carrier_code: string | null
           created_at: string
@@ -227,14 +199,12 @@ export type Database = {
           price: number
           return_date: string
           return_time: string
-          selected_seat_type: string | null
           stops: number
           trip_request_id: string
         }
         Insert: {
           airline: string
           auto_book?: boolean
-          baggage_included?: boolean
           booking_url?: string | null
           carrier_code?: string | null
           created_at?: string
@@ -249,14 +219,12 @@ export type Database = {
           price: number
           return_date: string
           return_time: string
-          selected_seat_type?: string | null
           stops?: number
           trip_request_id: string
         }
         Update: {
           airline?: string
           auto_book?: boolean
-          baggage_included?: boolean
           booking_url?: string | null
           carrier_code?: string | null
           created_at?: string
@@ -271,7 +239,6 @@ export type Database = {
           price?: number
           return_date?: string
           return_time?: string
-          selected_seat_type?: string | null
           stops?: number
           trip_request_id?: string
         }
@@ -287,64 +254,39 @@ export type Database = {
       }
       notifications: {
         Row: {
-          booking_id: string | null
           booking_request_id: string | null
-          channel: string | null
           created_at: string
           data: Json | null
           id: string
           is_read: boolean
           message: string | null
-          payload: Json | null
-          retry_count: number | null
-          sent_at: string | null
-          status: string | null
           trip_request_id: string | null
           type: string
           user_id: string
         }
         Insert: {
-          booking_id?: string | null
           booking_request_id?: string | null
-          channel?: string | null
           created_at?: string
           data?: Json | null
           id?: string
           is_read?: boolean
           message?: string | null
-          payload?: Json | null
-          retry_count?: number | null
-          sent_at?: string | null
-          status?: string | null
           trip_request_id?: string | null
           type: string
           user_id: string
         }
         Update: {
-          booking_id?: string | null
           booking_request_id?: string | null
-          channel?: string | null
           created_at?: string
           data?: Json | null
           id?: string
           is_read?: boolean
           message?: string | null
-          payload?: Json | null
-          retry_count?: number | null
-          sent_at?: string | null
-          status?: string | null
           trip_request_id?: string | null
           type?: string
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_notifications_booking_id"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "notifications_booking_request_id_fkey"
             columns: ["booking_request_id"]
@@ -477,8 +419,6 @@ export type Database = {
           id: string
           last_name: string | null
           phone: string | null
-          prefers_email_notifications: boolean | null
-          prefers_sms_notifications: boolean | null
           updated_at: string | null
         }
         Insert: {
@@ -488,8 +428,6 @@ export type Database = {
           id: string
           last_name?: string | null
           phone?: string | null
-          prefers_email_notifications?: boolean | null
-          prefers_sms_notifications?: boolean | null
           updated_at?: string | null
         }
         Update: {
@@ -499,8 +437,6 @@ export type Database = {
           id?: string
           last_name?: string | null
           phone?: string | null
-          prefers_email_notifications?: boolean | null
-          prefers_sms_notifications?: boolean | null
           updated_at?: string | null
         }
         Relationships: []
@@ -510,7 +446,6 @@ export type Database = {
           adults: number | null
           auto_book: boolean
           auto_book_enabled: boolean
-          baggage_included_required: boolean
           best_price: number | null
           budget: number
           created_at: string
@@ -525,7 +460,6 @@ export type Database = {
           max_duration: number
           max_price: number | null
           min_duration: number
-          nonstop_required: boolean
           origin_location_code: string | null
           preferred_payment_method_id: string | null
           return_date: string | null
@@ -535,7 +469,6 @@ export type Database = {
           adults?: number | null
           auto_book?: boolean
           auto_book_enabled?: boolean
-          baggage_included_required?: boolean
           best_price?: number | null
           budget: number
           created_at?: string
@@ -550,7 +483,6 @@ export type Database = {
           max_duration?: number
           max_price?: number | null
           min_duration?: number
-          nonstop_required?: boolean
           origin_location_code?: string | null
           preferred_payment_method_id?: string | null
           return_date?: string | null
@@ -560,7 +492,6 @@ export type Database = {
           adults?: number | null
           auto_book?: boolean
           auto_book_enabled?: boolean
-          baggage_included_required?: boolean
           best_price?: number | null
           budget?: number
           created_at?: string
@@ -575,7 +506,6 @@ export type Database = {
           max_duration?: number
           max_price?: number | null
           min_duration?: number
-          nonstop_required?: boolean
           origin_location_code?: string | null
           preferred_payment_method_id?: string | null
           return_date?: string | null
