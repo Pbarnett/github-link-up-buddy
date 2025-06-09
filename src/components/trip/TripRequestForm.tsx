@@ -149,7 +149,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       budget: data.budget,
       departure_airports: departureAirports,
       destination_airport: destinationAirport,
-      destination_location_code: destinationAirport, // Add this mapping
+      destination_location_code: destinationAirport, // Ensure this is always set
       nonstop_required: data.nonstop_required,
       baggage_included_required: data.baggage_included_required,
       auto_book_enabled: data.auto_book_enabled,
@@ -160,10 +160,17 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
 
   const createTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
     if (!userId) throw new Error("You must be logged in to create a trip request.");
+    
+    // Ensure destination_location_code is set - this is critical for the flight search
+    const destinationLocationCode = formData.destination_location_code || formData.destination_airport;
+    if (!destinationLocationCode) {
+      throw new Error("Destination location code is required for flight search.");
+    }
+    
     const tripRequestData = {
       user_id: userId,
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport, // Add this field
+      destination_location_code: destinationLocationCode, // Always ensure this is populated
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
@@ -176,6 +183,9 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       max_price: formData.max_price,
       preferred_payment_method_id: formData.preferred_payment_method_id,
     };
+    
+    console.log("Creating trip request with data:", tripRequestData);
+    
     const { data, error } = await supabase
       .from("trip_requests")
       .insert([tripRequestData])
@@ -188,9 +198,16 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
 
   const updateTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
     if (!userId || !tripRequestId) throw new Error("User ID or Trip Request ID is missing for update.");
+    
+    // Ensure destination_location_code is set - this is critical for the flight search
+    const destinationLocationCode = formData.destination_location_code || formData.destination_airport;
+    if (!destinationLocationCode) {
+      throw new Error("Destination location code is required for flight search.");
+    }
+    
     const tripRequestData = {
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport, // Add this field
+      destination_location_code: destinationLocationCode, // Always ensure this is populated
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
@@ -203,6 +220,9 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       max_price: formData.max_price,
       preferred_payment_method_id: formData.preferred_payment_method_id,
     };
+    
+    console.log("Updating trip request with data:", tripRequestData);
+    
     const { data, error } = await supabase
       .from("trip_requests")
       .update(tripRequestData)
