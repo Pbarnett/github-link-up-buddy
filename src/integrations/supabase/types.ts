@@ -77,9 +77,7 @@ export type Database = {
       }
       bookings: {
         Row: {
-          amadeus_order_id: string | null
           booked_at: string
-          booking_attempt_id: string
           booking_request_id: string | null
           email_reminder_sent: boolean
           flight_details: Json | null
@@ -87,9 +85,7 @@ export type Database = {
           id: string
           one_hour_email_sent: boolean
           one_hour_sms_sent: boolean
-          pnr: string | null
           price: number | null
-          seat_fee: number | null
           second_reminder_scheduled_at: string | null
           sms_reminder_sent: boolean
           source: string | null
@@ -98,9 +94,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          amadeus_order_id?: string | null
           booked_at?: string
-          booking_attempt_id?: string
           booking_request_id?: string | null
           email_reminder_sent?: boolean
           flight_details?: Json | null
@@ -108,9 +102,7 @@ export type Database = {
           id?: string
           one_hour_email_sent?: boolean
           one_hour_sms_sent?: boolean
-          pnr?: string | null
           price?: number | null
-          seat_fee?: number | null
           second_reminder_scheduled_at?: string | null
           sms_reminder_sent?: boolean
           source?: string | null
@@ -119,9 +111,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          amadeus_order_id?: string | null
           booked_at?: string
-          booking_attempt_id?: string
           booking_request_id?: string | null
           email_reminder_sent?: boolean
           flight_details?: Json | null
@@ -129,9 +119,7 @@ export type Database = {
           id?: string
           one_hour_email_sent?: boolean
           one_hour_sms_sent?: boolean
-          pnr?: string | null
           price?: number | null
-          seat_fee?: number | null
           second_reminder_scheduled_at?: string | null
           sms_reminder_sent?: boolean
           source?: string | null
@@ -287,64 +275,39 @@ export type Database = {
       }
       notifications: {
         Row: {
-          booking_id: string | null
           booking_request_id: string | null
-          channel: string | null
           created_at: string
           data: Json | null
           id: string
           is_read: boolean
           message: string | null
-          payload: Json | null
-          retry_count: number | null
-          sent_at: string | null
-          status: string | null
           trip_request_id: string | null
           type: string
           user_id: string
         }
         Insert: {
-          booking_id?: string | null
           booking_request_id?: string | null
-          channel?: string | null
           created_at?: string
           data?: Json | null
           id?: string
           is_read?: boolean
           message?: string | null
-          payload?: Json | null
-          retry_count?: number | null
-          sent_at?: string | null
-          status?: string | null
           trip_request_id?: string | null
           type: string
           user_id: string
         }
         Update: {
-          booking_id?: string | null
           booking_request_id?: string | null
-          channel?: string | null
           created_at?: string
           data?: Json | null
           id?: string
           is_read?: boolean
           message?: string | null
-          payload?: Json | null
-          retry_count?: number | null
-          sent_at?: string | null
-          status?: string | null
           trip_request_id?: string | null
           type?: string
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_notifications_booking_id"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "notifications_booking_request_id_fkey"
             columns: ["booking_request_id"]
@@ -477,8 +440,6 @@ export type Database = {
           id: string
           last_name: string | null
           phone: string | null
-          prefers_email_notifications: boolean | null
-          prefers_sms_notifications: boolean | null
           updated_at: string | null
         }
         Insert: {
@@ -488,8 +449,6 @@ export type Database = {
           id: string
           last_name?: string | null
           phone?: string | null
-          prefers_email_notifications?: boolean | null
-          prefers_sms_notifications?: boolean | null
           updated_at?: string | null
         }
         Update: {
@@ -499,8 +458,6 @@ export type Database = {
           id?: string
           last_name?: string | null
           phone?: string | null
-          prefers_email_notifications?: boolean | null
-          prefers_sms_notifications?: boolean | null
           updated_at?: string | null
         }
         Relationships: []

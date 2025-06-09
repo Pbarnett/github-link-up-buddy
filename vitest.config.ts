@@ -1,4 +1,5 @@
 
+
 import { defineConfig } from 'vitest/config';
 import path from 'path'; // Import path module
 
@@ -12,7 +13,6 @@ export default defineConfig({
       '**/supabase/**'
     ],
     setupFiles: ['./src/tests/setupTests.ts'], // Added setup file
-    types: ['@testing-library/jest-dom'], // Explicitly declare jest-dom types for Vitest
   },
   resolve: {
     alias: {

@@ -1,5 +1,6 @@
+
 import { vi } from 'vitest';
-import '@testing-library/jest-dom/vitest'; // Import jest-dom matchers for Vitest
+import '@testing-library/jest-dom'; // Import jest-dom matchers
 
 // Mock window.matchMedia for JSDOM
 Object.defineProperty(window, 'matchMedia', {
