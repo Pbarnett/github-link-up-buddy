@@ -21,7 +21,7 @@ import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import TripDurationInputs from "./sections/TripDurationInputs";
-import AutoBookingToggle from "./sections/AutoBookingToggle";
+import AutoBookingSection from "./sections/AutoBookingSection.tsx";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
 
@@ -236,6 +236,9 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
         setIsSubmitting(false);
         return;
       }
+
+      console.log("Form data before transform:", data);
+      // Specifically to check data.preferred_payment_method_id when auto_book_enabled is true
       
       const action = tripRequestId ? "Updating" : "Creating";
       toast({
@@ -327,7 +330,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
 
                 {/* Right Column */}
                 <div className="space-y-6 bg-white rounded-lg border border-gray-100 p-6">
-                  <AutoBookingToggle control={form.control} />
+                  <AutoBookingSection control={form.control} />
               {/* --- Filter Toggles Section --- */}
               <FilterTogglesSection control={form.control} isLoading={isSubmitting || isLoadingDetails} />
                 </div>
