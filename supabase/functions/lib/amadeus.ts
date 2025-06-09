@@ -1,19 +1,3 @@
-// Placeholder: Verify Deno compatibility and exact SDK/version
-import Amadeus from 'https://deno.land/x/amadeus@3.0.0/mod.ts';
-
-const amadeusClientId = Deno.env.get("VITE_AMADEUS_CLIENT_ID");
-const amadeusClientSecret = Deno.env.get("VITE_AMADEUS_CLIENT_SECRET");
-if (!amadeusClientId || !amadeusClientSecret) {
-  console.error('Error: Missing Amadeus environment variables. VITE_AMADEUS_CLIENT_ID and VITE_AMADEUS_CLIENT_SECRET must be set.');
-  throw new Error('Edge Function: Missing Amadeus environment variables (VITE_AMADEUS_CLIENT_ID or VITE_AMADEUS_CLIENT_SECRET).');
-}
-
-const amadeus = new Amadeus({
-  clientId: amadeusClientId,
-  clientSecret: amadeusClientSecret,
-});
-
-export { amadeus };
 
 // Amadeus booking integration wrapper
 
@@ -42,8 +26,8 @@ export interface BookingResponse {
 
 async function getAmadeusAccessToken(): Promise<string> {
   const baseUrl = Deno.env.get("AMADEUS_BASE_URL");
-  const clientId = Deno.env.get("VITE_AMADEUS_CLIENT_ID");
-  const clientSecret = Deno.env.get("VITE_AMADEUS_CLIENT_SECRET");
+  const clientId = Deno.env.get("AMADEUS_CLIENT_ID");
+  const clientSecret = Deno.env.get("AMADEUS_CLIENT_SECRET");
 
   if (!baseUrl || !clientId || !clientSecret) {
     throw new Error("Missing Amadeus credentials in environment variables");
