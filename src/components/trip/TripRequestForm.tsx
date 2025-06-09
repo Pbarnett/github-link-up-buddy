@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +23,7 @@ import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import TripDurationInputs from "./sections/TripDurationInputs";
 import AutoBookingToggle from "./sections/AutoBookingToggle";
 import StickyFormActions from "./StickyFormActions";
+import FilterTogglesSection from "./sections/FilterTogglesSection";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -59,6 +61,8 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       other_departure_airport: "",
       destination_airport: "",
       destination_other: "",
+      nonstop_required: true,
+      baggage_included_required: false,
       auto_book_enabled: false,
       max_price: null,
       preferred_payment_method_id: null,
@@ -91,6 +95,8 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
               other_departure_airport: otherAirport,
               destination_airport: tripData.destination_airport?.length === 3 && tripData.destination_airport === tripData.destination_airport?.toUpperCase() ? tripData.destination_airport : "",
               destination_other: tripData.destination_airport?.length !== 3 || tripData.destination_airport !== tripData.destination_airport?.toUpperCase() ? tripData.destination_airport : "",
+              nonstop_required: tripData.nonstop_required ?? true,
+              baggage_included_required: tripData.baggage_included_required ?? false,
               auto_book_enabled: tripData.auto_book_enabled ?? false, // Use nullish coalescing
               max_price: tripData.max_price,
               preferred_payment_method_id: tripData.preferred_payment_method_id,
@@ -143,6 +149,9 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       budget: data.budget,
       departure_airports: departureAirports,
       destination_airport: destinationAirport,
+      destination_location_code: destinationAirport, // Add this mapping
+      nonstop_required: data.nonstop_required,
+      baggage_included_required: data.baggage_included_required,
       auto_book_enabled: data.auto_book_enabled,
       max_price: data.max_price,
       preferred_payment_method_id: data.preferred_payment_method_id,
@@ -151,15 +160,18 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
 
   const createTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
     if (!userId) throw new Error("You must be logged in to create a trip request.");
-    const tripRequestData = { /* ... same as before ... */
+    const tripRequestData = {
       user_id: userId,
       destination_airport: formData.destination_airport,
+      destination_location_code: formData.destination_airport, // Add this field
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
       min_duration: formData.min_duration,
       max_duration: formData.max_duration,
       budget: formData.budget,
+      nonstop_required: formData.nonstop_required ?? true,
+      baggage_included_required: formData.baggage_included_required ?? false,
       auto_book_enabled: formData.auto_book_enabled ?? false,
       max_price: formData.max_price,
       preferred_payment_method_id: formData.preferred_payment_method_id,
@@ -176,14 +188,17 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
 
   const updateTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
     if (!userId || !tripRequestId) throw new Error("User ID or Trip Request ID is missing for update.");
-    const tripRequestData = { /* ... same as before ... */
+    const tripRequestData = {
       destination_airport: formData.destination_airport,
+      destination_location_code: formData.destination_airport, // Add this field
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
       min_duration: formData.min_duration,
       max_duration: formData.max_duration,
       budget: formData.budget,
+      nonstop_required: formData.nonstop_required ?? true,
+      baggage_included_required: formData.baggage_included_required ?? false,
       auto_book_enabled: formData.auto_book_enabled ?? false,
       max_price: formData.max_price,
       preferred_payment_method_id: formData.preferred_payment_method_id,
@@ -313,6 +328,8 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
                 {/* Right Column */}
                 <div className="space-y-6 bg-white rounded-lg border border-gray-100 p-6">
                   <AutoBookingToggle control={form.control} />
+              {/* --- Filter Toggles Section --- */}
+              <FilterTogglesSection control={form.control} isLoading={isSubmitting || isLoadingDetails} />
                 </div>
               </div>
 
