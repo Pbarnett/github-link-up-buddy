@@ -20,8 +20,18 @@ BEGIN
 END
 $$;
 
--- 3. Alter the status column to use the new enum
-ALTER TABLE public.booking_requests
-  ALTER COLUMN status
-  TYPE public.booking_request_status
-  USING status::public.booking_request_status;
+-- 3. Add status column with the new enum type
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'booking_requests'
+      AND column_name = 'status'
+  ) THEN
+    ALTER TABLE public.booking_requests
+      ADD COLUMN status public.booking_request_status NOT NULL DEFAULT 'new';
+  END IF;
+END
+$$;
