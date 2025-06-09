@@ -1,9 +1,3 @@
-const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-if (!stripeSecretKey) {
-  console.error('Error: Missing Stripe environment variable. STRIPE_SECRET_KEY must be set.');
-  throw new Error('Edge Function: Missing Stripe environment variable (STRIPE_SECRET_KEY).');
-}
-
 
 import Stripe from "https://esm.sh/stripe@14.21.0";
 
