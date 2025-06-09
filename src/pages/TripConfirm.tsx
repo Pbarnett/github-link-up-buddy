@@ -25,11 +25,12 @@ const TripConfirm = () => {
   const [bookingRequestId, setBookingRequestId] = useState<string | null>(null);
   const [isSavingTravelerData, setIsSavingTravelerData] = useState(false);
   const [isCheckingOffer, setIsCheckingOffer] = useState(false);
+  const [autoBookEnabled, setAutoBookEnabled] = useState<boolean | null>(null);
+  const [isLoadingAutoBookStatus, setIsLoadingAutoBookStatus] = useState(true);
   const { user, userId, loading: userLoading } = useCurrentUser();
   const searchParams = new URLSearchParams(location.search);
   const sessionId = searchParams.get('session_id');
 
-  // Check if offer has external booking URL and redirect if needed
   const checkOfferForExternalBooking = async (offerId: string) => {
     setIsCheckingOffer(true);
     try {
@@ -78,7 +79,6 @@ const TripConfirm = () => {
         setBookingStatus("Processing payment...");
         setShowTravelerForm(false);
         
-        // Trigger process-booking for completed checkout sessions
         const processCompletedBooking = async () => {
           try {
             console.log("[TripConfirm] Invoking process-booking for sessionId:", sessionId);
@@ -104,7 +104,6 @@ const TripConfirm = () => {
         return;
       }
       
-      // Parse offer details from query params
       const searchParams = new URLSearchParams(location.search);
       
       if (!searchParams.has('id')) {
@@ -136,15 +135,51 @@ const TripConfirm = () => {
         throw new Error("Incomplete flight information");
       }
 
-      // Check if this offer should be booked externally
-      const checkExternalBooking = async () => {
+      const initializeOfferAndAutoBookStatus = async () => {
+        setIsLoadingAutoBookStatus(true);
         const shouldRedirect = await checkOfferForExternalBooking(parsedOffer.id);
-        if (!shouldRedirect) {
-          setOffer(parsedOffer);
+        if (shouldRedirect) {
+          setIsLoadingAutoBookStatus(false);
+          return;
+        }
+
+        setOffer(parsedOffer);
+
+        try {
+          const { data: offerData, error: offerDetailsError } = await supabase
+            .from("flight_offers")
+            .select("trip_request_id")
+            .eq("id", parsedOffer.id)
+            .single();
+
+          if (offerDetailsError || !offerData?.trip_request_id) {
+            console.error("Error fetching trip_request_id for offer:", offerDetailsError?.message);
+            setAutoBookEnabled(false);
+            setIsLoadingAutoBookStatus(false);
+            return;
+          }
+
+          const { data: tripRequestData, error: tripRequestError } = await supabase
+            .from("trip_requests")
+            .select("auto_book_enabled")
+            .eq("id", offerData.trip_request_id)
+            .single();
+
+          if (tripRequestError) {
+            console.error("Error fetching auto_book_enabled status:", tripRequestError.message);
+            setAutoBookEnabled(false);
+          } else {
+            setAutoBookEnabled(tripRequestData?.auto_book_enabled ?? false);
+          }
+        } catch (err) {
+          console.error("Exception fetching auto_book_status:", err);
+          setAutoBookEnabled(false);
+        } finally {
+          setIsLoadingAutoBookStatus(false);
         }
       };
 
-      checkExternalBooking();
+      initializeOfferAndAutoBookStatus();
     } catch (error: any) {
       console.error("[TripConfirm] Error parsing offer details:", error);
       setHasError(true);
@@ -156,7 +191,6 @@ const TripConfirm = () => {
     }
   }, [location.search, sessionId, navigate]);
 
-  // Subscribe to booking status updates if we have a session ID
   useEffect(() => {
     if (!sessionId) return;
     
@@ -193,7 +227,6 @@ const TripConfirm = () => {
     
     fetchBookingRequest();
     
-    // Subscribe to booking status updates
     const channel = supabase
       .channel(`checkout:${sessionId}`)
       .on(
@@ -448,14 +481,40 @@ const TripConfirm = () => {
     );
   }
 
-  if (userLoading || !offer || isCheckingOffer) {
+  if (userLoading || !offer || isCheckingOffer || isLoadingAutoBookStatus) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
         <div className="animate-pulse flex flex-col items-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
           <p className="text-gray-500">
-            {isCheckingOffer ? "Checking booking options..." : "Loading flight details..."}
+            {isCheckingOffer ? "Checking booking options..." : (isLoadingAutoBookStatus ? "Loading booking settings..." : "Loading flight details...")}
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (autoBookEnabled === true) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-3xl mx-auto my-8 p-6 bg-blue-50 border border-blue-200 rounded-lg text-center shadow">
+          <CardHeader>
+            <CardTitle className="text-blue-700 text-2xl">Auto-Booking Enabled</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-lg font-medium text-blue-700 mb-2">
+              Auto‐booking is enabled and in progress for this trip.
+            </p>
+            <p className="text-sm text-blue-600">
+              You will be notified once the booking is confirmed or if any issues arise.
+              You can view the status on your dashboard.
+            </p>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <Button onClick={() => navigate('/dashboard')} variant="outline">
+              Go to Dashboard
+            </Button>
+          </CardFooter>
         </div>
       </div>
     );
@@ -473,15 +532,12 @@ const TripConfirm = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Error Message */}
             {error && (
               <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md flex items-start">
                 <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
                 <p>{error}</p>
               </div>
             )}
-            
-            {/* Airline and Flight Number */}
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <h3 className="text-xl font-semibold">{offer.airline}</h3>
@@ -489,10 +545,7 @@ const TripConfirm = () => {
               </div>
               <p className="text-2xl font-bold">${offer.price}</p>
             </div>
-            
-            {/* Flight Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-b py-4">
-              {/* Departure Info */}
               <div className="space-y-3">
                 <h4 className="font-medium">Departure</h4>
                 <div className="flex items-center">
@@ -504,8 +557,6 @@ const TripConfirm = () => {
                   <span>{offer.departure_time}</span>
                 </div>
               </div>
-              
-              {/* Return Info */}
               <div className="space-y-3">
                 <h4 className="font-medium">Return</h4>
                 <div className="flex items-center">
@@ -518,8 +569,6 @@ const TripConfirm = () => {
                 </div>
               </div>
             </div>
-            
-            {/* Duration */}
             <div className="flex items-center">
               <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
               <span className="text-sm text-gray-500">Flight duration: {offer.duration}</span>
@@ -527,7 +576,6 @@ const TripConfirm = () => {
           </CardContent>
         </Card>
 
-        {/* Traveler Data Form */}
         {showTravelerForm && (
           <TravelerDataForm
             onSubmit={handleTravelerDataSubmit}
@@ -535,7 +583,6 @@ const TripConfirm = () => {
           />
         )}
 
-        {/* Traveler Data Summary (when form is completed) */}
         {!showTravelerForm && travelerData && (
           <Card>
             <CardHeader>
@@ -570,7 +617,6 @@ const TripConfirm = () => {
           </Card>
         )}
 
-        {/* Payment Card */}
         <Card>
           <CardContent className="pt-6">
             <div className="bg-gray-50 p-4 rounded-md mb-4">
