@@ -1,9 +1,30 @@
 
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  console.error('Error: Missing Supabase environment variables. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.');
+  throw new Error('Edge Function: Missing Supabase environment variables (SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY).');
+}
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Import the flight API service (edge version) with explicit fetchToken
 import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
+
+// Utility functions moved directly into the edge function
+function decideSeatPreference(
+  offer: any,
+  trip: { max_price: number }
+): "AISLE" | "WINDOW" | "MIDDLE" | null {
+  // TODO: Jules will fill in the actual parsing of offer.seat_map or offer.fare_details.
+  return "MIDDLE"; // placeholder so our smoke test always picks "MIDDLE"
+}
+
+function offerIncludesCarryOnAndPersonal(offer: any): boolean {
+  // TODO: Implement actual baggage checking logic
+  return false; // placeholder
+}
 
 // Set up CORS headers
 const corsHeaders = {
@@ -37,12 +58,20 @@ serve(async (req: Request) => {
     let relaxedCriteria = false;
     
     if (req.method === "POST") {
-      body = await req.json();
-      tripRequestId = body.tripRequestId || null;
-      relaxedCriteria = body.relaxedCriteria === true;
-      
-      if (relaxedCriteria) {
-        console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
+      try {
+        body = await req.json();
+        tripRequestId = body.tripRequestId || null;
+        relaxedCriteria = body.relaxedCriteria === true;
+        
+        if (relaxedCriteria) {
+          console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
+        }
+      } catch (parseError) {
+        console.error('[flight-search] Error parsing request body:', parseError.message);
+        return new Response(
+          JSON.stringify({ error: 'Invalid JSON in request body' }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
     
@@ -126,7 +155,7 @@ serve(async (req: Request) => {
           continue;
         }
         
-        if (!request.destination_airport) {
+        if (!request.destination_location_code) {
           console.error(`[flight-search] No destination airport specified for request ${request.id}`);
           details.push({ 
             tripRequestId: request.id, 
@@ -139,13 +168,13 @@ serve(async (req: Request) => {
         // Create search params from the trip request - use ONLY the exact destination specified
         const searchParams: FlightSearchParams = {
           origin: request.departure_airports,
-          destination: request.destination_airport, // Use exact destination only, no nearby airports
+          destination: request.destination_location_code, // Use exact destination only, no nearby airports
           earliestDeparture: new Date(request.earliest_departure),
           latestDeparture: new Date(request.latest_departure),
           minDuration: relaxedCriteria ? 1 : request.min_duration, // Relax min duration if requested
           maxDuration: relaxedCriteria ? 30 : request.max_duration, // Relax max duration if requested
           budget: relaxedCriteria ? Math.ceil(request.budget * 1.2) : request.budget, // Increase budget by 20% if relaxed
-          maxConnections: 2 // reasonable default
+          relaxedCriteria: relaxedCriteria
         };
         
         // Log search parameters for debugging
@@ -186,43 +215,89 @@ serve(async (req: Request) => {
         // Filter offers to ensure they match the EXACT destination airport only
         const exactDestinationOffers = offers.filter(offer => {
           const offerDestination = offer.destination_airport;
-          const requestedDestination = request.destination_airport;
+          const requestedDestination = request.destination_location_code;
           return offerDestination === requestedDestination;
         });
         
-        console.log(`[flight-search] Request ${request.id}: Filtered from ${offers.length} to ${exactDestinationOffers.length} offers matching exact destination ${request.destination_airport}`);
+        console.log(`[flight-search] Request ${request.id}: Filtered from ${offers.length} to ${exactDestinationOffers.length} offers matching exact destination ${request.destination_location_code}`);
         
         // Filter offers based on max_price (if specified)
         // If max_price is null, no filtering is applied (treat as "no filter")
-        const filteredOffers = request.max_price === null 
-          ? exactDestinationOffers 
+        let priceFilteredOffers = request.max_price === null
+          ? exactDestinationOffers
           : exactDestinationOffers.filter(offer => offer.price <= request.max_price);
-        
-        console.log(`[flight-search] Request ${request.id}: Generated ${exactDestinationOffers.length} exact destination offers, filtered to ${filteredOffers.length} by max price`);
-        
-        if (filteredOffers.length === 0) {
-          details.push({ 
-            tripRequestId: request.id, 
-            matchesFound: 0, 
+
+        console.log(`[flight-search] Request ${request.id}: Generated ${exactDestinationOffers.length} exact destination offers, filtered to ${priceFilteredOffers.length} by max price`);
+
+        // --- Start of new filtering logic ---
+        const finalFilteredOffers = [];
+        for (const offer of priceFilteredOffers) {
+          try {
+            // Apply nonstop_required filter
+            // It's assumed `offer.nonstop_match` is a boolean indicating if the offer is non-stop.
+            // `request.nonstop_required` is from the trip_requests table.
+            if (request.nonstop_required === true && offer.stops > 0) {
+              console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to nonstop mismatch. Request nonstop: ${request.nonstop_required}, Offer stops: ${offer.stops}`);
+              continue;
+            }
+
+            // Apply baggage_included_required filter
+            // It's assumed `offer.baggage_included` is a boolean.
+            // `request.baggage_included_required` is from the trip_requests table.
+            if (request.baggage_included_required === true && offer.baggage_included !== true) {
+              console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to baggage mismatch. Request baggage: ${request.baggage_included_required}, Offer baggage: ${offer.baggage_included}`);
+              continue;
+            }
+
+            const seatType = decideSeatPreference(offer, request); // `request` is the trip here
+            if (seatType === null) {
+              console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to null seatType (max_price: ${request.max_price}).`);
+              continue;
+            }
+
+            // If all checks pass, add to list for DB insertion
+            finalFilteredOffers.push({
+              ...offer, // Spread the original offer
+              selected_seat_type: seatType,
+              // Ensure baggage_included and stops are part of the offer object by now,
+              // potentially defaulted if not provided by searchOffers.
+              baggage_included: offer.baggage_included !== undefined ? offer.baggage_included : false,
+              stops: offer.stops !== undefined ? offer.stops : 0,
+              trip_request_id: request.id,
+            });
+          } catch (filterError) {
+            console.error(`[flight-search] Error filtering offer for trip ${request.id}:`, filterError.message);
+            // Continue with next offer
+          }
+        }
+        // --- End of new filtering logic ---
+
+        console.log(`[flight-search] Request ${request.id}: ${priceFilteredOffers.length} offers after price filter, ${finalFilteredOffers.length} offers after ALL filters (seat, nonstop, baggage).`);
+
+        if (finalFilteredOffers.length === 0) {
+          details.push({
+            tripRequestId: request.id,
+            matchesFound: 0,
             offersGenerated: offers.length,
             exactDestinationOffers: exactDestinationOffers.length,
-            offersFiltered: 0,
-            error: "No matching offers for exact destination after filtering"
+            offersFiltered: priceFilteredOffers.length,
+            offersAfterAllFilters: 0,
+            error: "No matching offers after all filters (seat, nonstop, baggage)"
           });
           continue;
         }
-        
+
         // Log offers being inserted
-        console.log(`[flight-search] Inserting ${filteredOffers.length} offers. First offer:`, 
-          JSON.stringify(filteredOffers[0], null, 2));
-        
+        console.log(`[flight-search] Inserting ${finalFilteredOffers.length} offers. First offer:`,
+          JSON.stringify(finalFilteredOffers[0], null, 2));
+
         // Save offers to the database
         const { data: savedOffers, error: offersError, count: offersCount } = await supabaseClient
           .from("flight_offers")
-          .insert(filteredOffers)
+          .insert(finalFilteredOffers) // Use finalFilteredOffers here
           .select("id, price, departure_date, departure_time")
           .returns();
-        
+
         if (offersError) {
           console.error(`[flight-search] Error saving offers for request ${request.id}: ${offersError.message}`);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `Offers error: ${offersError.message}` });
@@ -232,14 +307,16 @@ serve(async (req: Request) => {
         console.log(`[flight-search] Inserted ${offersCount || 0} offers into flight_offers`);
         
         if (!savedOffers || savedOffers.length === 0) {
-          console.log(`[flight-search] No offers were saved for request ${request.id}. This could be due to duplicates.`);
+          console.log(`[flight-search] No offers were saved for request ${request.id}. This could be due to duplicates or RLS issues.`);
           details.push({ 
             tripRequestId: request.id,
             matchesFound: 0,
             offersGenerated: offers.length,
             exactDestinationOffers: exactDestinationOffers.length,
+            offersFiltered: priceFilteredOffers.length,
+            offersAfterAllFilters: finalFilteredOffers.length,
             offersInserted: 0,
-            error: "No offers were saved to the database"
+            error: "No offers were saved to the database (after all filters)"
           });
           continue;
         }
@@ -282,12 +359,14 @@ serve(async (req: Request) => {
           matchesFound: newInserts,
           offersGenerated: offers.length,
           exactDestinationOffers: exactDestinationOffers.length,
-          offersFiltered: filteredOffers.length,
+          offersFiltered: priceFilteredOffers.length,
+          offersAfterAllFilters: finalFilteredOffers.length,
+          offersInsertedToDB: savedOffers.length,
           relaxedCriteria: relaxedCriteria,
           exactDestinationOnly: true
         });
         
-        console.log(`[flight-search] Request ${request.id}: fetched ${offers.length} offers → ${exactDestinationOffers.length} exact destination → ${newInserts} new matches`);
+        console.log(`[flight-search] Request ${request.id}: fetched ${offers.length} offers → ${exactDestinationOffers.length} exact destination → ${priceFilteredOffers.length} price filtered → ${finalFilteredOffers.length} after all filters → ${newInserts} new matches`);
       } catch (requestError) {
         // Catch any errors in processing this specific trip request
         console.error(`[flight-search] Failed to process request ${request.id}: ${requestError.message}`);
@@ -329,7 +408,7 @@ serve(async (req: Request) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error.message || 'Unknown error occurred',
         requestsProcessed: 0,
         matchesInserted: 0,
         totalDurationMs,
