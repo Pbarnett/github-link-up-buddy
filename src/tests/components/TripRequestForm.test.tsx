@@ -88,6 +88,103 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
   // --- End of Tests for FilterTogglesSection functionality ---
 });
 
+describe('TripRequestForm - Destination Location Code Mapping', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (useCurrentUser as vi.Mock).mockReturnValue({
+      user: { id: 'test-user-id', email: 'test@example.com' },
+    });
+    (useNavigate as vi.Mock).mockReturnValue(vi.fn());
+  });
+
+  it('should populate destination_location_code from destination_airport when submitting', async () => {
+    const mockInsert = vi.fn().mockResolvedValue({ 
+      data: [{ id: 'new-trip-id', destination_location_code: 'LAX' }], 
+      error: null 
+    });
+    (supabase.from as vi.Mock).mockReturnValue({
+      insert: mockInsert,
+    });
+
+    render(
+      <MemoryRouter>
+        <TripRequestForm />
+      </MemoryRouter>
+    );
+
+    // Fill in required form fields
+    const earliestDateInput = screen.getByLabelText(/earliest departure/i);
+    const latestDateInput = screen.getByLabelText(/latest departure/i);
+    const budgetInput = screen.getByLabelText(/budget/i);
+    
+    fireEvent.change(earliestDateInput, { target: { value: '2024-08-15T10:00' } });
+    fireEvent.change(latestDateInput, { target: { value: '2024-08-20T10:00' } });
+    fireEvent.change(budgetInput, { target: { value: '1500' } });
+
+    // Select departure and destination
+    const nycCheckbox = screen.getByRole('checkbox', { name: /jfk/i });
+    await userEvent.click(nycCheckbox);
+    
+    const destinationSelect = screen.getByRole('combobox', { name: /destination/i });
+    await userEvent.click(destinationSelect);
+    const laxOption = screen.getByText('LAX - Los Angeles');
+    await userEvent.click(laxOption);
+
+    const submitButton = screen.getByRole('button', { name: /search now/i });
+    await userEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockInsert).toHaveBeenCalledTimes(1);
+    });
+
+    const submittedData = mockInsert.mock.calls[0][0][0];
+    
+    // Verify that destination_location_code is properly set
+    expect(submittedData).toHaveProperty('destination_airport', 'LAX');
+    expect(submittedData).toHaveProperty('destination_location_code', 'LAX');
+    expect(submittedData).toHaveProperty('user_id', 'test-user-id');
+    
+    console.log('Submitted data verification:', submittedData);
+  });
+
+  it('should handle custom destination airport correctly', async () => {
+    const mockInsert = vi.fn().mockResolvedValue({ 
+      data: [{ id: 'new-trip-id', destination_location_code: 'SFO' }], 
+      error: null 
+    });
+    (supabase.from as vi.Mock).mockReturnValue({
+      insert: mockInsert,
+    });
+
+    render(
+      <MemoryRouter>
+        <TripRequestForm />
+      </MemoryRouter>
+    );
+
+    // Fill required fields and custom destination
+    const customDestinationInput = screen.getByPlaceholderText(/enter airport code/i);
+    await userEvent.type(customDestinationInput, 'SFO');
+
+    // Fill other required fields
+    const earliestDateInput = screen.getByLabelText(/earliest departure/i);
+    fireEvent.change(earliestDateInput, { target: { value: '2024-08-15T10:00' } });
+
+    const submitButton = screen.getByRole('button', { name: /search now/i });
+    await userEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockInsert).toHaveBeenCalledTimes(1);
+    });
+
+    const submittedData = mockInsert.mock.calls[0][0][0];
+    
+    // Verify both destination_airport and destination_location_code are set to the custom value
+    expect(submittedData).toHaveProperty('destination_airport', 'SFO');
+    expect(submittedData).toHaveProperty('destination_location_code', 'SFO');
+  });
+});
+
 describe('TripRequestForm - Submission Logic', () => {
   beforeEach(() => {
     vi.clearAllMocks();
