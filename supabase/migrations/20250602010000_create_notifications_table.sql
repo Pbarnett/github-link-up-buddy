@@ -13,9 +13,39 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(use
 CREATE INDEX IF NOT EXISTS idx_notifications_type ON public.notifications(type);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON public.notifications(is_read);
 
-COMMENT ON TABLE public.notifications IS 'Stores user-facing notifications for various events like booking status changes and reminders.';
-COMMENT ON COLUMN public.notifications.type IS 'Type of notification, e.g., booking_success, booking_failure, reminder_23h, booking_canceled';
-COMMENT ON COLUMN public.notifications.payload IS 'JSONB payload with additional data specific to the notification type, e.g., PNR, flight details, error messages.';
+-- Add comments only if the table and columns exist
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+      FROM information_schema.tables
+     WHERE table_schema = 'public'
+       AND table_name = 'notifications'
+  ) THEN
+    COMMENT ON TABLE public.notifications IS 'Stores user-facing notifications for various events like booking status changes and reminders.';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+      FROM information_schema.columns
+     WHERE table_schema = 'public'
+       AND table_name = 'notifications'
+       AND column_name = 'type'
+  ) THEN
+    COMMENT ON COLUMN public.notifications.type IS 'Type of notification, e.g., booking_success, booking_failure, reminder_23h, booking_canceled';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+      FROM information_schema.columns
+     WHERE table_schema = 'public'
+       AND table_name = 'notifications'
+       AND column_name = 'payload'
+  ) THEN
+    COMMENT ON COLUMN public.notifications.payload IS 'JSONB payload with additional data specific to the notification type, e.g., PNR, flight details, error messages.';
+  END IF;
+END
+$$;
 
 -- Note: Row Level Security (RLS) should be considered and implemented based on application security requirements.
 -- Example RLS policies (Uncomment and adjust if needed):
