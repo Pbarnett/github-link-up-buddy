@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +23,7 @@ import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import TripDurationInputs from "./sections/TripDurationInputs";
 import AutoBookingToggle from "./sections/AutoBookingToggle";
 import StickyFormActions from "./StickyFormActions";
-import FilterTogglesSection from "./sections/FilterTogglesSection"; // Single import retained
+import FilterTogglesSection from "./sections/FilterTogglesSection";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -60,8 +61,8 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       other_departure_airport: "",
       destination_airport: "",
       destination_other: "",
-      nonstop_required: true, // Zod schema default
-      baggage_included_required: false, // Zod schema default
+      nonstop_required: true,
+      baggage_included_required: false,
       auto_book_enabled: false,
       max_price: null,
       preferred_payment_method_id: null,
@@ -148,6 +149,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       budget: data.budget,
       departure_airports: departureAirports,
       destination_airport: destinationAirport,
+      destination_location_code: destinationAirport, // Add this mapping
       nonstop_required: data.nonstop_required,
       baggage_included_required: data.baggage_included_required,
       auto_book_enabled: data.auto_book_enabled,
@@ -161,6 +163,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
     const tripRequestData = {
       user_id: userId,
       destination_airport: formData.destination_airport,
+      destination_location_code: formData.destination_airport, // Add this field
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
@@ -187,6 +190,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
     if (!userId || !tripRequestId) throw new Error("User ID or Trip Request ID is missing for update.");
     const tripRequestData = {
       destination_airport: formData.destination_airport,
+      destination_location_code: formData.destination_airport, // Add this field
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
