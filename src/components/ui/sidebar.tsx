@@ -1,5 +1,4 @@
 import * as React from "react"
-import { NavLink } from "react-router-dom"; // Added by subtask
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
@@ -760,17 +759,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-          {/* Dashboard Link - Added by subtask */}
-          <li>
-            <NavLink
-              to="/dashboard"
-              className={({ isActive }) =>
-                `group flex items-center rounded-md px-2 py-2 text-sm font-medium ${
-                  isActive ? "bg-gray-200 text-gray-900" : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                }`
-              }
-            >
-              {/* Icon placeholder: <HomeIcon className="mr-3 h-6 w-6 flex-shrink-0" /> */}
-              Dashboard
-            </NavLink>
-          </li>

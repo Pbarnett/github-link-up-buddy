@@ -26,9 +26,6 @@ const createTrip = async (
     destination_airport: formData.destination_airport || null,
     min_duration: formData.min_duration || 3,
     max_duration: formData.max_duration || 6,
-    // Filter preferences
-    nonstop_required: formData.nonstop_required ?? true,
-    baggage_included_required: formData.baggage_included_required ?? false,
     // Include auto-booking fields
     auto_book_enabled: formData.auto_book_enabled || false,
     max_price: formData.max_price || null,
