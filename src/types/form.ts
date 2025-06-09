@@ -89,7 +89,7 @@ export const tripFormSchema = z.object({
   return true;
 }, {
   message: "Maximum price and payment method are required for auto-booking",
-  path: ["max_price"],
+  path: ["preferred_payment_method_id"],
 });
 
 // Form values type derived from the schema
