@@ -58,12 +58,20 @@ serve(async (req: Request) => {
     let relaxedCriteria = false;
     
     if (req.method === "POST") {
-      body = await req.json();
-      tripRequestId = body.tripRequestId || null;
-      relaxedCriteria = body.relaxedCriteria === true;
-      
-      if (relaxedCriteria) {
-        console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
+      try {
+        body = await req.json();
+        tripRequestId = body.tripRequestId || null;
+        relaxedCriteria = body.relaxedCriteria === true;
+        
+        if (relaxedCriteria) {
+          console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
+        }
+      } catch (parseError) {
+        console.error('[flight-search] Error parsing request body:', parseError.message);
+        return new Response(
+          JSON.stringify({ error: 'Invalid JSON in request body' }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
     
@@ -166,7 +174,7 @@ serve(async (req: Request) => {
           minDuration: relaxedCriteria ? 1 : request.min_duration, // Relax min duration if requested
           maxDuration: relaxedCriteria ? 30 : request.max_duration, // Relax max duration if requested
           budget: relaxedCriteria ? Math.ceil(request.budget * 1.2) : request.budget, // Increase budget by 20% if relaxed
-          maxConnections: 2 // reasonable default
+          relaxedCriteria: relaxedCriteria
         };
         
         // Log search parameters for debugging
@@ -224,39 +232,43 @@ serve(async (req: Request) => {
         // --- Start of new filtering logic ---
         const finalFilteredOffers = [];
         for (const offer of priceFilteredOffers) {
-          // Apply nonstop_required filter
-          // It's assumed `offer.nonstop_match` is a boolean indicating if the offer is non-stop.
-          // `request.nonstop_required` is from the trip_requests table.
-          if (request.nonstop_required === true && offer.nonstop_match !== true) {
-            console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to nonstop mismatch. Request nonstop: ${request.nonstop_required}, Offer nonstop: ${offer.nonstop_match}`);
-            continue;
-          }
+          try {
+            // Apply nonstop_required filter
+            // It's assumed `offer.nonstop_match` is a boolean indicating if the offer is non-stop.
+            // `request.nonstop_required` is from the trip_requests table.
+            if (request.nonstop_required === true && offer.stops > 0) {
+              console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to nonstop mismatch. Request nonstop: ${request.nonstop_required}, Offer stops: ${offer.stops}`);
+              continue;
+            }
 
-          // Apply baggage_included_required filter
-          // It's assumed `offer.baggage_included` is a boolean.
-          // `request.baggage_included_required` is from the trip_requests table.
-          if (request.baggage_included_required === true && offer.baggage_included !== true) {
-            console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to baggage mismatch. Request baggage: ${request.baggage_included_required}, Offer baggage: ${offer.baggage_included}`);
-            continue;
-          }
+            // Apply baggage_included_required filter
+            // It's assumed `offer.baggage_included` is a boolean.
+            // `request.baggage_included_required` is from the trip_requests table.
+            if (request.baggage_included_required === true && offer.baggage_included !== true) {
+              console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to baggage mismatch. Request baggage: ${request.baggage_included_required}, Offer baggage: ${offer.baggage_included}`);
+              continue;
+            }
 
-          const seatType = decideSeatPreference(offer, request); // `request` is the trip here
-          if (seatType === null) {
-            console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to null seatType (max_price: ${request.max_price}).`);
-            continue;
-          }
+            const seatType = decideSeatPreference(offer, request); // `request` is the trip here
+            if (seatType === null) {
+              console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to null seatType (max_price: ${request.max_price}).`);
+              continue;
+            }
 
-          // If all checks pass, add to list for DB insertion
-          finalFilteredOffers.push({
-            ...offer, // Spread the original offer
-            selected_seat_type: seatType,
-            // Ensure baggage_included and nonstop_match are part of the offer object by now,
-            // potentially defaulted if not provided by searchOffers.
-            baggage_included: offer.baggage_included !== undefined ? offer.baggage_included : false,
-            nonstop_match: offer.nonstop_match !== undefined ? offer.nonstop_match : false,
-            trip_request_id: request.id,
-            notified: false, // Default for new offers
-          });
+            // If all checks pass, add to list for DB insertion
+            finalFilteredOffers.push({
+              ...offer, // Spread the original offer
+              selected_seat_type: seatType,
+              // Ensure baggage_included and stops are part of the offer object by now,
+              // potentially defaulted if not provided by searchOffers.
+              baggage_included: offer.baggage_included !== undefined ? offer.baggage_included : false,
+              stops: offer.stops !== undefined ? offer.stops : 0,
+              trip_request_id: request.id,
+            });
+          } catch (filterError) {
+            console.error(`[flight-search] Error filtering offer for trip ${request.id}:`, filterError.message);
+            // Continue with next offer
+          }
         }
         // --- End of new filtering logic ---
 
@@ -396,7 +408,7 @@ serve(async (req: Request) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error.message || 'Unknown error occurred',
         requestsProcessed: 0,
         matchesInserted: 0,
         totalDurationMs,
