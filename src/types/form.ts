@@ -15,6 +15,10 @@ export interface TripFormValues {
 export interface ExtendedTripFormValues extends TripFormValues {
   departure_airports?: string[];
   destination_airport?: string;
+  destination_location_code?: string; // Add this field
+  // Filter fields
+  nonstop_required?: boolean;
+  baggage_included_required?: boolean;
   // Auto-booking fields
   auto_book_enabled?: boolean;
   max_price?: number | null;
@@ -52,6 +56,9 @@ export const tripFormSchema = z.object({
   other_departure_airport: z.string().optional(),
   destination_airport: z.string().optional(),
   destination_other: z.string().optional(),
+  // New filter fields
+  nonstop_required: z.boolean().default(true),
+  baggage_included_required: z.boolean().default(false),
   // Auto-booking fields
   auto_book_enabled: z.boolean().default(false),
   max_price: z.coerce.number().min(100).max(10000).optional().nullable(),
