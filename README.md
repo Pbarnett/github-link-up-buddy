@@ -68,10 +68,7 @@ The application integrates with the Amadeus Flight API for real flight searches.
   AMADEUS_CLIENT_SECRET=your_client_secret_here
   AMADEUS_BASE_URL=https://test.api.amadeus.com
   ```
-- Supabase Secrets: The Amadeus variables above and the Stripe variables below must be added as Edge Function Secrets in the Supabase Dashboard (Project Settings → API → Edge Function Secrets).
-  - **Stripe Secrets**:
-    - `STRIPE_SECRET_KEY`: Your Stripe secret key (e.g., `sk_test_...` or `sk_live_...`).
-    - `STRIPE_WEBHOOK_SECRET`: Your Stripe webhook signing secret for the `stripe-webhook` function (e.g., `whsec_...`).
+- Supabase Secrets: same three values must be added to Edge Function Secrets
 - Rate limit: The Amadeus API has rate limits of approximately 1 request/second, 50 requests/minute
 - Throttling & retry logic is built into our implementation
 
