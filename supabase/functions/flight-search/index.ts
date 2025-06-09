@@ -1,4 +1,3 @@
-
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 if (!supabaseUrl || !supabaseServiceRoleKey) {
@@ -6,25 +5,13 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
   throw new Error('Edge Function: Missing Supabase environment variables (SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY).');
 }
 
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Import the flight API service (edge version) with explicit fetchToken
 import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
-
-// Utility functions moved directly into the edge function
-function decideSeatPreference(
-  offer: any,
-  trip: { max_price: number }
-): "AISLE" | "WINDOW" | "MIDDLE" | null {
-  // TODO: Jules will fill in the actual parsing of offer.seat_map or offer.fare_details.
-  return "MIDDLE"; // placeholder so our smoke test always picks "MIDDLE"
-}
-
-function offerIncludesCarryOnAndPersonal(offer: any): boolean {
-  // TODO: Implement actual baggage checking logic
-  return false; // placeholder
-}
+import { decideSeatPreference, offerIncludesCarryOnAndPersonal } from "../../lib/utils";
 
 // Set up CORS headers
 const corsHeaders = {
@@ -58,20 +45,12 @@ serve(async (req: Request) => {
     let relaxedCriteria = false;
     
     if (req.method === "POST") {
-      try {
-        body = await req.json();
-        tripRequestId = body.tripRequestId || null;
-        relaxedCriteria = body.relaxedCriteria === true;
-        
-        if (relaxedCriteria) {
-          console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
-        }
-      } catch (parseError) {
-        console.error('[flight-search] Error parsing request body:', parseError.message);
-        return new Response(
-          JSON.stringify({ error: 'Invalid JSON in request body' }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      body = await req.json();
+      tripRequestId = body.tripRequestId || null;
+      relaxedCriteria = body.relaxedCriteria === true;
+      
+      if (relaxedCriteria) {
+        console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
       }
     }
     
@@ -174,7 +153,7 @@ serve(async (req: Request) => {
           minDuration: relaxedCriteria ? 1 : request.min_duration, // Relax min duration if requested
           maxDuration: relaxedCriteria ? 30 : request.max_duration, // Relax max duration if requested
           budget: relaxedCriteria ? Math.ceil(request.budget * 1.2) : request.budget, // Increase budget by 20% if relaxed
-          relaxedCriteria: relaxedCriteria
+          maxConnections: 2 // reasonable default
         };
         
         // Log search parameters for debugging
@@ -232,43 +211,39 @@ serve(async (req: Request) => {
         // --- Start of new filtering logic ---
         const finalFilteredOffers = [];
         for (const offer of priceFilteredOffers) {
-          try {
-            // Apply nonstop_required filter
-            // It's assumed `offer.nonstop_match` is a boolean indicating if the offer is non-stop.
-            // `request.nonstop_required` is from the trip_requests table.
-            if (request.nonstop_required === true && offer.stops > 0) {
-              console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to nonstop mismatch. Request nonstop: ${request.nonstop_required}, Offer stops: ${offer.stops}`);
-              continue;
-            }
-
-            // Apply baggage_included_required filter
-            // It's assumed `offer.baggage_included` is a boolean.
-            // `request.baggage_included_required` is from the trip_requests table.
-            if (request.baggage_included_required === true && offer.baggage_included !== true) {
-              console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to baggage mismatch. Request baggage: ${request.baggage_included_required}, Offer baggage: ${offer.baggage_included}`);
-              continue;
-            }
-
-            const seatType = decideSeatPreference(offer, request); // `request` is the trip here
-            if (seatType === null) {
-              console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to null seatType (max_price: ${request.max_price}).`);
-              continue;
-            }
-
-            // If all checks pass, add to list for DB insertion
-            finalFilteredOffers.push({
-              ...offer, // Spread the original offer
-              selected_seat_type: seatType,
-              // Ensure baggage_included and stops are part of the offer object by now,
-              // potentially defaulted if not provided by searchOffers.
-              baggage_included: offer.baggage_included !== undefined ? offer.baggage_included : false,
-              stops: offer.stops !== undefined ? offer.stops : 0,
-              trip_request_id: request.id,
-            });
-          } catch (filterError) {
-            console.error(`[flight-search] Error filtering offer for trip ${request.id}:`, filterError.message);
-            // Continue with next offer
+          // Apply nonstop_required filter
+          // It's assumed `offer.nonstop_match` is a boolean indicating if the offer is non-stop.
+          // `request.nonstop_required` is from the trip_requests table.
+          if (request.nonstop_required === true && offer.nonstop_match !== true) {
+            console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to nonstop mismatch. Request nonstop: ${request.nonstop_required}, Offer nonstop: ${offer.nonstop_match}`);
+            continue;
           }
+
+          // Apply baggage_included_required filter
+          // It's assumed `offer.baggage_included` is a boolean.
+          // `request.baggage_included_required` is from the trip_requests table.
+          if (request.baggage_included_required === true && offer.baggage_included !== true) {
+            console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to baggage mismatch. Request baggage: ${request.baggage_included_required}, Offer baggage: ${offer.baggage_included}`);
+            continue;
+          }
+
+          const seatType = decideSeatPreference(offer, request); // `request` is the trip here
+          if (seatType === null) {
+            console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to null seatType (max_price: ${request.max_price}).`);
+            continue;
+          }
+
+          // If all checks pass, add to list for DB insertion
+          finalFilteredOffers.push({
+            ...offer, // Spread the original offer
+            selected_seat_type: seatType,
+            // Ensure baggage_included and nonstop_match are part of the offer object by now,
+            // potentially defaulted if not provided by searchOffers.
+            baggage_included: offer.baggage_included !== undefined ? offer.baggage_included : false,
+            nonstop_match: offer.nonstop_match !== undefined ? offer.nonstop_match : false,
+            trip_request_id: request.id,
+            notified: false, // Default for new offers
+          });
         }
         // --- End of new filtering logic ---
 
@@ -408,7 +383,7 @@ serve(async (req: Request) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Unknown error occurred',
+        error: error.message,
         requestsProcessed: 0,
         matchesInserted: 0,
         totalDurationMs,

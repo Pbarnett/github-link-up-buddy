@@ -1,7 +1,6 @@
-
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import TripConfirm from '../../pages/TripConfirm';
 // import { useSupabase } from '../../hooks/useSupabase'; // Removed
 import { supabase as supabaseClient } from '../../integrations/supabase/client'; // Import the actual client
@@ -42,7 +41,7 @@ describe('TripConfirm Page', () => {
     vi.mocked(supabaseClient.channel).mockClear();
     vi.mocked(supabaseClient.functions.invoke).mockClear();
     // If channel().on() etc. need reset, they can be done via re-mocking supabaseClient.channel
-    (useToast as MockedFunction<any>).mockReset();
+    (useToast as jest.Mock).mockReset();
     // vi.mocked(useCurrentUser) can be reset here if more granular control is needed per test
   });
 
@@ -66,7 +65,7 @@ describe('TripConfirm Page', () => {
       }
       return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: {}, error: null }) } as any;
     });
-    (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() });
+    (useToast as jest.Mock).mockReturnValue({ toast: vi.fn() });
 
     render(
       <MemoryRouter initialEntries={['/trip/confirm?tripRequestId=test-trip-1']}>
@@ -100,7 +99,7 @@ describe('TripConfirm Page', () => {
       }
       return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: {}, error: null }) } as any;
     });
-    (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() });
+    (useToast as jest.Mock).mockReturnValue({ toast: vi.fn() });
 
     render(
       <MemoryRouter initialEntries={['/trip/confirm?tripRequestId=test-trip-2']}>
@@ -161,7 +160,7 @@ describe('TripConfirm Page', () => {
       unsubscribe: vi.fn()
     } as any); // Use 'as any' to simplify complex channel mock typing for this subtask
 
-    (useToast as MockedFunction<any>).mockReturnValue({ toast: mockToast });
+    (useToast as jest.Mock).mockReturnValue({ toast: mockToast });
 
     render(
       <MemoryRouter initialEntries={['/trip/confirm?tripRequestId=test-trip-3']}>
