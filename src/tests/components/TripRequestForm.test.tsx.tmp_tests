@@ -1,6 +1,0 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi } from 'vitest';
-import TripRequestForm from '@/components/trip/TripRequestForm'; // Adjust path as needed
-
-// Test file created by subtask. Please add appropriate tests and review imports.

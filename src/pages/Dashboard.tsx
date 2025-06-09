@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye } from 'lucide-react';
-import TripHistory from '@/components/dashboard/TripHistory'; // Added import
 
 interface BookingRequest {
   id: string;
@@ -476,10 +475,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Trip History Section Added Here */}
-        <TripHistory />
-
       </div>
     </div>
   );

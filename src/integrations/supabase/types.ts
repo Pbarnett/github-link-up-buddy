@@ -79,15 +79,10 @@ export type Database = {
         Row: {
           booked_at: string
           booking_request_id: string | null
-          email_reminder_sent: boolean
           flight_details: Json | null
           flight_offer_id: string
           id: string
-          one_hour_email_sent: boolean
-          one_hour_sms_sent: boolean
           price: number | null
-          second_reminder_scheduled_at: string | null
-          sms_reminder_sent: boolean
           source: string | null
           status: string | null
           trip_request_id: string
@@ -96,15 +91,10 @@ export type Database = {
         Insert: {
           booked_at?: string
           booking_request_id?: string | null
-          email_reminder_sent?: boolean
           flight_details?: Json | null
           flight_offer_id: string
           id?: string
-          one_hour_email_sent?: boolean
-          one_hour_sms_sent?: boolean
           price?: number | null
-          second_reminder_scheduled_at?: string | null
-          sms_reminder_sent?: boolean
           source?: string | null
           status?: string | null
           trip_request_id: string
@@ -113,15 +103,10 @@ export type Database = {
         Update: {
           booked_at?: string
           booking_request_id?: string | null
-          email_reminder_sent?: boolean
           flight_details?: Json | null
           flight_offer_id?: string
           id?: string
-          one_hour_email_sent?: boolean
-          one_hour_sms_sent?: boolean
           price?: number | null
-          second_reminder_scheduled_at?: string | null
-          sms_reminder_sent?: boolean
           source?: string | null
           status?: string | null
           trip_request_id?: string
@@ -200,7 +185,6 @@ export type Database = {
         Row: {
           airline: string
           auto_book: boolean
-          baggage_included: boolean
           booking_url: string | null
           carrier_code: string | null
           created_at: string
@@ -215,14 +199,12 @@ export type Database = {
           price: number
           return_date: string
           return_time: string
-          selected_seat_type: string | null
           stops: number
           trip_request_id: string
         }
         Insert: {
           airline: string
           auto_book?: boolean
-          baggage_included?: boolean
           booking_url?: string | null
           carrier_code?: string | null
           created_at?: string
@@ -237,14 +219,12 @@ export type Database = {
           price: number
           return_date: string
           return_time: string
-          selected_seat_type?: string | null
           stops?: number
           trip_request_id: string
         }
         Update: {
           airline?: string
           auto_book?: boolean
-          baggage_included?: boolean
           booking_url?: string | null
           carrier_code?: string | null
           created_at?: string
@@ -259,7 +239,6 @@ export type Database = {
           price?: number
           return_date?: string
           return_time?: string
-          selected_seat_type?: string | null
           stops?: number
           trip_request_id?: string
         }
@@ -467,7 +446,6 @@ export type Database = {
           adults: number | null
           auto_book: boolean
           auto_book_enabled: boolean
-          baggage_included_required: boolean
           best_price: number | null
           budget: number
           created_at: string
@@ -482,7 +460,6 @@ export type Database = {
           max_duration: number
           max_price: number | null
           min_duration: number
-          nonstop_required: boolean
           origin_location_code: string | null
           preferred_payment_method_id: string | null
           return_date: string | null
@@ -492,7 +469,6 @@ export type Database = {
           adults?: number | null
           auto_book?: boolean
           auto_book_enabled?: boolean
-          baggage_included_required?: boolean
           best_price?: number | null
           budget: number
           created_at?: string
@@ -507,7 +483,6 @@ export type Database = {
           max_duration?: number
           max_price?: number | null
           min_duration?: number
-          nonstop_required?: boolean
           origin_location_code?: string | null
           preferred_payment_method_id?: string | null
           return_date?: string | null
@@ -517,7 +492,6 @@ export type Database = {
           adults?: number | null
           auto_book?: boolean
           auto_book_enabled?: boolean
-          baggage_included_required?: boolean
           best_price?: number | null
           budget?: number
           created_at?: string
@@ -532,7 +506,6 @@ export type Database = {
           max_duration?: number
           max_price?: number | null
           min_duration?: number
-          nonstop_required?: boolean
           origin_location_code?: string | null
           preferred_payment_method_id?: string | null
           return_date?: string | null
