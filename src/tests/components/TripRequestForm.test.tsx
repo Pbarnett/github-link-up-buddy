@@ -106,8 +106,8 @@ describe('TripRequestForm - Submission Logic', () => {
     (supabase.from as vi.Mock).mockReturnValue({
       insert: mockInsert,
     });
-    const mockToast = vi.fn();
-    (toast as vi.Mock).mockReturnValue(mockToast); // Corrected toast mock
+    // const mockToast = vi.fn(); // This was unused due to mockImplementation below
+    // (toast as vi.Mock).mockReturnValue(mockToast);
 
     const mockToastFn = vi.fn();
     (toast as vi.Mock).mockImplementation((options) => {

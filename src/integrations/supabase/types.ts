@@ -507,51 +507,78 @@ export type Database = {
       }
       trip_requests: {
         Row: {
+          adults: number | null
+          auto_book: boolean
           auto_book_enabled: boolean
+          baggage_included_required: boolean
+          best_price: number | null
           budget: number
           created_at: string
           departure_airports: string[]
+          departure_date: string | null
           destination_airport: string | null
           destination_location_code: string | null
           earliest_departure: string
           id: string
+          last_checked_at: string | null
           latest_departure: string
           max_duration: number
           max_price: number | null
           min_duration: number
+          nonstop_required: boolean
+          origin_location_code: string | null
           preferred_payment_method_id: string | null
+          return_date: string | null
           user_id: string
         }
         Insert: {
+          adults?: number | null
+          auto_book?: boolean
           auto_book_enabled?: boolean
+          baggage_included_required?: boolean
+          best_price?: number | null
           budget: number
           created_at?: string
           departure_airports?: string[]
+          departure_date?: string | null
           destination_airport?: string | null
           destination_location_code?: string | null
           earliest_departure: string
           id?: string
+          last_checked_at?: string | null
           latest_departure: string
           max_duration?: number
           max_price?: number | null
           min_duration?: number
+          nonstop_required?: boolean
+          origin_location_code?: string | null
           preferred_payment_method_id?: string | null
+          return_date?: string | null
           user_id: string
         }
         Update: {
+          adults?: number | null
+          auto_book?: boolean
           auto_book_enabled?: boolean
+          baggage_included_required?: boolean
+          best_price?: number | null
           budget?: number
           created_at?: string
           departure_airports?: string[]
+          departure_date?: string | null
           destination_airport?: string | null
           destination_location_code?: string | null
           earliest_departure?: string
           id?: string
+          last_checked_at?: string | null
           latest_departure?: string
           max_duration?: number
           max_price?: number | null
           min_duration?: number
+          nonstop_required?: boolean
+          origin_location_code?: string | null
           preferred_payment_method_id?: string | null
+          return_date?: string | null
           user_id?: string
         }
         Relationships: []
