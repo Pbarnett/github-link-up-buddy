@@ -1,0 +1,29 @@
+import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { vi, describe, it, expect, beforeEach } from 'vitest'; // Added beforeEach
+import TripConfirm from '@/pages/TripConfirm'; // Adjusted path assuming @ is src/
+import { useSupabase } from '@/hooks/useSupabase'; // Adjusted path assuming @ is src/
+import { useToast } from '@/components/ui/use-toast'; // Adjusted path assuming @ is src/
+
+// Mock Supabase and other hooks
+vi.mock('@/hooks/useSupabase');
+vi.mock('@/components/ui/use-toast');
+vi.mock('@/hooks/useCurrentUser', () => ({ // Added mock for useCurrentUser
+  useCurrentUser: vi.fn(() => ({
+    userId: 'test-user-123',
+    user: { id: 'test-user-123', email: 'test@example.com' },
+    isLoading: false,
+  })),
+}));
+
+
+describe('TripConfirm Page', () => {
+  // Placeholder for existing tests or new tests will be added below
+  beforeEach(() => {
+    // Reset mocks before each test
+    (useSupabase as jest.Mock).mockReset();
+    (useToast as jest.Mock).mockReset();
+    // Reset useCurrentUser mock if its behavior needs to change per test (for now, general mock is above)
+    // vi.mocked(useCurrentUser).mockReturnValue(...);
+  });
+});
