@@ -56,4 +56,18 @@ vi.mock('@/integrations/supabase/client', () => ({
 // You might also need to mock other global objects or functions here
 // e.g., IntersectionObserver, navigation objects if not using MemoryRouter appropriately etc.
 
+if (!global.IntersectionObserver) {
+  class IntersectionObserver {
+    root: Element | null = null;
+    rootMargin: string = '';
+    thresholds: ReadonlyArray<number> = [0];
+
+    observe() { /* do nothing */ }
+    unobserve() { /* do nothing */ }
+    disconnect() { /* do nothing */ }
+    takeRecords() { return []; }
+  }
+  global.IntersectionObserver = IntersectionObserver as any;
+}
+
 console.log('Test setup file (src/tests/setupTests.ts) loaded.');
