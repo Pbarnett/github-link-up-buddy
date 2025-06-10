@@ -54,7 +54,7 @@ describe("flightApi", () => {
       departure_date: "2023-07-01",
       departure_time: "08:30",
       return_date: "2023-07-08",
-      return_time: "12:15",
+      return_time: "09:00",
       duration: "PT7H30M",
       price: 429.99,
     });
@@ -135,23 +135,32 @@ describe("OAuth Token Management", () => {
 
   test("Call after token expiry fetches a new token", async () => {
     // First call
-    await fetchTokenForTest();
+    await fetchTokenForTest(); // counter = 1, token = "mock-token-1"
     expect(mockFetchCounter).toBe(1);
-    
-    // Advance time to just past expiration minus safety buffer
-    vi.advanceTimersByTime(1800 * 1000 - 59000); // Just under the 1-minute buffer
-    
-    // Should still use cached token
-    await fetchTokenForTest();
-    expect(mockFetchCounter).toBe(1);
-    
-    // Now advance past the buffer
-    vi.advanceTimersByTime(2000); // 2 more seconds
-    
-    // Should fetch new token
-    const newToken = await fetchTokenForTest();
+
+    // Advance time to just BEFORE the expiry threshold (e.g., token_expires_at - 70 seconds)
+    // Original expiry is 30 mins (1800s). Buffer is 60s. Threshold is at 29 mins (1740s).
+    // So advance by 1800s - 70s = 1730s = 1730000 ms
+    vi.advanceTimersByTime(1800 * 1000 - 70000); // Current time is now initial_now + 28m50s
+
+    // Condition: now < mockTokenExpires - 60000
+    // (initial_now + 28m50s) < (initial_now + 30m) - 1m
+    // (initial_now + 28m50s) < (initial_now + 29m) -> TRUE, should use cache
+
+    await fetchTokenForTest(); // Should use cached token
+    expect(mockFetchCounter).toBe(1); // Counter should still be 1
+
+    // Now advance time to just AFTER the expiry threshold.
+    // Advance by another 20 seconds. Total advancement = 28m50s + 20s = 29m10s.
+    // Current time is now initial_now + 29m10s
+    vi.advanceTimersByTime(20000);
+
+    // Condition: now < mockTokenExpires - 60000
+    // (initial_now + 29m10s) < (initial_now + 29m) -> FALSE, should fetch new token
+
+    const newToken = await fetchTokenForTest(); // Should fetch a new token
     expect(newToken).toBe("mock-token-2");
-    expect(mockFetchCounter).toBe(2);
+    expect(mockFetchCounter).toBe(2); // Counter should now be 2
   });
 });
 
