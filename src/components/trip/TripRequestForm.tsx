@@ -21,7 +21,7 @@ import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import TripDurationInputs from "./sections/TripDurationInputs";
-import AutoBookingSection from "./sections/AutoBookingSection.tsx";
+import AutoBookingSection from "./sections/AutoBookingSection"; // Removed .tsx extension
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
 
