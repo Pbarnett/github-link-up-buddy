@@ -191,9 +191,11 @@ const Dashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+
                 <p className="text-gray-500 text-center py-8">
                   Travel statistics will appear here as you book more trips.
                 </p>
+
               </CardContent>
             </Card>
           </TabsContent>
