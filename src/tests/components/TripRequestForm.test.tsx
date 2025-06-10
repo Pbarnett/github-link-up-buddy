@@ -1,3 +1,4 @@
+import React from "react"; // Added React import
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -40,12 +41,16 @@ vi.mock('@/hooks/useTravelerInfoCheck', () => ({
   useTravelerInfoCheck: vi.fn(),
 }));
 
-// Minimal stub for @radix-ui/react-select
-vi.mock("@radix-ui/react-select", () => ({
-  Select: ({ children }: any) => <div>{children}</div>,
-  SelectTrigger: ({ children }: any) => <button type="button">{children}</button>, // Added type="button" for clarity
-  // SelectContent and SelectItem are intentionally left out
-}));
+// New partial mock for @radix-ui/react-select
+vi.mock("@radix-ui/react-select", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@radix-ui/react-select")>();
+  return {
+    ...actual, // Spread all actual exports
+    // Override specific components. Assuming 'Root' is a direct export or part of the main 'Select' object.
+    Root: ({ children }: { children: React.ReactNode }) => <div data-testid="mock-select-root">{children}</div>,
+    // Trigger: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>, // Example if Trigger also needed simple mock
+  };
+});
 
 describe('TripRequestForm - Filter Toggles Logic', () => {
   beforeEach(() => {
