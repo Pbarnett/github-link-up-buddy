@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       auto_booking_requests: {
@@ -89,6 +64,7 @@ export type Database = {
           offer_data: Json
           offer_id: string
           processed_at: string | null
+          reminder_scheduled: boolean
           status: Database["public"]["Enums"]["booking_request_status"]
           traveler_data: Json | null
           trip_request_id: string | null
@@ -105,6 +81,7 @@ export type Database = {
           offer_data: Json
           offer_id: string
           processed_at?: string | null
+          reminder_scheduled?: boolean
           status?: Database["public"]["Enums"]["booking_request_status"]
           traveler_data?: Json | null
           trip_request_id?: string | null
@@ -121,6 +98,7 @@ export type Database = {
           offer_data?: Json
           offer_id?: string
           processed_at?: string | null
+          reminder_scheduled?: boolean
           status?: Database["public"]["Enums"]["booking_request_status"]
           traveler_data?: Json | null
           trip_request_id?: string | null
@@ -156,6 +134,7 @@ export type Database = {
           id: string
           one_hour_email_sent: boolean
           one_hour_sms_sent: boolean
+          payment_intent_id: string | null
           pnr: string | null
           price: number | null
           seat_fee: number | null
@@ -177,6 +156,7 @@ export type Database = {
           id?: string
           one_hour_email_sent?: boolean
           one_hour_sms_sent?: boolean
+          payment_intent_id?: string | null
           pnr?: string | null
           price?: number | null
           seat_fee?: number | null
@@ -198,6 +178,7 @@ export type Database = {
           id?: string
           one_hour_email_sent?: boolean
           one_hour_sms_sent?: boolean
+          payment_intent_id?: string | null
           pnr?: string | null
           price?: number | null
           seat_fee?: number | null
@@ -228,6 +209,13 @@ export type Database = {
             columns: ["trip_request_id"]
             isOneToOne: false
             referencedRelation: "trip_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_bookings_booking_request"
+            columns: ["booking_request_id"]
+            isOneToOne: false
+            referencedRelation: "booking_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -642,6 +630,7 @@ export type Database = {
           destination_location_code: string
           earliest_departure: string
           id: string
+          last_checked_at: string | null
           latest_departure: string
           max_duration: number
           max_price: number | null
@@ -660,6 +649,7 @@ export type Database = {
           destination_location_code: string
           earliest_departure: string
           id?: string
+          last_checked_at?: string | null
           latest_departure: string
           max_duration?: number
           max_price?: number | null
@@ -678,6 +668,7 @@ export type Database = {
           destination_location_code?: string
           earliest_departure?: string
           id?: string
+          last_checked_at?: string | null
           latest_departure?: string
           max_duration?: number
           max_price?: number | null
@@ -836,9 +827,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       booking_request_status: [

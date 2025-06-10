@@ -1,9 +1,28 @@
-
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 if (!supabaseUrl || !supabaseServiceRoleKey) {
-  console.error('Error: Missing Supabase environment variables. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.');
+  console.error('❌ Error: Missing Supabase environment variables. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.');
   throw new Error('Edge Function: Missing Supabase environment variables (SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY).');
+}
+
+// Check Amadeus credentials at startup
+const amadeusClientId = Deno.env.get("AMADEUS_CLIENT_ID");
+const amadeusClientSecret = Deno.env.get("AMADEUS_CLIENT_SECRET");
+const amadeusBaseUrl = Deno.env.get("AMADEUS_BASE_URL");
+
+console.log("🔧 [flight-search] Environment check:", {
+  hasSupabaseUrl: !!supabaseUrl,
+  hasSupabaseKey: !!supabaseServiceRoleKey,
+  hasAmadeusClientId: !!amadeusClientId,
+  hasAmadeusClientSecret: !!amadeusClientSecret,
+  hasAmadeusBaseUrl: !!amadeusBaseUrl,
+  amadeusClientIdLength: amadeusClientId ? amadeusClientId.length : 0,
+  amadeusClientSecretLength: amadeusClientSecret ? amadeusClientSecret.length : 0
+});
+
+if (!amadeusClientId || !amadeusClientSecret) {
+  console.error('❌ Error: Missing Amadeus environment variables. AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET must be set.');
+  throw new Error('Edge Function: Missing Amadeus environment variables (AMADEUS_CLIENT_ID or AMADEUS_CLIENT_SECRET).');
 }
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -42,9 +61,16 @@ const supabaseClient = createClient(
 serve(async (req: Request) => {
   // Performance timing start
   const functionStartTime = Date.now();
+  
+  console.log("🚀 [flight-search] Function invoked", {
+    method: req.method,
+    url: req.url,
+    timestamp: new Date().toISOString()
+  });
 
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("✅ [flight-search] Handling CORS preflight");
     return new Response(null, {
       status: 204,
       headers: corsHeaders,
@@ -58,48 +84,75 @@ serve(async (req: Request) => {
     let relaxedCriteria = false;
     
     if (req.method === "POST") {
-      body = await req.json();
-      tripRequestId = body.tripRequestId || null;
-      relaxedCriteria = body.relaxedCriteria === true;
-      
-      if (relaxedCriteria) {
-        console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
+      try {
+        body = await req.json();
+        tripRequestId = body.tripRequestId || null;
+        relaxedCriteria = body.relaxedCriteria === true;
+        
+        console.log("📋 [flight-search] Request body parsed", {
+          tripRequestId,
+          relaxedCriteria,
+          bodyKeys: Object.keys(body)
+        });
+      } catch (parseError) {
+        console.error("❌ [flight-search] Failed to parse request body:", parseError);
+        throw new Error("Invalid JSON in request body");
       }
     }
     
-    console.log(`[flight-search] Invoked${tripRequestId ? ` for ${tripRequestId}` : ' for auto-book enabled trips'}`);
+    if (relaxedCriteria) {
+      console.log(`🔓 [flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
+    }
+    
+    console.log(`🎯 [flight-search] Processing${tripRequestId ? ` trip request ${tripRequestId}` : ' auto-book enabled trips'}`);
     
     // Build the query based on whether tripRequestId is provided
     let requests;
     
     if (tripRequestId) {
-      console.log(`[flight-search] Processing single trip request ${tripRequestId}`);
+      console.log(`🔍 [flight-search] Fetching single trip request ${tripRequestId}`);
       const { data: single, error } = await supabaseClient
         .from("trip_requests")
         .select("*")
         .eq("id", tripRequestId)
         .single();
         
-      if (error || !single) {
+      if (error) {
+        console.error(`❌ [flight-search] Error fetching trip request ${tripRequestId}:`, error);
         throw new Error(`Trip request not found: ${error?.message || "No data returned"}`);
       }
       
+      if (!single) {
+        console.error(`❌ [flight-search] No data returned for trip request ${tripRequestId}`);
+        throw new Error(`Trip request not found: No data returned`);
+      }
+      
+      console.log(`✅ [flight-search] Found trip request:`, {
+        id: single.id,
+        destination: single.destination_location_code,
+        departureAirports: single.departure_airports,
+        earliestDeparture: single.earliest_departure,
+        latestDeparture: single.latest_departure,
+        budget: single.budget
+      });
+      
       requests = [single];
     } else {
-      console.log(`[flight-search] Processing all auto-book enabled trip requests`);
+      console.log(`🔍 [flight-search] Fetching all auto-book enabled trip requests`);
       const { data: many, error } = await supabaseClient
         .from("trip_requests")
         .select("*")
         .eq("auto_book_enabled", true);
         
       if (error) {
+        console.error(`❌ [flight-search] Error fetching auto-book requests:`, error);
         throw new Error(`Failed to fetch trip requests: ${error.message}`);
       }
       
       requests = many || [];
     }
     
-    console.log(`[flight-search] Got ${requests.length} request(s) to process`);
+    console.log(`📊 [flight-search] Got ${requests.length} request(s) to process`);
     
     let processedRequests = 0;
     let totalMatchesInserted = 0;
@@ -108,37 +161,44 @@ serve(async (req: Request) => {
     // Process each trip request
     for (const request of requests) {
       try {
-        console.log(`[flight-search] Processing trip request ${request.id}`);
+        console.log(`🎯 [flight-search] Processing trip request ${request.id}`);
         processedRequests++;
         
-        // Update last_checked_at timestamp
-        const { error: updateError } = await supabaseClient
-          .from("trip_requests")
-          .update({ last_checked_at: new Date().toISOString() })
-          .eq("id", request.id);
+        // Update last_checked_at timestamp (if column exists)
+        try {
+          const { error: updateError } = await supabaseClient
+            .from("trip_requests")
+            .update({ last_checked_at: new Date().toISOString() })
+            .eq("id", request.id);
 
-        if (updateError) {
-          console.error(`[flight-search] Error updating last_checked_at for request ${request.id}: ${updateError.message}`);
-          details.push({ tripRequestId: request.id, matchesFound: 0, error: `Update error: ${updateError.message}` });
-          continue;
+          if (updateError) {
+            console.warn(`⚠️ [flight-search] Could not update last_checked_at for request ${request.id}:`, updateError.message);
+            // Continue anyway - this is non-critical
+          } else {
+            console.log(`✅ [flight-search] Updated last_checked_at for request ${request.id}`);
+          }
+        } catch (updateError) {
+          console.warn(`⚠️ [flight-search] Exception updating last_checked_at for request ${request.id}:`, updateError);
+          // Continue anyway - this is non-critical
         }
 
         // Always delete existing flight offers for this trip to avoid stale data
-        // CRITICAL: This must happen BEFORE we search for new offers
-        console.log(`[flight-search] Deleting existing offers for trip ${request.id}`);
+        console.log(`🗑️ [flight-search] Deleting existing offers for trip ${request.id}`);
         const { error: deleteError } = await supabaseClient
           .from("flight_offers")
           .delete()
           .eq("trip_request_id", request.id);
         
         if (deleteError) {
-          console.error(`[flight-search] Error deleting existing offers for request ${request.id}: ${deleteError.message}`);
+          console.error(`❌ [flight-search] Error deleting existing offers for request ${request.id}:`, deleteError.message);
           // Continue anyway - this is non-critical
+        } else {
+          console.log(`✅ [flight-search] Deleted existing offers for trip ${request.id}`);
         }
         
         // Validate the trip request data before proceeding
         if (!request.departure_airports || !request.departure_airports.length) {
-          console.error(`[flight-search] No departure airports specified for request ${request.id}`);
+          console.error(`❌ [flight-search] No departure airports specified for request ${request.id}`);
           details.push({ 
             tripRequestId: request.id, 
             matchesFound: 0, 
@@ -148,7 +208,7 @@ serve(async (req: Request) => {
         }
         
         if (!request.destination_location_code) {
-          console.error(`[flight-search] No destination airport specified for request ${request.id}`);
+          console.error(`❌ [flight-search] No destination airport specified for request ${request.id}`);
           details.push({ 
             tripRequestId: request.id, 
             matchesFound: 0, 
@@ -157,20 +217,19 @@ serve(async (req: Request) => {
           continue;
         }
         
-        // Create search params from the trip request - use ONLY the exact destination specified
+        // Create search params from the trip request
         const searchParams: FlightSearchParams = {
           origin: request.departure_airports,
-          destination: request.destination_location_code, // Use exact destination only, no nearby airports
+          destination: request.destination_location_code,
           earliestDeparture: new Date(request.earliest_departure),
           latestDeparture: new Date(request.latest_departure),
-          minDuration: relaxedCriteria ? 1 : request.min_duration, // Relax min duration if requested
-          maxDuration: relaxedCriteria ? 30 : request.max_duration, // Relax max duration if requested
-          budget: relaxedCriteria ? Math.ceil(request.budget * 1.2) : request.budget, // Increase budget by 20% if relaxed
-          maxConnections: 2 // reasonable default
+          minDuration: relaxedCriteria ? 1 : request.min_duration,
+          maxDuration: relaxedCriteria ? 30 : request.max_duration,
+          budget: relaxedCriteria ? Math.ceil(request.budget * 1.2) : request.budget,
+          maxConnections: 2
         };
         
-        // Log search parameters for debugging
-        console.log(`[flight-search] Search params (exact destination only):`, JSON.stringify({
+        console.log(`📋 [flight-search] Search params for ${request.id}:`, {
           origin: searchParams.origin,
           destination: searchParams.destination,
           earliestDeparture: searchParams.earliestDeparture.toISOString(),
@@ -179,31 +238,37 @@ serve(async (req: Request) => {
           maxDuration: searchParams.maxDuration,
           budget: searchParams.budget,
           relaxedCriteria: relaxedCriteria,
-          exactDestinationOnly: true
-        }, null, 2));
+        });
         
-        let token;
+        // Test token fetch first
         try {
-          // Call fetchToken function that's now properly imported
-          token = await fetchToken();
-          console.log(`[flight-search] Fetched OAuth token: ${token?.substring(0, 10)}...`);
+          console.log(`🔑 [flight-search] Testing token fetch for request ${request.id}...`);
+          const token = await fetchToken();
+          console.log(`✅ [flight-search] Token fetched successfully: ${token?.substring(0, 10)}...`);
         } catch (tokenError) {
-          console.error(`[flight-search] Token fetch error for ${request.id}: ${tokenError.message}`);
+          console.error(`❌ [flight-search] Token fetch failed for ${request.id}:`, {
+            message: tokenError.message,
+            stack: tokenError.stack
+          });
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `Token error: ${tokenError.message}` });
           continue;
         }
         
+        // Search for offers
         let offers;
         try {
-          // Use the enhanced API to get flight offers with multiple search strategies
+          console.log(`🔍 [flight-search] Searching offers for request ${request.id}...`);
           offers = await searchOffers(searchParams, request.id);
-          console.log(`[flight-search] Request ${request.id}: Found ${offers.length} transformed offers from API (exact destination only)`);
+          console.log(`✅ [flight-search] Found ${offers.length} offers for request ${request.id}`);
         } catch (apiError) {
-          console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
+          console.error(`❌ [flight-search] Offer search failed for ${request.id}:`, {
+            message: apiError.message,
+            stack: apiError.stack
+          });
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
           continue;
         }
-        
+
         // Filter offers to ensure they match the EXACT destination airport only
         const exactDestinationOffers = offers.filter(offer => {
           const offerDestination = offer.destination_airport;
@@ -369,6 +434,14 @@ serve(async (req: Request) => {
     // Calculate total duration
     const totalDurationMs = Date.now() - functionStartTime;
     
+    console.log(`🎯 [flight-search] Function completed:`, {
+      requestsProcessed: processedRequests,
+      matchesInserted: totalMatchesInserted,
+      totalDurationMs,
+      relaxedCriteriaUsed: relaxedCriteria,
+      exactDestinationOnly: true
+    });
+    
     // Return enhanced summary with performance metrics
     return new Response(
       JSON.stringify({
@@ -389,7 +462,11 @@ serve(async (req: Request) => {
     );
   } catch (error) {
     // Top-level error handler
-    console.error("[flight-search] Function error:", error);
+    console.error("❌ [flight-search] Function error:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     
     // Calculate total duration even for errors
     const totalDurationMs = Date.now() - functionStartTime;
