@@ -24,6 +24,13 @@ type TravelerDetails = {
   documentExpiryDate?: string; // Example: important for international checks
 };
 
+// Define the expected shape of profile data
+type ProfileData = {
+  email?: string;
+  phone?: string;
+  first_name?: string;
+  last_name?: string;
+};
 
 export const useTravelerInfoStatus = (): { status: TravelerInfoStatus | null; isLoading: boolean; error: any } => {
   const { userId } = useCurrentUser();
@@ -77,7 +84,7 @@ export const useTravelerInfoStatus = (): { status: TravelerInfoStatus | null; is
         }
 
         const travelerDetails: TravelerDetails = travelerRequestData?.traveler_data as TravelerDetails || {};
-        const profile = profileData || {};
+        const profile: Partial<ProfileData> = profileData || {};
 
         // --- Calculate Status ---
         const missingFields: string[] = [];
