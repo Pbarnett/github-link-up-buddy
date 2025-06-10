@@ -15,9 +15,9 @@ export default defineConfig({
     types: ['vitest/globals', '@testing-library/jest-dom'], // Added vitest/globals for vi namespace
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+    ],
   },
   // Add optimizeDeps to help Vite pre-bundle these for Vitest
   optimizeDeps: {
