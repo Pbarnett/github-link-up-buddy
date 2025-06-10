@@ -1,85 +1,19 @@
-
-/// <reference types="vitest/globals" />
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm'; // Adjust path as needed
-import { supabase } from '@/integrations/supabase/client'; // Fixed import path
+import { supabase } from '@/lib/supabase'; // Assuming supabase client is imported like this
 import { useCurrentUser } from '@/hooks/useCurrentUser'; // Assuming custom hook
-// Remove direct import of toast, will use the shared mock via useToast or direct mock access
-// import { toast } from '@/components/ui/use-toast';
-
-// Shared mock implementation for toast, hoisted to be available for vi.mock factory
-const { actualMockToastImplementation } = vi.hoisted(() => {
-  return { actualMockToastImplementation: vi.fn() };
-});
+import { toast } from '@/components/ui/use-toast'; // Assuming toast is from here
 
 // Mock dependencies
-
-vi.mock('@radix-ui/react-select', async () => {
-  const actual = await vi.importActual('@radix-ui/react-select');
-  const Select = ({ children, value, onValueChange, ...props }: any) => {
-    // Mock a simple input field or a basic select for testing purposes
-    // This allows us to control the value directly or type into it.
-    return (
-      <input
-        data-testid={props['data-testid'] || "mock-radix-select"} // Pass through data-testid
-        value={value || ''}
-        onChange={(e) => onValueChange?.(e.target.value)}
-        aria-label={props['aria-label'] || props.name || 'Mock Radix Select'} // Use name if aria-label not provided
-        placeholder={props.placeholder}
-      />
-    );
-  };
-  const SelectTrigger = ({ children, ...props }: any) => <button {...props} type="button">{children || 'SelectTrigger'}</button>;
-  const SelectValue = (props: any) => <span data-testid="mock-select-value">{props.placeholder || 'SelectValue'}</span>;
-  const SelectContent = ({ children, ...props }: any) => <div {...props}>{children}</div>;
-  // For SelectItem, we'll make it a simple div that userEvent.click can interact with, returning its value via a data attribute
-  const SelectItem = ({ children, value, ...props }: any) => (
-    <div data-testid={`mock-select-item-${value}`} data-value={value} {...props} role="option">
-      {children}
-    </div>
-  );
-
-  return {
-    ...actual, // Spread actual to keep any other exports not being mocked
-    Select: Select, // Mock the main Select component (usually Select.Root)
-    SelectRoot: Select, // Alias if components use Select.Root
-    Root: Select,     // Alias if components use Root
-    SelectTrigger: SelectTrigger,
-    SelectValue: SelectValue,
-    SelectContent: SelectContent,
-    SelectItem: SelectItem,
-  };
-});
-
-vi.mock('@/integrations/supabase/client', () => {
-  const mockInsert = vi.fn().mockResolvedValue({ data: [{ id: 'default-mock-id' }], error: null });
-  const mockSelect = vi.fn().mockReturnThis();
-  const mockEq = vi.fn().mockReturnThis();
-  const mockSingle = vi.fn().mockResolvedValue({ data: {}, error: null });
-  // Add other methods if you know TripRequestForm uses them directly on mount/render
-
-  const fromMock = vi.fn().mockImplementation(() => ({
-    select: mockSelect,
-    insert: mockInsert, // This specific mockInsert can be overridden per test if needed
-    eq: mockEq,
-    single: mockSingle,
-    // Add other chainable methods here, e.g., order, limit, update
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
-  }));
-
-  return {
-    supabase: {
-      from: fromMock,
-      // If there are direct supabase client methods used, mock them too
-      // e.g., auth: { getUser: vi.fn(), ... }
-    },
-  };
-});
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    from: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockResolvedValue({ data: [{}], error: null }), // Default mock for insert
+  },
+}));
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -94,10 +28,7 @@ vi.mock('@/hooks/useCurrentUser', () => ({
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({
-  useToast: () => ({ // Mock the hook
-    toast: actualMockToastImplementation, // The hook's toast method uses the shared mock
-  }),
-  toast: actualMockToastImplementation, // The direct export also uses the shared mock
+  toast: vi.fn(),
 }));
 
 // Mock custom hooks used by AutoBookingSection
@@ -109,6 +40,13 @@ vi.mock('@/hooks/useTravelerInfoCheck', () => ({
   useTravelerInfoCheck: vi.fn(),
 }));
 
+// Minimal stub for @radix-ui/react-select
+vi.mock("@radix-ui/react-select", () => ({
+  Select: ({ children }: any) => <div>{children}</div>,
+  SelectTrigger: ({ children }: any) => <button type="button">{children}</button>, // Added type="button" for clarity
+  // SelectContent and SelectItem are intentionally left out
+}));
+
 describe('TripRequestForm - Filter Toggles Logic', () => {
   beforeEach(() => {
     // Reset mocks before each test in this suite
@@ -117,24 +55,6 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
     // Setup default mock implementations for this suite if needed
     (useCurrentUser as vi.Mock).mockReturnValue({ user: { id: 'test-user-id' } });
     (useNavigate as vi.Mock).mockReturnValue(vi.fn());
-
-
-    // Provide default mocks for hooks used by AutoBookingSection, even if not primary to this suite
-    const mockedUsePaymentMethods = usePaymentMethods as vi.MockedFunction<typeof usePaymentMethods>;
-    const mockedUseTravelerInfoCheck = useTravelerInfoCheck as vi.MockedFunction<typeof useTravelerInfoCheck>;
-
-    mockedUsePaymentMethods.mockReset();
-    mockedUsePaymentMethods.mockReturnValue({
-      data: [{ id: 'pm_1', brand: 'Visa', last4: '4242', is_default: true, nickname: 'Test Card' }],
-      isLoading: false,
-    });
-
-    mockedUseTravelerInfoCheck.mockReset();
-    mockedUseTravelerInfoCheck.mockReturnValue({
-      hasTravelerInfo: true,
-      isLoading: false,
-    });
-
   });
   // --- Tests for FilterTogglesSection functionality within TripRequestForm ---
 
@@ -185,6 +105,10 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
 });
 
 describe('TripRequestForm - Submission Logic', () => {
+  // Get typed mocks for hooks used in AutoBookingSection, even if not primary focus here
+  const mockUsePaymentMethods = vi.mocked(require('@/hooks/usePaymentMethods').usePaymentMethods);
+  const mockUseTravelerInfoCheck = vi.mocked(require('@/hooks/useTravelerInfoCheck').useTravelerInfoCheck);
+
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -196,19 +120,13 @@ describe('TripRequestForm - Submission Logic', () => {
     // Mock navigate
     (useNavigate as vi.Mock).mockReturnValue(vi.fn());
 
-    // Provide default mocks for hooks used by AutoBookingSection for this suite too
-    const mockedUsePaymentMethods = usePaymentMethods as vi.MockedFunction<typeof usePaymentMethods>;
-    const mockedUseTravelerInfoCheck = useTravelerInfoCheck as vi.MockedFunction<typeof useTravelerInfoCheck>;
-
-    mockedUsePaymentMethods.mockReset();
-    mockedUsePaymentMethods.mockReturnValue({
-      data: [{ id: 'pm_1', brand: 'Visa', last4: '4242', is_default: true, nickname: 'Test Card' }],
+    // Default mocks for AutoBookingSection hooks, in case they are called
+    mockUsePaymentMethods.mockReturnValue({
+      data: [], // Default to no payment methods for these tests
       isLoading: false,
     });
-
-    mockedUseTravelerInfoCheck.mockReset();
-    mockedUseTravelerInfoCheck.mockReturnValue({
-      hasTravelerInfo: true,
+    mockUseTravelerInfoCheck.mockReturnValue({
+      hasTravelerInfo: false, // Default to no traveler info
       isLoading: false,
     });
   });
@@ -219,14 +137,13 @@ describe('TripRequestForm - Submission Logic', () => {
       insert: mockInsert,
     });
     // const mockToast = vi.fn(); // This was unused due to mockImplementation below
-    // (toast as vi.Mock).mockReturnValue(mockToast); // Old way
+    // (toast as vi.Mock).mockReturnValue(mockToast);
 
-    actualMockToastImplementation.mockClear();
-    // const mockToastFn = vi.fn(); // Replaced by actualMockToastImplementation
-    // (toast as vi.Mock).mockImplementation((options) => { // Old way - this line was the issue
-    //     mockToastFn(options); // Capture toast options
-    //     return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() }; // Return structure expected by use-toast
-    // });
+    const mockToastFn = vi.fn();
+    (toast as vi.Mock).mockImplementation((options) => {
+        mockToastFn(options); // Capture toast options
+        return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() }; // Return structure expected by use-toast
+    });
     const mockNavigate = useNavigate(); // Get the mocked navigate function instance
 
     render(
@@ -245,11 +162,7 @@ describe('TripRequestForm - Submission Logic', () => {
     // If it's a combobox, you might need to screen.getByRole('combobox', { name: /destination/i })
     // then userEvent.type(combobox, 'LAX'), then potentially click a matching option.
     // For this iteration, we'll assume a simpler input or that typing into combobox sets free text.
-    // The combobox for destination is likely a Radix Select, now mocked as an input.
-    // We need to ensure it can be found by its label "Destination"
-    const destinationInput = screen.getByLabelText(/destination/i, { selector: 'input[data-testid="mock-radix-select"], input[aria-label="Destination"]' });
-    await userEvent.clear(destinationInput); // Clear if it has a default mock value
-    await userEvent.type(destinationInput, 'LAX');
+    await userEvent.type(screen.getByRole('combobox', { name: /destination/i }), 'LAX');
     // No, EnhancedDestinationSection has a specific input for the airport code:
     // <Input {...field} placeholder="e.g., LAX, LHR, CDG" className="w-full" />
     // This input is part of a form field registered with RHF. Its label might be implicit.
@@ -265,9 +178,7 @@ describe('TripRequestForm - Submission Logic', () => {
     // DepartureAirportsSection - fill "Other departure airport"
     // It has <Legend>Where are you flying from?</Legend>
     // And an input with placeholder "e.g. SFO, BOS" for other_departure_airport
-    const departureAirportInput = screen.getByLabelText(/Other Departure Airport \(IATA code\)/i);
-    departureAirportInput.focus();
-    await userEvent.type(departureAirportInput, 'SFO');
+    await userEvent.type(screen.getByPlaceholderText(/e\.g\. SFO, BOS/i), 'SFO');
 
     // DateRangeField - "When do you want to travel?"
     // It has two date pickers. Let's assume they have accessible names.
@@ -327,7 +238,7 @@ describe('TripRequestForm - Submission Logic', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/trip/offers?id=new-trip-id');
     });
     await waitFor(() => {
-      expect(actualMockToastImplementation).toHaveBeenCalledWith(
+      expect(mockToastFn).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Trip request submitted",
           description: "Your trip request has been successfully submitted!",
@@ -339,15 +250,8 @@ describe('TripRequestForm - Submission Logic', () => {
 
 // Helper function to fill the base form fields
 const fillBaseFormFields = async () => {
-  // Destination input (mocked Radix Select)
-  // The FormLabel for Destination is "Destination". The mock input should pick this up via aria-label.
-  const destinationInput = screen.getByLabelText(/destination/i, { selector: 'input[data-testid="mock-radix-select"], input[aria-label="Destination"]' });
-  await userEvent.clear(destinationInput);
-  await userEvent.type(destinationInput, 'LAX');
-
-  const departureAirportInput = screen.getByLabelText(/Other Departure Airport \(IATA code\)/i);
-  departureAirportInput.focus();
-  await userEvent.type(departureAirportInput, 'SFO');
+  await userEvent.type(screen.getByRole('combobox', { name: /destination/i }), 'LAX');
+  await userEvent.type(screen.getByPlaceholderText(/e\.g\. SFO, BOS/i), 'SFO');
   fireEvent.change(screen.getByLabelText(/earliest departure date/i), { target: { value: '2024-10-15' } });
   fireEvent.change(screen.getByLabelText(/latest departure date/i), { target: { value: '2024-10-20' } });
   await userEvent.clear(screen.getByLabelText(/budget/i));
@@ -361,7 +265,7 @@ const fillBaseFormFields = async () => {
 
 describe('TripRequestForm - Auto-Booking Logic', () => {
   let mockNavigate: vi.Mock;
-  // let mockToastFn: vi.Mock; // Replaced by actualMockToastImplementation
+  let mockToastFn: vi.Mock;
   let mockInsert: vi.Mock;
   // Mock hooks from AutoBookingSection
   const mockUsePaymentMethods = vi.mocked(require('@/hooks/usePaymentMethods').usePaymentMethods);
@@ -378,25 +282,22 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     mockNavigate = vi.fn();
     (useNavigate as vi.Mock).mockReturnValue(mockNavigate);
 
-    actualMockToastImplementation.mockClear();
-    // mockToastFn = vi.fn(); // Replaced
-    // (toast as vi.Mock).mockImplementation((options) => { // Old way
-    //   mockToastFn(options);
-    //   return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() };
-    // });
+    mockToastFn = vi.fn();
+    (toast as vi.Mock).mockImplementation((options) => {
+      mockToastFn(options);
+      return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() };
+    });
 
     mockInsert = vi.fn().mockResolvedValue({ data: [{ id: 'new-trip-id' }], error: null });
     (supabase.from as vi.Mock).mockReturnValue({ insert: mockInsert });
 
     // Default mocks for auto-booking prerequisites
-
-    mockedUsePaymentMethods.mockReturnValue({
-      data: [{ id: 'pm_1', brand: 'Visa', last4: '4242', is_default: true, nickname: 'Test Card' }],
+    mockUsePaymentMethods.mockReturnValue({
+      data: [{ id: 'pm_123', brand: 'Visa', last4: '4242', is_default: true, nickname: 'Work Card' }],
       isLoading: false,
     });
-    mockedUseTravelerInfoCheck.mockReturnValue({
-      hasTravelerInfo: true, // Consistent default
-
+    mockUseTravelerInfoCheck.mockReturnValue({
+      hasTravelerInfo: true,
       isLoading: false,
     });
   });
@@ -418,11 +319,10 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
       expect(screen.getByLabelText(/payment method for auto-booking/i)).toBeVisible();
     });
 
-    // Select a payment method (mocked Radix Select, now an input)
-    // The FormLabel for Payment Method is "Payment Method for Auto-Booking"
-    const paymentMethodInput = screen.getByLabelText(/payment method for auto-booking/i, { selector: 'input[data-testid="mock-radix-select"], input[aria-label="Payment Method for Auto-Booking"]' });
-    await userEvent.clear(paymentMethodInput);
-    await userEvent.type(paymentMethodInput, 'pm_123'); // Type the value directly
+    // Select a payment method
+    const paymentMethodSelect = screen.getByLabelText(/payment method for auto-booking/i);
+    await userEvent.click(paymentMethodSelect); // Open select
+    await userEvent.click(screen.getByText(/Visa •••• 4242 \(Default\) \(Work Card\)/i)); // Select option
 
     // Check if the value is set (indirectly, by checking if it's part of submission later or form state if possible)
     // For now, interaction is the key. The value selection will be verified in submission tests.
@@ -441,10 +341,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     });
     await userEvent.type(screen.getByLabelText(/maximum price \(usd\) for auto-booking/i), '1500');
 
-    // Do NOT select/type a payment method - ensure the input is clear if it holds a value by default from mock
-    const paymentMethodInput = screen.getByLabelText(/payment method for auto-booking/i, { selector: 'input[data-testid="mock-radix-select"], input[aria-label="Payment Method for Auto-Booking"]' });
-    await userEvent.clear(paymentMethodInput);
-
+    // Do NOT select a payment method
 
     const submitButton = screen.getByRole('button', { name: /enable auto-booking/i }); // Button text changes
     await userEvent.click(submitButton);
@@ -483,10 +380,9 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     await waitFor(() => {
        expect(screen.getByLabelText(/payment method for auto-booking/i)).toBeVisible();
     });
-    const paymentMethodInput = screen.getByLabelText(/payment method for auto-booking/i, { selector: 'input[data-testid="mock-radix-select"], input[aria-label="Payment Method for Auto-Booking"]' });
-    await userEvent.clear(paymentMethodInput);
-    await userEvent.type(paymentMethodInput, 'pm_123');
-
+    const paymentMethodSelect = screen.getByLabelText(/payment method for auto-booking/i);
+    await userEvent.click(paymentMethodSelect);
+    await userEvent.click(screen.getByText(/Visa •••• 4242 \(Default\) \(Work Card\)/i));
 
     // Do NOT fill max_price
 
@@ -544,9 +440,9 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     });
 
     await userEvent.type(screen.getByLabelText(/maximum price \(usd\) for auto-booking/i), '2000');
-    const paymentMethodInput = screen.getByLabelText(/payment method for auto-booking/i, { selector: 'input[data-testid="mock-radix-select"], input[aria-label="Payment Method for Auto-Booking"]' });
-    await userEvent.clear(paymentMethodInput);
-    await userEvent.type(paymentMethodInput, 'pm_123');
+    const paymentMethodSelect = screen.getByLabelText(/payment method for auto-booking/i);
+    await userEvent.click(paymentMethodSelect);
+    await userEvent.click(screen.getByText(/Visa •••• 4242 \(Default\) \(Work Card\)/i));
 
     const submitButton = screen.getByRole('button', { name: /enable auto-booking/i });
     await userEvent.click(submitButton);
@@ -559,7 +455,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     expect(submittedPayload).toHaveProperty('preferred_payment_method_id', 'pm_123');
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/trip/offers?id=new-trip-id'));
-    await waitFor(() => expect(actualMockToastImplementation).toHaveBeenCalledWith(
+    await waitFor(() => expect(mockToastFn).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Trip request submitted",
         description: "Your trip request has been successfully submitted! Auto-booking is enabled.",
@@ -583,7 +479,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     expect(submittedPayload.preferred_payment_method_id).toBeNull(); // Or undefined
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/trip/offers?id=new-trip-id'));
-    await waitFor(() => expect(actualMockToastImplementation).toHaveBeenCalledWith(
+    await waitFor(() => expect(mockToastFn).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Trip request submitted",
         description: "Your trip request has been successfully submitted!", // No auto-booking text
