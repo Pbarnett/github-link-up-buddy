@@ -1,11 +1,9 @@
-
-/// <reference types="vitest/globals" />
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm'; // Adjust path as needed
-import { supabase } from '@/integrations/supabase/client'; // Fixed import path
+import { supabase } from '@/lib/supabase'; // Assuming supabase client is imported like this
 import { useCurrentUser } from '@/hooks/useCurrentUser'; // Assuming custom hook
 // Remove direct import of toast, will use the shared mock via useToast or direct mock access
 // import { toast } from '@/components/ui/use-toast';
@@ -16,7 +14,7 @@ const { actualMockToastImplementation } = vi.hoisted(() => {
 });
 
 // Mock dependencies
-vi.mock('@/integrations/supabase/client', () => ({
+vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: vi.fn().mockReturnThis(),
     insert: vi.fn().mockResolvedValue({ data: [{}], error: null }), // Default mock for insert
