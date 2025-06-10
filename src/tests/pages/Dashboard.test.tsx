@@ -159,8 +159,12 @@ describe('Dashboard Page', () => {
     const tripHistoryTabTrigger = screen.getByRole('tab', { name: /Trip History/i });
     fireEvent.click(tripHistoryTabTrigger);
 
-    await waitFor(() => expect(screen.getByTestId('trip-history-mock')).toBeInTheDocument());
-    expect(mockedTripHistory).toHaveBeenCalledWith({ userId: mockUser.id }, expect.anything());
+    await waitFor(() => {
+      // First, check if the mock function was called with the expected props.
+      expect(mockedTripHistory).toHaveBeenCalledWith({ userId: mockUser.id }, expect.anything());
+      // Then, check if its rendered output is in the document.
+      expect(screen.getByTestId('trip-history-mock')).toBeInTheDocument();
+    });
 
     expect(screen.queryByText(/TestAir TA101/i)).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Trip History/i, selected: true })).toBeInTheDocument();
