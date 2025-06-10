@@ -16,12 +16,70 @@ const { actualMockToastImplementation } = vi.hoisted(() => {
 });
 
 // Mock dependencies
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    from: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockResolvedValue({ data: [{}], error: null }), // Default mock for insert
-  },
-}));
+
+vi.mock('@radix-ui/react-select', async () => {
+  const actual = await vi.importActual('@radix-ui/react-select');
+  const Select = ({ children, value, onValueChange, ...props }: any) => {
+    // Mock a simple input field or a basic select for testing purposes
+    // This allows us to control the value directly or type into it.
+    return (
+      <input
+        data-testid={props['data-testid'] || "mock-radix-select"} // Pass through data-testid
+        value={value || ''}
+        onChange={(e) => onValueChange?.(e.target.value)}
+        aria-label={props['aria-label'] || props.name || 'Mock Radix Select'} // Use name if aria-label not provided
+        placeholder={props.placeholder}
+      />
+    );
+  };
+  const SelectTrigger = ({ children, ...props }: any) => <button {...props} type="button">{children || 'SelectTrigger'}</button>;
+  const SelectValue = (props: any) => <span data-testid="mock-select-value">{props.placeholder || 'SelectValue'}</span>;
+  const SelectContent = ({ children, ...props }: any) => <div {...props}>{children}</div>;
+  // For SelectItem, we'll make it a simple div that userEvent.click can interact with, returning its value via a data attribute
+  const SelectItem = ({ children, value, ...props }: any) => (
+    <div data-testid={`mock-select-item-${value}`} data-value={value} {...props} role="option">
+      {children}
+    </div>
+  );
+
+  return {
+    ...actual, // Spread actual to keep any other exports not being mocked
+    Select: Select, // Mock the main Select component (usually Select.Root)
+    SelectRoot: Select, // Alias if components use Select.Root
+    Root: Select,     // Alias if components use Root
+    SelectTrigger: SelectTrigger,
+    SelectValue: SelectValue,
+    SelectContent: SelectContent,
+    SelectItem: SelectItem,
+  };
+});
+
+vi.mock('@/integrations/supabase/client', () => {
+  const mockInsert = vi.fn().mockResolvedValue({ data: [{ id: 'default-mock-id' }], error: null });
+  const mockSelect = vi.fn().mockReturnThis();
+  const mockEq = vi.fn().mockReturnThis();
+  const mockSingle = vi.fn().mockResolvedValue({ data: {}, error: null });
+  // Add other methods if you know TripRequestForm uses them directly on mount/render
+
+  const fromMock = vi.fn().mockImplementation(() => ({
+    select: mockSelect,
+    insert: mockInsert, // This specific mockInsert can be overridden per test if needed
+    eq: mockEq,
+    single: mockSingle,
+    // Add other chainable methods here, e.g., order, limit, update
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+  }));
+
+  return {
+    supabase: {
+      from: fromMock,
+      // If there are direct supabase client methods used, mock them too
+      // e.g., auth: { getUser: vi.fn(), ... }
+    },
+  };
+});
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -189,7 +247,11 @@ describe('TripRequestForm - Submission Logic', () => {
     // If it's a combobox, you might need to screen.getByRole('combobox', { name: /destination/i })
     // then userEvent.type(combobox, 'LAX'), then potentially click a matching option.
     // For this iteration, we'll assume a simpler input or that typing into combobox sets free text.
-    await userEvent.type(screen.getByRole('combobox', { name: /destination/i }), 'LAX');
+    // The combobox for destination is likely a Radix Select, now mocked as an input.
+    // We need to ensure it can be found by its label "Destination"
+    const destinationInput = screen.getByLabelText(/destination/i, { selector: 'input[data-testid="mock-radix-select"], input[aria-label="Destination"]' });
+    await userEvent.clear(destinationInput); // Clear if it has a default mock value
+    await userEvent.type(destinationInput, 'LAX');
     // No, EnhancedDestinationSection has a specific input for the airport code:
     // <Input {...field} placeholder="e.g., LAX, LHR, CDG" className="w-full" />
     // This input is part of a form field registered with RHF. Its label might be implicit.
@@ -279,7 +341,12 @@ describe('TripRequestForm - Submission Logic', () => {
 
 // Helper function to fill the base form fields
 const fillBaseFormFields = async () => {
-  await userEvent.type(screen.getByRole('combobox', { name: /destination/i }), 'LAX');
+  // Destination input (mocked Radix Select)
+  // The FormLabel for Destination is "Destination". The mock input should pick this up via aria-label.
+  const destinationInput = screen.getByLabelText(/destination/i, { selector: 'input[data-testid="mock-radix-select"], input[aria-label="Destination"]' });
+  await userEvent.clear(destinationInput);
+  await userEvent.type(destinationInput, 'LAX');
+
   const departureAirportInput = screen.getByLabelText(/Other Departure Airport \(IATA code\)/i);
   departureAirportInput.focus();
   await userEvent.type(departureAirportInput, 'SFO');
@@ -360,10 +427,11 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
       expect(screen.getByLabelText(/payment method for auto-booking/i)).toBeVisible();
     });
 
-    // Select a payment method
-    const paymentMethodSelect = screen.getByLabelText(/payment method for auto-booking/i);
-    await userEvent.click(paymentMethodSelect); // Open select
-    await userEvent.click(screen.getByText(/Visa •••• 4242 \(Default\) \(Work Card\)/i)); // Select option
+    // Select a payment method (mocked Radix Select, now an input)
+    // The FormLabel for Payment Method is "Payment Method for Auto-Booking"
+    const paymentMethodInput = screen.getByLabelText(/payment method for auto-booking/i, { selector: 'input[data-testid="mock-radix-select"], input[aria-label="Payment Method for Auto-Booking"]' });
+    await userEvent.clear(paymentMethodInput);
+    await userEvent.type(paymentMethodInput, 'pm_123'); // Type the value directly
 
     // Check if the value is set (indirectly, by checking if it's part of submission later or form state if possible)
     // For now, interaction is the key. The value selection will be verified in submission tests.
@@ -382,7 +450,10 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     });
     await userEvent.type(screen.getByLabelText(/maximum price \(usd\) for auto-booking/i), '1500');
 
-    // Do NOT select a payment method
+    // Do NOT select/type a payment method - ensure the input is clear if it holds a value by default from mock
+    const paymentMethodInput = screen.getByLabelText(/payment method for auto-booking/i, { selector: 'input[data-testid="mock-radix-select"], input[aria-label="Payment Method for Auto-Booking"]' });
+    await userEvent.clear(paymentMethodInput);
+
 
     const submitButton = screen.getByRole('button', { name: /enable auto-booking/i }); // Button text changes
     await userEvent.click(submitButton);
@@ -421,9 +492,10 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     await waitFor(() => {
        expect(screen.getByLabelText(/payment method for auto-booking/i)).toBeVisible();
     });
-    const paymentMethodSelect = screen.getByLabelText(/payment method for auto-booking/i);
-    await userEvent.click(paymentMethodSelect);
-    await userEvent.click(screen.getByText(/Visa •••• 4242 \(Default\) \(Work Card\)/i));
+    const paymentMethodInput = screen.getByLabelText(/payment method for auto-booking/i, { selector: 'input[data-testid="mock-radix-select"], input[aria-label="Payment Method for Auto-Booking"]' });
+    await userEvent.clear(paymentMethodInput);
+    await userEvent.type(paymentMethodInput, 'pm_123');
+
 
     // Do NOT fill max_price
 
@@ -481,9 +553,9 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     });
 
     await userEvent.type(screen.getByLabelText(/maximum price \(usd\) for auto-booking/i), '2000');
-    const paymentMethodSelect = screen.getByLabelText(/payment method for auto-booking/i);
-    await userEvent.click(paymentMethodSelect);
-    await userEvent.click(screen.getByText(/Visa •••• 4242 \(Default\) \(Work Card\)/i));
+    const paymentMethodInput = screen.getByLabelText(/payment method for auto-booking/i, { selector: 'input[data-testid="mock-radix-select"], input[aria-label="Payment Method for Auto-Booking"]' });
+    await userEvent.clear(paymentMethodInput);
+    await userEvent.type(paymentMethodInput, 'pm_123');
 
     const submitButton = screen.getByRole('button', { name: /enable auto-booking/i });
     await userEvent.click(submitButton);
