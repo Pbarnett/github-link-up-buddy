@@ -1,14 +1,15 @@
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm'; // Adjust path as needed
-import { supabase } from '@/lib/supabase'; // Assuming supabase client is imported like this
+import { supabase } from '@/integrations/supabase/client'; // Fixed import path
 import { useCurrentUser } from '@/hooks/useCurrentUser'; // Assuming custom hook
 import { toast } from '@/components/ui/use-toast'; // Assuming toast is from here
 
 // Mock dependencies
-vi.mock('@/lib/supabase', () => ({
+vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn().mockReturnThis(),
     insert: vi.fn().mockResolvedValue({ data: [{}], error: null }), // Default mock for insert
