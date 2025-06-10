@@ -84,8 +84,7 @@ export const invokeFlightSearch = async (
 ): Promise<FlightSearchResponse> => {
   console.log("📡 [flightSearchApi] Starting flight search invocation", {
     payload,
-    timestamp: new Date().toISOString(),
-    supabaseUrl: supabase.supabaseUrl
+    timestamp: new Date().toISOString()
   });
 
   try {
