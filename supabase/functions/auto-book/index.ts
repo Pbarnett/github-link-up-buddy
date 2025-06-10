@@ -44,7 +44,6 @@ interface TripRequest {
 console.log('[AutoBook] Function cold start or new instance.');
 
 Deno.serve(async (req: Request) => {
-  console.log("[auto-book] triggered at", new Date());
   console.log('[AutoBook] Request received.');
   const supabaseClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
