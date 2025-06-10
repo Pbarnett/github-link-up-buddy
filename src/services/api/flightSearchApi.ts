@@ -13,8 +13,6 @@ export interface FlightSearchRequestBody {
   tripRequestId: string;
   /** Whether to use relaxed criteria for the search. */
   relaxedCriteria: boolean;
-  /** The destination airport code (e.g., LAX). */
-  destination_location_code: string;
 }
 
 /**
