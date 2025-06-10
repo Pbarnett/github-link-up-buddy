@@ -1,11 +1,8 @@
 
-// src/tests/components/dashboard/TripHistory.test.tsx
-import { render, screen, waitFor } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed
-import { MemoryRouter } from 'react-router-dom'; // For <Link>
+// --- Mock Dependencies ---
+// These MUST be at the top due to Vitest hoisting
 
-// --- Mock Supabase client ---
+// Mock Supabase client
 // This variable will hold the mock promise resolver/rejecter for the final 'order' call
 let mockSupabaseQueryResolver: any;
 const mockOrder = vi.fn(() => new Promise((resolve, reject) => {
@@ -33,7 +30,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: mockSupabaseClient,
 }));
 
-// --- Mock react-router-dom ---
+// Mock react-router-dom
 // Mock Link to render as a simple anchor tag for easy href assertion
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
@@ -43,6 +40,12 @@ vi.mock('react-router-dom', async () => {
         useNavigate: vi.fn(() => vi.fn()), // Mock useNavigate as it's in the component
     };
 });
+
+// src/tests/components/dashboard/TripHistory.test.tsx
+import { render, screen, waitFor } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed
+import { MemoryRouter } from 'react-router-dom'; // For <Link>
 
 // --- Test Data ---
 const mockBookingsData = [
