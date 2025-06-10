@@ -43,7 +43,7 @@ vi.mock('react-router-dom', async () => {
 });
 
 // src/tests/components/dashboard/TripHistory.test.tsx
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react'; // Import within
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed
 import { MemoryRouter, Link as RouterLink } from 'react-router-dom'; // For <Link> and importing the mocked Link
@@ -141,11 +141,22 @@ describe('TripHistory Component', () => {
     expect(detailsLinks[1]).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[1].trip_request_id}`);
 
     // Check data for third booking (b3 - null pnr, null price)
-    expect(screen.getByRole('cell', { name: 'N/A' })).toBeInTheDocument(); // PNR is null
-    const priceCells = screen.getAllByRole('cell'); // Get all cells to find the N/A price
-    expect(priceCells.find(cell => cell.textContent === 'N/A')).toBeInTheDocument(); // Price is null
-    expect(screen.getByRole('cell', { name: '5C' })).toBeInTheDocument();
-    expect(screen.getByRole('cell', { name: new Date(mockBookingsData[2].created_at).toLocaleDateString() })).toBeInTheDocument();
+    const seatCellB3 = screen.getByRole('cell', { name: '5C' }); // Find a unique cell in b3's row
+    const rowB3 = seatCellB3.closest('tr');
+    if (!rowB3) throw new Error("Could not find table row for booking b3");
+
+    const cellsInRowB3 = within(rowB3).getAllByRole('cell');
+
+    // Assuming column order: PNR, Price, Seat, Booked On, Details
+    // Verify PNR for b3 (index 0) is 'N/A'
+    expect(cellsInRowB3[0]).toHaveTextContent('N/A');
+    // Verify Price for b3 (index 1) is 'N/A'
+    expect(cellsInRowB3[1]).toHaveTextContent('N/A');
+    // Verify Seat for b3 (index 2) is '5C' (already implicitly confirmed by finding seatCellB3)
+    expect(cellsInRowB3[2]).toHaveTextContent('5C');
+    // Check Booked On date for b3
+    expect(cellsInRowB3[3]).toHaveTextContent(new Date(mockBookingsData[2].created_at).toLocaleDateString());
+    // Check details link for b3 (it's the 3rd link in the detailsLinks array found earlier)
     expect(detailsLinks[2]).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[2].trip_request_id}`);
   });
 
