@@ -16,7 +16,6 @@ import { TripRequestFromDB } from "@/hooks/useTripOffers";
 import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { invokeFlightSearch } from "@/services/api/flightSearchApi";
 import DateRangeField from "./DateRangeField";
 import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
@@ -75,12 +74,11 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       const fetchTripDetails = async () => {
         setIsLoadingDetails(true);
         try {
-          // Use TripRequestFromDB for typing the response
           const { data: tripData, error } = await supabase
             .from("trip_requests")
             .select("*")
             .eq("id", tripRequestId)
-            .single<TripRequestFromDB>(); // Specify the type here
+            .single<TripRequestFromDB>();
 
           if (error) throw error;
 
@@ -98,7 +96,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
               destination_other: tripData.destination_airport?.length !== 3 || tripData.destination_airport !== tripData.destination_airport?.toUpperCase() ? tripData.destination_airport : "",
               nonstop_required: tripData.nonstop_required ?? true,
               baggage_included_required: tripData.baggage_included_required ?? false,
-              auto_book_enabled: tripData.auto_book_enabled ?? false, // Use nullish coalescing
+              auto_book_enabled: tripData.auto_book_enabled ?? false,
               max_price: tripData.max_price,
               preferred_payment_method_id: tripData.preferred_payment_method_id,
             });
@@ -217,16 +215,27 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
 
   const invokeFlightSearchForTrip = async (tripRequest: TripRequestFromDB): Promise<void> => {
     try {
-      console.log(`Invoking flight-search function for trip request ${tripRequest.id}`);
+      console.log(`🚀 Invoking flight-search function for trip request ${tripRequest.id}`);
       
-      const searchResult = await invokeFlightSearch({
-        tripRequestId: tripRequest.id,
-        relaxedCriteria: false
-      });
+      // Use the supabase.functions.invoke directly instead of the wrapper
+      const { data: searchResult, error: searchError } = await supabase.functions.invoke(
+        "flight-search",
+        { 
+          body: {
+            tripRequestId: tripRequest.id,
+            relaxedCriteria: false
+          }
+        }
+      );
 
-      console.log("Flight search completed:", searchResult);
+      if (searchError) {
+        console.error("❌ Flight search function error:", searchError);
+        throw new Error(`Flight search failed: ${searchError.message}`);
+      }
+
+      console.log("✅ Flight search completed:", searchResult);
       
-      if (searchResult.matchesInserted > 0) {
+      if (searchResult && searchResult.matchesInserted > 0) {
         toast({
           title: "Flight search completed",
           description: `Found ${searchResult.matchesInserted} potential flight matches`,
@@ -239,7 +248,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
         });
       }
     } catch (error) {
-      console.error("Failed to invoke flight-search function:", error);
+      console.error("❌ Failed to invoke flight-search function:", error);
       toast({
         title: "Warning",
         description: "We couldn't search for flights automatically. Please refresh the offers page.",
