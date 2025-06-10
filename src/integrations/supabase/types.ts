@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      auto_booking_requests: {
+        Row: {
+          created_at: string | null
+          criteria: Json
+          id: string
+          latest_booking_request_id: string | null
+          price_history: Json | null
+          status: string
+          trip_request_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          criteria: Json
+          id?: string
+          latest_booking_request_id?: string | null
+          price_history?: Json | null
+          status?: string
+          trip_request_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          criteria?: Json
+          id?: string
+          latest_booking_request_id?: string | null
+          price_history?: Json | null
+          status?: string
+          trip_request_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_booking_requests_trip_request_id_fkey"
+            columns: ["trip_request_id"]
+            isOneToOne: false
+            referencedRelation: "trip_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_requests: {
         Row: {
           attempts: number
@@ -162,6 +206,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      draft_trip_requests: {
+        Row: {
+          created_at: string | null
+          current_step: string
+          id: string
+          step_data: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_step?: string
+          id?: string
+          step_data?: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_step?: string
+          id?: string
+          step_data?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      feature_flags: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          enabled: boolean
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       flight_matches: {
         Row: {
@@ -479,6 +577,7 @@ export type Database = {
           phone: string | null
           prefers_email_notifications: boolean | null
           prefers_sms_notifications: boolean | null
+          trip_mode: string | null
           updated_at: string | null
         }
         Insert: {
@@ -490,6 +589,7 @@ export type Database = {
           phone?: string | null
           prefers_email_notifications?: boolean | null
           prefers_sms_notifications?: boolean | null
+          trip_mode?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -501,84 +601,64 @@ export type Database = {
           phone?: string | null
           prefers_email_notifications?: boolean | null
           prefers_sms_notifications?: boolean | null
+          trip_mode?: string | null
           updated_at?: string | null
         }
         Relationships: []
       }
       trip_requests: {
         Row: {
-          adults: number | null
-          auto_book: boolean
           auto_book_enabled: boolean
           baggage_included_required: boolean
-          best_price: number | null
           budget: number
           created_at: string
           departure_airports: string[]
-          departure_date: string | null
           destination_airport: string | null
-          destination_location_code: string | null
+          destination_location_code: string
           earliest_departure: string
           id: string
-          last_checked_at: string | null
           latest_departure: string
           max_duration: number
           max_price: number | null
           min_duration: number
           nonstop_required: boolean
-          origin_location_code: string | null
           preferred_payment_method_id: string | null
-          return_date: string | null
           user_id: string
         }
         Insert: {
-          adults?: number | null
-          auto_book?: boolean
           auto_book_enabled?: boolean
           baggage_included_required?: boolean
-          best_price?: number | null
           budget: number
           created_at?: string
           departure_airports?: string[]
-          departure_date?: string | null
           destination_airport?: string | null
-          destination_location_code?: string | null
+          destination_location_code: string
           earliest_departure: string
           id?: string
-          last_checked_at?: string | null
           latest_departure: string
           max_duration?: number
           max_price?: number | null
           min_duration?: number
           nonstop_required?: boolean
-          origin_location_code?: string | null
           preferred_payment_method_id?: string | null
-          return_date?: string | null
           user_id: string
         }
         Update: {
-          adults?: number | null
-          auto_book?: boolean
           auto_book_enabled?: boolean
           baggage_included_required?: boolean
-          best_price?: number | null
           budget?: number
           created_at?: string
           departure_airports?: string[]
-          departure_date?: string | null
           destination_airport?: string | null
-          destination_location_code?: string | null
+          destination_location_code?: string
           earliest_departure?: string
           id?: string
-          last_checked_at?: string | null
           latest_departure?: string
           max_duration?: number
           max_price?: number | null
           min_duration?: number
           nonstop_required?: boolean
-          origin_location_code?: string | null
           preferred_payment_method_id?: string | null
-          return_date?: string | null
           user_id?: string
         }
         Relationships: []
