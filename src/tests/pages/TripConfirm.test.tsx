@@ -7,8 +7,10 @@ import TripConfirm from '../../pages/TripConfirm';
 import { supabase as supabaseClient } from '../../integrations/supabase/client'; // Import the actual client
 // import { useToast } from '../../components/ui/use-toast'; // Will be handled by the new mock structure
 
-// Shared mock implementation for toast
-const actualMockToastImplementation = vi.fn();
+// Shared mock implementation for toast, hoisted to be available for vi.mock factory
+const { actualMockToastImplementation } = vi.hoisted(() => {
+  return { actualMockToastImplementation: vi.fn() };
+});
 
 // Mock Supabase client and other hooks
 vi.mock('../../integrations/supabase/client', () => ({
