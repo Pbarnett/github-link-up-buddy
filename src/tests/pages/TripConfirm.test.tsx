@@ -5,7 +5,10 @@ import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vites
 import TripConfirm from '../../pages/TripConfirm';
 // import { useSupabase } from '../../hooks/useSupabase'; // Removed
 import { supabase as supabaseClient } from '../../integrations/supabase/client'; // Import the actual client
-import { useToast } from '../../components/ui/use-toast';
+// import { useToast } from '../../components/ui/use-toast'; // Will be handled by the new mock structure
+
+// Shared mock implementation for toast
+const actualMockToastImplementation = vi.fn();
 
 // Mock Supabase client and other hooks
 vi.mock('../../integrations/supabase/client', () => ({
@@ -24,7 +27,10 @@ vi.mock('../../integrations/supabase/client', () => ({
     }
   }
 }));
-vi.mock('../../components/ui/use-toast');
+vi.mock('../../components/ui/use-toast', () => ({
+  useToast: () => ({ toast: actualMockToastImplementation }),
+  toast: actualMockToastImplementation,
+}));
 vi.mock('../../hooks/useCurrentUser', () => ({
   useCurrentUser: vi.fn(() => ({
     userId: 'test-user-123',
@@ -41,8 +47,9 @@ describe('TripConfirm Page', () => {
     vi.mocked(supabaseClient.auth.getUser).mockClear();
     vi.mocked(supabaseClient.channel).mockClear();
     vi.mocked(supabaseClient.functions.invoke).mockClear();
+    actualMockToastImplementation.mockClear();
     // If channel().on() etc. need reset, they can be done via re-mocking supabaseClient.channel
-    (useToast as MockedFunction<any>).mockReset();
+    // (useToast as MockedFunction<any>).mockReset(); // Old way
     // vi.mocked(useCurrentUser) can be reset here if more granular control is needed per test
   });
 
@@ -72,7 +79,7 @@ describe('TripConfirm Page', () => {
       }
       return baseReturn as any;
     });
-    (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() });
+    // (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() }); // Not needed due to shared mock
 
     render(
       <MemoryRouter initialEntries={['/trip/confirm?id=offer-for-auto-book&airline=AA&flight_number=123&price=500&departure_date=2024-01-01&departure_time=10:00&return_date=2024-01-05&return_time=12:00&duration=PT2H']}>
@@ -112,7 +119,7 @@ describe('TripConfirm Page', () => {
       }
       return baseReturn as any;
     });
-    (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() });
+    // (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() }); // Not needed
 
     render(
       <MemoryRouter initialEntries={['/trip/confirm?id=offer-for-manual-book&airline=BB&flight_number=456&price=600&departure_date=2024-02-01&departure_time=11:00&return_date=2024-02-05&return_time=13:00&duration=PT3H']}>
@@ -129,7 +136,7 @@ describe('TripConfirm Page', () => {
   });
 
   it('should call Sonner toast on "booking_succeeded" notification', async () => {
-    const mockToast = vi.fn();
+    // const mockToast = vi.fn(); // Will use actualMockToastImplementation
     let capturedCallback: Function | null = null;
 
     vi.mocked(supabaseClient.from).mockImplementation((tableName: string) => {
@@ -146,7 +153,8 @@ describe('TripConfirm Page', () => {
       } else if (tableName === 'trip_requests') {
         mockEq.mockImplementation((columnName, value) => {
           if (columnName === 'id' && value === 'trip-req-toast') {
-            return { single: vi.fn().mockResolvedValueOnce({ data: { id: 'trip-req-toast', auto_book_enabled: true }, error: null }) };
+            // Ensure auto_book_enabled is false for this test to allow manual booking flow
+            return { single: vi.fn().mockResolvedValueOnce({ data: { id: 'trip-req-toast', auto_book_enabled: false }, error: null }) };
           }
           return { single: vi.fn().mockResolvedValueOnce({ data: null, error: { message: 'Trip request not found for toast test' } }) };
         });
@@ -193,7 +201,7 @@ describe('TripConfirm Page', () => {
       } as any)
     );
 
-    (useToast as MockedFunction<any>).mockReturnValue({ toast: mockToast });
+    // (useToast as MockedFunction<any>).mockReturnValue({ toast: mockToast }); // Not needed due to shared mock
 
     render(
       <MemoryRouter initialEntries={['/trip/confirm?id=offer-for-toast-test&airline=CC&flight_number=789&price=700&departure_date=2024-03-01&departure_time=12:00&return_date=2024-03-05&return_time=14:00&duration=PT4H&checkout_session_id=session_id_for_trip_toast']}>
@@ -204,7 +212,7 @@ describe('TripConfirm Page', () => {
     );
 
     await waitFor(() => {
-      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
+      expect(actualMockToastImplementation).toHaveBeenCalledWith(expect.objectContaining({
         title: "Booking Confirmed!",
         description: "Your trip has been successfully booked. Flight: Flight to Paradise",
       }));
