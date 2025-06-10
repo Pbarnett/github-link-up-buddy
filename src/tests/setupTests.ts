@@ -1,5 +1,3 @@
-
-/// <reference types="vitest/globals" />
 import { vi } from 'vitest';
 import '@testing-library/jest-dom/vitest'; // Import jest-dom matchers for Vitest
 
