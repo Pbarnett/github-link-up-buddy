@@ -81,22 +81,11 @@ export const tripFormSchema = z.object({
 }, {
   message: "Please select a destination or enter a custom one",
   path: ["destination_airport"],
-}).superRefine((data, ctx) => {
+}).refine((data) => {
+  // If auto-booking is enabled, max_price and payment method must be provided
   if (data.auto_book_enabled) {
-    if (!data.max_price) {
-      ctx.addIssue({
-        path: ["max_price"],
-        message: "Maximum price is required for auto-booking",
-      });
-    }
-    if (!data.preferred_payment_method_id) {
-      ctx.addIssue({
-        path: ["preferred_payment_method_id"],
-        message: "Payment method is required for auto-booking",
-      });
-    }
+    return !!data.max_price && !!data.preferred_payment_method_id;
   }
-
   return true;
 }, {
   message: "Maximum price and payment method are required for auto-booking",
