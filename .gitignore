@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# TypeScript output
+src/**/*.js
+src/**/*.jsx
+src/**/*.d.ts
+src/**/*.d.ts.map
