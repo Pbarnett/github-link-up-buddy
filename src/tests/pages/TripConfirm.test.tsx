@@ -216,7 +216,7 @@ describe('TripConfirm Page', () => {
     await waitFor(() => {
       expect(actualMockToastImplementation).toHaveBeenCalledWith(expect.objectContaining({
         title: "Booking Confirmed!",
-        description: "Your trip has been successfully booked. Flight: Flight to Paradise",
+        description: "Your flight has been successfully booked. Redirecting to dashboard...",
       }));
     }, { timeout: 2000 });
   });
