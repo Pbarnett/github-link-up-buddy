@@ -139,6 +139,22 @@ describe('TripRequestForm - Submission Logic', () => {
 
     // Mock navigate
     (useNavigate as vi.Mock).mockReturnValue(vi.fn());
+
+    // Provide default mocks for hooks used by AutoBookingSection for this suite too
+    const mockedUsePaymentMethods = usePaymentMethods as vi.MockedFunction<typeof usePaymentMethods>;
+    const mockedUseTravelerInfoCheck = useTravelerInfoCheck as vi.MockedFunction<typeof useTravelerInfoCheck>;
+
+    mockedUsePaymentMethods.mockReset();
+    mockedUsePaymentMethods.mockReturnValue({
+      data: [{ id: 'pm_1', brand: 'Visa', last4: '4242', is_default: true, nickname: 'Test Card' }],
+      isLoading: false,
+    });
+
+    mockedUseTravelerInfoCheck.mockReset();
+    mockedUseTravelerInfoCheck.mockReturnValue({
+      hasTravelerInfo: true,
+      isLoading: false,
+    });
   });
 
   it('should populate destination_location_code from destination_airport if omitted', async () => {
@@ -189,7 +205,9 @@ describe('TripRequestForm - Submission Logic', () => {
     // DepartureAirportsSection - fill "Other departure airport"
     // It has <Legend>Where are you flying from?</Legend>
     // And an input with placeholder "e.g. SFO, BOS" for other_departure_airport
-    await userEvent.type(screen.getByLabelText(/Other Departure Airport \(IATA code\)/i), 'SFO');
+    const departureAirportInput = screen.getByLabelText(/Other Departure Airport \(IATA code\)/i);
+    departureAirportInput.focus();
+    await userEvent.type(departureAirportInput, 'SFO');
 
     // DateRangeField - "When do you want to travel?"
     // It has two date pickers. Let's assume they have accessible names.
@@ -262,7 +280,9 @@ describe('TripRequestForm - Submission Logic', () => {
 // Helper function to fill the base form fields
 const fillBaseFormFields = async () => {
   await userEvent.type(screen.getByRole('combobox', { name: /destination/i }), 'LAX');
-  await userEvent.type(screen.getByLabelText(/Other Departure Airport \(IATA code\)/i), 'SFO');
+  const departureAirportInput = screen.getByLabelText(/Other Departure Airport \(IATA code\)/i);
+  departureAirportInput.focus();
+  await userEvent.type(departureAirportInput, 'SFO');
   fireEvent.change(screen.getByLabelText(/earliest departure date/i), { target: { value: '2024-10-15' } });
   fireEvent.change(screen.getByLabelText(/latest departure date/i), { target: { value: '2024-10-20' } });
   await userEvent.clear(screen.getByLabelText(/budget/i));
