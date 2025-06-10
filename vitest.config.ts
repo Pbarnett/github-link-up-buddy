@@ -5,19 +5,19 @@ import path from 'path'; // Import path module
 export default defineConfig({
   test: {
     environment: 'jsdom',
-    globals: true,
+    globals: true, // This enables global APIs like vi, describe, it, expect
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      // '**/supabase/**' // Allow tests from supabase/functions/tests
+      '**/supabase/**'
     ],
     setupFiles: ['./src/tests/setupTests.ts'], // Added setup file
-    types: ['@testing-library/jest-dom'], // Explicitly declare jest-dom types for Vitest
+    types: ['vitest/globals', '@testing-library/jest-dom'], // Added vitest/globals for vi namespace
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+    ],
   },
   // Add optimizeDeps to help Vite pre-bundle these for Vitest
   optimizeDeps: {

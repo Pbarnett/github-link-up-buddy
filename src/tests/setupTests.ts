@@ -1,29 +1,70 @@
-
-
+/// <reference types="vitest/globals" />
 import { vi } from 'vitest';
 import '@testing-library/jest-dom/vitest'; // Import jest-dom matchers for Vitest
 
-// Mock window.matchMedia for JSDOM
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false, // Default value for matches
-    media: query,
-    onchange: null,
-    addListener: vi.fn(), // Deprecated but sometimes used
-    removeListener: vi.fn(), // Deprecated but sometimes used
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
+// JSDOM Polyfills for Radix UI and other components
 
-// Mock ResizeObserver for JSDOM
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
+// Pointer Events
+if (!global.PointerEvent) {
+  // Basic PointerEvent class if not present
+  class PointerEvent extends MouseEvent { // Inheriting from MouseEvent for more properties
+    public pointerId?: number;
+    public pointerType?: string;
+    // Add other properties as needed by tests or components
+    constructor(type: string, params: PointerEventInit = {}) {
+      super(type, params);
+      this.pointerId = params.pointerId;
+      this.pointerType = params.pointerType;
+    }
+  }
+  global.PointerEvent = PointerEvent as any;
+}
+
+Element.prototype.hasPointerCapture = Element.prototype.hasPointerCapture || vi.fn(() => false);
+Element.prototype.setPointerCapture = Element.prototype.setPointerCapture || vi.fn();
+Element.prototype.releasePointerCapture = Element.prototype.releasePointerCapture || vi.fn();
+
+// scrollIntoView
+Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || vi.fn();
+
+// ResizeObserver - common for some UI components, good to have a basic mock
+if (!global.ResizeObserver) {
+  class ResizeObserver {
+    observe() { /* do nothing */ }
+    unobserve() { /* do nothing */ }
+    disconnect() { /* do nothing */ }
+  }
+  global.ResizeObserver = ResizeObserver;
+}
+
+// IntersectionObserver - also common
+if (!global.IntersectionObserver) {
+  class IntersectionObserver {
+    observe() { /* do nothing */ }
+    unobserve() { /* do nothing */ }
+    disconnect() { /* do nothing */ }
+    takeRecords() { return []; }
+  }
+  global.IntersectionObserver = IntersectionObserver;
+  // Add rootMargin, thresholds etc. to prototype if needed by tests
+  (global.IntersectionObserver as any).prototype.root = null;
+  (global.IntersectionObserver as any).prototype.rootMargin = '';
+  (global.IntersectionObserver as any).prototype.thresholds = [0];
+}
+
+// matchMedia - for responsive hooks/components
+window.matchMedia = window.matchMedia || vi.fn().mockImplementation(query => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(), // deprecated
+  removeListener: vi.fn(), // deprecated
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
 }));
+
+// --- End of JSDOM Polyfills ---
 
 // Mock Supabase client and auth (basic mock for useCurrentUser)
 // This is a very basic mock. Depending on how useCurrentUser is implemented
@@ -55,42 +96,4 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-// You might also need to mock other global objects or functions here
-// e.g., IntersectionObserver, navigation objects if not using MemoryRouter appropriately etc.
-
 console.log('Test setup file (src/tests/setupTests.ts) loaded.');
-
-// Polyfill for PointerEvent and related methods for JSDOM
-if (!global.PointerEvent) {
-  class PointerEvent extends Event {
-    constructor(type: string, params: PointerEventInit = {}) {
-      super(type, params);
-      // You can add more properties from PointerEventInit if needed by your tests
-      // For example: this.pointerId = params.pointerId ?? 0;
-    }
-  }
-  global.PointerEvent = PointerEvent as any;
-}
-
-if (!Element.prototype.hasPointerCapture) {
-  Element.prototype.hasPointerCapture = function(_pointerId: number) {
-    // Minimal implementation, assuming one pointer capture at a time or not tracking
-    return (this as any)._capturedPointerId === _pointerId;
-  };
-}
-
-if (!Element.prototype.setPointerCapture) {
-  Element.prototype.setPointerCapture = function(pointerId: number) {
-    // Minimal implementation
-    (this as any)._capturedPointerId = pointerId;
-  };
-}
-
-if (!Element.prototype.releasePointerCapture) {
-  Element.prototype.releasePointerCapture = function(pointerId: number) {
-    // Minimal implementation
-    if ((this as any)._capturedPointerId === pointerId) {
-      delete (this as any)._capturedPointerId;
-    }
-  };
-}
