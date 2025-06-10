@@ -45,8 +45,6 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 const mapTripRequestToTripDetails = (dbTripRequest: TripRequestFromDB): TripDetails => {
   if (!dbTripRequest.id) {
-    // This error is critical for application logic, so it should probably remain an error
-    // or be handled in a way that guarantees TripDetails always has an id.
     logger.error("DB trip request is missing an ID.", dbTripRequest);
     throw new Error("DB trip request is missing an ID.");
   }
@@ -85,10 +83,16 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
   }, []);
 
   const loadOffers = useCallback(async (overrideFilterArg = false, relaxCriteriaArg = false, useCache = true) => {
-    logger.info("[useTripOffers] Loading offers", { tripId, overrideFilterArg, relaxCriteriaArg, useCache });
+    console.log("🔍 [useTripOffers] Starting loadOffers", { 
+      tripId, 
+      overrideFilterArg, 
+      relaxCriteriaArg, 
+      useCache,
+      timestamp: new Date().toISOString()
+    });
 
     if (!tripId) {
-      logger.error("[useTripOffers] No trip ID provided for loadOffers call.");
+      console.error("❌ [useTripOffers] No trip ID provided for loadOffers call.");
       setHasError(true);
       setErrorMessage("No trip ID provided");
       setIsLoading(false);
@@ -100,7 +104,7 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
     if (useCache && !isRefreshing && currentCacheKey) {
       const cached = searchCache.get(currentCacheKey);
       if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-        logger.info("[useTripOffers] Using cached results for key:", currentCacheKey);
+        console.log("✅ [useTripOffers] Using cached results for key:", currentCacheKey);
         setOffers(cached.offers);
         setTripDetailsState(cached.tripDetails);
         setIsLoading(false);
@@ -124,37 +128,59 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
       if (initialTripDetails && initialTripDetails.id === tripId) {
           currentTripDetails = initialTripDetails;
           setTripDetailsState(initialTripDetails);
+          console.log("📋 [useTripOffers] Using initial trip details:", currentTripDetails);
       } else if (tripDetailsState && tripDetailsState.id === tripId) {
           currentTripDetails = tripDetailsState;
+          console.log("📋 [useTripOffers] Using cached trip details:", currentTripDetails);
       } else {
-        logger.debug("[useTripOffers] Fetching trip details from DB for tripId:", tripId);
+        console.log("🔍 [useTripOffers] Fetching trip details from DB for tripId:", tripId);
         const { data: fetchedDbTripRequest, error: tripError } = await supabase
             .from("trip_requests")
             .select("*")
             .eq("id", tripId)
             .single<TripRequestFromDB>();
 
-        if (tripError) throw tripError; // Supabase errors are already quite descriptive
-        if (!fetchedDbTripRequest) throw new Error("No trip data found for ID: " + tripId); // This will be caught below
+        if (tripError) {
+          console.error("❌ [useTripOffers] Error fetching trip details:", tripError);
+          throw tripError;
+        }
+        if (!fetchedDbTripRequest) {
+          console.error("❌ [useTripOffers] No trip data found for ID:", tripId);
+          throw new Error("No trip data found for ID: " + tripId);
+        }
 
         currentTripDetails = mapTripRequestToTripDetails(fetchedDbTripRequest);
         setTripDetailsState(currentTripDetails);
+        console.log("✅ [useTripOffers] Fetched trip details:", currentTripDetails);
       }
+
+      console.log("🚀 [useTripOffers] About to invoke flight search with payload:", {
+        tripRequestId: tripId,
+        relaxedCriteria: relaxCriteriaArg,
+        timestamp: new Date().toISOString()
+      });
 
       const flightSearchPayload: FlightSearchRequestBody = {
         tripRequestId: tripId,
         relaxedCriteria: relaxCriteriaArg,
       };
-      console.log("useTripOffers calling invokeFlightSearch with payload:", flightSearchPayload);
+
+      
+      console.log("📡 [useTripOffers] Calling invokeFlightSearch...");
+
       const searchServiceResponse: FlightSearchResponse = await invokeFlightSearch(flightSearchPayload);
+      console.log("✅ [useTripOffers] Flight search response received:", {
+        success: searchServiceResponse.success,
+        requestsProcessed: searchServiceResponse.requestsProcessed,
+        matchesInserted: searchServiceResponse.matchesInserted,
+        message: searchServiceResponse.message,
+        details: searchServiceResponse.details
+      });
 
       if (!searchServiceResponse.success) {
-        // The message from searchServiceResponse should be informative enough
+        console.error("❌ [useTripOffers] Flight search reported failure:", searchServiceResponse.message);
         throw new Error(searchServiceResponse.message || "Flight search invocation reported failure.");
       }
-
-      // Use logger.debug for potentially large objects or verbose info
-      logger.debug("[useTripOffers] Flight search invoked successfully.", { tripId, responseData: searchServiceResponse });
 
       if (relaxCriteriaArg) {
         toast({
@@ -163,12 +189,13 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
         });
       }
 
+      console.log("🔍 [useTripOffers] Fetching offers from database for tripId:", tripId);
       const fetchedOffers: Offer[] = await fetchTripOffers(tripId);
-      logger.info(`[useTripOffers] Fetched ${fetchedOffers.length} offers via service for tripId: ${tripId}`);
+      console.log(`✅ [useTripOffers] Fetched ${fetchedOffers.length} offers from database for tripId: ${tripId}`);
 
       if (fetchedOffers.length === 0) {
-        logger.warn("[useTripOffers] No offers found via service for tripId:", tripId);
-        toast({ // This toast is user-facing, so it's fine.
+        console.warn("⚠️ [useTripOffers] No offers found in database for tripId:", tripId);
+        toast({
           title: "No flight offers found",
           description: "Try relaxing your search criteria or refreshing.",
           variant: "destructive",
@@ -184,8 +211,9 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
             validateOfferDuration(offer, currentTripDetails.min_duration, currentTripDetails.max_duration)
           );
 
+          console.log(`🔍 [useTripOffers] Duration filter: ${fetchedOffers.length} total → ${validOffers.length} valid (${currentTripDetails.min_duration}-${currentTripDetails.max_duration} days)`);
+
           if (validOffers.length < fetchedOffers.length) {
-            // This toast is also user-facing.
             toast({
               title: "Duration filter applied",
               description: `Found ${fetchedOffers.length} offers, but only ${validOffers.length} match your ${currentTripDetails.min_duration}-${currentTripDetails.max_duration} day trip duration.`,
@@ -193,7 +221,7 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
           }
           finalOffers = validOffers;
           if (validOffers.length === 0 && fetchedOffers.length > 0) {
-            toast({ // User-facing
+            toast({
               title: "No offers match duration",
               description: `Found ${fetchedOffers.length} offers, but none match your ${currentTripDetails.min_duration}-${currentTripDetails.max_duration} day duration. Consider searching any duration.`,
               variant: "destructive",
@@ -202,27 +230,33 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
         } else {
           finalOffers = fetchedOffers;
           if (overrideFilterArg) {
-            toast({ // User-facing
+            toast({
               title: "Search without duration filter",
               description: `Showing all ${fetchedOffers.length} available offers regardless of trip duration.`,
             });
           }
         }
 
+        console.log(`✅ [useTripOffers] Final offers count: ${finalOffers.length}`);
         setOffers(finalOffers);
         if (currentCacheKey && currentTripDetails) {
           searchCache.set(currentCacheKey, { offers: finalOffers, timestamp: Date.now(), tripDetails: currentTripDetails });
-          logger.info("[useTripOffers] Results cached for key:", currentCacheKey);
+          console.log("💾 [useTripOffers] Results cached for key:", currentCacheKey);
         }
       }
 
     } catch (err) {
       const error = err as Error | PostgrestError;
-      logger.error("[useTripOffers] Error in loadOffers:", { tripId, errorDetails: error });
+      console.error("❌ [useTripOffers] Error in loadOffers:", { 
+        tripId, 
+        errorMessage: error.message,
+        errorDetails: error,
+        stack: error.stack 
+      });
       setHasError(true);
       const displayMessage = error.message || "Something went wrong loading offers";
       setErrorMessage(displayMessage);
-      toast({ // User-facing
+      toast({
         title: "Error Loading Flight Offers",
         description: displayMessage,
         variant: "destructive"
@@ -231,6 +265,7 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
       setIsLoading(false);
       setIsRefreshing(false);
       setLastRefreshTime(Date.now());
+      console.log("🏁 [useTripOffers] loadOffers completed at", new Date().toISOString());
     }
   }, [tripId, initialTripDetails, tripDetailsState, isRefreshing, validateOfferDuration]);
 
@@ -286,3 +321,5 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
     handleRelaxCriteria,
   };
 };
+
+export default useTripOffers;
