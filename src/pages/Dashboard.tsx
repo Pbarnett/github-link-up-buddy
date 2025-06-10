@@ -452,7 +452,7 @@ const Dashboard = () => {
                 <CardDescription>Review your completed flight bookings.</CardDescription>
               </CardHeader>
               <CardContent>
-                {user && <TripHistory userId={user.id} />}
+                {user && <TripHistory userId={user?.id ?? ''} />}
               </CardContent>
             </Card>
           </TabsContent>
