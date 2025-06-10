@@ -24,7 +24,13 @@ vi.mock('../../integrations/supabase/client', () => ({
     }
   }
 }));
-vi.mock('../../components/ui/use-toast');
+
+// New standard mock for useToast
+const mockToast = vi.fn();
+vi.mock('../../components/ui/use-toast', () => ({
+  useToast: () => ({ toast: mockToast })
+}));
+
 vi.mock('../../hooks/useCurrentUser', () => ({
   useCurrentUser: vi.fn(() => ({
     userId: 'test-user-123',
@@ -42,7 +48,8 @@ describe('TripConfirm Page', () => {
     vi.mocked(supabaseClient.channel).mockClear();
     vi.mocked(supabaseClient.functions.invoke).mockClear();
     // If channel().on() etc. need reset, they can be done via re-mocking supabaseClient.channel
-    (useToast as MockedFunction<any>).mockReset();
+    // (useToast as MockedFunction<any>).mockReset(); // Removed as new mock handles reset via vi.clearAllMocks()
+    mockToast.mockClear(); // Clear the global mockToast spy
     // vi.mocked(useCurrentUser) can be reset here if more granular control is needed per test
   });
 
@@ -66,7 +73,7 @@ describe('TripConfirm Page', () => {
       }
       return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: {}, error: null }) } as any;
     });
-    (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() });
+    // (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() }); // Removed, global mock is used
 
     render(
       <MemoryRouter initialEntries={['/trip/confirm?tripRequestId=test-trip-1']}>
@@ -100,7 +107,7 @@ describe('TripConfirm Page', () => {
       }
       return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: {}, error: null }) } as any;
     });
-    (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() });
+    // (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() }); // Removed, global mock is used
 
     render(
       <MemoryRouter initialEntries={['/trip/confirm?tripRequestId=test-trip-2']}>
@@ -117,8 +124,8 @@ describe('TripConfirm Page', () => {
   });
 
   it('should call Sonner toast on "booking_succeeded" notification', async () => {
-    const mockToast = vi.fn();
-    const mockToastFn = vi.fn(); // Use a more specific name for the toast mock function
+    // const mockToast = vi.fn(); // Removed, global mockToast is used
+    // const mockToastFn = vi.fn(); // Removed, global mockToast is used
     let capturedCallback: Function | null = null;
 
     vi.mocked(supabaseClient.from).mockImplementation((tableName: string) => {
@@ -159,7 +166,7 @@ describe('TripConfirm Page', () => {
       unsubscribe: vi.fn()
     } as any);
 
-    (useToast as MockedFunction<any>).mockReturnValue({ toast: mockToastFn });
+    // (useToast as MockedFunction<any>).mockReturnValue({ toast: mockToastFn }); // Removed, global mock is used
 
     render(
       <MemoryRouter initialEntries={['/trip/confirm?tripRequestId=test-trip-3']}>
@@ -191,7 +198,7 @@ describe('TripConfirm Page', () => {
     });
 
     await waitFor(() => {
-      expect(mockToastFn).toHaveBeenCalledWith(expect.objectContaining({
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ // Changed to global mockToast
         title: "Booking Confirmed!",
         description: "Your trip has been successfully booked. Flight: Flight to Paradise",
       }));
