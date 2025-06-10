@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,7 +24,6 @@ import TripDurationInputs from "./sections/TripDurationInputs";
 import AutoBookingSection from "./sections/AutoBookingSection.tsx";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -330,9 +330,9 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
 
                 {/* Right Column */}
                 <div className="space-y-6 bg-white rounded-lg border border-gray-100 p-6">
-                  {!useFeatureFlag("auto_booking_v2") && <AutoBookingSection control={form.control} />}
-                  {/* --- Filter Toggles Section --- */}
-                  <FilterTogglesSection control={form.control} isLoading={isSubmitting || isLoadingDetails} />
+                  <AutoBookingSection control={form.control} />
+              {/* --- Filter Toggles Section --- */}
+              <FilterTogglesSection control={form.control} isLoading={isSubmitting || isLoadingDetails} />
                 </div>
               </div>
 
