@@ -9,7 +9,7 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      '**/supabase/**'
+      // '**/supabase/**' // Allow tests from supabase/functions/tests
     ],
     setupFiles: ['./src/tests/setupTests.ts'], // Added setup file
     types: ['@testing-library/jest-dom'], // Explicitly declare jest-dom types for Vitest
