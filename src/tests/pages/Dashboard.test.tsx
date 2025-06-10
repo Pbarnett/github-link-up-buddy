@@ -164,11 +164,15 @@ describe('Dashboard Page', () => {
     await waitFor(() => expect(screen.getByText(`Hello, ${mockUser.email}`)).toBeInTheDocument());
 
     const tripHistoryTabTrigger = screen.getByRole('tab', { name: /Trip History/i });
-    fireEvent.click(tripHistoryTabTrigger);
+    await userEvent.click(tripHistoryTabTrigger);
 
     await waitFor(() => {
-      // First, check if the mock function was called with the expected props.
+      // Check if the tab trigger itself believes it's selected
+      expect(tripHistoryTabTrigger).toHaveAttribute('aria-selected', 'true');
+
+      // Then, check if the mock function was called
       expect(mockedTripHistory).toHaveBeenCalledWith({ userId: mockUser.id }, expect.anything());
+
       // Then, check if its rendered output is in the document.
       expect(screen.getByTestId('trip-history-mock')).toBeInTheDocument();
     });
@@ -182,11 +186,11 @@ describe('Dashboard Page', () => {
     await waitFor(() => expect(screen.getByText(`Hello, ${mockUser.email}`)).toBeInTheDocument());
 
     const tripHistoryTabTrigger = screen.getByRole('tab', { name: /Trip History/i });
-    fireEvent.click(tripHistoryTabTrigger);
+    await userEvent.click(tripHistoryTabTrigger);
     await waitFor(() => expect(screen.getByTestId('trip-history-mock')).toBeInTheDocument());
 
     const currentRequestsTabTrigger = screen.getByRole('tab', { name: /Current Booking Requests/i });
-    fireEvent.click(currentRequestsTabTrigger);
+    await userEvent.click(currentRequestsTabTrigger);
 
     await waitFor(() => expect(screen.getByText(/TestAir TA101/i)).toBeInTheDocument());
     expect(screen.queryByTestId('trip-history-mock')).not.toBeInTheDocument();
