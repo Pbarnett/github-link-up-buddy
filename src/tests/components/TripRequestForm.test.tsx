@@ -5,7 +5,13 @@ import { MemoryRouter, useNavigate } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm'; // Adjust path as needed
 import { supabase } from '@/lib/supabase'; // Assuming supabase client is imported like this
 import { useCurrentUser } from '@/hooks/useCurrentUser'; // Assuming custom hook
-import { toast } from '@/components/ui/use-toast'; // Assuming toast is from here
+// Remove direct import of toast, will use the shared mock via useToast or direct mock access
+// import { toast } from '@/components/ui/use-toast';
+
+// Shared mock implementation for toast, hoisted to be available for vi.mock factory
+const { actualMockToastImplementation } = vi.hoisted(() => {
+  return { actualMockToastImplementation: vi.fn() };
+});
 
 // Mock dependencies
 vi.mock('@/lib/supabase', () => ({
@@ -28,7 +34,10 @@ vi.mock('@/hooks/useCurrentUser', () => ({
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({
-  toast: vi.fn(),
+  useToast: () => ({ // Mock the hook
+    toast: actualMockToastImplementation, // The hook's toast method uses the shared mock
+  }),
+  toast: actualMockToastImplementation, // The direct export also uses the shared mock
 }));
 
 // Mock custom hooks used by AutoBookingSection
@@ -133,13 +142,14 @@ describe('TripRequestForm - Submission Logic', () => {
       insert: mockInsert,
     });
     // const mockToast = vi.fn(); // This was unused due to mockImplementation below
-    // (toast as vi.Mock).mockReturnValue(mockToast);
+    // (toast as vi.Mock).mockReturnValue(mockToast); // Old way
 
-    const mockToastFn = vi.fn();
-    (toast as vi.Mock).mockImplementation((options) => {
-        mockToastFn(options); // Capture toast options
-        return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() }; // Return structure expected by use-toast
-    });
+    actualMockToastImplementation.mockClear();
+    // const mockToastFn = vi.fn(); // Replaced by actualMockToastImplementation
+    // (toast as vi.Mock).mockImplementation((options) => { // Old way - this line was the issue
+    //     mockToastFn(options); // Capture toast options
+    //     return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() }; // Return structure expected by use-toast
+    // });
     const mockNavigate = useNavigate(); // Get the mocked navigate function instance
 
     render(
@@ -234,7 +244,7 @@ describe('TripRequestForm - Submission Logic', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/trip/offers?id=new-trip-id');
     });
     await waitFor(() => {
-      expect(mockToastFn).toHaveBeenCalledWith(
+      expect(actualMockToastImplementation).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Trip request submitted",
           description: "Your trip request has been successfully submitted!",
@@ -261,7 +271,7 @@ const fillBaseFormFields = async () => {
 
 describe('TripRequestForm - Auto-Booking Logic', () => {
   let mockNavigate: vi.Mock;
-  let mockToastFn: vi.Mock;
+  // let mockToastFn: vi.Mock; // Replaced by actualMockToastImplementation
   let mockInsert: vi.Mock;
 
   // Get typed references to the mocked hooks
@@ -287,11 +297,12 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     mockNavigate = vi.fn();
     (useNavigate as vi.Mock).mockReturnValue(mockNavigate);
 
-    mockToastFn = vi.fn();
-    (toast as vi.Mock).mockImplementation((options) => {
-      mockToastFn(options);
-      return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() };
-    });
+    actualMockToastImplementation.mockClear();
+    // mockToastFn = vi.fn(); // Replaced
+    // (toast as vi.Mock).mockImplementation((options) => { // Old way
+    //   mockToastFn(options);
+    //   return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() };
+    // });
 
     mockInsert = vi.fn().mockResolvedValue({ data: [{ id: 'new-trip-id' }], error: null });
     (supabase.from as vi.Mock).mockReturnValue({ insert: mockInsert });
@@ -460,7 +471,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     expect(submittedPayload).toHaveProperty('preferred_payment_method_id', 'pm_123');
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/trip/offers?id=new-trip-id'));
-    await waitFor(() => expect(mockToastFn).toHaveBeenCalledWith(
+    await waitFor(() => expect(actualMockToastImplementation).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Trip request submitted",
         description: "Your trip request has been successfully submitted! Auto-booking is enabled.",
@@ -484,7 +495,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     expect(submittedPayload.preferred_payment_method_id).toBeNull(); // Or undefined
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/trip/offers?id=new-trip-id'));
-    await waitFor(() => expect(mockToastFn).toHaveBeenCalledWith(
+    await waitFor(() => expect(actualMockToastImplementation).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Trip request submitted",
         description: "Your trip request has been successfully submitted!", // No auto-booking text
