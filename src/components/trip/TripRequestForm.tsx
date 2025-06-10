@@ -16,12 +16,13 @@ import { TripRequestFromDB } from "@/hooks/useTripOffers";
 import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { invokeFlightSearch } from "@/services/api/flightSearchApi";
 import DateRangeField from "./DateRangeField";
 import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import TripDurationInputs from "./sections/TripDurationInputs";
-import AutoBookingSection from "./sections/AutoBookingSection"; // Removed .tsx extension
+import AutoBookingSection from "./sections/AutoBookingSection";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
 
@@ -149,7 +150,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       budget: data.budget,
       departure_airports: departureAirports,
       destination_airport: destinationAirport,
-      destination_location_code: destinationAirport, // Add this mapping
+      destination_location_code: destinationAirport,
       nonstop_required: data.nonstop_required,
       baggage_included_required: data.baggage_included_required,
       auto_book_enabled: data.auto_book_enabled,
@@ -163,7 +164,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
     const tripRequestData = {
       user_id: userId,
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport, // Add this field
+      destination_location_code: formData.destination_airport,
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
@@ -190,7 +191,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
     if (!userId || !tripRequestId) throw new Error("User ID or Trip Request ID is missing for update.");
     const tripRequestData = {
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport, // Add this field
+      destination_location_code: formData.destination_airport,
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
@@ -214,7 +215,40 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
     return data;
   };
 
-  const navigateToConfirmation = (tripRequest: TripRequestFromDB): void => { // Typed parameter
+  const invokeFlightSearchForTrip = async (tripRequest: TripRequestFromDB): Promise<void> => {
+    try {
+      console.log(`Invoking flight-search function for trip request ${tripRequest.id}`);
+      
+      const searchResult = await invokeFlightSearch({
+        tripRequestId: tripRequest.id,
+        relaxedCriteria: false
+      });
+
+      console.log("Flight search completed:", searchResult);
+      
+      if (searchResult.matchesInserted > 0) {
+        toast({
+          title: "Flight search completed",
+          description: `Found ${searchResult.matchesInserted} potential flight matches`,
+        });
+      } else {
+        toast({
+          title: "Flight search completed",
+          description: "No flights found matching your criteria. You can try adjusting your search parameters.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to invoke flight-search function:", error);
+      toast({
+        title: "Warning",
+        description: "We couldn't search for flights automatically. Please refresh the offers page.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const navigateToConfirmation = (tripRequest: TripRequestFromDB): void => {
     const actionText = tripRequestId ? "updated" : "submitted";
     const autoBookText = tripRequest.auto_book_enabled ? (tripRequestId ? ' Auto-booking settings updated.' : ' Auto-booking is enabled.') : '';
     toast({
@@ -238,7 +272,6 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       }
 
       console.log("Form data before transform:", data);
-      // Specifically to check data.preferred_payment_method_id when auto_book_enabled is true
       
       const action = tripRequestId ? "Updating" : "Creating";
       toast({
@@ -254,6 +287,9 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       } else {
         resultingTripRequest = await createTripRequest(transformedData);
       }
+      
+      // Invoke flight search after successful trip creation/update
+      await invokeFlightSearchForTrip(resultingTripRequest);
       
       navigateToConfirmation(resultingTripRequest);
       
