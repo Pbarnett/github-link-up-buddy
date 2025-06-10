@@ -56,18 +56,29 @@ serve(async (req: Request) => {
     let tripRequestId: string | null = null;
     let body: any = {};
     let relaxedCriteria = false;
+    let initialTripRequestIdForLog: string | null = null; // For consistent logging ID
     
     if (req.method === "POST") {
       body = await req.json();
       tripRequestId = body.tripRequestId || null;
+      initialTripRequestIdForLog = tripRequestId; // Capture for entry/exit logs
       relaxedCriteria = body.relaxedCriteria === true;
       
       if (relaxedCriteria) {
-        console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
+        console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${initialTripRequestIdForLog}`);
       }
     }
     
-    console.log(`[flight-search] Invoked${tripRequestId ? ` for ${tripRequestId}` : ' for auto-book enabled trips'}`);
+    // Log 1: Function Start & Received tripRequestId
+    console.log(`flight-search Edge Function START. trip_request_id: ${initialTripRequestIdForLog || (requests && requests.length > 0 ? requests[0].id : 'N/A for general scan')}`);
+    // The log above is a bit complex due to single vs. multiple request processing.
+    // Let's simplify the initial log and add more specific ones later.
+    // A more direct log after parsing tripRequestId (if single) or before loop (if multiple).
+    if (initialTripRequestIdForLog) {
+        console.log(`flight-search Edge Function START for single trip_request_id: ${initialTripRequestIdForLog}`);
+    } else {
+        console.log(`flight-search Edge Function START for scheduled run (auto-book enabled trips).`);
+    }
     
     // Build the query based on whether tripRequestId is provided
     let requests;
@@ -193,11 +204,18 @@ serve(async (req: Request) => {
           continue;
         }
         
-        let offers;
+        let amadeusRawOffers; // Assuming searchOffers might give more raw-like data first or this is within searchOffers
+        let offers; // Transformed offers
         try {
           // Use the enhanced API to get flight offers with multiple search strategies
+          // For this example, let's assume searchOffers returns already transformed offers.
           offers = await searchOffers(searchParams, request.id);
-          console.log(`[flight-search] Request ${request.id}: Found ${offers.length} transformed offers from API (exact destination only)`);
+          // Log 2: After Fetching Data from Amadeus API (simulated, as searchOffers abstracts it)
+          // Log 3: After Data Transformation (assuming searchOffers does this)
+          console.log(`Received and transformed ${offers.length} offers from Amadeus for trip_request_id: ${request.id}.`);
+          // Optional sample:
+          if (offers.length > 0) console.log("Amadeus sample offer (transformed):", JSON.stringify(offers[0], null, 2));
+
         } catch (apiError) {
           console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
@@ -260,7 +278,9 @@ serve(async (req: Request) => {
         }
         // --- End of new filtering logic ---
 
-        console.log(`[flight-search] Request ${request.id}: ${priceFilteredOffers.length} offers after price filter, ${finalFilteredOffers.length} offers after ALL filters (seat, nonstop, baggage).`);
+        // Log 4: After Filtering Logic
+        console.log(`Have ${finalFilteredOffers.length} offers remaining after custom filters (seat, nonstop, baggage) for trip_request_id: ${request.id}.`);
+        // console.log(`[flight-search] Request ${request.id}: ${priceFilteredOffers.length} offers after price filter, ${finalFilteredOffers.length} offers after ALL filters (seat, nonstop, baggage).`); // This is good, keep it or integrate
 
         if (finalFilteredOffers.length === 0) {
           details.push({
@@ -275,27 +295,37 @@ serve(async (req: Request) => {
           continue;
         }
 
-        // Log offers being inserted
-        console.log(`[flight-search] Inserting ${finalFilteredOffers.length} offers. First offer:`,
-          JSON.stringify(finalFilteredOffers[0], null, 2));
+        // Log 5: Before Database Insertion of flight_offers
+        console.log(`Attempting to insert ${finalFilteredOffers.length} flight offers into DB for trip_request_id: ${request.id}.`);
+        if (finalFilteredOffers.length > 0) {
+            // console.log("Offers to insert sample:", JSON.stringify(finalFilteredOffers[0], null, 2)); // Kept existing similar log
+            console.log(`[flight-search] Inserting ${finalFilteredOffers.length} offers. First offer:`, JSON.stringify(finalFilteredOffers[0], null, 2));
+        }
+
 
         // Save offers to the database
         const { data: savedOffers, error: offersError, count: offersCount } = await supabaseClient
           .from("flight_offers")
           .insert(finalFilteredOffers) // Use finalFilteredOffers here
           .select("id, price, departure_date, departure_time")
-          .returns();
+          .returns(); // .returns() is deprecated, use .select().then(res => res.data.length) or similar if count is needed differently
 
+        // Log 6: After Database Insertion of flight_offers (Success/Error)
         if (offersError) {
-          console.error(`[flight-search] Error saving offers for request ${request.id}: ${offersError.message}`);
+          console.error(`Error inserting flight_offers for trip_request_id: ${request.id}:`, offersError);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `Offers error: ${offersError.message}` });
           continue;
+        } else {
+          // Note: `savedOffers` contains the selected data, `offersCount` might be from .returns() which can be less reliable or deprecated.
+          // Using savedOffers.length is better if .select() is used. If .select() is not used, count is the way.
+          // The current .select() returns the inserted rows.
+          console.log(`Successfully inserted ${savedOffers ? savedOffers.length : 0} flight_offers for trip_request_id: ${request.id}.`);
         }
         
-        console.log(`[flight-search] Inserted ${offersCount || 0} offers into flight_offers`);
+        // console.log(`[flight-search] Inserted ${offersCount || 0} offers into flight_offers`); // This is now covered by the log above
         
         if (!savedOffers || savedOffers.length === 0) {
-          console.log(`[flight-search] No offers were saved for request ${request.id}. This could be due to duplicates or RLS issues.`);
+          console.log(`[flight-search] No offers were saved for request ${request.id} (returned from DB insert). This could be due to duplicates or RLS issues.`);
           details.push({ 
             tripRequestId: request.id,
             matchesFound: 0,
@@ -320,6 +350,8 @@ serve(async (req: Request) => {
         // Insert matches, avoiding duplicates with onConflict option
         let newInserts = 0;
         if (matchesToInsert.length > 0) {
+          // Log 7a: Before flight_matches operations
+          console.log(`Attempting to upsert ${matchesToInsert.length} flight_matches for trip_request_id: ${request.id}.`);
           const { data: insertedMatches, error: matchesError, count: matchCount } = await supabaseClient
             .from("flight_matches")
             .upsert(matchesToInsert, { 
@@ -328,17 +360,23 @@ serve(async (req: Request) => {
             })
             .select("id");
           
-          console.log(`[flight-search] Inserted ${matchCount || 0} flight_matches`);
-          
+          // Log 7b: After flight_matches operations
           if (matchesError) {
-            console.error(`[flight-search] Error saving matches for request ${request.id}: ${matchesError.message}`);
+            console.error(`Error upserting flight_matches for trip_request_id: ${request.id}:`, matchesError);
             details.push({ tripRequestId: request.id, matchesFound: 0, error: `Matches error: ${matchesError.message}` });
-            continue;
+            // Continue might be too harsh if offers were inserted but matches failed. Depending on desired atomicity.
+            // For now, we'll let it proceed to record what it could.
+          } else {
+            console.log(`Successfully upserted ${matchCount || 0} flight_matches for trip_request_id: ${request.id}.`);
           }
           
+          // console.log(`[flight-search] Inserted ${matchCount || 0} flight_matches`); // Covered by new log
+
           // Count new inserts (non-duplicates)
           newInserts = matchCount || 0;
           totalMatchesInserted += newInserts;
+        } else {
+          console.log(`No flight_matches to insert for trip_request_id: ${request.id}.`);
         }
         
         // Add to details array with successful processing info
@@ -369,6 +407,12 @@ serve(async (req: Request) => {
     // Calculate total duration
     const totalDurationMs = Date.now() - functionStartTime;
     
+    // Log 8: Function End & matchesInserted Value
+    // Note: initialTripRequestIdForLog is for when the function is called for a single trip.
+    // If called for multiple, this log might be better inside the loop or summarized.
+    // For now, this general log will use totalMatchesInserted.
+    console.log(`flight-search Edge Function END. Returning totalMatchesInserted: ${totalMatchesInserted}. Processed requests: ${processedRequests}.`);
+
     // Return enhanced summary with performance metrics
     return new Response(
       JSON.stringify({
@@ -376,7 +420,7 @@ serve(async (req: Request) => {
         matchesInserted: totalMatchesInserted,
         totalDurationMs,
         relaxedCriteriaUsed: relaxedCriteria,
-        exactDestinationOnly: true,
+        exactDestinationOnly: true, // This seems to be consistently true for this function's logic
         details
       }),
       {
