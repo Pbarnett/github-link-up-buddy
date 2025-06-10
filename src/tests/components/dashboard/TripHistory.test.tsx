@@ -1,10 +1,6 @@
 
-// src/tests/components/dashboard/TripHistory.test.tsx
-import { render, screen, waitFor } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed
-import { MemoryRouter } from 'react-router-dom'; // For <Link>
-
+// --- Mock Dependencies ---
+// These MUST be at the top due to Vitest hoisting
 
 // Module-scoped variable to hold the promise resolver for Supabase mock
 let mockSupabaseQueryResolver: { resolve: (value: any) => void; reject: (reason?: any) => void; };
@@ -12,7 +8,6 @@ let mockSupabaseQueryResolver: { resolve: (value: any) => void; reject: (reason?
 vi.mock('@/integrations/supabase/client', () => {
   const mockOrderInner = vi.fn(() => new Promise((resolve, reject) => {
     // Assign the resolver to the module-scoped variable
-
     mockSupabaseQueryResolver = { resolve, reject };
   }));
 
@@ -29,7 +24,6 @@ vi.mock('@/integrations/supabase/client', () => {
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockResolvedValue({ data: [], error: null }),
     };
-
   });
 
   return {
@@ -39,7 +33,6 @@ vi.mock('@/integrations/supabase/client', () => {
   };
 });
 
-
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -48,7 +41,6 @@ vi.mock('react-router-dom', async () => {
     useNavigate: vi.fn(() => vi.fn()), // Mock useNavigate as it's in the component
   };
 });
-
 
 // src/tests/components/dashboard/TripHistory.test.tsx
 import { render, screen, waitFor, within } from '@testing-library/react'; // Import within
