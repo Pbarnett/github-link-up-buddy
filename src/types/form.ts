@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -59,8 +58,8 @@ export const tripFormSchema = z.object({
   // New filter fields
   nonstop_required: z.boolean().default(true),
   baggage_included_required: z.boolean().default(false),
-  // Auto-booking fields
-  auto_book_enabled: z.boolean().default(false),
+  // Auto-booking fields - made optional for Phase 0
+  auto_book_enabled: z.boolean().default(false).optional(),
   max_price: z.coerce.number().min(100).max(10000).optional().nullable(),
   preferred_payment_method_id: z.string().optional().nullable(),
 }).refine((data) => data.latestDeparture > data.earliestDeparture, {
@@ -81,15 +80,6 @@ export const tripFormSchema = z.object({
 }, {
   message: "Please select a destination or enter a custom one",
   path: ["destination_airport"],
-}).refine((data) => {
-  // If auto-booking is enabled, max_price and payment method must be provided
-  if (data.auto_book_enabled) {
-    return !!data.max_price && !!data.preferred_payment_method_id;
-  }
-  return true;
-}, {
-  message: "Maximum price and payment method are required for auto-booking",
-  path: ["preferred_payment_method_id"],
 });
 
 // Form values type derived from the schema
