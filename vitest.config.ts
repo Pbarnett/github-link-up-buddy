@@ -5,7 +5,7 @@ import path from 'path'; // Import path module
 export default defineConfig({
   test: {
     environment: 'jsdom',
-    globals: true,
+    globals: true, // This enables global APIs like vi, describe, it, expect
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
