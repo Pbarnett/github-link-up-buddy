@@ -157,8 +157,9 @@ describe('Dashboard Page', () => {
     renderDashboardWithRouter();
     await waitFor(() => expect(screen.getByText(`Hello, ${mockUser.email}`)).toBeInTheDocument());
 
+    const user = userEvent.setup();
     const tripHistoryTabTrigger = screen.getByRole('tab', { name: /Trip History/i });
-    await userEvent.click(tripHistoryTabTrigger);
+    await user.click(tripHistoryTabTrigger);
 
     await waitFor(() => {
       // Check if the tab trigger itself believes it's selected
@@ -179,12 +180,13 @@ describe('Dashboard Page', () => {
     renderDashboardWithRouter();
     await waitFor(() => expect(screen.getByText(`Hello, ${mockUser.email}`)).toBeInTheDocument());
 
+    const user = userEvent.setup();
     const tripHistoryTabTrigger = screen.getByRole('tab', { name: /Trip History/i });
-    await userEvent.click(tripHistoryTabTrigger);
+    await user.click(tripHistoryTabTrigger);
     await waitFor(() => expect(screen.getByTestId('trip-history-mock')).toBeInTheDocument());
 
     const currentRequestsTabTrigger = screen.getByRole('tab', { name: /Current Booking Requests/i });
-    await userEvent.click(currentRequestsTabTrigger);
+    await user.click(currentRequestsTabTrigger);
 
     await waitFor(() => expect(screen.getByText(/TestAir TA101/i)).toBeInTheDocument());
     expect(screen.queryByTestId('trip-history-mock')).not.toBeInTheDocument();
