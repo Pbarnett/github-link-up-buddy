@@ -7,6 +7,7 @@ export interface TravelerInfoStatus {
   hasBasicInfo: boolean;
   hasPhoneNumber: boolean;
   isComplete: boolean;
+
   loading: boolean;
   error: string | null;
 }
@@ -51,9 +52,11 @@ export const useTravelerInfoStatus = (): TravelerInfoStatus => {
           throw error;
         }
 
+
         const hasBasicInfo = !!(profile?.first_name && profile?.last_name && profile?.email);
         const hasPhoneNumber = !!profile?.phone;
         const isComplete = hasBasicInfo && hasPhoneNumber;
+
 
         setStatus({
           hasBasicInfo,
