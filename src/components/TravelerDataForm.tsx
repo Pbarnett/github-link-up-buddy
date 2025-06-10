@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useTravelerInfoStatus } from '@/hooks/useTravelerInfoStatus';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +23,8 @@ interface TravelerDataFormProps {
 }
 
 const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {} }: TravelerDataFormProps) => {
+  const travelerStatus = useTravelerInfoStatus();
+  console.log(travelerStatus);
   const [formData, setFormData] = useState<TravelerData>({
     firstName: initialData.firstName || '',
     lastName: initialData.lastName || '',
