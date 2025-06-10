@@ -1,5 +1,12 @@
 
+// src/tests/pages/Dashboard.test.tsx
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import Dashboard from '@/pages/Dashboard';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+
 // --- Mock Dependencies ---
+
 // These MUST be at the top due to Vitest hoisting
 
 vi.mock('@/integrations/supabase/client', () => {
@@ -27,19 +34,24 @@ vi.mock('@/integrations/supabase/client', () => {
       from: mockFrom,
       channel: mockChannel,
       removeChannel: mockRemoveChannel,
+
     },
   };
 });
+
 
 vi.mock('@/components/dashboard/TripHistory', () => ({
   default: vi.fn(() => <div data-testid="trip-history-mock">Trip History Mock Content</div>),
 }));
 
+
 vi.mock('@/components/ui/use-toast', () => ({
   toast: vi.fn(),
 }));
 
+
 // react-router-dom mock remains unchanged for now as per instructions
+
 const mockNavigateFn = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -50,11 +62,6 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// src/tests/pages/Dashboard.test.tsx
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import Dashboard from '@/pages/Dashboard';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 // Import mocks to get references AFTER vi.mock calls
 import { supabase } from '@/integrations/supabase/client';
