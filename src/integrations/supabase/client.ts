@@ -1,20 +1,15 @@
+
 import { createClient } from '@supabase/supabase-js';
 
-// Get Supabase URL and Anon Key from environment variables
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// Check if the environment variables are set
-if (!SUPABASE_URL) {
-  throw new Error("VITE_SUPABASE_URL is not set. Please check your .env file or environment variables.");
-}
-if (!SUPABASE_PUBLISHABLE_KEY) {
-  throw new Error("VITE_SUPABASE_ANON_KEY is not set. Please check your .env file or environment variables.");
-}
+// Use the actual Supabase project values directly
+const SUPABASE_URL = 'https://bbonngdyfyfjqfhvoljl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJib25uZ2R5ZnlmanFmaHZvbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNTE5NTQsImV4cCI6MjA2MjgyNzk1NH0.qoXypUh-SemZwFjTyONGztNbhoowqLMiKSRKgA7fRR0';
 
 // Initialize and export the Supabase client
-export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-
-// Optional: You might want to export URL and Key if they are used elsewhere,
-// but generally, other parts of the app should just import the `supabase` client instance.
-// export { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY };
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    autoRefreshToken: true,
+    persistSession: true,
+  }
+});
