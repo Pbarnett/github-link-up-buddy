@@ -1,6 +1,13 @@
 
+// src/tests/pages/Dashboard.test.tsx
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import Dashboard from '@/pages/Dashboard';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+
 // --- Mock Dependencies ---
-// These MUST be at the top due to Vitest hoisting
+
+// Mock Supabase client
 const mockSupabaseAuthUser = vi.fn();
 const mockSupabaseAuthOnAuthStateChange = vi.fn(() => ({
   data: { subscription: { unsubscribe: vi.fn() } },
@@ -28,16 +35,20 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+// Mock TripHistory component
 const mockTripHistoryComponent = vi.fn(() => <div data-testid="trip-history-mock">Trip History Mock Content</div>);
 vi.mock('@/components/dashboard/TripHistory', () => ({
   default: mockTripHistoryComponent,
 }));
 
+// Mock useToast
 const mockToast = vi.fn();
 vi.mock('@/components/ui/use-toast', () => ({
   toast: mockToast,
 }));
 
+// Mock react-router-dom's Navigate component for unauthenticated test
+// Also mock useNavigate as it might be used by sub-components or if Dashboard itself uses it.
 const mockNavigateFn = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -48,11 +59,6 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// src/tests/pages/Dashboard.test.tsx
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import Dashboard from '@/pages/Dashboard';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 // --- Test Data ---
 const mockUser = { id: 'user-123', email: 'test@example.com' };
