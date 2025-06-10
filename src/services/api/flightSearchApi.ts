@@ -82,53 +82,97 @@ export interface FlightSearchError {
 export const invokeFlightSearch = async (
   payload: FlightSearchRequestBody
 ): Promise<FlightSearchResponse> => {
-  const { data, error: invokeError } = await supabase.functions.invoke(
-    "flight-search",
-    { body: payload }
-  );
+  console.log("📡 [flightSearchApi] Starting flight search invocation", {
+    payload,
+    timestamp: new Date().toISOString(),
+    supabaseUrl: supabase.supabaseUrl
+  });
 
-  if (invokeError) {
-    // This typically catches network errors or if the function itself threw an unhandled exception
-    // leading to a 500, or other non-2xx status codes that the Supabase client treats as an error.
-    // The 'invokeError' object might contain the function's actual response if it was a non-200.
-    logger.error("Error invoking flight-search function:", { details: invokeError });
+  try {
+    console.log("🔄 [flightSearchApi] Calling supabase.functions.invoke...");
+    const { data, error: invokeError } = await supabase.functions.invoke(
+      "flight-search",
+      { body: payload }
+    );
 
-    let functionErrorData;
-    if (invokeError.context && invokeError.context.json) { // Try to parse error from function response
-        functionErrorData = invokeError.context.json;
+    console.log("📨 [flightSearchApi] Function invoke completed", {
+      hasData: !!data,
+      hasError: !!invokeError,
+      errorDetails: invokeError,
+      dataPreview: data ? {
+        requestsProcessed: data.requestsProcessed,
+        matchesInserted: data.matchesInserted,
+        hasDetails: !!data.details
+      } : null
+    });
+
+    if (invokeError) {
+      // This typically catches network errors or if the function itself threw an unhandled exception
+      // leading to a 500, or other non-2xx status codes that the Supabase client treats as an error.
+      console.error("❌ [flightSearchApi] Error invoking flight-search function:", { 
+        error: invokeError,
+        message: invokeError.message,
+        context: invokeError.context 
+      });
+
+      let functionErrorData;
+      if (invokeError.context && invokeError.context.json) {
+          functionErrorData = invokeError.context.json;
+          console.log("📋 [flightSearchApi] Function error data:", functionErrorData);
+      }
+
+      throw {
+        message: invokeError.message || "Failed to invoke flight search function.",
+        details: invokeError,
+        functionErrorData: functionErrorData
+      } as FlightSearchError;
     }
 
+    // If invokeError is null, it means the function returned a 2xx status.
+    // The 'data' variable here is the body of the function's response.
+    if (data && typeof data.requestsProcessed === 'number') {
+      console.log("✅ [flightSearchApi] Flight search successful", {
+        requestsProcessed: data.requestsProcessed,
+        matchesInserted: data.matchesInserted,
+        totalDurationMs: data.totalDurationMs,
+        relaxedCriteriaUsed: data.relaxedCriteriaUsed
+      });
+
+      return {
+          ...data,
+          success: true,
+          message: `Flight search processed ${data.requestsProcessed} request(s).`
+      } as FlightSearchResponse;
+    }
+
+    // Fallback if the data is not in the expected format
+    console.warn("⚠️ [flightSearchApi] Flight search function returned unexpected data format:", { responseData: data });
+    return {
+      requestsProcessed: 0,
+      matchesInserted: 0,
+      totalDurationMs: 0,
+      relaxedCriteriaUsed: payload.relaxedCriteria,
+      exactDestinationOnly: true,
+      details: [],
+      success: true,
+      message: "Flight search function invoked, but response format was unexpected.",
+    };
+  } catch (error) {
+    console.error("❌ [flightSearchApi] Unexpected error during flight search invocation:", {
+      error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // Re-throw if it's already a FlightSearchError
+    if (error && typeof error === 'object' && 'message' in error && 'details' in error) {
+      throw error;
+    }
+    
+    // Otherwise wrap in a FlightSearchError
     throw {
-      message: invokeError.message || "Failed to invoke flight search function.",
-      details: invokeError,
-      functionErrorData: functionErrorData
+      message: error instanceof Error ? error.message : "Unexpected error during flight search invocation",
+      details: error
     } as FlightSearchError;
   }
-
-  // If invokeError is null, it means the function returned a 2xx status.
-  // The 'data' variable here is the body of the function's response.
-  // We assume 'data' directly matches the structure of a successful FlightSearchResponse from the edge function.
-  if (data && typeof data.requestsProcessed === 'number') {
-    // Add the 'success' and 'message' fields for client-side convenience,
-    // though the edge function itself doesn't return them at the top level.
-    return {
-        ...data,
-        success: true,
-        message: `Flight search processed ${data.requestsProcessed} request(s).`
-    } as FlightSearchResponse;
-  }
-
-  // Fallback if the data is not in the expected format, though ideally this shouldn't be reached
-  // if the edge function adheres to its contract.
-  logger.warn("Flight search function returned unexpected data format:", { responseData: data });
-  return {
-    requestsProcessed: 0,
-    matchesInserted: 0,
-    totalDurationMs: 0,
-    relaxedCriteriaUsed: payload.relaxedCriteria, // Best guess
-    exactDestinationOnly: true, // Assuming default
-    details: [],
-    success: true, // Or false, depending on how to interpret this state
-    message: "Flight search function invoked, but response format was unexpected.",
-  };
 };
