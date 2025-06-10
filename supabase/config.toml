@@ -1,1 +1,22 @@
 project_id = "bbonngdyfyfjqfhvoljl"
+
+# Each function gets its own [functions.<name>] block—no paths, no arrays
+
+[functions.flight-search]
+
+[functions.create-booking]
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.create-setup-session]
+
+[functions.create-payment-session]
+
+[functions.set-default-payment-method]
+
+[functions.delete-payment-method]
+
+[functions.scheduler-flight-search]
+
+[functions.auto-book]
