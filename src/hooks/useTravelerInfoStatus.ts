@@ -1,148 +1,87 @@
+
 import { useState, useEffect } from 'react';
+import { useCurrentUser } from './useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import type { Database } from '@/integrations/supabase/types';
 
-// Define the shape of the traveler info status
-export type TravelerInfoStatus = {
+export interface TravelerInfoStatus {
+  hasBasicInfo: boolean;
+  hasPhoneNumber: boolean;
   isComplete: boolean;
-  missingFields: string[];
-  completionPercentage: number;
-  requiresInternational: string[]; // Fields required for international travel
-};
 
-// Define the expected structure of traveler_data from booking_requests
-// This should align with what TravelerDataForm collects and what your checks depend on.
-type TravelerDetails = {
-  firstName?: string;
-  lastName?: string;
-  dateOfBirth?: string;
-  gender?: string;
-  passportNumber?: string;
-  // Add other fields that might be part of traveler_data
-  nationality?: string; // Example: important for international checks
-  documentExpiryDate?: string; // Example: important for international checks
-};
+  loading: boolean;
+  error: string | null;
+}
 
-// Define the expected shape of profile data
-type ProfileData = {
-  email?: string;
-  phone?: string;
-  first_name?: string;
-  last_name?: string;
-};
-
-export const useTravelerInfoStatus = (): { status: TravelerInfoStatus | null; isLoading: boolean; error: any } => {
-  const { userId } = useCurrentUser();
-  const [status, setStatus] = useState<TravelerInfoStatus | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<any>(null);
+/**
+ * Hook to check if the current user has complete traveler information
+ * This is the standardized version that should replace useTravelerInfoCheck
+ */
+export const useTravelerInfoStatus = (): TravelerInfoStatus => {
+  const { userId, loading: userLoading } = useCurrentUser();
+  const [status, setStatus] = useState<TravelerInfoStatus>({
+    hasBasicInfo: false,
+    hasPhoneNumber: false,
+    isComplete: false,
+    loading: true,
+    error: null,
+  });
 
   useEffect(() => {
-    const fetchTravelerInfo = async () => {
-      if (!userId) {
-        setStatus({
-          isComplete: false,
-          missingFields: ['userId'],
-          completionPercentage: 0,
-          requiresInternational: [],
-        });
-        setIsLoading(false);
-        return;
-      }
+    if (userLoading) return;
+    
+    if (!userId) {
+      setStatus({
+        hasBasicInfo: false,
+        hasPhoneNumber: false,
+        isComplete: false,
+        loading: false,
+        error: 'User not authenticated',
+      });
+      return;
+    }
 
-      setIsLoading(true);
-      setError(null);
-
+    const checkTravelerInfo = async () => {
       try {
-        // 1. Fetch profile data (assuming email and phone are relevant for completion)
-        const { data: profileData, error: profileError } = await supabase
+        const { data: profile, error } = await supabase
           .from('profiles')
-          .select('email, phone, first_name, last_name')
+          .select('first_name, last_name, email, phone')
           .eq('id', userId)
           .single();
 
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
-          // If profile is crucial and not found, you might want to throw or handle
+        if (error) {
+          throw error;
         }
 
-        // 2. Fetch traveler details (from booking_requests table, traveler_data column)
-        //    We fetch the most recent booking_request with traveler_data for this user.
-        //    Adjust if traveler details are stored differently (e.g., a dedicated traveler_details table).
-        const { data: travelerRequestData, error: travelerError } = await supabase
-          .from('booking_requests')
-          .select('traveler_data')
-          .eq('user_id', userId)
-          .not('traveler_data', 'is', null)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
 
-        if (travelerError && travelerError.code !== 'PGRST116') { // PGRST116: no rows found, which is a valid case
-          throw travelerError;
-        }
+        const hasBasicInfo = !!(profile?.first_name && profile?.last_name && profile?.email);
+        const hasPhoneNumber = !!profile?.phone;
+        const isComplete = hasBasicInfo && hasPhoneNumber;
 
-        const travelerDetails: TravelerDetails = travelerRequestData?.traveler_data as TravelerDetails || {};
-        const profile: Partial<ProfileData> = profileData || {};
-
-        // --- Calculate Status ---
-        const missingFields: string[] = [];
-        const totalFields = 7; // Adjusted to include passportNumber in the core count
-        let completedFields = 0;
-
-        // Profile checks (can be from 'profiles' or 'traveler_details' depending on your data model)
-        if (profile.first_name) completedFields++; else missingFields.push('profile.first_name');
-        if (profile.last_name) completedFields++; else missingFields.push('profile.last_name');
-        if (profile.email) completedFields++; else missingFields.push('profile.email');
-        // if (profile.phone) completedFields++; else missingFields.push('profile.phone');
-
-
-        // TravelerDetails checks (from traveler_data JSON in booking_requests)
-        if (travelerDetails.firstName) completedFields++; else missingFields.push('travelerDetails.firstName');
-        if (travelerDetails.lastName) completedFields++; else missingFields.push('travelerDetails.lastName');
-        if (travelerDetails.dateOfBirth) completedFields++; else missingFields.push('travelerDetails.dateOfBirth');
-        // if (travelerDetails.gender) completedFields++; else missingFields.push('travelerDetails.gender'); // Assuming gender is optional or handled differently
-
-        // International travel specific checks
-        const requiresInternational: string[] = [];
-        if (!travelerDetails.passportNumber) {
-            missingFields.push('travelerDetails.passportNumber');
-            requiresInternational.push('travelerDetails.passportNumber');
-        } else {
-            completedFields++;
-        }
-        // Example: Add more international fields if necessary
-        // if (!travelerDetails.nationality) requiresInternational.push('travelerDetails.nationality');
-        // if (!travelerDetails.documentExpiryDate) requiresInternational.push('travelerDetails.documentExpiryDate');
-
-
-        const completionPercentage = Math.round((completedFields / totalFields) * 100);
-        const isComplete = missingFields.length === 0;
 
         setStatus({
+          hasBasicInfo,
+          hasPhoneNumber,
           isComplete,
-          missingFields,
-          completionPercentage,
-          requiresInternational,
+          loading: false,
+          error: null,
         });
-
-      } catch (err) {
-        console.error('Error fetching traveler info status:', err);
-        setError(err);
-        setStatus({ // Provide a default error status
+      } catch (error) {
+        console.error('Error checking traveler info:', error);
+        setStatus({
+          hasBasicInfo: false,
+          hasPhoneNumber: false,
           isComplete: false,
-          missingFields: ['fetchError'],
-          completionPercentage: 0,
-          requiresInternational: [],
+          loading: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
-      } finally {
-        setIsLoading(false);
       }
     };
 
-    fetchTravelerInfo();
-  }, [userId]);
+    checkTravelerInfo();
+  }, [userId, userLoading]);
 
-  return { status, isLoading, error };
+  return status;
 };
+
+// Export the original hook name for backward compatibility
+export const useTravelerInfoCheck = useTravelerInfoStatus;
