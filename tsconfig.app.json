@@ -8,11 +8,13 @@
 
     /* Bundler mode */
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    // "allowImportingTsExtensions": true, // Removed due to TS5096
     "isolatedModules": true,
     "moduleDetection": "force",
-    "noEmit": true,
+    // "noEmit": true, // Removed as per TS6310, and composite:true requires emit
     "jsx": "react-jsx",
+    "composite": true, // Added as per TS6306
+    "declaration": true, // Recommended with composite:true
 
     /* Linting */
     "strict": false,
