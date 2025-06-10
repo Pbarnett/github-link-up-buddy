@@ -20,5 +20,4 @@ verify_jwt = false
 [functions.scheduler-flight-search]
 
 [functions.auto-book]
-schedule = "*/5 * * * *"
 
