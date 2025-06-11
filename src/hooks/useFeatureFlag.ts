@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -8,20 +9,30 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export const useFeatureFlag = (name: string, defaultVal = false): boolean => {
   const [enabled, setEnabled] = useState(defaultVal);
+  
   useEffect(() => {
-    supabase
-      .from('feature_flags')
-      .select('enabled')
-      .eq('name', name)
-      .single()
-      .then(({ data, error }) => {
-        if (error || data?.enabled === undefined) throw error; // Intentionally throw to fall into catch
-        setEnabled(data.enabled);
-      })
-      .catch((err) => { // Catch the error from then() or other errors
-        console.warn(`[useFeatureFlag] Error fetching flag "${name}", falling back to ${defaultVal}. Error:`, err?.message || err);
+    const fetchFlag = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('feature_flags')
+          .select('enabled')
+          .eq('name', name)
+          .single();
+        
+        if (!error && typeof data?.enabled === 'boolean') {
+          setEnabled(data.enabled);
+        } else {
+          console.warn(`[useFeatureFlag] Error fetching flag "${name}", falling back to ${defaultVal}. Error:`, error?.message || 'Unknown error');
+          setEnabled(defaultVal);
+        }
+      } catch (err) {
+        console.warn(`[useFeatureFlag] Error fetching flag "${name}", falling back to ${defaultVal}. Error:`, err);
         setEnabled(defaultVal);
-      });
+      }
+    };
+    
+    fetchFlag();
   }, [name, defaultVal]);
+  
   return enabled;
 };
