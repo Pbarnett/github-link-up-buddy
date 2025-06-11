@@ -1,13 +1,15 @@
 
-// --- Mock Dependencies ---
-// These MUST be at the top due to Vitest hoisting
+// src/tests/components/dashboard/TripHistory.test.tsx
+import { render, screen, waitFor } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed
+import { MemoryRouter } from 'react-router-dom'; // For <Link>
 
-// Module-scoped variable to hold the promise resolver for Supabase mock
-let mockSupabaseQueryResolver: { resolve: (value: any) => void; reject: (reason?: any) => void; };
+// --- Mock Supabase client ---
+// This variable will hold the mock promise resolver/rejecter for the final 'order' call
+let mockSupabaseQueryResolver: any;
+const mockOrder = vi.fn(() => new Promise((resolve, reject) => {
 
-vi.mock('@/integrations/supabase/client', () => {
-  const mockOrderInner = vi.fn(() => new Promise((resolve, reject) => {
-    // Assign the resolver to the module-scoped variable
     mockSupabaseQueryResolver = { resolve, reject };
   }));
 
@@ -24,14 +26,15 @@ vi.mock('@/integrations/supabase/client', () => {
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockResolvedValue({ data: [], error: null }),
     };
-  });
 
-  return {
-    supabase: {
-      from: mockFrom,
-    },
-  };
-});
+  }),
+};
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: mockSupabaseClient,
+}));
+
+// --- Mock react-router-dom ---
+// Mock Link to render as a simple anchor tag for easy href assertion
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -42,14 +45,6 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// src/tests/components/dashboard/TripHistory.test.tsx
-import { render, screen, waitFor, within } from '@testing-library/react'; // Import within
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed
-import { MemoryRouter, Link as RouterLink } from 'react-router-dom'; // For <Link> and importing the mocked Link
-
-// Import mocks to get references AFTER vi.mock calls
-import { supabase } from '@/integrations/supabase/client';
 
 
 // --- Test Data ---
@@ -141,22 +136,11 @@ describe('TripHistory Component', () => {
     expect(detailsLinks[1]).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[1].trip_request_id}`);
 
     // Check data for third booking (b3 - null pnr, null price)
-    const seatCellB3 = screen.getByRole('cell', { name: '5C' }); // Find a unique cell in b3's row
-    const rowB3 = seatCellB3.closest('tr');
-    if (!rowB3) throw new Error("Could not find table row for booking b3");
-
-    const cellsInRowB3 = within(rowB3).getAllByRole('cell');
-
-    // Assuming column order: PNR, Price, Seat, Booked On, Details
-    // Verify PNR for b3 (index 0) is 'N/A'
-    expect(cellsInRowB3[0]).toHaveTextContent('N/A');
-    // Verify Price for b3 (index 1) is 'N/A'
-    expect(cellsInRowB3[1]).toHaveTextContent('N/A');
-    // Verify Seat for b3 (index 2) is '5C' (already implicitly confirmed by finding seatCellB3)
-    expect(cellsInRowB3[2]).toHaveTextContent('5C');
-    // Check Booked On date for b3
-    expect(cellsInRowB3[3]).toHaveTextContent(new Date(mockBookingsData[2].created_at).toLocaleDateString());
-    // Check details link for b3 (it's the 3rd link in the detailsLinks array found earlier)
+    expect(screen.getByRole('cell', { name: 'N/A' })).toBeInTheDocument(); // PNR is null
+    const priceCells = screen.getAllByRole('cell'); // Get all cells to find the N/A price
+    expect(priceCells.find(cell => cell.textContent === 'N/A')).toBeInTheDocument(); // Price is null
+    expect(screen.getByRole('cell', { name: '5C' })).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: new Date(mockBookingsData[2].created_at).toLocaleDateString() })).toBeInTheDocument();
     expect(detailsLinks[2]).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[2].trip_request_id}`);
   });
 

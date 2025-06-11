@@ -32,26 +32,36 @@ export async function fetchToken(): Promise<string> {
   const now = Date.now();
   if (_token && now < _tokenExpires - 60_000) return _token;
 
-  const res = await fetch(
-    `${Deno.env.get("AMADEUS_BASE_URL")}/v1/security/oauth2/token`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "client_credentials",
-        client_id: Deno.env.get("AMADEUS_CLIENT_ID")!,
-        client_secret: Deno.env.get("AMADEUS_CLIENT_SECRET")!,
-      }),
-    }
-  );
+  try {
+    const res = await fetchWithTimeout(
+      `${Deno.env.get("AMADEUS_BASE_URL")}/v1/security/oauth2/token`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "client_credentials",
+          client_id: Deno.env.get("AMADEUS_CLIENT_ID")!,
+          client_secret: Deno.env.get("AMADEUS_CLIENT_SECRET")!,
+        }),
+      },
+      8000 // Timeout for token fetch
+    );
 
-  if (!res.ok) throw new Error(`Token fetch failed: ${res.status}`);
-  const { access_token, expires_in } = await res.json();
-  _token = access_token;
-  _tokenExpires = now + expires_in * 1000;
-  
-  console.log("[flight-search] Successfully received token");
-  return access_token;
+    if (!res.ok) throw new Error(`Token fetch failed: ${res.status} ${await res.text()}`);
+    const tokenData = await res.json();
+    _token = tokenData.access_token;
+    _tokenExpires = now + tokenData.expires_in * 1000;
+
+    console.log("[flight-search] Successfully received token");
+    return _token!;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      console.warn(`[flight-search] Timeout during OAuth token fetch.`);
+      throw new Error("Token fetch timed out");
+    }
+    console.error("[flight-search] Error in fetchToken:", err.message);
+    throw err; // Re-throw other errors
+  }
 }
 
 // ——————————————————————————————————————————
@@ -102,6 +112,18 @@ async function withRetry<T>(
       console.warn(`[flight-search] Attempt ${attempt} failed; retrying in ${delay}ms…`);
       await new Promise((r) => setTimeout(r, delay));
     }
+  }
+}
+
+// Helper function for fetch with timeout
+async function fetchWithTimeout(url: string, options: RequestInit, ms = 10_000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response; // Return the whole response object
+  } finally {
+    clearTimeout(id);
   }
 }
 
@@ -258,44 +280,57 @@ export async function searchOffers(
             travelers: [{ id: "1", travelerType: "ADULT" }],
             sources: ["GDS"]
           };
-          
-          const r = await fetch(url, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(simplePayload),
-          });
-          
-          if (!r.ok) {
-            const errorText = await r.text();
-            throw new Error(`Simplified search error: ${r.status} - ${errorText}`);
+          try {
+            const r = await fetchWithTimeout(url, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(simplePayload),
+            }, 8000); // Timeout for simplified search
+
+            if (!r.ok) {
+              const errorText = await r.text();
+              throw new Error(`Simplified search error: ${r.status} - ${errorText}`);
+            }
+            return await r.json();
+          } catch (err) {
+            if (err.name === 'AbortError') {
+              console.warn(`[flight-search] Timeout during simplified fallback Amadeus call for URL: ${url}`);
+              return { data: [] }; // Return shape expected by withRetry logic
+            }
+            throw err; // Re-throw other errors
           }
-          
-          return await r.json();
         };
         
         const resp = await withRetry(async () => {
-          const r = await fetch(url, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          });
-          
-          if (!r.ok) {
-            const errorText = await r.text();
-            console.error(`[flight-search] Amadeus API error: ${r.status}`, errorText);
-            throw new Error(`Amadeus API error: ${r.status} - ${errorText}`);
+          try {
+            const r = await fetchWithTimeout(url, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            }, 8000); // Timeout for main search
+
+            if (!r.ok) {
+              const errorText = await r.text();
+              console.error(`[flight-search] Amadeus API error: ${r.status}`, errorText);
+              throw new Error(`Amadeus API error: ${r.status} - ${errorText}`);
+            }
+            return await r.json();
+          } catch (err) {
+            if (err.name === 'AbortError') {
+              console.warn(`[flight-search] Timeout during main Amadeus call for URL: ${url}`);
+              return { data: [] }; // Return shape expected by withRetry logic
+            }
+            throw err; // Re-throw other errors
           }
-          
-          return await r.json();
         }, 3, 500, simplifiedSearch);
         
-        if (resp.data && resp.data.length > 0) {
+        if (resp && resp.data && resp.data.length > 0) { // Added null check for resp
           console.log(`[flight-search] Found ${resp.data.length} raw offers from ${originCode} using strategy ${strategy.name}`);
           // Add all offers from this strategy to our collection
           allRawOffers.push(...resp.data);
@@ -349,23 +384,30 @@ export async function searchOffers(
       const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers`;
       
       const resp = await withRetry(async () => {
-        const r = await fetch(url, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-        
-        if (!r.ok) {
-          throw new Error(`Fallback single-origin search failed: ${r.status}`);
+        try {
+          const r = await fetchWithTimeout(url, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          }, 8000); // Timeout for first-tier fallback
+
+          if (!r.ok) {
+            throw new Error(`Fallback single-origin search failed: ${r.status} ${await r.text()}`);
+          }
+          return await r.json();
+        } catch (err) {
+          if (err.name === 'AbortError') {
+            console.warn(`[flight-search] Timeout during first-tier fallback Amadeus call for URL: ${url}`);
+            return { data: [] }; // Return shape expected by withRetry logic
+          }
+          throw err; // Re-throw other errors
         }
-        
-        return await r.json();
       });
       
-      if (resp.data && resp.data.length > 0) {
+      if (resp && resp.data && resp.data.length > 0) { // Added null check for resp
         console.log(`[flight-search] Found ${resp.data.length} offers from fallback single-origin search`);
         allRawOffers.push(...resp.data);
       }
@@ -415,28 +457,41 @@ export async function searchOffers(
       const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers`;
       console.log("[flight-search] Trying maximally relaxed search criteria with 20% higher budget");
       
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(relaxedPayload),
-      });
-      
-      if (!resp.ok) {
-        console.error(`[flight-search] Maximally relaxed search failed: ${resp.status}`);
-      } else {
-        const data = await resp.json();
-        if (data.data && data.data.length > 0) {
-          console.log(`[flight-search] Found ${data.data.length} offers with maximally relaxed criteria`);
-          allRawOffers.push(...data.data);
+      let data: any = { data: [] }; // Default to no data
+      try {
+        const resp = await fetchWithTimeout(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(relaxedPayload),
+        }, 8000); // Timeout for second-tier fallback
+
+        if (resp.ok) {
+          data = await resp.json();
         } else {
-          console.log("[flight-search] No offers found even with maximally relaxed criteria");
+          console.error(`[flight-search] Maximally relaxed search failed (HTTP error): ${resp.status} ${await resp.text()}`);
+          // data remains { data: [] }
         }
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          console.warn(`[flight-search] Timeout during maximally relaxed Amadeus call for URL: ${url}`);
+        } else {
+          // Log other errors but don't necessarily throw, as this is a last-ditch fallback
+          console.error("[flight-search] Error during maximally relaxed Amadeus call:", err);
+        }
+        // data remains { data: [] }, so no offers will be pushed
       }
-    } catch (extremeFallbackError) {
-      console.error("[flight-search] Extreme fallback search failed:", extremeFallbackError);
+
+      if (data.data && data.data.length > 0) {
+        console.log(`[flight-search] Found ${data.data.length} offers with maximally relaxed criteria`);
+        allRawOffers.push(...data.data);
+      } else {
+        console.log("[flight-search] No offers found even with maximally relaxed criteria");
+      }
+    } catch (extremeFallbackError) { // This catch is for errors in setting up relaxedPayload or other logic before fetch
+      console.error("[flight-search] Error in extreme fallback setup:", extremeFallbackError);
     }
   }
     
@@ -550,7 +605,7 @@ function calculateReturnDate(departureDate: Date, durationDays: number, latestAl
 }
 
 // Helper to deduplicate offers based on key properties
-function dedupOffers(allOffers: any[]): any[] {
+export function dedupOffers(allOffers: any[]): any[] { // Added 'export'
   return Array.from(
     new Map(
       allOffers.map((offer: any) => {
