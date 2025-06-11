@@ -1,3 +1,5 @@
+console.log("[flight-search] 🔧 init OK");
+export const config = { runtime: "edge", maxDuration: 60 /* seconds */ };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -10,9 +12,29 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Import the flight API service (edge version) with explicit fetchToken
-import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
+import { dedupOffers, searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
 
 // Utility functions moved directly into the edge function
+
+// Helper function to generate date segments for searching
+export function generateDateSegments(
+  overallStart: Date,
+  overallEnd: Date,
+  segmentDurationDays: number
+): Array<{ segmentStart: Date; segmentEnd: Date }> {
+  const segments = [];
+  let currentStart = new Date(overallStart);
+  while (currentStart <= overallEnd) {
+    const segmentEndCalc = new Date(currentStart);
+    segmentEndCalc.setDate(segmentEndCalc.getDate() + segmentDurationDays - 1);
+    const actualEnd = segmentEndCalc > overallEnd ? new Date(overallEnd) : segmentEndCalc;
+    segments.push({ segmentStart: new Date(currentStart), segmentEnd: actualEnd });
+    currentStart = new Date(actualEnd);
+    currentStart.setDate(currentStart.getDate() + 1);
+  }
+  return segments;
+}
+
 function decideSeatPreference(
   offer: any,
   trip: { max_price: number }
@@ -56,18 +78,29 @@ serve(async (req: Request) => {
     let tripRequestId: string | null = null;
     let body: any = {};
     let relaxedCriteria = false;
+    let initialTripRequestIdForLog: string | null = null; // For consistent logging ID
     
     if (req.method === "POST") {
       body = await req.json();
       tripRequestId = body.tripRequestId || null;
+      initialTripRequestIdForLog = tripRequestId; // Capture for entry/exit logs
       relaxedCriteria = body.relaxedCriteria === true;
-      
+
       if (relaxedCriteria) {
-        console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${tripRequestId}`);
+        console.log(`[flight-search] Invoked with RELAXED CRITERIA for ${initialTripRequestIdForLog}`);
       }
     }
     
-    console.log(`[flight-search] Invoked${tripRequestId ? ` for ${tripRequestId}` : ' for auto-book enabled trips'}`);
+    // Log 1: Function Start & Received tripRequestId
+    // The complex log line below was removed as 'requests' is not yet defined here.
+    // console.log(`flight-search Edge Function START. trip_request_id: ${initialTripRequestIdForLog || (requests && requests.length > 0 ? requests[0].id : 'N/A for general scan')}`);
+
+    // These subsequent logs correctly handle the different invocation types:
+    if (initialTripRequestIdForLog) {
+        console.log(`flight-search Edge Function START for single trip_request_id: ${initialTripRequestIdForLog}`);
+    } else {
+        console.log(`flight-search Edge Function START for scheduled run (auto-book enabled trips).`);
+    }
     
     // Build the query based on whether tripRequestId is provided
     let requests;
@@ -111,6 +144,10 @@ serve(async (req: Request) => {
         console.log(`[flight-search] Processing trip request ${request.id}`);
         processedRequests++;
         
+        const requestProcessingStartTime = Date.now();
+        const MAX_REQUEST_PROCESSING_MS = 25000; // 25 seconds
+        let bailedOutDueToTime = false;
+
         // Update last_checked_at timestamp
         const { error: updateError } = await supabaseClient
           .from("trip_requests")
@@ -193,17 +230,140 @@ serve(async (req: Request) => {
           continue;
         }
         
-        let offers;
-        try {
-          // Use the enhanced API to get flight offers with multiple search strategies
-          offers = await searchOffers(searchParams, request.id);
-          console.log(`[flight-search] Request ${request.id}: Found ${offers.length} transformed offers from API (exact destination only)`);
-        } catch (apiError) {
-          console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
-          details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
-          continue;
+        // let amadeusRawOffers; // Not used here, searchOffers returns transformed
+        // let offers; // This will be defined after the segment loop
+
+        const allSegmentOffersRaw: any[] = [];
+        const segmentDays = 14; // segmentDays is used by generateDateSegments
+
+        // MAX_SEGMENTS_PER_REQUEST limit removed as per current subtask focus on batching.
+        // It can be re-introduced later if needed by limiting dateSegments array size.
+
+        const dateSegments = generateDateSegments(
+          new Date(request.earliest_departure),
+          new Date(request.latest_departure),
+          segmentDays
+        );
+
+        console.log(`[flight-search] Starting chunked fetch for trip ${request.id}, total segments ${dateSegments.length}`);
+        const BATCH_SIZE = 3;
+
+        for (let i = 0; i < dateSegments.length; i += BATCH_SIZE) {
+          const batchSegments = dateSegments.slice(i, i + BATCH_SIZE);
+          console.log(`[flight-search] Processing batch starting with segment index ${i} for trip ${request.id}. Batch size: ${batchSegments.length}`);
+
+          const promisesInBatch = batchSegments.map(segment => {
+            const segmentStartStr = segment.segmentStart.toISOString().slice(0,10); // For logging
+            const segmentEndStr = segment.segmentEnd.toISOString().slice(0,10);   // For logging
+
+            console.log(`[flight-search] Preparing segment for request ${request.id}: ${segmentStartStr} to ${segmentEndStr}`);
+
+            const segmentSearchParams: FlightSearchParams = {
+              ...searchParams, // Original searchParams for the request
+              earliestDeparture: segment.segmentStart,
+              latestDeparture: segment.segmentEnd,
+            };
+
+            return searchOffers(segmentSearchParams, request.id)
+              .then(segmentOffers => { // Handle success
+                // This existing log is good for successful fetch (can be 0 offers)
+                console.log(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} for request ${request.id} yielded ${segmentOffers ? segmentOffers.length : 0} offers.`);
+                return segmentOffers || []; // Ensure it's an array
+              })
+              .catch(e => { // Catch errors from searchOffers directly
+                console.error(`[flight-search] Error in searchOffers for segment ${segmentStartStr}-${segmentEndStr}, request ${request.id}:`, e.message);
+                return []; // Return empty array for this segment in case of error
+              });
+          });
+
+          const settledResults = await Promise.allSettled(promisesInBatch);
+
+          settledResults.forEach((result, index) => {
+            const segment = batchSegments[index]; // Get corresponding segment for logging
+            const segmentStartStr = segment.segmentStart.toISOString().slice(0,10);
+            const segmentEndStr = segment.segmentEnd.toISOString().slice(0,10);
+
+            if (result.status === 'fulfilled') {
+              const segmentOffers = result.value; // result.value is Offer[] or [] from catch
+              if (segmentOffers && segmentOffers.length > 0) {
+                allSegmentOffersRaw.push(...segmentOffers);
+              }
+              // Log already done inside .then() of the promise, or if we want summary:
+              console.log(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} (request ${request.id}) completed in batch. Added ${segmentOffers ? segmentOffers.length : 0} offers to raw list.`);
+            } else {
+              // This case should ideally not be reached if the .catch in map handles errors by returning []
+              console.error(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} (request ${request.id}) promise rejected in batch:`, result.reason);
+            }
+          });
+          console.log(`[flight-search] Batch starting with segment index ${i} for trip ${request.id} finished processing.`);
+
+          if (Date.now() - requestProcessingStartTime > MAX_REQUEST_PROCESSING_MS) {
+            console.warn(`[flight-search] Bail-out for request ${request.id} after ${Date.now() - requestProcessingStartTime}ms (limit: ${MAX_REQUEST_PROCESSING_MS}ms). Processing ${allSegmentOffersRaw.length} collected offers so far.`);
+            bailedOutDueToTime = true;
+            break; // Exit the batch processing loop for the current request
+          }
         }
-        
+
+        let offers = dedupOffers(allSegmentOffersRaw);
+        console.log(`[flight-search] Total ${offers.length} offers after aggregating and deduping segments for request ${request.id}.`);
+
+        if (offers.length === 0 && !bailedOutDueToTime) {
+          console.log(`[flight-search] Fallback: No offers after chunked fetch for ${request.id}. Trying full range relaxed search.`);
+          try {
+            const fallbackSegmentParams: FlightSearchParams = {
+              origin: request.departure_airports,
+              destination: request.destination_location_code,
+              earliestDeparture: new Date(request.earliest_departure),
+              latestDeparture: new Date(request.latest_departure),
+              minDuration: 1, // Explicitly relaxed min duration
+              maxDuration: 30, // Explicitly relaxed max duration
+              budget: Math.ceil(request.budget * 1.2), // Explicitly relaxed budget by 20% from original
+              maxConnections: searchParams.maxConnections || 2 // Use original maxConnections from overall searchParams
+            };
+
+            console.log(`[flight-search] Fallback search params for request ${request.id}:`, JSON.stringify({
+                origin: fallbackSegmentParams.origin,
+                destination: fallbackSegmentParams.destination,
+                earliestDeparture: fallbackSegmentParams.earliestDeparture.toISOString(),
+                latestDeparture: fallbackSegmentParams.latestDeparture.toISOString(),
+                minDuration: fallbackSegmentParams.minDuration,
+                maxDuration: fallbackSegmentParams.maxDuration,
+                budget: fallbackSegmentParams.budget,
+                relaxedCriteria: true // Indicating this is a relaxed search
+            }, null, 2));
+
+            const fallbackOffers = await searchOffers(fallbackSegmentParams, request.id);
+            console.log(`[flight-search] Fallback full-range invoke for ${request.id} complete. Received ${fallbackOffers ? fallbackOffers.length : 0} offers.`);
+            if (fallbackOffers && fallbackOffers.length > 0) {
+              offers = dedupOffers(fallbackOffers); // Dedupe fallback offers
+              console.log(`[flight-search] Using ${offers.length} offers from fallback for request ${request.id} after deduplication.`);
+            }
+          } catch (fallbackError) {
+            console.error(`[flight-search] Error during fallback search for request ${request.id}:`, fallbackError);
+            // 'offers' remains empty if fallback also fails or yields no offers
+          }
+        } else if (offers.length > 0 && bailedOutDueToTime) {
+            console.log(`[flight-search] Proceeding with ${offers.length} offers for request ${request.id} after bailing out due to time (no fallback attempted).`);
+        } else if (offers.length > 0 && !bailedOutDueToTime) {
+            console.log(`[flight-search] Proceeding with ${offers.length} offers for request ${request.id} from chunked search (no fallback needed).`);
+        } else { // offers.length === 0 && bailedOutDueToTime
+            console.log(`[flight-search] No offers collected for request ${request.id} after bailing out due to time (no fallback attempted).`);
+        }
+
+        // If, after all segments and potential fallback, no offers are found, then record this and continue.
+        if (offers.length === 0) {
+            console.log(`[flight-search] FINAL: No offers found for request ${request.id} after all processing.`);
+            details.push({
+                tripRequestId: request.id,
+                matchesFound: 0,
+                error: bailedOutDueToTime ? "Processing timed out before finding offers." : "No offers found after segmented search and fallback."
+            });
+            continue; // Continue to the next request in the main loop
+        }
+
+        // The following existing filtering logic will now operate on the 'offers' array (either from segments or fallback).
+        // The following existing filtering logic will now operate on the aggregated 'offers'.
+
         // Filter offers to ensure they match the EXACT destination airport only
         const exactDestinationOffers = offers.filter(offer => {
           const offerDestination = offer.destination_airport;
@@ -260,7 +420,9 @@ serve(async (req: Request) => {
         }
         // --- End of new filtering logic ---
 
-        console.log(`[flight-search] Request ${request.id}: ${priceFilteredOffers.length} offers after price filter, ${finalFilteredOffers.length} offers after ALL filters (seat, nonstop, baggage).`);
+        // Log 4: After Filtering Logic
+        console.log(`Have ${finalFilteredOffers.length} offers remaining after custom filters (seat, nonstop, baggage) for trip_request_id: ${request.id}.`);
+        // console.log(`[flight-search] Request ${request.id}: ${priceFilteredOffers.length} offers after price filter, ${finalFilteredOffers.length} offers after ALL filters (seat, nonstop, baggage).`); // This is good, keep it or integrate
 
         if (finalFilteredOffers.length === 0) {
           details.push({
@@ -275,27 +437,37 @@ serve(async (req: Request) => {
           continue;
         }
 
-        // Log offers being inserted
-        console.log(`[flight-search] Inserting ${finalFilteredOffers.length} offers. First offer:`,
-          JSON.stringify(finalFilteredOffers[0], null, 2));
+        // Log 5: Before Database Insertion of flight_offers
+        console.log(`Attempting to insert ${finalFilteredOffers.length} flight offers into DB for trip_request_id: ${request.id}.`);
+        if (finalFilteredOffers.length > 0) {
+            // console.log("Offers to insert sample:", JSON.stringify(finalFilteredOffers[0], null, 2)); // Kept existing similar log
+            console.log(`[flight-search] Inserting ${finalFilteredOffers.length} offers. First offer:`, JSON.stringify(finalFilteredOffers[0], null, 2));
+        }
+
 
         // Save offers to the database
         const { data: savedOffers, error: offersError, count: offersCount } = await supabaseClient
           .from("flight_offers")
           .insert(finalFilteredOffers) // Use finalFilteredOffers here
           .select("id, price, departure_date, departure_time")
-          .returns();
+          .returns(); // .returns() is deprecated, use .select().then(res => res.data.length) or similar if count is needed differently
 
+        // Log 6: After Database Insertion of flight_offers (Success/Error)
         if (offersError) {
-          console.error(`[flight-search] Error saving offers for request ${request.id}: ${offersError.message}`);
+          console.error(`Error inserting flight_offers for trip_request_id: ${request.id}:`, offersError);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `Offers error: ${offersError.message}` });
           continue;
+        } else {
+          // Note: `savedOffers` contains the selected data, `offersCount` might be from .returns() which can be less reliable or deprecated.
+          // Using savedOffers.length is better if .select() is used. If .select() is not used, count is the way.
+          // The current .select() returns the inserted rows.
+          console.log(`Successfully inserted ${savedOffers ? savedOffers.length : 0} flight_offers for trip_request_id: ${request.id}.`);
         }
         
-        console.log(`[flight-search] Inserted ${offersCount || 0} offers into flight_offers`);
+        // console.log(`[flight-search] Inserted ${offersCount || 0} offers into flight_offers`); // This is now covered by the log above
         
         if (!savedOffers || savedOffers.length === 0) {
-          console.log(`[flight-search] No offers were saved for request ${request.id}. This could be due to duplicates or RLS issues.`);
+          console.log(`[flight-search] No offers were saved for request ${request.id} (returned from DB insert). This could be due to duplicates or RLS issues.`);
           details.push({ 
             tripRequestId: request.id,
             matchesFound: 0,
@@ -320,6 +492,8 @@ serve(async (req: Request) => {
         // Insert matches, avoiding duplicates with onConflict option
         let newInserts = 0;
         if (matchesToInsert.length > 0) {
+          // Log 7a: Before flight_matches operations
+          console.log(`Attempting to upsert ${matchesToInsert.length} flight_matches for trip_request_id: ${request.id}.`);
           const { data: insertedMatches, error: matchesError, count: matchCount } = await supabaseClient
             .from("flight_matches")
             .upsert(matchesToInsert, { 
@@ -328,17 +502,23 @@ serve(async (req: Request) => {
             })
             .select("id");
           
-          console.log(`[flight-search] Inserted ${matchCount || 0} flight_matches`);
-          
+          // Log 7b: After flight_matches operations
           if (matchesError) {
-            console.error(`[flight-search] Error saving matches for request ${request.id}: ${matchesError.message}`);
+            console.error(`Error upserting flight_matches for trip_request_id: ${request.id}:`, matchesError);
             details.push({ tripRequestId: request.id, matchesFound: 0, error: `Matches error: ${matchesError.message}` });
-            continue;
+            // Continue might be too harsh if offers were inserted but matches failed. Depending on desired atomicity.
+            // For now, we'll let it proceed to record what it could.
+          } else {
+            console.log(`Successfully upserted ${matchCount || 0} flight_matches for trip_request_id: ${request.id}.`);
           }
           
+          // console.log(`[flight-search] Inserted ${matchCount || 0} flight_matches`); // Covered by new log
+
           // Count new inserts (non-duplicates)
           newInserts = matchCount || 0;
           totalMatchesInserted += newInserts;
+        } else {
+          console.log(`No flight_matches to insert for trip_request_id: ${request.id}.`);
         }
         
         // Add to details array with successful processing info
@@ -369,6 +549,12 @@ serve(async (req: Request) => {
     // Calculate total duration
     const totalDurationMs = Date.now() - functionStartTime;
     
+    // Log 8: Function End & matchesInserted Value
+    // Note: initialTripRequestIdForLog is for when the function is called for a single trip.
+    // If called for multiple, this log might be better inside the loop or summarized.
+    // For now, this general log will use totalMatchesInserted.
+    console.log(`flight-search Edge Function END. Returning totalMatchesInserted: ${totalMatchesInserted}. Processed requests: ${processedRequests}.`);
+
     // Return enhanced summary with performance metrics
     return new Response(
       JSON.stringify({
@@ -376,7 +562,7 @@ serve(async (req: Request) => {
         matchesInserted: totalMatchesInserted,
         totalDurationMs,
         relaxedCriteriaUsed: relaxedCriteria,
-        exactDestinationOnly: true,
+        exactDestinationOnly: true, // This seems to be consistently true for this function's logic
         details
       }),
       {
