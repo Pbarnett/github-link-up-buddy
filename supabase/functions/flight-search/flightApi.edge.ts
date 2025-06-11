@@ -32,7 +32,7 @@ export async function fetchToken(): Promise<string> {
   const now = Date.now();
   if (_token && now < _tokenExpires - 60_000) return _token;
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${Deno.env.get("AMADEUS_BASE_URL")}/v1/security/oauth2/token`,
     {
       method: "POST",
@@ -42,7 +42,8 @@ export async function fetchToken(): Promise<string> {
         client_id: Deno.env.get("AMADEUS_CLIENT_ID")!,
         client_secret: Deno.env.get("AMADEUS_CLIENT_SECRET")!,
       }),
-    }
+    },
+    8000 // Timeout for token fetch
   );
 
   if (!res.ok) throw new Error(`Token fetch failed: ${res.status}`);
@@ -102,6 +103,18 @@ async function withRetry<T>(
       console.warn(`[flight-search] Attempt ${attempt} failed; retrying in ${delay}ms…`);
       await new Promise((r) => setTimeout(r, delay));
     }
+  }
+}
+
+// Helper function for fetch with timeout
+async function fetchWithTimeout(url: string, options: RequestInit, ms = 10_000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response; // Return the whole response object
+  } finally {
+    clearTimeout(id);
   }
 }
 
@@ -259,14 +272,14 @@ export async function searchOffers(
             sources: ["GDS"]
           };
           
-          const r = await fetch(url, {
+          const r = await fetchWithTimeout(url, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify(simplePayload),
-          });
+          }, 8000); // Timeout for simplified search
           
           if (!r.ok) {
             const errorText = await r.text();
@@ -277,14 +290,14 @@ export async function searchOffers(
         };
         
         const resp = await withRetry(async () => {
-          const r = await fetch(url, {
+          const r = await fetchWithTimeout(url, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify(payload),
-          });
+          }, 8000); // Timeout for main search
           
           if (!r.ok) {
             const errorText = await r.text();
@@ -349,14 +362,14 @@ export async function searchOffers(
       const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers`;
       
       const resp = await withRetry(async () => {
-        const r = await fetch(url, {
+        const r = await fetchWithTimeout(url, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
-        });
+        }, 8000); // Timeout for first-tier fallback
         
         if (!r.ok) {
           throw new Error(`Fallback single-origin search failed: ${r.status}`);
@@ -415,14 +428,14 @@ export async function searchOffers(
       const url = `${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers`;
       console.log("[flight-search] Trying maximally relaxed search criteria with 20% higher budget");
       
-      const resp = await fetch(url, {
+      const resp = await fetchWithTimeout(url, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(relaxedPayload),
-      });
+      }, 8000); // Timeout for second-tier fallback
       
       if (!resp.ok) {
         console.error(`[flight-search] Maximally relaxed search failed: ${resp.status}`);
