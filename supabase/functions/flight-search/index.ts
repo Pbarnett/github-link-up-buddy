@@ -15,6 +15,26 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { dedupOffers, searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
 
 // Utility functions moved directly into the edge function
+
+// Helper function to generate date segments for searching
+export function generateDateSegments(
+  overallStart: Date,
+  overallEnd: Date,
+  segmentDurationDays: number
+): Array<{ segmentStart: Date; segmentEnd: Date }> {
+  const segments = [];
+  let currentStart = new Date(overallStart);
+  while (currentStart <= overallEnd) {
+    const segmentEndCalc = new Date(currentStart);
+    segmentEndCalc.setDate(segmentEndCalc.getDate() + segmentDurationDays - 1);
+    const actualEnd = segmentEndCalc > overallEnd ? new Date(overallEnd) : segmentEndCalc;
+    segments.push({ segmentStart: new Date(currentStart), segmentEnd: actualEnd });
+    currentStart = new Date(actualEnd);
+    currentStart.setDate(currentStart.getDate() + 1);
+  }
+  return segments;
+}
+
 function decideSeatPreference(
   offer: any,
   trip: { max_price: number }
@@ -211,50 +231,49 @@ serve(async (req: Request) => {
 
         const allSegmentOffersRaw: any[] = [];
         const segmentDays = 14;
-        let currentSearchStartDate = new Date(request.earliest_departure);
-        const overallSearchEndDate = new Date(request.latest_departure);
 
-        console.log(`[flight-search] Starting segmented search for request ${request.id} from ${request.earliest_departure} to ${request.latest_departure}`);
+        const dateSegments = generateDateSegments(
+          new Date(request.earliest_departure),
+          new Date(request.latest_departure),
+          segmentDays
+        );
 
-        while (currentSearchStartDate <= overallSearchEndDate) {
-          const currentSegmentEndDate = new Date(currentSearchStartDate);
-          currentSegmentEndDate.setDate(currentSegmentEndDate.getDate() + segmentDays - 1);
+        console.log(`[flight-search] Starting segmented search for request ${request.id} over ${dateSegments.length} segment(s). Overall range: ${request.earliest_departure} to ${request.latest_departure}`);
 
-          const actualSegmentEndDate = currentSegmentEndDate > overallSearchEndDate ? overallSearchEndDate : currentSegmentEndDate;
+        for (const segment of dateSegments) {
+          const segmentStartStr = segment.segmentStart.toISOString().slice(0,10);
+          const segmentEndStr = segment.segmentEnd.toISOString().slice(0,10);
 
-          console.log(`[flight-search] Processing segment for request ${request.id}: ${currentSearchStartDate.toISOString().slice(0,10)} to ${actualSegmentEndDate.toISOString().slice(0,10)}`);
+          // Log 1: Verify/Add Segment Start Log (already good as per problem desc)
+          console.log(`[flight-search] Processing segment for request ${request.id}: ${segmentStartStr} to ${segmentEndStr}`);
 
           const segmentSearchParams: FlightSearchParams = {
-            ...searchParams, // Spread the original searchParams (includes origin, destination, budget, original min/max duration, maxConnections, relaxedCriteria logic)
-            earliestDeparture: currentSearchStartDate,
-            latestDeparture: actualSegmentEndDate,
-            // minDuration and maxDuration from original searchParams are retained.
-            // searchOffers itself might need to handle cases where segment is shorter than minDuration.
-            // Or, we could adjust minDuration here:
-            // minDuration: Math.min(searchParams.minDuration, segmentDays), // Example adjustment
-            // maxDuration: Math.min(searchParams.maxDuration, segmentDays), // Example adjustment
+            ...searchParams, // Spread the original searchParams
+            earliestDeparture: segment.segmentStart,
+            latestDeparture: segment.segmentEnd,
           };
 
+          let segmentOfferCount = 0;
           try {
-            const segmentOffers = await searchOffers(segmentSearchParams, request.id); // searchOffers handles its own token
+            const segmentOffers = await searchOffers(segmentSearchParams, request.id);
             if (segmentOffers && segmentOffers.length > 0) {
               allSegmentOffersRaw.push(...segmentOffers);
-              console.log(`[flight-search] Segment ${currentSearchStartDate.toISOString().slice(0,10)}-${actualSegmentEndDate.toISOString().slice(0,10)} for request ${request.id} yielded ${segmentOffers.length} offers.`);
+              segmentOfferCount = segmentOffers.length;
+              // This existing log is good for successful fetch with offers
+              console.log(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} for request ${request.id} yielded ${segmentOffers.length} offers.`);
             } else {
-              console.log(`[flight-search] Segment ${currentSearchStartDate.toISOString().slice(0,10)}-${actualSegmentEndDate.toISOString().slice(0,10)} for request ${request.id} yielded 0 offers.`);
+              // This existing log is good for successful fetch with zero offers
+              console.log(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} for request ${request.id} yielded 0 offers.`);
             }
           } catch (segmentError) {
-            console.error(`[flight-search] Error processing segment ${currentSearchStartDate.toISOString().slice(0,10)}-${actualSegmentEndDate.toISOString().slice(0,10)} for request ${request.id}:`, segmentError);
-            // Decide if we should add to details and continue to next segment or break/throw
-            // For now, just log and continue to next segment to maximize data gathering.
+            console.error(`[flight-search] Error processing segment ${segmentStartStr}-${segmentEndStr} for request ${request.id}:`, segmentError);
+            // segmentOfferCount remains 0
           }
-
-          // Move to the next segment
-          currentSearchStartDate = new Date(actualSegmentEndDate);
-          currentSearchStartDate.setDate(currentSearchStartDate.getDate() + 1);
+          // Log 2: Add Segment End Log
+          console.log(`[flight-search] Segment end: processed ${segmentOfferCount} offers for ${segmentStartStr} to ${segmentEndStr} for request ${request.id}`);
         }
 
-        let offers = dedupOffers(allSegmentOffersRaw); // Use dedupOffers
+        let offers = dedupOffers(allSegmentOffersRaw);
         console.log(`[flight-search] Total ${offers.length} offers after aggregating and deduping segments for request ${request.id}.`);
         // Note: The existing dedupOffers in flightApi.edge.ts is called within searchOffers for its own results.
         // A final pass of deduplication on `offers` here might be beneficial if segments overlap and searchOffers doesn't globally dedupe.
