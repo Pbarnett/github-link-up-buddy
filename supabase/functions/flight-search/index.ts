@@ -144,6 +144,10 @@ serve(async (req: Request) => {
         console.log(`[flight-search] Processing trip request ${request.id}`);
         processedRequests++;
         
+        const requestProcessingStartTime = Date.now();
+        const MAX_REQUEST_PROCESSING_MS = 25000; // 25 seconds
+        let bailedOutDueToTime = false;
+
         // Update last_checked_at timestamp
         const { error: updateError } = await supabaseClient
           .from("trip_requests")
@@ -230,10 +234,10 @@ serve(async (req: Request) => {
         // let offers; // This will be defined after the segment loop
 
         const allSegmentOffersRaw: any[] = [];
-        const segmentDays = 14;
+        const segmentDays = 14; // segmentDays is used by generateDateSegments
 
-        let segmentsProcessedCount = 0;
-        const MAX_SEGMENTS_PER_REQUEST = 20; // Limit to prevent excessive segment processing
+        // MAX_SEGMENTS_PER_REQUEST limit removed as per current subtask focus on batching.
+        // It can be re-introduced later if needed by limiting dateSegments array size.
 
         const dateSegments = generateDateSegments(
           new Date(request.earliest_departure),
@@ -241,65 +245,123 @@ serve(async (req: Request) => {
           segmentDays
         );
 
-        console.log(`[flight-search] Starting segmented search for request ${request.id} over ${dateSegments.length} segment(s). Overall range: ${request.earliest_departure} to ${request.latest_departure}`);
+        console.log(`[flight-search] Starting chunked fetch for trip ${request.id}, total segments ${dateSegments.length}`);
+        const BATCH_SIZE = 3;
 
-        for (const segment of dateSegments) {
-          segmentsProcessedCount++;
-          if (segmentsProcessedCount > MAX_SEGMENTS_PER_REQUEST) {
-            console.warn(`[flight-search] Exceeded max segments (${MAX_SEGMENTS_PER_REQUEST}) for request ${request.id}. Breaking segment loop for this request.`);
-            break;
-          }
+        for (let i = 0; i < dateSegments.length; i += BATCH_SIZE) {
+          const batchSegments = dateSegments.slice(i, i + BATCH_SIZE);
+          console.log(`[flight-search] Processing batch starting with segment index ${i} for trip ${request.id}. Batch size: ${batchSegments.length}`);
 
-          const segmentStartStr = segment.segmentStart.toISOString().slice(0,10);
-          const segmentEndStr = segment.segmentEnd.toISOString().slice(0,10);
+          const promisesInBatch = batchSegments.map(segment => {
+            const segmentStartStr = segment.segmentStart.toISOString().slice(0,10); // For logging
+            const segmentEndStr = segment.segmentEnd.toISOString().slice(0,10);   // For logging
 
-          // Log 1: Verify/Add Segment Start Log (already good as per problem desc)
-          console.log(`[flight-search] Processing segment for request ${request.id}: ${segmentStartStr} to ${segmentEndStr}`);
+            console.log(`[flight-search] Preparing segment for request ${request.id}: ${segmentStartStr} to ${segmentEndStr}`);
 
-          const segmentSearchParams: FlightSearchParams = {
-            ...searchParams, // Spread the original searchParams
-            earliestDeparture: segment.segmentStart,
-            latestDeparture: segment.segmentEnd,
-          };
+            const segmentSearchParams: FlightSearchParams = {
+              ...searchParams, // Original searchParams for the request
+              earliestDeparture: segment.segmentStart,
+              latestDeparture: segment.segmentEnd,
+            };
 
-          let segmentOfferCount = 0;
-          try {
-            const segmentOffers = await searchOffers(segmentSearchParams, request.id);
-            if (segmentOffers && segmentOffers.length > 0) {
-              allSegmentOffersRaw.push(...segmentOffers);
-              segmentOfferCount = segmentOffers.length;
-              // This existing log is good for successful fetch with offers
-              console.log(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} for request ${request.id} yielded ${segmentOffers.length} offers.`);
+            return searchOffers(segmentSearchParams, request.id)
+              .then(segmentOffers => { // Handle success
+                // This existing log is good for successful fetch (can be 0 offers)
+                console.log(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} for request ${request.id} yielded ${segmentOffers ? segmentOffers.length : 0} offers.`);
+                return segmentOffers || []; // Ensure it's an array
+              })
+              .catch(e => { // Catch errors from searchOffers directly
+                console.error(`[flight-search] Error in searchOffers for segment ${segmentStartStr}-${segmentEndStr}, request ${request.id}:`, e.message);
+                return []; // Return empty array for this segment in case of error
+              });
+          });
+
+          const settledResults = await Promise.allSettled(promisesInBatch);
+
+          settledResults.forEach((result, index) => {
+            const segment = batchSegments[index]; // Get corresponding segment for logging
+            const segmentStartStr = segment.segmentStart.toISOString().slice(0,10);
+            const segmentEndStr = segment.segmentEnd.toISOString().slice(0,10);
+
+            if (result.status === 'fulfilled') {
+              const segmentOffers = result.value; // result.value is Offer[] or [] from catch
+              if (segmentOffers && segmentOffers.length > 0) {
+                allSegmentOffersRaw.push(...segmentOffers);
+              }
+              // Log already done inside .then() of the promise, or if we want summary:
+              console.log(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} (request ${request.id}) completed in batch. Added ${segmentOffers ? segmentOffers.length : 0} offers to raw list.`);
             } else {
-              // This existing log is good for successful fetch with zero offers
-              console.log(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} for request ${request.id} yielded 0 offers.`);
+              // This case should ideally not be reached if the .catch in map handles errors by returning []
+              console.error(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} (request ${request.id}) promise rejected in batch:`, result.reason);
             }
-          } catch (segmentError) {
-            console.error(`[flight-search] Error processing segment ${segmentStartStr}-${segmentEndStr} for request ${request.id}:`, segmentError);
-            // segmentOfferCount remains 0
+          });
+          console.log(`[flight-search] Batch starting with segment index ${i} for trip ${request.id} finished processing.`);
+
+          if (Date.now() - requestProcessingStartTime > MAX_REQUEST_PROCESSING_MS) {
+            console.warn(`[flight-search] Bail-out for request ${request.id} after ${Date.now() - requestProcessingStartTime}ms (limit: ${MAX_REQUEST_PROCESSING_MS}ms). Processing ${allSegmentOffersRaw.length} collected offers so far.`);
+            bailedOutDueToTime = true;
+            break; // Exit the batch processing loop for the current request
           }
-          // Log 2: Add Segment End Log
-          console.log(`[flight-search] Segment end: processed ${segmentOfferCount} offers for ${segmentStartStr} to ${segmentEndStr} for request ${request.id}`);
         }
 
         let offers = dedupOffers(allSegmentOffersRaw);
         console.log(`[flight-search] Total ${offers.length} offers after aggregating and deduping segments for request ${request.id}.`);
-        // Note: The existing dedupOffers in flightApi.edge.ts is called within searchOffers for its own results.
-        // A final pass of deduplication on `offers` here might be beneficial if segments overlap and searchOffers doesn't globally dedupe.
-        // For example: offers = dedupOffers(allSegmentOffersRaw); // If dedupOffers is made available here or similar logic applied.
 
-        // If, after all segments, no offers are found, then we can record this and continue.
+        if (offers.length === 0 && !bailedOutDueToTime) {
+          console.log(`[flight-search] Fallback: No offers after chunked fetch for ${request.id}. Trying full range relaxed search.`);
+          try {
+            const fallbackSegmentParams: FlightSearchParams = {
+              origin: request.departure_airports,
+              destination: request.destination_location_code,
+              earliestDeparture: new Date(request.earliest_departure),
+              latestDeparture: new Date(request.latest_departure),
+              minDuration: 1, // Explicitly relaxed min duration
+              maxDuration: 30, // Explicitly relaxed max duration
+              budget: Math.ceil(request.budget * 1.2), // Explicitly relaxed budget by 20% from original
+              maxConnections: searchParams.maxConnections || 2 // Use original maxConnections from overall searchParams
+            };
+
+            console.log(`[flight-search] Fallback search params for request ${request.id}:`, JSON.stringify({
+                origin: fallbackSegmentParams.origin,
+                destination: fallbackSegmentParams.destination,
+                earliestDeparture: fallbackSegmentParams.earliestDeparture.toISOString(),
+                latestDeparture: fallbackSegmentParams.latestDeparture.toISOString(),
+                minDuration: fallbackSegmentParams.minDuration,
+                maxDuration: fallbackSegmentParams.maxDuration,
+                budget: fallbackSegmentParams.budget,
+                relaxedCriteria: true // Indicating this is a relaxed search
+            }, null, 2));
+
+            const fallbackOffers = await searchOffers(fallbackSegmentParams, request.id);
+            console.log(`[flight-search] Fallback full-range invoke for ${request.id} complete. Received ${fallbackOffers ? fallbackOffers.length : 0} offers.`);
+            if (fallbackOffers && fallbackOffers.length > 0) {
+              offers = dedupOffers(fallbackOffers); // Dedupe fallback offers
+              console.log(`[flight-search] Using ${offers.length} offers from fallback for request ${request.id} after deduplication.`);
+            }
+          } catch (fallbackError) {
+            console.error(`[flight-search] Error during fallback search for request ${request.id}:`, fallbackError);
+            // 'offers' remains empty if fallback also fails or yields no offers
+          }
+        } else if (offers.length > 0 && bailedOutDueToTime) {
+            console.log(`[flight-search] Proceeding with ${offers.length} offers for request ${request.id} after bailing out due to time (no fallback attempted).`);
+        } else if (offers.length > 0 && !bailedOutDueToTime) {
+            console.log(`[flight-search] Proceeding with ${offers.length} offers for request ${request.id} from chunked search (no fallback needed).`);
+        } else { // offers.length === 0 && bailedOutDueToTime
+            console.log(`[flight-search] No offers collected for request ${request.id} after bailing out due to time (no fallback attempted).`);
+        }
+
+        // If, after all segments and potential fallback, no offers are found, then record this and continue.
         if (offers.length === 0) {
-            console.log(`[flight-search] No offers found for request ${request.id} after processing all segments and deduping.`);
+            console.log(`[flight-search] FINAL: No offers found for request ${request.id} after all processing.`);
             details.push({
                 tripRequestId: request.id,
                 matchesFound: 0,
-                error: "No offers found after segmented search."
+                error: bailedOutDueToTime ? "Processing timed out before finding offers." : "No offers found after segmented search and fallback."
             });
             continue; // Continue to the next request in the main loop
         }
 
-        // Log 2 & 3 are now effectively part of the segment loop logging.
+        // The following existing filtering logic will now operate on the 'offers' array (either from segments or fallback).
         // The following existing filtering logic will now operate on the aggregated 'offers'.
 
         // Filter offers to ensure they match the EXACT destination airport only
