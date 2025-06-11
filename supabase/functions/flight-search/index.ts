@@ -12,7 +12,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Import the flight API service (edge version) with explicit fetchToken
-import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
+import { dedupOffers, searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
 
 // Utility functions moved directly into the edge function
 function decideSeatPreference(
@@ -206,23 +206,73 @@ serve(async (req: Request) => {
           continue;
         }
         
-        let amadeusRawOffers; // Assuming searchOffers might give more raw-like data first or this is within searchOffers
-        let offers; // Transformed offers
-        try {
-          // Use the enhanced API to get flight offers with multiple search strategies
-          // For this example, let's assume searchOffers returns already transformed offers.
-          offers = await searchOffers(searchParams, request.id);
-          // Log 2: After Fetching Data from Amadeus API (simulated, as searchOffers abstracts it)
-          // Log 3: After Data Transformation (assuming searchOffers does this)
-          console.log(`Received and transformed ${offers.length} offers from Amadeus for trip_request_id: ${request.id}.`);
-          // Optional sample:
-          if (offers.length > 0) console.log("Amadeus sample offer (transformed):", JSON.stringify(offers[0], null, 2));
+        // let amadeusRawOffers; // Not used here, searchOffers returns transformed
+        // let offers; // This will be defined after the segment loop
 
-        } catch (apiError) {
-          console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
-          details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
-          continue;
+        const allSegmentOffersRaw: any[] = [];
+        const segmentDays = 14;
+        let currentSearchStartDate = new Date(request.earliest_departure);
+        const overallSearchEndDate = new Date(request.latest_departure);
+
+        console.log(`[flight-search] Starting segmented search for request ${request.id} from ${request.earliest_departure} to ${request.latest_departure}`);
+
+        while (currentSearchStartDate <= overallSearchEndDate) {
+          const currentSegmentEndDate = new Date(currentSearchStartDate);
+          currentSegmentEndDate.setDate(currentSegmentEndDate.getDate() + segmentDays - 1);
+
+          const actualSegmentEndDate = currentSegmentEndDate > overallSearchEndDate ? overallSearchEndDate : currentSegmentEndDate;
+
+          console.log(`[flight-search] Processing segment for request ${request.id}: ${currentSearchStartDate.toISOString().slice(0,10)} to ${actualSegmentEndDate.toISOString().slice(0,10)}`);
+
+          const segmentSearchParams: FlightSearchParams = {
+            ...searchParams, // Spread the original searchParams (includes origin, destination, budget, original min/max duration, maxConnections, relaxedCriteria logic)
+            earliestDeparture: currentSearchStartDate,
+            latestDeparture: actualSegmentEndDate,
+            // minDuration and maxDuration from original searchParams are retained.
+            // searchOffers itself might need to handle cases where segment is shorter than minDuration.
+            // Or, we could adjust minDuration here:
+            // minDuration: Math.min(searchParams.minDuration, segmentDays), // Example adjustment
+            // maxDuration: Math.min(searchParams.maxDuration, segmentDays), // Example adjustment
+          };
+
+          try {
+            const segmentOffers = await searchOffers(segmentSearchParams, request.id); // searchOffers handles its own token
+            if (segmentOffers && segmentOffers.length > 0) {
+              allSegmentOffersRaw.push(...segmentOffers);
+              console.log(`[flight-search] Segment ${currentSearchStartDate.toISOString().slice(0,10)}-${actualSegmentEndDate.toISOString().slice(0,10)} for request ${request.id} yielded ${segmentOffers.length} offers.`);
+            } else {
+              console.log(`[flight-search] Segment ${currentSearchStartDate.toISOString().slice(0,10)}-${actualSegmentEndDate.toISOString().slice(0,10)} for request ${request.id} yielded 0 offers.`);
+            }
+          } catch (segmentError) {
+            console.error(`[flight-search] Error processing segment ${currentSearchStartDate.toISOString().slice(0,10)}-${actualSegmentEndDate.toISOString().slice(0,10)} for request ${request.id}:`, segmentError);
+            // Decide if we should add to details and continue to next segment or break/throw
+            // For now, just log and continue to next segment to maximize data gathering.
+          }
+
+          // Move to the next segment
+          currentSearchStartDate = new Date(actualSegmentEndDate);
+          currentSearchStartDate.setDate(currentSearchStartDate.getDate() + 1);
         }
+
+        let offers = dedupOffers(allSegmentOffersRaw); // Use dedupOffers
+        console.log(`[flight-search] Total ${offers.length} offers after aggregating and deduping segments for request ${request.id}.`);
+        // Note: The existing dedupOffers in flightApi.edge.ts is called within searchOffers for its own results.
+        // A final pass of deduplication on `offers` here might be beneficial if segments overlap and searchOffers doesn't globally dedupe.
+        // For example: offers = dedupOffers(allSegmentOffersRaw); // If dedupOffers is made available here or similar logic applied.
+
+        // If, after all segments, no offers are found, then we can record this and continue.
+        if (offers.length === 0) {
+            console.log(`[flight-search] No offers found for request ${request.id} after processing all segments and deduping.`);
+            details.push({
+                tripRequestId: request.id,
+                matchesFound: 0,
+                error: "No offers found after segmented search."
+            });
+            continue; // Continue to the next request in the main loop
+        }
+
+        // Log 2 & 3 are now effectively part of the segment loop logging.
+        // The following existing filtering logic will now operate on the aggregated 'offers'.
 
         // Filter offers to ensure they match the EXACT destination airport only
         const exactDestinationOffers = offers.filter(offer => {
