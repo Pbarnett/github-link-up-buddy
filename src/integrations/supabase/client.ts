@@ -20,4 +20,3 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 // Optional: You might want to export URL and Key if they are used elsewhere,
 // but generally, other parts of the app should just import the `supabase` client instance.
 // export { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY };
-

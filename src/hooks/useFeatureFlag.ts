@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export const useFeatureFlag = (name: string, defaultVal = false): boolean => {
   const [enabled, setEnabled] = useState(defaultVal);
-  
+
   useEffect(() => {
     const fetchFlag = async () => {
       try {
@@ -18,7 +18,7 @@ export const useFeatureFlag = (name: string, defaultVal = false): boolean => {
           .select('enabled')
           .eq('name', name)
           .single();
-        
+
         if (!error && typeof data?.enabled === 'boolean') {
           setEnabled(data.enabled);
         } else {
@@ -30,9 +30,9 @@ export const useFeatureFlag = (name: string, defaultVal = false): boolean => {
         setEnabled(defaultVal);
       }
     };
-    
+
     fetchFlag();
   }, [name, defaultVal]);
-  
+
   return enabled;
 };
