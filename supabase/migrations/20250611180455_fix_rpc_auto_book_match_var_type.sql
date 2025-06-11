@@ -1,3 +1,4 @@
+-- ✅ No ::BIGINT casts found (validated 2025-06-11)
 CREATE OR REPLACE FUNCTION "public"."rpc_auto_book_match"("p_booking_request_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $_$
