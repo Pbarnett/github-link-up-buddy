@@ -563,7 +563,7 @@ function calculateReturnDate(departureDate: Date, durationDays: number, latestAl
 }
 
 // Helper to deduplicate offers based on key properties
-function dedupOffers(allOffers: any[]): any[] {
+export function dedupOffers(allOffers: any[]): any[] { // Added 'export'
   return Array.from(
     new Map(
       allOffers.map((offer: any) => {
