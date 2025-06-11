@@ -1,3 +1,4 @@
+// ✅ All IDs already UUID via Step 1 (validated 2025-06-11)
 import crypto from 'crypto';
 // supabase/functions/tests/auto-book.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach, MockedFunction } from 'vitest';
