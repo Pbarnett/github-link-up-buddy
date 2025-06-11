@@ -232,6 +232,9 @@ serve(async (req: Request) => {
         const allSegmentOffersRaw: any[] = [];
         const segmentDays = 14;
 
+        let segmentsProcessedCount = 0;
+        const MAX_SEGMENTS_PER_REQUEST = 20; // Limit to prevent excessive segment processing
+
         const dateSegments = generateDateSegments(
           new Date(request.earliest_departure),
           new Date(request.latest_departure),
@@ -241,6 +244,12 @@ serve(async (req: Request) => {
         console.log(`[flight-search] Starting segmented search for request ${request.id} over ${dateSegments.length} segment(s). Overall range: ${request.earliest_departure} to ${request.latest_departure}`);
 
         for (const segment of dateSegments) {
+          segmentsProcessedCount++;
+          if (segmentsProcessedCount > MAX_SEGMENTS_PER_REQUEST) {
+            console.warn(`[flight-search] Exceeded max segments (${MAX_SEGMENTS_PER_REQUEST}) for request ${request.id}. Breaking segment loop for this request.`);
+            break;
+          }
+
           const segmentStartStr = segment.segmentStart.toISOString().slice(0,10);
           const segmentEndStr = segment.segmentEnd.toISOString().slice(0,10);
 
