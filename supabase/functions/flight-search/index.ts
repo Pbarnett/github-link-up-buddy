@@ -1,3 +1,4 @@
+console.log("[flight-search] 🔧 init OK");
 export const config = { runtime: "edge", maxDuration: 60 /* seconds */ };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -71,10 +72,10 @@ serve(async (req: Request) => {
     }
     
     // Log 1: Function Start & Received tripRequestId
-    console.log(`flight-search Edge Function START. trip_request_id: ${initialTripRequestIdForLog || (requests && requests.length > 0 ? requests[0].id : 'N/A for general scan')}`);
-    // The log above is a bit complex due to single vs. multiple request processing.
-    // Let's simplify the initial log and add more specific ones later.
-    // A more direct log after parsing tripRequestId (if single) or before loop (if multiple).
+    // The complex log line below was removed as 'requests' is not yet defined here.
+    // console.log(`flight-search Edge Function START. trip_request_id: ${initialTripRequestIdForLog || (requests && requests.length > 0 ? requests[0].id : 'N/A for general scan')}`);
+
+    // These subsequent logs correctly handle the different invocation types:
     if (initialTripRequestIdForLog) {
         console.log(`flight-search Edge Function START for single trip_request_id: ${initialTripRequestIdForLog}`);
     } else {
