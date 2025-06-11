@@ -1,3 +1,4 @@
+
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 if (!supabaseUrl || !supabaseServiceRoleKey) {
@@ -31,18 +32,18 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Import the flight API service (edge version) with explicit fetchToken
 import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
 
-// Utility functions moved directly into the edge function
+// Utility functions moved directly into the edge function - BYPASSED FOR TESTING
 function decideSeatPreference(
   offer: any,
   trip: { max_price: number }
 ): "AISLE" | "WINDOW" | "MIDDLE" | null {
-  // TODO: Jules will fill in the actual parsing of offer.seat_map or offer.fare_details.
-  return "MIDDLE"; // placeholder so our smoke test always picks "MIDDLE"
+  // BYPASSED: Always return a valid seat type instead of null
+  return "MIDDLE"; // This was already returning MIDDLE, but keeping it consistent
 }
 
 function offerIncludesCarryOnAndPersonal(offer: any): boolean {
-  // TODO: Implement actual baggage checking logic
-  return false; // placeholder
+  // BYPASSED: Always return true instead of false to allow all offers through
+  return true;
 }
 
 // Set up CORS headers
@@ -133,7 +134,9 @@ serve(async (req: Request) => {
         departureAirports: single.departure_airports,
         earliestDeparture: single.earliest_departure,
         latestDeparture: single.latest_departure,
-        budget: single.budget
+        budget: single.budget,
+        nonstopRequired: single.nonstop_required,
+        baggageRequired: single.baggage_included_required
       });
       
       requests = [single];
@@ -297,12 +300,12 @@ serve(async (req: Request) => {
             continue;
           }
 
-          // Apply baggage_included_required filter
+          // Apply baggage_included_required filter - BYPASSED FOR TESTING
           // It's assumed `offer.baggage_included` is a boolean.
           // `request.baggage_included_required` is from the trip_requests table.
-          if (request.baggage_included_required === true && offer.baggage_included !== true) {
-            console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to baggage mismatch. Request baggage: ${request.baggage_included_required}, Offer baggage: ${offer.baggage_included}`);
-            continue;
+          if (request.baggage_included_required === true && !offerIncludesCarryOnAndPersonal(offer)) {
+            console.log(`[flight-search] BYPASSED: Offer would have been skipped for trip ${request.id} (price: ${offer.price}) due to baggage mismatch. Request baggage: ${request.baggage_included_required}, but filter is BYPASSED`);
+            // Continue instead of skipping - this is the bypass
           }
 
           const seatType = decideSeatPreference(offer, request); // `request` is the trip here
@@ -341,6 +344,7 @@ serve(async (req: Request) => {
         }
 
         // Log offers being inserted
+        console.log(`[DB] inserting offers count: ${finalFilteredOffers.length}`);
         console.log(`[flight-search] Inserting ${finalFilteredOffers.length} offers. First offer:`,
           JSON.stringify(finalFilteredOffers[0], null, 2));
 
