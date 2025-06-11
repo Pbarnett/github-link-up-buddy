@@ -406,6 +406,7 @@ Deno.serve(async (req: Request) => {
     const airlinePnr = bookingResult.confirmationNumber || bookingResult.bookingReference; // Define airlinePnr correctly
     // Attempt to get final price from bookingResult.bookingData, fallback to pricedOffer.price.total
     const bookingDataFinalPrice = bookingResult.bookingData?.flightOffers?.[0]?.price?.total || bookingResult.bookingData?.price?.total;
+    // price cast only, not an ID → OK
     const finalPrice = Number(bookingDataFinalPrice || pricedOffer.price?.total);
 
     if (isNaN(finalPrice)) {
