@@ -1,4 +1,3 @@
-
 project_id = "bbonngdyfyfjqfhvoljl"
 
 # Each function gets its own [functions.<name>] block—no paths, no arrays
@@ -22,6 +21,3 @@ verify_jwt = false
 
 [functions.auto-book]
 
-[functions.get-flag]
-
-[functions.create-auto-booking-request]

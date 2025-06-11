@@ -14,8 +14,6 @@
     "skipLibCheck": true,
     "allowJs": true,
     "noUnusedLocals": false,
-    "strictNullChecks": false,
-    "types": ["vitest/globals", "@testing-library/jest-dom"]
+    "strictNullChecks": false
   }
-  // "include" array removed to rely solely on referenced projects for 'tsc -b'
 }

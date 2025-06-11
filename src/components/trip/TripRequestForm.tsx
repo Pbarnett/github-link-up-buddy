@@ -21,7 +21,7 @@ import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import TripDurationInputs from "./sections/TripDurationInputs";
-import AutoBookingSection from "./sections/AutoBookingSection";
+import AutoBookingSection from "./sections/AutoBookingSection.tsx";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
 
@@ -74,11 +74,12 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       const fetchTripDetails = async () => {
         setIsLoadingDetails(true);
         try {
+          // Use TripRequestFromDB for typing the response
           const { data: tripData, error } = await supabase
             .from("trip_requests")
             .select("*")
             .eq("id", tripRequestId)
-            .single<TripRequestFromDB>();
+            .single<TripRequestFromDB>(); // Specify the type here
 
           if (error) throw error;
 
@@ -96,7 +97,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
               destination_other: tripData.destination_airport?.length !== 3 || tripData.destination_airport !== tripData.destination_airport?.toUpperCase() ? tripData.destination_airport : "",
               nonstop_required: tripData.nonstop_required ?? true,
               baggage_included_required: tripData.baggage_included_required ?? false,
-              auto_book_enabled: tripData.auto_book_enabled ?? false,
+              auto_book_enabled: tripData.auto_book_enabled ?? false, // Use nullish coalescing
               max_price: tripData.max_price,
               preferred_payment_method_id: tripData.preferred_payment_method_id,
             });
@@ -148,7 +149,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       budget: data.budget,
       departure_airports: departureAirports,
       destination_airport: destinationAirport,
-      destination_location_code: destinationAirport,
+      destination_location_code: destinationAirport, // Add this mapping
       nonstop_required: data.nonstop_required,
       baggage_included_required: data.baggage_included_required,
       auto_book_enabled: data.auto_book_enabled,
@@ -162,7 +163,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
     const tripRequestData = {
       user_id: userId,
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport,
+      destination_location_code: formData.destination_airport, // Add this field
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
@@ -189,7 +190,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
     if (!userId || !tripRequestId) throw new Error("User ID or Trip Request ID is missing for update.");
     const tripRequestData = {
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport,
+      destination_location_code: formData.destination_airport, // Add this field
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
@@ -213,51 +214,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
     return data;
   };
 
-  const invokeFlightSearchForTrip = async (tripRequest: TripRequestFromDB): Promise<void> => {
-    try {
-      console.log(`🚀 Invoking flight-search function for trip request ${tripRequest.id}`);
-      
-      // Use the supabase.functions.invoke directly instead of the wrapper
-      const { data: searchResult, error: searchError } = await supabase.functions.invoke(
-        "flight-search",
-        { 
-          body: {
-            tripRequestId: tripRequest.id,
-            relaxedCriteria: false
-          }
-        }
-      );
-
-      if (searchError) {
-        console.error("❌ Flight search function error:", searchError);
-        throw new Error(`Flight search failed: ${searchError.message}`);
-      }
-
-      console.log("✅ Flight search completed:", searchResult);
-      
-      if (searchResult && searchResult.matchesInserted > 0) {
-        toast({
-          title: "Flight search completed",
-          description: `Found ${searchResult.matchesInserted} potential flight matches`,
-        });
-      } else {
-        toast({
-          title: "Flight search completed",
-          description: "No flights found matching your criteria. You can try adjusting your search parameters.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("❌ Failed to invoke flight-search function:", error);
-      toast({
-        title: "Warning",
-        description: "We couldn't search for flights automatically. Please refresh the offers page.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const navigateToConfirmation = (tripRequest: TripRequestFromDB): void => {
+  const navigateToConfirmation = (tripRequest: TripRequestFromDB): void => { // Typed parameter
     const actionText = tripRequestId ? "updated" : "submitted";
     const autoBookText = tripRequest.auto_book_enabled ? (tripRequestId ? ' Auto-booking settings updated.' : ' Auto-booking is enabled.') : '';
     toast({
@@ -281,6 +238,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       }
 
       console.log("Form data before transform:", data);
+      // Specifically to check data.preferred_payment_method_id when auto_book_enabled is true
       
       const action = tripRequestId ? "Updating" : "Creating";
       toast({
@@ -296,9 +254,6 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       } else {
         resultingTripRequest = await createTripRequest(transformedData);
       }
-      
-      // Invoke flight search after successful trip creation/update
-      await invokeFlightSearchForTrip(resultingTripRequest);
       
       navigateToConfirmation(resultingTripRequest);
       
