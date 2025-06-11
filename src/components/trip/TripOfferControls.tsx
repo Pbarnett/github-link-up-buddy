@@ -40,7 +40,7 @@ const TripOfferControls: React.FC<TripOfferControlsProps> = ({
     const oldMultiplier = budgetMultiplier;
     const next = budgetMultiplier * 1.2;
     setBudgetMultiplier(next);
-    
+
     toast({
       title: 'Budget updated',
       description: `Searching up to ${formatCurrency(currentBudget * 1.2)}.`,
