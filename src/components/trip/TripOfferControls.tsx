@@ -6,7 +6,8 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useConstraintState } from "@/hooks/useConstraintState";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { Lock } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { Offer } from "@/services/tripOffersService";
 
 interface TripOfferControlsProps {
@@ -43,10 +44,14 @@ const TripOfferControls: React.FC<TripOfferControlsProps> = ({
     toast({
       title: 'Budget updated',
       description: `Searching up to ${formatCurrency(currentBudget * 1.2)}.`,
-      action: {
-        label: 'Undo',
-        onClick: () => setBudgetMultiplier(oldMultiplier),
-      },
+      action: (
+        <ToastAction
+          altText="Undo budget bump"
+          onClick={() => setBudgetMultiplier(oldMultiplier)}
+        >
+          Undo
+        </ToastAction>
+      ),
     });
   };
 
