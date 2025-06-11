@@ -35,11 +35,9 @@ vi.mock('@/integrations/supabase/client', () => {
   };
 });
 
-
 vi.mock('@/components/dashboard/TripHistory', () => ({
-  default: mockTripHistoryComponent,
+  default: vi.fn(() => <div data-testid="trip-history-mock">Trip History Mock Content</div>),
 }));
-
 
 vi.mock('@/components/ui/use-toast', () => ({
   toast: vi.fn(), // Assuming useToast is not directly used, but toast is. Adjust if useToast hook is primary.
@@ -53,56 +51,10 @@ vi.mock('react-router-dom', async () => {
     ...actual,
     Navigate: vi.fn(({ to }) => <div data-testid="navigate-mock">{`Redirecting to ${to}`}</div>),
     useNavigate: () => mockNavigateFn,
-
-  };
-});
-
-vi.mock('@/components/ui/tabs', async () => {
-  const actualTabs = await vi.importActual('@/components/ui/tabs');
-  const ReactActual = await vi.importActual('react');
-
-  const MockTabs = ({ children, defaultValue, value, onValueChange }: any) => {
-    const currentTab = value !== undefined ? value : activeTabForMock();
-
-    const list: React.ReactNode[] = [];
-    const contents: React.ReactNode[] = [];
-
-    ReactActual.Children.forEach(children, (child: React.ReactNode) => {
-      if (ReactActual.isValidElement(child)) {
-        if (child.type === (actualTabs as any).TabsList) {
-          list.push(ReactActual.cloneElement(child as React.ReactElement, {
-            children: ReactActual.Children.map(child.props.children, (trigger: any) => {
-              if (ReactActual.isValidElement(trigger) && trigger.type === (actualTabs as any).TabsTrigger) {
-                return ReactActual.cloneElement(trigger, {
-                  'aria-selected': trigger.props.value === currentTab,
-                  'data-state': trigger.props.value === currentTab ? 'active' : 'inactive',
-                  onClick: () => {
-                    setActiveTabForMock(trigger.props.value);
-                    if (onValueChange) onValueChange(trigger.props.value);
-                  }
-                });
-              }
-              return trigger;
-            })
-          }));
-        } else if (child.type === (actualTabs as any).TabsContent) {
-          if (child.props.value === currentTab) {
-            contents.push(child);
-          }
-        } else {
-          contents.push(child);
-        }
-      }
-    });
-    return ReactActual.createElement('div', {}, ...list, ...contents);
-  };
-  return {
-    ...actualTabs,
-    Tabs: MockTabs,
-  };
-});
-
-
+// Import mocks to get references AFTER vi.mock calls
+import { supabase } from '@/integrations/supabase/client';
+import TripHistory from '@/components/dashboard/TripHistory'; // Default import
+import { toast as uiToast } from '@/components/ui/use-toast'; // Named import
 
 // --- Test Data ---
 const mockUser = { id: 'user-123', email: 'test@example.com' };
@@ -116,7 +68,6 @@ const mockTripRequestsData = [
 
 // --- Test Suite ---
 describe('Dashboard Page', () => {
-
   const mockedSupabaseAuthUser = supabase.auth.getUser as MockedFunction<typeof supabase.auth.getUser>;
   const mockedSupabaseFrom = supabase.from as MockedFunction<typeof supabase.from>;
   const mockedTripHistory = TripHistory as MockedFunction<typeof TripHistory>;
@@ -134,29 +85,24 @@ describe('Dashboard Page', () => {
     mockedSupabaseFrom.mockImplementation((tableName: string) => {
       const mockUpdateInstance = vi.fn().mockReturnThis();
       const mockEqForUpdate = vi.fn().mockResolvedValue({ error: null });
-
+      (mockUpdateInstance as any).eq = mockEqForUpdate;
       const chain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         limit: vi.fn().mockReturnThis(),
-        update: mockSupabaseUpdate, // Specific mock for update
-        single: vi.fn(), // For single record fetches if any
+        update: mockUpdateInstance,
+        single: vi.fn(),
       };
       if (tableName === 'booking_requests') {
         (chain.order as MockedFunction<any>).mockResolvedValue({ data: mockBookingRequestsData, error: null });
       } else if (tableName === 'trip_requests') {
         (chain.limit as MockedFunction<any>).mockResolvedValue({ data: mockTripRequestsData, error: null });
       } else {
-        // Default for other tables or unspecific calls in order() context
         (chain.order as MockedFunction<any>).mockResolvedValue({ data: [], error: null });
         (chain.limit as MockedFunction<any>).mockResolvedValue({ data: [], error: null });
       }
-      // Mock the update chain to resolve successfully by default
-      const mockEq = vi.fn().mockResolvedValue({ error: null });
-      (mockSupabaseUpdate as any).eq = mockEq;
-
-      return chain;
+      return chain as any;
     });
   });
 
@@ -172,9 +118,7 @@ describe('Dashboard Page', () => {
   };
 
   it('1. Renders loading state initially', async () => {
-
     mockedSupabaseAuthUser.mockImplementationOnce(() => new Promise(() => {}));
-
     renderDashboardWithRouter();
     expect(screen.getByText(/Loading.../i)).toBeInTheDocument();
   });
@@ -192,11 +136,7 @@ describe('Dashboard Page', () => {
     renderDashboardWithRouter();
     await waitFor(() => expect(screen.getByText(`Hello, ${mockUser.email}`)).toBeInTheDocument());
 
-
-    setActiveTabForMock('tripHistory');
-    renderDashboardWithRouter(); // Re-render to apply the new activeTabForMock
-
-
+    const user = userEvent.setup();
     const tripHistoryTabTrigger = screen.getByRole('tab', { name: /Trip History/i });
     await user.click(tripHistoryTabTrigger);
 
@@ -233,7 +173,7 @@ describe('Dashboard Page', () => {
   });
 
   it('5. Handles unauthenticated state (simulates redirect to /login)', async () => {
-    mockSupabaseAuthUser.mockResolvedValue({ data: { user: null }, error: null });
+    mockedSupabaseAuthUser.mockResolvedValue({ data: { user: null }, error: null } as any);
     renderDashboardWithRouter();
     await waitFor(() => {
       expect(screen.getByTestId('navigate-mock')).toHaveTextContent('Redirecting to /login');
