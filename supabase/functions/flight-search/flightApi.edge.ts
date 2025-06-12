@@ -10,6 +10,79 @@ if (!amadeusClientId || !amadeusClientSecret) {
 
 import type { TablesInsert } from "@/integrations/supabase/types";
 
+// --- Types for Offer Scoring & Pooling (PR #8) ---
+interface OfferSegment { stops: number; durationMins: number; }
+
+interface RawOffer {
+  id: string;
+  price: number;
+  segments: OfferSegment[];
+  hasCarryOn: boolean;
+  seat?: string;
+}
+
+interface ScoredOffer extends RawOffer {
+  score: number;
+  reasons: string[];
+}
+
+interface SearchOffersResult {
+  dbOffers: TablesInsert<'flight_offers'>[];
+  pools: { poolA: ScoredOffer[]; poolB: ScoredOffer[]; poolC: ScoredOffer[]; };
+}
+
+const constraintProfiles = {
+  hard: {
+    stops: 0,
+    carry_on: true,
+    price_ceiling: 'budget', // This will be evaluated against params.budget
+    seatPrefOrder: ['AISLE', 'WINDOW', 'MIDDLE'], // Added as per scoring logic in brief
+  },
+  relaxations: [ // Not directly used by scoring in PR #8 brief, but part of the constant
+    { "stops": 1, "maxLayoverHrs": 3 },
+    { "price_ceiling": "budget * 1.2" },
+    { "price_ceiling": "budget * 1.44" },
+    { "stops": 2 }
+  ],
+};
+// --- End of Types for Offer Scoring & Pooling ---
+
+// --- Helper Functions for Offer Processing (PR #8) ---
+function parseDuration(dur: string): number {
+  // Matches ISO 8601 duration format like PT1H30M
+  const m = dur.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  return m ? (Number(m[1]) || 0) * 60 + (Number(m[2]) || 0) : 0;
+}
+
+// Placeholder/Simplified version as actual logic for Amadeus carry-on is complex
+// and depends on specific offer fields not detailed in RawOffer for this PR.
+function offerIncludesCarryOnAndPersonal(offer: any): boolean {
+  // This is a STUB. A real implementation would inspect detailed fare rules
+  // or specific fields in the Amadeus offer structure.
+  // For this PR, we'll default to true.
+  return true; // Default stub: assume carry-on included
+}
+
+const checkCarryOnIncluded = (offer: any): boolean => offerIncludesCarryOnAndPersonal(offer);
+
+// Placeholder/Simplified version for seat preference extraction.
+// Actual logic requires seat map availability and pricing, not typically in basic offer.
+function decideSeatPreference(offer: any, criteria: { max_price: number }): string | undefined {
+  // This is a STUB. A real implementation is complex.
+  // The scoring logic expects this to return 'AISLE', 'WINDOW', OR 'MIDDLE' if matched.
+  // This function will be called from within searchOffers where criteria.max_price (from params.budget) is available.
+  // If `offer.seat` (as per RawOffer type definition) is pre-populated by the mapping logic, use it.
+  if (offer.seat) {
+      const seatUpper = String(offer.seat).toUpperCase(); // Ensure it's a string before calling toUpperCase
+      if (['AISLE', 'WINDOW', 'MIDDLE'].includes(seatUpper)) {
+          return seatUpper;
+      }
+  }
+  // Otherwise, for this stub, let's not guess a seat.
+  return undefined;
+}
+// --- End of Helper Functions ---
+
 export interface FlightSearchParams {
   origin: string[];
   destination: string | null;
@@ -174,7 +247,7 @@ function generatePlaceholderBookingUrl(
 export async function searchOffers(
   params: FlightSearchParams,
   tripRequestId: string
-): Promise<TablesInsert<"flight_offers">[]> {
+): Promise<SearchOffersResult> {
   console.log(`[flight-search] Starting searchOffers for trip ${tripRequestId}`);
   const token = await fetchToken();
 
@@ -547,51 +620,115 @@ export async function searchOffers(
   });
   
   console.log(`[flight-search] Kept ${durationFilteredOffers.length} offers after duration filter (from ${uniqueOffers.length})`);
-  
+
+  // --- Start of PR #8 Mapping, Scoring, and Pooling Logic ---
+
+  // If no offers after duration filtering, return empty results for pools too
   if (durationFilteredOffers.length === 0) {
-    console.log(`[flight-search] No offers found that match duration criteria ${params.minDuration}-${params.maxDuration} days`);
-    
-    // If we have offers but none match our strict duration filter, 
-    // try one last time with relaxed duration constraints if this was a strict search
-    if (uniqueOffers.length > 0 && params.minDuration > 1 && params.maxDuration < 30) {
-      console.log(`[flight-search] FALLBACK 3: Trying relaxed duration filter as fallback`);
-      // Use a more permissive filter
-      const relaxedOffers = uniqueOffers.filter((offer: any) => {
-        try {
-          const dep = new Date(offer.itineraries[0].segments[0].departure.at);
-          const backAt = offer.itineraries[1]?.segments?.slice(-1)[0]?.departure?.at;
-          
-          if (!backAt) return false;
-          
-          const ret = new Date(backAt);
-          const tripDays = Math.round((ret.getTime() - dep.getTime()) / msPerDay);
-          
-          // More permissive filter - accept anything reasonable
-          const isReasonable = tripDays >= 1 && tripDays <= 30;
-          if (isReasonable) {
-            console.log(`[flight-search] Relaxed filter accepting offer with duration: ${tripDays} days`);
-          }
-          return isReasonable;
-        } catch (err) {
-          return false;
-        }
-      });
-      
-      if (relaxedOffers.length > 0) {
-        console.log(`[flight-search] Found ${relaxedOffers.length} offers with relaxed duration filter`);
-        // Transform Amadeus response to our database format
-        const api = { data: relaxedOffers };
-        return transformAmadeusToOffers(api, tripRequestId, params.origin[0], params.destination!);
-      }
-    }
-    
-    return [];
+    console.log("[flight-search] No duration-filtered offers to process for scoring and pooling.");
+    const dbOffers = transformAmadeusToOffers( // Still call transform to get correctly typed empty array
+      { data: [] },
+      tripRequestId,
+      params.origin[0],
+      params.destination!
+    );
+    return { // Return type is SearchOffersResult
+      dbOffers,
+      pools: { poolA: [], poolB: [], poolC: [] },
+    };
   }
 
-  // Transform Amadeus response to our database format
-  console.log(`[flight-search] Found ${durationFilteredOffers.length} offers for trip ${tripRequestId}`);
+  // Define extractSeatPreference helper that uses params.budget from searchOffers scope
+  const extractSeatPreference = (offer: any): string | undefined =>
+    decideSeatPreference(offer, { max_price: params.budget });
+
+  // 1) Map to RawOffer[]
+  console.log("[flight-search] Mapping Amadeus offers to RawOffer structure...");
+  const rawOffers: RawOffer[] = durationFilteredOffers.map((offer: any) => {
+    // Basic error checking for critical offer structure
+    if (!offer.id || !offer.price?.total || !offer.itineraries?.[0]?.segments) {
+      console.warn("[flight-search] Skipping malformed Amadeus offer during RawOffer mapping:", offer.id);
+      return null; // Will be filtered out later
+    }
+    return {
+      id: offer.id,
+      price: parseFloat(offer.price.total) || 0,
+      segments: offer.itineraries.flatMap((it: any) =>
+        it.segments.map((seg: any) => ({
+          stops: seg.numberOfStops ?? 0,
+          durationMins: parseDuration(seg.duration), // Uses global parseDuration
+        }))
+      ),
+      hasCarryOn: checkCarryOnIncluded(offer), // Uses global checkCarryOnIncluded
+      seat: extractSeatPreference(offer), // Uses locally defined extractSeatPreference
+    };
+  }).filter(Boolean) as RawOffer[]; // Filter out any nulls from malformed offers
+  console.log(`[flight-search] Mapped ${rawOffers.length} offers to RawOffer structure.`);
+
+  // 2) Score & Bucket
+  console.log("[flight-search] Scoring and bucketing RawOffers...");
+  let scoredOffers: ScoredOffer[];
+  try {
+    scoredOffers = rawOffers.map(o => {
+      const reasons: string[] = [];
+      let score = 0;
+      
+      // Ensure segments exist and is an array before calling 'every'
+      if (o.segments && Array.isArray(o.segments) && o.segments.every(s => s.stops === 0)) {
+        score += 40;
+      } else {
+        reasons.push('+1 stop');
+      }
+
+      if (o.hasCarryOn) {
+        score += 10;
+      } else {
+        reasons.push('no carry-on');
+      }
+
+      const budget = params.budget; // From searchOffers params
+      if (o.price <= budget) {
+        score += 20;
+      } else {
+        reasons.push(`$${(o.price - budget).toFixed(2)} over budget`);
+      }
+
+      // Use constraintProfiles constant defined at the top of the file
+      if (o.seat && constraintProfiles.hard.seatPrefOrder && constraintProfiles.hard.seatPrefOrder.includes(o.seat)) {
+        score += 10;
+      } else {
+        reasons.push('seat unavailable');
+      }
+      // console.debug is not available in Deno edge functions, use console.log
+      console.log('[flight-search] scoreOffer debug:', { id: o.id, score, reasons });
+      return { ...o, score, reasons };
+    });
+  } catch (err) {
+    console.error('[flight-search] Scoring error:', err);
+    scoredOffers = rawOffers.map(o => ({ ...o, score: 0, reasons: ['scoring_error'] }));
+  }
+  console.log(`[flight-search] Scored ${scoredOffers.length} offers.`);
+
+  const poolA = scoredOffers.filter(o => o.score >= 80);
+  const poolB = scoredOffers.filter(o => o.score >= 50 && o.score < 80);
+  const poolC = scoredOffers.filter(o => o.score < 50);
+  console.log(`[flight-search] Pooling results: Pool A (${poolA.length}), Pool B (${poolB.length}), Pool C (${poolC.length})`);
+
+  // --- End of PR #8 Mapping, Scoring, and Pooling Logic ---
+  // (The pools: poolA, poolB, poolC are defined by the logic block above this point)
+
+  // Transform Amadeus response to our database format for dbOffers.
+  // This uses the original durationFilteredOffers that passed all initial criteria
+  // and were used as input for the RawOffer mapping.
+  console.log(`[flight-search] Found ${durationFilteredOffers.length} offers for trip ${tripRequestId} to be transformed for DB.`);
   const api = { data: durationFilteredOffers };
-  return transformAmadeusToOffers(api, tripRequestId, params.origin[0], params.destination!);
+  const dbOffers = transformAmadeusToOffers(api, tripRequestId, params.origin[0], params.destination!);
+
+  console.log(`[flight-search] Returning ${dbOffers.length} dbOffers and pools A:${poolA.length}, B:${poolB.length}, C:${poolC.length}.`);
+  return {
+    dbOffers,
+    pools: { poolA, poolB, poolC },
+  };
 }
 
 // Helper to calculate a return date based on departure and duration
