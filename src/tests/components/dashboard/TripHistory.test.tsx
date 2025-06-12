@@ -1,4 +1,4 @@
-
+import React from 'react';
 // src/tests/components/dashboard/TripHistory.test.tsx
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
