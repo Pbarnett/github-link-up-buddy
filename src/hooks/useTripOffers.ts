@@ -145,7 +145,29 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
         tripRequestId: tripId,
         relaxedCriteria: relaxCriteriaArg,
       };
-      const searchServiceResponse: FlightSearchResponse = await invokeFlightSearch(flightSearchPayload);
+
+      console.log("useTripOffers calling invokeFlightSearch with payload:", flightSearchPayload);
+      
+      // 🎯 INTELLIGENT SEARCH with fallback strategy
+      let searchServiceResponse: FlightSearchResponse;
+      try {
+        searchServiceResponse = await invokeFlightSearch(flightSearchPayload);
+      } catch (searchError) {
+        logger.error("[useTripOffers] Initial flight search failed, checking for existing offers:", { tripId, errorDetails: searchError });
+        
+        // Check if we have any existing offers before giving up
+        const existingOffers = await fetchTripOffers(tripId);
+        if (existingOffers.length > 0) {
+          logger.info(`[useTripOffers] Found ${existingOffers.length} existing offers, using cached results`);
+          setOffers(existingOffers);
+          setIsLoading(false);
+          return;
+        }
+        
+        // If no existing offers, re-throw the error
+        throw searchError;
+      }
+
 
       if (!searchServiceResponse.success) {
         // The message from searchServiceResponse should be informative enough

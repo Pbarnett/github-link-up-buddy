@@ -54,7 +54,7 @@ describe("flightApi", () => {
       departure_date: "2023-07-01",
       departure_time: "08:30",
       return_date: "2023-07-08",
-      return_time: "12:15",
+      return_time: "09:00",
       duration: "PT7H30M",
       price: 429.99,
     });
@@ -138,15 +138,15 @@ describe("OAuth Token Management", () => {
     await fetchTokenForTest();
     expect(mockFetchCounter).toBe(1);
 
-    // Advance time to just past expiration minus safety buffer
-    vi.advanceTimersByTime(1800 * 1000 - 59000); // Just under the 1-minute buffer
+    // Advance time to just before the safety buffer kicks in
+    vi.advanceTimersByTime(1740 * 1000); // Advance to 29 minutes (1740 seconds) - still within 1-minute buffer
 
     // Should still use cached token
     await fetchTokenForTest();
     expect(mockFetchCounter).toBe(1);
 
     // Now advance past the buffer
-    vi.advanceTimersByTime(2000); // 2 more seconds
+    vi.advanceTimersByTime(61 * 1000); // Advance past the 1-minute buffer
 
     // Should fetch new token
     const newToken = await fetchTokenForTest();

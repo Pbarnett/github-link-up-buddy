@@ -1,7 +1,18 @@
 
-/// <reference types="vitest/globals" />
+import { render as rtlRender } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import React from 'react'
+
 import { vi } from 'vitest';
 import '@testing-library/jest-dom/vitest'; // Import jest-dom matchers for Vitest
+
+// Wrap all components in a router for tests
+export function render(ui: React.ReactElement, options = {}) {
+  return rtlRender(ui, { wrapper: MemoryRouter, ...options })
+}
+
+// Re-export everything else from RTL
+export * from '@testing-library/react'
 
 // Mock window.matchMedia for JSDOM
 Object.defineProperty(window, 'matchMedia', {
@@ -54,6 +65,15 @@ vi.mock('@/integrations/supabase/client', () => ({
     // Mock other Supabase client methods as needed by your components during tests
   },
 }));
+
+// Global mock for toast functionality
+vi.mock('@/components/ui/use-toast', () => {
+  const mockToast = vi.fn();
+  return {
+    useToast: () => ({ toast: mockToast }),
+    toast: mockToast,
+  };
+});
 
 // You might also need to mock other global objects or functions here
 // e.g., IntersectionObserver, navigation objects if not using MemoryRouter appropriately etc.
