@@ -88,6 +88,13 @@ function decideSeatPreference(offer: any, criteria: { max_price: number }): stri
  * PERF: called 100-300× / search – keep O(n).
  */
 export function computeCarryOnFee(offer:any): number|null {
+  // 🚨 ROLLBACK MECHANISM: Check feature flag for emergency disable
+  const allowUnknownCarryOn = Deno.env.get("ALLOW_UNKNOWN_CARRYON");
+  if (allowUnknownCarryOn === "false" || allowUnknownCarryOn === "0") {
+    console.log('[carry-on] Feature disabled via ALLOW_UNKNOWN_CARRYON flag, returning 0');
+    return 0; // Temporary fallback - treat all as free carry-on
+  }
+
   /* TEMP: capture first sample for schema discovery */
   // Use console.log for Deno compatibility, and stringify carefully for large objects
   if (Deno.env.get("DEBUG_BAGGAGE") === "true") { // Conditional logging
