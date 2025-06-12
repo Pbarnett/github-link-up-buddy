@@ -1,3 +1,4 @@
+
 // src/services/constraintManager.test.ts
 import { getNextRelaxation } from '@/services/constraintManager';
 import profilesData from '@/config/constraintProfiles.json';
@@ -22,4 +23,5 @@ test('getNextRelaxation cycles correctly', () => {
 
   // Optional: Test with a negative index, should also return null due to the added checks
   expect(getNextRelaxation(-1)).toBeNull();
+
 });
