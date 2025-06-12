@@ -5,7 +5,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm'; // Adjust path as needed
-import { supabase } from '@/integrations/supabase/client'; // Fixed import path
+
+import { supabase } from '@/integrations/supabase/client'; // Assuming supabase client is imported like this
+
 import { useCurrentUser } from '@/hooks/useCurrentUser'; // Assuming custom hook
 import { toast } from '@/components/ui/use-toast'; // Assuming toast is from here
 

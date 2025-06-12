@@ -14,6 +14,7 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { TripRequestFromDB } from "@/hooks/useTripOffers";
 import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
+import { invokeFlightSearch } from "@/services/api/flightSearchApi";
 import { useIsMobile } from "@/hooks/use-mobile";
 import DateRangeField from "./DateRangeField";
 import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
@@ -253,6 +254,37 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
         resultingTripRequest = await updateTripRequest(transformedData);
       } else {
         resultingTripRequest = await createTripRequest(transformedData);
+        
+        // 🎯 INTELLIGENT FLIGHT SEARCH TRIGGER for new trips
+        try {
+          // Calculate date range to determine search strategy
+          const timeDiff = transformedData.latestDeparture.getTime() - transformedData.earliestDeparture.getTime();
+          const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+          
+          toast({
+            title: "Searching for flights",
+            description: `Analyzing ${daysDiff} days of flight options...`,
+          });
+          
+          // Trigger flight search with appropriate strategy
+          await invokeFlightSearch({
+            tripRequestId: resultingTripRequest.id,
+            relaxedCriteria: false
+          });
+          
+          toast({
+            title: "Flight search initiated",
+            description: "We're finding the best flight options for your trip.",
+          });
+          
+        } catch (searchError) {
+          // Don't block navigation if search fails - user can retry on offers page
+          console.warn('Flight search failed during form submission:', searchError);
+          toast({
+            title: "Search in progress",
+            description: "Flight search will continue on the next page.",
+          });
+        }
       }
       
       navigateToConfirmation(resultingTripRequest);
