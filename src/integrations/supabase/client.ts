@@ -1,3 +1,4 @@
+
 console.log("Vite loaded env vars at Supabase client init:", import.meta.env);
 import { createClient } from '@supabase/supabase-js';
 
