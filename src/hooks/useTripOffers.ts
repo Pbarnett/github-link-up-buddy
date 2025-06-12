@@ -145,7 +145,6 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
         tripRequestId: tripId,
         relaxedCriteria: relaxCriteriaArg,
       };
-      console.log("useTripOffers calling invokeFlightSearch with payload:", flightSearchPayload);
       const searchServiceResponse: FlightSearchResponse = await invokeFlightSearch(flightSearchPayload);
 
       if (!searchServiceResponse.success) {
