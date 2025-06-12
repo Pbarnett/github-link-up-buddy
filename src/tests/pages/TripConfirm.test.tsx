@@ -1,14 +1,14 @@
-
+import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import TripConfirm from '../../pages/TripConfirm';
+import TripConfirm from '@/pages/TripConfirm';
 // import { useSupabase } from '../../hooks/useSupabase'; // Removed
-import { supabase as supabaseClient } from '../../integrations/supabase/client'; // Import the actual client
-import { useToast } from '../../components/ui/use-toast';
+import { supabase as supabaseClient } from '@/integrations/supabase/client'; // Import the actual client
+import { useToast } from '@/components/ui/use-toast';
 
 // Mock Supabase client and other hooks
-vi.mock('../../integrations/supabase/client', () => ({
+vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn(),
     auth: {
@@ -25,13 +25,9 @@ vi.mock('../../integrations/supabase/client', () => ({
   }
 }));
 
-// New standard mock for useToast
+// Toast mock is now handled globally in setupTests.ts
 const mockToast = vi.fn();
-vi.mock('../../components/ui/use-toast', () => ({
-  useToast: () => ({ toast: mockToast })
-}));
-
-vi.mock('../../hooks/useCurrentUser', () => ({
+vi.mock('@/hooks/useCurrentUser', () => ({
   useCurrentUser: vi.fn(() => ({
     userId: 'test-user-123',
     user: { id: 'test-user-123', email: 'test@example.com' },
@@ -41,7 +37,7 @@ vi.mock('../../hooks/useCurrentUser', () => ({
 
 
 describe('TripConfirm Page', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset mocks before each test
     vi.mocked(supabaseClient.from).mockClear();
     vi.mocked(supabaseClient.auth.getUser).mockClear();
@@ -50,6 +46,9 @@ describe('TripConfirm Page', () => {
     // If channel().on() etc. need reset, they can be done via re-mocking supabaseClient.channel
     // (useToast as MockedFunction<any>).mockReset(); // Removed as new mock handles reset via vi.clearAllMocks()
     mockToast.mockClear(); // Clear the global mockToast spy
+    // Get fresh reference to the mocked toast function
+    const { toast } = await import('@/components/ui/use-toast');
+    vi.mocked(toast).mockClear();
     // vi.mocked(useCurrentUser) can be reset here if more granular control is needed per test
   });
 
@@ -82,7 +81,9 @@ describe('TripConfirm Page', () => {
     // (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() }); // Removed, global mock is used
 
     render(
+
       <MemoryRouter initialEntries={['/trip/confirm?id=offer-for-auto-book&airline=AA&flight_number=123&price=500&departure_date=2024-01-01&departure_time=10:00&return_date=2024-01-05&return_time=12:00&duration=PT2H']}>
+
         <Routes>
           <Route path="/trip/confirm" element={<TripConfirm />} />
         </Routes>
@@ -122,7 +123,9 @@ describe('TripConfirm Page', () => {
     // (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() }); // Removed, global mock is used
 
     render(
+
       <MemoryRouter initialEntries={['/trip/confirm?id=offer-for-manual-book&airline=BB&flight_number=456&price=600&departure_date=2024-02-01&departure_time=11:00&return_date=2024-02-05&return_time=13:00&duration=PT3H']}>
+
         <Routes>
           <Route path="/trip/confirm" element={<TripConfirm />} />
         </Routes>
@@ -178,7 +181,9 @@ describe('TripConfirm Page', () => {
     // (useToast as MockedFunction<any>).mockReturnValue({ toast: mockToastFn }); // Removed, global mock is used
 
     render(
+
       <MemoryRouter initialEntries={['/trip/confirm?id=offer-for-toast-test&airline=CC&flight_number=789&price=700&departure_date=2024-03-01&departure_time=12:00&return_date=2024-03-05&return_time=14:00&duration=PT4H&checkout_session_id=session_id_for_trip_toast']}>
+
         <Routes>
           <Route path="/trip/confirm" element={<TripConfirm />} />
         </Routes>

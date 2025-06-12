@@ -64,6 +64,15 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+// Global mock for toast functionality
+vi.mock('@/components/ui/use-toast', () => {
+  const mockToast = vi.fn();
+  return {
+    useToast: () => ({ toast: mockToast }),
+    toast: mockToast,
+  };
+});
+
 // You might also need to mock other global objects or functions here
 // e.g., IntersectionObserver, navigation objects if not using MemoryRouter appropriately etc.
 

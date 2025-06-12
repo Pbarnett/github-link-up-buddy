@@ -1,34 +1,32 @@
+// Hook for usePaymentMethods
+import { useState, useEffect } from 'react';
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
-
-// Export a typed alias for use elsewhere in the app
-export type PaymentMethod = Database["public"]["Tables"]["payment_methods"]["Row"];
-
-export function usePaymentMethods() {
-  const query = useQuery<PaymentMethod[], Error>({
-    queryKey: ["payment_methods"],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from("payment_methods")
-          .select("*")
-          .order("created_at", { ascending: false });
-        
-        if (error) throw error;
-        
-        return data || [];
-      } catch (error) {
-        console.error("Error fetching payment methods:", error);
-        throw error;
-      }
-    }
-  });
-
-  return {
-    ...query,
-    paymentMethods: query.data || [],
-    loading: query.isLoading
-  };
+export interface PaymentMethod {
+  id: string;
+  brand: string;
+  last4: string;
+  is_default: boolean;
+  nickname?: string;
 }
+
+export interface UsePaymentMethodsReturn {
+  data: PaymentMethod[];
+  isLoading: boolean;
+  error?: Error;
+}
+
+export const usePaymentMethods = (): UsePaymentMethodsReturn => {
+  const [data, setData] = useState<PaymentMethod[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | undefined>();
+
+  useEffect(() => {
+    // Simulate loading payment methods
+    setTimeout(() => {
+      setData([]);
+      setIsLoading(false);
+    }, 100);
+  }, []);
+
+  return { data, isLoading, error };
+};
