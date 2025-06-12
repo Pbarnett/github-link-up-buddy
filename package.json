@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "tsc": "tsc",
-    "dev": "vite --port 3000",
+    "dev": "vite --port 8080",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
