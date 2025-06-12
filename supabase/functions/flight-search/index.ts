@@ -12,7 +12,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Import the flight API service (edge version) with explicit fetchToken
-import { dedupOffers, searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
+import { dedupOffers, searchOffers, FlightSearchParams, fetchToken, type SearchOffersResult, type ScoredOffer } from "./flightApi.edge.ts";
 
 // Utility functions moved directly into the edge function
 
@@ -137,6 +137,11 @@ serve(async (req: Request) => {
     let processedRequests = 0;
     let totalMatchesInserted = 0;
     const details = [];
+
+    let aggregatedPools: { poolA: ScoredOffer[]; poolB: ScoredOffer[]; poolC: ScoredOffer[] } | null = null;
+    if (requests.length === 1) {
+        aggregatedPools = { poolA: [], poolB: [], poolC: [] };
+    }
     
     // Process each trip request
     for (const request of requests) {
@@ -265,14 +270,16 @@ serve(async (req: Request) => {
             };
 
             return searchOffers(segmentSearchParams, request.id)
-              .then(segmentOffers => { // Handle success
-                // This existing log is good for successful fetch (can be 0 offers)
-                console.log(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} for request ${request.id} yielded ${segmentOffers ? segmentOffers.length : 0} offers.`);
-                return segmentOffers || []; // Ensure it's an array
+              // Type assertion here as searchOffers now returns SearchOffersResult
+              .then(segmentSearchResult => { // Handle success (segmentSearchResult is SearchOffersResult)
+                const numDbOffers = segmentSearchResult.dbOffers ? segmentSearchResult.dbOffers.length : 0;
+                console.log(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} for request ${request.id} yielded ${numDbOffers} dbOffers.`);
+                return segmentSearchResult; // Return the whole SearchOffersResult
               })
               .catch(e => { // Catch errors from searchOffers directly
                 console.error(`[flight-search] Error in searchOffers for segment ${segmentStartStr}-${segmentEndStr}, request ${request.id}:`, e.message);
-                return []; // Return empty array for this segment in case of error
+                // Return a SearchOffersResult-like structure with empty fields in case of error
+                return { dbOffers: [], pools: { poolA: [], poolB: [], poolC: [] } } as SearchOffersResult;
               });
           });
 
@@ -284,14 +291,18 @@ serve(async (req: Request) => {
             const segmentEndStr = segment.segmentEnd.toISOString().slice(0,10);
 
             if (result.status === 'fulfilled') {
-              const segmentOffers = result.value; // result.value is Offer[] or [] from catch
-              if (segmentOffers && segmentOffers.length > 0) {
-                allSegmentOffersRaw.push(...segmentOffers);
+              const segmentSearchResult = result.value as SearchOffersResult; // result.value is SearchOffersResult
+              if (segmentSearchResult.dbOffers && segmentSearchResult.dbOffers.length > 0) {
+                allSegmentOffersRaw.push(...segmentSearchResult.dbOffers);
               }
-              // Log already done inside .then() of the promise, or if we want summary:
-              console.log(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} (request ${request.id}) completed in batch. Added ${segmentOffers ? segmentOffers.length : 0} offers to raw list.`);
+              if (aggregatedPools && segmentSearchResult.pools) {
+                aggregatedPools.poolA.push(...segmentSearchResult.pools.poolA);
+                aggregatedPools.poolB.push(...segmentSearchResult.pools.poolB);
+                aggregatedPools.poolC.push(...segmentSearchResult.pools.poolC);
+              }
+              const numDbOffers = segmentSearchResult.dbOffers ? segmentSearchResult.dbOffers.length : 0;
+              console.log(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} (request ${request.id}) completed in batch. Added ${numDbOffers} dbOffers to raw list. Pools: A:${segmentSearchResult.pools.poolA.length}, B:${segmentSearchResult.pools.poolB.length}, C:${segmentSearchResult.pools.poolC.length}`);
             } else {
-              // This case should ideally not be reached if the .catch in map handles errors by returning []
               console.error(`[flight-search] Segment ${segmentStartStr}-${segmentEndStr} (request ${request.id}) promise rejected in batch:`, result.reason);
             }
           });
@@ -332,11 +343,18 @@ serve(async (req: Request) => {
                 relaxedCriteria: true // Indicating this is a relaxed search
             }, null, 2));
 
-            const fallbackOffers = await searchOffers(fallbackSegmentParams, request.id);
-            console.log(`[flight-search] Fallback full-range invoke for ${request.id} complete. Received ${fallbackOffers ? fallbackOffers.length : 0} offers.`);
-            if (fallbackOffers && fallbackOffers.length > 0) {
-              offers = dedupOffers(fallbackOffers); // Dedupe fallback offers
-              console.log(`[flight-search] Using ${offers.length} offers from fallback for request ${request.id} after deduplication.`);
+            const fallbackSearchResult = await searchOffers(fallbackSegmentParams, request.id) as SearchOffersResult;
+            const numFallbackDbOffers = fallbackSearchResult.dbOffers ? fallbackSearchResult.dbOffers.length : 0;
+            console.log(`[flight-search] Fallback full-range invoke for ${request.id} complete. Received ${numFallbackDbOffers} dbOffers. Pools: A:${fallbackSearchResult.pools.poolA.length}, B:${fallbackSearchResult.pools.poolB.length}, C:${fallbackSearchResult.pools.poolC.length}`);
+            if (fallbackSearchResult.dbOffers && fallbackSearchResult.dbOffers.length > 0) {
+              offers = dedupOffers(fallbackSearchResult.dbOffers); // Dedupe fallback dbOffers
+              console.log(`[flight-search] Using ${offers.length} dbOffers from fallback for request ${request.id} after deduplication.`);
+              if (aggregatedPools && fallbackSearchResult.pools) { // Also aggregate pools from fallback
+                aggregatedPools.poolA.push(...fallbackSearchResult.pools.poolA);
+                aggregatedPools.poolB.push(...fallbackSearchResult.pools.poolB);
+                aggregatedPools.poolC.push(...fallbackSearchResult.pools.poolC);
+                console.log(`[flight-search] Added fallback pools to aggregatedPools for request ${request.id}.`);
+              }
             }
           } catch (fallbackError) {
             console.error(`[flight-search] Error during fallback search for request ${request.id}:`, fallbackError);
@@ -549,6 +567,16 @@ serve(async (req: Request) => {
     // Calculate total duration
     const totalDurationMs = Date.now() - functionStartTime;
     
+    if (aggregatedPools) {
+        const deduplicateScoredOffers = (offersToDedup: ScoredOffer[]): ScoredOffer[] => {
+            return Array.from(new Map(offersToDedup.map(o => [o.id, o])).values());
+        };
+        aggregatedPools.poolA = deduplicateScoredOffers(aggregatedPools.poolA);
+        aggregatedPools.poolB = deduplicateScoredOffers(aggregatedPools.poolB);
+        aggregatedPools.poolC = deduplicateScoredOffers(aggregatedPools.poolC);
+        console.log(`[flight-search] Aggregated and deduped pools: Pool A (${aggregatedPools.poolA.length}), Pool B (${aggregatedPools.poolB.length}), Pool C (${aggregatedPools.poolC.length})`);
+    }
+
     // Log 8: Function End & matchesInserted Value
     // Note: initialTripRequestIdForLog is for when the function is called for a single trip.
     // If called for multiple, this log might be better inside the loop or summarized.
@@ -556,15 +584,21 @@ serve(async (req: Request) => {
     console.log(`flight-search Edge Function END. Returning totalMatchesInserted: ${totalMatchesInserted}. Processed requests: ${processedRequests}.`);
 
     // Return enhanced summary with performance metrics
+    const responsePayload: any = {
+      requestsProcessed: processedRequests,
+      matchesInserted: totalMatchesInserted,
+      totalDurationMs,
+      relaxedCriteriaUsed: relaxedCriteria,
+      exactDestinationOnly: true,
+      details
+    };
+
+    if (aggregatedPools && requests.length === 1) {
+      responsePayload.pools = aggregatedPools;
+    }
+
     return new Response(
-      JSON.stringify({
-        requestsProcessed: processedRequests,
-        matchesInserted: totalMatchesInserted,
-        totalDurationMs,
-        relaxedCriteriaUsed: relaxedCriteria,
-        exactDestinationOnly: true, // This seems to be consistently true for this function's logic
-        details
-      }),
+      JSON.stringify(responsePayload),
       {
         status: 200,
         headers: {

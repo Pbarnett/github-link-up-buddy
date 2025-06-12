@@ -9,24 +9,24 @@ import { MemoryRouter } from 'react-router-dom'; // For <Link>
 // This variable will hold the mock promise resolver/rejecter for the final 'order' call
 let mockSupabaseQueryResolver: any;
 const mockOrder = vi.fn(() => new Promise((resolve, reject) => {
-    mockSupabaseQueryResolver = { resolve, reject };
-}));
 
-const mockSupabaseClient = {
-  from: vi.fn((tableName: string) => {
+    mockSupabaseQueryResolver = { resolve, reject };
+  }));
+
+  const mockFrom = vi.fn((tableName: string) => {
     if (tableName === 'bookings') {
       return {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        order: mockOrder, // Use the mockOrder function here
+        order: mockOrderInner,
       };
     }
-    // Fallback for other tables if any, though not expected for this component
     return {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({ data: [], error: null }),
     };
+
   }),
 };
 vi.mock('@/integrations/supabase/client', () => ({
@@ -35,14 +35,17 @@ vi.mock('@/integrations/supabase/client', () => ({
 
 // --- Mock react-router-dom ---
 // Mock Link to render as a simple anchor tag for easy href assertion
+
 vi.mock('react-router-dom', async () => {
-    const actual = await vi.importActual('react-router-dom');
-    return {
-        ...actual,
-        Link: vi.fn(({ to, children, ...props }) => <a href={String(to)} {...props}>{children}</a>),
-        useNavigate: vi.fn(() => vi.fn()), // Mock useNavigate as it's in the component
-    };
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    Link: vi.fn(({ to, children, ...props }) => <a href={String(to)} {...props}>{children}</a>),
+    useNavigate: vi.fn(() => vi.fn()), // Mock useNavigate as it's in the component
+  };
 });
+
+
 
 // --- Test Data ---
 const mockBookingsData = [
@@ -53,8 +56,25 @@ const mockBookingsData = [
 
 // --- Test Suite ---
 describe('TripHistory Component', () => {
+  // Obtain references to the mock functions from the imported modules
+  const mockedSupabaseFrom = supabase.from as MockedFunction<typeof supabase.from>;
+  // Get a reference to the mocked Link component
+  const MockedLink = RouterLink as MockedFunction<typeof RouterLink>;
+
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    // Clear all mocks that were obtained by importing
+    mockedSupabaseFrom.mockClear();
+    // If mockOrderInner was accessible here, clear it: mockOrderInner.mockClear();
+    // However, mockOrderInner is inside the factory. Its calls are part of mockedSupabaseFrom's calls.
+    // So clearing mockedSupabaseFrom should be sufficient for the 'from' chain.
+    // Individual methods on the chain (select, eq, order) also get new vi.fn() on each 'from' call if mockFrom is structured that way.
+
+    // Clear the mocked Link calls
+    MockedLink.mockClear();
+
+    // Reset the query resolver if needed, though it's typically controlled per test.
+    // mockSupabaseQueryResolver = undefined; // Or some other reset state if applicable
   });
 
   const renderTripHistory = (userId = 'user-test-id') => {
@@ -135,9 +155,8 @@ describe('TripHistory Component', () => {
       expect(detailsLink).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}`);
     });
     // Check that the mocked Link component was called with the correct `to` prop
-    const { Link } = await import('react-router-dom');
-    const LinkMock = Link as unknown as MockedFunction<any>;
-    expect(LinkMock).toHaveBeenCalledWith(
+    // We already have MockedLink from the import section
+    expect(MockedLink).toHaveBeenCalledWith(
         expect.objectContaining({ to: `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}` }),
         expect.anything()
     );
