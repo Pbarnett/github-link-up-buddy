@@ -64,17 +64,15 @@ export const createTripRequest = async (
   
   try {
     // Invoke the flight-search edge function directly for this trip
-    const flightSearchPayload = { tripRequestId: tripRequest.id };
-    console.log("Invoking flight-search function with payload:", flightSearchPayload);
+    console.log(`Invoking flight-search function for trip request ${tripRequest.id}`);
     const { data: fsData, error: fsError } = await supabase.functions.invoke<{
       requestsProcessed: number;
       matchesInserted: number;
       totalDurationMs: number;
       details: any[];
     }>("flight-search", {
-      body: flightSearchPayload
+      body: { tripRequestId: tripRequest.id }
     });
-    console.log("flight-search direct invocation result:", { data: fsData, error: fsError });
     
     if (fsError) {
       console.error("Error invoking flight-search function:", fsError);

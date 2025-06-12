@@ -1,10 +1,13 @@
-import React from "react"; // Added React import
+
+/// <reference types="vitest/globals" />
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm'; // Adjust path as needed
+
 import { supabase } from '@/integrations/supabase/client'; // Assuming supabase client is imported like this
+
 import { useCurrentUser } from '@/hooks/useCurrentUser'; // Assuming custom hook
 import { toast } from '@/components/ui/use-toast'; // Assuming toast is from here
 
@@ -41,19 +44,6 @@ vi.mock('@/hooks/useTravelerInfoCheck', () => ({
   useTravelerInfoCheck: vi.fn(),
 }));
 
-
-// New partial mock for @radix-ui/react-select
-vi.mock("@radix-ui/react-select", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@radix-ui/react-select")>();
-  return {
-    ...actual, // Spread all actual exports
-    // Override specific components. Assuming 'Root' is a direct export or part of the main 'Select' object.
-    Root: ({ children }: { children: React.ReactNode }) => <div data-testid="mock-select-root">{children}</div>,
-    // Trigger: ({ children }: { children: React.ReactNode }) => <button type="button">{children}</button>, // Example if Trigger also needed simple mock
-  };
-});
-
-
 describe('TripRequestForm - Filter Toggles Logic', () => {
   beforeEach(() => {
     // Reset mocks before each test in this suite
@@ -62,8 +52,6 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
     // Setup default mock implementations for this suite if needed
     (useCurrentUser as vi.Mock).mockReturnValue({ user: { id: 'test-user-id' } });
     (useNavigate as vi.Mock).mockReturnValue(vi.fn());
-
-
   });
   // --- Tests for FilterTogglesSection functionality within TripRequestForm ---
 
@@ -114,10 +102,6 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
 });
 
 describe('TripRequestForm - Submission Logic', () => {
-  // Get typed mocks for hooks used in AutoBookingSection, even if not primary focus here
-  const mockUsePaymentMethods = vi.mocked(require('@/hooks/usePaymentMethods').usePaymentMethods);
-  const mockUseTravelerInfoCheck = vi.mocked(require('@/hooks/useTravelerInfoCheck').useTravelerInfoCheck);
-
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -128,16 +112,6 @@ describe('TripRequestForm - Submission Logic', () => {
 
     // Mock navigate
     (useNavigate as vi.Mock).mockReturnValue(vi.fn());
-
-    // Default mocks for AutoBookingSection hooks, in case they are called
-    mockUsePaymentMethods.mockReturnValue({
-      data: [], // Default to no payment methods for these tests
-      isLoading: false,
-    });
-    mockUseTravelerInfoCheck.mockReturnValue({
-      hasTravelerInfo: false, // Default to no traveler info
-      isLoading: false,
-    });
   });
 
   it('should populate destination_location_code from destination_airport if omitted', async () => {
@@ -276,22 +250,13 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
   let mockNavigate: vi.Mock;
   let mockToastFn: vi.Mock;
   let mockInsert: vi.Mock;
-
-  // Get typed references to the mocked hooks
-  const mockedUsePaymentMethods = usePaymentMethods as vi.MockedFunction<typeof usePaymentMethods>;
-  const mockedUseTravelerInfoCheck = useTravelerInfoCheck as vi.MockedFunction<typeof useTravelerInfoCheck>;
+  // Mock hooks from AutoBookingSection
+  const mockUsePaymentMethods = vi.mocked(require('@/hooks/usePaymentMethods').usePaymentMethods);
+  const mockUseTravelerInfoCheck = vi.mocked(require('@/hooks/useTravelerInfoCheck').useTravelerInfoCheck);
 
 
   beforeEach(() => {
-    vi.clearAllMocks(); // Clears call history for all mocks
-
-    // Specifically clear implementation details or return values for these if needed,
-    // or ensure they are freshly set. vi.clearAllMocks() handles call history.
-    // For instance, if a default mockReturnValue was set at the top-level describe,
-    // it might need to be reset if tests within this describe block change it and expect a clean state.
-    // However, these are typically set per test or in this specific beforeEach.
-    mockedUsePaymentMethods.mockReset(); // Resets mock state including implementation/return value
-    mockedUseTravelerInfoCheck.mockReset(); // Resets mock state
+    vi.clearAllMocks();
 
     (useCurrentUser as vi.Mock).mockReturnValue({
       user: { id: 'test-user-id', email: 'test@example.com' },
@@ -309,14 +274,13 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     mockInsert = vi.fn().mockResolvedValue({ data: [{ id: 'new-trip-id' }], error: null });
     (supabase.from as vi.Mock).mockReturnValue({ insert: mockInsert });
 
-
+    // Default mocks for auto-booking prerequisites
     mockUsePaymentMethods.mockReturnValue({
       data: [{ id: 'pm_123', brand: 'Visa', last4: '4242', is_default: true, nickname: 'Work Card' }],
       isLoading: false,
     });
     mockUseTravelerInfoCheck.mockReturnValue({
       hasTravelerInfo: true,
-
       isLoading: false,
     });
   });

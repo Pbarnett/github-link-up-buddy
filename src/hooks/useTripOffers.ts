@@ -145,6 +145,7 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
         tripRequestId: tripId,
         relaxedCriteria: relaxCriteriaArg,
       };
+
       console.log("useTripOffers calling invokeFlightSearch with payload:", flightSearchPayload);
       
       // 🎯 INTELLIGENT SEARCH with fallback strategy
@@ -166,6 +167,7 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
         // If no existing offers, re-throw the error
         throw searchError;
       }
+
 
       if (!searchServiceResponse.success) {
         // The message from searchServiceResponse should be informative enough
