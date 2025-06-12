@@ -1,5 +1,16 @@
+import { render as rtlRender } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import React from 'react'
 import { vi } from 'vitest';
 import '@testing-library/jest-dom/vitest'; // Import jest-dom matchers for Vitest
+
+// Wrap all components in a router for tests
+export function render(ui: React.ReactElement, options = {}) {
+  return rtlRender(ui, { wrapper: MemoryRouter, ...options })
+}
+
+// Re-export everything else from RTL
+export * from '@testing-library/react'
 
 // Mock window.matchMedia for JSDOM
 Object.defineProperty(window, 'matchMedia', {

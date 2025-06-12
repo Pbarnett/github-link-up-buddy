@@ -6,12 +6,13 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
       '**/supabase/**'
     ],
-    setupFiles: ['./src/tests/setupTests.ts'], // Added setup file
+    setupFiles: ['src/tests/setupTests.ts'], // Added setup file
     types: ['@testing-library/jest-dom'], // Explicitly declare jest-dom types for Vitest
   },
   resolve: {
