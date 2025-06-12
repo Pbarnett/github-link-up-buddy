@@ -1,3 +1,5 @@
+// ✅ All IDs already UUID via Step 1 (validated 2025-06-11)
+import crypto from 'crypto';
 // supabase/functions/tests/auto-book.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach, MockedFunction } from 'vitest';
 
@@ -107,8 +109,15 @@ describe('auto-book Integration Tests', () => {
 
   // --- Test Case 1: Successful Flow with Seat Selection ---
   it('should successfully book a flight with seat selection and update database', async () => {
+    const generatedTripId = crypto.randomUUID();
+    const generatedUserId = crypto.randomUUID();
+    const generatedAttemptLockId = crypto.randomUUID();
+    const generatedOfferId = crypto.randomUUID();
+    const generatedOrderId = crypto.randomUUID();
+    const generatedBookingRecId = crypto.randomUUID();
+
     const mockTrip = {
-      id: 'tripSuccess123', user_id: 'user1', payment_intent_id: 'pi_success',
+      id: generatedTripId, user_id: generatedUserId, payment_intent_id: 'pi_success', // payment_intent_id is Stripe specific format
       origin_location_code: 'LHR', destination_location_code: 'JFK',
       departure_date: '2024-12-01', return_date: '2024-12-10', adults: 1, nonstop_required: false,
       max_price: 600, allow_middle_seat: true,
@@ -117,15 +126,15 @@ describe('auto-book Integration Tests', () => {
     const mockRequest = createMockRequest(mockTrip);
 
     // Mock Lock Acquisition
-    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: { id: 'attemptLock1' }, error: null }); // booking_attempts.insert
+    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: { id: generatedAttemptLockId }, error: null }); // booking_attempts.insert
 
     // Mock Amadeus
-    const pricedOfferData = { id: 'offer001', price: { total: '500.00', grandTotal: '500.00' }, flightOffers: [{ price: {total: '500.00', grandTotal: '500.00'}}], itineraries: [{ segments: [{ id: 'seg001' }] }] };
-    mockAmadeusInstance.shopping.flightOffersSearch.get.mockResolvedValue({ data: [pricedOfferData] });
-    mockAmadeusInstance.shopping.flightOffers.pricing.post.mockResolvedValue({ data: pricedOfferData });
+    const pricedOfferData = { id: generatedOfferId, price: { total: '500.00', grandTotal: '500.00' }, flightOffers: [{ price: {total: '500.00', grandTotal: '500.00'}}], itineraries: [{ segments: [{ id: 'seg001' }] }] };
+    mockAmadeusInstance.shopping.flightOffersSearch.get.mockResolvedValue({ data: [pricedOfferData] }); // Assuming this is not used directly by auto-book but by priceWithAmadeus
+    mockAmadeusInstance.shopping.flightOffers.pricing.post.mockResolvedValue({ data: pricedOfferData }); // Used by priceWithAmadeus
     const seatMapData = { data: [{ flightSegments: [{ decks: [{ rows: [{ seats: [{ seatNumber: '1A', features: ['AISLE'], pricing: {total: '20.00'}, available: true }] }] }] }] }] };
     mockAmadeusInstance.shopping.seatMaps.get.mockResolvedValue(seatMapData);
-    const bookingConfirmation = { data: { id: 'orderXYZ1', flightOrderId: 'orderXYZ1', associatedRecords: [{reference: 'PNR123'}], flightOffers: [pricedOfferData] }};
+    const bookingConfirmation = { data: { id: generatedOrderId, flightOrderId: generatedOrderId, associatedRecords: [{reference: 'PNR123'}], flightOffers: [pricedOfferData] }};
     mockAmadeusInstance.booking.flightOrders.post.mockResolvedValue(bookingConfirmation);
 
     // Mock selectSeat
@@ -137,48 +146,54 @@ describe('auto-book Integration Tests', () => {
 
     // Mock DB Updates (bookings, trip_requests, booking_attempts)
     (mockSupabaseClientInstance.single as MockedFunction<any>)
-        .mockResolvedValueOnce({ data: { id: 'bookingRec1' }, error: null }) // bookings.update
-        .mockResolvedValueOnce({ data: { id: 'tripSuccess123' }, error: null }) // trip_requests.update
-        .mockResolvedValueOnce({ data: { id: 'attemptLock1' }, error: null }); // booking_attempts.update (finally)
+        .mockResolvedValueOnce({ data: { id: generatedBookingRecId }, error: null }) // bookings.update
+        .mockResolvedValueOnce({ data: { id: generatedTripId }, error: null }) // trip_requests.update
+        .mockResolvedValueOnce({ data: { id: generatedAttemptLockId }, error: null }); // booking_attempts.update (finally)
 
     const response = await autoBookHandler(mockRequest);
     const responseBody = await response.json();
 
     expect(response.status).toBe(200);
     expect(responseBody.success).toBe(true);
-    expect(responseBody.flightOrderId).toBe('orderXYZ1');
+    expect(responseBody.flightOrderId).toBe(generatedOrderId);
     expect(mockSelectSeat).toHaveBeenCalledWith(seatMapData.data[0], 500, 600, true);
 
     const amadeusBookingCall = mockAmadeusInstance.booking.flightOrders.post.mock.calls[0][0];
     expect(JSON.parse(amadeusBookingCall).data.travelers[0].seatSelections).toEqual([{ segmentId: 'seg001', seatNumber: '1A' }]);
 
     expect(mockSupabaseClientInstance.from).toHaveBeenCalledWith('bookings');
-    expect(mockSupabaseClientInstance.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'booked', selected_seat_number: '1A', amadeus_order_id: 'orderXYZ1' }));
+    expect(mockSupabaseClientInstance.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'booked', selected_seat_number: '1A', amadeus_order_id: generatedOrderId }));
     expect(mockSupabaseClientInstance.from).toHaveBeenCalledWith('trip_requests');
     expect(mockSupabaseClientInstance.update).toHaveBeenCalledWith(expect.objectContaining({ auto_book: false, status: 'booked' }));
     expect(mockSupabaseClientInstance.from).toHaveBeenCalledWith('booking_attempts');
-    expect(mockSupabaseClientInstance.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed', flight_order_id: 'orderXYZ1' }));
+    expect(mockSupabaseClientInstance.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed', flight_order_id: generatedOrderId }));
   });
 
   // --- Test Case 2: Stripe Payment Fails ---
   it('should attempt Amadeus cancellation and update statuses if Stripe payment fails', async () => {
-    const mockTrip = { id: 'tripStripeFail', payment_intent_id: 'pi_stripe_fail', traveler_data: {}, user_id: 'user2' };
-    const mockRequest = createMockRequest(mockTrip);
-    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: { id: 'attemptLock2' }, error: null }); // Lock
+    const generatedTripId = crypto.randomUUID();
+    const generatedUserId = crypto.randomUUID();
+    const generatedAttemptLockId = crypto.randomUUID();
+    const generatedOfferId = crypto.randomUUID();
+    const generatedOrderId = crypto.randomUUID();
 
-    const pricedOfferData = { id: 'offer002', price: { total: '300.00', grandTotal: '300.00' }, flightOffers: [{price: {total: '300.00', grandTotal: '300.00'}}] };
-    mockAmadeusInstance.shopping.flightOffersSearch.get.mockResolvedValue({ data: [pricedOfferData] });
+    const mockTrip = { id: generatedTripId, payment_intent_id: 'pi_stripe_fail', traveler_data: {}, user_id: generatedUserId };
+    const mockRequest = createMockRequest(mockTrip);
+    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: { id: generatedAttemptLockId }, error: null }); // Lock
+
+    const pricedOfferData = { id: generatedOfferId, price: { total: '300.00', grandTotal: '300.00' }, flightOffers: [{price: {total: '300.00', grandTotal: '300.00'}}] };
+    // mockAmadeusInstance.shopping.flightOffersSearch.get.mockResolvedValue({ data: [pricedOfferData] }); // Not directly used
     mockAmadeusInstance.shopping.flightOffers.pricing.post.mockResolvedValue({ data: pricedOfferData });
     mockAmadeusInstance.shopping.seatMaps.get.mockResolvedValue({ data: [] }); // No seats
-    const bookingConfirmation = { data: { id: 'orderStripeFail', flightOrderId: 'orderStripeFail', flightOffers: [pricedOfferData] }};
+    const bookingConfirmation = { data: { id: generatedOrderId, flightOrderId: generatedOrderId, flightOffers: [pricedOfferData] }};
     mockAmadeusInstance.booking.flightOrders.post.mockResolvedValue(bookingConfirmation); // Amadeus booking succeeds
 
     mockStripeInstance.paymentIntents.capture.mockRejectedValue(new Error('Stripe Payment Failed')); // Stripe fails
     mockAmadeusInstance.booking.flightOrders.cancel.post.mockResolvedValue({ data: {} }); // Amadeus cancel mock
 
     (mockSupabaseClientInstance.single as MockedFunction<any>)
-        .mockResolvedValueOnce({ data: { id: 'tripStripeFail' }, error: null }) // trip_requests.update (to failed)
-        .mockResolvedValueOnce({ data: { id: 'attemptLock2' }, error: null }); // booking_attempts.update (to failed in finally)
+        .mockResolvedValueOnce({ data: { id: generatedTripId }, error: null }) // trip_requests.update (to failed)
+        .mockResolvedValueOnce({ data: { id: generatedAttemptLockId }, error: null }); // booking_attempts.update (to failed in finally)
 
     const response = await autoBookHandler(mockRequest);
     const responseBody = await response.json();
@@ -186,23 +201,29 @@ describe('auto-book Integration Tests', () => {
     expect(response.status).toBe(500);
     expect(responseBody.success).toBe(false);
     expect(responseBody.error).toContain('Stripe Payment Failed');
-    expect(mockAmadeusInstance.booking.flightOrders.cancel.post).toHaveBeenCalledWith({ path: { flightOrderId: 'orderStripeFail' } });
+    expect(mockAmadeusInstance.booking.flightOrders.cancel.post).toHaveBeenCalledWith({ path: { flightOrderId: generatedOrderId } });
     expect(mockSupabaseClientInstance.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed', auto_book_error: expect.stringContaining('Stripe Payment Failed') })); // trip_requests
     expect(mockSupabaseClientInstance.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed', error_message: expect.stringContaining('Stripe Payment Failed') })); // booking_attempts
   });
 
   // --- Test Case 3: Amadeus Seat Map Fails (Graceful fallback) ---
   it('should proceed with booking if seat map fails, without seat selection', async () => {
-    const mockTrip = { id: 'tripSeatFail', max_price: 400, payment_intent_id: 'pi_seat_fail', traveler_data: {firstName: 'Seat', lastName: 'Fail'}, user_id: 'user3' };
-    const mockRequest = createMockRequest(mockTrip);
-    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: { id: 'attemptLock3' }, error: null }); // Lock
+    const generatedTripId = crypto.randomUUID();
+    const generatedUserId = crypto.randomUUID();
+    const generatedAttemptLockId = crypto.randomUUID();
+    const generatedOfferId = crypto.randomUUID();
+    const generatedOrderId = crypto.randomUUID();
 
-    const pricedOfferData = { id: 'offer003', price: { total: '350.00', grandTotal: '350.00' }, flightOffers: [{price: {total: '350.00', grandTotal: '350.00'}}] };
-    mockAmadeusInstance.shopping.flightOffersSearch.get.mockResolvedValue({ data: [pricedOfferData] });
+    const mockTrip = { id: generatedTripId, max_price: 400, payment_intent_id: 'pi_seat_fail', traveler_data: {firstName: 'Seat', lastName: 'Fail'}, user_id: generatedUserId };
+    const mockRequest = createMockRequest(mockTrip);
+    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: { id: generatedAttemptLockId }, error: null }); // Lock
+
+    const pricedOfferData = { id: generatedOfferId, price: { total: '350.00', grandTotal: '350.00' }, flightOffers: [{price: {total: '350.00', grandTotal: '350.00'}}] };
+    // mockAmadeusInstance.shopping.flightOffersSearch.get.mockResolvedValue({ data: [pricedOfferData] });
     mockAmadeusInstance.shopping.flightOffers.pricing.post.mockResolvedValue({ data: pricedOfferData });
     mockAmadeusInstance.shopping.seatMaps.get.mockRejectedValue(new Error('Seat map unavailable')); // Seat map fails
 
-    const bookingConfirmation = { data: { id: 'orderSeatFail', flightOrderId: 'orderSeatFail', flightOffers: [pricedOfferData] }};
+    const bookingConfirmation = { data: { id: generatedOrderId, flightOrderId: generatedOrderId, flightOffers: [pricedOfferData] }};
     mockAmadeusInstance.booking.flightOrders.post.mockResolvedValue(bookingConfirmation);
     mockSelectSeat.mockReturnValue(null); // selectSeat will return null if map fails or no seat found
     mockStripeInstance.paymentIntents.capture.mockResolvedValue({ status: 'succeeded', id: 'pi_seat_fail' });
@@ -217,24 +238,30 @@ describe('auto-book Integration Tests', () => {
 
     expect(response.status).toBe(200);
     expect(responseBody.success).toBe(true);
-    expect(responseBody.flightOrderId).toBe('orderSeatFail');
+    expect(responseBody.flightOrderId).toBe(generatedOrderId);
     const amadeusBookingCall = mockAmadeusInstance.booking.flightOrders.post.mock.calls[0][0];
     expect(JSON.parse(amadeusBookingCall).data.travelers[0].seatSelections).toEqual([]); // No seat selection
     expect(mockSupabaseClientInstance.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'booked', selected_seat_number: null })); // bookings
-    expect(mockSupabaseClientInstance.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed', flight_order_id: 'orderSeatFail' })); // booking_attempts
+    expect(mockSupabaseClientInstance.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed', flight_order_id: generatedOrderId })); // booking_attempts
   });
 
   // --- Test Case 4: DB Update Fails (after successful payment) ---
   it('should return error if DB update fails after payment, without Amadeus rollback', async () => {
-    const mockTrip = { id: 'tripDbFail', payment_intent_id: 'pi_db_fail', traveler_data: {}, user_id: 'user4' };
-    const mockRequest = createMockRequest(mockTrip);
-    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: { id: 'attemptLock4' }, error: null }); // Lock
+    const generatedTripId = crypto.randomUUID();
+    const generatedUserId = crypto.randomUUID();
+    const generatedAttemptLockId = crypto.randomUUID();
+    const generatedOfferId = crypto.randomUUID();
+    const generatedOrderId = crypto.randomUUID();
 
-    const pricedOfferData = { id: 'offer004', price: { total: '200.00', grandTotal: '200.00' }, flightOffers: [{price: {total: '200.00', grandTotal: '200.00'}}] };
-    mockAmadeusInstance.shopping.flightOffersSearch.get.mockResolvedValue({ data: [pricedOfferData] });
+    const mockTrip = { id: generatedTripId, payment_intent_id: 'pi_db_fail', traveler_data: {}, user_id: generatedUserId };
+    const mockRequest = createMockRequest(mockTrip);
+    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: { id: generatedAttemptLockId }, error: null }); // Lock
+
+    const pricedOfferData = { id: generatedOfferId, price: { total: '200.00', grandTotal: '200.00' }, flightOffers: [{price: {total: '200.00', grandTotal: '200.00'}}] };
+    // mockAmadeusInstance.shopping.flightOffersSearch.get.mockResolvedValue({ data: [pricedOfferData] });
     mockAmadeusInstance.shopping.flightOffers.pricing.post.mockResolvedValue({ data: pricedOfferData });
     mockAmadeusInstance.shopping.seatMaps.get.mockResolvedValue({ data: [] });
-    const bookingConfirmation = { data: { id: 'orderDbFail', flightOrderId: 'orderDbFail', flightOffers: [pricedOfferData] }};
+    const bookingConfirmation = { data: { id: generatedOrderId, flightOrderId: generatedOrderId, flightOffers: [pricedOfferData] }};
     mockAmadeusInstance.booking.flightOrders.post.mockResolvedValue(bookingConfirmation);
     mockStripeInstance.paymentIntents.capture.mockResolvedValue({ status: 'succeeded', id: 'pi_db_fail' }); // Stripe succeeds
 
@@ -242,8 +269,8 @@ describe('auto-book Integration Tests', () => {
     (mockSupabaseClientInstance.single as MockedFunction<any>)
         .mockResolvedValueOnce({ data: null, error: new Error('DB Bookings Update Failed') }); // bookings.update fails
         // trip_requests update might not be reached or also fail
-    (mockSupabaseClientInstance.single as MockedFunction<any>)
-        .mockResolvedValueOnce({ data: { id: 'attemptLock4' }, error: null }); // booking_attempts.update (finally)
+    (mockSupabaseClientInstance.single as MockedFunction<any>) // This is for the booking_attempts update in `finally`
+        .mockResolvedValueOnce({ data: { id: generatedAttemptLockId }, error: null }); // booking_attempts.update (finally)
 
     const response = await autoBookHandler(mockRequest);
     const responseBody = await response.json();
@@ -257,7 +284,10 @@ describe('auto-book Integration Tests', () => {
 
   // --- Test Case 5: Locking Scenario - Idempotency ---
   it('should return 200 if lock acquisition fails with unique constraint (idempotency)', async () => {
-    const mockTrip = { id: 'tripLockFail', user_id: 'user5' };
+    const generatedTripId = crypto.randomUUID();
+    const generatedUserId = crypto.randomUUID();
+
+    const mockTrip = { id: generatedTripId, user_id: generatedUserId };
     const mockRequest = createMockRequest(mockTrip);
 
     // Mock Lock Acquisition Failure (unique violation)
