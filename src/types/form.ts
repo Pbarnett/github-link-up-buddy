@@ -65,6 +65,14 @@ export const tripFormSchema = z.object({
 }).refine((data) => data.latestDeparture > data.earliestDeparture, {
   message: "Latest departure date must be after earliest departure date",
   path: ["latestDeparture"],
+}).refine((data) => {
+  // Intelligent date range validation - prevent overly wide ranges that cause timeouts
+  const timeDiff = data.latestDeparture.getTime() - data.earliestDeparture.getTime();
+  const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+  return daysDiff <= 60; // Allow up to 60 days for flexibility
+}, {
+  message: "Date range cannot exceed 60 days. For longer searches, please create multiple trips.",
+  path: ["latestDeparture"],
 }).refine((data) => data.max_duration >= data.min_duration, {
   message: "Maximum duration must be greater than or equal to minimum duration",
   path: ["max_duration"],
