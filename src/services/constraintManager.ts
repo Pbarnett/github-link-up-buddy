@@ -1,15 +1,24 @@
-import profiles from '@/config/constraintProfiles.json';
-// Assuming RelaxationStep is the correct type from the previously created file.
-// Adjust path if necessary, e.g., '../types/constraintProfiles'.
-import { RelaxationStep } from '@/types/constraintProfiles';
+
+// src/services/constraintManager.ts
+// Import the raw JSON; requires resolveJsonModule in tsconfig
+import profilesData from '@/config/constraintProfiles.json';
+import { RelaxationStep, ConstraintProfiles } from '@/types/constraintProfiles';
+
+// Cast to our TS interface if necessary
+const profiles = profilesData as ConstraintProfiles;
 
 /**
- * Returns the next relaxation rule, or null if no more.
+ * Returns the next relaxation step, or null if none remain.
+
  */
 export function getNextRelaxation(
   step: number
 ): RelaxationStep | null {
-  // Ensure that profiles.relaxations is treated as RelaxationStep[]
-  const relaxations: RelaxationStep[] = profiles.relaxations;
-  return relaxations[step] ?? null;
+
+  // Ensure step is a valid index and profiles.relaxations exists
+  if (profiles && profiles.relaxations && step >= 0 && step < profiles.relaxations.length) {
+    return profiles.relaxations[step];
+  }
+  return null;
+
 }
