@@ -27,13 +27,16 @@ const mockSupabaseUpdate = vi.fn().mockReturnThis(); // For retryBookingRequest
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
-      getUser: mockSupabaseAuthUser,
-      onAuthStateChange: mockSupabaseAuthOnAuthStateChange,
+      getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user-id', email: 'test@example.com' } }, error: null }),
+      onAuthStateChange: vi.fn(),
       signOut: vi.fn(),
     },
-    from: mockSupabaseFrom,
-    channel: mockSupabaseChannel,
-    removeChannel: mockSupabaseRemoveChannel,
+    from: vi.fn(),
+    channel: vi.fn(() => ({
+      on: vi.fn(),
+      subscribe: vi.fn(),
+    })),
+    removeChannel: vi.fn(),
   },
 }));
 
