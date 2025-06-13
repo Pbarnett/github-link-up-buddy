@@ -1,7 +1,8 @@
 
 import React from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { useTripOffers, TripDetails } from "@/hooks/useTripOffers";
+import { useTripOffers } from "@/hooks/useTripOffersLegacy";
+import { TripDetails } from "@/hooks/useTripOffers";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import TripOfferDetailsCard from "@/components/trip/TripOfferDetailsCard";
