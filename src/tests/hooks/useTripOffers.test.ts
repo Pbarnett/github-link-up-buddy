@@ -1,6 +1,6 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useTripOffers, TripDetails } from '@/hooks/useTripOffers';
+import { useTripOffers, TripDetails, clearCache } from '@/hooks/useTripOffers';
 import * as tripOffersService from '@/services/tripOffersService';
 import * as flightSearchApi from '@/services/api/flightSearchApi';
 import { toast } from '@/components/ui/use-toast';
@@ -112,6 +112,9 @@ describe('useTripOffers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
+    // Clear the cache manually to ensure test isolation
+    clearCache();
+    
     // Setup default mocks
     mockTripOffersService.fetchTripOffers = vi.fn().mockResolvedValue(mockOffers);
     (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
@@ -175,6 +178,7 @@ describe('useTripOffers', () => {
 
   describe('Loading offers successfully', () => {
     it('should load offers and apply duration filter by default', async () => {
+
       // beforeEach already clears mocks and sets up default responses.
       // If specific mock behavior is needed for this test, adjust it here.
       // For this test, the default mocks from beforeEach should be fine.
@@ -203,6 +207,7 @@ describe('useTripOffers', () => {
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
       (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
       
+
       const { result } = renderHook(() =>
         useTripOffers({ tripId: uniqueTripId })
       );
@@ -321,9 +326,12 @@ describe('useTripOffers', () => {
 
   describe('Error handling', () => {
     it('should handle flight search API errors', async () => {
+
       const uniqueErrorTripId = 'test-trip-id-flight-error';
+
       const searchError = new Error('Flight search failed');
       
+
       // Mock setup: Supabase fetch is SUCCESSFUL, invokeFlightSearch is REJECTED.
       const mockSingleFlightApiError = vi.fn().mockResolvedValue({
         data: { ...mockTripDetails, id: uniqueErrorTripId, min_duration: 3, max_duration: 7 },
@@ -339,10 +347,31 @@ describe('useTripOffers', () => {
       });
 
       (invokeFlightSearch as vi.Mock).mockRejectedValue(searchError);
+
       mockTripOffersService.fetchTripOffers.mockResolvedValue([]);
+      
+      // Setup Supabase mock
+      const mockSingle = vi.fn().mockResolvedValue({
+        data: {
+          id: 'test-trip-id-error',
+          earliest_departure: '2024-07-01',
+          latest_departure: '2024-07-31',
+          min_duration: 3,
+          max_duration: 7,
+          budget: 1000,
+          destination_airport: 'LAX',
+        },
+        error: null,
+      });
+      
+      const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
+      const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+      (supabase.from as any).mockReturnValue({ select: mockSelect });
 
       const { result } = renderHook(() =>
+
         useTripOffers({ tripId: uniqueErrorTripId })
+
       );
 
       await waitFor(() => {
@@ -362,8 +391,9 @@ describe('useTripOffers', () => {
       const searchError = new Error('Flight search failed');
       (invokeFlightSearch as vi.Mock).mockRejectedValue(searchError);
       
-      // Mock existing offers available
-      mockTripOffersService.fetchTripOffers.mockResolvedValueOnce(mockOffers);
+      // Mock existing offers available - the hook will call fetchTripOffers twice:
+      // Once during normal search, then again during error fallback
+      mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
 
       const uniqueFallbackTripId = 'test-trip-id-fallback';
       // Supabase fetch is SUCCESSFUL for this test
@@ -391,6 +421,7 @@ describe('useTripOffers', () => {
       });
 
       expect(result.current.hasError).toBe(false);
+
       expect(result.current.offers).toHaveLength(1);
     });
 
@@ -398,6 +429,7 @@ describe('useTripOffers', () => {
       const uniqueSupabaseErrorId = 'test-trip-id-supabase-error';
       // Mock setup: Supabase fetch results in an ERROR.
       const mockSingleSupabaseError = vi.fn().mockResolvedValue({
+
         data: null,
         error: { message: 'Trip not found', code: 'PGRST116', details: '', hint: '' }, // PGRST116: "Invalid response from database" (example)
       });
@@ -415,7 +447,9 @@ describe('useTripOffers', () => {
       mockTripOffersService.fetchTripOffers.mockResolvedValue([]);
 
       const { result } = renderHook(() =>
+
         useTripOffers({ tripId: uniqueSupabaseErrorId })
+
       );
 
       await waitFor(() => {
@@ -457,19 +491,26 @@ describe('useTripOffers', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
+
       // Clear previous calls from initial load & set up for the refresh call
       (invokeFlightSearch as vi.Mock).mockClear();
       (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
 
       mockTripOffersService.fetchTripOffers.mockClear();
+
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
+      mockFlightSearchApi.invokeFlightSearch.mockResolvedValue(mockFlightSearchResponse);
 
-      // Trigger refresh
-      result.current.refreshOffers();
+      // Trigger refresh wrapped in act
+      await act(async () => {
+        await result.current.refreshOffers();
+      });
 
+      // Wait for the refresh to complete
       await waitFor(() => {
          expect(result.current.isRefreshing).toBe(false);
       });
+
 
       // Wait directly for the mock call to happen, as it's the core of the test.
       await waitFor(() => {
@@ -480,6 +521,7 @@ describe('useTripOffers', () => {
       }, { timeout: 5000 }); // Increased timeout for this specific assertion
       // Optionally, also check that isRefreshing eventually becomes false if that's a separate concern.
       expect(result.current.isRefreshing).toBe(false);
+
     });
 
     it('should prevent rapid successive refreshes', async () => {
@@ -500,11 +542,19 @@ describe('useTripOffers', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      // First refresh
-      result.current.refreshOffers();
+      // Clear mocks to isolate this test's calls
+      vi.clearAllMocks();
+      mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
+
+      // First refresh - wrap in act to handle state updates
+      await act(async () => {
+        result.current.refreshOffers();
+      });
       
       // Immediate second refresh should be blocked
+
       result.current.refreshOffers(); // This one should trigger the toast
+
 
       // It might take a moment for the toast to be called due to async nature and debounce checks
       await waitFor(() => {
