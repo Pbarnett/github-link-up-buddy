@@ -308,15 +308,34 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
       } catch (searchError) {
         logger.error("[useTripOffers] Initial flight search failed, checking for existing offers:", { tripId, errorDetails: searchError });
         
-        const existingOffers = await fetchTripOffers(tripId);
-        if (existingOffers.length > 0) {
-          logger.info(`[useTripOffers] Found ${existingOffers.length} existing offers, using cached results`);
-          setOffers(existingOffers);
-          setIsLoading(false);
-          return;
+        const existingOffersRaw = await fetchTripOffers(tripId);
+        if (existingOffersRaw.length > 0) {
+          logger.info(`[useTripOffers] Found ${existingOffersRaw.length} existing offers, attempting to use as fallback.`);
+          // Apply duration filter to existing offers if applicable
+          let finalExistingOffers: Offer[];
+          if (!overrideFilterArg && currentTripDetails) { // currentTripDetails should be available here
+            finalExistingOffers = existingOffersRaw.filter(offer =>
+              validateOfferDuration(offer, currentTripDetails.min_duration, currentTripDetails.max_duration)
+            );
+            if (finalExistingOffers.length < existingOffersRaw.length) {
+              toast({
+                title: "Duration filter applied to fallback",
+                description: `Found ${existingOffersRaw.length} offers, but only ${finalExistingOffers.length} match your ${currentTripDetails.min_duration}-${currentTripDetails.max_duration} day trip duration.`,
+              });
+            }
+          } else {
+            finalExistingOffers = existingOffersRaw;
+          }
+
+          if (finalExistingOffers.length > 0) {
+            setOffers(finalExistingOffers);
+            setIsLoading(false);
+            setHasError(false); // Successfully used fallback
+            return;
+          }
         }
         
-        throw searchError;
+        throw searchError; // If no existing offers or they are all filtered out
       }
 
       if (!searchServiceResponse.success) {
