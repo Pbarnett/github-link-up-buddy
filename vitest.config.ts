@@ -1,12 +1,10 @@
-
-/// <reference types="vitest/globals" />
 import { defineConfig } from 'vitest/config';
 import path from 'path';
 
 export default defineConfig({
   test: {
     environment: 'jsdom',
-    globals: true,
+    globals: false,
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     exclude: [
       '**/node_modules/**',
