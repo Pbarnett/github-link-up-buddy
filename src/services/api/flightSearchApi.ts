@@ -1,4 +1,3 @@
-
 /**
  * @file Service layer for interacting with the flight search Supabase edge function.
  */
@@ -49,25 +48,18 @@ export interface FlightSearchResponse {
   /** Detailed results for each processed trip request. */
   details: FlightSearchDetail[];
   /** Optional: A top-level success indicator, true if no major errors transforming the function's output. */
-  success?: boolean;
+  success?: boolean; // Kept as optional, can be set by invokeFlightSearch wrapper
   /** Optional: A top-level message, mainly for client-side use if needed. */
-  message?: string;
-  /** Pool A: Best Value/Perfect offers */
-  poolA?: ScoredOffer[];
-  /** Pool B: Low Cost/Close offers */
-  poolB?: ScoredOffer[];
-  /** Pool C: Premium/Backup offers */
-  poolC?: ScoredOffer[];
-}
-
-/**
- * Enhanced response with aliased pool names for frontend consumption
- */
-export interface FlightSearchResponseWithPools extends FlightSearchResponse {
+  message?: string; // Kept as optional, can be set by invokeFlightSearch wrapper
+  /** Pool 1: Best Value/Perfect offers */
   pool1: ScoredOffer[];
+  /** Pool 2: Low Cost/Close offers */
   pool2: ScoredOffer[];
+  /** Pool 3: Premium/Backup offers */
   pool3: ScoredOffer[];
 }
+
+// FlightSearchResponseWithPools interface removed
 
 /**
  * Represents an error that occurred during the flight search invocation.
@@ -97,7 +89,7 @@ export interface FlightSearchError {
  */
 export const invokeFlightSearch = async (
   payload: FlightSearchRequestBody
-): Promise<FlightSearchResponse> => {
+): Promise<FlightSearchResponse> => { // Updated return type
   const { data, error: invokeError } = await supabase.functions.invoke(
     "flight-search",
     { body: payload }
@@ -111,6 +103,9 @@ export const invokeFlightSearch = async (
         functionErrorData = invokeError.context.json;
     }
 
+    // Constructing a FlightSearchError, but need to ensure it aligns with what callers expect
+    // or if they expect FlightSearchResponse even on error (which is not typical for a Promise rejection)
+    // For now, throwing the error object as before.
     throw {
       message: invokeError.message || "Failed to invoke flight search function.",
       details: invokeError,
@@ -118,15 +113,22 @@ export const invokeFlightSearch = async (
     } as FlightSearchError;
   }
 
+  // Assuming 'data' from Supabase function might contain poolA, poolB, poolC
+  // and other fields of FlightSearchResponse directly.
   if (data && typeof data.requestsProcessed === 'number') {
+    const { poolA, poolB, poolC, ...restOfData } = data;
     return {
-        ...data,
+        ...restOfData,
+        pool1: poolA || [],
+        pool2: poolB || [],
+        pool3: poolC || [],
         success: true,
         message: `Flight search processed ${data.requestsProcessed} request(s).`
-    } as FlightSearchResponse;
+    } as FlightSearchResponse; // Cast to ensure type compatibility
   }
 
   logger.warn("Flight search function returned unexpected data format:", { responseData: data });
+  // Fallback case, now includes mandatory pool1, pool2, pool3
   return {
     requestsProcessed: 0,
     matchesInserted: 0,
@@ -134,29 +136,28 @@ export const invokeFlightSearch = async (
     relaxedCriteriaUsed: payload.relaxedCriteria,
     exactDestinationOnly: true,
     details: [],
-    success: true,
+    pool1: [],
+    pool2: [],
+    pool3: [],
+    success: false, // Set to false as format was unexpected
     message: "Flight search function invoked, but response format was unexpected.",
   };
 };
 
 /**
- * Enhanced flight search function that returns pools with aliased names
+ * Fetches flight search results, including specific pools.
+ * This function now directly returns the result of invokeFlightSearch as its structure is aligned.
  */
 export const fetchFlightSearch = async (
   tripRequestId: string,
   relaxedCriteria: boolean = false
-): Promise<FlightSearchResponseWithPools> => {
+): Promise<FlightSearchResponse> => { // Updated return type
   const payload: FlightSearchRequestBody = {
     tripRequestId,
     relaxedCriteria,
   };
-
-  const data = await invokeFlightSearch(payload);
   
-  return {
-    ...data,
-    pool1: data.poolA || [],
-    pool2: data.poolB || [],
-    pool3: data.poolC || [],
-  };
+  // invokeFlightSearch now returns data in the desired FlightSearchResponse structure
+  // including pool1, pool2, pool3.
+  return await invokeFlightSearch(payload);
 };
