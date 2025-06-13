@@ -43,6 +43,11 @@ interface UseTripOffersReturn {
 const searchCache = new Map<string, { offers: Offer[], timestamp: number, tripDetails: TripDetails }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Export for testing purposes
+export const clearCache = () => {
+  searchCache.clear();
+};
+
 const mapTripRequestToTripDetails = (dbTripRequest: TripRequestFromDB): TripDetails => {
   if (!dbTripRequest.id) {
     // This error is critical for application logic, so it should probably remain an error
