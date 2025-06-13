@@ -76,7 +76,6 @@ export default defineConfig(({ mode }) => ({
           // Date and utility libraries
           'utils': [
             'date-fns',
-            'lodash',
           ],
         },
       },
