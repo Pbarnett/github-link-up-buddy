@@ -37,32 +37,44 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
 }));
 
 // Mock Supabase client and auth (basic mock for useCurrentUser)
-// This is a very basic mock. Depending on how useCurrentUser is implemented
-// and what other Supabase features are used, this might need to be more sophisticated.
 vi.mock('@/hooks/useCurrentUser', () => ({
   useCurrentUser: vi.fn(() => ({
-    userId: 'test-user-id-123', // Provide a mock user ID
-    user: { id: 'test-user-id-123', email: 'test@example.com' }, // Provide mock user object
+    userId: 'test-user-id-123',
+    user: { id: 'test-user-id-123', email: 'test@example.com' },
     isLoading: false,
-    // Add any other properties returned by your actual useCurrentUser hook
   })),
 }));
 
-// Mock supabase client if it's directly imported and used in components for non-auth calls
+// Mock usePaymentMethods hook
+vi.mock('@/hooks/usePaymentMethods', () => ({
+  usePaymentMethods: vi.fn(() => ({
+    data: [],
+    isLoading: false,
+    error: undefined,
+    refetch: vi.fn(),
+  })),
+}));
+
+// Mock supabase client
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({
+        data: { session: { access_token: 'mock-token' } },
+        error: null,
+      }),
+    },
     from: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
-    single: vi.fn().mockResolvedValue({ data: {}, error: null }), // Default single mock
-    rpc: vi.fn().mockResolvedValue({ data: {}, error: null }), // Default rpc mock
+    single: vi.fn().mockResolvedValue({ data: {}, error: null }),
+    rpc: vi.fn().mockResolvedValue({ data: {}, error: null }),
     functions: {
       invoke: vi.fn().mockResolvedValue({ data: {}, error: null }),
     },
-    // Mock other Supabase client methods as needed by your components during tests
   },
 }));
 
@@ -75,7 +87,16 @@ vi.mock('@/components/ui/use-toast', () => {
   };
 });
 
-// You might also need to mock other global objects or functions here
-// e.g., IntersectionObserver, navigation objects if not using MemoryRouter appropriately etc.
+// Mock @tanstack/react-query
+vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: vi.fn(() => ({
+    invalidateQueries: vi.fn(),
+  })),
+  useQuery: vi.fn(() => ({
+    data: undefined,
+    isLoading: false,
+    error: null,
+  })),
+}));
 
 console.log('Test setup file (src/tests/setupTests.ts) loaded.');
