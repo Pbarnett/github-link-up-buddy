@@ -1,4 +1,5 @@
 
+/// <reference types="vitest/globals" />
 import { defineConfig } from 'vitest/config';
 import path from 'path';
 
@@ -13,8 +14,10 @@ export default defineConfig({
       '**/supabase/**', // Exclude supabase functions from client-side tests
       '**/supabase/functions/**', // Explicitly exclude edge functions
     ],
+
     setupFiles: ['src/tests/setupTests.ts'],
     types: ['@testing-library/jest-dom'],
+
   },
   resolve: {
     alias: {
