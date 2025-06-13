@@ -1,19 +1,17 @@
+
 import React from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { useTripOffers, TripDetails } from "@/hooks/useTripOffers";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import TripOfferDetailsCard from "@/components/trip/TripOfferDetailsCard";
 import TripOfferList from "@/components/trip/TripOfferList";
 import TripOfferControls from "@/components/trip/TripOfferControls";
 import TripErrorCard from "@/components/trip/TripErrorCard";
-// Removed unused imports: supabase, Offer, Card components (now in sub-components), Button, toast, formatDate, TripOfferCard, TripOffersLoading, Link (now in TripOfferControls)
-// Removed useMemo, useEffect, useState from react imports as they are now in the hook
+import TripOffersWithPools from "./TripOffersWithPools";
 
-export default function TripOffers() {
-  const [searchParams] = useSearchParams();
-  const tripId = searchParams.get("id");
-  const location = useLocation();
-  const initialTripDetails = location.state?.tripDetails as TripDetails | undefined;
-
+// Legacy component wrapper for the existing functionality
+const LegacyTripOffers = ({ tripId, initialTripDetails }: { tripId: string; initialTripDetails?: TripDetails }) => {
   const {
     offers,
     tripDetails,
@@ -28,7 +26,7 @@ export default function TripOffers() {
     handleRelaxCriteria,
   } = useTripOffers({ tripId, initialTripDetails });
 
-  if (hasError && !isLoading && offers.length === 0) { // Only show full page error if truly critical and no offers to show
+  if (hasError && !isLoading && offers.length === 0) {
     return (
       <TripErrorCard
         message={errorMessage}
@@ -57,16 +55,9 @@ export default function TripOffers() {
         offers={offers}
         usedRelaxedCriteria={usedRelaxedCriteria}
         ignoreFilter={ignoreFilter}
-        hasError={hasError || (!isLoading && offers.length === 0)} // Controls should appear if error OR no offers
+        hasError={hasError || (!isLoading && offers.length === 0)}
       />
 
-      {/*
-        The main error display is handled by TripErrorCard above.
-        TripOfferList will show a "no offers" message if offers array is empty.
-        If there's an error but some offers were previously loaded, we might still want to show them.
-        The hasError prop for TripOfferControls ensures buttons are shown.
-        The main TripErrorCard is for when fetching completely fails and no offers can be displayed.
-      */}
       <TripOfferList
         offers={offers}
         isLoading={isLoading}
@@ -74,5 +65,36 @@ export default function TripOffers() {
         ignoreFilter={ignoreFilter}
       />
     </div>
+  );
+};
+
+export default function TripOffers() {
+  const [searchParams] = useSearchParams();
+  const tripId = searchParams.get("id");
+  const location = useLocation();
+  const initialTripDetails = location.state?.tripDetails as TripDetails | undefined;
+  
+  // Feature flag to determine which UI to show
+  const enablePools = useFeatureFlag('use_new_pools_ui', false);
+
+  if (!tripId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900">Trip ID not found</h2>
+          <p className="text-gray-600">Please provide a valid trip ID.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <TooltipProvider>
+      {enablePools ? (
+        <TripOffersWithPools />
+      ) : (
+        <LegacyTripOffers tripId={tripId} initialTripDetails={initialTripDetails} />
+      )}
+    </TooltipProvider>
   );
 }
