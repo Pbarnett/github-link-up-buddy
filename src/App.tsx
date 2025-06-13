@@ -1,9 +1,20 @@
+
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import SkipLink from "@/components/ui/skip-link";
+import Index from "@/pages/Index";
+import Login from "@/pages/Login";
+import Dashboard from "@/pages/Dashboard";
+import TripNew from "@/pages/TripNew";
+import TripOffers from "@/pages/TripOffers";
+import TripConfirm from "@/pages/TripConfirm";
+import Profile from "@/pages/Profile";
+import Wallet from "@/pages/Wallet";
+import NotFound from "@/pages/NotFound";
+import AuthGuard from "@/components/AuthGuard";
 
 const queryClient = new QueryClient();
 
