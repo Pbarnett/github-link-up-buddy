@@ -1,4 +1,3 @@
-/// <reference types="vitest/globals" />
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useTripOffers, clearCache } from '@/hooks/useTripOffersLegacy';
