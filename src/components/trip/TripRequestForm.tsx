@@ -28,6 +28,7 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
+  mode?: 'manual' | 'auto';
 }
 
 const categorizeAirports = (airports: string[] | null | undefined): { nycAirports: string[], otherAirport: string } => {
@@ -45,7 +46,7 @@ const categorizeAirports = (airports: string[] | null | undefined): { nycAirport
   return { nycAirports: nycSelected, otherAirport: other };
 };
 
-const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
+const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProps) => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { userId } = useCurrentUser();
@@ -64,7 +65,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       destination_other: "",
       nonstop_required: true,
       baggage_included_required: false,
-      auto_book_enabled: false,
+      auto_book_enabled: mode === 'auto', // Set based on mode
       max_price: null,
       preferred_payment_method_id: null,
     },
@@ -222,7 +223,7 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
       title: `Trip request ${actionText}`,
       description: `Your trip request has been successfully ${actionText}!${autoBookText}`,
     });
-    navigate(`/trip/offers?id=${tripRequest.id}`);
+    navigate(`/trip/offers?id=${tripRequest.id}&mode=${mode}`);
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -311,12 +312,26 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
     watchedFields.min_duration &&
     watchedFields.max_duration &&
     ((watchedFields.nyc_airports && watchedFields.nyc_airports.length > 0) || watchedFields.other_departure_airport) &&
-    (watchedFields.destination_airport || watchedFields.destination_other)
+    (watchedFields.destination_airport || watchedFields.destination_other) &&
+    // Additional validation for auto mode
+    (mode === 'manual' || (watchedFields.auto_book_enabled && watchedFields.max_price))
   );
 
-  const buttonText = watchedFields.auto_book_enabled 
+  const buttonText = mode === 'auto' 
     ? (tripRequestId ? "Update Auto-Booking" : "Enable Auto-Booking")
-    : (tripRequestId ? "Update Trip Request" : "Search Now");
+    : (watchedFields.auto_book_enabled 
+        ? (tripRequestId ? "Update Auto-Booking" : "Enable Auto-Booking")
+        : (tripRequestId ? "Update Trip Request" : "Search Now"));
+
+  const getPageTitle = () => {
+    if (mode === 'auto') return 'Set Up Auto-Booking';
+    return 'Plan Your Trip';
+  };
+
+  const getPageDescription = () => {
+    if (mode === 'auto') return 'Configure your travel preferences and booking criteria below.';
+    return 'Enter the parameters for your trip below.';
+  };
 
   return isLoadingDetails ? (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -332,17 +347,17 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
         <div className="p-6 pb-4 border-b border-gray-100">
           <button
             type="button"
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/trip/new")}
             className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
-            New Search
+            {mode === 'auto' ? 'Auto-Booking Setup' : 'New Search'}
           </button>
           <div>
             <h1 className={`font-bold text-gray-900 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
-              Plan Your Trip
+              {getPageTitle()}
             </h1>
-            <p className="text-gray-600 mt-1">Enter the parameters for your trip below.</p>
+            <p className="text-gray-600 mt-1">{getPageDescription()}</p>
           </div>
         </div>
 
@@ -362,7 +377,10 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
 
                 {/* Right Column */}
                 <div className="space-y-6 bg-white rounded-lg border border-gray-100 p-6">
-                  {!useFeatureFlag("auto_booking_v2") && <AutoBookingSection control={form.control} />}
+                  {/* Show AutoBookingSection for auto mode or when feature flag is disabled */}
+                  {(mode === 'auto' || !useFeatureFlag("auto_booking_v2")) && (
+                    <AutoBookingSection control={form.control} mode={mode} />
+                  )}
                   {/* --- Filter Toggles Section --- */}
                   <FilterTogglesSection control={form.control} isLoading={isSubmitting || isLoadingDetails} />
                 </div>
@@ -374,11 +392,11 @@ const TripRequestForm = ({ tripRequestId }: TripRequestFormProps) => {
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => navigate("/dashboard")} 
+                    onClick={() => navigate("/trip/new")} 
                     disabled={isSubmitting}
                     className="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 h-11"
                   >
-                    Cancel
+                    Back
                   </Button>
                   <Button 
                     type="submit" 
