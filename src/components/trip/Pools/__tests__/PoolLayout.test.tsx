@@ -1,8 +1,9 @@
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, MockedFunction } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import PoolLayout from '../PoolLayout';
+import { useTripOffersPools } from '@/hooks/useTripOffers';
 
 // Mock the hook
 vi.mock('@/hooks/useTripOffers', () => ({
@@ -10,12 +11,20 @@ vi.mock('@/hooks/useTripOffers', () => ({
     pool1: [],
     pool2: [],
     pool3: [],
+    budget: 1000,
+    maxBudget: 3000,
+    dateRange: { from: '2024-01-01', to: '2024-01-05' },
+    bumpsUsed: 0,
+    bumpBudget: vi.fn(),
     mode: 'manual',
     isLoading: false,
     hasError: false,
     errorMessage: '',
+    refreshPools: vi.fn(),
   })),
 }));
+
+const mockedUseTripOffersPools = useTripOffersPools as MockedFunction<typeof useTripOffersPools>;
 
 // Mock the utility
 vi.mock('@/utils/getPoolDisplayName', () => ({
@@ -43,15 +52,20 @@ describe('PoolLayout', () => {
   });
 
   it('shows loading skeleton when loading', () => {
-    const { useTripOffersPools } = require('@/hooks/useTripOffers');
-    useTripOffersPools.mockReturnValue({
+    mockedUseTripOffersPools.mockReturnValue({
       pool1: [],
       pool2: [],
       pool3: [],
+      budget: 1000,
+      maxBudget: 3000,
+      dateRange: { from: '2024-01-01', to: '2024-01-05' },
+      bumpsUsed: 0,
+      bumpBudget: vi.fn(),
       mode: 'manual',
       isLoading: true,
       hasError: false,
       errorMessage: '',
+      refreshPools: vi.fn(),
     });
 
     renderWithRouter(<PoolLayout tripId="test-trip-id" />);
@@ -62,15 +76,20 @@ describe('PoolLayout', () => {
   });
 
   it('shows error message when there is an error', () => {
-    const { useTripOffersPools } = require('@/hooks/useTripOffers');
-    useTripOffersPools.mockReturnValue({
+    mockedUseTripOffersPools.mockReturnValue({
       pool1: [],
       pool2: [],
       pool3: [],
+      budget: 1000,
+      maxBudget: 3000,
+      dateRange: { from: '2024-01-01', to: '2024-01-05' },
+      bumpsUsed: 0,
+      bumpBudget: vi.fn(),
       mode: 'manual',
       isLoading: false,
       hasError: true,
       errorMessage: 'Test error message',
+      refreshPools: vi.fn(),
     });
 
     renderWithRouter(<PoolLayout tripId="test-trip-id" />);
