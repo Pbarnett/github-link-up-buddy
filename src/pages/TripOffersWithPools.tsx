@@ -2,6 +2,7 @@
 import React from "react";
 import { useSearchParams, useLocation } from "react-router-dom";
 import PoolLayout from "@/components/trip/Pools/PoolLayout";
+import PoolOfferControls from "@/components/trip/PoolOfferControls";
 import TripOfferDetailsCard from "@/components/trip/TripOfferDetailsCard";
 import { TripDetails } from "@/hooks/useTripOffers";
 
@@ -30,7 +31,8 @@ export default function TripOffersWithPools() {
         usedRelaxedCriteria={false}
       />
       
-      <div className="w-full max-w-4xl mt-6">
+      <div className="w-full max-w-4xl mt-6 space-y-6">
+        <PoolOfferControls tripId={tripId} />
         <PoolLayout tripId={tripId} />
       </div>
     </div>
