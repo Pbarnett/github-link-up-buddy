@@ -1,9 +1,11 @@
+
 /**
  * @file Service layer for interacting with the flight search Supabase edge function.
  */
 
 import { supabase } from "@/integrations/supabase/client";
-import logger from "@/lib/logger"; // Import logger
+import logger from "@/lib/logger";
+import { ScoredOffer } from "@/types/offer";
 
 /**
  * Request payload for the flight search Supabase function.
@@ -47,14 +49,28 @@ export interface FlightSearchResponse {
   /** Detailed results for each processed trip request. */
   details: FlightSearchDetail[];
   /** Optional: A top-level success indicator, true if no major errors transforming the function's output. */
-  success?: boolean; // Added to align with how useTripOffers might use it
-   /** Optional: A top-level message, mainly for client-side use if needed. */
-  message?: string; // Added to align
+  success?: boolean;
+  /** Optional: A top-level message, mainly for client-side use if needed. */
+  message?: string;
+  /** Pool A: Best Value/Perfect offers */
+  poolA?: ScoredOffer[];
+  /** Pool B: Low Cost/Close offers */
+  poolB?: ScoredOffer[];
+  /** Pool C: Premium/Backup offers */
+  poolC?: ScoredOffer[];
+}
+
+/**
+ * Enhanced response with aliased pool names for frontend consumption
+ */
+export interface FlightSearchResponseWithPools extends FlightSearchResponse {
+  pool1: ScoredOffer[];
+  pool2: ScoredOffer[];
+  pool3: ScoredOffer[];
 }
 
 /**
  * Represents an error that occurred during the flight search invocation.
- * This could be a network error, or an error explicitly returned by the function (e.g., 500 status).
  */
 export interface FlightSearchError {
   /** The error message. */
@@ -88,13 +104,10 @@ export const invokeFlightSearch = async (
   );
 
   if (invokeError) {
-    // This typically catches network errors or if the function itself threw an unhandled exception
-    // leading to a 500, or other non-2xx status codes that the Supabase client treats as an error.
-    // The 'invokeError' object might contain the function's actual response if it was a non-200.
     logger.error("Error invoking flight-search function:", { details: invokeError });
 
     let functionErrorData;
-    if (invokeError.context && invokeError.context.json) { // Try to parse error from function response
+    if (invokeError.context && invokeError.context.json) {
         functionErrorData = invokeError.context.json;
     }
 
@@ -105,12 +118,7 @@ export const invokeFlightSearch = async (
     } as FlightSearchError;
   }
 
-  // If invokeError is null, it means the function returned a 2xx status.
-  // The 'data' variable here is the body of the function's response.
-  // We assume 'data' directly matches the structure of a successful FlightSearchResponse from the edge function.
   if (data && typeof data.requestsProcessed === 'number') {
-    // Add the 'success' and 'message' fields for client-side convenience,
-    // though the edge function itself doesn't return them at the top level.
     return {
         ...data,
         success: true,
@@ -118,17 +126,37 @@ export const invokeFlightSearch = async (
     } as FlightSearchResponse;
   }
 
-  // Fallback if the data is not in the expected format, though ideally this shouldn't be reached
-  // if the edge function adheres to its contract.
   logger.warn("Flight search function returned unexpected data format:", { responseData: data });
   return {
     requestsProcessed: 0,
     matchesInserted: 0,
     totalDurationMs: 0,
-    relaxedCriteriaUsed: payload.relaxedCriteria, // Best guess
-    exactDestinationOnly: true, // Assuming default
+    relaxedCriteriaUsed: payload.relaxedCriteria,
+    exactDestinationOnly: true,
     details: [],
-    success: true, // Or false, depending on how to interpret this state
+    success: true,
     message: "Flight search function invoked, but response format was unexpected.",
+  };
+};
+
+/**
+ * Enhanced flight search function that returns pools with aliased names
+ */
+export const fetchFlightSearch = async (
+  tripRequestId: string,
+  relaxedCriteria: boolean = false
+): Promise<FlightSearchResponseWithPools> => {
+  const payload: FlightSearchRequestBody = {
+    tripRequestId,
+    relaxedCriteria,
+  };
+
+  const data = await invokeFlightSearch(payload);
+  
+  return {
+    ...data,
+    pool1: data.poolA || [],
+    pool2: data.poolB || [],
+    pool3: data.poolC || [],
   };
 };
