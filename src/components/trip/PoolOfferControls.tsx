@@ -40,7 +40,7 @@ const PoolOfferControls: React.FC<PoolOfferControlsProps> = ({ tripId }) => {
   };
 
   return (
-    <div className="space-y-4 p-4 bg-white rounded-lg border">
+    <div className="space-y-4 p-4 bg-white rounded-lg border ring-focus" tabIndex={-1}>
       <ConstraintChips
         dateRange={dateRange}
         nonStopOnly={nonStopOnly}
@@ -62,6 +62,7 @@ const PoolOfferControls: React.FC<PoolOfferControlsProps> = ({ tripId }) => {
           disabled={bumpsUsed >= 3 || budget >= maxBudget}
           variant="outline"
           size="sm"
+          aria-label={`Increase budget by 20% (${bumpsUsed}/3 increases used)`}
         >
           +20% Budget
         </Button>
