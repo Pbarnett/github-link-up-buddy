@@ -1,3 +1,4 @@
+/// <reference types="vitest/globals" />
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useTripOffers, TripDetails, clearCache } from '@/hooks/useTripOffers';
@@ -499,7 +500,7 @@ describe('useTripOffers', () => {
       mockTripOffersService.fetchTripOffers.mockClear();
 
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
-      mockFlightSearchApi.invokeFlightSearch.mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
 
       // Trigger refresh wrapped in act
       await act(async () => {
