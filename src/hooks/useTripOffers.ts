@@ -45,20 +45,37 @@ interface UseTripOffersReturn {
   handleRelaxCriteria: () => Promise<void>;
 }
 
-// New interface for pools functionality
+/**
+ * Enhanced interface for the new pools-based functionality
+ * @interface PoolsHookResult
+ * @description Provides three pools of scored offers with budget management and date constraints
+ */
 export interface PoolsHookResult {
+  /** Pool 1: Best value offers */
   pool1: ScoredOffer[];
+  /** Pool 2: Low cost options */
   pool2: ScoredOffer[];
+  /** Pool 3: Premium selections */
   pool3: ScoredOffer[];
+  /** Current budget amount */
   budget: number;
+  /** Maximum budget limit (from trip details or calculated) */
   maxBudget: number;
+  /** Date range constraints for the trip */
   dateRange: { from: string; to: string };
+  /** Number of budget bumps used (max 3) */
   bumpsUsed: number;
+  /** Function to increase budget by 20% (capped at 3 uses or maxBudget) */
   bumpBudget(): void;
+  /** Current mode: manual or auto */
   mode: 'manual' | 'auto';
+  /** Loading state */
   isLoading: boolean;
+  /** Error state */
   hasError: boolean;
+  /** Error message */
   errorMessage: string;
+  /** Function to refresh all pools */
   refreshPools: () => Promise<void>;
 }
 
@@ -88,7 +105,13 @@ const mapTripRequestToTripDetails = (dbTripRequest: TripRequestFromDB): TripDeta
   };
 };
 
-// New pools-based hook
+/**
+ * New pools-based hook for enhanced trip offers management
+ * @param tripId - The trip request ID
+ * @returns PoolsHookResult with three pools of offers and budget management
+ * @description Provides three categorized pools of flight offers with progressive budget management.
+ * Budget can be increased up to 3 times or until maxBudget is reached, whichever comes first.
+ */
 export const useTripOffersPools = ({ tripId }: { tripId: string | null }): PoolsHookResult => {
   const [searchParams] = useSearchParams();
   const mode = (searchParams.get('mode') as 'manual' | 'auto') || 'manual';
@@ -115,11 +138,19 @@ export const useTripOffersPools = ({ tripId }: { tripId: string | null }): Pools
     };
   }, [tripDetails?.earliest_departure, tripDetails?.latest_departure]);
 
+  /**
+   * Increases the budget by 20% with safety constraints
+   * - Maximum 3 bumps allowed
+   * - Cannot exceed maxBudget
+   * - Whichever limit is reached first stops further bumps
+   */
   const bumpBudget = useCallback(() => {
+    // Safety check: stop if already used 3 bumps OR if budget has reached maxBudget
     if (bumpsUsed >= 3 || budget >= maxBudget) return;
-    const next = Math.min(budget * 1.2, maxBudget);
-    setBudget(next);
-    setBumpsUsed(b => b + 1);
+    
+    const newBudget = Math.min(budget * 1.2, maxBudget);
+    setBudget(newBudget);
+    setBumpsUsed(prev => prev + 1);
   }, [budget, bumpsUsed, maxBudget]);
 
   const loadPools = useCallback(async () => {
