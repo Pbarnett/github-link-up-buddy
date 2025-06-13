@@ -1,8 +1,37 @@
 
-// Stub implementation for feature flags
-// Will be replaced with real SWR + Edge Function implementation in Phase 1
-export const useFeatureFlag = (flag: string): boolean => {
-  // Until real back-end flag exists, always return false
-  // This ensures the legacy auto-booking toggle is hidden
-  return false;
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+export const useFeatureFlag = (flagName: string, defaultValue: boolean = false): boolean => {
+  const [isEnabled, setIsEnabled] = useState(defaultValue);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeatureFlag = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('feature_flags')
+          .select('enabled')
+          .eq('name', flagName)
+          .single();
+
+        if (error) {
+          console.warn(`Feature flag '${flagName}' not found, using default value:`, defaultValue);
+          setIsEnabled(defaultValue);
+        } else {
+          setIsEnabled(data.enabled);
+        }
+      } catch (error) {
+        console.error(`Error fetching feature flag '${flagName}':`, error);
+        setIsEnabled(defaultValue);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFeatureFlag();
+  }, [flagName, defaultValue]);
+
+  // Return the default value while loading to prevent UI flicker
+  return isLoading ? defaultValue : isEnabled;
 };

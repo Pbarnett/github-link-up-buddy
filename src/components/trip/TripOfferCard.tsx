@@ -2,7 +2,8 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PlaneTakeoff, ExternalLink, Calendar } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { PlaneTakeoff, ExternalLink, Calendar, Info } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -30,10 +31,25 @@ export interface OfferProps {
   carrier_code?: string;
   origin_airport?: string;
   destination_airport?: string;
+  // New pricing structure fields
+  priceStructure?: {
+    base: number;
+    carryOnFee: number;
+    total: number;
+  };
+  carryOnIncluded?: boolean;
+  reasons?: string[];
 }
+
+const formatCurrency = (amount: number): string => {
+  return `$${amount.toFixed(2)}`;
+};
 
 const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
   const navigate = useNavigate();
+
+  // Calculate display price with fallback
+  const total = offer.priceStructure?.total ?? offer.price;
 
   // 1. Determine the IATA carrier code
   const rawFlightNum = offer.flight_number || "";
@@ -77,7 +93,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
       console.log(`[ANALYTICS] External booking clicked:`, {
         offerId: offer.id,
         airline: offer.airline,
-        price: offer.price,
+        price: total,
         bookingUrl: offer.booking_url,
         timestamp: new Date().toISOString()
       });
@@ -102,7 +118,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
     params.set('id', offer.id);
     params.set('airline', offer.airline);
     params.set('flight_number', offer.flight_number);
-    params.set('price', offer.price.toString());
+    params.set('price', total.toString());
     params.set('departure_date', offer.departure_date);
     params.set('departure_time', offer.departure_time);
     params.set('return_date', offer.return_date);
@@ -174,6 +190,21 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
           </svg>
           Flight duration: {humanDuration}
         </p>
+
+        {/* Carry-on Badge */}
+        <div className="mt-2">
+          {offer.carryOnIncluded ? (
+            <Badge variant="secondary" className="bg-green-100 text-green-800">
+              Carry-on included
+            </Badge>
+          ) : (
+            offer.priceStructure?.carryOnFee && (
+              <Badge variant="outline">
+                + {formatCurrency(offer.priceStructure.carryOnFee)} carry-on
+              </Badge>
+            )
+          )}
+        </div>
       </div>
 
       {/* RIGHT SIDE: Days Pill, Price, & Booking - Horizontally aligned */}
@@ -183,8 +214,22 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
           {tripDays} Days
         </span>
 
-        {/* Price */}
-        <span className="text-3xl font-bold text-gray-900 leading-none">${offer.price.toFixed(2)}</span>
+        {/* Price with tooltip for reasons */}
+        <div className="flex items-center gap-2">
+          <span className="text-3xl font-bold text-gray-900 leading-none">
+            {formatCurrency(total)}
+          </span>
+          {offer.reasons && offer.reasons.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{offer.reasons[0]}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
 
         {/* "Book on X" Button - Enhanced alignment */}
         <button
