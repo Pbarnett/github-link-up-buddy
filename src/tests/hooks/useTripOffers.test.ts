@@ -1,5 +1,5 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { useTripOffers, clearCache } from '@/hooks/useTripOffersLegacy';
 import { TripDetails } from '@/hooks/useTripOffers';
 import * as tripOffersService from '@/services/tripOffersService';
@@ -118,8 +118,8 @@ describe('useTripOffers', () => {
     
     // Setup default mocks
     mockTripOffersService.fetchTripOffers = vi.fn().mockResolvedValue(mockOffers);
-    (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
-    (fetchFlightSearch as vi.Mock).mockResolvedValue({ pool1: [], pool2: [], pool3: [] });
+    (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
+    (fetchFlightSearch as Mock).mockResolvedValue({ pool1: [], pool2: [], pool3: [] });
     mockToast.mockImplementation(() => {});
     
     // Mock Supabase response for trip details
@@ -193,7 +193,7 @@ describe('useTripOffers', () => {
       });
       const mockEqUnique = vi.fn().mockReturnValue({ single: mockSingleUnique });
       const mockSelectUnique = vi.fn().mockReturnValue({ eq: mockEqUnique });
-      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+      (supabase.from as Mock).mockImplementation((table: string) => {
         if (table === 'trip_requests') {
           return { select: mockSelectUnique };
         }
@@ -206,7 +206,7 @@ describe('useTripOffers', () => {
 
       // Ensure other service mocks are as expected for this test
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
       
 
       const { result } = renderHook(() =>
@@ -231,7 +231,7 @@ describe('useTripOffers', () => {
       const uniqueToastTestTripId = 'test-trip-id-toast-filter';
 
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
       mockToast.mockClear();
 
       const mockSingleToast = vi.fn().mockResolvedValue({
@@ -242,7 +242,7 @@ describe('useTripOffers', () => {
       const mockSelectToast = vi.fn().mockReturnValue({ eq: mockEqToast });
 
       // Specifically mock supabase.from for 'trip_requests' table for this test
-      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+      (supabase.from as Mock).mockImplementation((table: string) => {
         if (table === 'trip_requests') {
           return { select: mockSelectToast };
         }
@@ -273,7 +273,7 @@ describe('useTripOffers', () => {
 
       // Initial mock setup for this specific test and tripId
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
       mockToast.mockClear();
 
       const mockSingleOverride = vi.fn().mockResolvedValue({
@@ -282,7 +282,7 @@ describe('useTripOffers', () => {
       });
       const mockEqOverride = vi.fn().mockReturnValue({ single: mockSingleOverride });
       const mockSelectOverride = vi.fn().mockReturnValue({ eq: mockEqOverride });
-      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+      (supabase.from as Mock).mockImplementation((table: string) => {
         if (table === 'trip_requests') {
           return { select: mockSelectOverride };
         }
@@ -300,13 +300,13 @@ describe('useTripOffers', () => {
 
       // Clear mocks that would have been called during initial load
       // before calling the function that will trigger new calls.
-      (invokeFlightSearch as vi.Mock).mockClear();
+      (invokeFlightSearch as Mock).mockClear();
       mockTripOffersService.fetchTripOffers.mockClear();
       mockToast.mockClear();
 
       // Re-mock for the specific calls within loadOffers triggered by handleOverrideSearch
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
 
 
       // Action: Override search to ignore duration filter
@@ -340,14 +340,14 @@ describe('useTripOffers', () => {
       });
       const mockEqFlightApiError = vi.fn().mockReturnValue({ single: mockSingleFlightApiError });
       const mockSelectFlightApiError = vi.fn().mockReturnValue({ eq: mockEqFlightApiError });
-      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+      (supabase.from as Mock).mockImplementation((table: string) => {
         if (table === 'trip_requests') {
           return { select: mockSelectFlightApiError };
         }
         return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: null, error: new Error(`Unexpected table '${table}'`) }) };
       });
 
-      (invokeFlightSearch as vi.Mock).mockRejectedValue(searchError);
+      (invokeFlightSearch as Mock).mockRejectedValue(searchError);
 
       mockTripOffersService.fetchTripOffers.mockResolvedValue([]);
       
@@ -390,7 +390,7 @@ describe('useTripOffers', () => {
 
     it('should fall back to existing offers when search fails', async () => {
       const searchError = new Error('Flight search failed');
-      (invokeFlightSearch as vi.Mock).mockRejectedValue(searchError);
+      (invokeFlightSearch as Mock).mockRejectedValue(searchError);
       
       // Mock existing offers available - the hook will call fetchTripOffers twice:
       // Once during normal search, then again during error fallback
@@ -404,14 +404,14 @@ describe('useTripOffers', () => {
       });
       const mockEqFallback = vi.fn().mockReturnValue({ single: mockSingleFallback });
       const mockSelectFallback = vi.fn().mockReturnValue({ eq: mockEqFallback });
-      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+      (supabase.from as Mock).mockImplementation((table: string) => {
         if (table === 'trip_requests') {
           return { select: mockSelectFallback };
         }
         return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: null, error: new Error(`Unexpected table '${table}'`) }) };
       });
 
-      (invokeFlightSearch as vi.Mock).mockRejectedValue(new Error('Flight search failed'));
+      (invokeFlightSearch as Mock).mockRejectedValue(new Error('Flight search failed'));
 
       const { result } = renderHook(() =>
         useTripOffers({ tripId: uniqueFallbackTripId })
@@ -436,7 +436,7 @@ describe('useTripOffers', () => {
       });
       const mockEqSupabaseError = vi.fn().mockReturnValue({ single: mockSingleSupabaseError });
       const mockSelectSupabaseError = vi.fn().mockReturnValue({ eq: mockEqSupabaseError });
-      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+      (supabase.from as Mock).mockImplementation((table: string) => {
         if (table === 'trip_requests') {
           return { select: mockSelectSupabaseError };
         }
@@ -444,7 +444,7 @@ describe('useTripOffers', () => {
       });
 
       // Ensure other mocks don't interfere or are set as neutral if needed
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
       mockTripOffersService.fetchTripOffers.mockResolvedValue([]);
 
       const { result } = renderHook(() =>
@@ -477,11 +477,11 @@ describe('useTripOffers', () => {
       const mockSingleRefresh = vi.fn().mockResolvedValue({ data: { ...mockTripDetails, id: uniqueRefreshTripId, min_duration: 3, max_duration: 7 }, error: null });
       const mockEqRefresh = vi.fn().mockReturnValue({ single: mockSingleRefresh });
       const mockSelectRefresh = vi.fn().mockReturnValue({ eq: mockEqRefresh });
-      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+      (supabase.from as Mock).mockImplementation((table: string) => {
         if (table === 'trip_requests') return { select: mockSelectRefresh };
         return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({data: null, error: new Error("unexpected table")})};
       });
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
 
       const { result } = renderHook(() =>
@@ -494,13 +494,13 @@ describe('useTripOffers', () => {
 
 
       // Clear previous calls from initial load & set up for the refresh call
-      (invokeFlightSearch as vi.Mock).mockClear();
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockClear();
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
 
       mockTripOffersService.fetchTripOffers.mockClear();
 
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
 
       // Trigger refresh wrapped in act
       await act(async () => {
@@ -529,8 +529,12 @@ describe('useTripOffers', () => {
       const uniqueRapidRefreshId = 'test-trip-id-rapid-refresh';
       const mockSingleRapid = vi.fn().mockResolvedValue({ data: { ...mockTripDetails, id: uniqueRapidRefreshId }, error: null });
       const mockEqRapid = vi.fn().mockReturnValue({ single: mockSingleRapid });
-      (supabase.from('trip_requests').select('*').eq as vi.Mock).mockImplementation((col, val) =>
-        (col === 'id' && val === uniqueRapidRefreshId) ? mockEqRapid : { single: vi.fn().mockResolvedValue({data: null, error: new Error("unexpected id")})}
+      // @ts-ignore TS2589: Type instantiation is excessively deep and possibly infinite.
+      ((supabase.from('trip_requests').select('*').eq as Mock) as any).mockImplementation(
+        (columnName: string, value: any) =>
+          (columnName === 'id' && value === uniqueRapidRefreshId)
+            ? mockEqRapid
+            : { single: vi.fn().mockResolvedValue({data: null, error: new Error("unexpected id")})}
       );
       mockToast.mockClear();
 
@@ -573,11 +577,11 @@ describe('useTripOffers', () => {
       const mockSingleRelaxed = vi.fn().mockResolvedValue({ data: { ...mockTripDetails, id: uniqueRelaxedId, min_duration: 3, max_duration: 7 }, error: null });
       const mockEqRelaxed = vi.fn().mockReturnValue({ single: mockSingleRelaxed });
       const mockSelectRelaxed = vi.fn().mockReturnValue({ eq: mockEqRelaxed });
-      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+      (supabase.from as Mock).mockImplementation((table: string) => {
         if (table === 'trip_requests') return { select: mockSelectRelaxed };
         return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({data: null, error: new Error("unexpected table")})};
       });
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
       mockToast.mockClear();
 
@@ -590,10 +594,10 @@ describe('useTripOffers', () => {
       });
 
       // Clear previous calls from initial load
-      (invokeFlightSearch as vi.Mock).mockClear();
+      (invokeFlightSearch as Mock).mockClear();
       mockTripOffersService.fetchTripOffers.mockClear();
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
 
 
       // Trigger relaxed criteria search
@@ -624,11 +628,11 @@ describe('useTripOffers', () => {
       const mockSingleCache = vi.fn().mockResolvedValue({ data: { ...mockTripDetails, id: cachedTripId, min_duration: 3, max_duration: 7 }, error: null });
       const mockEqCache = vi.fn().mockReturnValue({ single: mockSingleCache });
       const mockSelectCache = vi.fn().mockReturnValue({ eq: mockEqCache });
-      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+      (supabase.from as Mock).mockImplementation((table: string) => {
         if (table === 'trip_requests') return { select: mockSelectCache };
         return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({data: null, error: new Error("unexpected table")})};
       });
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
 
       // First render
@@ -640,7 +644,7 @@ describe('useTripOffers', () => {
         expect(result1.current.isLoading).toBe(false);
       }, { timeout: 2000 }); // Increased timeout for initial load
 
-      const firstCallCount = (invokeFlightSearch as vi.Mock).mock.calls.length;
+      const firstCallCount = (invokeFlightSearch as Mock).mock.calls.length;
       expect(firstCallCount).toBeGreaterThan(0);
       unmount();
 
@@ -657,7 +661,7 @@ describe('useTripOffers', () => {
 
 
       // Should not have made additional API calls for flight search
-      expect((invokeFlightSearch as vi.Mock).mock.calls.length).toBe(firstCallCount);
+      expect((invokeFlightSearch as Mock).mock.calls.length).toBe(firstCallCount);
       expect(result2.current.offers).toHaveLength(1);
     });
   });
@@ -709,7 +713,7 @@ describe('useTripOffers', () => {
       // Clear all mocks to ensure we get a fresh start
       vi.clearAllMocks();
       mockTripOffersService.fetchTripOffers.mockResolvedValue(offersOutsideDuration);
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
 
       const { result } = renderHook(() =>
         useTripOffers({ tripId: 'test-trip-id-new' })
@@ -733,7 +737,7 @@ describe('useTripOffers', () => {
       // Clear mocks and setup for empty offers
       vi.clearAllMocks();
       mockTripOffersService.fetchTripOffers.mockResolvedValue([]);
-      (invokeFlightSearch as vi.Mock).mockResolvedValue(mockFlightSearchResponse);
+      (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
 
       const { result } = renderHook(() =>
         useTripOffers({ tripId: 'test-trip-id-empty' })
