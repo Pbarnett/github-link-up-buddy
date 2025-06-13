@@ -1,210 +1,159 @@
 
-import { Control, useFormContext } from "react-hook-form";
-import { usePaymentMethods } from "@/hooks/usePaymentMethods";
-import { useTravelerInfoCheck } from "@/hooks/useTravelerInfoCheck";
-import { useToast } from "@/components/ui/use-toast";
-import { 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel 
-} from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
-import TripNumberField from "../TripNumberField";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CircleAlertIcon, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Control, useWatch } from "react-hook-form";
+import { FormValues } from "@/types/form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Settings, DollarSign, CreditCard } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 
 interface AutoBookingSectionProps {
-  control: Control<any>;
+  control: Control<FormValues>;
+  mode?: 'manual' | 'auto';
 }
 
-const AutoBookingSection = ({ control }: AutoBookingSectionProps) => {
-  const { watch, setValue, getValues } = useFormContext();
+const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
   const { data: paymentMethods, isLoading: isLoadingPaymentMethods } = usePaymentMethods();
-  const {
-    hasTravelerInfo,
-    isLoading: isLoadingTravelerInfo,
-  } = useTravelerInfoCheck();
-  const { toast } = useToast();
+  
+  // Watch the auto_book_enabled field to conditionally show fields
+  const autoBookEnabled = useWatch({
+    control,
+    name: "auto_book_enabled",
+  });
 
-  const autoBookEnabled = watch("auto_book_enabled");
-  console.log("auto_booking_enabled watched value at definition:", autoBookEnabled);
-  const selectedPaymentMethodId = watch("preferred_payment_method_id");
-
-  const handleAutoBookToggle = async (enabled: boolean) => {
-    console.log("handleAutoBookToggle called with enabled:", enabled);
-    if (enabled) {
-      if (isLoadingTravelerInfo || isLoadingPaymentMethods) {
-        toast({
-          title: "Checking requirements...",
-          description: "Please wait while we verify auto-booking eligibility.",
-        });
-        setValue("auto_book_enabled", false);
-        console.log("auto_booking_enabled after prerequisites setValue(false):", getValues().auto_book_enabled);
-        return;
-      }
-
-      let canEnable = true;
-      let message = "";
-
-      if (!hasTravelerInfo) {
-        canEnable = false;
-        message = "Traveler Information Required. Please complete a manual booking first to save your traveler information for auto-booking.";
-      } else if (!paymentMethods || paymentMethods.length === 0) {
-        canEnable = false;
-        message = "Payment Method Required. Please add a payment method to your wallet before enabling auto-booking.";
-      }
-
-      if (!canEnable) {
-        toast({
-          title: "Auto-Booking Disabled",
-          description: message,
-          variant: "destructive",
-        });
-        setValue("auto_book_enabled", false);
-        console.log("auto_booking_enabled after prerequisites setValue(false):", getValues().auto_book_enabled);
-        return;
-      }
-    }
-    setValue("auto_book_enabled", enabled, { shouldValidate: true });
-    console.log("auto_booking_enabled after setValue in toggle:", getValues().auto_book_enabled);
-  };
-
-  const showMissingTravelerInfoAlert = !isLoadingTravelerInfo && !hasTravelerInfo;
-  const showMissingPaymentMethodsAlert = !isLoadingPaymentMethods && (!paymentMethods || paymentMethods.length === 0);
-  const showSelectPaymentMethodAlert = autoBookEnabled && !selectedPaymentMethodId && paymentMethods && paymentMethods.length > 0;
+  // For auto mode, auto-booking should be enabled and section should be expanded
+  const isAutoMode = mode === 'auto';
+  const shouldShowFields = isAutoMode || autoBookEnabled;
 
   return (
-    <div className="space-y-4">
-      <FormField
-        control={control}
-        name="auto_book_enabled"
-        render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-            <div className="space-y-0.5">
-              <FormLabel>Enable Auto-Booking</FormLabel>
-              <FormDescription>
-                Automatically book flights when they match your criteria.
-              </FormDescription>
-            </div>
-            <FormControl>
-              {(() => { // IIFE to allow statement before expression
-                console.log("auto_booking_enabled field.value before Switch:", field.value);
-                return (
-              <Switch
-                checked={field.value}
-                onCheckedChange={handleAutoBookToggle}
-                disabled={isLoadingTravelerInfo || isLoadingPaymentMethods}
-              />
-                );
-              })()}
-            </FormControl>
-          </FormItem>
-        )}
-      />
-
-      {(isLoadingTravelerInfo || isLoadingPaymentMethods) && autoBookEnabled && (
-         <Alert>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <AlertTitle>Loading Prerequisites</AlertTitle>
-            <AlertDescription>
-              Verifying traveler information and payment methods...
-            </AlertDescription>
-          </Alert>
-      )}
-
-      {showMissingTravelerInfoAlert && (
-        <Alert>
-          <CircleAlertIcon className="h-4 w-4" />
-          <AlertTitle>Traveler Information Needed</AlertTitle>
-          <AlertDescription>
-            To use auto-booking, please complete at least one manual booking to save your traveler details.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {showMissingPaymentMethodsAlert && (
-         <Alert>
-          <CircleAlertIcon className="h-4 w-4" />
-          <AlertTitle>Payment Method Needed</AlertTitle>
-          <AlertDescription>
-            Please add a payment method to your wallet to enable auto-booking.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {showSelectPaymentMethodAlert && (
-         <Alert>
-          <CircleAlertIcon className="h-4 w-4" />
-          <AlertTitle>Select Payment Method</AlertTitle>
-          <AlertDescription>
-            Please select a payment method below for auto-booking.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {autoBookEnabled && !isLoadingTravelerInfo && hasTravelerInfo && (
-        <>
-          <TripNumberField 
-            name="max_price"
-            label="Maximum Price (USD) for Auto-Booking"
-            description="We'll only auto-book flights under this price"
-            placeholder="Enter maximum price"
-            prefix="$"
-            control={control}
-          />
-
+    <Card className="border border-gray-200">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-2">
+          <Settings className="h-5 w-5 text-blue-600" />
+          <CardTitle className="text-lg">Auto-Booking</CardTitle>
+        </div>
+        <p className="text-sm text-gray-600">
+          {isAutoMode 
+            ? "Configure automatic booking when flights match your criteria"
+            : "Automatically book flights when they meet your criteria"
+          }
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Auto-booking toggle - hidden in auto mode since it's always enabled */}
+        {!isAutoMode && (
           <FormField
             control={control}
-            name="preferred_payment_method_id"
+            name="auto_book_enabled"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Payment Method for Auto-Booking</FormLabel>
-                <Select
-                  disabled={isLoadingPaymentMethods || !paymentMethods || paymentMethods.length === 0}
-                  onValueChange={field.onChange}
-                  value={field.value || ""}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {paymentMethods && paymentMethods.map((method) => (
-                      <SelectItem key={method.id} value={method.id}>
-                        {method.brand} •••• {method.last4}
-                        {method.is_default && " (Default)"}
-                        {method.nickname ? ` (${method.nickname})` : ''}
-                      </SelectItem>
-                    ))}
-                     {(!paymentMethods || paymentMethods.length === 0) && !isLoadingPaymentMethods && (
-                        <div className="p-2 text-sm text-muted-foreground">No payment methods found.</div>
-                     )}
-                     {isLoadingPaymentMethods && (
-                        <div className="p-2 text-sm text-muted-foreground flex items-center">
-                            <Loader2 className="h-4 w-4 animate-spin mr-2"/> Loading...
-                        </div>
-                     )}
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Select the payment method for auto-booking.
-                </FormDescription>
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base font-medium">
+                    Enable Auto-Booking
+                  </FormLabel>
+                  <div className="text-sm text-gray-600">
+                    Automatically book when criteria are met
+                  </div>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
               </FormItem>
             )}
           />
-        </>
-      )}
-    </div>
+        )}
+
+        {/* Show additional fields when auto-booking is enabled */}
+        {shouldShowFields && (
+          <div className="space-y-4 border-t pt-4">
+            {/* Maximum Price */}
+            <FormField
+              control={control}
+              name="max_price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Maximum Price {isAutoMode && <span className="text-red-500">*</span>}
+                  </FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                      <Input
+                        type="number"
+                        placeholder="2000"
+                        className="pl-8"
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                      />
+                    </div>
+                  </FormControl>
+                  <div className="text-xs text-gray-500">
+                    We'll only book flights under this price
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Payment Method Selection */}
+            <FormField
+              control={control}
+              name="preferred_payment_method_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Payment Method {isAutoMode && <span className="text-red-500">*</span>}
+                  </FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value || ""}
+                    disabled={isLoadingPaymentMethods}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={
+                          isLoadingPaymentMethods 
+                            ? "Loading payment methods..." 
+                            : paymentMethods.length === 0
+                              ? "No payment methods available"
+                              : "Select payment method"
+                        } />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {paymentMethods.map((method) => (
+                        <SelectItem key={method.id} value={method.id}>
+                          <div className="flex items-center gap-2">
+                            <span className="capitalize">{method.brand}</span>
+                            <span>•••• {method.last4}</span>
+                            {method.is_default && (
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Default</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {paymentMethods.length === 0 && !isLoadingPaymentMethods && (
+                    <div className="text-xs text-amber-600">
+                      You'll need to add a payment method before enabling auto-booking
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
