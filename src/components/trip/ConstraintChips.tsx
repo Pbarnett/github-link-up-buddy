@@ -39,8 +39,18 @@ const ConstraintChips: React.FC<ConstraintChipsProps> = ({
       {/* Non-stop only toggle chip */}
       <Badge 
         variant={nonStopOnly ? "default" : "outline"}
-        className="flex items-center gap-1 cursor-pointer hover:bg-opacity-80 transition-colors"
+        className="flex items-center gap-1 cursor-pointer hover:bg-opacity-80 transition-colors ring-focus"
         onClick={onToggleNonStop}
+        tabIndex={0}
+        role="button"
+        aria-pressed={nonStopOnly}
+        aria-label={`Non-stop flights ${nonStopOnly ? 'enabled' : 'disabled'}`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggleNonStop();
+          }
+        }}
       >
         {nonStopOnly ? (
           <ToggleRight className="h-3 w-3" />
