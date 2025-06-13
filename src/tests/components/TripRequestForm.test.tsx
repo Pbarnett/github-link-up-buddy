@@ -1,6 +1,6 @@
 
 /// <reference types="vitest/globals" />
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
@@ -50,8 +50,8 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
     vi.clearAllMocks();
 
     // Setup default mock implementations for this suite if needed
-    (useCurrentUser as vi.Mock).mockReturnValue({ user: { id: 'test-user-id' } });
-    (useNavigate as vi.Mock).mockReturnValue(vi.fn());
+    (useCurrentUser as Mock).mockReturnValue({ user: { id: 'test-user-id' } });
+    (useNavigate as Mock).mockReturnValue(vi.fn());
   });
   // --- Tests for FilterTogglesSection functionality within TripRequestForm ---
 
@@ -106,24 +106,24 @@ describe('TripRequestForm - Submission Logic', () => {
     vi.clearAllMocks();
 
     // Mock current user
-    (useCurrentUser as vi.Mock).mockReturnValue({
+    (useCurrentUser as Mock).mockReturnValue({
       user: { id: 'test-user-id', email: 'test@example.com' },
     });
 
     // Mock navigate
-    (useNavigate as vi.Mock).mockReturnValue(vi.fn());
+    (useNavigate as Mock).mockReturnValue(vi.fn());
   });
 
   it('should populate destination_location_code from destination_airport if omitted', async () => {
     const mockInsert = vi.fn().mockResolvedValue({ data: [{ id: 'new-trip-id' }], error: null });
-    (supabase.from as vi.Mock).mockReturnValue({
+    (supabase.from as Mock).mockReturnValue({
       insert: mockInsert,
     });
     // const mockToast = vi.fn(); // This was unused due to mockImplementation below
     // (toast as vi.Mock).mockReturnValue(mockToast);
 
     const mockToastFn = vi.fn();
-    (toast as vi.Mock).mockImplementation((options) => {
+    (toast as Mock).mockImplementation((options) => {
         mockToastFn(options); // Capture toast options
         return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() }; // Return structure expected by use-toast
     });
@@ -247,9 +247,9 @@ const fillBaseFormFields = async () => {
 
 
 describe('TripRequestForm - Auto-Booking Logic', () => {
-  let mockNavigate: vi.Mock;
-  let mockToastFn: vi.Mock;
-  let mockInsert: vi.Mock;
+  let mockNavigate: Mock;
+  let mockToastFn: Mock;
+  let mockInsert: Mock;
   // Mock hooks from AutoBookingSection
   const mockUsePaymentMethods = vi.mocked(require('@/hooks/usePaymentMethods').usePaymentMethods);
   const mockUseTravelerInfoCheck = vi.mocked(require('@/hooks/useTravelerInfoCheck').useTravelerInfoCheck);
@@ -258,21 +258,21 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    (useCurrentUser as vi.Mock).mockReturnValue({
+    (useCurrentUser as Mock).mockReturnValue({
       user: { id: 'test-user-id', email: 'test@example.com' },
     });
 
     mockNavigate = vi.fn();
-    (useNavigate as vi.Mock).mockReturnValue(mockNavigate);
+    (useNavigate as Mock).mockReturnValue(mockNavigate);
 
     mockToastFn = vi.fn();
-    (toast as vi.Mock).mockImplementation((options) => {
+    (toast as Mock).mockImplementation((options) => {
       mockToastFn(options);
       return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() };
     });
 
     mockInsert = vi.fn().mockResolvedValue({ data: [{ id: 'new-trip-id' }], error: null });
-    (supabase.from as vi.Mock).mockReturnValue({ insert: mockInsert });
+    (supabase.from as Mock).mockReturnValue({ insert: mockInsert });
 
     // Default mocks for auto-booking prerequisites
     mockUsePaymentMethods.mockReturnValue({
