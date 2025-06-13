@@ -66,6 +66,11 @@ const searchCache = new Map<string, { offers: Offer[], timestamp: number, tripDe
 const poolsCache = new Map<string, { pools: { pool1: ScoredOffer[], pool2: ScoredOffer[], pool3: ScoredOffer[] }, timestamp: number, budget: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Export for testing purposes
+export const clearCache = () => {
+  searchCache.clear();
+};
+
 const mapTripRequestToTripDetails = (dbTripRequest: TripRequestFromDB): TripDetails => {
   if (!dbTripRequest.id) {
     logger.error("DB trip request is missing an ID.", dbTripRequest);
