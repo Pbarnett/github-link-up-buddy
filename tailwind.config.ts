@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -92,5 +93,33 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+		require("tailwindcss-animate"),
+		function({ addUtilities }: any) {
+			const newUtilities = {
+				'.ring-focus': {
+					'&:focus-visible': {
+						outline: 'none',
+						'box-shadow': '0 0 0 2px hsl(var(--ring))',
+						'border-radius': 'calc(var(--radius) - 2px)'
+					}
+				},
+				'.skip-link': {
+					position: 'absolute',
+					top: '-40px',
+					left: '6px',
+					background: 'hsl(var(--primary))',
+					color: 'hsl(var(--primary-foreground))',
+					padding: '8px 16px',
+					'text-decoration': 'none',
+					'border-radius': '4px',
+					'z-index': '1000',
+					'&:focus': {
+						top: '6px'
+					}
+				}
+			}
+			addUtilities(newUtilities)
+		}
+	],
 } satisfies Config;
