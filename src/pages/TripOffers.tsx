@@ -127,7 +127,7 @@ export default function TripOffers() {
           });
         }
       }
-      
+
       if (newOffers.length === 0 && pageToLoad === 0) {
         toast({
           title: "No flight offers found",
@@ -158,37 +158,37 @@ export default function TripOffers() {
       setIsFetchingNextPage(false);
     }
   };
-  
+
   // Main useEffect for loading offers when tripId or primary filters change.
   useEffect(() => {
     if (tripId) { // Ensure tripId is present before attempting to load.
-        setCurrentPage(0); 
-        setOffers([]); 
-        setHasMore(true); 
+        setCurrentPage(0);
+        setOffers([]);
+        setHasMore(true);
         setTripDetails(null); // Force re-fetch of trip details for new filter sets
         loadOffers(0, ignoreFilter, usedRelaxedCriteria);
     }
   // ignoreFilter and usedRelaxedCriteria changes will trigger a page 0 reload.
-  }, [tripId, ignoreFilter, usedRelaxedCriteria]); 
+  }, [tripId, ignoreFilter, usedRelaxedCriteria]);
 
 
   const refreshOffers = async () => {
     if (!tripId) return;
-    setIsRefreshing(true); 
+    setIsRefreshing(true);
     setCurrentPage(0);
     setOffers([]);
     setHasMore(true);
     setTripDetails(null); // Force re-fetch of trip details
     try {
       // When refreshing, use the current state of ignoreFilter and usedRelaxedCriteria
-      await loadOffers(0, ignoreFilter, usedRelaxedCriteria); 
+      await loadOffers(0, ignoreFilter, usedRelaxedCriteria);
     } finally {
       setIsRefreshing(false);
     }
   };
   
   const handleOverrideSearch = () => {
-    setIgnoreFilter(true); 
+    setIgnoreFilter(true);
     setUsedRelaxedCriteria(false); // Override should disable relaxed criteria.
     // useEffect will handle reloading from page 0.
     // Toast message for overrideFilter is now handled inside loadOffers if pageToLoad === 0

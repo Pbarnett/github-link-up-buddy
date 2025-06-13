@@ -101,11 +101,11 @@ const TripConfirm = () => {
           // Success path: Booking processing initiated successfully by the edge function.
           // The actual booking status ('done' or 'failed') will still come via realtime or subsequent fetch.
           // However, per instructions, we immediately update UI to 'done' and show success toast.
-          updateBookingStatusMessage("done"); 
+          updateBookingStatusMessage("done");
           toast({
             title: "Booking Confirmed!",
             description: "Your flight booking has been successfully processed. Redirecting to dashboard...",
-            variant: "default", 
+            variant: "default",
           });
           // Note: The actual redirect to dashboard is handled by updateBookingStatusMessage("done")
 
@@ -219,15 +219,15 @@ const TripConfirm = () => {
     try { // Outer try for the finally block
       try { // Inner try for the invoke call and error handling
         // Assuming 'tripId' from the URL search parameter 'id' is the intended bookingRequestId.
-        // This 'id' is currently parsed as offer.id. If 'bookingRequestId' needs to be the 
-        // actual trip_request.id, then the navigation to this page or the data available 
+        // This 'id' is currently parsed as offer.id. If 'bookingRequestId' needs to be the
+        // actual trip_request.id, then the navigation to this page or the data available
         // to this component needs to be adjusted to provide the correct trip_request_id.
-        const tripIdFromParams = searchParams.get("id"); 
+        const tripIdFromParams = searchParams.get("id");
 
         // Call the create-booking-request edge function
         const res = await supabase.functions.invoke<{ url: string }>("create-booking-request", {
-          body: { 
-            userId, 
+          body: {
+            userId,
             offerId: offer!.id, // offer is checked for null just before this block
             // Assuming 'bookingRequestId' corresponds to the 'tripId' (trip_request_id) for this context.
             // Per instructions, using searchParams.get("id") for bookingRequestId.
@@ -235,11 +235,11 @@ const TripConfirm = () => {
             bookingRequestId: tripIdFromParams
           }
         });
-        
+
         if (res.error || !res.data?.url) {
           throw new Error(res.error?.message ?? "No URL found in response");
         }
-        
+
         // If we reach here, it's a success with a URL
         window.location.href = res.data.url;
       } catch (e: unknown) {
