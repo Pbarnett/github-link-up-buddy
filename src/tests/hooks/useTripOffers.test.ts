@@ -1,7 +1,8 @@
 /// <reference types="vitest/globals" />
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useTripOffers, TripDetails, clearCache } from '@/hooks/useTripOffers';
+import { useTripOffers, clearCache } from '@/hooks/useTripOffersLegacy';
+import { TripDetails } from '@/hooks/useTripOffers';
 import * as tripOffersService from '@/services/tripOffersService';
 import * as flightSearchApi from '@/services/api/flightSearchApi';
 import { toast } from '@/components/ui/use-toast';
