@@ -51,6 +51,8 @@ export interface PoolsHookResult {
   pool2: ScoredOffer[];
   pool3: ScoredOffer[];
   budget: number;
+  maxBudget: number;
+  dateRange: { from: string; to: string };
   bumpsUsed: number;
   bumpBudget(): void;
   mode: 'manual' | 'auto';
@@ -100,6 +102,13 @@ export const useTripOffersPools = ({ tripId }: { tripId: string | null }): Pools
   const maxBudget = useMemo(() => {
     return tripDetails?.max_price || budget * 3;
   }, [tripDetails?.max_price, budget]);
+
+  const dateRange = useMemo(() => {
+    return {
+      from: tripDetails?.earliest_departure || "",
+      to: tripDetails?.latest_departure || "",
+    };
+  }, [tripDetails?.earliest_departure, tripDetails?.latest_departure]);
 
   const bumpBudget = useCallback(() => {
     if (bumpsUsed >= 3 || budget >= maxBudget) return;
@@ -193,6 +202,8 @@ export const useTripOffersPools = ({ tripId }: { tripId: string | null }): Pools
   return {
     ...pools,
     budget,
+    maxBudget,
+    dateRange,
     bumpsUsed,
     bumpBudget,
     mode,
