@@ -99,26 +99,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-/* Skip link styles */
-.skip-link {
-  @apply absolute left-4 top-4 z-50 bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium;
-  transform: translateY(-100vh);
-  transition: transform 0.2s ease-in-out;
-}
-
-.skip-link:focus {
-  transform: translateY(0);
-}
-
-/* Global focus ring utility */
-.ring-focus {
-  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .skip-link {
-    transition: none;
-  }
-}
