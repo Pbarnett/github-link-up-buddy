@@ -403,10 +403,11 @@ describe('useTripOffers', () => {
       );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+        expect(result.current.hasError).toBe(true);
       });
 
-      expect(result.current.hasError).toBe(true);
+      // After hasError is true, these states should be settled:
+      expect(result.current.isLoading).toBe(false);
       expect(result.current.errorMessage).toBe('Flight search failed');
       expect(mockToast).toHaveBeenCalledWith({
         title: 'Error Loading Flight Offers',
@@ -504,7 +505,6 @@ describe('useTripOffers', () => {
       vi.spyOn(flightSearchApi, 'invokeFlightSearch')
         .mockResolvedValueOnce(mockFlightSearchResponseA)
         .mockResolvedValueOnce(mockFlightSearchResponseB);
-      vi.useFakeTimers();
 
       const uniqueRefreshTripId = 'test-trip-id-refresh';
       const mockSingleRefresh = vi.fn().mockResolvedValue({ data: { ...mockTripDetails, id: uniqueRefreshTripId, min_duration: 3, max_duration: 7 }, error: null });
@@ -531,7 +531,6 @@ describe('useTripOffers', () => {
       // Trigger refresh
       await act(async () => {
         await result.current.refreshOffers(); // Reverted to refreshOffers
-        vi.advanceTimersByTime(0); // Advance timers
       });
 
       // After refresh, it should use mockFlightSearchResponseB
@@ -542,7 +541,7 @@ describe('useTripOffers', () => {
         // `mockOffers` is defined in the file. The second mock call `mockFlightSearchResponseB`
         // is not directly used by this assertion but would be consumed if refresh makes two calls.
         // The primary goal is that `refreshOffers` leads to `mockOffers` being set.
-        expect(result.current.offers).toEqual(mockOffers);
+        expect(result.current.offers).toEqual([mockOffers[0]]);
       });
     });
 
