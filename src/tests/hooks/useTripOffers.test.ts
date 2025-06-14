@@ -403,8 +403,10 @@ describe('useTripOffers', () => {
         error: null,
       });
       const mockEqFallback = vi.fn().mockReturnValue({ single: mockSingleFallback });
-      const mockSelectFallback = vi.fn().mockReturnValue({ eq: mockEqFallback });
-      (supabase.from as Mock).mockImplementation((table: string) => {
+
+      const mockSelectFallback = vi.fn().mockReturnValue({ eq: mockSelectFallback });
+      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+
         if (table === 'trip_requests') {
           return { select: mockSelectFallback };
         }
@@ -435,8 +437,10 @@ describe('useTripOffers', () => {
         error: { message: 'Trip not found', code: 'PGRST116', details: '', hint: '' }, // PGRST116: "Invalid response from database" (example)
       });
       const mockEqSupabaseError = vi.fn().mockReturnValue({ single: mockSingleSupabaseError });
-      const mockSelectSupabaseError = vi.fn().mockReturnValue({ eq: mockEqSupabaseError });
-      (supabase.from as Mock).mockImplementation((table: string) => {
+
+      const mockSelectSupabaseError = vi.fn().mockReturnValue({ eq: mockSelectSupabaseError });
+      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+
         if (table === 'trip_requests') {
           return { select: mockSelectSupabaseError };
         }
@@ -576,8 +580,10 @@ describe('useTripOffers', () => {
       const uniqueRelaxedId = 'test-trip-id-relaxed';
       const mockSingleRelaxed = vi.fn().mockResolvedValue({ data: { ...mockTripDetails, id: uniqueRelaxedId, min_duration: 3, max_duration: 7 }, error: null });
       const mockEqRelaxed = vi.fn().mockReturnValue({ single: mockSingleRelaxed });
-      const mockSelectRelaxed = vi.fn().mockReturnValue({ eq: mockEqRelaxed });
-      (supabase.from as Mock).mockImplementation((table: string) => {
+
+      const mockSelectRelaxed = vi.fn().mockReturnValue({ eq: mockSelectRelaxed });
+      (supabase.from as vi.Mock).mockImplementation((table: string) => {
+
         if (table === 'trip_requests') return { select: mockSelectRelaxed };
         return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({data: null, error: new Error("unexpected table")})};
       });
@@ -756,4 +762,3 @@ describe('useTripOffers', () => {
     });
   });
 });
-
