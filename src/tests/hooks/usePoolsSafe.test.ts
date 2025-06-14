@@ -109,7 +109,15 @@ describe('usePoolsSafe', () => {
       expect(result.current.pool1).toHaveLength(2);
       expect(result.current.pool1[0]).toEqual({
         ...mockLegacyResult.offers[0],
-        score: 1
+        score: 1,
+        priceStructure: {
+          base: 500,
+          carryOnFee: 0,
+          total: 500
+        },
+        carryOnIncluded: false,
+        reasons: [],
+        pool: 1
       });
       expect(result.current.pool2).toEqual([]);
       expect(result.current.pool3).toEqual([]);
@@ -160,7 +168,7 @@ describe('usePoolsSafe', () => {
   });
 
   describe('Fallback behavior', () => {
-    it('should map legacy offers to pool1 with score', async () => {
+    it('should map legacy offers to pool1 with complete ScoredOffer structure', async () => {
       const error = new Error('Pools failed');
       mockTripOffers.useTripOffersPools.mockImplementation(() => {
         throw error;
@@ -175,8 +183,30 @@ describe('usePoolsSafe', () => {
       });
 
       expect(result.current.pool1).toEqual([
-        { ...mockLegacyResult.offers[0], score: 1 },
-        { ...mockLegacyResult.offers[1], score: 1 }
+        {
+          ...mockLegacyResult.offers[0],
+          score: 1,
+          priceStructure: {
+            base: 500,
+            carryOnFee: 0,
+            total: 500
+          },
+          carryOnIncluded: false,
+          reasons: [],
+          pool: 1
+        },
+        {
+          ...mockLegacyResult.offers[1],
+          score: 1,
+          priceStructure: {
+            base: 750,
+            carryOnFee: 0,
+            total: 750
+          },
+          carryOnIncluded: false,
+          reasons: [],
+          pool: 1
+        }
       ]);
     });
 
