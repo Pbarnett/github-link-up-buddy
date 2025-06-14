@@ -1,90 +1,92 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import TripNew from "./pages/TripNew";
-import TripOffers from "./pages/TripOffers";
-import TripConfirm from "./pages/TripConfirm";
-import Profile from "./pages/Profile";
-import Wallet from "./pages/Wallet";
-import AuthGuard from "./components/AuthGuard";
-import NotFound from "./pages/NotFound";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
+import SkipLink from "@/components/ui/skip-link";
+import Index from "@/pages/Index";
+import Login from "@/pages/Login";
+import Dashboard from "@/pages/Dashboard";
+import TripNew from "@/pages/TripNew";
+import TripOffers from "@/pages/TripOffers";
+import TripConfirm from "@/pages/TripConfirm";
+import Profile from "@/pages/Profile";
+import Wallet from "@/pages/Wallet";
+import NotFound from "@/pages/NotFound";
+import AuthGuard from "@/components/AuthGuard";
 
 const queryClient = new QueryClient();
 
-const App = () => {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <a href="#main" className="skip-link">
-          Skip to content
-        </a>
         <BrowserRouter>
-          <div id="main">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <AuthGuard>
-                    <Dashboard />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/trip/new"
-                element={
-                  <AuthGuard>
-                    <TripNew />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/trip/offers"
-                element={
-                  <AuthGuard>
-                    <TripOffers />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/trip/confirm"
-                element={
-                  <AuthGuard>
-                    <TripConfirm />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <AuthGuard>
-                    <Profile />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/wallet"
-                element={
-                  <AuthGuard>
-                    <Wallet />
-                  </AuthGuard>
-                }
-              />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+          <SkipLink />
+          <div className="min-h-screen bg-background font-sans antialiased">
+            <main id="main" className="focus:outline-none" tabIndex={-1}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <AuthGuard>
+                      <Dashboard />
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/trip/new"
+                  element={
+                    <AuthGuard>
+                      <TripNew />
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/trip/offers"
+                  element={
+                    <AuthGuard>
+                      <TripOffers />
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/trip/confirm"
+                  element={
+                    <AuthGuard>
+                      <TripConfirm />
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <AuthGuard>
+                      <Profile />
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/wallet"
+                  element={
+                    <AuthGuard>
+                      <Wallet />
+                    </AuthGuard>
+                  }
+                />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
           </div>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;
