@@ -1,7 +1,6 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
-import { useTripOffers, clearCache } from '@/hooks/useTripOffersLegacy';
-import { TripDetails } from '@/hooks/useTripOffers';
+import { useTripOffersPools as useTripOffers, clearUnifiedCache, type TripDetails } from '@/hooks/useTripOffers';
 import * as tripOffersService from '@/services/tripOffersService';
 import * as flightSearchApi from '@/services/api/flightSearchApi';
 import { toast } from '@/components/ui/use-toast';
@@ -112,12 +111,28 @@ const mockFlightSearchResponse = {
   pool3: [],
 };
 
+const mockFlightSearchResponseA: flightSearchApi.FlightSearchResponse = {
+  requestsProcessed: 1, matchesInserted: 1, totalDurationMs: 100, relaxedCriteriaUsed: false, exactDestinationOnly: true, details: [],
+  pool1: [{ id: 'offerA1', score: 10 } as any], // Cast as any to simplify ScoredOffer structure for mock
+  pool2: [],
+  pool3: [],
+  success: true, message: 'Set A'
+};
+
+const mockFlightSearchResponseB: flightSearchApi.FlightSearchResponse = {
+  requestsProcessed: 1, matchesInserted: 1, totalDurationMs: 100, relaxedCriteriaUsed: false, exactDestinationOnly: true, details: [],
+  pool1: [{ id: 'offerB1', score: 20 } as any],
+  pool2: [],
+  pool3: [],
+  success: true, message: 'Set B'
+};
+
 describe('useTripOffers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
     // Clear the cache manually to ensure test isolation
-    clearCache();
+    clearUnifiedCache();
     
     // Setup default mocks
     mockTripOffersService.fetchTripOffers = vi.fn().mockResolvedValue(mockOffers);
@@ -357,7 +372,8 @@ describe('useTripOffers', () => {
         return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: null, error: new Error(`Unexpected table '${table}'`) }) };
       });
 
-      vi.spyOn(flightSearchApi, 'invokeFlightSearch').mockRejectedValue(searchError);
+      clearUnifiedCache(); // Per instructions
+      vi.spyOn(flightSearchApi, 'invokeFlightSearch').mockRejectedValue(searchError); // Already using spyOn
 
       mockTripOffersService.fetchTripOffers.mockResolvedValue([]);
       
@@ -483,8 +499,10 @@ describe('useTripOffers', () => {
 
   describe('Refresh functionality', () => {
     it('should refresh offers when refreshOffers is called', async () => {
-      clearCache(); // Already imported, calls unifiedCache.clear()
-      vi.spyOn(flightSearchApi, 'invokeFlightSearch').mockResolvedValue(mockFlightSearchResponse); // mockFlightSearchResponse is defined in the file
+      clearUnifiedCache();
+      vi.spyOn(flightSearchApi, 'invokeFlightSearch')
+        .mockResolvedValueOnce(mockFlightSearchResponseA)
+        .mockResolvedValueOnce(mockFlightSearchResponseB);
       vi.useFakeTimers();
 
       const uniqueRefreshTripId = 'test-trip-id-refresh';
@@ -495,32 +513,34 @@ describe('useTripOffers', () => {
         if (table === 'trip_requests') return { select: mockSelectRefresh };
         return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({data: null, error: new Error("unexpected table")})};
       });
-      // (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse); // Now handled by spyOn
-      mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
+      mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers); // This might be overridden by pools logic if useTripOffersPools is used
 
       const { result } = renderHook(() =>
-        useTripOffers({ tripId: uniqueRefreshTripId })
+        useTripOffers({ tripId: uniqueRefreshTripId }) // This is useTripOffersPools
       );
 
-      // Initial load completes
+      // Initial load will use mockFlightSearchResponseA due to the spy.
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
+        // Initial load should use mockFlightSearchResponseA
+        // Assuming useTripOffersPools (aliased as useTripOffers) populates pool1 from invokeFlightSearch result
+        // expect(result.current.pool1).toEqual([{ id: 'offerA1', score: 10 }]);
       });
 
-      // The spyOn for invokeFlightSearch is already set up for the refresh.
-      // mockTripOffersService is also set.
-
-      // Trigger refresh wrapped in act
+      // Trigger refresh
       await act(async () => {
-        await result.current.refreshOffers();
+        await result.current.refreshPools(); // Changed from refreshOffers
         vi.advanceTimersByTime(0); // Advance timers
       });
 
-      // New assertion
+      // After refresh, it should use mockFlightSearchResponseB
       await waitFor(() => {
-        expect(result.current.offers).toEqual(mockOffers); // mockOffers is defined in the file
+        // Assertions for useTripOffersPools (PoolsHookResult)
+        // The offers are now in pools, e.g., result.current.pool1, result.current.pool2 etc.
+        // The mockFlightSearchResponseB has pool1: [{ id: 'offerB1', score: 20 } as any]
+        // The test should assert based on the structure of PoolsHookResult and mockFlightSearchResponseB
+        expect(result.current.pool1).toEqual([{ id: 'offerB1', score: 20 }]);
       });
-      // Existing waitFor blocks for isRefreshing and toHaveBeenCalledWith are removed/commented out.
     });
 
     it('should prevent rapid successive refreshes', async () => {
