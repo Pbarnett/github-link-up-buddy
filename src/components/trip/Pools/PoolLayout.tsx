@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useTripOffersPools } from '@/hooks/useTripOffers';
+import { usePoolsSafe } from '@/hooks/usePoolsSafe';
 import { getPoolDisplayName } from '@/utils/getPoolDisplayName';
 import PoolSection from './PoolSection';
 import TripOfferCard from '../TripOfferCard';
@@ -18,8 +18,9 @@ const PoolLayout: React.FC<PoolLayoutProps> = ({ tripId }) => {
     mode,
     isLoading,
     hasError,
-    errorMessage
-  } = useTripOffersPools({ tripId });
+    errorMessage,
+    isUsingFallback
+  } = usePoolsSafe({ tripId });
 
   if (isLoading) {
     return (
@@ -43,6 +44,23 @@ const PoolLayout: React.FC<PoolLayoutProps> = ({ tripId }) => {
   }
 
   const pools = [pool1, pool2, pool3];
+  
+  // If using fallback, show only pool1 with all offers
+  if (isUsingFallback) {
+    return (
+      <div className="space-y-6">
+        <PoolSection
+          name="All Available Offers"
+          count={pool1.length}
+          defaultOpen={true}
+        >
+          {pool1.map((offer) => (
+            <TripOfferCard key={offer.id} offer={offer} />
+          ))}
+        </PoolSection>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">

@@ -5,12 +5,17 @@ import PoolLayout from "@/components/trip/Pools/PoolLayout";
 import PoolOfferControls from "@/components/trip/PoolOfferControls";
 import TripOfferDetailsCard from "@/components/trip/TripOfferDetailsCard";
 import { TripDetails } from "@/hooks/useTripOffers";
+import { usePoolsSafe } from "@/hooks/usePoolsSafe";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 export default function TripOffersWithPools() {
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get("id");
   const location = useLocation();
   const initialTripDetails = location.state?.tripDetails as TripDetails | undefined;
+
+  const { isUsingFallback } = usePoolsSafe({ tripId });
 
   if (!tripId) {
     return (
@@ -30,6 +35,15 @@ export default function TripOffersWithPools() {
         ignoreFilter={false}
         usedRelaxedCriteria={false}
       />
+      
+      {isUsingFallback && (
+        <Alert className="w-full max-w-4xl mt-4 mb-2">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Using simplified view due to loading issues. All offers are shown in a single list.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div className="w-full max-w-4xl mt-6 space-y-6">
         <PoolOfferControls tripId={tripId} />
