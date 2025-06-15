@@ -193,17 +193,20 @@ serve(async (req: Request) => {
           continue;
         }
         
-        let offers;
+        let searchResult;
         try {
           // Use the enhanced API to get flight offers with multiple search strategies
-          offers = await searchOffers(searchParams, request.id);
-          console.log(`[flight-search] Request ${request.id}: Found ${offers.length} transformed offers from API (exact destination only)`);
+          searchResult = await searchOffers(searchParams, request.id);
+          console.log(`[flight-search] Request ${request.id}: Found ${searchResult.dbOffers ? searchResult.dbOffers.length : 'undefined'} transformed offers from API (exact destination only)`);
         } catch (apiError) {
           console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
           continue;
         }
 
+        // Extract offers from the search result
+        const offers = searchResult?.dbOffers || [];
+        
         // Filter offers to ensure they match the EXACT destination airport only
         const exactDestinationOffers = offers.filter(offer => {
           const offerDestination = offer.destination_airport;
@@ -250,12 +253,7 @@ serve(async (req: Request) => {
           finalFilteredOffers.push({
             ...offer, // Spread the original offer
             selected_seat_type: seatType,
-            // Ensure baggage_included and nonstop_match are part of the offer object by now,
-            // potentially defaulted if not provided by searchOffers.
-            baggage_included: offer.baggage_included !== undefined ? offer.baggage_included : false,
-            nonstop_match: offer.nonstop_match !== undefined ? offer.nonstop_match : false,
             trip_request_id: request.id,
-            notified: false, // Default for new offers
           });
         }
         // --- End of new filtering logic ---
