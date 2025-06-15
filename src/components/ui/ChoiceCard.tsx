@@ -30,21 +30,21 @@ const ChoiceCard = ({
   return (
     <Card 
       className={cn(
-        "relative overflow-hidden border-2 hover:border-accent-analyst hover:shadow-lg transition-all duration-200 cursor-pointer group focus-within:ring-2 focus-within:ring-accent-analyst focus-within:ring-offset-2 bg-card-analyst max-w-sm mx-auto",
+        "relative overflow-hidden border border-border hover:border-primary hover:shadow-lg transition-all duration-200 cursor-pointer group focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 bg-card max-w-sm mx-auto",
         "mode-card-hover",
         className
       )}
     >
       <CardHeader className="pb-4">
         <div className="flex items-start gap-4 mb-3">
-          <div className="p-3 bg-accent-fade rounded-xl group-hover:bg-accent-fade transition-colors">
+          <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/15 transition-colors">
             {icon}
           </div>
           <div className="flex-1">
-            <CardTitle className="text-xl font-semibold analyst-text-primary mb-2">
+            <CardTitle className="text-xl font-semibold text-card-foreground mb-2">
               {title}
             </CardTitle>
-            <CardDescription className="text-base analyst-text-muted leading-relaxed">
+            <CardDescription className="text-base text-muted-foreground leading-relaxed prose-analyst">
               {description}
             </CardDescription>
           </div>
@@ -56,12 +56,9 @@ const ChoiceCard = ({
         </div>
         <Button 
           onClick={onClick}
-          variant={buttonVariant}
+          variant={buttonVariant === 'default' ? 'default' : 'analyst-secondary'}
           className={cn(
-            "w-full font-medium py-3 h-11 transform hover:scale-[1.03] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2",
-            buttonVariant === 'default' 
-              ? "bg-primary hover:bg-primary/90 text-white focus:ring-primary" 
-              : "bg-accent-analyst hover:bg-accent-analyst/90 text-black focus:ring-accent-analyst"
+            "w-full font-medium py-3 h-11 transform hover:scale-[1.03] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           )}
           aria-describedby={ariaDescribedBy}
         >
