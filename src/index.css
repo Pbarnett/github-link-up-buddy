@@ -56,7 +56,29 @@
     --success: #10b981;
   }
 
+  /* ===== Parker Flight – Autopilot Analyst override ===== */
   [data-theme="analyst"] {
+    /* Surfaces */
+    --background: 18 18 18;
+    --card: 31 31 31;
+    --card-foreground: 224 224 224;
+
+    /* Text */
+    --foreground: 224 224 224;
+    --muted: 144 144 144;
+
+    /* Accent */
+    --primary: 166 100 79;           /* teal #00FFC6 */
+    --primary-foreground: 13 13 13;  /* #0D0D0D */
+
+    /* Borders & subtle lines */
+    --border: 42 42 42;              /* #2A2A2A */
+
+    /* Remove legacy browns/golds */
+    --ring: var(--primary);
+    --secondary: var(--card);
+    --secondary-foreground: var(--foreground);
+
     /* Autopilot Analyst Dark Theme Tokens */
     --bg-surface: #121212;
     --bg-card: #1F1F1F;
@@ -68,24 +90,10 @@
     --error: #FF5964;
     --success: #34D399;
 
-    /* Override existing Shadcn tokens for dark theme */
-    --background: 18 18 18;
-    --foreground: 224 224 224;
-    --card: 31 31 31;
-    --card-foreground: 224 224 224;
+    /* Additional overrides */
     --popover: 31 31 31;
     --popover-foreground: 224 224 224;
-    --primary: 166 100 79;
-    --primary-foreground: 18 18 18;
-    --secondary: 42 42 42;
-    --secondary-foreground: 224 224 224;
-    --muted: 42 42 42;
-    --muted-foreground: 144 144 144;
-    --accent: 166 100 79;
-    --accent-foreground: 18 18 18;
-    --border: 42 42 42;
     --input: 42 42 42;
-    --ring: 166 100 79;
   }
 
   .dark {
@@ -201,6 +209,11 @@
 
   .analyst-accent {
     color: var(--accent);
+  }
+
+  /* Global Prose Utility */
+  .prose-analyst {
+    @apply text-foreground leading-[1.6] text-[15px] md:text-[15px];
   }
 
   /* Typography scale utilities */
