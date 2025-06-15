@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +21,7 @@ import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import TripDurationInputs from "./sections/TripDurationInputs";
-import AutoBookingSection from "./sections/AutoBookingSection.tsx";
+import AutoBookingSection from "./sections/AutoBookingSection";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -33,7 +32,7 @@ import {
   fetchTripRequest,
   createTripRequest,
   updateTripRequest,
-} from "@/services/tripService"; // <-- ADDED
+} from "@/services/tripService";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -299,4 +298,3 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
 };
 
 export default TripRequestForm;
-
