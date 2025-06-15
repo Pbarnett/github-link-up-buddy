@@ -61,17 +61,10 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
 
   useEffect(() => {
     if (tripRequestId) {
-      const fetchTripDetails = async () => {
+      const fetchData = async () => {
         setIsLoadingDetails(true);
         try {
-          const { data: tripData, error } = await supabase
-            .from("trip_requests")
-            .select("*")
-            .eq("id", tripRequestId)
-            .single<TripRequestFromDB>();
-
-          if (error) throw error;
-
+          const tripData = await fetchTripRequest(tripRequestId);
           if (tripData) {
             const { nycAirports, otherAirport } = categorizeAirports(tripData.departure_airports);
             form.reset({
@@ -92,87 +85,16 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
             });
           }
         } catch (err) {
-          const error = err as Error | PostgrestError;
-          toast({
-            title: "Error fetching trip details",
-            description: error.message || "Failed to load existing trip data.",
-            variant: "destructive",
-          });
+          // Error toast already handled in service
         } finally {
           setIsLoadingDetails(false);
         }
       };
-      fetchTripDetails();
+      fetchData();
     } else {
       form.reset(form.formState.defaultValues);
     }
   }, [tripRequestId, form]);
-
-  const createTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
-    if (!userId) throw new Error("You must be logged in to create a trip request.");
-    const tripRequestData = {
-      user_id: userId,
-      destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport, // Add this field
-      departure_airports: formData.departure_airports || [],
-      earliest_departure: formData.earliestDeparture.toISOString(),
-      latest_departure: formData.latestDeparture.toISOString(),
-      min_duration: formData.min_duration,
-      max_duration: formData.max_duration,
-      budget: formData.budget,
-      nonstop_required: formData.nonstop_required ?? true,
-      baggage_included_required: formData.baggage_included_required ?? false,
-      auto_book_enabled: formData.auto_book_enabled ?? false,
-      max_price: formData.max_price,
-      preferred_payment_method_id: formData.preferred_payment_method_id,
-    };
-    const { data, error } = await supabase
-      .from("trip_requests")
-      .insert([tripRequestData])
-      .select()
-      .single<TripRequestFromDB>();
-    if (error) throw error;
-    if (!data) throw new Error("Failed to create trip request or retrieve its data.");
-    return data;
-  };
-
-  const updateTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
-    if (!userId || !tripRequestId) throw new Error("User ID or Trip Request ID is missing for update.");
-    const tripRequestData = {
-      destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport, // Add this field
-      departure_airports: formData.departure_airports || [],
-      earliest_departure: formData.earliestDeparture.toISOString(),
-      latest_departure: formData.latestDeparture.toISOString(),
-      min_duration: formData.min_duration,
-      max_duration: formData.max_duration,
-      budget: formData.budget,
-      nonstop_required: formData.nonstop_required ?? true,
-      baggage_included_required: formData.baggage_included_required ?? false,
-      auto_book_enabled: formData.auto_book_enabled ?? false,
-      max_price: formData.max_price,
-      preferred_payment_method_id: formData.preferred_payment_method_id,
-    };
-    const { data, error } = await supabase
-      .from("trip_requests")
-      .update(tripRequestData)
-      .eq("id", tripRequestId)
-      .select()
-      .single<TripRequestFromDB>();
-    if (error) throw error;
-    if (!data) throw new Error("Failed to update trip request or retrieve its data.");
-    return data;
-  };
-
-  const navigateToConfirmation = (tripRequest: TripRequestFromDB): void => {
-    const actionText = tripRequestId ? "updated" : "submitted";
-    const autoBookText = tripRequest.auto_book_enabled ? (tripRequestId ? ' Auto-booking settings updated.' : ' Auto-booking is enabled.') : '';
-    toast({
-      title: `Trip request ${actionText}`,
-      description: `Your trip request has been successfully ${actionText}!${autoBookText}`,
-    });
-    navigate(`/trip/offers?id=${tripRequest.id}&mode=${mode}`);
-  };
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
@@ -199,9 +121,11 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       let resultingTripRequest: TripRequestFromDB;
 
       if (tripRequestId) {
-        resultingTripRequest = await updateTripRequest(transformedData);
+        // Use service function for update
+        resultingTripRequest = await updateTripRequest(userId, tripRequestId, transformedData);
       } else {
-        resultingTripRequest = await createTripRequest(transformedData);
+        // Use service function for create
+        resultingTripRequest = await createTripRequest(userId, transformedData);
         try {
           const timeDiff = transformedData.latestDeparture.getTime() - transformedData.earliestDeparture.getTime();
           const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
