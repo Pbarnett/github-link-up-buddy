@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +29,11 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { validateFormData, isFormValid } from "@/lib/tripFormValidation";
 import { transformFormData } from "@/lib/tripFormTransformers";
 import { categorizeAirports } from "@/lib/airportUtils";
+import {
+  fetchTripRequest,
+  createTripRequest,
+  updateTripRequest,
+} from "@/services/tripService"; // <-- ADDED
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -58,6 +64,15 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       preferred_payment_method_id: null,
     },
   });
+
+  // Helper function for navigation after submit
+  function navigateToConfirmation(tripRequest: TripRequestFromDB) {
+    if (tripRequest && tripRequest.id) {
+      navigate(`/trip/confirm/${tripRequest.id}`);
+    } else {
+      navigate("/trip/confirm"); // fallback if id is missing
+    }
+  }
 
   useEffect(() => {
     if (tripRequestId) {
@@ -284,3 +299,4 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
 };
 
 export default TripRequestForm;
+
