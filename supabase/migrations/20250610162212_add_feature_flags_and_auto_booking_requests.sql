@@ -43,3 +43,7 @@ CREATE POLICY "Users can delete their own auto booking requests"
 INSERT INTO public.feature_flags (name, enabled, description) 
 VALUES ('auto_booking_v2', false, 'Enable the new auto-booking workflow with enhanced UI')
 ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO public.feature_flags (name, enabled, description)
+VALUES ('extended_date_range', false, 'Enable extended date range for trip searches (120 days)')
+ON CONFLICT (name) DO NOTHING;

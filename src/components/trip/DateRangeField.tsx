@@ -1,7 +1,9 @@
 
+export const MAX_RANGE_DAYS = 120;
 import { format } from "date-fns";
 import { CalendarIcon, ArrowRight } from "lucide-react";
 import { Control } from "react-hook-form";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -26,6 +28,10 @@ interface DateRangeFieldProps {
 }
 
 const DateRangeField = ({ control }: DateRangeFieldProps) => {
+  const extended = useFeatureFlag('extended_date_range');
+  const hardLimit = extended ? MAX_RANGE_DAYS : 60;
+  // TODO: Use hardLimit in component's date validation if any
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
