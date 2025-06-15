@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,8 +7,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye } from 'lucide-react';
-import TripHistory from '@/components/dashboard/TripHistory'; // Added import
+import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye, FolderOpen } from 'lucide-react';
+import TripHistory from '@/components/dashboard/TripHistory';
+import DashboardSkeleton from '@/components/dashboard/DashboardSkeleton';
 
 interface BookingRequest {
   id: string;
@@ -291,9 +291,9 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/70 to-slate-100">
+        <div className="w-full max-w-7xl px-4">
+          <DashboardSkeleton />
         </div>
       </div>
     );
@@ -307,11 +307,11 @@ const Dashboard = () => {
   const filteredRequests = getFilteredBookingRequests();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/60 to-white">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 animate-fade-in">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1 tracking-tight">Dashboard</h1>
             <p className="mt-2 text-lg text-gray-600">Hello, {user.email}</p>
           </div>
           <div className="flex gap-3">
@@ -319,24 +319,24 @@ const Dashboard = () => {
               onClick={refreshData}
               disabled={refreshing}
               variant="outline"
+              className="shadow-sm hover:scale-105 transition-transform duration-150"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button onClick={handleSignOut}>Sign Out</Button>
+            <Button onClick={handleSignOut} className="shadow-sm hover:scale-105 transition-transform duration-150">Sign Out</Button>
           </div>
         </div>
 
-        {/* Main content area with new Tabs */}
         <Tabs defaultValue="currentRequests" className="w-full mt-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 bg-white">
             <TabsTrigger value="currentRequests">Current Booking Requests</TabsTrigger>
             <TabsTrigger value="tripHistory">Trip History</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="currentRequests">
-            {/* Booking Requests with its own internal Tabs for filtering */}
-            <Card className="mt-4">
+          {/* --- Booking Requests Tab --- */}
+          <TabsContent value="currentRequests" className="animate-fade-in">
+            <Card className="mt-4 shadow-[0_2px_8px_rgba(40,72,100,0.06)] transition-all hover:shadow-md">
               <CardHeader>
                 <CardTitle>Booking Requests</CardTitle>
                 <CardDescription>
@@ -345,7 +345,7 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-muted/40">
                     <TabsTrigger value="all" className="text-xs">
                       All ({statusCounts.all})
                     </TabsTrigger>
@@ -366,32 +366,36 @@ const Dashboard = () => {
                     </TabsTrigger>
                   </TabsList>
 
-                  <div className="mt-6">
+                  <div className="mt-6 transition-all duration-200">
                     {filteredRequests.length === 0 ? (
-                      <p className="text-gray-500 text-center py-8">
-                        {statusFilter === 'all'
-                          ? 'No booking requests yet'
-                          : `No ${statusFilter.replace('_', ' ')} requests`
-                        }
-                      </p>
+                      <div className="flex flex-col items-center py-12">
+                        <FolderOpen className="w-8 h-8 mb-3 text-gray-400" />
+                        <div className="mb-1 text-gray-600 font medium">
+                          {statusFilter === 'all'
+                            ? 'No booking requests yet'
+                            : `No ${statusFilter.replace('_', ' ')} requests`}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Start a new trip search to create your first booking request.</div>
+                      </div>
                     ) : (
                       <div className="space-y-4">
                         {filteredRequests.map((request) => (
-                          <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div
+                            key={request.id}
+                            className="flex items-center justify-between p-4 border rounded-lg bg-white hover:shadow-md transition-shadow duration-200 animate-fade-in"
+                          >
                             <div className="flex items-center space-x-3">
-                              {getStatusIcon(request.status)}
+                              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted/60 shadow-sm">
+                                {getStatusIcon(request.status)}
+                              </div>
                               <div>
-                                <p className="font-medium">
-                                  {request.offer_data?.airline} {request.offer_data?.flight_number}
-                                </p>
-                                <p className="text-sm text-gray-500">
+                                <p className="font-medium text-slate-900">{request.offer_data?.airline} {request.offer_data?.flight_number}</p>
+                                <p className="text-xs text-gray-500">
                                   Created {new Date(request.created_at).toLocaleDateString()}
                                 </p>
                                 {request.error_message && (
                                   <div className="flex items-center space-x-2 mt-1">
-                                    <p className="text-sm text-red-600 truncate max-w-xs">
-                                      {request.error_message.substring(0, 50)}...
-                                    </p>
+                                    <span className="inline-block px-2 py-1 rounded bg-red-50 text-red-600 text-xs font-semibold">Error</span>
                                     <Dialog>
                                       <DialogTrigger asChild>
                                         <Button
@@ -422,14 +426,23 @@ const Dashboard = () => {
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <Badge variant={getStatusBadgeVariant(request.status)}>
-                                {request.status.replace('_', ' ')}
+                              <Badge variant={getStatusBadgeVariant(request.status)}
+                                className={`
+                                  px-3 py-1 rounded-md font-semibold text-xs transition-all duration-150
+                                  ${request.status === "done" ? "bg-green-100 text-green-700 border-green-200"
+                                    : request.status === "failed" ? "bg-red-100 text-red-700 border-red-200"
+                                    : request.status === "processing" ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                    : ""}
+                                `}
+                              >
+                                <span className="capitalize">{request.status.replace('_', ' ')}</span>
                               </Badge>
                               {request.status === 'failed' && request.attempts < 3 && (
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => retryBookingRequest(request.id)}
+                                  className="ml-2 transition hover:scale-105"
                                 >
                                   Retry
                                 </Button>
@@ -445,8 +458,9 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="tripHistory">
-            <Card className="mt-4">
+          {/* --- Trip History Tab --- */}
+          <TabsContent value="tripHistory" className="animate-fade-in">
+            <Card className="mt-4 shadow-[0_2px_8px_rgba(40,72,100,0.06)] transition-all hover:shadow-md">
               <CardHeader>
                 <CardTitle>Past Bookings</CardTitle>
                 <CardDescription>Review your completed flight bookings.</CardDescription>
@@ -458,9 +472,9 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Recent Trip Requests card can remain separate or be moved into a tab if desired later */}
-        <div className="mt-8"> {/* Added margin-top for spacing if it's below the new Tabs */}
-          <Card>
+        {/* Recent Trip Requests */}
+        <div className="mt-8"> 
+          <Card className="shadow-[0_2px_8px_rgba(40,72,100,0.06)] transition-all hover:shadow-md animate-fade-in">
             <CardHeader>
               <CardTitle>Recent Trip Requests</CardTitle>
               <CardDescription>
@@ -469,11 +483,20 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               {tripRequests.length === 0 ? (
-                <p className="text-gray-500">No trip requests yet</p>
+                <div className="flex flex-col items-center py-12">
+                  <FolderOpen className="w-8 h-8 mb-3 text-gray-400" />
+                  <div className="mb-1 text-gray-600 font medium">
+                    No trip requests yet
+                  </div>
+                  <div className="text-xs text-muted-foreground">Create a trip request to get started!</div>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {tripRequests.map((trip) => (
-                    <div key={trip.id} className="p-4 border rounded-lg">
+                    <div 
+                      key={trip.id} 
+                      className="p-4 border rounded-lg hover:shadow-md transition-shadow duration-200 bg-white animate-fade-in"
+                    >
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-medium">
@@ -487,7 +510,7 @@ const Dashboard = () => {
                             Budget: ${trip.budget}
                           </p>
                         </div>
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="bg-muted/40">
                           {new Date(trip.created_at).toLocaleDateString()}
                         </Badge>
                       </div>
@@ -500,7 +523,6 @@ const Dashboard = () => {
         </div>
 
         {/* Old Trip History Section Removed From Here */}
-        {/* <TripHistory /> */}
       </div>
     </div>
   );
