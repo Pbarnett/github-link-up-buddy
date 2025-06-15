@@ -1,8 +1,16 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useFeatureFlag = (flagName: string, defaultValue: boolean = false): boolean => {
+/**
+ * 🚦 useFeatureFlag
+ * Returns [isEnabled, isLoading]
+ * Use: const [enabled, loading] = useFeatureFlag("flag_name");
+ * For backward compatibility, the hook can still be consumed as a boolean (default: isEnabled).
+ */
+export const useFeatureFlag = (
+  flagName: string, 
+  defaultValue: boolean = false
+): [boolean, boolean] & { isEnabled?: boolean; isLoading?: boolean } => {
   const [isEnabled, setIsEnabled] = useState(defaultValue);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -32,6 +40,13 @@ export const useFeatureFlag = (flagName: string, defaultValue: boolean = false):
     fetchFeatureFlag();
   }, [flagName, defaultValue]);
 
-  // Return the default value while loading to prevent UI flicker
-  return isLoading ? defaultValue : isEnabled;
+  // Backward compatible: single boolean return.
+  // For finer control, destructure as [enabled, loading].
+  const tuple: [boolean, boolean] & { isEnabled?: boolean; isLoading?: boolean } = [isLoading ? defaultValue : isEnabled, isLoading];
+  tuple.isEnabled = isLoading ? defaultValue : isEnabled;
+  tuple.isLoading = isLoading;
+  return tuple;
 };
+
+// LEGACY default (keep for existing consumers): bool-only
+// If you want only the enabled status: const [enabled] = useFeatureFlag("flag_name");
