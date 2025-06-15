@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -9,6 +8,10 @@ import { supabase } from '@/integrations/supabase/client'; // Assuming supabase 
 
 import { useCurrentUser } from '@/hooks/useCurrentUser'; // Assuming custom hook
 import { toast } from '@/components/ui/use-toast'; // Assuming toast is from here
+
+// ---- ADD THIS IMPORT ----
+import { addDays } from "date-fns";
+// -------------------------
 
 // Mock dependencies
 vi.mock('@/integrations/supabase/client', () => ({
@@ -163,8 +166,8 @@ describe('TripRequestForm - Submission Logic', () => {
     // A better way is to use the label if available from the <FormField name="destination_airport">
     // Based on the RHF setup, it's likely linked to a label.
     // The section title is "Where do you want to go?". The input itself might not have a direct visible label.
-    // Let's assume screen.getByPlaceholderText('e.g., LAX, LHR, CDG') is how we get destination_airport
-    // await userEvent.type(screen.getByPlaceholderText(/e\.g\.\, LAX, LHR, CDG/i), 'LAX');
+    // Let's assume screen.getByPlaceholderText('e\.g\. LAX, LHR, CDG') is how we get destination_airport
+    // await userEvent.type(screen.getByPlaceholderText(/e\.g\. LAX, LHR, CDG/i), 'LAX');
     // Actually, the combobox itself (from shadcn/ui) should be the input.
     // The name for the combobox seems to be "Destination" due to <Legend>Destination</Legend> in EnhancedDestinationSection.
 
