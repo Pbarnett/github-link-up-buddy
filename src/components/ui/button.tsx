@@ -19,6 +19,10 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        // New Autopilot Analyst variants
+        "analyst-primary": "bg-accent-analyst text-black hover:bg-accent-analyst/90 shadow-accent-fade",
+        "analyst-secondary": "bg-card-analyst text-text-primary-analyst border border-border-subtle hover:bg-surface",
+        "analyst-ghost": "text-text-primary-analyst hover:bg-accent-fade hover:text-accent-analyst",
       },
       size: {
         default: "h-10 px-4 py-2",
