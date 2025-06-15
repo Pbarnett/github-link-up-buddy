@@ -43,6 +43,49 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Autopilot Analyst Light Theme Tokens */
+    --bg-surface: #f8f9fa;
+    --bg-card: #ffffff;
+    --border-subtle: #e1e5e9;
+    --text-primary: #1a1a1a;
+    --text-muted: #6b7280;
+    --accent: #3b82f6;
+    --accent-fade: rgba(59, 130, 246, 0.16);
+    --error: #ef4444;
+    --success: #10b981;
+  }
+
+  [data-theme="analyst"] {
+    /* Autopilot Analyst Dark Theme Tokens */
+    --bg-surface: #121212;
+    --bg-card: #1F1F1F;
+    --border-subtle: #2A2A2A;
+    --text-primary: #E0E0E0;
+    --text-muted: #909090;
+    --accent: #00FFC6;
+    --accent-fade: rgba(0, 255, 198, 0.16);
+    --error: #FF5964;
+    --success: #34D399;
+
+    /* Override existing Shadcn tokens for dark theme */
+    --background: 18 18 18;
+    --foreground: 224 224 224;
+    --card: 31 31 31;
+    --card-foreground: 224 224 224;
+    --popover: 31 31 31;
+    --popover-foreground: 224 224 224;
+    --primary: 166 100 79;
+    --primary-foreground: 18 18 18;
+    --secondary: 42 42 42;
+    --secondary-foreground: 224 224 224;
+    --muted: 42 42 42;
+    --muted-foreground: 144 144 144;
+    --accent: 166 100 79;
+    --accent-foreground: 18 18 18;
+    --border: 42 42 42;
+    --input: 42 42 42;
+    --ring: 166 100 79;
   }
 
   .dark {
@@ -90,7 +133,12 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* Autopilot Analyst theme body styles */
+  [data-theme="analyst"] body {
+    @apply bg-surface text-primary-analyst;
   }
 }
 
@@ -99,7 +147,7 @@
   .ring-focus {
     &:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 2px hsl(var(--ring));
+      box-shadow: 0 0 0 2px var(--accent);
       border-radius: calc(var(--radius) - 2px);
     }
   }
@@ -108,8 +156,8 @@
     position: absolute;
     top: -40px;
     left: 6px;
-    background: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
+    background: var(--accent);
+    color: var(--text-primary);
     padding: 8px 16px;
     text-decoration: none;
     border-radius: 4px;
@@ -133,5 +181,47 @@
     .mobile-full-width {
       @apply w-full;
     }
+  }
+
+  /* Autopilot Analyst specific utilities */
+  .analyst-card {
+    @apply bg-card-analyst border border-subtle rounded-md;
+  }
+
+  .analyst-text-primary {
+    @apply text-primary-analyst;
+  }
+
+  .analyst-text-muted {
+    @apply text-muted-analyst;
+  }
+
+  .analyst-accent {
+    @apply text-accent-analyst;
+  }
+
+  /* Typography scale utilities */
+  .text-h1 {
+    @apply text-h1 font-bold;
+  }
+
+  .text-h2 {
+    @apply text-h2 font-semibold;
+  }
+
+  .text-h3 {
+    @apply text-h3 font-semibold;
+  }
+
+  .text-body {
+    @apply text-body;
+  }
+
+  .text-label {
+    @apply text-label font-medium uppercase tracking-wide;
+  }
+
+  .text-data {
+    @apply text-data font-mono;
   }
 }
