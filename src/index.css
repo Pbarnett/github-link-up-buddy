@@ -138,7 +138,8 @@
 
   /* Autopilot Analyst theme body styles */
   [data-theme="analyst"] body {
-    @apply bg-surface text-primary-analyst;
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
   }
 }
 
@@ -185,43 +186,58 @@
 
   /* Autopilot Analyst specific utilities */
   .analyst-card {
-    @apply bg-card-analyst border border-subtle rounded-md;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.375rem;
   }
 
   .analyst-text-primary {
-    @apply text-primary-analyst;
+    color: var(--text-primary);
   }
 
   .analyst-text-muted {
-    @apply text-muted-analyst;
+    color: var(--text-muted);
   }
 
   .analyst-accent {
-    @apply text-accent-analyst;
+    color: var(--accent);
   }
 
   /* Typography scale utilities */
   .text-h1 {
-    @apply text-h1 font-bold;
+    font-size: 2.5rem;
+    line-height: 3rem;
+    font-weight: 700;
   }
 
   .text-h2 {
-    @apply text-h2 font-semibold;
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+    font-weight: 600;
   }
 
   .text-h3 {
-    @apply text-h3 font-semibold;
+    font-size: 1.375rem;
+    line-height: 1.875rem;
+    font-weight: 600;
   }
 
   .text-body {
-    @apply text-body;
+    font-size: 0.9375rem;
+    line-height: 1.5rem;
   }
 
   .text-label {
-    @apply text-label font-medium uppercase tracking-wide;
+    font-size: 0.6875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .text-data {
-    @apply text-data font-mono;
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-family: 'Space Mono', 'Menlo', monospace;
   }
 }
