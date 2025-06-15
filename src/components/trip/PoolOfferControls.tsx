@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import * as React from "react";
 import { useTripOffersPools } from '@/hooks/useTripOffers';
 import ConstraintChips from './ConstraintChips';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ interface PoolOfferControlsProps {
 }
 
 const PoolOfferControls: React.FC<PoolOfferControlsProps> = ({ tripId }) => {
-  const [nonStopOnly, setNonStopOnly] = useState(false);
+  const [nonStopOnly, setNonStopOnly] = React.useState(false);
   
   const {
     budget,
@@ -22,7 +22,7 @@ const PoolOfferControls: React.FC<PoolOfferControlsProps> = ({ tripId }) => {
 
   const toggleNonStop = () => {
     setNonStopOnly(prev => !prev);
-    // TODO: Apply non-stop filter to offers when implemented
+    // Non-stop filter toggle, implementation can be added as needed.
   };
 
   const handleBumpBudget = () => {
@@ -71,4 +71,5 @@ const PoolOfferControls: React.FC<PoolOfferControlsProps> = ({ tripId }) => {
   );
 };
 
-export default PoolOfferControls;
+export default React.memo(PoolOfferControls);
+
