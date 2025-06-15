@@ -25,26 +25,14 @@ import AutoBookingSection from "./sections/AutoBookingSection.tsx";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { validateFormData, isFormValid } from "@/lib/tripFormValidation";
+import { transformFormData } from "@/lib/tripFormTransformers";
+import { categorizeAirports } from "@/lib/airportUtils";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
   mode?: 'manual' | 'auto';
 }
-
-const categorizeAirports = (airports: string[] | null | undefined): { nycAirports: string[], otherAirport: string } => {
-  if (!airports) return { nycAirports: [], otherAirport: "" };
-  const nyc = ["JFK", "LGA", "EWR"];
-  const nycSelected: string[] = [];
-  let other = "";
-  airports.forEach(ap => {
-    if (nyc.includes(ap.toUpperCase())) {
-      nycSelected.push(ap.toUpperCase());
-    } else if (!other) {
-      other = ap.toUpperCase();
-    }
-  });
-  return { nycAirports: nycSelected, otherAirport: other };
-};
 
 const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProps) => {
   const navigate = useNavigate();
@@ -76,12 +64,11 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       const fetchTripDetails = async () => {
         setIsLoadingDetails(true);
         try {
-          // Use TripRequestFromDB for typing the response
           const { data: tripData, error } = await supabase
             .from("trip_requests")
             .select("*")
             .eq("id", tripRequestId)
-            .single<TripRequestFromDB>(); // Specify the type here
+            .single<TripRequestFromDB>();
 
           if (error) throw error;
 
@@ -99,7 +86,7 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
               destination_other: tripData.destination_airport?.length !== 3 || tripData.destination_airport !== tripData.destination_airport?.toUpperCase() ? tripData.destination_airport : "",
               nonstop_required: tripData.nonstop_required ?? true,
               baggage_included_required: tripData.baggage_included_required ?? false,
-              auto_book_enabled: tripData.auto_book_enabled ?? false, // Use nullish coalescing
+              auto_book_enabled: tripData.auto_book_enabled ?? false,
               max_price: tripData.max_price,
               preferred_payment_method_id: tripData.preferred_payment_method_id,
             });
@@ -120,45 +107,6 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       form.reset(form.formState.defaultValues);
     }
   }, [tripRequestId, form]);
-
-  const validateFormData = (data: FormValues): boolean => {
-    const destinationAirport = data.destination_airport || data.destination_other || "";
-    if (!destinationAirport) {
-      toast({
-        title: "Validation error",
-        description: "Please select a destination or enter a custom one.",
-        variant: "destructive",
-      });
-      return false;
-    }
-    return true;
-  };
-
-  const transformFormData = (data: FormValues): ExtendedTripFormValues => {
-    const departureAirports: string[] = [];
-    if (data.nyc_airports && data.nyc_airports.length > 0) {
-      departureAirports.push(...data.nyc_airports);
-    }
-    if (data.other_departure_airport) {
-      departureAirports.push(data.other_departure_airport);
-    }
-    const destinationAirport = data.destination_airport || data.destination_other || "";
-    return {
-      earliestDeparture: data.earliestDeparture,
-      latestDeparture: data.latestDeparture,
-      min_duration: data.min_duration,
-      max_duration: data.max_duration,
-      budget: data.budget,
-      departure_airports: departureAirports,
-      destination_airport: destinationAirport,
-      destination_location_code: destinationAirport, // Add this mapping
-      nonstop_required: data.nonstop_required,
-      baggage_included_required: data.baggage_included_required,
-      auto_book_enabled: data.auto_book_enabled,
-      max_price: data.max_price,
-      preferred_payment_method_id: data.preferred_payment_method_id,
-    };
-  };
 
   const createTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
     if (!userId) throw new Error("You must be logged in to create a trip request.");
@@ -216,7 +164,7 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     return data;
   };
 
-  const navigateToConfirmation = (tripRequest: TripRequestFromDB): void => { // Typed parameter
+  const navigateToConfirmation = (tripRequest: TripRequestFromDB): void => {
     const actionText = tripRequestId ? "updated" : "submitted";
     const autoBookText = tripRequest.auto_book_enabled ? (tripRequestId ? ' Auto-booking settings updated.' : ' Auto-booking is enabled.') : '';
     toast({
@@ -240,14 +188,13 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       }
 
       console.log("Form data before transform:", data);
-      // Specifically to check data.preferred_payment_method_id when auto_book_enabled is true
-      
+
       const action = tripRequestId ? "Updating" : "Creating";
       toast({
         title: `${action} trip request`,
         description: `Please wait while we ${action.toLowerCase()} your trip request...`,
       });
-      
+
       const transformedData = transformFormData(data);
       let resultingTripRequest: TripRequestFromDB;
 
@@ -255,31 +202,26 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
         resultingTripRequest = await updateTripRequest(transformedData);
       } else {
         resultingTripRequest = await createTripRequest(transformedData);
-        
-        // 🎯 INTELLIGENT FLIGHT SEARCH TRIGGER for new trips
         try {
-          // Calculate date range to determine search strategy
           const timeDiff = transformedData.latestDeparture.getTime() - transformedData.earliestDeparture.getTime();
           const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-          
+
           toast({
             title: "Searching for flights",
             description: `Analyzing ${daysDiff} days of flight options...`,
           });
-          
-          // Trigger flight search with appropriate strategy
+
           await invokeFlightSearch({
             tripRequestId: resultingTripRequest.id,
             relaxedCriteria: false
           });
-          
+
           toast({
             title: "Flight search initiated",
             description: "We're finding the best flight options for your trip.",
           });
-          
+
         } catch (searchError) {
-          // Don't block navigation if search fails - user can retry on offers page
           console.warn('Flight search failed during form submission:', searchError);
           toast({
             title: "Search in progress",
@@ -287,9 +229,9 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
           });
         }
       }
-      
+
       navigateToConfirmation(resultingTripRequest);
-      
+
     } catch (err) {
       const error = err as Error | PostgrestError;
       logger.error(`Error ${tripRequestId ? "updating" : "creating"} trip request:`, { tripRequestId, errorDetails: error });
@@ -303,19 +245,8 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     }
   };
 
-  // Check if required fields are filled for enabling submit button
   const watchedFields = form.watch();
-  const isFormValid = Boolean(
-    watchedFields.earliestDeparture &&
-    watchedFields.latestDeparture &&
-    watchedFields.budget &&
-    watchedFields.min_duration &&
-    watchedFields.max_duration &&
-    ((watchedFields.nyc_airports && watchedFields.nyc_airports.length > 0) || watchedFields.other_departure_airport) &&
-    (watchedFields.destination_airport || watchedFields.destination_other) &&
-    // Additional validation for auto mode
-    (mode === 'manual' || (watchedFields.auto_book_enabled && watchedFields.max_price))
-  );
+  const isFormValidState = isFormValid(watchedFields, mode);
 
   const buttonText = mode === 'auto' 
     ? (tripRequestId ? "Update Auto-Booking" : "Enable Auto-Booking")
@@ -400,7 +331,7 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                   </Button>
                   <Button 
                     type="submit" 
-                    disabled={isSubmitting || !isFormValid} 
+                    disabled={isSubmitting || !isFormValidState} 
                     className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-medium disabled:opacity-50 min-w-[160px] h-11"
                   >
                     {isSubmitting ? (
@@ -419,7 +350,7 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
         {/* Sticky Actions for Desktop */}
         <StickyFormActions
           isSubmitting={isSubmitting}
-          isFormValid={isFormValid}
+          isFormValid={isFormValidState}
           buttonText={buttonText}
           onSubmit={form.handleSubmit(onSubmit)}
         />
