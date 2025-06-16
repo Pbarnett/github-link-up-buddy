@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import TripNew from "./pages/TripNew";
 import TripOffers from "./pages/TripOffers";
 import TripConfirm from "./pages/TripConfirm";
+import TripRequestFormPage from "./pages/TripRequestFormPage";
 import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
 import TestFlightSearch from "./pages/TestFlightSearch";
@@ -67,6 +68,22 @@ const App = () => {
                 element={
                   <AuthGuard>
                     <TripConfirm />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/trip/request/:tripRequestId"
+                element={
+                  <AuthGuard>
+                    <TripRequestFormPage />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/trip/request/:tripRequestId/edit"
+                element={
+                  <AuthGuard>
+                    <TripRequestFormPage />
                   </AuthGuard>
                 }
               />
