@@ -11,6 +11,7 @@ import TripOffers from "./pages/TripOffers";
 import TripConfirm from "./pages/TripConfirm";
 import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
+import TestFlightSearch from "./pages/TestFlightSearch";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 
@@ -74,6 +75,14 @@ const App = () => {
                 element={
                   <AuthGuard>
                     <Wallet />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/test-flight-search"
+                element={
+                  <AuthGuard>
+                    <TestFlightSearch />
                   </AuthGuard>
                 }
               />
