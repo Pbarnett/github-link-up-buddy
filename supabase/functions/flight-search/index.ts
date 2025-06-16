@@ -210,8 +210,8 @@ serve(async (req: Request) => {
         const offers = searchResult?.dbOffers || [];
         const pools = searchResult?.pools || { poolA: [], poolB: [], poolC: [] };
         
-        // Filter offers to match destination - allow for flexibility with airport codes
-        // This fixes the issue where APIs return nearby airports or variant codes
+        // Filter offers to match destination - EXACT matching only
+        // No nearby airports or metro area mapping - user gets exactly what they request
         const destinationOffers = offers.filter(offer => {
           const offerDestination = offer.destination_airport;
           const requestedDestination = request.destination_location_code;
@@ -221,47 +221,8 @@ serve(async (req: Request) => {
             return true;
           }
           
-          // Secondary match: case-insensitive comparison
+          // Secondary match: case-insensitive comparison (for robustness)
           if (offerDestination?.toLowerCase() === requestedDestination?.toLowerCase()) {
-            return true;
-          }
-          
-          // Tertiary match: comprehensive mapping for metro areas and nearby airports
-          // This helps with cases where users search for city codes but API returns specific airports
-          const cityAirportMapping = {
-            // US Major Cities
-            'NYC': ['JFK', 'LGA', 'EWR'],
-            'CHI': ['ORD', 'MDW'],
-            'WAS': ['DCA', 'IAD', 'BWI'],
-            'LAX': ['LAX', 'BUR', 'LGB', 'SNA'], // Los Angeles area
-            'SFO': ['SFO', 'OAK', 'SJC'], // San Francisco Bay Area
-            'MIA': ['MIA', 'FLL', 'PBI'], // South Florida
-            'DFW': ['DFW', 'DAL'], // Dallas
-            'HOU': ['IAH', 'HOU'], // Houston
-            'BOS': ['BOS', 'PVD'], // Boston area
-            
-            // European Cities
-            'LON': ['LHR', 'LGW', 'STN', 'LTN', 'LCY'],
-            'PAR': ['CDG', 'ORY', 'BVA'],
-            'MIL': ['MXP', 'LIN', 'BGY'],
-            'ROM': ['FCO', 'CIA'],
-            'BER': ['BER', 'SXF', 'TXL'],
-            'STO': ['ARN', 'BMA', 'NYO'],
-            
-            // Asian Cities
-            'TYO': ['NRT', 'HND'],
-            'OSA': ['KIX', 'ITM'],
-            'SEL': ['ICN', 'GMP'],
-            'BKK': ['BKK', 'DMK'],
-            
-            // Special Cases & Islands
-            'MVY': ['MVY', 'ACK'], // Martha's Vineyard area
-            'HPN': ['HPN', 'LGA'], // White Plains area
-            'ISP': ['ISP', 'JFK', 'LGA'], // Long Island
-          };
-          
-          // Check if requested destination is a city code and offer matches any of its airports
-          if (cityAirportMapping[requestedDestination]?.includes(offerDestination)) {
             return true;
           }
           
@@ -270,7 +231,7 @@ serve(async (req: Request) => {
           return false;
         });
         
-        console.log(`[flight-search] Request ${request.id}: Filtered from ${offers.length} to ${destinationOffers.length} offers matching destination ${request.destination_location_code} (flexible matching)`);
+        console.log(`[flight-search] Request ${request.id}: Filtered from ${offers.length} to ${destinationOffers.length} offers matching destination ${request.destination_location_code} (exact matching only)`);
         
         // Filter offers based on max_price (if specified)
         // If max_price is null, no filtering is applied (treat as "no filter")
