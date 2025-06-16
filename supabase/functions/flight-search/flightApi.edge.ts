@@ -1,9 +1,4 @@
-const amadeusClientId = Deno.env.get("AMADEUS_CLIENT_ID");
-const amadeusClientSecret = Deno.env.get("AMADEUS_CLIENT_SECRET");
-if (!amadeusClientId || !amadeusClientSecret) {
-  console.error('Error: Missing Amadeus environment variables. AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET must be set.');
-  throw new Error('Edge Function: Missing Amadeus environment variables (AMADEUS_CLIENT_ID or AMADEUS_CLIENT_SECRET).');
-}
+// Environment variables are accessed during request execution, not at module level
 
 // This file is specifically for Supabase Edge Functions
 // It contains Deno-specific code that shouldn't be imported by client-side code
@@ -203,18 +198,34 @@ let _token: string | undefined;
 let _tokenExpires = 0;
 export async function fetchToken(): Promise<string> {
   console.log("[flight-search] Fetching OAuth token...");
+  
+  // Check environment variables are available during request execution
+  const amadeusClientId = Deno.env.get("AMADEUS_CLIENT_ID");
+  const amadeusClientSecret = Deno.env.get("AMADEUS_CLIENT_SECRET");
+  const amadeusBaseUrl = Deno.env.get("AMADEUS_BASE_URL");
+  
+  if (!amadeusClientId || !amadeusClientSecret) {
+    console.error('Error: Missing Amadeus environment variables. AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET must be set.');
+    throw new Error('Missing Amadeus environment variables (AMADEUS_CLIENT_ID or AMADEUS_CLIENT_SECRET).');
+  }
+  
+  if (!amadeusBaseUrl) {
+    console.error('Error: Missing AMADEUS_BASE_URL environment variable.');
+    throw new Error('Missing AMADEUS_BASE_URL environment variable.');
+  }
+  
   const now = Date.now();
   if (_token && now < _tokenExpires - 60_000) return _token;
   try {
     const res = await fetchWithTimeout(
-      `${Deno.env.get("AMADEUS_BASE_URL")}/v1/security/oauth2/token`,
+      `${amadeusBaseUrl}/v1/security/oauth2/token`,
       {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
           grant_type: "client_credentials",
-          client_id: Deno.env.get("AMADEUS_CLIENT_ID")!,
-          client_secret: Deno.env.get("AMADEUS_CLIENT_SECRET")!,
+          client_id: amadeusClientId,
+          client_secret: amadeusClientSecret,
         }),
       },
       8000 // Timeout for token fetch
@@ -274,7 +285,9 @@ export async function searchOffers(
   tripRequestId: string
 ): Promise<SearchOffersResult> { // Correct return type
   console.log(`[flight-search] Starting searchOffers for trip ${tripRequestId}`);
+  
   const token = await fetchToken();
+  
   const allRawAmadeusOffers: any[] = []; // Changed variable name for clarity
 
   // ... (Main search logic with strategies, fallbacks - assumed to be the version from end of PR #8)
@@ -307,8 +320,12 @@ export async function searchOffers(
       
       console.log(`[flight-search] Date calculation: departure=${departureDate}, return=${returnDate}, duration=${params.maxDuration} days`);
       
-      // Build the Amadeus flight offers search URL
-      const searchUrl = new URL(`${Deno.env.get("AMADEUS_BASE_URL")}/v2/shopping/flight-offers`);
+      // Build the Amadeus flight offers search URL  
+      const amadeusBaseUrl = Deno.env.get("AMADEUS_BASE_URL");
+      if (!amadeusBaseUrl) {
+        throw new Error('Missing AMADEUS_BASE_URL environment variable.');
+      }
+      const searchUrl = new URL(`${amadeusBaseUrl}/v2/shopping/flight-offers`);
       searchUrl.searchParams.set('originLocationCode', origin);
       searchUrl.searchParams.set('destinationLocationCode', params.destination!);
       searchUrl.searchParams.set('departureDate', departureDate);
@@ -350,12 +367,120 @@ export async function searchOffers(
   // TEST_MODE fallback if no real offers found
   if (allRawAmadeusOffers.length === 0 && Deno.env.get("TEST_MODE") === "true") {
       console.warn("[flight-search] TEST_MODE: Injecting dummy Amadeus offers as allRawAmadeusOffers is empty.");
-      allRawAmadeusOffers.push({ // Example structure, adapt as needed
-          id: "test-offer-1",
-          itineraries: [{ segments: [{ departure: { at: "2024-09-10T10:00:00" }, duration: "PT2H" }], duration: "PT2H" }, { segments: [{ departure: { at: "2024-09-12T14:00:00" }, duration: "PT2H" }], duration: "PT2H" }],
-          price: { total: "250.00" },
-          travelerPricings: [{ fareDetailsBySegment: [ {additionalServices: [{type: "BAGGAGE", description: "CARRY ON BAG", amount: "30.00"}]}]}] // for computeCarryOnFee
-      });
+      
+      // Generate 3 mock offers with proper structure for pools testing
+      const mockOffers = [
+        {
+          id: "test-offer-perfect",
+          itineraries: [
+            {
+              segments: [{
+                departure: { at: "2025-07-15T10:00:00", iataCode: "SFO" },
+                arrival: { iataCode: "LAX" },
+                duration: "PT2H",
+                carrierCode: "AA",
+                number: "123",
+                numberOfStops: 0
+              }],
+              duration: "PT2H"
+            },
+            {
+              segments: [{
+                departure: { at: "2025-07-18T14:00:00", iataCode: "LAX" },
+                arrival: { iataCode: "SFO" },
+                duration: "PT2H",
+                carrierCode: "AA",
+                number: "456",
+                numberOfStops: 0
+              }],
+              duration: "PT2H"
+            }
+          ],
+          price: { total: "450.00" }, // Under budget (500)
+          travelerPricings: [{ 
+            fareDetailsBySegment: [{
+              additionalServices: [] // No carry-on fee (free)
+            }]
+          }]
+        },
+        {
+          id: "test-offer-good",
+          itineraries: [
+            {
+              segments: [{
+                departure: { at: "2025-07-15T12:00:00", iataCode: "SFO" },
+                arrival: { iataCode: "LAX" },
+                duration: "PT3H30M",
+                carrierCode: "DL",
+                number: "789",
+                numberOfStops: 1
+              }],
+              duration: "PT3H30M"
+            },
+            {
+              segments: [{
+                departure: { at: "2025-07-18T16:00:00", iataCode: "LAX" },
+                arrival: { iataCode: "SFO" },
+                duration: "PT3H30M",
+                carrierCode: "DL",
+                number: "987",
+                numberOfStops: 1
+              }],
+              duration: "PT3H30M"
+            }
+          ],
+          price: { total: "480.00" }, // Under budget
+          travelerPricings: [{ 
+            fareDetailsBySegment: [{
+              additionalServices: [{
+                type: "BAGGAGE",
+                description: "CARRY ON BAG",
+                amount: "20.00"
+              }]
+            }]
+          }]
+        },
+        {
+          id: "test-offer-backup",
+          itineraries: [
+            {
+              segments: [{
+                departure: { at: "2025-07-16T08:00:00", iataCode: "SFO" },
+                arrival: { iataCode: "LAX" },
+                duration: "PT5H",
+                carrierCode: "UA",
+                number: "555",
+                numberOfStops: 2
+              }],
+              duration: "PT5H"
+            },
+            {
+              segments: [{
+                departure: { at: "2025-07-19T20:00:00", iataCode: "LAX" },
+                arrival: { iataCode: "SFO" },
+                duration: "PT5H",
+                carrierCode: "UA",
+                number: "666",
+                numberOfStops: 2
+              }],
+              duration: "PT5H"
+            }
+          ],
+          price: { total: "520.00" }, // Over budget
+          travelerPricings: [{ 
+            fareDetailsBySegment: [{
+              additionalServices: [{
+                type: "BAGGAGE",
+                description: "CARRY ON BAG",
+                amount: "40.00"
+              }]
+            }]
+          }]
+        }
+      ];
+      
+      allRawAmadeusOffers.push(...mockOffers);
+      console.log(`[flight-search] TEST_MODE: Added ${mockOffers.length} mock offers for testing`);
   }
 
 
@@ -512,6 +637,14 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string, primar
         }
         const totalPrice = base + carryOnFee;
 
+        // Calculate if this is a nonstop flight (all segments have 0 stops)
+        const isNonstop = offer.itineraries.every((itinerary: any) => 
+          itinerary.segments.every((segment: any) => (segment.numberOfStops || 0) === 0)
+        );
+
+        // Check if baggage is included (carry-on fee is 0)
+        const baggageIncluded = carryOnFee === 0;
+
         return [{
           trip_request_id: tripRequestId,
           airline: carrierCode,
@@ -525,6 +658,8 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string, primar
           return_time: back.departure.at.split("T")[1].slice(0,5),
           duration: offer.itineraries[0].duration,
           price: totalPrice, // Now base + carryOnFee
+          nonstop_match: isNonstop, // Add nonstop matching
+          baggage_included: baggageIncluded, // Add baggage matching
           // TODO: Future migration may add carry_on_fee column to flight_offers table.
           // If so, add: carry_on_fee: carryOnFee,
           booking_url: offer.pricingOptions?.agents?.[0]?.deepLink || offer.deepLink || generatePlaceholderBookingUrl(carrierCode, out.departure?.iataCode || primaryOrigin, out.arrival?.iataCode || destination, out.departure.at.split("T")[0], back.departure.at.split("T")[0]),
