@@ -63,6 +63,14 @@ const App = () => {
                 }
               />
               <Route
+                path="/trip/confirm/:id"
+                element={
+                  <AuthGuard>
+                    <TripConfirm />
+                  </AuthGuard>
+                }
+              />
+              <Route
                 path="/profile"
                 element={
                   <AuthGuard>
