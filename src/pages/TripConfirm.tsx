@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2, AlertCircle } from "lucide-react";
@@ -15,6 +15,7 @@ import { toJsonSafe } from "@/utils/toJsonSafe";
 const TripConfirm = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id: urlId } = useParams(); // Get ID from URL parameter if present
   const [offer, setOffer] = useState<OfferProps | null>(null);
   const [hasError, setHasError] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
