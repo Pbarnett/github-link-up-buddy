@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -165,10 +166,8 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
           console.error('[invokeFlightSearch] keys →', Object.keys(err || {}));
           if (err && typeof err === 'object' && 'status' in err) {
             // Supabase FunctionsHttpError exposes .status / .context
-            // @ts-expect-error dynamic check
-            console.error('[invokeFlightSearch] status →', err.status);
-            // @ts-expect-error
-            if (err.context) console.error('[invokeFlightSearch] context →', err.context);
+            console.error('[invokeFlightSearch] status →', (err as any).status);
+            if ('context' in err) console.error('[invokeFlightSearch] context →', (err as any).context);
           }
           toast({
             variant: 'destructive',
