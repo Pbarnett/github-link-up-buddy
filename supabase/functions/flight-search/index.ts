@@ -1,3 +1,4 @@
+console.info('[flight-search] boot OK', new Date().toISOString());
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
