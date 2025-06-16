@@ -104,6 +104,7 @@ serve(async (req: Request) => {
     let processedRequests = 0;
     let totalMatchesInserted = 0;
     const details = [];
+    let allPools = { poolA: [], poolB: [], poolC: [] };
     
     // Process each trip request
     for (const request of requests) {
@@ -198,6 +199,7 @@ serve(async (req: Request) => {
           // Use the enhanced API to get flight offers with multiple search strategies
           searchResult = await searchOffers(searchParams, request.id);
           console.log(`[flight-search] Request ${request.id}: Found ${searchResult.dbOffers ? searchResult.dbOffers.length : 'undefined'} transformed offers from API (exact destination only)`);
+          console.log(`[flight-search] Request ${request.id}: Pools - A: ${searchResult.pools?.poolA?.length || 0}, B: ${searchResult.pools?.poolB?.length || 0}, C: ${searchResult.pools?.poolC?.length || 0}`);
         } catch (apiError) {
           console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
@@ -206,6 +208,7 @@ serve(async (req: Request) => {
 
         // Extract offers from the search result
         const offers = searchResult?.dbOffers || [];
+        const pools = searchResult?.pools || { poolA: [], poolB: [], poolC: [] };
         
         // Filter offers to ensure they match the EXACT destination airport only
         const exactDestinationOffers = offers.filter(offer => {
@@ -352,6 +355,13 @@ serve(async (req: Request) => {
           exactDestinationOnly: true
         });
         
+        // Collect pools data from this search result
+        if (pools) {
+          allPools.poolA.push(...(pools.poolA || []));
+          allPools.poolB.push(...(pools.poolB || []));
+          allPools.poolC.push(...(pools.poolC || []));
+        }
+        
         console.log(`[flight-search] Request ${request.id}: fetched ${offers.length} offers → ${exactDestinationOffers.length} exact destination → ${priceFilteredOffers.length} price filtered → ${finalFilteredOffers.length} after all filters → ${newInserts} new matches`);
       } catch (requestError) {
         // Catch any errors in processing this specific trip request
@@ -367,7 +377,7 @@ serve(async (req: Request) => {
     // Calculate total duration
     const totalDurationMs = Date.now() - functionStartTime;
     
-    // Return enhanced summary with performance metrics
+    // Return enhanced summary with performance metrics and pools data
     return new Response(
       JSON.stringify({
         requestsProcessed: processedRequests,
@@ -375,7 +385,10 @@ serve(async (req: Request) => {
         totalDurationMs,
         relaxedCriteriaUsed: relaxedCriteria,
         exactDestinationOnly: true,
-        details
+        details,
+        poolA: allPools.poolA,
+        poolB: allPools.poolB,
+        poolC: allPools.poolC
       }),
       {
         status: 200,
