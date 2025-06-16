@@ -87,7 +87,7 @@ const Login = () => {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: (import.meta.env.VITE_APP_URL || window.location.origin) + '/dashboard',
+          emailRedirectTo: window.location.origin + '/dashboard',
         }
       });
       
@@ -155,7 +155,7 @@ const Login = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: (import.meta.env.VITE_APP_URL || window.location.origin) + '/dashboard',
+          redirectTo: window.location.origin + '/dashboard',
           skipBrowserRedirect: false
         }
       });
