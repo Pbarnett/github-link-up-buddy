@@ -159,12 +159,23 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
             description: "We're finding the best flight options for your trip.",
           });
 
-        } catch (searchError) {
-          console.warn('Flight search failed during form submission:', searchError);
+        } catch (err) {
+          console.error('[invokeFlightSearch] raw error →', err);
+          console.error('[invokeFlightSearch] typeof →', typeof err);
+          console.error('[invokeFlightSearch] keys →', Object.keys(err || {}));
+          if (err && typeof err === 'object' && 'status' in err) {
+            // Supabase FunctionsHttpError exposes .status / .context
+            // @ts-expect-error dynamic check
+            console.error('[invokeFlightSearch] status →', err.status);
+            // @ts-expect-error
+            if (err.context) console.error('[invokeFlightSearch] context →', err.context);
+          }
           toast({
-            title: "Search in progress",
-            description: "Flight search will continue on the next page.",
+            variant: 'destructive',
+            title: 'Flight search failed',
+            description: typeof err === 'object' ? JSON.stringify(err, null, 2) : String(err),
           });
+          throw err;
         }
       }
 
