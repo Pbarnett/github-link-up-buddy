@@ -226,16 +226,38 @@ serve(async (req: Request) => {
             return true;
           }
           
-          // Tertiary match: partial matching for metro areas (e.g., NYC -> JFK, LGA, EWR)
+          // Tertiary match: comprehensive mapping for metro areas and nearby airports
           // This helps with cases where users search for city codes but API returns specific airports
           const cityAirportMapping = {
+            // US Major Cities
             'NYC': ['JFK', 'LGA', 'EWR'],
-            'LON': ['LHR', 'LGW', 'STN', 'LTN'],
-            'PAR': ['CDG', 'ORY'],
             'CHI': ['ORD', 'MDW'],
             'WAS': ['DCA', 'IAD', 'BWI'],
-            'MIL': ['MXP', 'LIN'],
-            'TYO': ['NRT', 'HND']
+            'LAX': ['LAX', 'BUR', 'LGB', 'SNA'], // Los Angeles area
+            'SFO': ['SFO', 'OAK', 'SJC'], // San Francisco Bay Area
+            'MIA': ['MIA', 'FLL', 'PBI'], // South Florida
+            'DFW': ['DFW', 'DAL'], // Dallas
+            'HOU': ['IAH', 'HOU'], // Houston
+            'BOS': ['BOS', 'PVD'], // Boston area
+            
+            // European Cities
+            'LON': ['LHR', 'LGW', 'STN', 'LTN', 'LCY'],
+            'PAR': ['CDG', 'ORY', 'BVA'],
+            'MIL': ['MXP', 'LIN', 'BGY'],
+            'ROM': ['FCO', 'CIA'],
+            'BER': ['BER', 'SXF', 'TXL'],
+            'STO': ['ARN', 'BMA', 'NYO'],
+            
+            // Asian Cities
+            'TYO': ['NRT', 'HND'],
+            'OSA': ['KIX', 'ITM'],
+            'SEL': ['ICN', 'GMP'],
+            'BKK': ['BKK', 'DMK'],
+            
+            // Special Cases & Islands
+            'MVY': ['MVY', 'ACK'], // Martha's Vineyard area
+            'HPN': ['HPN', 'LGA'], // White Plains area
+            'ISP': ['ISP', 'JFK', 'LGA'], // Long Island
           };
           
           // Check if requested destination is a city code and offer matches any of its airports
@@ -295,6 +317,29 @@ serve(async (req: Request) => {
         console.log(`[flight-search] Request ${request.id}: ${priceFilteredOffers.length} offers after price filter, ${finalFilteredOffers.length} offers after ALL filters (seat, nonstop, baggage).`);
 
         if (finalFilteredOffers.length === 0) {
+          // Provide detailed debugging information about where offers were filtered out
+          let errorMessage = "No matching offers found";
+          const filteringDetails = [];
+          
+          if (offers.length === 0) {
+            errorMessage = "No offers returned from flight search API";
+          } else if (destinationOffers.length === 0) {
+            errorMessage = `No offers matched destination ${request.destination_location_code}. API returned destinations: ${[...new Set(offers.map(o => o.destination_airport))].join(', ')}`;
+            filteringDetails.push(`destination_filter: ${offers.length} → 0`);
+          } else if (priceFilteredOffers.length === 0) {
+            errorMessage = `No offers within price limit. Budget: ${request.budget}, Max price: ${request.max_price}, Offer prices: ${destinationOffers.map(o => o.price).sort((a,b) => a-b).slice(0,5).join(', ')}`;
+            filteringDetails.push(`price_filter: ${destinationOffers.length} → 0`);
+          } else {
+            // Offers were filtered out by nonstop, baggage, or seat requirements
+            const nonstopIssues = priceFilteredOffers.filter(o => request.nonstop_required && !o.nonstop_match).length;
+            const baggageIssues = priceFilteredOffers.filter(o => request.baggage_included_required && !o.baggage_included).length;
+            
+            if (nonstopIssues > 0) filteringDetails.push(`nonstop_filter: ${nonstopIssues} offers excluded`);
+            if (baggageIssues > 0) filteringDetails.push(`baggage_filter: ${baggageIssues} offers excluded`);
+            
+            errorMessage = `Offers filtered out by requirements: ${filteringDetails.join(', ')}`;
+          }
+          
           details.push({
             tripRequestId: request.id,
             matchesFound: 0,
@@ -302,7 +347,8 @@ serve(async (req: Request) => {
             exactDestinationOffers: destinationOffers.length,
             offersFiltered: priceFilteredOffers.length,
             offersAfterAllFilters: 0,
-            error: "No matching offers after all filters (seat, nonstop, baggage)"
+            error: errorMessage,
+            filteringDetails: filteringDetails.length > 0 ? filteringDetails.join(' | ') : undefined
           });
           continue;
         }
