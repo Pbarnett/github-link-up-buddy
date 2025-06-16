@@ -183,6 +183,7 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
       }
 
       logger.debug("[useTripOffersLegacy] Flight search invoked successfully.", { tripId, responseData: searchServiceResponse });
+      console.log("[useTripOffersLegacy] DEBUGGING: Search completed, checking database for offers...");
 
       if (relaxCriteriaArg) {
         toast({
@@ -191,14 +192,61 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
         });
       }
 
+      // Add delay to ensure edge function has time to write to database
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const fetchedOffers: Offer[] = await fetchTripOffers(tripId);
       logger.info(`[useTripOffersLegacy] Fetched ${fetchedOffers.length} offers via service for tripId: ${tripId}`);
+      console.log(`[useTripOffersLegacy] DEBUGGING: Database query returned ${fetchedOffers.length} offers`);
+      
+      // Enhanced debugging for search response vs database offers
+      if (searchServiceResponse.matchesInserted > 0 && fetchedOffers.length === 0) {
+        console.error("[useTripOffersLegacy] DEBUGGING: Edge function reported inserting offers but database query found none!");
+        console.error("[useTripOffersLegacy] DEBUGGING: Edge function response:", JSON.stringify(searchServiceResponse, null, 2));
+        
+        // Try a direct database check
+        const { data: directCheck, error: directError } = await supabase
+          .from("flight_offers")
+          .select("*")
+          .eq("trip_request_id", tripId)
+          .limit(5);
+        
+        console.error("[useTripOffersLegacy] DEBUGGING: Direct database check:", { directCheck, directError });
+      }
+      
+      if (searchServiceResponse.details && searchServiceResponse.details.length > 0) {
+        const detail = searchServiceResponse.details[0];
+        console.log("[useTripOffersLegacy] DEBUGGING: Search details:", {
+          offersGenerated: detail.offersGenerated,
+          exactDestinationOffers: detail.exactDestinationOffers,
+          offersAfterAllFilters: detail.offersAfterAllFilters,
+          matchesFound: detail.matchesFound,
+          error: detail.error,
+          filteringDetails: detail.filteringDetails
+        });
+      }
 
       if (fetchedOffers.length === 0) {
         logger.warn("[useTripOffersLegacy] No offers found via service for tripId:", tripId);
+        
+        // Enhanced error message based on search response
+        let errorDescription = "Try relaxing your search criteria or refreshing.";
+        if (searchServiceResponse.details && searchServiceResponse.details.length > 0) {
+          const detail = searchServiceResponse.details[0];
+          if (detail.error) {
+            errorDescription = `Search issue: ${detail.error}`;
+          } else if (detail.offersGenerated === 0) {
+            errorDescription = "No flights found by the search API. Try different dates or destinations.";
+          } else if (detail.exactDestinationOffers === 0) {
+            errorDescription = `Found ${detail.offersGenerated} flights but none to your exact destination. Try nearby airports or different dates.`;
+          } else if (detail.offersAfterAllFilters === 0) {
+            errorDescription = "Found flights but none matched your requirements (price, nonstop, baggage). Try relaxing filters.";
+          }
+        }
+        
         toast({
           title: "No flight offers found",
-          description: "Try relaxing your search criteria or refreshing.",
+          description: errorDescription,
           variant: "destructive",
         });
         setOffers([]);
