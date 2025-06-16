@@ -210,7 +210,8 @@ serve(async (req: Request) => {
         const offers = searchResult?.dbOffers || [];
         const pools = searchResult?.pools || { poolA: [], poolB: [], poolC: [] };
         
-        // Filter offers to match destination - with flexible matching for small airports
+        // Filter offers to match destination - EXACT matching only
+        // No nearby airports or metro area mapping - user gets exactly what they request
         const destinationOffers = offers.filter(offer => {
           const offerDestination = offer.destination_airport;
           const requestedDestination = request.destination_location_code;
@@ -223,35 +224,6 @@ serve(async (req: Request) => {
           // Secondary match: case-insensitive comparison (for robustness)
           if (offerDestination?.toLowerCase() === requestedDestination?.toLowerCase()) {
             return true;
-          }
-          
-          // Tertiary match: nearby airports for small destinations
-          // Martha's Vineyard (MVY) area airports
-          if (requestedDestination === 'MVY') {
-            const mvyAreaAirports = ['BOS', 'ACK', 'HYA', 'PVC']; // Boston, Nantucket, Hyannis, Provincetown
-            if (mvyAreaAirports.includes(offerDestination)) {
-              console.log(`[flight-search] MVY nearby match: offer=${offerDestination}, requested=${requestedDestination}`);
-              return true;
-            }
-          }
-          
-          // Nantucket (ACK) area airports  
-          if (requestedDestination === 'ACK') {
-            const ackAreaAirports = ['BOS', 'MVY', 'HYA', 'PVC'];
-            if (ackAreaAirports.includes(offerDestination)) {
-              console.log(`[flight-search] ACK nearby match: offer=${offerDestination}, requested=${requestedDestination}`);
-              return true;
-            }
-          }
-          
-          // Small island destinations that often connect through larger hubs
-          const smallIslandDestinations = ['MVY', 'ACK', 'HYA', 'PVC', 'CGA', 'MHA', 'MVY'];
-          if (smallIslandDestinations.includes(requestedDestination)) {
-            // Allow Boston as a connection hub for Cape Cod/Islands area
-            if (offerDestination === 'BOS') {
-              console.log(`[flight-search] Small island hub match: offer=${offerDestination}, requested=${requestedDestination}`);
-              return true;
-            }
           }
           
           // For debugging: log non-matching destinations
