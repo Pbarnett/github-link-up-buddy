@@ -1,6 +1,6 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
-import { useTripOffers, clearCache } from '@/hooks/useTripOffersLegacy';
+import { useTripOffers, clearCache } from '@/hooks/useTripOffers';
 import { type TripDetails } from '@/hooks/useTripOffers';
 import * as tripOffersService from '@/services/tripOffersService';
 import * as flightSearchApi from '@/services/api/flightSearchApi';
@@ -9,15 +9,11 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Mock the services
 vi.mock('@/services/tripOffersService');
-
-// Corrected: Define vi.mock factory that returns mock functions directly
 vi.mock('@/services/api/flightSearchApi', () => ({
   invokeFlightSearch: vi.fn(),
   fetchFlightSearch: vi.fn(),
 }));
 
-// Import the mocked functions here to get a reference to them
-// These are now vi.fn() instances created by the factory above.
 import { invokeFlightSearch, fetchFlightSearch } from '@/services/api/flightSearchApi';
 
 vi.mock('@/components/ui/use-toast');
@@ -30,7 +26,6 @@ vi.mock('@/lib/logger', () => ({
   },
 }));
 
-// Mock Supabase client
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn().mockReturnValue({
