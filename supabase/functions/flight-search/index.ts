@@ -210,22 +210,53 @@ serve(async (req: Request) => {
         const offers = searchResult?.dbOffers || [];
         const pools = searchResult?.pools || { poolA: [], poolB: [], poolC: [] };
         
-        // Filter offers to ensure they match the EXACT destination airport only
-        const exactDestinationOffers = offers.filter(offer => {
+        // Filter offers to match destination - allow for flexibility with airport codes
+        // This fixes the issue where APIs return nearby airports or variant codes
+        const destinationOffers = offers.filter(offer => {
           const offerDestination = offer.destination_airport;
           const requestedDestination = request.destination_location_code;
-          return offerDestination === requestedDestination;
+          
+          // Primary match: exact destination
+          if (offerDestination === requestedDestination) {
+            return true;
+          }
+          
+          // Secondary match: case-insensitive comparison
+          if (offerDestination?.toLowerCase() === requestedDestination?.toLowerCase()) {
+            return true;
+          }
+          
+          // Tertiary match: partial matching for metro areas (e.g., NYC -> JFK, LGA, EWR)
+          // This helps with cases where users search for city codes but API returns specific airports
+          const cityAirportMapping = {
+            'NYC': ['JFK', 'LGA', 'EWR'],
+            'LON': ['LHR', 'LGW', 'STN', 'LTN'],
+            'PAR': ['CDG', 'ORY'],
+            'CHI': ['ORD', 'MDW'],
+            'WAS': ['DCA', 'IAD', 'BWI'],
+            'MIL': ['MXP', 'LIN'],
+            'TYO': ['NRT', 'HND']
+          };
+          
+          // Check if requested destination is a city code and offer matches any of its airports
+          if (cityAirportMapping[requestedDestination]?.includes(offerDestination)) {
+            return true;
+          }
+          
+          // For debugging: log non-matching destinations
+          console.log(`[flight-search] Destination mismatch: offer=${offerDestination}, requested=${requestedDestination}`);
+          return false;
         });
         
-        console.log(`[flight-search] Request ${request.id}: Filtered from ${offers.length} to ${exactDestinationOffers.length} offers matching exact destination ${request.destination_location_code}`);
+        console.log(`[flight-search] Request ${request.id}: Filtered from ${offers.length} to ${destinationOffers.length} offers matching destination ${request.destination_location_code} (flexible matching)`);
         
         // Filter offers based on max_price (if specified)
         // If max_price is null, no filtering is applied (treat as "no filter")
         let priceFilteredOffers = request.max_price === null
-          ? exactDestinationOffers
-          : exactDestinationOffers.filter(offer => offer.price <= request.max_price);
+          ? destinationOffers
+          : destinationOffers.filter(offer => offer.price <= request.max_price);
 
-        console.log(`[flight-search] Request ${request.id}: Generated ${exactDestinationOffers.length} exact destination offers, filtered to ${priceFilteredOffers.length} by max price`);
+        console.log(`[flight-search] Request ${request.id}: Generated ${destinationOffers.length} destination offers, filtered to ${priceFilteredOffers.length} by max price`);
 
         // --- Start of new filtering logic ---
         const finalFilteredOffers = [];
@@ -268,7 +299,7 @@ serve(async (req: Request) => {
             tripRequestId: request.id,
             matchesFound: 0,
             offersGenerated: offers.length,
-            exactDestinationOffers: exactDestinationOffers.length,
+            exactDestinationOffers: destinationOffers.length,
             offersFiltered: priceFilteredOffers.length,
             offersAfterAllFilters: 0,
             error: "No matching offers after all filters (seat, nonstop, baggage)"
@@ -301,7 +332,7 @@ serve(async (req: Request) => {
             tripRequestId: request.id,
             matchesFound: 0,
             offersGenerated: offers.length,
-            exactDestinationOffers: exactDestinationOffers.length,
+            exactDestinationOffers: destinationOffers.length,
             offersFiltered: priceFilteredOffers.length,
             offersAfterAllFilters: finalFilteredOffers.length,
             offersInserted: 0,
@@ -347,7 +378,7 @@ serve(async (req: Request) => {
           tripRequestId: request.id, 
           matchesFound: newInserts,
           offersGenerated: offers.length,
-          exactDestinationOffers: exactDestinationOffers.length,
+          exactDestinationOffers: destinationOffers.length,
           offersFiltered: priceFilteredOffers.length,
           offersAfterAllFilters: finalFilteredOffers.length,
           offersInsertedToDB: savedOffers.length,
@@ -362,7 +393,7 @@ serve(async (req: Request) => {
           allPools.poolC.push(...(pools.poolC || []));
         }
         
-        console.log(`[flight-search] Request ${request.id}: fetched ${offers.length} offers → ${exactDestinationOffers.length} exact destination → ${priceFilteredOffers.length} price filtered → ${finalFilteredOffers.length} after all filters → ${newInserts} new matches`);
+        console.log(`[flight-search] Request ${request.id}: fetched ${offers.length} offers → ${destinationOffers.length} destination matched → ${priceFilteredOffers.length} price filtered → ${finalFilteredOffers.length} after all filters → ${newInserts} new matches`);
       } catch (requestError) {
         // Catch any errors in processing this specific trip request
         console.error(`[flight-search] Failed to process request ${request.id}: ${requestError.message}`);
