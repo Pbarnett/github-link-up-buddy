@@ -124,11 +124,21 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
       };
 
       logger.info("[useTripOffersLegacy] calling invokeFlightSearch with payload:", flightSearchPayload); // Changed console.log to logger.info
+      console.log("[useTripOffersLegacy] DEBUGGING: About to invoke flight search for trip:", tripId);
+      console.log("[useTripOffersLegacy] DEBUGGING: Trip details:", JSON.stringify(currentTripDetails, null, 2));
+      console.log("[useTripOffersLegacy] DEBUGGING: Flight search payload:", JSON.stringify(flightSearchPayload, null, 2));
 
       let searchServiceResponse: FlightSearchResponse;
       try {
+        console.log("[useTripOffersLegacy] DEBUGGING: Calling invokeFlightSearch...");
+        const startTime = Date.now();
         searchServiceResponse = await invokeFlightSearch(flightSearchPayload);
+        const endTime = Date.now();
+        console.log(`[useTripOffersLegacy] DEBUGGING: invokeFlightSearch completed in ${endTime - startTime}ms`);
+        console.log("[useTripOffersLegacy] DEBUGGING: Flight search response:", JSON.stringify(searchServiceResponse, null, 2));
       } catch (searchError) {
+        console.error("[useTripOffersLegacy] DEBUGGING: invokeFlightSearch failed with error:", searchError);
+        console.error("[useTripOffersLegacy] DEBUGGING: Error details:", JSON.stringify(searchError, null, 2));
         logger.error("[useTripOffersLegacy] Initial flight search failed, checking for existing offers:", { tripId, errorDetails: searchError });
 
         const existingOffersRaw = await fetchTripOffers(tripId);
