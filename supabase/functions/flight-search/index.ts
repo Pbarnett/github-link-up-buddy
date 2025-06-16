@@ -1,4 +1,3 @@
-console.info('[flight-search] boot OK', new Date().toISOString());
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -105,7 +104,6 @@ serve(async (req: Request) => {
     let processedRequests = 0;
     let totalMatchesInserted = 0;
     const details = [];
-    let allPools = { poolA: [], poolB: [], poolC: [] };
     
     // Process each trip request
     for (const request of requests) {
@@ -200,7 +198,6 @@ serve(async (req: Request) => {
           // Use the enhanced API to get flight offers with multiple search strategies
           searchResult = await searchOffers(searchParams, request.id);
           console.log(`[flight-search] Request ${request.id}: Found ${searchResult.dbOffers ? searchResult.dbOffers.length : 'undefined'} transformed offers from API (exact destination only)`);
-          console.log(`[flight-search] Request ${request.id}: Pools - A: ${searchResult.pools?.poolA?.length || 0}, B: ${searchResult.pools?.poolB?.length || 0}, C: ${searchResult.pools?.poolC?.length || 0}`);
         } catch (apiError) {
           console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
@@ -209,38 +206,23 @@ serve(async (req: Request) => {
 
         // Extract offers from the search result
         const offers = searchResult?.dbOffers || [];
-        const pools = searchResult?.pools || { poolA: [], poolB: [], poolC: [] };
         
-        // Filter offers to match destination - EXACT matching only
-        // No nearby airports or metro area mapping - user gets exactly what they request
-        const destinationOffers = offers.filter(offer => {
+        // Filter offers to ensure they match the EXACT destination airport only
+        const exactDestinationOffers = offers.filter(offer => {
           const offerDestination = offer.destination_airport;
           const requestedDestination = request.destination_location_code;
-          
-          // Primary match: exact destination
-          if (offerDestination === requestedDestination) {
-            return true;
-          }
-          
-          // Secondary match: case-insensitive comparison (for robustness)
-          if (offerDestination?.toLowerCase() === requestedDestination?.toLowerCase()) {
-            return true;
-          }
-          
-          // For debugging: log non-matching destinations
-          console.log(`[flight-search] Destination mismatch: offer=${offerDestination}, requested=${requestedDestination}`);
-          return false;
+          return offerDestination === requestedDestination;
         });
         
-        console.log(`[flight-search] Request ${request.id}: Filtered from ${offers.length} to ${destinationOffers.length} offers matching destination ${request.destination_location_code} (exact matching only)`);
+        console.log(`[flight-search] Request ${request.id}: Filtered from ${offers.length} to ${exactDestinationOffers.length} offers matching exact destination ${request.destination_location_code}`);
         
         // Filter offers based on max_price (if specified)
         // If max_price is null, no filtering is applied (treat as "no filter")
         let priceFilteredOffers = request.max_price === null
-          ? destinationOffers
-          : destinationOffers.filter(offer => offer.price <= request.max_price);
+          ? exactDestinationOffers
+          : exactDestinationOffers.filter(offer => offer.price <= request.max_price);
 
-        console.log(`[flight-search] Request ${request.id}: Generated ${destinationOffers.length} destination offers, filtered to ${priceFilteredOffers.length} by max price`);
+        console.log(`[flight-search] Request ${request.id}: Generated ${exactDestinationOffers.length} exact destination offers, filtered to ${priceFilteredOffers.length} by max price`);
 
         // --- Start of new filtering logic ---
         const finalFilteredOffers = [];
@@ -279,38 +261,14 @@ serve(async (req: Request) => {
         console.log(`[flight-search] Request ${request.id}: ${priceFilteredOffers.length} offers after price filter, ${finalFilteredOffers.length} offers after ALL filters (seat, nonstop, baggage).`);
 
         if (finalFilteredOffers.length === 0) {
-          // Provide detailed debugging information about where offers were filtered out
-          let errorMessage = "No matching offers found";
-          const filteringDetails = [];
-          
-          if (offers.length === 0) {
-            errorMessage = "No offers returned from flight search API";
-          } else if (destinationOffers.length === 0) {
-            errorMessage = `No offers matched destination ${request.destination_location_code}. API returned destinations: ${[...new Set(offers.map(o => o.destination_airport))].join(', ')}`;
-            filteringDetails.push(`destination_filter: ${offers.length} → 0`);
-          } else if (priceFilteredOffers.length === 0) {
-            errorMessage = `No offers within price limit. Budget: ${request.budget}, Max price: ${request.max_price}, Offer prices: ${destinationOffers.map(o => o.price).sort((a,b) => a-b).slice(0,5).join(', ')}`;
-            filteringDetails.push(`price_filter: ${destinationOffers.length} → 0`);
-          } else {
-            // Offers were filtered out by nonstop, baggage, or seat requirements
-            const nonstopIssues = priceFilteredOffers.filter(o => request.nonstop_required && !o.nonstop_match).length;
-            const baggageIssues = priceFilteredOffers.filter(o => request.baggage_included_required && !o.baggage_included).length;
-            
-            if (nonstopIssues > 0) filteringDetails.push(`nonstop_filter: ${nonstopIssues} offers excluded`);
-            if (baggageIssues > 0) filteringDetails.push(`baggage_filter: ${baggageIssues} offers excluded`);
-            
-            errorMessage = `Offers filtered out by requirements: ${filteringDetails.join(', ')}`;
-          }
-          
           details.push({
             tripRequestId: request.id,
             matchesFound: 0,
             offersGenerated: offers.length,
-            exactDestinationOffers: destinationOffers.length,
+            exactDestinationOffers: exactDestinationOffers.length,
             offersFiltered: priceFilteredOffers.length,
             offersAfterAllFilters: 0,
-            error: errorMessage,
-            filteringDetails: filteringDetails.length > 0 ? filteringDetails.join(' | ') : undefined
+            error: "No matching offers after all filters (seat, nonstop, baggage)"
           });
           continue;
         }
@@ -340,7 +298,7 @@ serve(async (req: Request) => {
             tripRequestId: request.id,
             matchesFound: 0,
             offersGenerated: offers.length,
-            exactDestinationOffers: destinationOffers.length,
+            exactDestinationOffers: exactDestinationOffers.length,
             offersFiltered: priceFilteredOffers.length,
             offersAfterAllFilters: finalFilteredOffers.length,
             offersInserted: 0,
@@ -386,7 +344,7 @@ serve(async (req: Request) => {
           tripRequestId: request.id, 
           matchesFound: newInserts,
           offersGenerated: offers.length,
-          exactDestinationOffers: destinationOffers.length,
+          exactDestinationOffers: exactDestinationOffers.length,
           offersFiltered: priceFilteredOffers.length,
           offersAfterAllFilters: finalFilteredOffers.length,
           offersInsertedToDB: savedOffers.length,
@@ -394,14 +352,7 @@ serve(async (req: Request) => {
           exactDestinationOnly: true
         });
         
-        // Collect pools data from this search result
-        if (pools) {
-          allPools.poolA.push(...(pools.poolA || []));
-          allPools.poolB.push(...(pools.poolB || []));
-          allPools.poolC.push(...(pools.poolC || []));
-        }
-        
-        console.log(`[flight-search] Request ${request.id}: fetched ${offers.length} offers → ${destinationOffers.length} destination matched → ${priceFilteredOffers.length} price filtered → ${finalFilteredOffers.length} after all filters → ${newInserts} new matches`);
+        console.log(`[flight-search] Request ${request.id}: fetched ${offers.length} offers → ${exactDestinationOffers.length} exact destination → ${priceFilteredOffers.length} price filtered → ${finalFilteredOffers.length} after all filters → ${newInserts} new matches`);
       } catch (requestError) {
         // Catch any errors in processing this specific trip request
         console.error(`[flight-search] Failed to process request ${request.id}: ${requestError.message}`);
@@ -416,7 +367,7 @@ serve(async (req: Request) => {
     // Calculate total duration
     const totalDurationMs = Date.now() - functionStartTime;
     
-    // Return enhanced summary with performance metrics and pools data
+    // Return enhanced summary with performance metrics
     return new Response(
       JSON.stringify({
         requestsProcessed: processedRequests,
@@ -424,10 +375,7 @@ serve(async (req: Request) => {
         totalDurationMs,
         relaxedCriteriaUsed: relaxedCriteria,
         exactDestinationOnly: true,
-        details,
-        poolA: allPools.poolA,
-        poolB: allPools.poolB,
-        poolC: allPools.poolC
+        details
       }),
       {
         status: 200,

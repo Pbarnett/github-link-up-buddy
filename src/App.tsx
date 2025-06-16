@@ -9,10 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import TripNew from "./pages/TripNew";
 import TripOffers from "./pages/TripOffers";
 import TripConfirm from "./pages/TripConfirm";
-import TripRequestFormPage from "./pages/TripRequestFormPage";
 import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
-import TestFlightSearch from "./pages/TestFlightSearch";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 
@@ -64,30 +62,6 @@ const App = () => {
                 }
               />
               <Route
-                path="/trip/confirm/:id"
-                element={
-                  <AuthGuard>
-                    <TripConfirm />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/trip/request/:tripRequestId"
-                element={
-                  <AuthGuard>
-                    <TripRequestFormPage />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/trip/request/:tripRequestId/edit"
-                element={
-                  <AuthGuard>
-                    <TripRequestFormPage />
-                  </AuthGuard>
-                }
-              />
-              <Route
                 path="/profile"
                 element={
                   <AuthGuard>
@@ -100,14 +74,6 @@ const App = () => {
                 element={
                   <AuthGuard>
                     <Wallet />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/test-flight-search"
-                element={
-                  <AuthGuard>
-                    <TestFlightSearch />
                   </AuthGuard>
                 }
               />
