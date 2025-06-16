@@ -53,32 +53,6 @@ export type Database = {
           },
         ]
       }
-      booking_attempts: {
-        Row: {
-          attempt_timestamp: string
-          id: string
-          trip_request_id: string | null
-        }
-        Insert: {
-          attempt_timestamp?: string
-          id?: string
-          trip_request_id?: string | null
-        }
-        Update: {
-          attempt_timestamp?: string
-          id?: string
-          trip_request_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_attempts_trip_request_id_fkey"
-            columns: ["trip_request_id"]
-            isOneToOne: true
-            referencedRelation: "trip_requests"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       booking_requests: {
         Row: {
           attempts: number
@@ -89,7 +63,6 @@ export type Database = {
           id: string
           offer_data: Json
           offer_id: string
-          payment_captured: boolean
           processed_at: string | null
           reminder_scheduled: boolean
           status: Database["public"]["Enums"]["booking_request_status"]
@@ -107,7 +80,6 @@ export type Database = {
           id?: string
           offer_data: Json
           offer_id: string
-          payment_captured?: boolean
           processed_at?: string | null
           reminder_scheduled?: boolean
           status?: Database["public"]["Enums"]["booking_request_status"]
@@ -125,7 +97,6 @@ export type Database = {
           id?: string
           offer_data?: Json
           offer_id?: string
-          payment_captured?: boolean
           processed_at?: string | null
           reminder_scheduled?: boolean
           status?: Database["public"]["Enums"]["booking_request_status"]
@@ -164,15 +135,13 @@ export type Database = {
           one_hour_email_sent: boolean
           one_hour_sms_sent: boolean
           payment_intent_id: string | null
-          payment_status: string
           pnr: string | null
           price: number | null
           seat_fee: number | null
           second_reminder_scheduled_at: string | null
-          selected_seat_number: string | null
           sms_reminder_sent: boolean
           source: string | null
-          status: Database["public"]["Enums"]["booking_status_enum"] | null
+          status: string | null
           trip_request_id: string
           user_id: string
         }
@@ -188,15 +157,13 @@ export type Database = {
           one_hour_email_sent?: boolean
           one_hour_sms_sent?: boolean
           payment_intent_id?: string | null
-          payment_status?: string
           pnr?: string | null
           price?: number | null
           seat_fee?: number | null
           second_reminder_scheduled_at?: string | null
-          selected_seat_number?: string | null
           sms_reminder_sent?: boolean
           source?: string | null
-          status?: Database["public"]["Enums"]["booking_status_enum"] | null
+          status?: string | null
           trip_request_id: string
           user_id: string
         }
@@ -212,15 +179,13 @@ export type Database = {
           one_hour_email_sent?: boolean
           one_hour_sms_sent?: boolean
           payment_intent_id?: string | null
-          payment_status?: string
           pnr?: string | null
           price?: number | null
           seat_fee?: number | null
           second_reminder_scheduled_at?: string | null
-          selected_seat_number?: string | null
           sms_reminder_sent?: boolean
           source?: string | null
-          status?: Database["public"]["Enums"]["booking_status_enum"] | null
+          status?: string | null
           trip_request_id?: string
           user_id?: string
         }
@@ -254,6 +219,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      draft_trip_requests: {
+        Row: {
+          created_at: string | null
+          current_step: string
+          id: string
+          step_data: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_step?: string
+          id?: string
+          step_data?: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_step?: string
+          id?: string
+          step_data?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       feature_flags: {
         Row: {
@@ -342,7 +334,6 @@ export type Database = {
           flight_number: string
           id: string
           layover_airports: string[] | null
-          nonstop_match: boolean | null
           origin_airport: string | null
           price: number
           return_date: string
@@ -365,7 +356,6 @@ export type Database = {
           flight_number: string
           id?: string
           layover_airports?: string[] | null
-          nonstop_match?: boolean | null
           origin_airport?: string | null
           price: number
           return_date: string
@@ -388,7 +378,6 @@ export type Database = {
           flight_number?: string
           id?: string
           layover_airports?: string[] | null
-          nonstop_match?: boolean | null
           origin_airport?: string | null
           price?: number
           return_date?: string
@@ -591,47 +580,6 @@ export type Database = {
         }
         Relationships: []
       }
-      payments: {
-        Row: {
-          amount: number
-          booking_id: string | null
-          created_at: string
-          currency: string
-          id: string
-          status: Database["public"]["Enums"]["payment_status_enum"]
-          stripe_payment_intent_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          booking_id?: string | null
-          created_at?: string
-          currency?: string
-          id?: string
-          status?: Database["public"]["Enums"]["payment_status_enum"]
-          stripe_payment_intent_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          booking_id?: string | null
-          created_at?: string
-          currency?: string
-          id?: string
-          status?: Database["public"]["Enums"]["payment_status_enum"]
-          stripe_payment_intent_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payments_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           created_at: string | null
@@ -642,6 +590,7 @@ export type Database = {
           phone: string | null
           prefers_email_notifications: boolean | null
           prefers_sms_notifications: boolean | null
+          trip_mode: string | null
           updated_at: string | null
         }
         Insert: {
@@ -653,6 +602,7 @@ export type Database = {
           phone?: string | null
           prefers_email_notifications?: boolean | null
           prefers_sms_notifications?: boolean | null
+          trip_mode?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -664,21 +614,18 @@ export type Database = {
           phone?: string | null
           prefers_email_notifications?: boolean | null
           prefers_sms_notifications?: boolean | null
+          trip_mode?: string | null
           updated_at?: string | null
         }
         Relationships: []
       }
       trip_requests: {
         Row: {
-          adults: number | null
-          auto_book: boolean
           auto_book_enabled: boolean
           baggage_included_required: boolean
-          best_price: number | null
           budget: number
           created_at: string
           departure_airports: string[]
-          departure_date: string | null
           destination_airport: string | null
           destination_location_code: string
           earliest_departure: string
@@ -689,21 +636,15 @@ export type Database = {
           max_price: number | null
           min_duration: number
           nonstop_required: boolean
-          origin_location_code: string | null
           preferred_payment_method_id: string | null
-          return_date: string | null
           user_id: string
         }
         Insert: {
-          adults?: number | null
-          auto_book?: boolean
           auto_book_enabled?: boolean
           baggage_included_required?: boolean
-          best_price?: number | null
           budget: number
           created_at?: string
           departure_airports?: string[]
-          departure_date?: string | null
           destination_airport?: string | null
           destination_location_code: string
           earliest_departure: string
@@ -714,21 +655,15 @@ export type Database = {
           max_price?: number | null
           min_duration?: number
           nonstop_required?: boolean
-          origin_location_code?: string | null
           preferred_payment_method_id?: string | null
-          return_date?: string | null
           user_id: string
         }
         Update: {
-          adults?: number | null
-          auto_book?: boolean
           auto_book_enabled?: boolean
           baggage_included_required?: boolean
-          best_price?: number | null
           budget?: number
           created_at?: string
           departure_airports?: string[]
-          departure_date?: string | null
           destination_airport?: string | null
           destination_location_code?: string
           earliest_departure?: string
@@ -739,9 +674,7 @@ export type Database = {
           max_price?: number | null
           min_duration?: number
           nonstop_required?: boolean
-          origin_location_code?: string | null
           preferred_payment_method_id?: string | null
-          return_date?: string | null
           user_id?: string
         }
         Relationships: []
@@ -770,7 +703,7 @@ export type Database = {
               p_payment_intent_id: string
               p_currency?: string
             }
-        Returns: undefined
+        Returns: Record<string, unknown>
       }
     }
     Enums: {
@@ -781,14 +714,6 @@ export type Database = {
         | "processing"
         | "done"
         | "failed"
-        | "cancelled"
-      booking_status_enum:
-        | "pending"
-        | "booked"
-        | "ticketed"
-        | "failed"
-        | "canceled"
-      payment_status_enum: "unpaid" | "pending" | "paid" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -911,16 +836,7 @@ export const Constants = {
         "processing",
         "done",
         "failed",
-        "cancelled",
       ],
-      booking_status_enum: [
-        "pending",
-        "booked",
-        "ticketed",
-        "failed",
-        "canceled",
-      ],
-      payment_status_enum: ["unpaid", "pending", "paid", "failed"],
     },
   },
 } as const

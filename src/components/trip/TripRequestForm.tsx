@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,23 +21,30 @@ import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import TripDurationInputs from "./sections/TripDurationInputs";
-import AutoBookingSection from "./sections/AutoBookingSection";
+import AutoBookingSection from "./sections/AutoBookingSection.tsx";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { validateFormData, isFormValid } from "@/lib/tripFormValidation";
-import { transformFormData } from "@/lib/tripFormTransformers";
-import { categorizeAirports } from "@/lib/airportUtils";
-import {
-  fetchTripRequest,
-  createTripRequest,
-  updateTripRequest,
-} from "@/services/tripService";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
   mode?: 'manual' | 'auto';
 }
+
+const categorizeAirports = (airports: string[] | null | undefined): { nycAirports: string[], otherAirport: string } => {
+  if (!airports) return { nycAirports: [], otherAirport: "" };
+  const nyc = ["JFK", "LGA", "EWR"];
+  const nycSelected: string[] = [];
+  let other = "";
+  airports.forEach(ap => {
+    if (nyc.includes(ap.toUpperCase())) {
+      nycSelected.push(ap.toUpperCase());
+    } else if (!other) {
+      other = ap.toUpperCase();
+    }
+  });
+  return { nycAirports: nycSelected, otherAirport: other };
+};
 
 const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProps) => {
   const navigate = useNavigate();
@@ -65,21 +71,20 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     },
   });
 
-  // Helper function for navigation after submit
-  function navigateToConfirmation(tripRequest: TripRequestFromDB) {
-    if (tripRequest && tripRequest.id) {
-      navigate(`/trip/confirm/${tripRequest.id}`);
-    } else {
-      navigate("/trip/confirm"); // fallback if id is missing
-    }
-  }
-
   useEffect(() => {
     if (tripRequestId) {
-      const fetchData = async () => {
+      const fetchTripDetails = async () => {
         setIsLoadingDetails(true);
         try {
-          const tripData = await fetchTripRequest(tripRequestId);
+          // Use TripRequestFromDB for typing the response
+          const { data: tripData, error } = await supabase
+            .from("trip_requests")
+            .select("*")
+            .eq("id", tripRequestId)
+            .single<TripRequestFromDB>(); // Specify the type here
+
+          if (error) throw error;
+
           if (tripData) {
             const { nycAirports, otherAirport } = categorizeAirports(tripData.departure_airports);
             form.reset({
@@ -94,22 +99,132 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
               destination_other: tripData.destination_airport?.length !== 3 || tripData.destination_airport !== tripData.destination_airport?.toUpperCase() ? tripData.destination_airport : "",
               nonstop_required: tripData.nonstop_required ?? true,
               baggage_included_required: tripData.baggage_included_required ?? false,
-              auto_book_enabled: tripData.auto_book_enabled ?? false,
+              auto_book_enabled: tripData.auto_book_enabled ?? false, // Use nullish coalescing
               max_price: tripData.max_price,
               preferred_payment_method_id: tripData.preferred_payment_method_id,
             });
           }
         } catch (err) {
-          // Error toast already handled in service
+          const error = err as Error | PostgrestError;
+          toast({
+            title: "Error fetching trip details",
+            description: error.message || "Failed to load existing trip data.",
+            variant: "destructive",
+          });
         } finally {
           setIsLoadingDetails(false);
         }
       };
-      fetchData();
+      fetchTripDetails();
     } else {
       form.reset(form.formState.defaultValues);
     }
   }, [tripRequestId, form]);
+
+  const validateFormData = (data: FormValues): boolean => {
+    const destinationAirport = data.destination_airport || data.destination_other || "";
+    if (!destinationAirport) {
+      toast({
+        title: "Validation error",
+        description: "Please select a destination or enter a custom one.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const transformFormData = (data: FormValues): ExtendedTripFormValues => {
+    const departureAirports: string[] = [];
+    if (data.nyc_airports && data.nyc_airports.length > 0) {
+      departureAirports.push(...data.nyc_airports);
+    }
+    if (data.other_departure_airport) {
+      departureAirports.push(data.other_departure_airport);
+    }
+    const destinationAirport = data.destination_airport || data.destination_other || "";
+    return {
+      earliestDeparture: data.earliestDeparture,
+      latestDeparture: data.latestDeparture,
+      min_duration: data.min_duration,
+      max_duration: data.max_duration,
+      budget: data.budget,
+      departure_airports: departureAirports,
+      destination_airport: destinationAirport,
+      destination_location_code: destinationAirport, // Add this mapping
+      nonstop_required: data.nonstop_required,
+      baggage_included_required: data.baggage_included_required,
+      auto_book_enabled: data.auto_book_enabled,
+      max_price: data.max_price,
+      preferred_payment_method_id: data.preferred_payment_method_id,
+    };
+  };
+
+  const createTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
+    if (!userId) throw new Error("You must be logged in to create a trip request.");
+    const tripRequestData = {
+      user_id: userId,
+      destination_airport: formData.destination_airport,
+      destination_location_code: formData.destination_airport, // Add this field
+      departure_airports: formData.departure_airports || [],
+      earliest_departure: formData.earliestDeparture.toISOString(),
+      latest_departure: formData.latestDeparture.toISOString(),
+      min_duration: formData.min_duration,
+      max_duration: formData.max_duration,
+      budget: formData.budget,
+      nonstop_required: formData.nonstop_required ?? true,
+      baggage_included_required: formData.baggage_included_required ?? false,
+      auto_book_enabled: formData.auto_book_enabled ?? false,
+      max_price: formData.max_price,
+      preferred_payment_method_id: formData.preferred_payment_method_id,
+    };
+    const { data, error } = await supabase
+      .from("trip_requests")
+      .insert([tripRequestData])
+      .select()
+      .single<TripRequestFromDB>();
+    if (error) throw error;
+    if (!data) throw new Error("Failed to create trip request or retrieve its data.");
+    return data;
+  };
+
+  const updateTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
+    if (!userId || !tripRequestId) throw new Error("User ID or Trip Request ID is missing for update.");
+    const tripRequestData = {
+      destination_airport: formData.destination_airport,
+      destination_location_code: formData.destination_airport, // Add this field
+      departure_airports: formData.departure_airports || [],
+      earliest_departure: formData.earliestDeparture.toISOString(),
+      latest_departure: formData.latestDeparture.toISOString(),
+      min_duration: formData.min_duration,
+      max_duration: formData.max_duration,
+      budget: formData.budget,
+      nonstop_required: formData.nonstop_required ?? true,
+      baggage_included_required: formData.baggage_included_required ?? false,
+      auto_book_enabled: formData.auto_book_enabled ?? false,
+      max_price: formData.max_price,
+      preferred_payment_method_id: formData.preferred_payment_method_id,
+    };
+    const { data, error } = await supabase
+      .from("trip_requests")
+      .update(tripRequestData)
+      .eq("id", tripRequestId)
+      .select()
+      .single<TripRequestFromDB>();
+    if (error) throw error;
+    if (!data) throw new Error("Failed to update trip request or retrieve its data.");
+    return data;
+  };
+
+  const navigateToConfirmation = (tripRequest: TripRequestFromDB): void => { // Typed parameter
+    const actionText = tripRequestId ? "updated" : "submitted";
+    const autoBookText = tripRequest.auto_book_enabled ? (tripRequestId ? ' Auto-booking settings updated.' : ' Auto-booking is enabled.') : '';
+    toast({
+      title: `Trip request ${actionText}`,
+      description: `Your trip request has been successfully ${actionText}!${autoBookText}`,
+    });
+    navigate(`/trip/offers?id=${tripRequest.id}&mode=${mode}`);
+  };
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
@@ -125,61 +240,56 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       }
 
       console.log("Form data before transform:", data);
-
+      // Specifically to check data.preferred_payment_method_id when auto_book_enabled is true
+      
       const action = tripRequestId ? "Updating" : "Creating";
       toast({
         title: `${action} trip request`,
         description: `Please wait while we ${action.toLowerCase()} your trip request...`,
       });
-
+      
       const transformedData = transformFormData(data);
       let resultingTripRequest: TripRequestFromDB;
 
       if (tripRequestId) {
-        // Use service function for update
-        resultingTripRequest = await updateTripRequest(userId, tripRequestId, transformedData);
+        resultingTripRequest = await updateTripRequest(transformedData);
       } else {
-        // Use service function for create
-        resultingTripRequest = await createTripRequest(userId, transformedData);
+        resultingTripRequest = await createTripRequest(transformedData);
+        
+        // 🎯 INTELLIGENT FLIGHT SEARCH TRIGGER for new trips
         try {
+          // Calculate date range to determine search strategy
           const timeDiff = transformedData.latestDeparture.getTime() - transformedData.earliestDeparture.getTime();
           const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
+          
           toast({
             title: "Searching for flights",
             description: `Analyzing ${daysDiff} days of flight options...`,
           });
-
+          
+          // Trigger flight search with appropriate strategy
           await invokeFlightSearch({
             tripRequestId: resultingTripRequest.id,
             relaxedCriteria: false
           });
-
+          
           toast({
             title: "Flight search initiated",
             description: "We're finding the best flight options for your trip.",
           });
-
-        } catch (err) {
-          console.error('[invokeFlightSearch] raw error →', err);
-          console.error('[invokeFlightSearch] typeof →', typeof err);
-          console.error('[invokeFlightSearch] keys →', Object.keys(err || {}));
-          if (err && typeof err === 'object' && 'status' in err) {
-            // Supabase FunctionsHttpError exposes .status / .context
-            console.error('[invokeFlightSearch] status →', (err as any).status);
-            if ('context' in err) console.error('[invokeFlightSearch] context →', (err as any).context);
-          }
+          
+        } catch (searchError) {
+          // Don't block navigation if search fails - user can retry on offers page
+          console.warn('Flight search failed during form submission:', searchError);
           toast({
-            variant: 'destructive',
-            title: 'Flight search failed',
-            description: typeof err === 'object' ? JSON.stringify(err, null, 2) : String(err),
+            title: "Search in progress",
+            description: "Flight search will continue on the next page.",
           });
-          throw err;
         }
       }
-
+      
       navigateToConfirmation(resultingTripRequest);
-
+      
     } catch (err) {
       const error = err as Error | PostgrestError;
       logger.error(`Error ${tripRequestId ? "updating" : "creating"} trip request:`, { tripRequestId, errorDetails: error });
@@ -193,8 +303,19 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     }
   };
 
+  // Check if required fields are filled for enabling submit button
   const watchedFields = form.watch();
-  const isFormValidState = isFormValid(watchedFields, mode);
+  const isFormValid = Boolean(
+    watchedFields.earliestDeparture &&
+    watchedFields.latestDeparture &&
+    watchedFields.budget &&
+    watchedFields.min_duration &&
+    watchedFields.max_duration &&
+    ((watchedFields.nyc_airports && watchedFields.nyc_airports.length > 0) || watchedFields.other_departure_airport) &&
+    (watchedFields.destination_airport || watchedFields.destination_other) &&
+    // Additional validation for auto mode
+    (mode === 'manual' || (watchedFields.auto_book_enabled && watchedFields.max_price))
+  );
 
   const buttonText = mode === 'auto' 
     ? (tripRequestId ? "Update Auto-Booking" : "Enable Auto-Booking")
@@ -279,7 +400,7 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                   </Button>
                   <Button 
                     type="submit" 
-                    disabled={isSubmitting || !isFormValidState} 
+                    disabled={isSubmitting || !isFormValid} 
                     className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-medium disabled:opacity-50 min-w-[160px] h-11"
                   >
                     {isSubmitting ? (
@@ -298,7 +419,7 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
         {/* Sticky Actions for Desktop */}
         <StickyFormActions
           isSubmitting={isSubmitting}
-          isFormValid={isFormValidState}
+          isFormValid={isFormValid}
           buttonText={buttonText}
           onSubmit={form.handleSubmit(onSubmit)}
         />

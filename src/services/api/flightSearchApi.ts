@@ -25,10 +25,8 @@ export interface FlightSearchDetail {
   offersGenerated?: number;
   exactDestinationOffers?: number;
   offersFiltered?: number;
-  offersAfterAllFilters?: number;
   offersInserted?: number;
   error?: string;
-  filteringDetails?: string;
   relaxedCriteria?: boolean;
   exactDestinationOnly?: boolean;
 }
