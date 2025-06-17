@@ -25,18 +25,16 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
   try {
     const offers = api.data.flatMap((offer: any) => {
       try {
-        const out = offer.itineraries[0].segments[0];
-        
-        // More robust handling of return segment
-        const backItin = offer.itineraries[1];
-        if (!backItin) {
-          console.log("Skipping one-way flight without return itinerary");
-          return [];
-        }
-        
-        const back = backItin.segments.slice(-1)[0];
-        if (!back?.departure?.at) {
-          console.log("Skipping offer with missing return departure time");
+        const out = offer?.itineraries?.[0]?.segments?.[0];
+        const backItin = offer?.itineraries?.[1];
+        const back = backItin?.segments?.slice(-1)?.[0];
+
+        // Essential data checks after optional chaining
+        if (!out?.departure?.at || !out?.carrierCode || !out?.number ||
+            !back?.departure?.at ||
+            !offer?.itineraries?.[0]?.duration ||
+            !offer?.price?.total) {
+          console.warn("Skipping offer due to missing essential data after optional chaining:", offer);
           return [];
         }
         
@@ -47,7 +45,8 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
         // Calculate trip duration to ensure it meets requirements
         const outDate = new Date(departureDate);
         const retDate = new Date(returnDate);
-        const tripDays = Math.round((retDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24));
+        // const tripDays = Math.round((retDate.getTime() - outDate.getTime()) / (1000 * 60 * 60 * 24));
+        // tripDays is calculated but not used, consider removing or using it for validation if needed.
         
         return [{
           trip_request_id: tripRequestId,
@@ -57,8 +56,8 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string): Table
           departure_time: out.departure.at.split("T")[1].slice(0,5),
           return_date: returnDate,
           return_time: back.departure.at.split("T")[1].slice(0,5),
-          duration: offer.itineraries[0].duration,
-          price: parseFloat(offer.price.total),
+          duration: offer.itineraries[0].duration, // Already checked via offer?.itineraries?.[0]?.duration
+          price: parseFloat(offer.price.total), // Already checked via offer?.price?.total
         }];
       } catch (err) {
         console.error("Error transforming individual offer:", err);
