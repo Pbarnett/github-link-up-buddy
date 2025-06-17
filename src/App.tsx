@@ -19,13 +19,13 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const { enabled, loading } = useFlightSearchV2Flag();
+  const flightSearchV2Enabled = useFlightSearchV2Flag();
 
   useEffect(() => {
-    if (!loading && enabled) {
-      console.log('🔧 v2 flag ON');
+    if (flightSearchV2Enabled) {
+      console.info('🔧 FS-V2 flag ON');
     }
-  }, [enabled, loading]);
+  }, [flightSearchV2Enabled]);
 
   return (
     <QueryClientProvider client={queryClient}>
