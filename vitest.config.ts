@@ -14,6 +14,7 @@ export default defineConfig({
       '**/supabase/functions/**', // Explicitly exclude edge functions
       'src/components/trip/**/__tests__/**',
       'src/tests/**',
+      'supabase/functions/**/__tests__/**',
     ],
     coverage: {
       reporter: ['text', 'json', 'lcov'],
