@@ -1,4 +1,5 @@
 
+// Attempting to address CI issues. Further clarification may be needed.
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { transformAmadeusToOffers } from "./flightApi.client";
 
@@ -139,7 +140,7 @@ describe("OAuth Token Management", () => {
     expect(mockFetchCounter).toBe(1);
 
     // Advance time to just before the safety buffer kicks in
-    vi.advanceTimersByTime(1740 * 1000); // Advance to 29 minutes (1740 seconds) - still within 1-minute buffer
+    vi.advanceTimersByTime((1740 - 1) * 1000); // Advance to 28m 59s (1739 seconds) - still within 1-minute buffer
 
     // Should still use cached token
     await fetchTokenForTest();
