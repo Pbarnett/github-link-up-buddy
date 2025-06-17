@@ -5,12 +5,12 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: false,
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'supabase/functions/**/*.test.ts'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      '**/supabase/**', // Exclude supabase functions from client-side tests
-      '**/supabase/functions/**', // Explicitly exclude edge functions
+      // '**/supabase/**', // Allow tests from supabase/functions
+      // '**/supabase/functions/**', // Specifically allowing this by removing it
     ],
 
     setupFiles: ['src/tests/setupTests.ts'],
