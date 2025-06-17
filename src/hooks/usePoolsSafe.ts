@@ -4,6 +4,7 @@ import { useTripOffers, UseTripOffersReturn } from './useTripOffersLegacy';
 import { toast } from '@/hooks/use-toast';
 import logger from '@/lib/logger';
 import { useState, useEffect } from 'react';
+import { ScoredOffer } from '@/types/offer';
 
 interface UsePoolsSafeParams {
   tripId: string | null;
@@ -59,8 +60,22 @@ export function usePoolsSafe(params: UsePoolsSafeParams): PoolsSafeResult {
 
   // If we're using fallback, return legacy data in pools format
   if (isUsingFallback && fallbackData) {
+    // Convert legacy offers to ScoredOffer format
+    const convertedOffers: ScoredOffer[] = fallbackData.offers.map(offer => ({
+      ...offer,
+      score: 1,
+      priceStructure: {
+        basePrice: offer.price,
+        fees: 0,
+        total: offer.price
+      },
+      carryOnIncluded: offer.baggage_included || false,
+      reasons: ['Legacy fallback offer'],
+      pool: 'pool1' as const
+    }));
+
     return {
-      pool1: fallbackData.offers.map(offer => ({ ...offer, score: 1 })),
+      pool1: convertedOffers,
       pool2: [],
       pool3: [],
       budget: fallbackData.tripDetails?.budget || 1000,
