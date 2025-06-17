@@ -5,16 +5,14 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: false,
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    // Ignore flaky legacy suites until rebuild is complete
+
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'supabase/functions/**/*.test.ts'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      '**/supabase/**', // Exclude supabase functions from client-side tests
-      '**/supabase/functions/**', // Explicitly exclude edge functions
-      'src/components/trip/**/__tests__/**',
-      'src/tests/**',
-      'supabase/functions/**/__tests__/**',
+      // '**/supabase/**', // Allow tests from supabase/functions
+      // '**/supabase/functions/**', // Specifically allowing this by removing it
+
     ],
     coverage: {
       reporter: ['text', 'json', 'lcov'],
