@@ -215,7 +215,7 @@ serve(async (req: Request) => {
         
         // Filter offers based on max_price (if specified)
         // If max_price is null, no filtering is applied (treat as "no filter")
-        let priceFilteredOffers = request.max_price === null
+        const priceFilteredOffers = request.max_price === null
           ? exactDestinationOffers
           : exactDestinationOffers.filter(offer => offer.price <= request.max_price);
 
