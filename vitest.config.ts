@@ -15,7 +15,18 @@ export default defineConfig({
 
     setupFiles: ['src/tests/setupTests.ts'],
     types: ['@testing-library/jest-dom'],
-
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'html', 'lcov'],
+      thresholds: {
+        global: {
+          statements: 80,
+          branches: 80,
+          functions: 80,
+          lines: 80,
+        },
+      },
+    },
   },
   resolve: {
     alias: {
