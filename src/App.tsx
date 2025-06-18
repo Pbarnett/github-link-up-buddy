@@ -1,9 +1,7 @@
 
-import { useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useFlightSearchV2Flag } from '@/flightSearchV2/useFlightSearchV2Flag';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -19,14 +17,6 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const flightSearchV2Enabled = useFlightSearchV2Flag();
-
-  useEffect(() => {
-    if (flightSearchV2Enabled) {
-      console.info('🔧 FS-V2 flag ON');
-    }
-  }, [flightSearchV2Enabled]);
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
