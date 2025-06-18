@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client'; // For safeQuery's potential use, though safeQuery abstracts it
 import { safeQuery } from '@/lib/supabaseUtils';
 import { useFlightSearchV2Flag } from './useFlightSearchV2Flag';
-import type { FlightOfferV2 } from './types';
+import type { FlightOfferV2, FlightOfferV2DbRow } from './types';
 
 export interface UseFlightOffersOptions {
   enabled?: boolean;
@@ -59,7 +59,24 @@ export function useFlightOffers(
         } else {
           // Assuming the data from Supabase matches FlightOfferV2[] structure.
           // Add type assertion if necessary, or data transformation.
-          setOffers(data as FlightOfferV2[] || []); // Ensure data is not null/undefined before setting
+          const dbData = data as FlightOfferV2DbRow[] || [];
+          const mappedOffers: FlightOfferV2[] = dbData.map(dbRow => ({
+            id: dbRow.id,
+            tripRequestId: dbRow.trip_request_id,
+            mode: dbRow.mode,
+            priceTotal: dbRow.price_total,
+            priceCarryOn: dbRow.price_carry_on,
+            bagsIncluded: dbRow.bags_included,
+            cabinClass: dbRow.cabin_class,
+            nonstop: dbRow.nonstop,
+            originIata: dbRow.origin_iata,
+            destinationIata: dbRow.destination_iata,
+            departDt: dbRow.depart_dt,
+            returnDt: dbRow.return_dt,
+            seatPref: dbRow.seat_pref,
+            createdAt: dbRow.created_at,
+          }));
+          setOffers(mappedOffers);
           setError(null);
         }
         setLoading(false);

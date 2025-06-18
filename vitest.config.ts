@@ -23,8 +23,7 @@ export default defineConfig({
     types: ['@testing-library/jest-dom'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'lcov'], // Updated reporter
-      // Updated thresholds structure
+      reporter: ['text', 'json', 'lcov'],
       statements: 80,
       branches: 80,
       functions: 80,
