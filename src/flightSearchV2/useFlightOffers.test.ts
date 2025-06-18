@@ -3,7 +3,7 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { useFlightOffers } from './useFlightOffers';
 import { safeQuery } from '@/lib/supabaseUtils';
 import { useFlightSearchV2Flag } from './useFlightSearchV2Flag';
-import type { FlightOfferV2 } from './types';
+import type { FlightOfferV2, FlightOfferV2DbRow } from './types';
 
 // Mock dependencies
 vi.mock('@/lib/supabaseUtils', () => ({
@@ -30,10 +30,19 @@ vi.mock('@/integrations/supabase/client', () => ({
 
 
 const mockTripRequestId = 'test-trip-123';
-const mockOffers: FlightOfferV2[] = [
+
+// This is the expected output structure (camelCase)
+const mockOffersCamelCase: FlightOfferV2[] = [
   { id: 'offer-1', tripRequestId: mockTripRequestId, mode: 'AUTO', priceTotal: 100, priceCarryOn: null, bagsIncluded: true, cabinClass: 'ECONOMY', nonstop: true, originIata: 'JFK', destinationIata: 'LAX', departDt: '2024-09-01T10:00:00Z', returnDt: null, seatPref: null, createdAt: '2024-08-01T12:00:00Z' },
   { id: 'offer-2', tripRequestId: mockTripRequestId, mode: 'MANUAL', priceTotal: 150, priceCarryOn: 25, bagsIncluded: false, cabinClass: 'BUSINESS', nonstop: false, originIata: 'JFK', destinationIata: 'LAX', departDt: '2024-09-02T10:00:00Z', returnDt: null, seatPref: 'AISLE', createdAt: '2024-08-01T13:00:00Z' },
 ];
+
+// This is what safeQuery will return (snake_case)
+const mockDbRows: FlightOfferV2DbRow[] = [
+  { id: 'offer-1', trip_request_id: mockTripRequestId, mode: 'AUTO', price_total: 100, price_carry_on: null, bags_included: true, cabin_class: 'ECONOMY', nonstop: true, origin_iata: 'JFK', destination_iata: 'LAX', depart_dt: '2024-09-01T10:00:00Z', return_dt: null, seat_pref: null, created_at: '2024-08-01T12:00:00Z' },
+  { id: 'offer-2', trip_request_id: mockTripRequestId, mode: 'MANUAL', price_total: 150, price_carry_on: 25, bags_included: false, cabin_class: 'BUSINESS', nonstop: false, origin_iata: 'JFK', destination_iata: 'LAX', depart_dt: '2024-09-02T10:00:00Z', return_dt: null, seat_pref: 'AISLE', created_at: '2024-08-01T13:00:00Z' },
+];
+
 
 describe('useFlightOffers', () => {
   beforeEach(() => {
@@ -54,14 +63,14 @@ describe('useFlightOffers', () => {
   });
 
   it('2. Happy path (flag ON) → returns mocked rows', async () => {
-    (safeQuery as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: mockOffers, error: null });
+    (safeQuery as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: mockDbRows, error: null });
     const { result } = renderHook(() => useFlightOffers(mockTripRequestId));
 
     expect(result.current.isLoading).toBe(true); // Initial loading state
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
-      expect(result.current.offers).toEqual(mockOffers);
+      expect(result.current.offers).toEqual(mockOffersCamelCase); // Assert against the expected camelCase output
       expect(result.current.error).toBeNull();
     });
     expect(safeQuery).toHaveBeenCalledTimes(1);
@@ -109,7 +118,7 @@ describe('useFlightOffers', () => {
 
     // Make safeQuery resolve after a delay
     (safeQuery as ReturnType<typeof vi.fn>).mockImplementationOnce(() =>
-      new Promise(resolve => setTimeout(() => resolve({ data: mockOffers, error: null }), 50))
+      new Promise(resolve => setTimeout(() => resolve({ data: mockDbRows, error: null }), 50))
     );
 
     const { unmount, result } = renderHook(() => useFlightOffers(mockTripRequestId));

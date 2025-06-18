@@ -111,7 +111,7 @@ describe('selectSeat', () => {
         const seats = [createMockSeat('1A', ['AISLE'], 0)];
         const mockSeatMap = { flightSegments: [createMockSegment(seats)] };
         // Test with remaining budget > 0
-        const result = selectSeat(mockSeatMap, baseFare, baseFare + 10, true); // budget 110, remaining 10
+        let result = selectSeat(mockSeatMap, baseFare, baseFare + 10, true); // budget 110, remaining 10
         expect(result).toEqual({ seatNumber: '1A', seatType: 'AISLE', price: 0 });
 
         // Test with remaining budget = 0. User's code `remainingBudget <=0` returns null.
