@@ -15,6 +15,7 @@ export default defineConfig({
 
     ],
     coverage: {
+      provider: 'v8',
       reporter: ['text', 'json', 'lcov'],
       statements: 80,
       branches: 80,
