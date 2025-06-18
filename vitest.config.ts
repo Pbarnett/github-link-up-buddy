@@ -6,12 +6,14 @@ export default defineConfig({
     environment: 'jsdom',
     globals: false,
 
+
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'supabase/functions/**/*.test.ts'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
       // '**/supabase/**', // Allow tests from supabase/functions
       // '**/supabase/functions/**', // Specifically allowing this by removing it
+
 
     ],
     coverage: {
@@ -27,7 +29,15 @@ export default defineConfig({
 
     setupFiles: ['src/tests/setupTests.ts'],
     types: ['@testing-library/jest-dom'],
-
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'lcov'], // Updated reporter
+      // Updated thresholds structure
+      statements: 80,
+      branches: 80,
+      functions: 80,
+      lines: 80,
+    },
   },
   resolve: {
     alias: {
