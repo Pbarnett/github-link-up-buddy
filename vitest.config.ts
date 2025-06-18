@@ -20,6 +20,9 @@ export default defineConfig({
       branches: 80,
       functions: 80,
       lines: 80,
+      exclude: [
+        'src/integrations/supabase/types.generated.ts',
+      ],
     },
 
     setupFiles: ['src/tests/setupTests.ts'],
