@@ -65,13 +65,13 @@ export function usePoolsSafe(params: UsePoolsSafeParams): PoolsSafeResult {
       ...offer,
       score: 1,
       priceStructure: {
-        basePrice: offer.price,
-        fees: 0,
+        base: offer.price,
+        carryOnFee: 0,
         total: offer.price
       },
       carryOnIncluded: offer.baggage_included || false,
       reasons: ['Legacy fallback offer'],
-      pool: 'pool1' as const
+      pool: 1
     }));
 
     return {
