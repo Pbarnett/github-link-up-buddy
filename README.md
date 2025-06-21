@@ -119,6 +119,39 @@ Use these metrics to:
 - Monitor rate limit impacts
 - Ensure the system is performing within expected parameters
 
+### Flight Search v2
+
+A new version of the flight search functionality (V2) is being developed. This version introduces a new data path and user interface for displaying flight offers.
+
+**Key Components:**
+
+*   **`flight_offers_v2` Table:** A new database table to store V2 flight offers.
+*   **`/flight-offers-v2` Edge Function:** Retrieves V2 flight offers based on a `trip_request_id`.
+*   **`flight_search_v2_enabled` Feature Flag:** Controls the availability of the V2 functionality (both in environment variables and the `feature_flags` database table).
+*   **`useFlightOffers` Hook (`src/flightSearchV2/useFlightOffers.ts`):**
+    *   Fetches V2 flight offers via a server action.
+    *   Handles mapping from database schema (snake_case) to application schema (camelCase).
+    *   Includes cancellation-on-unmount and early return if the feature flag is disabled.
+*   **`getFlightOffers` Server Action (`src/serverActions/getFlightOffers.ts`):**
+    *   Calls the `/flight-offers-v2` edge function.
+    *   Implements a 5-minute in-memory cache for results.
+*   **`TripOffersV2.tsx` Page (`src/pages/TripOffersV2.tsx`):**
+    *   A new page that utilizes the `useFlightOffers` hook to display V2 flight offers.
+    *   Includes loading, empty, and error states.
+    *   Shows a placeholder if the V2 feature flag is disabled.
+
+**Testing:**
+
+*   Unit tests for the `getFlightOffers` server action (Vitest, mocked fetch).
+*   Hook tests for `useFlightOffers` (Vitest with RTL, covering success, flag-off, invalid ID, unmount).
+*   Component tests for `TripOffersV2.tsx` (RTL, covering loading, data, empty, and flag-disabled states).
+
+**Accessing V2 Offers:**
+
+*   Navigate to the `/trip/offers-v2` route (exact route might vary depending on router configuration for `TripOffersV2.tsx`).
+*   Ensure the `flight_search_v2_enabled` feature flag is ON in your environment and database.
+*   Ensure there is data in the `flight_offers_v2` table for a given `trip_request_id` that the page will use.
+
 ## Project Structure
 
 - `/src/pages` - Main application pages

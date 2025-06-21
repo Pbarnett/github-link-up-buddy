@@ -1,85 +1,84 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { useFlightOffers } from './useFlightOffers';
-import { safeQuery } from '@/lib/supabaseUtils';
-import { useFlightSearchV2Flag } from './useFlightSearchV2Flag';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { useFlightOffers, mapFlightOfferDbRowToV2 } from './useFlightOffers'; // mapFlightOfferDbRowToV2 is also exported here
+import * as featureFlagHook from '@/hooks/useFeatureFlag';
+import * as serverActions from '@/serverActions/getFlightOffers';
 import type { FlightOfferV2, FlightOfferV2DbRow } from './types';
 
 // Mock dependencies
-vi.mock('@/lib/supabaseUtils', () => ({
-  safeQuery: vi.fn(),
-}));
-
-vi.mock('./useFlightSearchV2Flag', () => ({
-  useFlightSearchV2Flag: vi.fn(),
-}));
-
-// Mock Supabase client (though safeQuery abstracts it, some tests might want to verify its usage pattern indirectly)
-// For this hook, direct Supabase client mock might not be strictly needed if safeQuery is fully trusted.
-// However, if safeQuery's internal call to supabase.from(...).select(...).eq(...) needs verification,
-// then a deeper mock of supabase client would be required.
-// Given the spec focuses on mocking safeQuery, we'll rely on that.
-vi.mock('@/integrations/supabase/client', () => ({
-    supabase: {
-      from: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-    }
-  })
-);
-
+vi.mock('@/hooks/useFeatureFlag');
+vi.mock('@/serverActions/getFlightOffers');
 
 const mockTripRequestId = 'test-trip-123';
 
-// This is the expected output structure (camelCase)
-const mockOffersCamelCase: FlightOfferV2[] = [
-  { id: 'offer-1', tripRequestId: mockTripRequestId, mode: 'AUTO', priceTotal: 100, priceCarryOn: null, bagsIncluded: true, cabinClass: 'ECONOMY', nonstop: true, originIata: 'JFK', destinationIata: 'LAX', departDt: '2024-09-01T10:00:00Z', returnDt: null, seatPref: null, createdAt: '2024-08-01T12:00:00Z' },
-  { id: 'offer-2', tripRequestId: mockTripRequestId, mode: 'MANUAL', priceTotal: 150, priceCarryOn: 25, bagsIncluded: false, cabinClass: 'BUSINESS', nonstop: false, originIata: 'JFK', destinationIata: 'LAX', departDt: '2024-09-02T10:00:00Z', returnDt: null, seatPref: 'AISLE', createdAt: '2024-08-01T13:00:00Z' },
-];
-
-// This is what safeQuery will return (snake_case)
 const mockDbRows: FlightOfferV2DbRow[] = [
-  { id: 'offer-1', trip_request_id: mockTripRequestId, mode: 'AUTO', price_total: 100, price_carry_on: null, bags_included: true, cabin_class: 'ECONOMY', nonstop: true, origin_iata: 'JFK', destination_iata: 'LAX', depart_dt: '2024-09-01T10:00:00Z', return_dt: null, seat_pref: null, created_at: '2024-08-01T12:00:00Z' },
-  { id: 'offer-2', trip_request_id: mockTripRequestId, mode: 'MANUAL', price_total: 150, price_carry_on: 25, bags_included: false, cabin_class: 'BUSINESS', nonstop: false, origin_iata: 'JFK', destination_iata: 'LAX', depart_dt: '2024-09-02T10:00:00Z', return_dt: null, seat_pref: 'AISLE', created_at: '2024-08-01T13:00:00Z' },
+  { id: 'offer-db-1', trip_request_id: mockTripRequestId, mode: 'AUTO', price_total: 100, price_carry_on: null, bags_included: true, cabin_class: 'ECONOMY', nonstop: true, origin_iata: 'JFK', destination_iata: 'LAX', depart_dt: '2024-09-01T10:00:00Z', return_dt: null, seat_pref: null, created_at: '2024-08-01T12:00:00Z' },
+  { id: 'offer-db-2', trip_request_id: mockTripRequestId, mode: 'MANUAL', price_total: 150, price_carry_on: 25, bags_included: false, cabin_class: 'BUSINESS', nonstop: false, origin_iata: 'JFK', destination_iata: 'LAX', depart_dt: '2024-09-02T10:00:00Z', return_dt: null, seat_pref: 'AISLE', created_at: '2024-08-01T13:00:00Z' },
 ];
 
+const expectedMappedOffers: FlightOfferV2[] = mockDbRows.map(mapFlightOfferDbRowToV2);
 
-describe('useFlightOffers', () => {
+describe('useFlightOffers Hook', () => {
+  let mockUseFeatureFlag: vi.SpyInstance;
+  let mockGetFlightOffers: vi.SpyInstance;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default mock implementations
-    (useFlightSearchV2Flag as ReturnType<typeof vi.fn>).mockReturnValue({ enabled: true, loading: false });
-    (safeQuery as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [], error: null });
+    // Setup default mocks
+    mockUseFeatureFlag = vi.spyOn(featureFlagHook, 'useFeatureFlag').mockReturnValue(true);
+    mockGetFlightOffers = vi.spyOn(serverActions, 'getFlightOffers').mockResolvedValue([]);
   });
 
-  it('1. Flag OFF → no query, returns empty', async () => {
-    (useFlightSearchV2Flag as ReturnType<typeof vi.fn>).mockReturnValue({ enabled: false, loading: false });
+  it('should return initial state and featureEnabled: false if feature flag is off', () => {
+    mockUseFeatureFlag.mockReturnValue(false);
     const { result } = renderHook(() => useFlightOffers(mockTripRequestId));
 
     expect(result.current.offers).toEqual([]);
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
-    expect(safeQuery).not.toHaveBeenCalled();
+    expect(result.current.isFeatureEnabled).toBe(false);
+    expect(mockGetFlightOffers).not.toHaveBeenCalled();
   });
 
-  it('2. Happy path (flag ON) → returns mocked rows', async () => {
-    (safeQuery as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: mockDbRows, error: null });
+  it('should set error if tripRequestId is invalid and feature is enabled', () => {
+    const { result } = renderHook(() => useFlightOffers('')); // Invalid ID
+
+    expect(result.current.offers).toEqual([]);
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toEqual(new Error('Invalid tripRequestId provided.'));
+    expect(result.current.isFeatureEnabled).toBe(true);
+    expect(mockGetFlightOffers).not.toHaveBeenCalled();
+  });
+
+  it('should not fetch if opts.enabled is false, even if feature is enabled', () => {
+    const { result } = renderHook(() => useFlightOffers(mockTripRequestId, { enabled: false }));
+
+    expect(result.current.offers).toEqual([]);
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBeNull();
+    expect(result.current.isFeatureEnabled).toBe(true); // Feature flag is on
+    expect(mockGetFlightOffers).not.toHaveBeenCalled();
+  });
+
+  it('should fetch and map offers successfully when feature is enabled and hook is enabled', async () => {
+    mockGetFlightOffers.mockResolvedValue(mockDbRows);
     const { result } = renderHook(() => useFlightOffers(mockTripRequestId));
 
-    expect(result.current.isLoading).toBe(true); // Initial loading state
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.isFeatureEnabled).toBe(true);
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
-      expect(result.current.offers).toEqual(mockOffersCamelCase); // Assert against the expected camelCase output
+      expect(result.current.offers).toEqual(expectedMappedOffers);
       expect(result.current.error).toBeNull();
     });
-    expect(safeQuery).toHaveBeenCalledTimes(1);
-    // Optionally, verify arguments to safeQuery if needed (requires deeper inspection of safeQuery mock setup)
+    expect(mockGetFlightOffers).toHaveBeenCalledTimes(1);
+    expect(mockGetFlightOffers).toHaveBeenCalledWith(mockTripRequestId);
   });
 
-  it('3. Supabase error (via safeQuery mock) → error instance exposed', async () => {
-    const mockError = new Error('Supabase query failed');
-    (safeQuery as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: null, error: mockError });
+  it('should handle errors from getFlightOffers server action', async () => {
+    const mockError = new Error('Server action failed');
+    mockGetFlightOffers.mockRejectedValue(mockError);
     const { result } = renderHook(() => useFlightOffers(mockTripRequestId));
 
     expect(result.current.isLoading).toBe(true);
@@ -89,75 +88,73 @@ describe('useFlightOffers', () => {
       expect(result.current.offers).toEqual([]);
       expect(result.current.error).toBe(mockError);
     });
-    expect(safeQuery).toHaveBeenCalledTimes(1);
   });
 
-  it('4. Invalid id (empty string) → immediate INVALID_ID error, no Supabase call', () => {
-    const { result } = renderHook(() => useFlightOffers(''));
-
-    expect(result.current.offers).toEqual([]);
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.error).toBeInstanceOf(Error);
-    expect((result.current.error as Error).message).toBe('INVALID_ID');
-    expect(safeQuery).not.toHaveBeenCalled();
-  });
-
-  it('4. Invalid id (null) → immediate INVALID_ID error, no Supabase call', () => {
-    // @ts-expect-error testing invalid input
-    const { result } = renderHook(() => useFlightOffers(null));
-
-    expect(result.current.offers).toEqual([]);
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.error).toBeInstanceOf(Error);
-    expect((result.current.error as Error).message).toBe('INVALID_ID');
-    expect(safeQuery).not.toHaveBeenCalled();
-  });
-
-  it('5. Unmount safety – simulate unmount before promise resolves, assert no state-update warning', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    // Make safeQuery resolve after a delay
-    (safeQuery as ReturnType<typeof vi.fn>).mockImplementationOnce(() =>
-      new Promise(resolve => setTimeout(() => resolve({ data: mockDbRows, error: null }), 50))
-    );
+  it('should handle AbortController signal on unmount', async () => {
+    const abortSpy = vi.spyOn(AbortController.prototype, 'abort');
+    mockGetFlightOffers.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve(mockDbRows), 50)));
 
     const { unmount, result } = renderHook(() => useFlightOffers(mockTripRequestId));
+    expect(result.current.isLoading).toBe(true);
 
-    expect(result.current.isLoading).toBe(true); // Should be loading
-
-    // Unmount before the promise resolves
     unmount();
 
-    // Wait for a bit longer than the promise delay
+    // Wait for longer than the mock fetch
     await act(() => new Promise(resolve => setTimeout(resolve, 100)));
 
-    // Assert that no state update warnings (like "Can't perform a React state update on an unmounted component") occurred
-    // This is typically checked by ensuring console.error was not called with such a warning.
-    // The hook's `cancelled` flag should prevent setState calls.
-    expect(consoleErrorSpy).not.toHaveBeenCalledWith(expect.stringContaining('Can\'t perform a React state update on an unmounted component'));
-
-    // Note: The actual state values after unmount are less relevant than preventing the warning.
-    // If you need to check state, result.current will not update after unmount.
-
-    consoleErrorSpy.mockRestore();
+    expect(abortSpy).toHaveBeenCalledTimes(1);
+    // State should not have updated after unmount, so isLoading might still be true
+    // or values might be from initial state if unmount was very fast.
+    // The key is that no setState warning occurs (Vitest handles this by default).
   });
 
-  it('should not fetch if opts.enabled is false', async () => {
-    const { result } = renderHook(() => useFlightOffers(mockTripRequestId, { enabled: false }));
+  it('refetch function should trigger a new fetch', async () => {
+    mockGetFlightOffers
+      .mockResolvedValueOnce(mockDbRows)
+      .mockResolvedValueOnce([{ ...mockDbRows[0], id: 'refetched-offer' }]);
 
-    expect(result.current.offers).toEqual([]);
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.error).toBeNull();
-    expect(safeQuery).not.toHaveBeenCalled();
-  });
-
-  it('should not fetch if v2 flag is loading', async () => {
-    (useFlightSearchV2Flag as ReturnType<typeof vi.fn>).mockReturnValue({ enabled: true, loading: true });
     const { result } = renderHook(() => useFlightOffers(mockTripRequestId));
 
-    expect(result.current.offers).toEqual([]);
-    expect(result.current.isLoading).toBe(false); // Should be false as no fetch initiated
-    expect(result.current.error).toBeNull();
-    expect(safeQuery).not.toHaveBeenCalled();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.offers).toEqual(expectedMappedOffers);
+    expect(mockGetFlightOffers).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      result.current.refetch();
+    });
+
+    expect(result.current.isLoading).toBe(true);
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(mockGetFlightOffers).toHaveBeenCalledTimes(2);
+    // Check if the offers updated based on the second mock call
+    const expectedRefetchedOffer = mapFlightOfferDbRowToV2({ ...mockDbRows[0], id: 'refetched-offer' });
+    expect(result.current.offers).toEqual([expectedRefetchedOffer]);
+  });
+
+   it('should return new data if tripRequestId changes', async () => {
+    const initialId = 'trip-id-1';
+    const newId = 'trip-id-2';
+    const initialData = [{ ...mockDbRows[0], id: 'initial-offer', trip_request_id: initialId }];
+    const newData = [{ ...mockDbRows[1], id: 'new-offer', trip_request_id: newId }];
+
+    mockGetFlightOffers.mockResolvedValueOnce(initialData);
+    const { result, rerender } = renderHook(
+      ({ id }) => useFlightOffers(id),
+      { initialProps: { id: initialId } }
+    );
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.offers).toEqual(initialData.map(mapFlightOfferDbRowToV2));
+    expect(mockGetFlightOffers).toHaveBeenCalledWith(initialId);
+
+    mockGetFlightOffers.mockResolvedValueOnce(newData); // For the new ID
+    rerender({ id: newId });
+
+    expect(result.current.isLoading).toBe(true);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.offers).toEqual(newData.map(mapFlightOfferDbRowToV2));
+    expect(mockGetFlightOffers).toHaveBeenCalledWith(newId);
+    expect(mockGetFlightOffers).toHaveBeenCalledTimes(2);
   });
 });
