@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       auto_booking_requests: {
@@ -404,6 +429,80 @@ export type Database = {
           },
         ]
       }
+      flight_offers_v2: {
+        Row: {
+          arrival_airport: string | null
+          booking_url: string | null
+          carrier_code: string | null
+          created_at: string
+          departure_airport: string | null
+          departure_date: string | null
+          departure_time: string | null
+          duration: string | null
+          flight_number: string | null
+          flight_search_v2_enabled: boolean
+          id: string
+          offer_data: Json
+          price_base: number | null
+          price_currency: string
+          price_total: number
+          return_date: string | null
+          return_time: string | null
+          stops: number
+          trip_request_id: string
+        }
+        Insert: {
+          arrival_airport?: string | null
+          booking_url?: string | null
+          carrier_code?: string | null
+          created_at?: string
+          departure_airport?: string | null
+          departure_date?: string | null
+          departure_time?: string | null
+          duration?: string | null
+          flight_number?: string | null
+          flight_search_v2_enabled?: boolean
+          id?: string
+          offer_data: Json
+          price_base?: number | null
+          price_currency?: string
+          price_total: number
+          return_date?: string | null
+          return_time?: string | null
+          stops?: number
+          trip_request_id: string
+        }
+        Update: {
+          arrival_airport?: string | null
+          booking_url?: string | null
+          carrier_code?: string | null
+          created_at?: string
+          departure_airport?: string | null
+          departure_date?: string | null
+          departure_time?: string | null
+          duration?: string | null
+          flight_number?: string | null
+          flight_search_v2_enabled?: boolean
+          id?: string
+          offer_data?: Json
+          price_base?: number | null
+          price_currency?: string
+          price_total?: number
+          return_date?: string | null
+          return_time?: string | null
+          stops?: number
+          trip_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_offers_v2_trip_request_id_fkey"
+            columns: ["trip_request_id"]
+            isOneToOne: false
+            referencedRelation: "trip_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           booking_id: string | null
@@ -689,6 +788,7 @@ export type Database = {
           origin_location_code: string | null
           preferred_payment_method_id: string | null
           return_date: string | null
+          search_mode: string | null
           user_id: string
         }
         Insert: {
@@ -714,6 +814,7 @@ export type Database = {
           origin_location_code?: string | null
           preferred_payment_method_id?: string | null
           return_date?: string | null
+          search_mode?: string | null
           user_id: string
         }
         Update: {
@@ -739,6 +840,7 @@ export type Database = {
           origin_location_code?: string | null
           preferred_payment_method_id?: string | null
           return_date?: string | null
+          search_mode?: string | null
           user_id?: string
         }
         Relationships: []
@@ -899,6 +1001,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       booking_request_status: [
@@ -921,4 +1026,3 @@ export const Constants = {
     },
   },
 } as const
-
