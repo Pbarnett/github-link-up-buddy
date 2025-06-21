@@ -1,94 +1,126 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client'; // For safeQuery's potential use, though safeQuery abstracts it
-import { safeQuery } from '@/lib/supabaseUtils';
-import { useFlightSearchV2Flag } from './useFlightSearchV2Flag';
+import { useState, useEffect, useMemo } from 'react';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { getFlightOffers } from '@/serverActions/getFlightOffers';
+import { mapFlightOfferDbRowToV2 } from './utils/mapFlightOfferDbRowToV2';
 import type { FlightOfferV2, FlightOfferV2DbRow } from './types';
 
 export interface UseFlightOffersOptions {
+  // If false, the hook will not run the fetch operation.
   enabled?: boolean;
 }
+
+export interface UseFlightOffersResult {
+  offers: FlightOfferV2[];
+  isLoading: boolean;
+  error: Error | null;
+  isFeatureEnabled: boolean;
+  refetch: () => void;
+}
+
+const initialState = {
+  offers: [],
+  isLoading: false,
+  error: null,
+};
 
 export function useFlightOffers(
   tripRequestId: string,
   opts: UseFlightOffersOptions = {}
-) {
-  const { enabled = true } = opts; // Default to true if not provided
-  const { enabled: v2FlagEnabled, loading: v2FlagLoading } = useFlightSearchV2Flag(); // Assuming hook returns { enabled, loading }
+): UseFlightOffersResult {
+  const { enabled: optionEnabled = true } = opts;
 
-  const [offers, setOffers] = useState<FlightOfferV2[]>([]);
-  const [isLoading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown | null>(null);
+  // The useFeatureFlag hook returns a boolean (isEnabled) and handles its own loading state internally.
+  // It returns `defaultValue` (false by default) while its internal loading state is true.
+  // So, `isFeatureFlagEnabled` will be true only if the flag is loaded and true.
+  const isFeatureFlagEnabled = useFeatureFlag('flight_search_v2_enabled', false);
 
-  // Validation guard for tripRequestId
-  if (!tripRequestId || typeof tripRequestId !== 'string') {
-    // Ensure this structure is returned consistently, even if called during render phase
-    // This immediate return might cause issues if states are expected to be initialized by React first.
-    // A common pattern is to set an error state and return, or handle this within useEffect.
-    // For this implementation, following the spec for immediate return.
-    return { offers: [], isLoading: false, error: new Error('INVALID_ID') };
-  }
+  const [offers, setOffers] = useState<FlightOfferV2[]>(initialState.offers);
+  const [isLoading, setLoading] = useState<boolean>(initialState.isLoading);
+  const [error, setError] = useState<Error | null>(initialState.error);
+  const [offers, setOffers] = useState<FlightOfferV2[]>(initialState.offers);
+  const [isLoading, setLoading] = useState<boolean>(initialState.isLoading);
+  const [error, setError] = useState<Error | null>(initialState.error);
+  const [fetchTrigger, setFetchTrigger] = useState(0);
+
+  const refetch = () => {
+    setFetchTrigger(prev => prev + 1);
+  };
+
+  const isValidTripRequestId = tripRequestId && typeof tripRequestId === 'string';
 
   useEffect(() => {
-    // Do not proceed if the v2 flag is still loading, or if the flag is disabled, or the hook instance is disabled via opts
-    if (v2FlagLoading || !v2FlagEnabled || !enabled) {
-      // If query shouldn't run, ensure loading is false and offers are empty.
-      setOffers([]);
+    // Only proceed if feature is enabled, hook is enabled via options, and tripRequestId is valid.
+    if (!isFeatureFlagEnabled || !optionEnabled) {
+      setOffers(initialState.offers);
       setLoading(false);
       setError(null);
       return;
     }
 
-    let cancelled = false;
-    const fetchOffers = async () => {
+    if (!isValidTripRequestId) {
+      setError(new Error('Invalid tripRequestId provided.'));
+      setOffers(initialState.offers);
+      setLoading(false);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    const fetchOffersData = async () => {
       setLoading(true);
-      setError(null); // Reset error before new fetch
+      setError(null);
 
-      // Using safeQuery as specified
-      const { data, error: queryError } = await safeQuery(() =>
-        supabase
-          .from('flight_offers_v2')
-          .select('*')
-          .eq('trip_request_id', tripRequestId)
-      );
+      try {
+        const dbRows: FlightOfferV2DbRow[] = await getFlightOffers(tripRequestId);
 
-      if (!cancelled) {
-        if (queryError) {
-          console.error('Error fetching flight offers v2:', queryError);
-          setError(queryError);
-          setOffers([]);
-        } else {
-          // Assuming the data from Supabase matches FlightOfferV2[] structure.
-          // Add type assertion if necessary, or data transformation.
-          const dbData = data as FlightOfferV2DbRow[] || [];
-          const mappedOffers: FlightOfferV2[] = dbData.map(dbRow => ({
-            id: dbRow.id,
-            tripRequestId: dbRow.trip_request_id,
-            mode: dbRow.mode,
-            priceTotal: dbRow.price_total,
-            priceCarryOn: dbRow.price_carry_on,
-            bagsIncluded: dbRow.bags_included,
-            cabinClass: dbRow.cabin_class,
-            nonstop: dbRow.nonstop,
-            originIata: dbRow.origin_iata,
-            destinationIata: dbRow.destination_iata,
-            departDt: dbRow.depart_dt,
-            returnDt: dbRow.return_dt,
-            seatPref: dbRow.seat_pref,
-            createdAt: dbRow.created_at,
-          }));
-          setOffers(mappedOffers);
-          setError(null);
+        if (abortController.signal.aborted) {
+          return;
         }
-        setLoading(false);
+
+        const mappedOffers = dbRows.map(mapFlightOfferDbRowToV2);
+        setOffers(mappedOffers);
+      } catch (e) {
+        if (abortController.signal.aborted) {
+          return;
+        }
+        console.error('Error fetching or processing flight offers v2:', e);
+        setError(e instanceof Error ? e : new Error('An unknown error occurred'));
+        setOffers([]);
+      } finally {
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchOffers();
+    fetchOffersData();
 
     return () => {
-      cancelled = true;
+      abortController.abort();
     };
-  }, [tripRequestId, enabled, v2FlagEnabled, v2FlagLoading]); // Dependencies for the effect
+  }, [tripRequestId, optionEnabled, isFeatureFlagEnabled, isValidTripRequestId, fetchTrigger]);
 
-  return { offers, isLoading, error };
+  // If feature flag is not enabled, return the disabled state.
+  // This check is now after the useEffect to comply with rules of hooks.
+  if (!isFeatureFlagEnabled) {
+    return {
+      offers: [],
+      isLoading: false, // Should be false as useEffect would have reset it or not run fetch.
+      error: null,      // Should be null for the same reason.
+      isFeatureEnabled: false,
+      refetch,
+    };
+  }
+
+  return {
+    offers,
+    isLoading,
+    error,
+    isFeatureEnabled: true,
+    refetch,
+  };
 }
+
+// Exporting the mapper as requested by requirements,
+// though it's also directly importable from its own module.
+export { mapFlightOfferDbRowToV2 };
