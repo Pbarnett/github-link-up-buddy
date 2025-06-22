@@ -25,7 +25,12 @@ const App = () => {
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <BrowserRouter>
+        <BrowserRouter 
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}
+        >
           <div id="main">
             <Routes>
               <Route path="/" element={<Index />} />

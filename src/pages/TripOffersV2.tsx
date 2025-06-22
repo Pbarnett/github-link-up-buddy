@@ -41,6 +41,16 @@ const EmptyStateCard: React.FC = () => (
 const TripOffersV2: React.FC = () => {
   const { tripId } = useParams<{ tripId: string }>();
   const { offers, isLoading, error, isFeatureEnabled, refetch } = useFlightOffers(tripId || 'default-trip-id');
+  
+  // Debug logging
+  console.log('[TripOffersV2] Debug info:', {
+    tripId,
+    offers: offers?.length || 0,
+    offersData: offers,
+    isLoading,
+    error: error?.message,
+    isFeatureEnabled
+  });
 
   if (!isFeatureEnabled) {
     return (
