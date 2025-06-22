@@ -3,6 +3,7 @@ import { getFlightOffers, clearGetFlightOffersCache } from './getFlightOffers';
 import { supabase } from '@/integrations/supabase/client';
 import { FlightOfferV2DbRow } from '@/flightSearchV2/types';
 
+
 // Mock the supabase client
 const mockEq = vi.fn();
 const mockSelect = vi.fn(() => ({ eq: mockEq }));
@@ -16,6 +17,7 @@ vi.mock('@/integrations/supabase/client', () => ({
     from: mockFrom,
   },
 }));
+
 
 const mockTripRequestId = 'test-trip-id-123';
 const mockDbRows: FlightOfferV2DbRow[] = [
@@ -38,24 +40,32 @@ const mockDbRows: FlightOfferV2DbRow[] = [
 ];
 
 describe('getFlightOffers server action', () => {
+  // Get references to the mocked functions
+  const mockFrom = supabase.from as vi.MockedFunction<typeof supabase.from>;
+  const mockFunctionsInvoke = supabase.functions.invoke as vi.MockedFunction<typeof supabase.functions.invoke>;
+  let mockSelect: vi.MockedFunction<any>;
+  let mockEq: vi.MockedFunction<any>;
+
   beforeEach(() => {
     vi.useFakeTimers();
-    // Reset mocks and cache before each test
-    vi.resetAllMocks();
     clearGetFlightOffersCache(); // Ensure cache is cleared
+
     // Reset supabase.functions.invoke mock
     (supabase.functions.invoke as vi.Mock).mockClear();
     // Reset supabase client query mocks
     mockFrom.mockClear();
     mockSelect.mockClear();
     mockEq.mockClear();
+
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
+
   it('should fetch flight offers successfully from the table (cache miss)', async () => {
+
     mockEq.mockResolvedValueOnce({ data: mockDbRows, error: null });
 
     const result = await getFlightOffers(mockTripRequestId);
@@ -66,6 +76,7 @@ describe('getFlightOffers server action', () => {
     expect(result).toEqual(mockDbRows);
     expect(supabase.functions.invoke).not.toHaveBeenCalled();
   });
+
 
   it('should throw an error if fetching from table fails', async () => {
     const errorMessage = 'Table fetch failed';
@@ -78,10 +89,13 @@ describe('getFlightOffers server action', () => {
   });
 
 
+
   it('should use cached data for subsequent calls within cache duration', async () => {
     mockEq.mockResolvedValueOnce({ data: mockDbRows, error: null });
 
+
     // First call - should fetch from table
+
     await getFlightOffers(mockTripRequestId);
     expect(mockEq).toHaveBeenCalledTimes(1);
 
@@ -205,7 +219,9 @@ describe('getFlightOffers server action', () => {
     expect(result1Cached).toEqual(mockDbRows);
   });
 
+
   it('clearGetFlightOffersCache should clear the cache (table fetch)', async () => {
+
     mockEq
       .mockResolvedValueOnce({ data: mockDbRows, error: null }) // First call
       .mockResolvedValueOnce({ data: [{ ...mockDbRows[0], id: 'offer-new' }], error: null }); // Second call
