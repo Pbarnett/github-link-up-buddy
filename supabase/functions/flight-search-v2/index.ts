@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -361,3 +362,4 @@ Environment Variables needed for the function:
   - SUPABASE_ANON_KEY
   (And potentially AMADEUS_CLIENT_ID, AMADEUS_CLIENT_SECRET for a real Amadeus client)
 */
+
