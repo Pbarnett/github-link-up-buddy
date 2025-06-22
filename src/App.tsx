@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import TripNew from "./pages/TripNew";
 import TripOffers from "./pages/TripOffers";
+import TripOffersV2 from "./pages/TripOffersV2"; // Import the V2 component
 import TripConfirm from "./pages/TripConfirm";
 import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
@@ -74,6 +75,14 @@ const App = () => {
                 element={
                   <AuthGuard>
                     <Wallet />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/trips/:tripId/v2"
+                element={
+                  <AuthGuard>
+                    <TripOffersV2 />
                   </AuthGuard>
                 }
               />
