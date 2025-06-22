@@ -22,6 +22,10 @@ vi.mock('@/hooks/useTripOffers', () => ({
     errorMessage: '',
     refreshPools: vi.fn(),
   })),
+  mapTripRequestToTripDetails: vi.fn(),
+  clearUnifiedCache: vi.fn(),
+  unifiedCache: new Map(),
+  CACHE_DURATION: 5 * 60 * 1000,
 }));
 
 const mockedUseTripOffersPools = useTripOffersPools as MockedFunction<typeof useTripOffersPools>;
