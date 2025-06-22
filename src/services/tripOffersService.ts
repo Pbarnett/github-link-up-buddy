@@ -25,18 +25,30 @@ export type Offer = Tables<'flight_offers'> & {
  * @returns Promise<Offer[]> - Array of flight offers
  */
 export async function fetchTripOffers(tripRequestId: string): Promise<Offer[]> {
+  console.log('[🔍 DB-DEBUG] Fetching trip offers for tripRequestId:', tripRequestId);
+  
   const { data, error } = await supabase
     .from('flight_offers')
     .select('*')
     .eq('trip_request_id', tripRequestId)
     .order('price', { ascending: true });
 
+  console.log('[🔍 DB-DEBUG] Raw database response:', { data, error, count: data?.length || 0 });
+
   if (error) {
-    console.error('Error fetching trip offers:', error);
+    console.error('[🔍 DB-DEBUG] Error fetching trip offers:', error);
     throw new Error(`Failed to fetch trip offers: ${error.message}`);
   }
 
-  return (data || []) as Offer[];
+  const offers = (data || []) as Offer[];
+  console.log(`[🔍 DB-DEBUG] Successfully fetched ${offers.length} offers from database`);
+  
+  // Log first few offers for debugging
+  if (offers.length > 0) {
+    console.log('[🔍 DB-DEBUG] Sample offers:', offers.slice(0, 3));
+  }
+
+  return offers;
 }
 
 /**

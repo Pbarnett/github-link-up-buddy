@@ -90,10 +90,14 @@ export interface FlightSearchError {
 export const invokeFlightSearch = async (
   payload: FlightSearchRequestBody
 ): Promise<FlightSearchResponse> => { // Updated return type
+  logger.info("[🔍 FLIGHT-SEARCH-DEBUG] Starting flight search with payload:", payload);
+  
   const { data, error: invokeError } = await supabase.functions.invoke(
     "flight-search",
     { body: payload }
   );
+  
+  logger.info("[🔍 FLIGHT-SEARCH-DEBUG] Raw response from edge function:", { data, error: invokeError });
 
   if (invokeError) {
     logger.error("Error invoking flight-search function:", { details: invokeError });

@@ -1,8 +1,14 @@
 const amadeusClientId = Deno.env.get("AMADEUS_CLIENT_ID");
 const amadeusClientSecret = Deno.env.get("AMADEUS_CLIENT_SECRET");
-if (!amadeusClientId || !amadeusClientSecret) {
+const testMode = Deno.env.get("TEST_MODE") === "true";
+
+if (!testMode && (!amadeusClientId || !amadeusClientSecret)) {
   console.error('Error: Missing Amadeus environment variables. AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET must be set.');
   throw new Error('Edge Function: Missing Amadeus environment variables (AMADEUS_CLIENT_ID or AMADEUS_CLIENT_SECRET).');
+}
+
+if (testMode) {
+  console.log('🔧 [TEST_MODE] Running in test mode - using mock data instead of real Amadeus API');
 }
 
 // This file is specifically for Supabase Edge Functions
