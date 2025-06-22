@@ -10,6 +10,7 @@ import TripOfferList from "@/components/trip/TripOfferList";
 import TripOfferControls from "@/components/trip/TripOfferControls";
 import TripErrorCard from "@/components/trip/TripErrorCard";
 import TripOffersWithPools from "./TripOffersWithPools";
+import DebugInfo from "@/components/debug/DebugInfo";
 
 // Legacy component wrapper for the existing functionality
 const LegacyTripOffers = ({ tripId, initialTripDetails }: { tripId: string; initialTripDetails?: TripDetails }) => {
@@ -80,6 +81,10 @@ export default function TripOffers() {
   const flightSearchV2Enabled = useFeatureFlag('flight_search_v2_enabled', false);
   // Feature flag to determine which UI to show for legacy path
   const enablePools = useFeatureFlag('use_new_pools_ui', false);
+  
+  // Debug logging to track which implementation is being used
+  console.log('[🔍 TRIP-OFFERS-DEBUG] Feature flag enablePools:', enablePools);
+  console.log('[🔍 TRIP-OFFERS-DEBUG] Will use:', enablePools ? 'TripOffersWithPools' : 'LegacyTripOffers');
 
   useEffect(() => {
     if (flightSearchV2Enabled && tripId) {
@@ -113,6 +118,7 @@ export default function TripOffers() {
   // Render legacy UI only if flightSearchV2Enabled is false and tripId is present.
   return (
     <TooltipProvider>
+      <DebugInfo tripId={tripId} />
       {enablePools ? (
         <TripOffersWithPools />
       ) : (

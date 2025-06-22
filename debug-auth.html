@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Debug</title>
+</head>
+<body>
+    <h1>Supabase Auth Debug</h1>
+    <div id="output"></div>
+    <button onclick="clearAuth()">Clear All Auth Data</button>
+    <button onclick="checkAuth()">Check Auth State</button>
+    
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js';
+        
+        const SUPABASE_URL = 'http://127.0.0.1:54321';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function log(message) {
+            const output = document.getElementById('output');
+            output.innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+        
+        window.checkAuth = async function() {
+            document.getElementById('output').innerHTML = '';
+            
+            log('=== AUTH DEBUG ===');
+            log('Supabase URL: ' + SUPABASE_URL);
+            
+            // Check session
+            const { data: session, error } = await supabase.auth.getSession();
+            log('Session: ' + JSON.stringify(session, null, 2));
+            if (error) log('Session Error: ' + error.message);
+            
+            // Check user
+            const { data: user, error: userError } = await supabase.auth.getUser();
+            log('User: ' + JSON.stringify(user, null, 2));
+            if (userError) log('User Error: ' + userError.message);
+            
+            // Check localStorage
+            log('=== LOCAL STORAGE ===');
+            Object.keys(localStorage).forEach(key => {
+                if (key.includes('supabase') || key.includes('sb-')) {
+                    log(key + ': ' + localStorage.getItem(key));
+                }
+            });
+        };
+        
+        window.clearAuth = function() {
+            // Clear all auth data
+            Object.keys(localStorage).forEach(key => {
+                if (key.includes('supabase') || key.includes('sb-')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            
+            Object.keys(sessionStorage).forEach(key => {
+                if (key.includes('supabase') || key.includes('sb-')) {
+                    sessionStorage.removeItem(key);
+                }
+            });
+            
+            // Sign out
+            supabase.auth.signOut();
+            
+            log('Auth data cleared!');
+        };
+        
+        // Check auth on load
+        checkAuth();
+    </script>
+</body>
+</html>
