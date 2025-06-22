@@ -431,66 +431,51 @@ export type Database = {
       }
       flight_offers_v2: {
         Row: {
-          arrival_airport: string | null
-          booking_url: string | null
-          carrier_code: string | null
+          bags_included: boolean
+          cabin_class: string | null
           created_at: string
-          departure_airport: string | null
-          departure_date: string | null
-          departure_time: string | null
-          duration: string | null
-          flight_number: string | null
-          flight_search_v2_enabled: boolean
+          depart_dt: string
+          destination_iata: string
           id: string
-          offer_data: Json
-          price_base: number | null
-          price_currency: string
+          mode: string
+          nonstop: boolean
+          origin_iata: string
+          price_carry_on: number | null
           price_total: number
-          return_date: string | null
-          return_time: string | null
-          stops: number
+          return_dt: string | null
+          seat_pref: string | null
           trip_request_id: string
         }
         Insert: {
-          arrival_airport?: string | null
-          booking_url?: string | null
-          carrier_code?: string | null
+          bags_included?: boolean
+          cabin_class?: string | null
           created_at?: string
-          departure_airport?: string | null
-          departure_date?: string | null
-          departure_time?: string | null
-          duration?: string | null
-          flight_number?: string | null
-          flight_search_v2_enabled?: boolean
+          depart_dt: string
+          destination_iata: string
           id?: string
-          offer_data: Json
-          price_base?: number | null
-          price_currency?: string
+          mode?: string
+          nonstop: boolean
+          origin_iata: string
+          price_carry_on?: number | null
           price_total: number
-          return_date?: string | null
-          return_time?: string | null
-          stops?: number
+          return_dt?: string | null
+          seat_pref?: string | null
           trip_request_id: string
         }
         Update: {
-          arrival_airport?: string | null
-          booking_url?: string | null
-          carrier_code?: string | null
+          bags_included?: boolean
+          cabin_class?: string | null
           created_at?: string
-          departure_airport?: string | null
-          departure_date?: string | null
-          departure_time?: string | null
-          duration?: string | null
-          flight_number?: string | null
-          flight_search_v2_enabled?: boolean
+          depart_dt?: string
+          destination_iata?: string
           id?: string
-          offer_data?: Json
-          price_base?: number | null
-          price_currency?: string
+          mode?: string
+          nonstop?: boolean
+          origin_iata?: string
+          price_carry_on?: number | null
           price_total?: number
-          return_date?: string | null
-          return_time?: string | null
-          stops?: number
+          return_dt?: string | null
+          seat_pref?: string | null
           trip_request_id?: string
         }
         Relationships: [
@@ -1026,3 +1011,4 @@ export const Constants = {
     },
   },
 } as const
+
