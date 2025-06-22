@@ -221,6 +221,22 @@ const Login = () => {
           >
             Google
           </Button>
+          
+          <div className="pt-6 border-t border-gray-200">
+            <Button 
+              type="button" 
+              variant="destructive" 
+              size="sm"
+              className="w-full text-xs"
+              onClick={() => {
+                cleanupAuthState();
+                toast({ title: "Auth Reset", description: "Authentication data cleared. Page will reload." });
+                setTimeout(() => window.location.reload(), 1000);
+              }}
+            >
+              🔧 Emergency Reset (Clear Auth Data)
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
