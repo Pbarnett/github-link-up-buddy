@@ -16,10 +16,11 @@ interface EdgeFunctionError {
 
 /**
  * Server action to fetch flight offers for a given trip request ID.
- * It calls the 'flight-offers-v2' Supabase edge function.
- * Implements a 5-minute in-memory cache.
+ * If refresh=true, triggers a new search via edge function before reading from database.
+ * Otherwise, reads directly from flight_offers_v2 table with 5-minute in-memory cache.
  *
  * @param tripRequestId The ID of the trip request.
+
  * @param refresh Optional boolean. If true, bypasses cache and calls the 'flight-search-v2' edge function
  *                to refresh data before fetching from 'flight-offers-v2'.
  * @returns A promise that resolves to an array of FlightOfferV2DbRow objects.
@@ -50,11 +51,13 @@ export const getFlightOffers = async (
     console.log(`[ServerAction/getFlightOffers] Cache invalidated for tripRequestId: ${tripRequestId} after refresh.`);
   }
 
+
   const cachedEntry = cache.get(tripRequestId);
   if (cachedEntry && (Date.now() - cachedEntry.timestamp < CACHE_DURATION_MS)) {
     console.log(`[ServerAction/getFlightOffers] Cache hit for tripRequestId: ${tripRequestId}`);
     return cachedEntry.data;
   }
+
 
   console.log(`[ServerAction/getFlightOffers] Cache miss or stale for tripRequestId: ${tripRequestId}. Fetching from flight_offers_v2 table...`);
 
@@ -84,6 +87,7 @@ export const getFlightOffers = async (
   // Should not happen if tableError is not thrown, but as a fallback
   console.error(`[ServerAction/getFlightOffers] Unexpected: No data and no error from 'flight_offers_v2' table for tripRequestId ${tripRequestId}.`);
   return []; // Return empty array if no data found, or handle as error if appropriate
+
 };
 
 /**
