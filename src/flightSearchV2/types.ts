@@ -3,6 +3,7 @@ export interface FlightOfferV2 {
   tripRequestId: string;
   mode: 'LEGACY' | 'AUTO' | 'MANUAL';
   priceTotal: number;
+  priceCurrency?: string;
   priceCarryOn: number | null;
   bagsIncluded: boolean;
   cabinClass: string | null;
