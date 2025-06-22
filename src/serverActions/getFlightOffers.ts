@@ -20,53 +20,74 @@ interface EdgeFunctionError {
  * Otherwise, reads directly from flight_offers_v2 table with 5-minute in-memory cache.
  *
  * @param tripRequestId The ID of the trip request.
- * @param refresh Optional flag to trigger new search before reading data.
+
+ * @param refresh Optional boolean. If true, bypasses cache and calls the 'flight-search-v2' edge function
+ *                to refresh data before fetching from 'flight-offers-v2'.
  * @returns A promise that resolves to an array of FlightOfferV2DbRow objects.
  * @throws Will throw an error if the fetch fails or the edge function returns an error.
  */
-export const getFlightOffers = async (tripRequestId: string, refresh = false): Promise<FlightOfferV2DbRow[]> => {
-  // If refresh is requested, invalidate cache and trigger new search
+export const getFlightOffers = async (
+  tripRequestId: string,
+  refresh: boolean = false
+): Promise<FlightOfferV2DbRow[]> => {
   if (refresh) {
-    console.log(`[ServerAction/getFlightOffers] Refresh requested for tripRequestId: ${tripRequestId}. Invalidating cache and triggering new search.`);
-    cache.delete(tripRequestId);
-    
-    // Trigger new search via edge function
+    console.log(`[ServerAction/getFlightOffers] Refresh requested for tripRequestId: ${tripRequestId}. Invoking flight-search-v2...`);
+    // Call the new flight-search-v2 edge function to update offers
+    // We expect this function to populate/update the flight_offers_v2 table.
+    // The response of flight-search-v2 might indicate success/failure or count of inserted items.
     const { data: searchData, error: searchError } = await supabase.functions.invoke('flight-search-v2', {
-      body: { tripRequestId },
+      body: { tripRequestId }, // Pass tripRequestId, add other params like maxPrice if needed by edge function
     });
-    
+
     if (searchError) {
-      console.error(`[ServerAction/getFlightOffers] Error invoking flight-search-v2 for tripRequestId ${tripRequestId}:`, searchError);
-      throw new Error(`Failed to trigger flight search v2: ${searchError.message}`);
+      console.error(`[ServerAction/getFlightOffers] Error invoking edge function 'flight-search-v2' for tripRequestId ${tripRequestId}:`, searchError);
+      throw new Error(`Failed to refresh flight offers via flight-search-v2: ${searchError.message}`);
     }
-    
-    console.log(`[ServerAction/getFlightOffers] Flight search triggered for tripRequestId: ${tripRequestId}:`, searchData);
+    // Log the response from flight-search-v2, e.g., { inserted: number, message: string }
+    console.log(`[ServerAction/getFlightOffers] Response from 'flight-search-v2' for tripRequestId ${tripRequestId}:`, searchData);
+
+    // Invalidate cache for this tripRequestId as we've triggered a refresh
+    cache.delete(tripRequestId);
+    console.log(`[ServerAction/getFlightOffers] Cache invalidated for tripRequestId: ${tripRequestId} after refresh.`);
   }
 
-  // Check cache first (unless refresh was requested, in which case cache was cleared)
+
   const cachedEntry = cache.get(tripRequestId);
   if (cachedEntry && (Date.now() - cachedEntry.timestamp < CACHE_DURATION_MS)) {
     console.log(`[ServerAction/getFlightOffers] Cache hit for tripRequestId: ${tripRequestId}`);
     return cachedEntry.data;
   }
 
-  console.log(`[ServerAction/getFlightOffers] Cache miss or stale for tripRequestId: ${tripRequestId}. Reading from database...`);
 
-  // Read directly from flight_offers_v2 table
-  const { data, error } = await supabase
+  console.log(`[ServerAction/getFlightOffers] Cache miss or stale for tripRequestId: ${tripRequestId}. Fetching from flight_offers_v2 table...`);
+
+  // This part should ideally fetch from the `flight_offers_v2` table directly,
+  // as the edge function `flight-search-v2` is now responsible for populating it.
+  // The original logic invoked 'flight-offers-v2' which was assumed to return data.
+  // If 'flight-offers-v2' was meant to be the table name and not another function, this needs adjustment.
+  // Assuming the plan meant `flight-search-v2` (new) populates, and this function reads from the table.
+
+  // Let's adjust to read from the table `flight_offers_v2`
+  const { data: tableData, error: tableError } = await supabase
     .from('flight_offers_v2')
     .select('*')
     .eq('trip_request_id', tripRequestId);
 
-  if (error) {
-    console.error(`[ServerAction/getFlightOffers] Error reading from flight_offers_v2 table for tripRequestId ${tripRequestId}:`, error);
-    throw new Error(`Failed to fetch flight offers v2: ${error.message}`);
+  if (tableError) {
+    console.error(`[ServerAction/getFlightOffers] Error fetching from 'flight_offers_v2' table for tripRequestId ${tripRequestId}:`, tableError);
+    throw new Error(`Failed to fetch flight offers from table: ${tableError.message}`);
   }
 
-  // Cache and return the data
-  const offers = data as FlightOfferV2DbRow[];
-  cache.set(tripRequestId, { data: offers, timestamp: Date.now() });
-  return offers;
+  if (tableData) {
+    // Successfully fetched data from table
+    cache.set(tripRequestId, { data: tableData as FlightOfferV2DbRow[], timestamp: Date.now() });
+    return tableData as FlightOfferV2DbRow[];
+  }
+
+  // Should not happen if tableError is not thrown, but as a fallback
+  console.error(`[ServerAction/getFlightOffers] Unexpected: No data and no error from 'flight_offers_v2' table for tripRequestId ${tripRequestId}.`);
+  return []; // Return empty array if no data found, or handle as error if appropriate
+
 };
 
 /**
