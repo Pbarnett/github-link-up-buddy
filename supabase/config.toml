@@ -1,5 +1,20 @@
 project_id = "bbonngdyfyfjqfhvoljl"
 
+[auth]
+enabled = true
+site_url = "http://localhost:8080"
+additional_redirect_urls = ["http://localhost:8080/dashboard"]
+jwt_expiry = 3600
+enable_signup = true
+enable_anonymous_sign_ins = false
+minimum_password_length = 6
+
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"
+redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
+
 # Each function gets its own [functions.<name>] block—no paths, no arrays
 
 [functions.flight-search]
@@ -20,4 +35,8 @@ verify_jwt = false
 [functions.scheduler-flight-search]
 
 [functions.auto-book]
+
+[functions.flight-search-v2]
+
+[functions.flight-offers-v2]
 
