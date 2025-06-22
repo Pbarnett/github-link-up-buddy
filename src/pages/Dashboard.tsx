@@ -48,6 +48,16 @@ const Dashboard = () => {
 
       if (error) {
         console.error('Error fetching user:', error);
+        // Check if this is a JWT user not found error
+        if (error.message && error.message.includes('User from sub claim in JWT does not exist')) {
+          console.log('Stale JWT detected, clearing auth state...');
+          await supabase.auth.signOut();
+          toast({
+            title: "Session expired",
+            description: "Please sign in again.",
+            variant: "destructive",
+          });
+        }
         setLoading(false);
         return;
       }

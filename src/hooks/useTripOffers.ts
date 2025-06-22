@@ -149,12 +149,28 @@ export const useTripOffersPools = ({ tripId }: { tripId: string | null }): Pools
         return;
       }
 
+      logger.info("[🔍 POOLS-DEBUG] Calling fetchFlightSearch for tripId:", tripId);
       const response = await fetchFlightSearch(tripId, false);
+      logger.info("[🔍 POOLS-DEBUG] fetchFlightSearch response:", {
+        pool1Count: response.pool1?.length || 0,
+        pool2Count: response.pool2?.length || 0,
+        pool3Count: response.pool3?.length || 0,
+        totalOffers: (response.pool1?.length || 0) + (response.pool2?.length || 0) + (response.pool3?.length || 0),
+        success: response.success,
+        message: response.message
+      });
+      
       const newPools = {
         pool1: response.pool1,
         pool2: response.pool2,
         pool3: response.pool3,
       };
+      
+      logger.info("[🔍 POOLS-DEBUG] Setting pools state:", {
+        pool1Count: newPools.pool1?.length || 0,
+        pool2Count: newPools.pool2?.length || 0,
+        pool3Count: newPools.pool3?.length || 0
+      });
 
       setPools(newPools);
       // Cache Write:

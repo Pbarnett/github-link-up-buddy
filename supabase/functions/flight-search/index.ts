@@ -10,7 +10,19 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Import the flight API service (edge version) with explicit fetchToken
-import { searchOffers, FlightSearchParams, fetchToken } from "./flightApi.edge.ts";
+// (This will be dynamically imported only when needed in production mode)
+
+// Type definitions
+interface FlightSearchParams {
+  origin: string[];
+  destination: string | null;
+  earliestDeparture: Date;
+  latestDeparture: Date;
+  minDuration: number;
+  maxDuration: number;
+  budget: number;
+  maxConnections?: number;
+}
 
 // Utility functions moved directly into the edge function
 function decideSeatPreference(
@@ -51,7 +63,192 @@ serve(async (req: Request) => {
     });
   }
 
+  // 🔧 LOCAL DEVELOPMENT MODE BYPASS
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  // In local Supabase, the internal URL is "http://kong:8000"
+  const isLocal = supabaseUrl.includes("127.0.0.1") || supabaseUrl.includes("localhost") || supabaseUrl.includes("kong:8000");
+  
+  console.log(`🔧 [DEBUG] SUPABASE_URL: ${supabaseUrl}`);
+  console.log(`🔧 [DEBUG] isLocal: ${isLocal}`);
+  
+  if (isLocal) {
+    console.log('🔧 [LOCAL-DEV] Detected local development - returning mock flight search response');
+    
+    // Parse request to get tripRequestId
+    let tripRequestId = "test-trip-id";
+    if (req.method === "POST") {
+      try {
+        const body = await req.json();
+        tripRequestId = body.tripRequestId || "test-trip-id";
+      } catch (e) {
+        console.log('🔧 [LOCAL-DEV] Could not parse request body, using default tripRequestId');
+      }
+    }
+    
+    // Insert some test flight offers into the database
+    try {
+      // First get the trip request details to generate realistic mock data
+      const { data: tripRequest, error: tripError } = await supabaseClient
+        .from("trip_requests")
+        .select("*")
+        .eq("id", tripRequestId)
+        .single();
+      
+      if (tripError || !tripRequest) {
+        console.error('🔧 [LOCAL-DEV] Could not fetch trip request:', tripError);
+        // Fall back to default mock data
+      }
+      
+      // Clear any existing offers for this trip
+      await supabaseClient
+        .from("flight_offers")
+        .delete()
+        .eq("trip_request_id", tripRequestId);
+      
+      // Generate dynamic mock data based on trip request
+      const originAirport = tripRequest?.departure_airports?.[0] || "JFK";
+      const destinationAirport = tripRequest?.destination_location_code || "LAX";
+      const earliestDep = tripRequest?.earliest_departure ? new Date(tripRequest.earliest_departure) : new Date('2024-09-15');
+      const latestDep = tripRequest?.latest_departure ? new Date(tripRequest.latest_departure) : new Date('2024-09-20');
+      const minDuration = tripRequest?.min_duration || 3;
+      const maxDuration = tripRequest?.max_duration || 7;
+      const budget = tripRequest?.budget || 1000;
+      
+      // Calculate realistic dates within the trip window
+      const depDate1 = new Date(earliestDep.getTime() + Math.random() * (latestDep.getTime() - earliestDep.getTime()));
+      const depDate2 = new Date(earliestDep.getTime() + Math.random() * (latestDep.getTime() - earliestDep.getTime()));
+      
+      // Calculate return dates based on duration
+      const duration1 = minDuration + Math.floor(Math.random() * (maxDuration - minDuration + 1));
+      const duration2 = minDuration + Math.floor(Math.random() * (maxDuration - minDuration + 1));
+      
+      const retDate1 = new Date(depDate1.getTime() + duration1 * 24 * 60 * 60 * 1000);
+      const retDate2 = new Date(depDate2.getTime() + duration2 * 24 * 60 * 60 * 1000);
+      
+      // Generate realistic prices within budget
+      const price1 = Math.floor(budget * 0.6 + Math.random() * budget * 0.4);
+      const price2 = Math.floor(budget * 0.4 + Math.random() * budget * 0.6);
+      
+      // Generate realistic airline codes based on route
+      const airlines = [
+        { name: "Test Airlines", code: "TA" },
+        { name: "Budget Air", code: "BA" },
+        { name: "Express Airways", code: "EA" },
+        { name: "Quick Jet", code: "QJ" }
+      ];
+      
+      const airline1 = airlines[Math.floor(Math.random() * airlines.length)];
+      const airline2 = airlines[Math.floor(Math.random() * airlines.length)];
+      
+      console.log(`🔧 [LOCAL-DEV] Generating mock flights for ${originAirport} → ${destinationAirport}`);
+      
+      // Generate more realistic flight durations based on route distance
+      const getRealisticFlightDuration = (origin: string, destination: string): string => {
+        // Estimate flight time based on common routes (in hours)
+        const routeDistances: Record<string, number> = {
+          // NYC to various destinations
+          'JFK-MVY': 1, 'JFK-MIA': 3, 'JFK-LAX': 6, 'JFK-ORD': 2.5, 'JFK-SFO': 6,
+          'LGA-MVY': 1, 'LGA-MIA': 3, 'LGA-LAX': 6, 'LGA-ORD': 2.5, 'LGA-SFO': 6,
+          'EWR-MVY': 1, 'EWR-MIA': 3, 'EWR-LAX': 6, 'EWR-ORD': 2.5, 'EWR-SFO': 6,
+          // Default fallback
+          'DEFAULT': 2
+        };
+        
+        const routeKey = `${origin}-${destination}`;
+        const baseHours = routeDistances[routeKey] || routeDistances['DEFAULT'];
+        
+        // Add some random variation (±30 minutes)
+        const variation = (Math.random() - 0.5) * 1; // ±0.5 hours
+        const totalHours = Math.max(0.5, baseHours + variation);
+        
+        const hours = Math.floor(totalHours);
+        const minutes = Math.round((totalHours - hours) * 60);
+        
+        return hours > 0 ? `PT${hours}H${minutes}M` : `PT${minutes}M`;
+      };
+      
+      // Generate 4-6 mock offers for more realistic variety
+      const numOffers = 4 + Math.floor(Math.random() * 3); // 4-6 offers
+      const mockOffers = [];
+      
+      for (let i = 0; i < numOffers; i++) {
+        const airline = airlines[Math.floor(Math.random() * airlines.length)];
+        const depDate = new Date(earliestDep.getTime() + Math.random() * (latestDep.getTime() - earliestDep.getTime()));
+        const duration = minDuration + Math.floor(Math.random() * (maxDuration - minDuration + 1));
+        const retDate = new Date(depDate.getTime() + duration * 24 * 60 * 60 * 1000);
+        const price = Math.floor(budget * 0.3 + Math.random() * budget * 0.7); // More price variation
+        
+        mockOffers.push({
+          trip_request_id: tripRequestId,
+          airline: airline.name,
+          carrier_code: airline.code,
+          origin_airport: originAirport,
+          destination_airport: destinationAirport,
+          flight_number: `${airline.code}${Math.floor(Math.random() * 999) + 100}`,
+          departure_date: depDate.toISOString().split('T')[0],
+          departure_time: `${String(Math.floor(Math.random() * 12) + 6).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
+          return_date: retDate.toISOString().split('T')[0],
+          return_time: `${String(Math.floor(Math.random() * 12) + 12).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
+          duration: getRealisticFlightDuration(originAirport, destinationAirport),
+          price: price,
+          booking_url: `https://example.com/book/${airline.code.toLowerCase()}${Math.floor(Math.random() * 999)}`
+        });
+      }
+      
+      console.log(`🔧 [LOCAL-DEV] Generated ${numOffers} mock offers with realistic flight durations`);
+      
+      const { data: insertedOffers, error: insertError } = await supabaseClient
+        .from("flight_offers")
+        .insert(mockOffers)
+        .select();
+      
+      if (insertError) {
+        console.error('🔧 [LOCAL-DEV] Error inserting mock offers:', insertError);
+      } else {
+        console.log(`🔧 [LOCAL-DEV] Inserted ${insertedOffers?.length || 0} mock flight offers`);
+      }
+      
+      // Return successful response
+      return new Response(JSON.stringify({
+        requestsProcessed: 1,
+        matchesInserted: mockOffers.length,
+        totalDurationMs: Date.now() - functionStartTime,
+        relaxedCriteriaUsed: false,
+        exactDestinationOnly: true,
+        details: [{
+          tripRequestId: tripRequestId,
+          matchesFound: mockOffers.length,
+          offersGenerated: mockOffers.length,
+          offersInserted: mockOffers.length
+        }],
+        success: true,
+        message: "🔧 [LOCAL-DEV] Mock flight search completed",
+        pool1: [],
+        pool2: [],
+        pool3: []
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error('🔧 [LOCAL-DEV] Error in mock flight search:', error);
+      return new Response(JSON.stringify({
+        error: "Local development mock failed",
+        details: error.message
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  }
+
+  // PRODUCTION MODE - Dynamically import flightApi.edge.ts only when needed
+  console.log('🔧 [PRODUCTION] Running in production mode - attempting to load flightApi.edge.ts');
+  
   try {
+    // Dynamic import to avoid loading flightApi.edge.ts in local mode
+    const { searchOffers, fetchToken } = await import("./flightApi.edge.ts");
+    
     // Parse request body for optional tripRequestId
     let tripRequestId: string | null = null;
     let body: any = {};
