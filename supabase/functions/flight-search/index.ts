@@ -167,16 +167,48 @@ serve(async (req: Request) => {
         return hours > 0 ? `PT${hours}H${minutes}M` : `PT${minutes}M`;
       };
       
-      // Generate 4-6 mock offers for more realistic variety
-      const numOffers = 4 + Math.floor(Math.random() * 3); // 4-6 offers
+      // Generate 6-8 mock offers for more realistic variety (more than needed so we can test filtering)
+      const numOffers = 6 + Math.floor(Math.random() * 3); // 6-8 offers
       const mockOffers = [];
       
       for (let i = 0; i < numOffers; i++) {
         const airline = airlines[Math.floor(Math.random() * airlines.length)];
         const depDate = new Date(earliestDep.getTime() + Math.random() * (latestDep.getTime() - earliestDep.getTime()));
-        const duration = minDuration + Math.floor(Math.random() * (maxDuration - minDuration + 1));
+        
+        // 🧪 PHASE 3: Generate varied trip durations to test duration filtering
+        // Some offers will be within range, some outside to test filtering
+        let duration;
+        if (i < 4) {
+          // First 4 offers: within the valid duration range
+          duration = minDuration + Math.floor(Math.random() * (maxDuration - minDuration + 1));
+        } else if (i === 4) {
+          // 5th offer: too short (should be filtered out)
+          duration = Math.max(1, minDuration - 1);
+        } else {
+          // 6th+ offers: too long (should be filtered out)
+          duration = maxDuration + 1 + Math.floor(Math.random() * 3);
+        }
+        
         const retDate = new Date(depDate.getTime() + duration * 24 * 60 * 60 * 1000);
-        const price = Math.floor(budget * 0.3 + Math.random() * budget * 0.7); // More price variation
+        
+        // 🧪 PHASE 3: Generate varied prices to test price filtering
+        let price;
+        if (i < 3) {
+          // First 3 offers: within budget
+          price = Math.floor(budget * 0.3 + Math.random() * budget * 0.5);
+        } else if (i === 3) {
+          // 4th offer: exactly at budget
+          price = budget;
+        } else {
+          // 5th+ offers: over budget (to test price filtering later)
+          price = Math.floor(budget * 1.1 + Math.random() * budget * 0.5);
+        }
+        
+        // 🧪 PHASE 3: Add properties for future filter testing
+        const nonstopFlight = i < 4; // First 4 are nonstop, others have connections
+        const baggageIncluded = i < 3; // First 3 include baggage, others don't
+        
+        console.log(`🧪 [MOCK-DEBUG] Offer ${i + 1}: ${airline.name} - Duration: ${duration} days (${duration >= minDuration && duration <= maxDuration ? 'VALID' : 'INVALID'}) - Price: $${price} (${price <= budget ? 'WITHIN BUDGET' : 'OVER BUDGET'}) - Nonstop: ${nonstopFlight} - Baggage: ${baggageIncluded}`);
         
         mockOffers.push({
           trip_request_id: tripRequestId,
@@ -191,7 +223,10 @@ serve(async (req: Request) => {
           return_time: `${String(Math.floor(Math.random() * 12) + 12).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
           duration: getRealisticFlightDuration(originAirport, destinationAirport),
           price: price,
-          booking_url: `https://example.com/book/${airline.code.toLowerCase()}${Math.floor(Math.random() * 999)}`
+          booking_url: `https://example.com/book/${airline.code.toLowerCase()}${Math.floor(Math.random() * 999)}`,
+          // 🧪 PHASE 3: Add filter test properties (for future use)
+          baggage_included: baggageIncluded,
+          nonstop_match: nonstopFlight
         });
       }
       

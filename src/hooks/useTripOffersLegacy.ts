@@ -61,7 +61,7 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
     return tripDays >= minDuration && tripDays <= maxDuration;
   }, []);
 
-  const loadOffers = useCallback(async (overrideFilterArg = true, relaxCriteriaArg = false, useCache = true) => {
+  const loadOffers = useCallback(async (overrideFilterArg = false, relaxCriteriaArg = false, useCache = true) => {
     logger.info("[useTripOffersLegacy] Loading offers", { tripId, overrideFilterArg, relaxCriteriaArg, useCache });
 
     if (!tripId) {
