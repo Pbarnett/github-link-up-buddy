@@ -37,9 +37,7 @@ export function useFlightOffers(
   const [offers, setOffers] = useState<FlightOfferV2[]>(initialState.offers);
   const [isLoading, setLoading] = useState<boolean>(initialState.isLoading);
   const [error, setError] = useState<Error | null>(initialState.error);
-  const [offers, setOffers] = useState<FlightOfferV2[]>(initialState.offers);
-  const [isLoading, setLoading] = useState<boolean>(initialState.isLoading);
-  const [error, setError] = useState<Error | null>(initialState.error);
+  // Removed duplicate state declarations for offers, isLoading, error
   const [fetchTrigger, setFetchTrigger] = useState(0);
 
   const refetch = () => {
