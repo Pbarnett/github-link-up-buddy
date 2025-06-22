@@ -1,5 +1,6 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import type { MockInstance } from 'vitest';
 import { useFlightOffers, mapFlightOfferDbRowToV2 } from './useFlightOffers'; // mapFlightOfferDbRowToV2 is also exported here
 import * as featureFlagHook from '@/hooks/useFeatureFlag';
 import * as serverActions from '@/serverActions/getFlightOffers';
@@ -19,8 +20,8 @@ const mockDbRows: FlightOfferV2DbRow[] = [
 const expectedMappedOffers: FlightOfferV2[] = mockDbRows.map(mapFlightOfferDbRowToV2);
 
 describe('useFlightOffers Hook', () => {
-  let mockUseFeatureFlag: vi.SpyInstance;
-  let mockGetFlightOffers: vi.SpyInstance;
+  let mockUseFeatureFlag: MockInstance;
+  let mockGetFlightOffers: MockInstance;
 
   beforeEach(() => {
     vi.clearAllMocks();

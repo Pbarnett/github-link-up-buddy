@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor, within, cleanup } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach, type Mock } from 'vitest';
 import TripOffersV2 from './TripOffersV2';
 import * as useFlightOffersHook from '@/flightSearchV2/useFlightOffers';
 import { FlightOfferV2 } from '@/flightSearchV2/types';
@@ -16,7 +16,7 @@ vi.mock('react-router-dom', async () => {
     };
 });
 
-const mockUseFlightOffers = useFlightOffersHook.useFlightOffers as vi.Mock;
+const mockUseFlightOffers = useFlightOffersHook.useFlightOffers as Mock;
 
 const mockOffersData: FlightOfferV2[] = [
   { id: 'offer-1', tripRequestId: 'trip-1', mode: 'AUTO', priceTotal: 199.99, priceCurrency: 'USD', priceCarryOn: 25, bagsIncluded: true, cabinClass: 'ECONOMY', nonstop: true, originIata: 'JFK', destinationIata: 'LAX', departDt: '2024-12-01T10:00:00Z', returnDt: null, seatPref: 'AISLE', createdAt: '2024-07-01T00:00:00Z' },
@@ -136,6 +136,7 @@ describe('TripOffersV2 Component', () => {
   });
 
   it('should format dates correctly, including return date if present, and handle invalid dates gracefully', () => {
+    const { format } = require('date-fns'); // Ensure date-fns is available in test env
     const offersWithSpecificDates = [
         // Use unique originIata for each offer to ensure `getByText` can find the specific row
         { ...mockOffersData[0], id:'offer-valid-no-return', departDt: '2024-12-01T10:00:00Z', returnDt: null, originIata: 'DT1' },
@@ -149,15 +150,20 @@ describe('TripOffersV2 Component', () => {
     const validNoReturnRow = screen.getByText(/DT1 →/).closest('tr');
     expect(validNoReturnRow).toBeInTheDocument();
     if (validNoReturnRow) {
-      expect(within(validNoReturnRow).getByText(/Depart: Dec 01, 2024 10:00/)).toBeInTheDocument();
+      // Use the same formatting logic as the component to account for timezone conversion
+      const expectedDepartDate = format(new Date('2024-12-01T10:00:00Z'), 'MMM dd, yyyy HH:mm');
+      expect(within(validNoReturnRow).getByText(new RegExp(`Depart: ${expectedDepartDate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`))).toBeInTheDocument();
     }
 
     // For offer-valid-with-return (originIata: DT2)
     const validWithReturnRow = screen.getByText(/DT2 →/).closest('tr');
     expect(validWithReturnRow).toBeInTheDocument();
     if (validWithReturnRow) {
-      expect(within(validWithReturnRow).getByText(/Depart: Dec 05, 2024 12:30/)).toBeInTheDocument();
-      expect(within(validWithReturnRow).getByText(/Return: Dec 10, 2024 15:00/)).toBeInTheDocument();
+      // Use the same formatting logic as the component to account for timezone conversion
+      const expectedDepartDate = format(new Date('2024-12-05T12:30:00Z'), 'MMM dd, yyyy HH:mm');
+      const expectedReturnDate = format(new Date('2024-12-10T15:00:00Z'), 'MMM dd, yyyy HH:mm');
+      expect(within(validWithReturnRow).getByText(new RegExp(`Depart: ${expectedDepartDate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`))).toBeInTheDocument();
+      expect(within(validWithReturnRow).getByText(new RegExp(`Return: ${expectedReturnDate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`))).toBeInTheDocument();
     }
 
     // For offer-invalid-date

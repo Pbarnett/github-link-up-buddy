@@ -1,22 +1,25 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach, type MockedFunction, type Mock } from 'vitest';
 import { getFlightOffers, clearGetFlightOffersCache } from './getFlightOffers';
 import { supabase } from '@/integrations/supabase/client';
 import { FlightOfferV2DbRow } from '@/flightSearchV2/types';
 
 
-// Mock the supabase client
-const mockEq = vi.fn();
-const mockSelect = vi.fn(() => ({ eq: mockEq }));
-const mockFrom = vi.fn(() => ({ select: mockSelect }));
+// Mock the supabase client with all definitions inside the factory
+vi.mock('@/integrations/supabase/client', () => {
+  const mockEq = vi.fn();
+  const mockSelect = vi.fn(() => ({ eq: mockEq }));
+  const mockFrom = vi.fn(() => ({ select: mockSelect }));
+  const mockFunctionsInvoke = vi.fn();
 
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    functions: {
-      invoke: vi.fn(),
+  return {
+    supabase: {
+      from: mockFrom,
+      functions: {
+        invoke: mockFunctionsInvoke,
+      },
     },
-    from: mockFrom,
-  },
-}));
+  };
+});
 
 
 const mockTripRequestId = 'test-trip-id-123';
@@ -41,22 +44,22 @@ const mockDbRows: FlightOfferV2DbRow[] = [
 
 describe('getFlightOffers server action', () => {
   // Get references to the mocked functions
-  const mockFrom = supabase.from as vi.MockedFunction<typeof supabase.from>;
-  const mockFunctionsInvoke = supabase.functions.invoke as vi.MockedFunction<typeof supabase.functions.invoke>;
-  let mockSelect: vi.MockedFunction<any>;
-  let mockEq: vi.MockedFunction<any>;
+  const mockFrom = supabase.from as MockedFunction<typeof supabase.from>;
+  const mockFunctionsInvoke = supabase.functions.invoke as MockedFunction<typeof supabase.functions.invoke>;
+  let mockSelect: MockedFunction<any>;
+  let mockEq: MockedFunction<any>;
 
   beforeEach(() => {
     vi.useFakeTimers();
     clearGetFlightOffersCache(); // Ensure cache is cleared
-
-    // Reset supabase.functions.invoke mock
-    (supabase.functions.invoke as vi.Mock).mockClear();
-    // Reset supabase client query mocks
-    mockFrom.mockClear();
-    mockSelect.mockClear();
-    mockEq.mockClear();
-
+    
+    // Reset all mocks to clear state from previous tests
+    vi.clearAllMocks();
+    
+    // Set up fresh mock chain for each test
+    mockEq = vi.fn();
+    mockSelect = vi.fn(() => ({ eq: mockEq }));
+    mockFrom.mockReturnValue({ select: mockSelect } as any);
   });
 
   afterEach(() => {
@@ -128,7 +131,7 @@ describe('getFlightOffers server action', () => {
 
   describe('with refresh = true', () => {
     it('should invoke flight-search-v2, invalidate cache, then fetch from table', async () => {
-      (supabase.functions.invoke as vi.Mock).mockResolvedValueOnce({ data: { inserted: 1, message: "Refreshed" }, error: null });
+      (supabase.functions.invoke as Mock).mockResolvedValueOnce({ data: { inserted: 1, message: "Refreshed" }, error: null });
       // Mock for the first table read (to populate cache initially)
       mockEq.mockResolvedValueOnce({ data: mockDbRows, error: null });
       // Mock for the table read AFTER refresh
@@ -169,7 +172,7 @@ describe('getFlightOffers server action', () => {
 
     it('should throw error if flight-search-v2 invocation fails during refresh', async () => {
       const refreshErrorMessage = 'Refresh function failed';
-      (supabase.functions.invoke as vi.Mock).mockResolvedValueOnce({ data: null, error: new Error(refreshErrorMessage) });
+      (supabase.functions.invoke as Mock).mockResolvedValueOnce({ data: null, error: new Error(refreshErrorMessage) });
 
       await expect(getFlightOffers(mockTripRequestId, true)).rejects.toThrow(
         `Failed to refresh flight offers via flight-search-v2: ${refreshErrorMessage}`
@@ -182,7 +185,7 @@ describe('getFlightOffers server action', () => {
     });
 
     it('refresh=true should still fetch from table if flight-search-v2 succeeds but finds no new offers (e.g. inserted: 0)', async () => {
-        (supabase.functions.invoke as vi.Mock).mockResolvedValueOnce({ data: { inserted: 0, message: "No new offers" }, error: null });
+        (supabase.functions.invoke as Mock).mockResolvedValueOnce({ data: { inserted: 0, message: "No new offers" }, error: null });
         mockEq.mockResolvedValueOnce({ data: mockDbRows, error: null });
 
         const result = await getFlightOffers(mockTripRequestId, true);
