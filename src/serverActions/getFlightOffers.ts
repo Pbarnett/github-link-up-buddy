@@ -46,6 +46,7 @@ function transformLegacyToV2(legacyOffer: LegacyFlightOffer): FlightOfferV2DbRow
     return_dt: legacyOffer.return_date ? createIsoDateTime(legacyOffer.return_date, legacyOffer.return_time) : null,
     seat_pref: legacyOffer.selected_seat_type,
     created_at: legacyOffer.created_at,
+    booking_url: legacyOffer.booking_url || null, // Include booking URL if present in legacy data
   };
 }
 
@@ -105,34 +106,53 @@ export const getFlightOffers = async (
     return cachedEntry.data;
   }
 
-  console.log(`[ServerAction/getFlightOffers] Cache miss or stale for tripRequestId: ${tripRequestId}. Fetching from flight_offers table...`);
+  console.log(`[ServerAction/getFlightOffers] Cache miss or stale for tripRequestId: ${tripRequestId}. Fetching from flight_offers_v2 table...`);
 
-  // TEMP FIX: Read from flight_offers table instead of flight_offers_v2 to fix data source mismatch
-  const { data: tableData, error: tableError } = await supabase
-    .from('flight_offers')
+  // Read from flight_offers_v2 table which has booking URLs
+  const { data: v2Data, error: v2Error } = await supabase
+    .from('flight_offers_v2')
     .select('*')
     .eq('trip_request_id', tripRequestId);
-
-
-
-  if (tableError) {
-    console.error(`[ServerAction/getFlightOffers] Error fetching from 'flight_offers' table for tripRequestId ${tripRequestId}:`, tableError);
-    throw new Error(`Failed to fetch flight offers from table: ${tableError.message}`);
-  }
-
-  if (tableData) {
-    // Transform legacy data to V2 format
-    const transformedData = (tableData as LegacyFlightOffer[]).map(transformLegacyToV2);
-    console.log(`[ServerAction/getFlightOffers] Transformed ${transformedData.length} legacy offers to V2 format`);
     
-    // Cache the transformed data
-    cache.set(tripRequestId, { data: transformedData, timestamp: Date.now() });
-    return transformedData;
+  // If no V2 data, fall back to legacy table and transform
+  if (v2Error || !v2Data || v2Data.length === 0) {
+    console.log(`[ServerAction/getFlightOffers] No V2 data found, falling back to legacy flight_offers table...`);
+    
+    const { data: legacyData, error: legacyError } = await supabase
+      .from('flight_offers')
+      .select('*')
+      .eq('trip_request_id', tripRequestId);
+      
+    if (legacyError) {
+      console.error(`[ServerAction/getFlightOffers] Error fetching from 'flight_offers' table for tripRequestId ${tripRequestId}:`, legacyError);
+      throw new Error(`Failed to fetch flight offers from table: ${legacyError.message}`);
+    }
+    
+    if (legacyData) {
+      // Transform legacy data to V2 format
+      const transformedData = (legacyData as LegacyFlightOffer[]).map(transformLegacyToV2);
+      console.log(`[ServerAction/getFlightOffers] Transformed ${transformedData.length} legacy offers to V2 format`);
+      
+      // Cache the transformed data
+      cache.set(tripRequestId, { data: transformedData, timestamp: Date.now() });
+      return transformedData;
+    }
+    
+    return []; // No data found in either table
   }
 
-  // Should not happen if tableError is not thrown, but as a fallback
-  console.error(`[ServerAction/getFlightOffers] Unexpected: No data and no error from 'flight_offers' table for tripRequestId ${tripRequestId}.`);
-  return []; // Return empty array if no data found, or handle as error if appropriate
+  // If we have V2 data, use it directly
+  if (v2Data && v2Data.length > 0) {
+    console.log(`[ServerAction/getFlightOffers] Found ${v2Data.length} offers in flight_offers_v2 table`);
+    
+    // Cache the V2 data
+    cache.set(tripRequestId, { data: v2Data as FlightOfferV2DbRow[], timestamp: Date.now() });
+    return v2Data as FlightOfferV2DbRow[];
+  }
+
+  // No data found in either table
+  console.log(`[ServerAction/getFlightOffers] No flight offers found for tripRequestId ${tripRequestId}`);
+  return []
 
 };
 
