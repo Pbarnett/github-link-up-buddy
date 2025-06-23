@@ -126,6 +126,20 @@ const TripOffersV2: React.FC = () => {
     }
   };
 
+  const calculateTripDuration = (departDt: string, returnDt: string | null) => {
+    if (!returnDt) return '1 day';
+    try {
+      const departDate = new Date(departDt);
+      const returnDate = new Date(returnDt);
+      const diffInMs = returnDate.getTime() - departDate.getTime();
+      const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+      return `${diffInDays} day${diffInDays === 1 ? '' : 's'}`;
+    } catch (e) {
+      console.error("Error calculating duration:", e);
+      return 'N/A';
+    }
+  };
+
   const handleBookOffer = (offer: any) => {
     console.log('Booking offer:', offer.id, 'Booking URL:', offer.bookingUrl);
     
@@ -190,8 +204,9 @@ const TripOffersV2: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[250px]">Route</TableHead>
+                <TableHead className="w-[200px]">Route</TableHead>
                 <TableHead>Dates</TableHead>
+                <TableHead className="w-[100px]">Duration</TableHead>
                 <TableHead>Details</TableHead>
                 <TableHead className="text-right">Price</TableHead>
                 <TableHead className="w-[140px]">Action</TableHead>
@@ -218,6 +233,11 @@ const TripOffersV2: React.FC = () => {
                         </span>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 font-medium">
+                      {calculateTripDuration(offer.departDt, offer.returnDt)}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
