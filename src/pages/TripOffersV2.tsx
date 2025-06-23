@@ -222,69 +222,67 @@ const TripOffersV2: React.FC = () => {
         <CardContent className="p-0">
           <div className="divide-y divide-gray-100">
             {sortedOffers.map((offer) => (
-              <div key={offer.id} className="p-6 hover:bg-gray-50 transition-colors">
-                {/* Header Row: Route and Price */}
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {offer.originIata} → {offer.destinationIata}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {calculateTripDuration(offer.departDt, offer.returnDt)} trip
-                    </p>
+              <div key={offer.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center justify-between">
+                  {/* LEFT: Flight Details */}
+                  <div className="flex-1 space-y-1">
+                    {/* Route and Trip Duration */}
+                    <div className="flex items-center gap-4">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {offer.originIata} → {offer.destinationIata}
+                      </h3>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                        {calculateTripDuration(offer.departDt, offer.returnDt)}
+                      </span>
+                    </div>
+                    
+                    {/* Flight Details */}
+                    <div className="flex items-center gap-6 text-sm">
+                      <div>
+                        <span className="text-gray-500">Depart:</span>
+                        <span className="ml-1 font-medium text-gray-900">{formatDate(offer.departDt)}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Return:</span>
+                        <span className="ml-1 font-medium text-gray-900">
+                          {offer.returnDt ? formatDate(offer.returnDt) : 'One-way'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Flight:</span>
+                        <span className="ml-1 font-medium text-gray-900">{formatFlightTime(offer.departDt, offer.returnDt)}</span>
+                      </div>
+                      
+                      {/* Badges inline */}
+                      {offer.nonstop && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
+                          Nonstop
+                        </span>
+                      )}
+                      {offer.bagsIncluded && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                          Bags Included
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xl font-bold text-gray-900">
-                      {formatCurrency(offer.priceTotal, offer.priceCurrency || 'USD')}
+
+                  {/* RIGHT: Price and Book Button */}
+                  <div className="flex items-center gap-4 ml-6">
+                    <div className="text-right">
+                      <div className="text-xl font-bold text-gray-900">
+                        {formatCurrency(offer.priceTotal, offer.priceCurrency || 'USD')}
+                      </div>
                     </div>
                     <Button 
                       onClick={() => handleBookOffer(offer)}
                       size="sm"
-                      className="mt-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       Book Flight
                     </Button>
                   </div>
                 </div>
-
-                {/* Details Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500 font-medium">Departure</span>
-                    <div className="text-gray-900">{formatDate(offer.departDt)}</div>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 font-medium">Flight Time</span>
-                    <div className="text-gray-900">{formatFlightTime(offer.departDt, offer.returnDt)}</div>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 font-medium">Return</span>
-                    <div className="text-gray-900">
-                      {offer.returnDt ? formatDate(offer.returnDt) : 'One-way'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Badges Row */}
-                {(offer.nonstop || offer.bagsIncluded || offer.cabinClass) && (
-                  <div className="flex items-center space-x-2 mt-3">
-                    {offer.nonstop && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
-                        Nonstop
-                      </span>
-                    )}
-                    {offer.bagsIncluded && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                        Bags Included
-                      </span>
-                    )}
-                    {offer.cabinClass && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-700">
-                        {offer.cabinClass}
-                      </span>
-                    )}
-                  </div>
-                )}
               </div>
             ))}
           </div>
