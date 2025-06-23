@@ -391,20 +391,18 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                 </div>
               </div>
 
-              {/* Advanced Options - Collapsible */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="bg-gray-400 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
-                  Flight Preferences & {mode === 'auto' ? 'Auto-Booking' : 'Filters'}
-                </h2>
-                <div className="space-y-6">
-                  {/* Show AutoBookingSection for auto mode or when feature flag is disabled */}
-                  {(mode === 'auto' || !useFeatureFlag("auto_booking_v2")) && (
+              {/* Advanced Options - Only show for auto mode */}
+              {mode === 'auto' && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <span className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
+                    Auto-Booking Settings
+                  </h2>
+                  <div className="space-y-6">
                     <AutoBookingSection control={form.control} mode={mode} />
-                  )}
-                  <FilterTogglesSection control={form.control} isLoading={isSubmitting || isLoadingDetails} />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Form Actions */}
               <div className="pt-8 border-t border-gray-200 mt-8">
