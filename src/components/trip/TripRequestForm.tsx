@@ -364,24 +364,44 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
         <FormProvider {...form}>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="p-6">
-              {/* Responsive Grid Layout */}
-              <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2 lg:gap-8'}`}>
-                {/* Left Column */}
-                <div className="space-y-6 bg-white rounded-lg border border-gray-100 p-6">
+              {/* Primary Travel Details */}
+              <div className="bg-blue-50 rounded-lg border border-blue-200 p-6 mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</span>
+                  Travel Details
+                </h2>
+                <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2 lg:gap-8'}`}>
                   <EnhancedDestinationSection control={form.control} watch={form.watch} />
                   <DepartureAirportsSection control={form.control} />
+                </div>
+                <div className="mt-6">
                   <DateRangeField control={form.control} />
+                </div>
+              </div>
+
+              {/* Trip Preferences */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="bg-gray-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</span>
+                  Trip Preferences
+                </h2>
+                <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2 lg:gap-8'}`}>
                   <EnhancedBudgetSection control={form.control} />
                   <TripDurationInputs control={form.control} />
                 </div>
+              </div>
 
-                {/* Right Column */}
-                <div className="space-y-6 bg-white rounded-lg border border-gray-100 p-6">
+              {/* Advanced Options - Collapsible */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="bg-gray-400 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
+                  Flight Preferences & {mode === 'auto' ? 'Auto-Booking' : 'Filters'}
+                </h2>
+                <div className="space-y-6">
                   {/* Show AutoBookingSection for auto mode or when feature flag is disabled */}
                   {(mode === 'auto' || !useFeatureFlag("auto_booking_v2")) && (
                     <AutoBookingSection control={form.control} mode={mode} />
                   )}
-                  {/* --- Filter Toggles Section --- */}
                   <FilterTogglesSection control={form.control} isLoading={isSubmitting || isLoadingDetails} />
                 </div>
               </div>

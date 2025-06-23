@@ -20,17 +20,20 @@ const TripNew = () => {
             <button
               type="button"
               onClick={() => navigate("/dashboard")}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4"
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Dashboard
             </button>
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                How would you like to find flights?
+              <h1 className="text-4xl font-bold text-gray-900 mb-3">
+                Find Your Perfect Flight
               </h1>
-              <p className="text-lg text-gray-600">
-                Choose your preferred booking approach
+              <p className="text-xl text-gray-600 mb-2">
+                Choose how you'd like Parker Flight to help you
+              </p>
+              <p className="text-sm text-gray-500">
+                Both options search the same flights - the difference is when you book
               </p>
             </div>
           </div>
