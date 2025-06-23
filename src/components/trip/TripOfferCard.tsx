@@ -172,24 +172,45 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
           </p>
         </div>
 
-        {/* Flight Duration */}
-        <p className="mt-2 text-gray-600 flex items-center">
-          <svg
-            className="w-5 h-5 mr-2 text-gray-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          Flight duration: {humanDuration}
-        </p>
+        {/* Flight Time and Trip Duration */}
+        <div className="mt-2 flex flex-wrap gap-4">
+          <div className="flex items-center text-gray-600">
+            <svg
+              className="w-5 h-5 mr-2 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span className="font-medium text-gray-700">Flight time:</span>
+            <span className="ml-1 text-blue-600 font-semibold">{humanDuration}</span>
+          </div>
+          <div className="flex items-center text-gray-600">
+            <svg
+              className="w-5 h-5 mr-2 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M8 7V3m8 4V3m-9 8h10m-9 4h9m-9 4h9M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z"
+              />
+            </svg>
+            <span className="font-medium text-gray-700">Trip length:</span>
+            <span className="ml-1 text-green-600 font-semibold">{tripDays} day{tripDays === 1 ? '' : 's'}</span>
+          </div>
+        </div>
 
         {/* Carry-on Badge */}
         <div className="mt-2">
