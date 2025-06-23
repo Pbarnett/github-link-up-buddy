@@ -219,79 +219,75 @@ const TripOffersV2: React.FC = () => {
           <CardTitle className="text-2xl font-bold text-gray-800">Available Flight Offers</CardTitle>
           <p className="text-sm text-gray-600 mt-2">Sorted by price (lowest to highest)</p>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[180px]">Route</TableHead>
-                <TableHead>Dates</TableHead>
-                <TableHead className="w-[90px]">Trip</TableHead>
-                <TableHead className="w-[90px]">Flight Time</TableHead>
-                <TableHead>Details</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="w-[140px]">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedOffers.map((offer) => (
-                <TableRow key={offer.id} className="hover:bg-gray-50">
-                  <TableCell>
-                    <div className="flex items-center font-medium">
-                      <PlaneTakeoff className="mr-2 h-5 w-5 text-blue-500" />
+        <CardContent className="p-0">
+          <div className="divide-y divide-gray-100">
+            {sortedOffers.map((offer) => (
+              <div key={offer.id} className="p-6 hover:bg-gray-50 transition-colors">
+                {/* Header Row: Route and Price */}
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
                       {offer.originIata} → {offer.destinationIata}
-                      <PlaneLanding className="ml-2 h-5 w-5 text-green-500" />
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {calculateTripDuration(offer.departDt, offer.returnDt)} trip
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xl font-bold text-gray-900">
+                      {formatCurrency(offer.priceTotal, offer.priceCurrency || 'USD')}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="text-sm text-gray-700 flex items-center">
-                        <CalendarDays className="mr-1 h-4 w-4 text-gray-500" /> Depart: {formatDate(offer.departDt)}
-                      </span>
-                      {offer.returnDt && (
-                        <span className="text-sm text-gray-700 flex items-center">
-                          <CalendarDays className="mr-1 h-4 w-4 text-gray-500" /> Return: {formatDate(offer.returnDt)}
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 font-medium">
-                      {calculateTripDuration(offer.departDt, offer.returnDt)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="bg-orange-50 text-orange-700 font-medium">
-                      {formatFlightTime(offer.departDt, offer.returnDt)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {offer.cabinClass && <Badge variant="outline">{offer.cabinClass}</Badge>}
-                      {offer.nonstop && <Badge variant="secondary" className="bg-green-100 text-green-700">Nonstop</Badge>}
-                      {offer.bagsIncluded && (
-                        <Badge variant="outline" className="flex items-center">
-                          <ShoppingBag className="mr-1 h-3 w-3" /> Bags Included
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right font-semibold text-lg text-green-600">
-                    {formatCurrency(offer.priceTotal, offer.priceCurrency || 'USD')}
-                  </TableCell>
-                  <TableCell>
                     <Button 
                       onClick={() => handleBookOffer(offer)}
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className="mt-1 bg-blue-600 hover:bg-blue-700 text-white"
                     >
-                      <ExternalLink className="w-4 h-4 mr-1" />
-                      Book
+                      Book Flight
                     </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </div>
+                </div>
+
+                {/* Details Row */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500 font-medium">Departure</span>
+                    <div className="text-gray-900">{formatDate(offer.departDt)}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 font-medium">Flight Time</span>
+                    <div className="text-gray-900">{formatFlightTime(offer.departDt, offer.returnDt)}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 font-medium">Return</span>
+                    <div className="text-gray-900">
+                      {offer.returnDt ? formatDate(offer.returnDt) : 'One-way'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Badges Row */}
+                {(offer.nonstop || offer.bagsIncluded || offer.cabinClass) && (
+                  <div className="flex items-center space-x-2 mt-3">
+                    {offer.nonstop && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
+                        Nonstop
+                      </span>
+                    )}
+                    {offer.bagsIncluded && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                        Bags Included
+                      </span>
+                    )}
+                    {offer.cabinClass && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-700">
+                        {offer.cabinClass}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
           <div className="mt-6 flex justify-end">
             <button
               onClick={refetch}
