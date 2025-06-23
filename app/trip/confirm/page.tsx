@@ -223,10 +223,18 @@ const TripConfirm = () => {
             </div>
           </div>
           
-          {/* Duration */}
-          <div className="flex items-center">
-            <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
-            <span className="text-sm text-gray-500">Flight duration: {offer.duration}</span>
+          {/* Duration and Trip Length */}
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
+              <span className="text-sm text-gray-500">Flight duration: {offer.duration}</span>
+            </div>
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-2 text-blue-500" />
+              <span className="inline-block bg-blue-50 text-blue-700 text-sm font-semibold rounded-full px-2 py-1">
+                {Math.ceil((new Date(offer.return_date).getTime() - new Date(offer.departure_date).getTime()) / (1000 * 60 * 60 * 24))} Days Trip
+              </span>
+            </div>
           </div>
           
           {/* Notes */}
