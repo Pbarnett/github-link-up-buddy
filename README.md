@@ -1,15 +1,16 @@
 
-# Supabase Auth Demo
+# Parker Flight
 
-A simple React application demonstrating authentication with Supabase.
+An autonomous flight booking application that monitors flight prices and automatically books flights when user-defined criteria are met. Built with React/TypeScript frontend, Supabase backend, and integrated with Amadeus flight data API and Stripe payments.
 
-## Features
+## Core Features
 
-- Email magic link authentication
-- Google OAuth authentication
-- Protected dashboard route
-- Authentication state management
-- Automated flight search and booking with Amadeus API
+- **Autonomous Flight Booking**: Set preferences and let the system automatically book flights when criteria are met
+- **Real-time Flight Monitoring**: Background jobs monitor flight prices using Amadeus API
+- **Secure Payment Processing**: Stripe integration with two-step authorization and capture
+- **User Authentication**: Email magic link and Google OAuth authentication
+- **Modern UI/UX**: Clean, responsive interface with 2025 design standards
+- **Flight Search & Results**: Manual flight search with booking URL generation
 
 ## Getting Started
 
@@ -52,10 +53,87 @@ cp .env.example .env
      ```
    - Also add these secrets to your Supabase Edge Function Secrets in the Supabase dashboard
 
-6. Start the development server:
+6. Configure Stripe for payments:
+   - Create a Stripe account and get your API keys
+   - Add the following to your `.env` file:
+     ```
+     STRIPE_PUBLISHABLE_KEY=pk_test_...
+     STRIPE_SECRET_KEY=sk_test_...
+     ```
+   - Add Stripe secrets to Supabase Edge Function Secrets
+
+7. Start the development server:
 ```bash
 pnpm dev
 ```
+
+## Architecture Overview
+
+Parker Flight is built on a modern, scalable architecture designed for autonomous flight booking:
+
+### Core Components
+
+1. **Frontend (React/TypeScript)**
+   - Modern UI with top navigation and breadcrumbs
+   - Flight search interface with manual and auto modes
+   - User dashboard for managing preferences and bookings
+   - Responsive design with Tailwind CSS and shadcn/ui components
+
+2. **Backend (Supabase)**
+   - PostgreSQL database with robust schema design
+   - Edge Functions for API integrations and business logic
+   - Real-time subscriptions for live updates
+   - Row Level Security (RLS) for data protection
+
+3. **Payment Processing (Stripe)**
+   - Two-step payment authorization and capture
+   - Secure payment method storage
+   - Webhook handling for payment events
+   - PCI compliance through Stripe Elements
+
+4. **Flight Data (Amadeus API)**
+   - Real-time flight search and pricing
+   - Background monitoring jobs
+   - Rate limiting and retry logic
+   - Booking URL generation for major airlines
+
+### Key Features Implemented
+
+- ✅ User authentication (email magic links, Google OAuth)
+- ✅ Flight search with filters (nonstop, carry-on)
+- ✅ Results display with pricing, duration, and booking URLs
+- ✅ Modern navigation and UX design
+- ✅ Price sorting and trip duration display
+- ✅ Mode switching between manual and auto booking flows
+- ✅ Git tagging and branch management for stable releases
+
+### Development Roadmap
+
+The following components are planned for implementation:
+
+#### Phase 1: Core Auto-Booking Infrastructure
+- [ ] **State Machine Workflow**: Implement booking flow with Saga pattern
+- [ ] **Background Job System**: Supabase Cron for fare monitoring
+- [ ] **Payment Authorization**: Stripe PaymentIntent with manual capture
+- [ ] **Database Schema**: Tables for watches, bookings, and audit logs
+
+#### Phase 2: User Experience & Legal Compliance
+- [ ] **User Consent Management**: Explicit authorization workflows
+- [ ] **Notification System**: Email/SMS for booking confirmations and alerts
+- [ ] **Emergency Controls**: Cancel/pause functionality for user safety
+- [ ] **Terms of Service**: Legal framework for automated transactions
+
+#### Phase 3: Scalability & Monitoring
+- [ ] **API Cost Optimization**: Batched requests and intelligent caching
+- [ ] **Error Handling**: Comprehensive retry logic and failure recovery
+- [ ] **Monitoring Dashboard**: System health and performance metrics
+- [ ] **Feature Flags**: Safe rollout of new functionality
+
+#### Phase 4: Production Readiness
+- [ ] **Security Audit**: Comprehensive security review
+- [ ] **Load Testing**: Performance validation under scale
+- [ ] **Compliance Review**: FTC and legal requirement verification
+- [ ] **Beta Testing**: Limited user rollout with feedback collection
 
 ## Amadeus Flight API
 
@@ -161,21 +239,24 @@ A new version of the flight search functionality (V2) is being developed. This v
 
 ## Routes
 
-- `/` - Home page
+- `/` - Home page with Parker Flight branding
 - `/login` - Authentication page with magic link and Google sign-in
 - `/dashboard` - Protected route showing user information
-- `/trip/new` - Create a new trip request
-- `/trip/offers` - View flight offers for a trip
+- `/trip/new` - Trip creation with manual vs auto-booking mode selection
+- `/trip/offers` - View flight offers with search results (legacy)
+- `/trip/offers-v2` - Enhanced flight offers display (V2)
 
 ## Technologies
 
-- React 18 with TypeScript
-- Vite as build tool
-- Tailwind CSS for styling
-- Supabase for authentication
-- React Router for routing
-- shadcn/ui for UI components
-- Amadeus API for flight searches
+- **Frontend**: React 18 with TypeScript, Vite build tool
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **Backend**: Supabase (PostgreSQL + Edge Functions)
+- **Authentication**: Supabase Auth (email magic links, Google OAuth)
+- **Payments**: Stripe with secure payment method storage
+- **Flight Data**: Amadeus Flight API with rate limiting and retry logic
+- **Routing**: React Router with protected routes
+- **Testing**: Vitest with React Testing Library
+- **Version Control**: Git with tagged releases and stable branches
 
 ## Smoke Test Checklist
 
