@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
+import TopNavigation from "./components/navigation/TopNavigation";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +32,8 @@ const App = () => {
             v7_relativeSplatPath: true
           }}
         >
-          <div id="main">
+          <TopNavigation />
+          <main id="main" className="flex-1 overflow-auto">
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
@@ -94,7 +96,7 @@ const App = () => {
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </div>
+          </main>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
