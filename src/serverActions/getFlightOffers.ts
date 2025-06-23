@@ -1,5 +1,53 @@
 import { supabase } from '@/integrations/supabase/client';
 import { FlightOfferV2DbRow } from '@/flightSearchV2/types';
+import { Tables } from '@/integrations/supabase/types';
+
+// Legacy flight offer type from flight_offers table
+type LegacyFlightOffer = Tables<'flight_offers'>;
+
+// Function to transform legacy format to V2 format
+function transformLegacyToV2(legacyOffer: LegacyFlightOffer): FlightOfferV2DbRow {
+  // Extract airport codes from full names if needed
+  const extractIataCode = (airportName: string | null): string => {
+    if (!airportName) return 'UNK';
+    // Try to extract 3-letter IATA code (e.g., "JFK" from "John F. Kennedy International (JFK)")
+    const match = airportName.match(/\(([A-Z]{3})\)/);
+    if (match) return match[1];
+    // If no parentheses, assume the whole string is the code if it's 3 letters
+    if (airportName.length === 3 && /^[A-Z]{3}$/.test(airportName)) return airportName;
+    // Otherwise return first 3 characters or default
+    return airportName.substring(0, 3).toUpperCase() || 'UNK';
+  };
+  
+  // Create ISO datetime from date and time
+  const createIsoDateTime = (date: string, time: string): string => {
+    try {
+      // Combine date and time, assume UTC if no timezone info
+      const dateTime = `${date}T${time}`;
+      return new Date(dateTime).toISOString();
+    } catch {
+      return new Date().toISOString();
+    }
+  };
+
+  return {
+    id: legacyOffer.id,
+    trip_request_id: legacyOffer.trip_request_id,
+    mode: 'LEGACY', // All legacy offers are marked as LEGACY mode
+    price_total: legacyOffer.price || 0,
+    price_currency: 'USD', // Default to USD for legacy offers
+    price_carry_on: null, // Legacy format doesn't have carry-on pricing
+    bags_included: legacyOffer.baggage_included || true,
+    cabin_class: null, // Legacy format doesn't specify cabin class
+    nonstop: legacyOffer.stops === 0,
+    origin_iata: extractIataCode(legacyOffer.origin_airport),
+    destination_iata: extractIataCode(legacyOffer.destination_airport),
+    depart_dt: createIsoDateTime(legacyOffer.departure_date, legacyOffer.departure_time),
+    return_dt: legacyOffer.return_date ? createIsoDateTime(legacyOffer.return_date, legacyOffer.return_time) : null,
+    seat_pref: legacyOffer.selected_seat_type,
+    created_at: legacyOffer.created_at,
+  };
+}
 
 const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -48,44 +96,42 @@ export const getFlightOffers = async (
 
     // Invalidate cache for this tripRequestId as we've triggered a refresh
     cache.delete(tripRequestId);
-    console.log(`[ServerAction/getFlightOffers] Cache invalidated for tripRequestId: ${tripRequestId} after refresh.`);
   }
 
-
+  // Check cache first
   const cachedEntry = cache.get(tripRequestId);
   if (cachedEntry && (Date.now() - cachedEntry.timestamp < CACHE_DURATION_MS)) {
     console.log(`[ServerAction/getFlightOffers] Cache hit for tripRequestId: ${tripRequestId}`);
     return cachedEntry.data;
   }
 
+  console.log(`[ServerAction/getFlightOffers] Cache miss or stale for tripRequestId: ${tripRequestId}. Fetching from flight_offers table...`);
 
-  console.log(`[ServerAction/getFlightOffers] Cache miss or stale for tripRequestId: ${tripRequestId}. Fetching from flight_offers_v2 table...`);
-
-  // This part should ideally fetch from the `flight_offers_v2` table directly,
-  // as the edge function `flight-search-v2` is now responsible for populating it.
-  // The original logic invoked 'flight-offers-v2' which was assumed to return data.
-  // If 'flight-offers-v2' was meant to be the table name and not another function, this needs adjustment.
-  // Assuming the plan meant `flight-search-v2` (new) populates, and this function reads from the table.
-
-  // Let's adjust to read from the table `flight_offers_v2`
+  // TEMP FIX: Read from flight_offers table instead of flight_offers_v2 to fix data source mismatch
   const { data: tableData, error: tableError } = await supabase
-    .from('flight_offers_v2')
+    .from('flight_offers')
     .select('*')
     .eq('trip_request_id', tripRequestId);
 
+
+
   if (tableError) {
-    console.error(`[ServerAction/getFlightOffers] Error fetching from 'flight_offers_v2' table for tripRequestId ${tripRequestId}:`, tableError);
+    console.error(`[ServerAction/getFlightOffers] Error fetching from 'flight_offers' table for tripRequestId ${tripRequestId}:`, tableError);
     throw new Error(`Failed to fetch flight offers from table: ${tableError.message}`);
   }
 
   if (tableData) {
-    // Successfully fetched data from table
-    cache.set(tripRequestId, { data: tableData as FlightOfferV2DbRow[], timestamp: Date.now() });
-    return tableData as FlightOfferV2DbRow[];
+    // Transform legacy data to V2 format
+    const transformedData = (tableData as LegacyFlightOffer[]).map(transformLegacyToV2);
+    console.log(`[ServerAction/getFlightOffers] Transformed ${transformedData.length} legacy offers to V2 format`);
+    
+    // Cache the transformed data
+    cache.set(tripRequestId, { data: transformedData, timestamp: Date.now() });
+    return transformedData;
   }
 
   // Should not happen if tableError is not thrown, but as a fallback
-  console.error(`[ServerAction/getFlightOffers] Unexpected: No data and no error from 'flight_offers_v2' table for tripRequestId ${tripRequestId}.`);
+  console.error(`[ServerAction/getFlightOffers] Unexpected: No data and no error from 'flight_offers' table for tripRequestId ${tripRequestId}.`);
   return []; // Return empty array if no data found, or handle as error if appropriate
 
 };
