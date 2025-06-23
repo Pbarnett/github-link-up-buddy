@@ -47,7 +47,7 @@ const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSecti
               </div>
               <Select 
                 onValueChange={field.onChange} 
-                value={field.value || undefined}
+                value={field.value || ""}
               >
                 <FormControl>
                   <SelectTrigger className="h-11 bg-white border-gray-300">

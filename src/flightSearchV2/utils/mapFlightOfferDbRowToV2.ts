@@ -22,5 +22,6 @@ export const mapFlightOfferDbRowToV2 = (dbRow: FlightOfferV2DbRow): FlightOfferV
     returnDt: dbRow.return_dt,
     seatPref: dbRow.seat_pref,
     createdAt: dbRow.created_at,
+    bookingUrl: dbRow.booking_url || undefined, // Map booking_url field
   };
 };

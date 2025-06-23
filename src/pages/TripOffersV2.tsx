@@ -1,13 +1,15 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useFlightOffers } from '@/flightSearchV2/useFlightOffers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Terminal, PlaneTakeoff, PlaneLanding, ShoppingBag, CalendarDays, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Terminal, PlaneTakeoff, PlaneLanding, ShoppingBag, CalendarDays, AlertCircle, ExternalLink } from "lucide-react";
 import TripOffersV2Skeleton from '@/components/TripOffersV2Skeleton';
 import { format } from 'date-fns';
+import { toast } from '@/components/ui/use-toast';
 
 // Placeholder for a component to show when the feature flag is disabled
 const FlagDisabledPlaceholder: React.FC = () => (
@@ -40,6 +42,7 @@ const EmptyStateCard: React.FC = () => (
 
 const TripOffersV2: React.FC = () => {
   const { tripId } = useParams<{ tripId: string }>();
+  const navigate = useNavigate();
   const { offers, isLoading, error, isFeatureEnabled, refetch } = useFlightOffers(tripId || 'default-trip-id');
   
   // Debug logging
@@ -123,6 +126,59 @@ const TripOffersV2: React.FC = () => {
     }
   };
 
+  const handleBookOffer = (offer: any) => {
+    console.log('Booking offer:', offer.id, 'Booking URL:', offer.bookingUrl);
+    
+    // If offer has external booking URL (like Google Flights), redirect to airline website
+    if (offer.bookingUrl) {
+      console.log(`[ANALYTICS] External booking clicked:`, {
+        offerId: offer.id,
+        route: `${offer.originIata} → ${offer.destinationIata}`,
+        price: offer.priceTotal,
+        bookingUrl: offer.bookingUrl,
+        timestamp: new Date().toISOString()
+      });
+      
+      toast({
+        title: `Redirecting to Airline Website`,
+        description: "Opening airline website to complete your booking...",
+        duration: 3000,
+      });
+
+      // Redirect to the airline website for external bookings (like Google Flights)
+      setTimeout(() => {
+        window.open(offer.bookingUrl, '_blank');
+      }, 500);
+
+      return;
+    }
+    
+    // If no external booking URL, fall back to internal booking flow
+    console.log('No external booking URL found, using internal booking flow');
+    
+    // Convert V2 offer format to legacy format for internal booking
+    const params = new URLSearchParams();
+    params.set('id', offer.id);
+    params.set('airline', offer.originIata + '-' + offer.destinationIata); // Placeholder airline
+    params.set('flight_number', 'V2-' + offer.id.slice(0, 6));
+    params.set('price', offer.priceTotal.toString());
+    params.set('departure_date', offer.departDt.split('T')[0]);
+    params.set('departure_time', new Date(offer.departDt).toLocaleTimeString());
+    params.set('return_date', offer.returnDt ? offer.returnDt.split('T')[0] : offer.departDt.split('T')[0]);
+    params.set('return_time', offer.returnDt ? new Date(offer.returnDt).toLocaleTimeString() : new Date(offer.departDt).toLocaleTimeString());
+    params.set('duration', offer.returnDt ? 
+      Math.ceil((new Date(offer.returnDt).getTime() - new Date(offer.departDt).getTime()) / (1000 * 60 * 60 * 24)) + ' days' : 
+      '1 day'
+    );
+    
+    navigate(`/trip/confirm?${params.toString()}`);
+    
+    toast({
+      title: "Flight Selected",
+      description: `You've selected flight ${offer.originIata} → ${offer.destinationIata} for booking.`,
+    });
+  };
+
 
   return (
     <div className="container mx-auto p-4">
@@ -138,6 +194,7 @@ const TripOffersV2: React.FC = () => {
                 <TableHead>Dates</TableHead>
                 <TableHead>Details</TableHead>
                 <TableHead className="text-right">Price</TableHead>
+                <TableHead className="w-[140px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -175,6 +232,16 @@ const TripOffersV2: React.FC = () => {
                   </TableCell>
                   <TableCell className="text-right font-semibold text-lg text-green-600">
                     {formatCurrency(offer.priceTotal, offer.priceCurrency || 'USD')}
+                  </TableCell>
+                  <TableCell>
+                    <Button 
+                      onClick={() => handleBookOffer(offer)}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      Book
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
