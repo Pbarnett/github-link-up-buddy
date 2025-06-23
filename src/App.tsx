@@ -15,6 +15,7 @@ import Wallet from "./pages/Wallet";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 import TopNavigation from "./components/navigation/TopNavigation";
+import Breadcrumbs from "./components/navigation/Breadcrumbs";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => {
           }}
         >
           <TopNavigation />
+          <Breadcrumbs />
           <main id="main" className="flex-1 overflow-auto">
             <Routes>
               <Route path="/" element={<Index />} />
