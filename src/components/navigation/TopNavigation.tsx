@@ -74,6 +74,12 @@ const TopNavigation = () => {
       description: 'Find and book flights'
     },
     {
+      name: 'Auto-Booking',
+      href: '/trip/new?mode=auto',
+      icon: Settings,
+      description: 'Set up automatic booking'
+    },
+    {
       name: 'My Trips',
       href: '/dashboard',
       icon: Calendar,
