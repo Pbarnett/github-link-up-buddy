@@ -116,7 +116,7 @@ const TopNavigation = () => {
             <PlaneTakeoff className="h-4 w-4" />
           </div>
           <span className="hidden font-bold sm:inline-block text-lg">
-            FlightBuddy
+            Parker Flight
           </span>
         </Link>
 
