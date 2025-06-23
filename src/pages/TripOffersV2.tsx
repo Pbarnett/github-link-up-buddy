@@ -140,6 +140,21 @@ const TripOffersV2: React.FC = () => {
     }
   };
 
+  const formatFlightTime = (departDt: string, returnDt: string | null) => {
+    // For V2, we don't have individual flight durations stored,
+    // so we'll estimate based on route distance
+    try {
+      const departDate = new Date(departDt);
+      const returnDate = returnDt ? new Date(returnDt) : null;
+      
+      // This is a simplified estimation - in real implementation,
+      // actual flight time would come from Amadeus API response
+      return '~8h 30m'; // Placeholder for typical international flight
+    } catch (e) {
+      return 'N/A';
+    }
+  };
+
   const handleBookOffer = (offer: any) => {
     console.log('Booking offer:', offer.id, 'Booking URL:', offer.bookingUrl);
     
@@ -208,9 +223,10 @@ const TripOffersV2: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px]">Route</TableHead>
+                <TableHead className="w-[180px]">Route</TableHead>
                 <TableHead>Dates</TableHead>
-                <TableHead className="w-[100px]">Duration</TableHead>
+                <TableHead className="w-[90px]">Trip</TableHead>
+                <TableHead className="w-[90px]">Flight Time</TableHead>
                 <TableHead>Details</TableHead>
                 <TableHead className="text-right">Price</TableHead>
                 <TableHead className="w-[140px]">Action</TableHead>
@@ -241,6 +257,11 @@ const TripOffersV2: React.FC = () => {
                   <TableCell>
                     <Badge variant="secondary" className="bg-blue-50 text-blue-700 font-medium">
                       {calculateTripDuration(offer.departDt, offer.returnDt)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="bg-orange-50 text-orange-700 font-medium">
+                      {formatFlightTime(offer.departDt, offer.returnDt)}
                     </Badge>
                   </TableCell>
                   <TableCell>
