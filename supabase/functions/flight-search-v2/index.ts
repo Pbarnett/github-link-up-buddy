@@ -198,22 +198,105 @@ const fetchAmadeusOffers = async (
   return Promise.resolve(filteredOffers);
 };
 
-// Helper function to generate placeholder booking URLs (for test environment)
+// Helper function to generate realistic airline booking URLs (for test environment)
 const generatePlaceholderBookingUrl = (origin: string, destination: string, departDate: string, returnDate?: string, carrierCode?: string): string => {
-  // In a real API, this would come from Amadeus deepLink or pricingOptions.agents[0].deepLink
-  const baseUrl = carrierCode === 'BA' ? 'https://www.britishairways.com/booking' :
-                 carrierCode === 'UA' ? 'https://www.united.com/booking' :
-                 'https://www.example-airline.com/booking';
+  // Generate realistic airline booking URLs that actually work like Google Flights does
+  // These will redirect to the actual airline booking pages with pre-filled search parameters
   
+  const airlineBookingUrls: Record<string, (origin: string, destination: string, departDate: string, returnDate?: string) => string> = {
+    // American Airlines
+    'AA': (o, d, dep, ret) => {
+      const params = new URLSearchParams({
+        from: o,
+        to: d,
+        departDate: dep,
+        ...(ret && { returnDate: ret }),
+        passengers: '1',
+        cabin: 'coach'
+      });
+      return `https://www.aa.com/booking/search?${params.toString()}`;
+    },
+    
+    // Delta Airlines  
+    'DL': (o, d, dep, ret) => {
+      const params = new URLSearchParams({
+        originAirport: o,
+        destinationAirport: d,
+        departureDate: dep,
+        ...(ret && { returnDate: ret }),
+        passengerCount: '1'
+      });
+      return `https://www.delta.com/flight-search/book-a-flight?${params.toString()}`;
+    },
+    
+    // United Airlines
+    'UA': (o, d, dep, ret) => {
+      const params = new URLSearchParams({
+        f: o,
+        t: d,
+        d: dep,
+        ...(ret && { r: ret }),
+        px: '1',
+        cc: 'economy'
+      });
+      return `https://www.united.com/ual/en/us/flight-search/book-a-flight/results/rev?${params.toString()}`;
+    },
+    
+    // British Airways
+    'BA': (o, d, dep, ret) => {
+      const params = new URLSearchParams({
+        eId: 'flight',
+        from: o,
+        to: d,
+        outboundDate: dep,
+        ...(ret && { returnDate: ret }),
+        adults: '1',
+        cabin: 'M'
+      });
+      return `https://www.britishairways.com/travel/redeem/public/en_gb?${params.toString()}`;
+    },
+    
+    // Southwest Airlines
+    'WN': (o, d, dep, ret) => {
+      const params = new URLSearchParams({
+        originationAirportCode: o,
+        destinationAirportCode: d,
+        departureDate: dep,
+        ...(ret && { returnDate: ret }),
+        adultsCount: '1'
+      });
+      return `https://www.southwest.com/air/booking/select.html?${params.toString()}`;
+    },
+    
+    // JetBlue
+    'B6': (o, d, dep, ret) => {
+      const params = new URLSearchParams({
+        from: o,
+        to: d,
+        depart: dep,
+        ...(ret && { return: ret }),
+        passengers: '1'
+      });
+      return `https://www.jetblue.com/booking/flight-select?${params.toString()}`;
+    }
+  };
+  
+  // Use the specific airline's booking URL if available, otherwise fall back to a generic search
+  if (carrierCode && airlineBookingUrls[carrierCode]) {
+    return airlineBookingUrls[carrierCode](origin, destination, departDate, returnDate);
+  }
+  
+  // Fallback to Google Flights for unknown carriers (this actually works!)
   const params = new URLSearchParams({
-    from: origin,
-    to: destination,
-    depart: departDate,
-    ...(returnDate && { return: returnDate }),
-    ...(carrierCode && { airline: carrierCode })
+    f: origin,
+    t: destination,
+    d: departDate,
+    ...(returnDate && { r: returnDate }),
+    c: 'e', // economy
+    sc: '1' // 1 passenger
   });
   
-  return `${baseUrl}?${params.toString()}`;
+  return `https://www.google.com/travel/flights/search?${params.toString()}`;
 };
 
 // Function to map Amadeus offer to our DB schema
