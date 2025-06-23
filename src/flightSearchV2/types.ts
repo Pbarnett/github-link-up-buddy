@@ -14,6 +14,7 @@ export interface FlightOfferV2 {
   returnDt: string | null;
   seatPref: string | null;
   createdAt: string;  // ISO
+  bookingUrl?: string; // External airline booking URL
 }
 
 export interface FlightOfferV2DbRow {
@@ -31,4 +32,5 @@ export interface FlightOfferV2DbRow {
   return_dt: string | null;
   seat_pref: string | null;
   created_at: string;  // ISO
+  booking_url: string | null; // External airline booking URL
 }

@@ -81,6 +81,7 @@ interface FlightOfferV2Insert {
   destination_iata: string;
   depart_dt: string;   // ISO
   return_dt?: string | null; // For one-way or multi-city, this might be null or handled differently
+  booking_url?: string; // External airline booking URL (like Google Flights deeplinks)
   // seat_pref is not typically part of an offer search, but post-booking.
   // external_offer_id to store Amadeus offer ID or similar
   external_offer_id?: string;
@@ -197,6 +198,24 @@ const fetchAmadeusOffers = async (
   return Promise.resolve(filteredOffers);
 };
 
+// Helper function to generate placeholder booking URLs (for test environment)
+const generatePlaceholderBookingUrl = (origin: string, destination: string, departDate: string, returnDate?: string, carrierCode?: string): string => {
+  // In a real API, this would come from Amadeus deepLink or pricingOptions.agents[0].deepLink
+  const baseUrl = carrierCode === 'BA' ? 'https://www.britishairways.com/booking' :
+                 carrierCode === 'UA' ? 'https://www.united.com/booking' :
+                 'https://www.example-airline.com/booking';
+  
+  const params = new URLSearchParams({
+    from: origin,
+    to: destination,
+    depart: departDate,
+    ...(returnDate && { return: returnDate }),
+    ...(carrierCode && { airline: carrierCode })
+  });
+  
+  return `${baseUrl}?${params.toString()}`;
+};
+
 // Function to map Amadeus offer to our DB schema
 const mapAmadeusToDbSchema = (offer: AmadeusFlightOffer, tripRequestId: string): FlightOfferV2Insert => {
   const firstItinerary = offer.itineraries[0];
@@ -213,6 +232,20 @@ const mapAmadeusToDbSchema = (offer: AmadeusFlightOffer, tripRequestId: string):
 
   const travelerPricing = offer.travelerPricings[0]; // Assuming single adult traveler for simplicity
   const fareDetails = travelerPricing.fareDetailsBySegment[0];
+  
+  // Get carrier code for booking URL generation
+  const carrierCode = firstSegment.carrierCode;
+  const departDate = firstSegment.departure.at.split('T')[0];
+  const returnDate = returnDt ? returnDt.split('T')[0] : undefined;
+  
+  // Generate booking URL (in real API, this would come from Amadeus response)
+  const bookingUrl = generatePlaceholderBookingUrl(
+    firstSegment.departure.iataCode, 
+    lastSegmentOfFirstItinerary.arrival.iataCode,
+    departDate,
+    returnDate,
+    carrierCode
+  );
 
   return {
     trip_request_id: tripRequestId,
@@ -226,6 +259,7 @@ const mapAmadeusToDbSchema = (offer: AmadeusFlightOffer, tripRequestId: string):
     destination_iata: lastSegmentOfFirstItinerary.arrival.iataCode, // For one-way or first leg of round-trip
     depart_dt: new Date(firstSegment.departure.at).toISOString(),
     return_dt: returnDt,
+    booking_url: bookingUrl, // Include the booking URL
     external_offer_id: offer.id,
     raw_offer_payload: offer as Record<string, any>, // Store the whole Amadeus offer
   };
