@@ -21,10 +21,13 @@ const TripOfferList: React.FC<TripOfferListProps> = ({
     return <TripOffersLoading />;
   }
 
+  // Sort offers by price (cheapest first)
+  const sortedOffers = [...offers].sort((a, b) => a.price - b.price);
+
   return (
     <div className="space-y-4">
-      {offers.length > 0 ? (
-        offers.map((offer) => <TripOfferCard key={offer.id} offer={offer} />)
+      {sortedOffers.length > 0 ? (
+        sortedOffers.map((offer) => <TripOfferCard key={offer.id} offer={offer} />)
       ) : (
         <Card className="p-6 text-center">
           <p className="mb-4">No offers found that match your criteria.</p>

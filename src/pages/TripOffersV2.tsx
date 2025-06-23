@@ -194,11 +194,15 @@ const TripOffersV2: React.FC = () => {
   };
 
 
+  // Sort offers by price (cheapest first)
+  const sortedOffers = [...offers].sort((a, b) => a.priceTotal - b.priceTotal);
+
   return (
     <div className="container mx-auto p-4">
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-gray-800">Available Flight Offers</CardTitle>
+          <p className="text-sm text-gray-600 mt-2">Sorted by price (lowest to highest)</p>
         </CardHeader>
         <CardContent>
           <Table>
@@ -213,7 +217,7 @@ const TripOffersV2: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {offers.map((offer) => (
+              {sortedOffers.map((offer) => (
                 <TableRow key={offer.id} className="hover:bg-gray-50">
                   <TableCell>
                     <div className="flex items-center font-medium">
