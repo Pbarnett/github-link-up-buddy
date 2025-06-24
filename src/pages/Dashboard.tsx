@@ -404,89 +404,109 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Enhanced Dashboard Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="card-enhanced border-blue-200 hover:border-blue-300 card-gradient-blue group">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-blue-800">Active Auto-Bookings</p>
-                  <p className="text-4xl font-bold text-blue-900 transition-transform duration-200 group-hover:scale-105">
-                    {statusCounts.pending_booking + statusCounts.processing}
-                  </p>
-                  <p className="text-sm text-blue-700 font-medium">
-                    Monitoring for flight deals
-                  </p>
-                </div>
-                <div className="h-16 w-16 bg-blue-500/10 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:bg-blue-500/20 group-hover:scale-110">
-                  <Plane className="h-8 w-8 text-blue-600" />
-                </div>
+        {/* Conditional Hero Block - Progressive Disclosure */}
+        {(statusCounts.pending_booking + statusCounts.processing + statusCounts.done) === 0 ? (
+          /* Getting Started Hero Block - When Everything is 0 */
+          <Card className="card-enhanced mb-8 text-center py-12 px-6 bg-gradient-to-br from-blue-50 via-white to-blue-50 border-blue-200">
+            <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <h2 className="text-2xl font-bold text-gray-900">✈️ Skip the fare hunt.</h2>
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                  Tell us your perfect flight and price; we'll book it the moment it appears.
+                </p>
               </div>
-              {statusCounts.pending_booking + statusCounts.processing === 0 && (
-                <div className="mt-4 pt-4 border-t border-blue-200">
-                  <Button 
-                    onClick={() => window.location.href = '/trip/new?mode=auto'}
-                    variant="outline"
-                    className="w-full text-blue-700 border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-all duration-200"
-                    size="sm"
-                  >
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Set Up Auto-Booking
-                  </Button>
-                </div>
-              )}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                <Button
+                  onClick={() => window.location.href = '/trip/new?mode=auto'}
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                >
+                  <PlusCircle className="h-5 w-5 mr-2" />
+                  Set up Auto-Booking
+                </Button>
+                <Button
+                  onClick={() => window.location.href = '/trip/new'}
+                  variant="ghost"
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-medium"
+                >
+                  or search flights manually
+                </Button>
+              </div>
             </CardContent>
           </Card>
+        ) : (
+          /* Active State - Mini Widgets When User Has Data */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Upcoming Trips Widget */}
+            <Card className="card-enhanced border-green-200 hover:border-green-300 cursor-pointer group" onClick={() => document.querySelector('[value="tripHistory"]')?.click()}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-green-800">Upcoming Trips</p>
+                    <p className="text-3xl font-bold text-green-900 transition-transform duration-200 group-hover:scale-105">
+                      {statusCounts.done}
+                    </p>
+                    <p className="text-sm text-green-700 font-medium">
+                      {statusCounts.done > 0 ? 'Booked flights' : 'No trips yet'}
+                    </p>
+                  </div>
+                  <div className="h-16 w-16 bg-green-500/10 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:bg-green-500/20 group-hover:scale-110">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card className="card-enhanced border-green-200 hover:border-green-300 card-gradient-green group">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-green-800">Booked Flights</p>
-                  <p className="text-4xl font-bold text-green-900 transition-transform duration-200 group-hover:scale-105">
-                    {statusCounts.done}
-                  </p>
-                  <p className="text-sm text-green-700 font-medium">
-                    {statusCounts.done > 0 ? 'Successfully purchased' : 'Ready for your first flight'}
-                  </p>
+            {/* Active Watches Widget */}
+            <Card className="card-enhanced border-blue-200 hover:border-blue-300 cursor-pointer group" onClick={() => document.querySelector('[value="currentRequests"]')?.click()}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-blue-800">Active Watches</p>
+                    <p className="text-3xl font-bold text-blue-900 transition-transform duration-200 group-hover:scale-105">
+                      {statusCounts.pending_booking + statusCounts.processing}
+                    </p>
+                    <p className="text-sm text-blue-700 font-medium">
+                      {statusCounts.pending_booking + statusCounts.processing > 0 ? 'Monitoring fares' : 'No active watches'}
+                    </p>
+                  </div>
+                  <div className="h-16 w-16 bg-blue-500/10 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:bg-blue-500/20 group-hover:scale-110">
+                    <Activity className="h-8 w-8 text-blue-600" />
+                  </div>
                 </div>
-                <div className="h-16 w-16 bg-green-500/10 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:bg-green-500/20 group-hover:scale-110">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-              </div>
-              {statusCounts.done === 0 && (
-                <div className="mt-4 pt-4 border-t border-green-200">
-                  <Button 
-                    onClick={() => window.location.href = '/trip/new'}
-                    variant="outline"
-                    className="w-full text-green-700 border-green-300 hover:bg-green-50 hover:border-green-400 transition-all duration-200"
-                    size="sm"
-                  >
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Book Your First Flight
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Main content area with new Tabs */}
-        <Tabs defaultValue="currentRequests" className="w-full mt-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="currentRequests">Current Booking Requests</TabsTrigger>
-            <TabsTrigger value="tripHistory">Trip History</TabsTrigger>
-          </TabsList>
+        {/* Only show detailed tabs when user has data to show */}
+        {(statusCounts.pending_booking + statusCounts.processing + statusCounts.done + statusCounts.failed + statusCounts.pending_payment) > 0 && (
+          <Tabs defaultValue="currentRequests" className="w-full mt-6">
+            <TabsList className="grid w-full grid-cols-2 bg-gray-100 p-1 rounded-lg">
+              <TabsTrigger 
+                value="currentRequests"
+                className="rounded-md transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium"
+              >
+                Active Watches
+              </TabsTrigger>
+              <TabsTrigger 
+                value="tripHistory"
+                className="rounded-md transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium"
+              >
+                My Trips
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="currentRequests">
-            {/* Booking Requests with its own internal Tabs for filtering */}
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle>Booking Requests</CardTitle>
-                <CardDescription>
-                  Track your flight booking requests and their status
-                </CardDescription>
-              </CardHeader>
+            <TabsContent value="currentRequests">
+              {/* Active Watches with its own internal Tabs for filtering */}
+              <Card className="card-enhanced mt-4">
+                <CardHeader className="pb-4">
+                  <CardTitle className="heading-secondary">Active Watches</CardTitle>
+                  <CardDescription className="text-gray-600">
+                    Monitor your active flight searches and auto-booking requests
+                  </CardDescription>
+                </CardHeader>
               <CardContent>
                 <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
                   <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
@@ -673,6 +693,7 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
+        )}
       </div>
     </div>
   );
