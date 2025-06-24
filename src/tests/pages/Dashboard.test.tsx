@@ -8,48 +8,33 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 // --- Mock Dependencies ---
 
 // Mock Supabase client
-const mockSupabaseAuthUser = vi.fn();
-const mockSupabaseAuthOnAuthStateChange = vi.fn(() => ({
-  data: { subscription: { unsubscribe: vi.fn() } },
-}));
-const mockSupabaseFrom = vi.fn();
-const mockSupabaseChannelOn = vi.fn().mockReturnThis();
-const mockSupabaseChannelSubscribe = vi.fn(() => ({ unsubscribe: vi.fn() }));
-const mockSupabaseChannel = vi.fn(() => ({
-  on: mockSupabaseChannelOn,
-  subscribe: mockSupabaseChannelSubscribe,
-}));
-const mockSupabaseRemoveChannel = vi.fn();
-const mockSupabaseUpdate = vi.fn().mockReturnThis(); // For retryBookingRequest
-
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
       getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user-id', email: 'test@example.com' } }, error: null }),
-      onAuthStateChange: vi.fn(),
+      onAuthStateChange: vi.fn(() => ({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      })),
       signOut: vi.fn(),
     },
-
-
-
-
-    from: mockSupabaseFrom,
-    channel: mockSupabaseChannel,
-    removeChannel: mockSupabaseRemoveChannel,
-
+    from: vi.fn(),
+    channel: vi.fn(() => ({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })),
+    })),
+    removeChannel: vi.fn(),
   },
 }));
 
 // Mock TripHistory component
-const mockTripHistoryComponent = vi.fn(() => <div data-testid="trip-history-mock">Trip History Mock Content</div>);
 vi.mock('@/components/dashboard/TripHistory', () => ({
-  default: mockTripHistoryComponent,
+  default: vi.fn(() => <div data-testid="trip-history-mock">Trip History Mock Content</div>),
 }));
 
 // Mock useToast
-const mockToast = vi.fn();
 vi.mock('@/components/ui/use-toast', () => ({
-  toast: mockToast,
+  toast: vi.fn(),
+  useToast: () => ({ toast: vi.fn() }),
 }));
 
 // Mock react-router-dom's Navigate component for unauthenticated test
@@ -77,21 +62,21 @@ const mockTripRequestsData = [
 
 // --- Test Suite ---
 describe('Dashboard Page', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Default: Authenticated user
-    mockSupabaseAuthUser.mockResolvedValue({ data: { user: mockUser }, error: null });
-
+    // Mock the implementation for each test
+    const { supabase } = await import('@/integrations/supabase/client');
+    
     // Mock Supabase 'from' chained calls more robustly
-    mockSupabaseFrom.mockImplementation((tableName: string) => {
+    (supabase.from as any).mockImplementation((tableName: string) => {
       const chain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         limit: vi.fn().mockReturnThis(),
-        update: mockSupabaseUpdate, // Specific mock for update
-        single: vi.fn(), // For single record fetches if any
+        update: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) })),
+        single: vi.fn(),
       };
 
       if (tableName === 'booking_requests') {
@@ -99,13 +84,9 @@ describe('Dashboard Page', () => {
       } else if (tableName === 'trip_requests') {
         (chain.limit as MockedFunction<any>).mockResolvedValue({ data: mockTripRequestsData, error: null });
       } else {
-        // Default for other tables or unspecific calls in order() context
         (chain.order as MockedFunction<any>).mockResolvedValue({ data: [], error: null });
         (chain.limit as MockedFunction<any>).mockResolvedValue({ data: [], error: null });
       }
-      // Mock the update chain to resolve successfully by default
-      const mockEq = vi.fn().mockResolvedValue({ error: null });
-      (mockSupabaseUpdate as any).eq = mockEq;
 
       return chain;
     });
@@ -123,7 +104,8 @@ describe('Dashboard Page', () => {
   };
 
   it('1. Renders loading state initially', async () => {
-    mockSupabaseAuthUser.mockImplementationOnce(() => new Promise(() => {})); // Simulate pending promise
+    const { supabase } = await import('@/integrations/supabase/client');
+    (supabase.auth.getUser as any).mockImplementationOnce(() => new Promise(() => {})); // Simulate pending promise
     renderDashboardWithRouter();
     expect(screen.getByText(/Loading.../i)).toBeInTheDocument();
   });
@@ -146,7 +128,8 @@ describe('Dashboard Page', () => {
     fireEvent.click(tripHistoryTabTrigger);
 
     await waitFor(() => expect(screen.getByTestId('trip-history-mock')).toBeInTheDocument());
-    expect(mockTripHistoryComponent).toHaveBeenCalledWith({ userId: mockUser.id }, expect.anything());
+    const { default: TripHistoryMock } = await import('@/components/dashboard/TripHistory');
+    expect(TripHistoryMock).toHaveBeenCalledWith({ userId: mockUser.id }, expect.anything());
 
     expect(screen.queryByText(/TestAir TA101/i)).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Trip History/i, selected: true })).toBeInTheDocument();
@@ -169,7 +152,8 @@ describe('Dashboard Page', () => {
   });
 
   it('5. Handles unauthenticated state (simulates redirect to /login)', async () => {
-    mockSupabaseAuthUser.mockResolvedValue({ data: { user: null }, error: null });
+    const { supabase } = await import('@/integrations/supabase/client');
+    (supabase.auth.getUser as any).mockResolvedValue({ data: { user: null }, error: null });
     renderDashboardWithRouter();
 
     await waitFor(() => {
