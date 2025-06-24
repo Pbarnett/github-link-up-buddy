@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye, PlusCircle, Plane, Calendar, DollarSign, Activity, TrendingUp } from 'lucide-react';
 import TripHistory from '@/components/dashboard/TripHistory'; // Added import
 
 interface BookingRequest {
@@ -301,9 +301,57 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg">Loading...</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          {/* Header skeleton */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
+              <div className="h-6 w-64 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="flex gap-3">
+              <div className="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-10 w-20 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-10 w-20 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+          
+          {/* Summary cards skeleton - updated for focused layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {[1, 2].map((i) => (
+              <div key={i} className="bg-white p-6 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-2"></div>
+                    <div className="h-10 w-16 bg-gray-200 rounded animate-pulse mb-1"></div>
+                    <div className="h-3 w-28 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="h-16 w-16 bg-gray-200 rounded-lg animate-pulse"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Main content skeleton */}
+          <div className="bg-white rounded-lg border">
+            <div className="p-6">
+              <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-4"></div>
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="border rounded-lg p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="h-4 w-4 bg-gray-200 rounded-full animate-pulse"></div>
+                      <div className="flex-1">
+                        <div className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-1"></div>
+                        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                      <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -319,22 +367,88 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-8 space-y-4 lg:space-y-0">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
             <p className="mt-2 text-lg text-gray-600">Hello, {user.email}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Prominent New Trip CTA */}
             <Button
-              onClick={refreshData}
-              disabled={refreshing}
-              variant="outline"
+              onClick={() => window.location.href = '/trip/new'}
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 text-lg shadow-lg hover:shadow-xl transition-all"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
+              <PlusCircle className="h-5 w-5 mr-2" />
+              Find Your Next Flight
             </Button>
-            <Button onClick={handleSignOut}>Sign Out</Button>
+            <Button onClick={handleSignOut} variant="ghost" size="sm">Sign Out</Button>
           </div>
+        </div>
+
+        {/* Focused Dashboard Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Card className="hover:shadow-md transition-shadow border-blue-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-700">Active Auto-Bookings</p>
+                  <p className="text-3xl font-bold text-blue-900">
+                    {statusCounts.pending_booking + statusCounts.processing}
+                  </p>
+                  <p className="text-sm text-blue-600 mt-1">
+                    Monitoring for flight deals
+                  </p>
+                </div>
+                <div className="h-16 w-16 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Plane className="h-8 w-8 text-blue-600" />
+                </div>
+              </div>
+              {statusCounts.pending_booking + statusCounts.processing === 0 && (
+                <div className="mt-4 pt-4 border-t border-blue-100">
+                  <Button 
+                    onClick={() => window.location.href = '/trip/new?mode=auto'}
+                    variant="outline"
+                    className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+                    size="sm"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Set Up Auto-Booking
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow border-green-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-700">Booked Flights</p>
+                  <p className="text-3xl font-bold text-green-900">{statusCounts.done}</p>
+                  <p className="text-sm text-green-600 mt-1">
+                    {statusCounts.done > 0 ? 'Successfully purchased' : 'Ready for your first flight'}
+                  </p>
+                </div>
+                <div className="h-16 w-16 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                </div>
+              </div>
+              {statusCounts.done === 0 && (
+                <div className="mt-4 pt-4 border-t border-green-100">
+                  <Button 
+                    onClick={() => window.location.href = '/trip/new'}
+                    variant="outline"
+                    className="w-full text-green-600 border-green-200 hover:bg-green-50"
+                    size="sm"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Book Your First Flight
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main content area with new Tabs */}
@@ -378,74 +492,140 @@ const Dashboard = () => {
 
                   <div className="mt-6">
                     {filteredRequests.length === 0 ? (
-                      <p className="text-gray-500 text-center py-8">
-                        {statusFilter === 'all'
-                          ? 'No booking requests yet'
-                          : `No ${statusFilter.replace('_', ' ')} requests`
-                        }
-                      </p>
+                      <div className="text-center py-12">
+                        <div className="h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          {statusFilter === 'all' ? (
+                            <Plane className="h-12 w-12 text-gray-400" />
+                          ) : (
+                            getStatusIcon(statusFilter === 'pending_booking' ? 'pending_booking' : statusFilter === 'processing' ? 'processing' : statusFilter === 'done' ? 'done' : statusFilter === 'failed' ? 'failed' : statusFilter)
+                          )}
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          {statusFilter === 'all'
+                            ? 'No booking requests yet'
+                            : `No ${statusFilter.replace('_', ' ')} requests`
+                          }
+                        </h3>
+                        <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                          {statusFilter === 'all'
+                            ? 'Start by creating your first trip request to find great flight deals.'
+                            : `No requests with ${statusFilter.replace('_', ' ')} status at the moment.`
+                          }
+                        </p>
+                        {statusFilter === 'all' && (
+                          <Button 
+                            onClick={() => window.location.href = '/trip/new'}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <PlusCircle className="h-4 w-4 mr-2" />
+                            Create Your First Trip
+                          </Button>
+                        )}
+                      </div>
                     ) : (
                       <div className="space-y-4">
                         {filteredRequests.map((request) => (
-                          <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex items-center space-x-3">
-                              {getStatusIcon(request.status)}
-                              <div>
-                                <p className="font-medium">
-                                  {request.offer_data?.airline} {request.offer_data?.flight_number}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  Created {new Date(request.created_at).toLocaleDateString()}
-                                </p>
-                                {request.error_message && (
-                                  <div className="flex items-center space-x-2 mt-1">
-                                    <p className="text-sm text-red-600 truncate max-w-xs">
-                                      {request.error_message.substring(0, 50)}...
-                                    </p>
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => setSelectedError(request.error_message)}
-                                          className="p-1 h-auto"
-                                        >
-                                          <Eye className="h-3 w-3" />
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-2xl">
-                                        <DialogHeader>
-                                          <DialogTitle>Error Details</DialogTitle>
-                                          <DialogDescription>
-                                            Booking request {request.id.slice(0, 8)} error information
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="mt-4">
-                                          <pre className="whitespace-pre-wrap text-sm bg-gray-100 p-4 rounded max-h-96 overflow-y-auto">
-                                            {request.error_message}
-                                          </pre>
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
+                          <Card key={request.id} className="hover:shadow-md transition-shadow">
+                            <CardContent className="p-4">
+                              {/* Mobile-optimized layout */}
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                                <div className="flex items-start space-x-3">
+                                  <div className="flex-shrink-0 mt-1">
+                                    {getStatusIcon(request.status)}
                                   </div>
-                                )}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                                      <p className="font-medium text-gray-900 truncate">
+                                        {request.offer_data?.airline} {request.offer_data?.flight_number}
+                                      </p>
+                                      <Badge 
+                                        variant={getStatusBadgeVariant(request.status)}
+                                        className="self-start sm:self-center mt-1 sm:mt-0"
+                                      >
+                                        {request.status.replace('_', ' ')}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-1 text-sm text-gray-500">
+                                      <span>Created {new Date(request.created_at).toLocaleDateString()}</span>
+                                      {request.offer_data?.price && (
+                                        <span className="flex items-center">
+                                          <DollarSign className="h-3 w-3 mr-1" />
+                                          ${request.offer_data.price}
+                                        </span>
+                                      )}
+                                      {request.attempts > 0 && (
+                                        <span className="text-orange-600">
+                                          Attempt {request.attempts}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {request.error_message && (
+                                      <div className="flex items-center space-x-2 mt-2 p-2 bg-red-50 rounded border-l-4 border-red-200">
+                                        <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm text-red-700 truncate">
+                                            {request.error_message.length > 100 
+                                              ? `${request.error_message.substring(0, 100)}...`
+                                              : request.error_message
+                                            }
+                                          </p>
+                                        </div>
+                                        <Dialog>
+                                          <DialogTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => setSelectedError(request.error_message)}
+                                              className="p-1 h-auto flex-shrink-0"
+                                            >
+                                              <Eye className="h-3 w-3" />
+                                            </Button>
+                                          </DialogTrigger>
+                                          <DialogContent className="max-w-2xl">
+                                            <DialogHeader>
+                                              <DialogTitle>Error Details</DialogTitle>
+                                              <DialogDescription>
+                                                Booking request {request.id.slice(0, 8)} error information
+                                              </DialogDescription>
+                                            </DialogHeader>
+                                            <div className="mt-4">
+                                              <pre className="whitespace-pre-wrap text-sm bg-gray-100 p-4 rounded max-h-96 overflow-y-auto">
+                                                {request.error_message}
+                                              </pre>
+                                            </div>
+                                          </DialogContent>
+                                        </Dialog>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                {/* Action buttons */}
+                                <div className="flex items-center space-x-2 sm:flex-shrink-0">
+                                  {request.status === 'failed' && request.attempts < 3 && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => retryBookingRequest(request.id)}
+                                      className="text-xs"
+                                    >
+                                      <RefreshCw className="h-3 w-3 mr-1" />
+                                      Retry
+                                    </Button>
+                                  )}
+                                  {request.status === 'pending_payment' && (
+                                    <Button
+                                      size="sm"
+                                      className="bg-green-600 hover:bg-green-700 text-xs"
+                                    >
+                                      <DollarSign className="h-3 w-3 mr-1" />
+                                      Pay Now
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Badge variant={getStatusBadgeVariant(request.status)}>
-                                {request.status.replace('_', ' ')}
-                              </Badge>
-                              {request.status === 'failed' && request.attempts < 3 && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => retryBookingRequest(request.id)}
-                                >
-                                  Retry
-                                </Button>
-                              )}
-                            </div>
-                          </div>
+                            </CardContent>
+                          </Card>
                         ))}
                       </div>
                     )}
@@ -467,50 +647,6 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Recent Trip Requests card can remain separate or be moved into a tab if desired later */}
-        <div className="mt-8"> {/* Added margin-top for spacing if it's below the new Tabs */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Trip Requests</CardTitle>
-              <CardDescription>
-                Your latest trip searches and requests
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {tripRequests.length === 0 ? (
-                <p className="text-gray-500">No trip requests yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {tripRequests.map((trip) => (
-                    <div key={trip.id} className="p-4 border rounded-lg">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium">
-                            To: {trip.destination_airport || 'Any destination'}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {new Date(trip.earliest_departure).toLocaleDateString()} -
-                            {new Date(trip.latest_departure).toLocaleDateString()}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Budget: ${trip.budget}
-                          </p>
-                        </div>
-                        <Badge variant="outline">
-                          {new Date(trip.created_at).toLocaleDateString()}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Old Trip History Section Removed From Here */}
-        {/* <TripHistory /> */}
       </div>
     </div>
   );
