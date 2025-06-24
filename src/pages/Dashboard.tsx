@@ -262,13 +262,19 @@ const Dashboard = () => {
   };
 
   const getStatusIcon = (status: string) => {
+    const iconClasses = "h-4 w-4 transition-all duration-200";
     switch (status) {
-      case 'done': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'failed': return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'processing': return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
+      case 'done': 
+        return <CheckCircle className={`${iconClasses} text-green-500 drop-shadow-sm`} />;
+      case 'failed': 
+        return <XCircle className={`${iconClasses} text-red-500 drop-shadow-sm`} />;
+      case 'processing': 
+        return <RefreshCw className={`${iconClasses} text-blue-500 animate-spin drop-shadow-sm`} />;
       case 'pending_booking':
-      case 'pending_payment': return <Clock className="h-4 w-4 text-yellow-500" />;
-      default: return <AlertCircle className="h-4 w-4 text-gray-500" />;
+      case 'pending_payment': 
+        return <Clock className={`${iconClasses} text-amber-500 drop-shadow-sm`} />;
+      default: 
+        return <AlertCircle className={`${iconClasses} text-gray-500 drop-shadow-sm`} />;
     }
   };
 
@@ -301,48 +307,49 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          {/* Header skeleton */}
+          {/* Enhanced Header skeleton */}
           <div className="flex justify-between items-center mb-8">
-            <div>
-              <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
-              <div className="h-6 w-64 bg-gray-200 rounded animate-pulse"></div>
+            <div className="space-y-3">
+              <div className="h-8 w-48 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded-lg animate-pulse"></div>
+              <div className="h-6 w-64 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded-lg animate-pulse"></div>
             </div>
             <div className="flex gap-3">
-              <div className="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-10 w-20 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-10 w-20 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-12 w-48 bg-gradient-to-r from-blue-200 via-blue-300 to-blue-200 rounded-lg animate-pulse"></div>
+              <div className="h-10 w-20 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded-lg animate-pulse"></div>
             </div>
           </div>
           
-          {/* Summary cards skeleton - updated for focused layout */}
+          {/* Enhanced Summary cards skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {[1, 2].map((i) => (
-              <div key={i} className="bg-white p-6 rounded-lg border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-2"></div>
-                    <div className="h-10 w-16 bg-gray-200 rounded animate-pulse mb-1"></div>
+              <div key={i} className="card-enhanced p-6 overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full animate-shimmer transform"></div>
+                <div className="flex items-center justify-between relative">
+                  <div className="space-y-3">
+                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-10 w-16 bg-gray-200 rounded animate-pulse"></div>
                     <div className="h-3 w-28 bg-gray-200 rounded animate-pulse"></div>
                   </div>
-                  <div className="h-16 w-16 bg-gray-200 rounded-lg animate-pulse"></div>
+                  <div className="h-16 w-16 bg-gray-200 rounded-xl animate-pulse"></div>
                 </div>
               </div>
             ))}
           </div>
           
-          {/* Main content skeleton */}
-          <div className="bg-white rounded-lg border">
-            <div className="p-6">
-              <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-4"></div>
+          {/* Enhanced Main content skeleton */}
+          <div className="card-enhanced">
+            <div className="p-6 space-y-6">
+              <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="border rounded-lg p-4">
-                    <div className="flex items-center space-x-3">
+                  <div key={i} className="border border-gray-100 rounded-xl p-4 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full animate-shimmer transform"></div>
+                    <div className="flex items-center space-x-3 relative">
                       <div className="h-4 w-4 bg-gray-200 rounded-full animate-pulse"></div>
-                      <div className="flex-1">
-                        <div className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-1"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-5 w-32 bg-gray-200 rounded animate-pulse"></div>
                         <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
                       </div>
                       <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
@@ -365,51 +372,62 @@ const Dashboard = () => {
   const filteredRequests = getFilteredBookingRequests();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Enhanced Header */}
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-8 space-y-4 lg:space-y-0">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="mt-2 text-lg text-gray-600">Hello, {user.email}</p>
+          <div className="space-y-2">
+            <h1 className="heading-primary bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-lg text-gray-600 font-medium">
+              Welcome back, <span className="text-brand-blue font-semibold">{user.email}</span>
+            </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
-            {/* Prominent New Trip CTA */}
             <Button
               onClick={() => window.location.href = '/trip/new'}
               size="lg"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 text-lg shadow-lg hover:shadow-xl transition-all"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-8 py-3 text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
               <PlusCircle className="h-5 w-5 mr-2" />
               Find Your Next Flight
             </Button>
-            <Button onClick={handleSignOut} variant="ghost" size="sm">Sign Out</Button>
+            <Button 
+              onClick={handleSignOut} 
+              variant="ghost" 
+              size="sm"
+              className="hover:bg-gray-100 transition-colors duration-200"
+            >
+              Sign Out
+            </Button>
           </div>
         </div>
 
-        {/* Focused Dashboard Cards */}
+        {/* Enhanced Dashboard Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="hover:shadow-md transition-shadow border-blue-200">
+          <Card className="card-enhanced border-blue-200 hover:border-blue-300 card-gradient-blue group">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-700">Active Auto-Bookings</p>
-                  <p className="text-3xl font-bold text-blue-900">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-blue-800">Active Auto-Bookings</p>
+                  <p className="text-4xl font-bold text-blue-900 transition-transform duration-200 group-hover:scale-105">
                     {statusCounts.pending_booking + statusCounts.processing}
                   </p>
-                  <p className="text-sm text-blue-600 mt-1">
+                  <p className="text-sm text-blue-700 font-medium">
                     Monitoring for flight deals
                   </p>
                 </div>
-                <div className="h-16 w-16 bg-blue-100 rounded-lg flex items-center justify-center">
+                <div className="h-16 w-16 bg-blue-500/10 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:bg-blue-500/20 group-hover:scale-110">
                   <Plane className="h-8 w-8 text-blue-600" />
                 </div>
               </div>
               {statusCounts.pending_booking + statusCounts.processing === 0 && (
-                <div className="mt-4 pt-4 border-t border-blue-100">
+                <div className="mt-4 pt-4 border-t border-blue-200">
                   <Button 
                     onClick={() => window.location.href = '/trip/new?mode=auto'}
                     variant="outline"
-                    className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+                    className="w-full text-blue-700 border-blue-300 hover:bg-blue-50 hover:border-blue-400 transition-all duration-200"
                     size="sm"
                   >
                     <PlusCircle className="h-4 w-4 mr-2" />
@@ -420,26 +438,28 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow border-green-200">
+          <Card className="card-enhanced border-green-200 hover:border-green-300 card-gradient-green group">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-700">Booked Flights</p>
-                  <p className="text-3xl font-bold text-green-900">{statusCounts.done}</p>
-                  <p className="text-sm text-green-600 mt-1">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-green-800">Booked Flights</p>
+                  <p className="text-4xl font-bold text-green-900 transition-transform duration-200 group-hover:scale-105">
+                    {statusCounts.done}
+                  </p>
+                  <p className="text-sm text-green-700 font-medium">
                     {statusCounts.done > 0 ? 'Successfully purchased' : 'Ready for your first flight'}
                   </p>
                 </div>
-                <div className="h-16 w-16 bg-green-100 rounded-lg flex items-center justify-center">
+                <div className="h-16 w-16 bg-green-500/10 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:bg-green-500/20 group-hover:scale-110">
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
               </div>
               {statusCounts.done === 0 && (
-                <div className="mt-4 pt-4 border-t border-green-100">
+                <div className="mt-4 pt-4 border-t border-green-200">
                   <Button 
                     onClick={() => window.location.href = '/trip/new'}
                     variant="outline"
-                    className="w-full text-green-600 border-green-200 hover:bg-green-50"
+                    className="w-full text-green-700 border-green-300 hover:bg-green-50 hover:border-green-400 transition-all duration-200"
                     size="sm"
                   >
                     <PlusCircle className="h-4 w-4 mr-2" />
@@ -492,21 +512,26 @@ const Dashboard = () => {
 
                   <div className="mt-6">
                     {filteredRequests.length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          {statusFilter === 'all' ? (
-                            <Plane className="h-12 w-12 text-gray-400" />
-                          ) : (
-                            getStatusIcon(statusFilter === 'pending_booking' ? 'pending_booking' : statusFilter === 'processing' ? 'processing' : statusFilter === 'done' ? 'done' : statusFilter === 'failed' ? 'failed' : statusFilter)
-                          )}
+                      <div className="text-center py-16">
+                        <div className="relative">
+                          <div className="h-32 w-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                            {statusFilter === 'all' ? (
+                              <Plane className="h-16 w-16 text-gray-400" />
+                            ) : (
+                              <div className="scale-150">
+                                {getStatusIcon(statusFilter)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="absolute top-0 right-1/2 transform translate-x-1/2 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        <h3 className="text-xl font-semibold text-gray-900 mb-3">
                           {statusFilter === 'all'
                             ? 'No booking requests yet'
                             : `No ${statusFilter.replace('_', ' ')} requests`
                           }
                         </h3>
-                        <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                        <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
                           {statusFilter === 'all'
                             ? 'Start by creating your first trip request to find great flight deals.'
                             : `No requests with ${statusFilter.replace('_', ' ')} status at the moment.`
@@ -515,9 +540,10 @@ const Dashboard = () => {
                         {statusFilter === 'all' && (
                           <Button 
                             onClick={() => window.location.href = '/trip/new'}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                            size="lg"
                           >
-                            <PlusCircle className="h-4 w-4 mr-2" />
+                            <PlusCircle className="h-5 w-5 mr-2" />
                             Create Your First Trip
                           </Button>
                         )}
