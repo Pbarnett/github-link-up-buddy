@@ -1,7 +1,7 @@
 
 # Parker Flight
 
-An autonomous flight booking application that monitors flight prices and automatically books flights when user-defined criteria are met. Built with React/TypeScript frontend, Supabase backend, and integrated with Amadeus flight data API and Stripe payments.
+An autonomous flight booking application that monitors flight prices and automatically books flights when user-defined criteria are met. Built with React/TypeScript frontend, Supabase backend, and integrated with flight data APIs (Amadeus for search, Duffel for booking) and secure payment processing.
 
 ## Core Features
 

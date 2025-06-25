@@ -226,11 +226,45 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     navigate(`/trip/offers?id=${tripRequest.id}&mode=${mode}`);
   };
 
+  const handleContinueToPricing = async () => {
+    // Validate only Step 1 fields
+    const step1Fields = [
+      'destination_airport',
+      'destination_other', 
+      'nyc_airports',
+      'other_departure_airport',
+      'earliestDeparture',
+      'latestDeparture',
+      'min_duration',
+      'max_duration'
+    ];
+    
+    const isStep1Valid = await form.trigger(step1Fields);
+    
+    if (!isStep1Valid) {
+      // Validation failed - errors will be displayed automatically
+      return;
+    }
+    
+    // Advance to step 2
+    setCurrentStep(2);
+    
+    // Scroll to top and focus on max price field
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Give DOM time to paint, then move focus
+    requestAnimationFrame(() => {
+      const maxPriceInput = document.querySelector('input[name="max_price"]') as HTMLInputElement;
+      if (maxPriceInput) {
+        maxPriceInput.focus();
+      }
+    });
+  };
+
   const handleStepSubmit = async (data: FormValues) => {
-    // For auto mode step 1, just proceed to step 2
+    // For auto mode step 1, use the new continue handler
     if (mode === 'auto' && currentStep === 1) {
-      if (!validateFormData(data)) return;
-      setCurrentStep(2);
+      await handleContinueToPricing();
       return;
     }
     
