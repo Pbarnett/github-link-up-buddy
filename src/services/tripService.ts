@@ -63,26 +63,30 @@ export const createTripRequest = async (
   const tripRequest = await createTrip(userId, formData);
   
   try {
-    // Invoke the flight-search edge function directly for this trip
-    console.log(`Invoking flight-search function for trip request ${tripRequest.id}`);
+    // Invoke the NEW flight-search-v2 edge function with real Amadeus integration
+    console.log(`Invoking flight-search-v2 function for trip request ${tripRequest.id}`);
     const { data: fsData, error: fsError } = await supabase.functions.invoke<{
-      requestsProcessed: number;
-      matchesInserted: number;
-      totalDurationMs: number;
-      details: any[];
-    }>("flight-search", {
+      inserted: number;
+      message: string;
+    }>("flight-search-v2", {
       body: { tripRequestId: tripRequest.id }
     });
     
     if (fsError) {
-      console.error("Error invoking flight-search function:", fsError);
+      console.error("Error invoking flight-search-v2 function:", fsError);
     } else {
       console.log("Flight search completed:", fsData);
       // Show information about the search results
-      if (fsData.matchesInserted > 0) {
+      if (fsData.inserted > 0) {
         toast({
           title: "Flight search completed",
-          description: `Found ${fsData.matchesInserted} potential flight matches`,
+          description: `Found ${fsData.inserted} flight offers from Amadeus API`,
+        });
+      } else {
+        toast({
+          title: "Flight search completed",
+          description: "No flights found for your criteria. Try adjusting your search parameters.",
+          variant: "default",
         });
       }
     }
@@ -96,12 +100,12 @@ export const createTripRequest = async (
     });
   }
   
-  // Fetch the newly created offers
+  // Fetch the newly created offers from the new V2 table
   const { data: offers, error: offersError } = await supabase
-    .from("flight_offers")
+    .from("flight_offers_v2")
     .select("*")
     .eq("trip_request_id", tripRequest.id)
-    .order("price", { ascending: true });
+    .order("price_total", { ascending: true });
   
   if (offersError) {
     console.error("Error fetching offers:", offersError);
