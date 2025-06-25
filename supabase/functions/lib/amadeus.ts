@@ -1,15 +1,16 @@
 // supabase/functions/lib/amadeus.ts
 
-// Environment variable checks (moved to top for clarity, though Deno.env can be accessed directly)
-const AMADEUS_CLIENT_ID = Deno.env.get("AMADEUS_CLIENT_ID");
-const AMADEUS_CLIENT_SECRET = Deno.env.get("AMADEUS_CLIENT_SECRET");
-const AMADEUS_BASE_URL = Deno.env.get("AMADEUS_BASE_URL");
+// Helper function to get environment variables dynamically
+function getAmadeusEnv() {
+  const AMADEUS_CLIENT_ID = Deno.env.get("AMADEUS_API_KEY") || Deno.env.get("AMADEUS_CLIENT_ID");
+  const AMADEUS_CLIENT_SECRET = Deno.env.get("AMADEUS_API_SECRET") || Deno.env.get("AMADEUS_CLIENT_SECRET");
+  const AMADEUS_BASE_URL = Deno.env.get("AMADEUS_BASE_URL");
 
-if (!AMADEUS_CLIENT_ID || !AMADEUS_CLIENT_SECRET || !AMADEUS_BASE_URL) {
-  console.error('CRITICAL Error: Missing Amadeus environment variables. AMADEUS_CLIENT_ID, AMADEUS_CLIENT_SECRET, and AMADEUS_BASE_URL must be set.');
-  // Depending on Deno version, `Deno.exit(1)` might be too harsh for a library.
-  // Throwing an error at module load time is also an option, or functions will fail at runtime.
-  // For now, functions will throw if these are missing at call time.
+  if (!AMADEUS_CLIENT_ID || !AMADEUS_CLIENT_SECRET || !AMADEUS_BASE_URL) {
+    console.error('CRITICAL Error: Missing Amadeus environment variables. AMADEUS_CLIENT_ID, AMADEUS_CLIENT_SECRET, and AMADEUS_BASE_URL must be set.');
+  }
+
+  return { AMADEUS_CLIENT_ID, AMADEUS_CLIENT_SECRET, AMADEUS_BASE_URL };
 }
 
 export interface TravelerData {
@@ -42,13 +43,28 @@ export interface SeatSelection {
   seatNumber: string;
 }
 
-// Function to get Amadeus Access Token
+// Token caching variables
+let _cachedToken: string | undefined;
+let _cachedExpiry = 0;
+
+// Function to get Amadeus Access Token with caching
 export async function getAmadeusAccessToken(): Promise<string> {
+  const { AMADEUS_CLIENT_ID, AMADEUS_CLIENT_SECRET, AMADEUS_BASE_URL } = getAmadeusEnv();
+  
   if (!AMADEUS_CLIENT_ID || !AMADEUS_CLIENT_SECRET || !AMADEUS_BASE_URL) {
     console.error("Error: Missing Amadeus credentials in environment variables for getAmadeusAccessToken.");
     throw new Error("Missing Amadeus credentials.");
   }
 
+  const now = Date.now();
+  
+  // Return cached token if valid (with 60-second buffer)
+  if (_cachedToken && now < _cachedExpiry - 60_000) {
+    console.log("[lib/amadeus] Using cached access token");
+    return _cachedToken;
+  }
+
+  console.log("[lib/amadeus] Fetching new access token");
   const response = await fetch(`${AMADEUS_BASE_URL}/v1/security/oauth2/token`, {
     method: 'POST',
     headers: {
@@ -68,7 +84,13 @@ export async function getAmadeusAccessToken(): Promise<string> {
   }
 
   const data = await response.json();
-  return data.access_token;
+  
+  // Cache the token and expiry time
+  _cachedToken = data.access_token;
+  _cachedExpiry = now + (data.expires_in * 1000);
+  
+  console.log(`[lib/amadeus] Token cached, expires in ${data.expires_in} seconds`);
+  return _cachedToken;
 }
 
 // New function to search and price flight offers
@@ -85,6 +107,8 @@ export async function priceWithAmadeus(
   },
   token: string
 ): Promise<any | null> {
+  const { AMADEUS_BASE_URL } = getAmadeusEnv();
+  
   if (!AMADEUS_BASE_URL) {
     console.error("Error: AMADEUS_BASE_URL not configured for priceWithAmadeus.");
     throw new Error("AMADEUS_BASE_URL not configured.");
@@ -170,6 +194,8 @@ export async function bookWithAmadeus(
   seatSelections: SeatSelection[], // Array of { segmentId: string, seatNumber: string }
   token: string
 ): Promise<BookingResponse> {
+  const { AMADEUS_BASE_URL } = getAmadeusEnv();
+  
   if (!AMADEUS_BASE_URL) {
     console.error("Error: AMADEUS_BASE_URL not configured for bookWithAmadeus.");
     throw new Error("AMADEUS_BASE_URL not configured.");
@@ -265,6 +291,8 @@ export async function cancelAmadeusOrder(
   orderId: string,
   token: string
 ): Promise<{ success: boolean, error?: string }> {
+  const { AMADEUS_BASE_URL } = getAmadeusEnv();
+  
   if (!AMADEUS_BASE_URL) {
     console.error("Error: AMADEUS_BASE_URL not configured for cancelAmadeusOrder.");
     throw new Error("AMADEUS_BASE_URL not configured.");
