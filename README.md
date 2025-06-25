@@ -170,30 +170,37 @@ Based on comprehensive analysis, Parker Flight has a remarkably advanced foundat
 - ✅ **User Preference Management**: Configurable notification channels
 - ✅ **Notification Queue**: Reliable delivery with retry mechanisms
 
-### 🔧 Immediate Production Tasks (2-3 weeks)
+### 🔧 Immediate Production Tasks (6 weeks - Simplified Approach)
 
-**Phase 1: Duffel Integration (Technical Priority)**
+**Phase 1: Core Duffel Integration (Weeks 1-2)**
 - [ ] **Database Migration**: Execute Duffel schema migration adding `duffel_order_id`, `provider`, `duffel_payment_methods` table
-- [ ] **Duffel API Integration**: Implement offer search, order creation, and payment processing via Duffel API
-- [ ] **Webhook Handler**: Build secure webhook endpoint for Duffel order updates and payment confirmations
-- [ ] **Fallback Logic**: Implement Amadeus fallback for failed Duffel bookings with state cleanup
-- [ ] **Payment Tokenization**: Replace Stripe direct integration with Duffel Payments tokenization
-- [ ] **Testing Environment**: Set up Duffel sandbox with "Duffel Airways" for comprehensive integration testing
+- [ ] **Simplified Duffel Flow**: Use Duffel for both search AND booking in auto-booking (no Amadeus hybrid)
+- [ ] **Basic API Integration**: Implement core Duffel offer search, order creation, and payment processing
+- [ ] **Idempotency System**: Implement booking request IDs to prevent duplicate bookings
+- [ ] **Testing Environment**: Set up Duffel sandbox with "Duffel Airways" testing
 
-**Phase 2: Legal & Compliance Foundation**
+**Phase 2: Reliability & Monitoring (Weeks 3-4)**
+- [ ] **Webhook Implementation**: Secure Duffel webhook endpoint with signature verification
+- [ ] **Error Tracking**: Integrate Sentry for application error monitoring
+- [ ] **Uptime Monitoring**: Basic Duffel API health checks and alerts
+- [ ] **Limited Fallback**: Pre-payment fallback to manual booking on Duffel failures
+- [ ] **Real-time Updates**: Status synchronization via webhooks with polling backup
+
+**Phase 3: Legal & Compliance Foundation**
 - [ ] **User Consent Flow**: Implement explicit auto-booking authorization UI with FTC-compliant language
 - [ ] **Terms of Service**: Update ToS covering Duffel as Merchant of Record and autonomous transactions
 - [ ] **Privacy Policy**: GDPR/CCPA compliant privacy policy including Duffel data sharing
 - [ ] **Emergency Controls**: "Stop All Auto-Bookings" toggle and individual watch cancellation
 - [ ] **Dispute Handling**: Process for chargebacks appearing as "Duffel" on customer statements
 
-**Phase 3: Production Deployment**
-- [ ] **Duffel Production Credentials**: Upgrade from test to production Duffel API access
-- [ ] **Revenue Reconciliation**: Set up Duffel balance tracking and payout monitoring
-- [ ] **Amadeus Coexistence**: Maintain Amadeus for manual search while using Duffel for auto-booking
-- [ ] **Environment Configuration**: Production secrets management for dual-provider setup
+**Phase 4: Testing & Production Deployment (Weeks 5-6)**
+- [ ] **Integration Testing**: Comprehensive Duffel sandbox testing with edge cases
+- [ ] **Webhook Testing**: Test duplicate events, out-of-order delivery, and failure scenarios
+- [ ] **Idempotency Testing**: Verify no duplicate bookings under any retry conditions
+- [ ] **Feature Flag Implementation**: Gradual rollout system for safe deployment
+- [ ] **Production Environment**: Duffel production credentials and monitoring setup
 
-**Phase 3: User Experience Polish**
+**Phase 5: User Experience Polish (Post-Launch)**
 - [ ] **Dashboard Enhancement**: Watch management interface with clear status indicators
 - [ ] **Notification Preferences**: User-configurable email/SMS notification settings
 - [ ] **Booking History**: Complete trip history with cancellation options
@@ -244,16 +251,39 @@ Based on comprehensive analysis, Parker Flight has a remarkably advanced foundat
 ### 🎯 Key Success Metrics
 
 **Technical:**
-- Booking success rate > 95%
-- Average savings per user > $50/booking
+- Booking success rate > 95% (Duffel primary, <5% fallback)
+- Auto-booking completion time < 30 seconds
 - System uptime > 99.5%
 - Payment failure rate < 2%
+- Zero duplicate bookings (idempotency enforced)
 
 **Business:**
 - User retention rate > 60% after first booking
 - Customer satisfaction score > 4.5/5
 - Average time to first booking < 7 days
 - Support ticket volume < 5% of bookings
+
+### 🔧 Critical Technical Priorities
+
+**1. Idempotency First**
+- Unique booking request IDs prevent duplicate bookings
+- Database-level constraints and checks
+- Duffel's built-in duplicate detection as backup
+
+**2. Simplified Architecture**
+- Duffel for both search AND booking in auto-booking flow
+- Eliminates Amadeus/Duffel price mismatch issues
+- Reduces integration complexity significantly
+
+**3. Robust Monitoring**
+- Sentry for error tracking and alerting
+- Webhook reliability with polling backup
+- Uptime monitoring for Duffel API health
+
+**4. Revenue Model Flexibility**
+- Zero-fee initially (pure cost pass-through)
+- Configurable markup/fee system for future
+- Feature flags for pricing experiments
 
 ## Amadeus Flight API
 
