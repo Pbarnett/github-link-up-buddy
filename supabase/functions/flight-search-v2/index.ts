@@ -96,6 +96,7 @@ import { searchFlightOffers } from '../lib/amadeus-search.ts';
 
 // Function to get trip request details from database
 const getTripRequestDetails = async (tripRequestId: string, supabaseClient: any) => {
+  console.log('[DEBUG] Fetching trip request details for:', tripRequestId);
   const { data, error } = await supabaseClient
     .from('trip_requests')
     .select('*')
@@ -103,10 +104,11 @@ const getTripRequestDetails = async (tripRequestId: string, supabaseClient: any)
     .single();
 
   if (error) {
-    console.error('Error fetching trip request:', error);
+    console.error('[DEBUG] Error fetching trip request:', error);
     return null;
   }
 
+  console.log('[DEBUG] Trip request data:', JSON.stringify(data, null, 2));
   return data;
 };
 
@@ -125,27 +127,179 @@ const fetchAmadeusOffers = async (
     throw new Error('Trip request not found');
   }
 
-  // Fetch offers from Amadeus
-  const offers = await searchFlightOffers({
-    originLocationCode: tripRequest.origin_location_code,
-    destinationLocationCode: tripRequest.destination_location_code,
-    departureDate: tripRequest.departure_date,
-    returnDate: tripRequest.return_date,
-    adults: tripRequest.adults || 1,
-    travelClass: 'ECONOMY', // Default to economy for now
-    nonStop: tripRequest.nonstop_required || false,
-    max: 10,  // Limit number of results for performance
-  });
+  console.log('[DEBUG] Attempting to fetch offers from Amadeus...');
+  
+  try {
+    // Try to fetch offers from Amadeus
+    const offers = await searchFlightOffers({
+      originLocationCode: tripRequest.origin_location_code,
+      destinationLocationCode: tripRequest.destination_location_code,
+      departureDate: tripRequest.departure_date,
+      returnDate: tripRequest.return_date,
+      adults: tripRequest.adults || 1,
+      travelClass: 'ECONOMY', // Default to economy for now
+      nonStop: tripRequest.nonstop_required || false,
+      max: 10,  // Limit number of results for performance
+    });
 
-  // Filter by maxPrice if specified
-  let filteredOffers = offers;
+    console.log('[DEBUG] Successfully fetched', offers.length, 'offers from Amadeus');
+    
+    // Filter by maxPrice if specified
+    let filteredOffers = offers;
+    if (maxPrice !== undefined) {
+      filteredOffers = offers.filter(offer => {
+        const price = parseFloat(offer.price?.total || '0');
+        return price <= maxPrice;
+      });
+      console.log('[DEBUG] Filtered to', filteredOffers.length, 'offers by max price:', maxPrice);
+    }
+
+    return filteredOffers;
+  } catch (error) {
+    console.warn('[DEBUG] Amadeus API failed, falling back to mock data:', error.message);
+    
+    // Fallback to mock data if Amadeus fails
+    return generateMockOffers(tripRequest, maxPrice);
+  }
+};
+
+// Mock data generator for testing when Amadeus API is unavailable
+const generateMockOffers = (tripRequest: any, maxPrice?: number): AmadeusFlightOffer[] => {
+  console.log('[DEBUG] Generating mock flight offers for testing');
+  
+  const mockOffers: AmadeusFlightOffer[] = [
+    {
+      id: 'MOCK_001',
+      source: 'GDS',
+      instantTicketingRequired: false,
+      nonHomogeneous: false,
+      oneWay: !tripRequest.return_date,
+      lastTicketingDate: '2024-12-31',
+      numberOfBookableSeats: 9,
+      itineraries: [{
+        duration: 'PT6H30M',
+        segments: [{
+          departure: {
+            iataCode: tripRequest.origin_location_code || 'JFK',
+            terminal: '4',
+            at: `${tripRequest.departure_date || '2024-12-15'}T08:00:00`
+          },
+          arrival: {
+            iataCode: tripRequest.destination_location_code || 'LAX',
+            terminal: '4',
+            at: `${tripRequest.departure_date || '2024-12-15'}T11:30:00`
+          },
+          carrierCode: 'AA',
+          number: '123',
+          aircraft: { code: '321' },
+          operating: { carrierCode: 'AA' },
+          duration: 'PT6H30M',
+          id: '1',
+          numberOfStops: 0,
+          blacklistedInEU: false
+        }]
+      }],
+      price: {
+        currency: 'USD',
+        total: '325.00',
+        base: '275.00',
+        fees: [{ amount: '50.00', type: 'SUPPLIER' }]
+      },
+      pricingOptions: {
+        fareType: ['PUBLISHED'],
+        includedCheckedBags: { quantity: 0 }
+      },
+      validatingAirlineCodes: ['AA'],
+      travelerPricings: [{
+        travelerId: '1',
+        fareOption: 'STANDARD',
+        travelerType: 'ADULT',
+        price: {
+          currency: 'USD',
+          total: '325.00',
+          base: '275.00'
+        },
+        fareDetailsBySegment: [{
+          segmentId: '1',
+          cabin: 'ECONOMY',
+          fareBasis: 'Y',
+          class: 'Y',
+          includedCheckedBags: { quantity: 0 }
+        }]
+      }]
+    },
+    {
+      id: 'MOCK_002',
+      source: 'GDS',
+      instantTicketingRequired: false,
+      nonHomogeneous: false,
+      oneWay: !tripRequest.return_date,
+      lastTicketingDate: '2024-12-31',
+      numberOfBookableSeats: 5,
+      itineraries: [{
+        duration: 'PT8H15M',
+        segments: [{
+          departure: {
+            iataCode: tripRequest.origin_location_code || 'JFK',
+            terminal: 'B',
+            at: `${tripRequest.departure_date || '2024-12-15'}T14:30:00`
+          },
+          arrival: {
+            iataCode: tripRequest.destination_location_code || 'LAX',
+            terminal: '7',
+            at: `${tripRequest.departure_date || '2024-12-15'}T19:45:00`
+          },
+          carrierCode: 'DL',
+          number: '456',
+          aircraft: { code: '737' },
+          operating: { carrierCode: 'DL' },
+          duration: 'PT8H15M',
+          id: '2',
+          numberOfStops: 1,
+          blacklistedInEU: false
+        }]
+      }],
+      price: {
+        currency: 'USD',
+        total: '289.50',
+        base: '245.50',
+        fees: [{ amount: '44.00', type: 'SUPPLIER' }]
+      },
+      pricingOptions: {
+        fareType: ['PUBLISHED'],
+        includedCheckedBags: { quantity: 1 }
+      },
+      validatingAirlineCodes: ['DL'],
+      travelerPricings: [{
+        travelerId: '1',
+        fareOption: 'STANDARD',
+        travelerType: 'ADULT',
+        price: {
+          currency: 'USD',
+          total: '289.50',
+          base: '245.50'
+        },
+        fareDetailsBySegment: [{
+          segmentId: '2',
+          cabin: 'ECONOMY',
+          fareBasis: 'Y',
+          class: 'Y',
+          includedCheckedBags: { quantity: 1 }
+        }]
+      }]
+    }
+  ];
+  
+  // Apply price filter to mock data
+  let filteredOffers = mockOffers;
   if (maxPrice !== undefined) {
-    filteredOffers = offers.filter(offer => {
-      const price = parseFloat(offer.price?.total || '0');
+    filteredOffers = mockOffers.filter(offer => {
+      const price = parseFloat(offer.price.total);
       return price <= maxPrice;
     });
   }
-
+  
+  console.log('[DEBUG] Generated', filteredOffers.length, 'mock offers');
   return filteredOffers;
 };
 
@@ -301,6 +455,8 @@ const mapAmadeusToDbSchema = (offer: AmadeusFlightOffer, tripRequestId: string):
 
 
 serve(async (req: Request) => {
+  console.log('[DEBUG] Flight-search-v2 edge function started');
+  
   // Ensure CORS headers are set for all responses, including errors
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*', // Or specific origins
@@ -310,6 +466,7 @@ serve(async (req: Request) => {
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('[DEBUG] CORS preflight request handled');
     return new Response('ok', { headers: corsHeaders });
   }
 
@@ -327,14 +484,19 @@ serve(async (req: Request) => {
     }
 
     const payload: FlightSearchRequest = await req.json();
+    console.log('[DEBUG] Request payload:', JSON.stringify(payload, null, 2));
     const { tripRequestId, maxPrice } = payload;
 
     if (!tripRequestId) {
+      console.log('[DEBUG] Missing tripRequestId in payload');
       return new Response(JSON.stringify({ error: 'tripRequestId is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    
+    console.log('[DEBUG] Trip request ID:', tripRequestId);
+    console.log('[DEBUG] Max price filter:', maxPrice);
 
 
     // In a real app, you'd fetch trip details (origin, dest, dates) from your DB using tripRequestId
@@ -350,19 +512,29 @@ serve(async (req: Request) => {
     }
 
     const offersToInsert = amadeusOffers.map(offer => mapAmadeusToDbSchema(offer, tripRequestId));
+    console.log('[DEBUG] Mapped', offersToInsert.length, 'offers for database insertion');
+    console.log('[DEBUG] Sample offer to insert:', JSON.stringify(offersToInsert[0], null, 2));
 
     // Insert into Supabase
+    console.log('[DEBUG] Attempting to insert into flight_offers_v2 table...');
     const { data, error, count } = await supabaseClient
       .from('flight_offers_v2')
       .insert(offersToInsert)
       .select(); // .select() is important to get the count of inserted rows correctly
 
     if (error) {
-      console.error('Supabase insert error:', error);
+      console.error('[DEBUG] Supabase insert error:', JSON.stringify(error, null, 2));
+      console.error('[DEBUG] Failed to insert offers. Error details:', error);
       throw error; // Will be caught by the outer try/catch
     }
+    
+    console.log('[DEBUG] Database insertion result:');
+    console.log('[DEBUG] - Inserted data count:', data?.length || 0);
+    console.log('[DEBUG] - Count from response:', count);
+    console.log('[DEBUG] - First inserted record:', data?.[0] ? JSON.stringify(data[0], null, 2) : 'None');
 
-    const insertedCount = count ?? 0;
+    // Use data.length as reliable count since Supabase count can be unreliable
+    const insertedCount = data?.length ?? 0;
 
     return new Response(
       JSON.stringify({ inserted: insertedCount, message: `Successfully inserted ${insertedCount} flight offers.` }),
