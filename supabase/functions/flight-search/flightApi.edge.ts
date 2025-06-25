@@ -301,21 +301,103 @@ export async function searchOffers(
   // if (resp && resp.data && resp.data.length > 0) { allRawAmadeusOffers.push(...resp.data); }
 
 
-  // ---- Abridged Amadeus call section for brevity in this example ----
-  // In a real scenario, the full Amadeus call logic from the known good state would be here.
-  // This includes loops for origins, strategies, and fallback mechanisms.
-  // For this example, let's simulate that `allRawAmadeusOffers` gets populated.
-  // To make this runnable for a test, we might add a dummy population if it's empty:
-  if (allRawAmadeusOffers.length === 0 && Deno.env.get("TEST_MODE") === "true") { // Conditional dummy data
-      console.warn("[flight-search] TEST_MODE: Injecting dummy Amadeus offers as allRawAmadeusOffers is empty.");
-      allRawAmadeusOffers.push({ // Example structure, adapt as needed
-          id: "test-offer-1",
-          itineraries: [{ segments: [{ departure: { at: "2024-09-10T10:00:00" }, duration: "PT2H" }], duration: "PT2H" }, { segments: [{ departure: { at: "2024-09-12T14:00:00" }, duration: "PT2H" }], duration: "PT2H" }],
-          price: { total: "250.00" },
-          travelerPricings: [{ fareDetailsBySegment: [ {additionalServices: [{type: "BAGGAGE", description: "CARRY ON BAG", amount: "30.00"}]}]}] // for computeCarryOnFee
+  // Import config from lib to check if we should use mock
+  const { useMock, amadeusHost } = await import("../lib/config.ts");
+  
+  if (useMock) {
+    console.log("[flight-search] Using mock data - AMADEUS_LIVE=0");
+    // Inject dummy data for testing
+    allRawAmadeusOffers.push({ 
+        id: "mock-offer-1",
+        itineraries: [
+          { 
+            segments: [{ 
+              departure: { iataCode: params.origin[0], at: "2024-09-10T10:00:00" }, 
+              arrival: { iataCode: params.destination, at: "2024-09-10T12:00:00" },
+              carrierCode: "BA",
+              number: "123",
+              duration: "PT2H" 
+            }], 
+            duration: "PT2H" 
+          }, 
+          { 
+            segments: [{ 
+              departure: { iataCode: params.destination, at: "2024-09-12T14:00:00" }, 
+              arrival: { iataCode: params.origin[0], at: "2024-09-12T16:00:00" },
+              carrierCode: "BA",
+              number: "124",
+              duration: "PT2H" 
+            }], 
+            duration: "PT2H" 
+          }
+        ],
+        price: { total: "250.00" },
+        travelerPricings: [{ 
+          fareDetailsBySegment: [{ 
+            additionalServices: [{
+              type: "BAGGAGE", 
+              description: "CARRY ON BAG", 
+              amount: "30.00"
+            }]
+          }]
+        }]
+    });
+  } else {
+    console.log("[flight-search] Making real Amadeus API calls - AMADEUS_LIVE=1");
+    
+    // Real Amadeus API implementation
+    for (const originCode of params.origin) {
+      console.log(`[flight-search] Searching from origin: ${originCode}`);
+      
+      // Calculate search parameters
+      const searchParams = new URLSearchParams({
+        originLocationCode: originCode,
+        destinationLocationCode: params.destination!,
+        departureDate: params.earliestDeparture.toISOString().split('T')[0],
+        adults: '1', // Default to 1 adult for now
+        max: '3', // Limit to 3 offers per search
       });
+      
+      // Add return date for round trip
+      const returnDate = new Date(params.earliestDeparture.getTime() + params.minDuration * 24 * 60 * 60 * 1000);
+      searchParams.append('returnDate', returnDate.toISOString().split('T')[0]);
+      
+      try {
+        console.log(`[flight-search] Calling Amadeus API: ${amadeusHost}/v2/shopping/flight-offers?${searchParams.toString()}`);
+        
+        const response = await withRetry(async () => {
+          const resp = await fetchWithTimeout(
+            `${amadeusHost}/v2/shopping/flight-offers?${searchParams.toString()}`,
+            {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+              }
+            },
+            15000 // 15 second timeout
+          );
+          
+          if (!resp.ok) {
+            const errorText = await resp.text();
+            throw new Error(`Amadeus API error ${resp.status}: ${errorText}`);
+          }
+          
+          return await resp.json();
+        });
+        
+        if (response && response.data && Array.isArray(response.data)) {
+          console.log(`[flight-search] Found ${response.data.length} offers from ${originCode}`);
+          allRawAmadeusOffers.push(...response.data);
+        } else {
+          console.log(`[flight-search] No offers found from ${originCode}`);
+        }
+      } catch (error) {
+        console.error(`[flight-search] Error searching from ${originCode}:`, error.message);
+        // Continue with next origin
+      }
+    }
   }
-  // ---- End of Abridged Amadeus call section ----
 
 
   if (allRawAmadeusOffers.length === 0) {
