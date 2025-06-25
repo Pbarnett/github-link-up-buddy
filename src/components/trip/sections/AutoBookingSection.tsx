@@ -2,10 +2,11 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Control, useWatch } from "react-hook-form";
 import { FormValues } from "@/types/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, DollarSign, CreditCard } from "lucide-react";
+import { Settings, DollarSign, CreditCard, Shield } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 
@@ -21,6 +22,12 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
   const autoBookEnabled = useWatch({
     control,
     name: "auto_book_enabled",
+  });
+
+  // Watch max_price for display
+  const maxPrice = useWatch({
+    control,
+    name: "max_price",
   });
 
   // For auto mode, auto-booking should be enabled and section should be expanded
@@ -71,35 +78,18 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
         {/* Show additional fields when auto-booking is enabled */}
         {shouldShowFields && (
           <div className="space-y-4 border-t pt-4">
-            {/* Maximum Price */}
-            <FormField
-              control={control}
-              name="max_price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    Maximum Price {isAutoMode && <span className="text-red-500">*</span>}
-                  </FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                      <Input
-                        type="number"
-                        placeholder="2000"
-                        className="pl-8"
-                        value={field.value || ""}
-                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                      />
-                    </div>
-                  </FormControl>
-                  <div className="text-xs text-gray-500">
-                    We'll only book flights under this price
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Price information - display only in auto mode */}
+            {isAutoMode && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">Price Limit</span>
+                </div>
+                <p className="text-sm text-blue-700">
+                  We'll only buy if the fare is <span className="font-semibold">${maxPrice || 1000}</span> or less.
+                </p>
+              </div>
+            )}
 
             {/* Payment Method Selection */}
             <FormField
@@ -122,7 +112,7 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
                           isLoadingPaymentMethods 
                             ? "Loading payment methods..." 
                             : paymentMethods.length === 0
-                              ? "No payment methods available"
+                              ? "No payment method on file — add one to continue."
                               : "Select payment method"
                         } />
                       </SelectTrigger>
@@ -132,9 +122,12 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
                         <SelectItem key={method.id} value={method.id}>
                           <div className="flex items-center gap-2">
                             <span className="capitalize">{method.brand}</span>
-                            <span>•••• {method.last4}</span>
+                            <span>••{method.last4}</span>
                             {method.is_default && (
                               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Default</span>
+                            )}
+                            {method.nickname && (
+                              <span className="text-xs text-gray-500">({method.nickname})</span>
                             )}
                           </div>
                         </SelectItem>
@@ -142,14 +135,42 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
                     </SelectContent>
                   </Select>
                   {paymentMethods.length === 0 && !isLoadingPaymentMethods && (
-                    <div className="text-xs text-amber-600">
-                      You'll need to add a payment method before enabling auto-booking
+                    <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-md p-3 mt-2">
+                      <Shield className="h-4 w-4" />
+                      No payment method on file — add one to continue.
                     </div>
                   )}
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* Authorization Confirmation - only show in auto mode */}
+            {isAutoMode && (
+              <FormField
+                control={control}
+                name="auto_book_consent"
+                render={({ field }) => (
+                  <FormItem className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-start space-x-3">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="mt-1"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-medium">
+                          I authorize Parker Flight to charge my saved card and issue the ticket automatically when the above criteria are met. I can void within 24 h.
+                        </FormLabel>
+                      </div>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </div>
         )}
       </CardContent>
