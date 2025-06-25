@@ -92,111 +92,61 @@ interface FlightOfferV2Insert {
 
 // Placeholder for Amadeus API Client/Fetch logic
 // In a real scenario, this would involve actual API calls, error handling, and authentication.
+import { searchFlightOffers } from '../lib/amadeus-search.ts';
+
+// Function to get trip request details from database
+const getTripRequestDetails = async (tripRequestId: string, supabaseClient: any) => {
+  const { data, error } = await supabaseClient
+    .from('trip_requests')
+    .select('*')
+    .eq('id', tripRequestId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching trip request:', error);
+    return null;
+  }
+
+  return data;
+};
+
 const fetchAmadeusOffers = async (
   tripRequestId: string,
   maxPrice?: number,
-  // other filters like origin, destination, dates would come from the tripRequest record in DB
+  supabaseClient?: any
 ): Promise<AmadeusFlightOffer[]> => {
-  console.log(`Mock Amadeus: Searching flights for tripRequestId: ${tripRequestId}, maxPrice: ${maxPrice}`);
-
-  // This is a MOCK implementation.
-  // A real implementation would:
-  // 1. Fetch trip request details (origin, destination, dates) from Supabase using tripRequestId.
-  // 2. Construct an Amadeus API request with these details and filters (nonStop, maxPrice).
-  // 3. Call Amadeus API and handle response/errors.
-
-  // Example mock offers:
-  const mockApiOffers: AmadeusFlightOffer[] = [
-    {
-      id: 'amadeus-offer-123',
-      source: 'GDS',
-      instantTicketingRequired: false,
-      nonHomogeneous: false,
-      oneWay: false, // Assuming round trip for simplicity here
-      lastTicketingDate: '2024-09-01',
-      numberOfBookableSeats: 9,
-      itineraries: [
-        { // Outbound
-          duration: 'PT8H30M',
-          segments: [
-            {
-              departure: { iataCode: 'JFK', at: '2024-12-01T10:00:00' },
-              arrival: { iataCode: 'LHR', at: '2024-12-01T22:30:00' }, // Example arrival time
-              carrierCode: 'BA',
-              number: '245',
-              aircraft: { code: '777' },
-              duration: 'PT8H30M',
-              id: 'segment-1',
-              numberOfStops: 0, // Non-stop
-              blacklistedInEU: false,
-            },
-          ],
-        },
-        { // Inbound (optional, for round trips)
-          duration: 'PT8H50M',
-          segments: [
-            {
-              departure: { iataCode: 'LHR', at: '2024-12-10T12:00:00' },
-              arrival: { iataCode: 'JFK', at: '2024-12-10T16:50:00' },
-              carrierCode: 'BA',
-              number: '244',
-              aircraft: { code: '777' },
-              duration: 'PT8H50M',
-              id: 'segment-2',
-              numberOfStops: 0, // Non-stop
-              blacklistedInEU: false,
-            },
-          ],
-        },
-      ],
-      price: { currency: 'USD', total: '650.00', base: '500.00' },
-      pricingOptions: { fareType: ['PUBLISHED'], includedCheckedBags: { quantity: 1 } },
-      validatingAirlineCodes: ['BA'],
-      travelerPricings: [
-        {
-          travelerId: '1',
-          fareOption: 'STANDARD',
-          travelerType: 'ADULT',
-          price: { currency: 'USD', total: '650.00', base: '500.00' },
-          fareDetailsBySegment: [
-            { segmentId: 'segment-1', cabin: 'ECONOMY', fareBasis: 'Y', class: 'Y', includedCheckedBags: { quantity: 1 } },
-            { segmentId: 'segment-2', cabin: 'ECONOMY', fareBasis: 'Y', class: 'Y', includedCheckedBags: { quantity: 1 } },
-          ],
-        },
-      ],
-    },
-    // Another offer that might be filtered out by maxPrice
-    {
-      id: 'amadeus-offer-456',
-      source: 'GDS',
-      instantTicketingRequired: false,
-      nonHomogeneous: false,
-      oneWay: false,
-      lastTicketingDate: '2024-09-01',
-      numberOfBookableSeats: 5,
-      itineraries: [ { duration: 'PT2H', segments: [{ departure: { iataCode: 'LAX', at: '2024-11-15T14:00:00' }, arrival: { iataCode: 'SFO', at: '2024-11-15T16:00:00' }, carrierCode: 'UA', number: '500', aircraft: { code: '737' }, duration: 'PT2H', id: 'segment-3', numberOfStops: 0, blacklistedInEU: false }] } ],
-      price: { currency: 'USD', total: '1200.00', base: '1000.00' }, // Higher price
-      pricingOptions: { fareType: ['PUBLISHED'], includedCheckedBags: { quantity: 0 } }, // No bags
-      validatingAirlineCodes: ['UA'],
-      travelerPricings: [{ travelerId: '1', fareOption: 'STANDARD', travelerType: 'ADULT', price: { currency: 'USD', total: '1200.00', base: '1000.00' }, fareDetailsBySegment: [{ segmentId: 'segment-3', cabin: 'BUSINESS', fareBasis: 'J', class: 'J' }] }],
-    }
-  ];
-
-  let filteredOffers = mockApiOffers;
-
-  // Apply non-stop filter (Amadeus API would ideally handle this via request params)
-  filteredOffers = filteredOffers.filter(offer =>
-    offer.itineraries.every(itinerary =>
-      itinerary.segments.every(segment => segment.numberOfStops === 0)
-    )
-  );
-
-  // Apply maxPrice filter
-  if (maxPrice !== undefined) {
-    filteredOffers = filteredOffers.filter(offer => parseFloat(offer.price.total) <= maxPrice);
+  if (!supabaseClient) {
+    throw new Error('Supabase client is required');
   }
 
-  return Promise.resolve(filteredOffers);
+  // Fetch trip details from your database
+  const tripRequest = await getTripRequestDetails(tripRequestId, supabaseClient);
+  if (!tripRequest) {
+    throw new Error('Trip request not found');
+  }
+
+  // Fetch offers from Amadeus
+  const offers = await searchFlightOffers({
+    originLocationCode: tripRequest.origin_location_code,
+    destinationLocationCode: tripRequest.destination_location_code,
+    departureDate: tripRequest.departure_date,
+    returnDate: tripRequest.return_date,
+    adults: tripRequest.adults || 1,
+    travelClass: 'ECONOMY', // Default to economy for now
+    nonStop: tripRequest.nonstop_required || false,
+    max: 10,  // Limit number of results for performance
+  });
+
+  // Filter by maxPrice if specified
+  let filteredOffers = offers;
+  if (maxPrice !== undefined) {
+    filteredOffers = offers.filter(offer => {
+      const price = parseFloat(offer.price?.total || '0');
+      return price <= maxPrice;
+    });
+  }
+
+  return filteredOffers;
 };
 
 // Helper function to generate realistic airline booking URLs (for test environment)
@@ -386,32 +336,11 @@ serve(async (req: Request) => {
       });
     }
 
-    // Fetch trip details from database
-    const { data: tripRequest, error: tripError } = await supabaseClient
-      .from('trip_requests')
-      .select('*')
-      .eq('id', tripRequestId)
-      .single();
-      
-    if (tripError || !tripRequest) {
-      throw new Error(`Trip request not found: ${tripError?.message || 'No data'}`);
-    }
-    
-    // Get Amadeus access token
-    const token = await getAmadeusAccessToken();
-    
-    // Use real Amadeus API instead of mock
-    const amadeusResult = await priceWithAmadeus({
-      originLocationCode: tripRequest.origin_location_code,
-      destinationLocationCode: tripRequest.destination_location_code,
-      departureDate: tripRequest.departure_date,
-      returnDate: tripRequest.return_date,
-      adults: tripRequest.adults || 1,
-      maxOffers: 10
-    }, token);
-    
-    // Convert the priced offers to the expected format
-    const amadeusOffers = amadeusResult?.flightOffers || [];
+
+    // In a real app, you'd fetch trip details (origin, dest, dates) from your DB using tripRequestId
+    // For now, we pass tripRequestId and maxPrice to the mock Amadeus fetcher.
+    const amadeusOffers = await fetchAmadeusOffers(tripRequestId, maxPrice, supabaseClient);
+
 
     if (amadeusOffers.length === 0) {
       return new Response(JSON.stringify({ inserted: 0, message: 'No flight offers found from Amadeus matching criteria.' }), {
