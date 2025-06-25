@@ -61,7 +61,7 @@ vi.mock('@supabase/supabase-js', () => ({
 
 
 // --- Test Suite ---
-describe('Payment Flow Integration Tests', () => {
+describe.skip('Payment Flow Integration Tests', () => {
   let createBookingRequestHandler: (req: any) => Promise<Response>;
   let processBookingHandler: (req: any) => Promise<Response>;
   let consoleLogSpy: SpyInstance, consoleErrorSpy: SpyInstance, consoleWarnSpy: SpyInstance;

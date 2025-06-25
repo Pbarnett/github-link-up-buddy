@@ -1,16 +1,7 @@
-# Parker Flight: Duffel Integration Implementation Plan (v2)
-
-## Major Changes from v1
-- **Fixed Payment Architecture:** Removed separate payment service - payments integrated into order creation
-- **Corrected Data Models:** Updated TypeScript interfaces to match actual Duffel API responses
-- **Added Offer Expiration Handling:** Critical 5-20 minute offer lifecycle management
-- **Enhanced Webhook Events:** Added missing webhook types from API documentation
-- **Corrected Auto-Booking State Machine:** Aligned with Duffel's actual booking flow
-- **Updated Rate Limits:** Accurate API limits per endpoint type
-- **Added Identity Document Requirements:** Conditional passport collection logic
+# Parker Flight: Duffel Integration Implementation Plan
 
 ## Overview
-Based on comprehensive research and Duffel API documentation analysis, Parker Flight will integrate Duffel as the primary booking provider while maintaining Amadeus for flight search. This plan outlines the complete technical implementation to achieve production-ready auto-booking with Duffel as Merchant of Record.
+Based on comprehensive research, Parker Flight will integrate Duffel as the primary booking provider while maintaining Amadeus for flight search. This plan outlines the complete technical implementation to achieve production-ready auto-booking with Duffel as Merchant of Record.
 
 ## Phase 1: Database & Schema Migration (Week 1)
 
@@ -19,18 +10,12 @@ Based on comprehensive research and Duffel API documentation analysis, Parker Fl
 
 ```sql
 -- Execute migration: 20250625000001_duffel_integration.sql
--- Key additions:
--- - duffel_order_id, duffel_offer_id, offer_expires_at
--- - passenger_identity_documents JSONB field
--- - booking_reference (Duffel PNR)
--- - live_mode boolean flag
 ```
 
 **Tasks:**
 - [ ] Create and test database migration locally
 - [ ] Add Duffel-specific columns to `bookings` table
-- [ ] Add `offer_expires_at` timestamp for offer lifecycle tracking
-- [ ] Add `passenger_identity_documents` JSONB for passport data
+- [ ] Create `duffel_payment_methods` table for tokenized cards
 - [ ] Create `duffel_webhook_events` table for event tracking
 - [ ] Add `provider` enum to distinguish Amadeus vs Duffel bookings
 - [ ] Create database functions for Duffel booking management
@@ -47,52 +32,24 @@ Based on comprehensive research and Duffel API documentation analysis, Parker Fl
 - Create `src/types/duffel.ts` for Duffel-specific types
 
 ```typescript
-// Corrected Duffel types based on API documentation
+// New Duffel types needed
 interface DuffelOrder {
   id: string; // ord_00009htYpSCXrwaB9DnUm0
-  booking_reference: string; // Airline PNR (not 'pnr')
-  live_mode: boolean;
-  created_at: string;
-  documents: Array<{
-    type: 'electronic_ticket' | 'electronic_miscellaneous_document';
-    unique_identifier: string;
-  }>;
-  payment_status: {
-    awaiting_payment: boolean;
-    payment_required_by: string | null;
-    price_guarantee_expires_at: string | null;
-  };
-  slices: DuffelSlice[];
-  passengers: DuffelPassenger[];
-  total_amount: string;
-  total_currency: string;
-  // Note: No 'tickets' array - use 'documents' instead
+  status: 'confirmed' | 'cancelled' | 'refunded';
+  pnr: string;
+  tickets: DuffelTicket[];
+  // ... other Duffel order fields
 }
 
-interface DuffelOffer {
-  id: string; // off_00009htYpSCXrwaB9DnUm0
-  expires_at: string; // Critical: offers expire in 5-20 minutes
-  total_amount: string;
-  total_currency: string;
-  payment_requirements: {
-    requires_instant_payment: boolean;
-    payment_required_by: string | null;
-    price_guarantee_expires_at: string | null;
-  };
-  passenger_identity_documents_required: boolean;
-  slices: DuffelSlice[];
-}
-
-interface DuffelPassenger {
+interface DuffelPaymentMethod {
   id: string;
-  given_name: string;
-  family_name: string;
-  born_on: string;
-  identity_documents?: Array<{
-    type: 'passport';
-    unique_identifier: string;
-    issuing_country_code: string;
-  }>;
+  user_id: string;
+  duffel_payment_intent_id: string;
+  card_last4: string;
+  card_brand: string;
+  exp_month: number;
+  exp_year: number;
+  is_active: boolean;
 }
 ```
 
@@ -120,10 +77,7 @@ class DuffelService {
 - [ ] Set up Duffel test environment credentials
 - [ ] Implement Duffel API client with authentication
 - [ ] Add retry logic and error handling (similar to Amadeus)
-- [ ] Implement rate limiting per API docs:
-  - Search: 120 requests per minute
-  - Orders: 60 requests per minute  
-  - Other endpoints: 300 requests per minute
+- [ ] Implement rate limiting (120 searches/minute limit)
 - [ ] Create offer search functionality
 - [ ] Implement order creation and payment flows
 - [ ] Add comprehensive error mapping
@@ -131,91 +85,28 @@ class DuffelService {
 **Testing Requirements:**
 - [ ] Test with Duffel Airways in sandbox
 - [ ] Test payment failures and retries
-- [ ] Test offer expiration scenarios (CRITICAL)
-- [ ] Test identity document collection requirements
+- [ ] Test offer expiration scenarios
 - [ ] Verify webhook signature validation
-- [ ] Test hold order payment scenarios
 
-### 2.3 Offer Expiration Management (CRITICAL)
-**Key Insight:** Duffel offers expire in 5-20 minutes - this is the most critical aspect of the integration.
+### 2.2 Payment Integration (Duffel Payments)
+**Create: `src/services/duffelPayments.ts`**
 
 ```typescript
-class OfferExpirationService {
-  async validateOffer(offerId: string): Promise<{ valid: boolean; offer?: DuffelOffer; timeLeft?: number }> {
-    const offer = await duffel.offers.get(offerId);
-    const now = new Date();
-    const expires = new Date(offer.expires_at);
-    const bufferMinutes = 2; // Safety buffer
-    const timeLeft = expires.getTime() - now.getTime();
-    const isValid = timeLeft > (bufferMinutes * 60 * 1000);
-    
-    return { valid: isValid, offer, timeLeft };
-  }
-  
-  async refreshOffer(searchParams: DuffelSearchParams): Promise<DuffelOffer[]> {
-    // Re-run search to get fresh offers
-    const offerRequest = await duffel.offerRequests.create(searchParams);
-    return offerRequest.offers;
-  }
+class DuffelPaymentsService {
+  async createPaymentIntent(amount: number, currency: string): Promise<PaymentIntent>
+  async confirmPaymentIntent(intentId: string): Promise<PaymentIntent>
+  async refundPayment(intentId: string, amount?: number): Promise<Refund>
+  async createClientToken(paymentIntentId: string): Promise<string>
 }
 ```
 
 **Tasks:**
-- [ ] Implement offer expiration checking before every order creation
-- [ ] Add automatic offer refresh when expired
-- [ ] Show countdown timers to users during booking
-- [ ] Implement offer caching with TTL
-- [ ] Add alerts for high offer expiration rates
-
-### 2.4 Enhanced Error Handling
-**Critical Duffel-specific errors from API documentation:**
-
-```typescript
-const DUFFEL_ERROR_MAP = {
-  'offer_no_longer_available': 'This flight is no longer available. Please search again.',
-  'validation_error': 'Please check your travel details and try again.',
-  'payment_required': 'Payment is required to complete this booking.',
-  'passenger_identity_documents_required': 'Passport information is required for this route.',
-  'insufficient_funds': 'Payment was declined. Please try a different card.',
-  'rate_limit_exceeded': 'Too many requests. Please wait a moment and try again.',
-  'price_changed': 'The price has changed. Please review the new total.',
-  'schedule_changed': 'The flight schedule has changed since booking.'
-};
-```
-
-### 2.2 Payment Integration (Integrated with Order Creation)
-**Critical Change:** Duffel integrates payment directly into order creation - no separate payment service needed.
-
-```typescript
-class DuffelService {
-  // Payment is handled during order creation
-  async createOrder(orderData: {
-    selected_offers: string[];
-    passengers: DuffelPassenger[];
-    payments: Array<{
-      type: 'balance'; // Duffel manages the actual payment processing
-      amount: string;
-      currency: string;
-    }>;
-  }): Promise<DuffelOrder>
-  
-  // For hold orders (payment later)
-  async createHoldOrder(orderData: Omit<OrderData, 'payments'>): Promise<DuffelOrder>
-  async payForOrder(orderId: string, paymentData: PaymentData): Promise<DuffelOrder>
-  
-  // Offer expiration management (CRITICAL)
-  async validateOfferExpiration(offerId: string): Promise<{ valid: boolean; offer?: DuffelOffer }>
-  async refreshExpiredOffer(searchParams: DuffelSearchParams): Promise<DuffelOffer[]>
-}
-```
-
-**Tasks:**
-- [ ] Integrate payment collection into order creation flow
-- [ ] Implement offer expiration checking (5-20 minute window)
-- [ ] Add hold order support for delayed payment scenarios
-- [ ] Create identity document collection for required routes
-- [ ] Implement automatic offer refresh when expired
-- [ ] Add support for `requires_instant_payment` vs hold orders
+- [ ] Integrate Duffel's card tokenization component
+- [ ] Implement server-side payment confirmation
+- [ ] Add support for merchant-initiated transactions (auto-booking)
+- [ ] Create payment method storage logic
+- [ ] Implement refund processing
+- [ ] Add currency conversion handling (with FX buffer)
 
 ## Phase 3: Auto-Booking Engine Redesign (Week 3)
 
@@ -226,24 +117,17 @@ Current flow: `Amadeus search → Amadeus book → Stripe charge`
 New flow: `Amadeus search → Duffel offer → Duffel book → Duffel charge → Fallback to Amadeus if needed`
 
 ```typescript
-// Corrected auto-booking state machine aligned with Duffel API
+// New auto-booking state machine
 enum AutoBookingState {
   AMADEUS_SEARCH = 'amadeus_search',
-  DUFFEL_OFFER_REQUEST = 'duffel_offer_request',     // Create offer request
-  DUFFEL_OFFER_SELECTION = 'duffel_offer_selection', // Get specific offer
-  DUFFEL_OFFER_VALIDATION = 'duffel_offer_validation', // Check expiration
-  DUFFEL_ORDER_CREATE = 'duffel_order_create',       // Includes payment
-  DUFFEL_CONFIRMATION = 'duffel_confirmation',       // Wait for confirmation
+  DUFFEL_OFFER_SEARCH = 'duffel_offer_search', 
+  DUFFEL_PAYMENT_AUTH = 'duffel_payment_auth',
+  DUFFEL_ORDER_CREATE = 'duffel_order_create',
+  DUFFEL_TICKETING = 'duffel_ticketing',
   AMADEUS_FALLBACK = 'amadeus_fallback',
   COMPLETED = 'completed',
   FAILED = 'failed'
 }
-
-// Key changes:
-// 1. Removed separate payment auth - payment is part of order creation
-// 2. Added offer validation for expiration checking (critical!)
-// 3. Added confirmation state for webhook-driven updates
-// 4. Simplified flow to match Duffel's actual API pattern
 ```
 
 **Tasks:**
@@ -282,15 +166,10 @@ class BookingFallbackService {
 **Create: `supabase/functions/duffel-webhook/index.ts`**
 
 ```typescript
-// Complete webhook event types based on API documentation
+// Webhook event types to handle
 interface DuffelWebhookEvent {
   id: string;
-  type: 'order.created' 
-      | 'order.cancelled' 
-      | 'order.payment_succeeded' 
-      | 'order.payment_failed'
-      | 'order.ticketed'
-      | 'order.schedule_changed';  // Added missing events
+  type: 'order.created' | 'order.ticketed' | 'order.cancelled' | 'payment.succeeded' | 'payment.failed';
   data: DuffelOrder | DuffelPayment;
   created_at: string;
 }
