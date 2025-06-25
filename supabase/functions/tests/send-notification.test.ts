@@ -70,15 +70,23 @@ describe('send-notification Edge Function', () => {
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    // Dynamically import the handler after mocks are established
-    // This assumes send-notification/index.ts exports its Deno.serve callback or a testable part of it
-    const module = await import('../send-notification/index.ts');
-    sendNotificationHandler = (module as any).testableHandler ||
-        (module as any).default?.handler || // Common patterns for exporting Deno serve handlers
-        (async (_req: Request) => new Response("Handler not found in module", { status: 501 }));
-
-    if (sendNotificationHandler.toString().includes("Handler not found in module")) {
-        console.warn("Test setup: Could not get testableHandler from send-notification/index.ts. Tests may not run correctly.");
+    // Import the testable handler
+    try {
+      console.log("Attempting to import send-notification handler...");
+      const module = await import('../send-notification/index.ts');
+      console.log("Import successful, available exports:", Object.keys(module));
+      sendNotificationHandler = (module as any).testableHandler;
+      if (!sendNotificationHandler) {
+        console.warn("Test setup: testableHandler not found in send-notification/index.ts");
+        console.warn("Available exports:", Object.keys(module));
+        sendNotificationHandler = async (_req: Request) => new Response("testableHandler not found", { status: 501 });
+      } else {
+        console.log("testableHandler found and assigned successfully");
+      }
+    } catch (error) {
+      console.error("Test setup: Failed to import send-notification handler:", error);
+      console.error("Error details:", error.stack);
+      sendNotificationHandler = async (_req: Request) => new Response("Handler import failed", { status: 501 });
     }
   });
 
@@ -102,7 +110,15 @@ describe('send-notification Edge Function', () => {
       payload: { pnr: 'PNR123', airline: 'TestAir', flight_number: 'TA101', departure_datetime: '2024-12-25T10:00:00Z', price: 250 },
     };
     const response = await sendNotificationHandler(createMockRequest(requestBody));
-    const body = await response.json();
+    const responseText = await response.text();
+    console.log('Response status:', response.status);
+    console.log('Response text:', responseText);
+    
+    if (response.status === 501) {
+      throw new Error(`Handler not properly imported: ${responseText}`);
+    }
+    
+    const body = JSON.parse(responseText);
 
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
@@ -129,11 +145,16 @@ describe('send-notification Edge Function', () => {
   });
 
   it('4. Skips email if Resend API key is missing, logs warning', async () => {
-    mockEnvGet.mockImplementation((key: string) => key === 'VITE_RESEND_API_KEY' ? undefined : 'mock_value');
-    // Re-import or ensure handler picks up new env state if Resend client is module-level
-    const module = await import('../send-notification/index.ts');
-    sendNotificationHandler = (module as any).testableHandler || (module as any).default?.handler;
-
+    mockEnvGet.mockImplementation((key: string) => {
+      const envs: Record<string, string | undefined> = {
+        'SUPABASE_URL': 'http://mock-supabase.url',
+        'SUPABASE_SERVICE_ROLE_KEY': 'mock-service-role-key',
+        'VITE_RESEND_API_KEY': undefined, // Explicitly undefined for this test
+        'RESEND_FROM_EMAIL': 'from@example.com',
+        'VITE_TWILIO_ACCOUNT_SID': undefined,
+      };
+      return envs[key];
+    });
 
     const requestBody = { user_id: 'user123', type: 'booking_success', payload: {} };
     await sendNotificationHandler(createMockRequest(requestBody));
@@ -151,8 +172,6 @@ describe('send-notification Edge Function', () => {
         if (key === 'RESEND_FROM_EMAIL') return 'from@example.com';
         return undefined;
     });
-    const module = await import('../send-notification/index.ts'); // Re-import for env change
-    sendNotificationHandler = (module as any).testableHandler || (module as any).default?.handler;
 
     const requestBody = { user_id: 'user123', type: 'booking_success', payload: {} };
     await sendNotificationHandler(createMockRequest(requestBody));

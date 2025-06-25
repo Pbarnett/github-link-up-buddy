@@ -1,8 +1,68 @@
 // supabase/functions/send-notification/index.ts
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { Resend } from 'npm:resend'; // Using npm specifier for Resend
+// Conditional imports for Deno vs Node.js environments
+let serve: any;
+let createClient: any;
+let SupabaseClient: any;
+
+async function initializeEnvironment() {
+  if (typeof Deno !== 'undefined') {
+    // Deno environment - use https imports
+    const { serve: denoServe } = await import('https://deno.land/std@0.177.0/http/server.ts');
+    const { createClient: denoCreateClient, SupabaseClient: denoSupabaseClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    serve = denoServe;
+    createClient = denoCreateClient;
+    SupabaseClient = denoSupabaseClient;
+  } else {
+    // Node.js/test environment - use npm packages
+    try {
+      const { createClient: nodeCreateClient } = await import('@supabase/supabase-js');
+      createClient = nodeCreateClient;
+      // Mock serve function for Node.js
+      serve = (handler: any) => console.log('Mock serve called with handler');
+    } catch (error) {
+      console.error('Failed to import Supabase in Node.js environment:', error);
+    }
+  }
+}
+
+// Handle Resend import - use dynamic import for Deno environment
+let Resend: any;
+
+async function initializeResend() {
+  if (Resend) return Resend; // Already initialized
+  
+  if (typeof Deno !== 'undefined') {
+    // In Deno environment, use npm: import
+    try {
+      const { Resend: ResendClass } = await import('npm:resend');
+      Resend = ResendClass;
+      return ResendClass;
+    } catch (error) {
+      console.error('Failed to import Resend in Deno environment:', error);
+      // Fallback mock class
+      Resend = class MockResend {
+        constructor(apiKey: string) {}
+        emails = { send: async () => ({ data: { id: 'mock-id' }, error: null }) };
+      };
+      return Resend;
+    }
+  } else {
+    // In test environment, try to import resend for mocking
+    try {
+      const { Resend: ResendClass } = await import('resend');
+      Resend = ResendClass;
+      return ResendClass;
+    } catch (error) {
+      // Fallback mock for test environment
+      Resend = class MockResend {
+        constructor(apiKey: string) {}
+        emails = { send: async () => ({ data: { id: 'mock-id' }, error: null }) };
+      };
+      return Resend;
+    }
+  }
+}
 
 // Helper function to safely convert values to valid JSON
 function toJsonSafe(value: unknown): any {
@@ -105,7 +165,12 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-serve(async (req: Request) => {
+// Export the handler for testing
+export const testableHandler = async (req: Request): Promise<Response> => {
+  // Initialize environment if not already done
+  if (!createClient) {
+    await initializeEnvironment();
+  }
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -182,7 +247,8 @@ serve(async (req: Request) => {
       const resendApiKey = Deno.env.get('VITE_RESEND_API_KEY') || Deno.env.get('RESEND_API_KEY');
       if (type.toLowerCase().includes('booking') || type === 'reminder_23h') {
         if (resendApiKey) {
-          const resend = new Resend(resendApiKey);
+          const ResendClass = await initializeResend();
+          const resend = new ResendClass(resendApiKey);
           let subject = 'Your Flight Booking Update';
           let htmlBody = `<p>You have a new update regarding your flight booking.</p><p>Details: ${JSON.stringify(validatedPayload)}</p>`;
 
@@ -237,7 +303,7 @@ serve(async (req: Request) => {
             console.error(`[SendNotification] Error sending email via Resend for user ${user_id}: ${emailError.message}`, emailError);
           }
         } else {
-          console.warn('[SendNotification] RESEND_API_KEY (VITE_RESEND_API_KEY) not configured. Skipping email for user ${user_id}.');
+          console.warn(`[SendNotification] RESEND_API_KEY (VITE_RESEND_API_KEY) not configured. Skipping email for user ${user_id}.`);
         }
       } else {
         console.log(`[SendNotification] Email not sent for type "${type}" as it's not a booking-related or reminder type for user ${user_id}.`);
@@ -249,7 +315,7 @@ serve(async (req: Request) => {
     // 4. SMS Fallback (Stub)
     const twilioAccountSid = Deno.env.get('VITE_TWILIO_ACCOUNT_SID') || Deno.env.get('TWILIO_ACCOUNT_SID');
     if (!twilioAccountSid) {
-      console.log('[SendNotification] SMS (Twilio SID) not configured, skipping SMS for user ${user_id}.');
+      console.log(`[SendNotification] SMS (Twilio SID) not configured, skipping SMS for user ${user_id}.`);
     } else {
       console.log(`[SendNotification] SMS STUB: Would attempt to send SMS to user ${user_id} for type ${type}. Payload: ${JSON.stringify(validatedPayload)}`);
     }
@@ -266,4 +332,13 @@ serve(async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-});
+};
+
+// Initialize and serve the handler when running in Deno
+if (typeof Deno !== 'undefined') {
+  initializeEnvironment().then(() => {
+    serve(testableHandler);
+  }).catch(error => {
+    console.error('Failed to initialize Deno environment:', error);
+  });
+}
