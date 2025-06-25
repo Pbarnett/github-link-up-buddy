@@ -20,7 +20,7 @@ export interface ExtendedTripFormValues extends TripFormValues {
   baggage_included_required?: boolean;
   // Auto-booking fields
   auto_book_enabled?: boolean;
-  max_price?: number | null;
+  max_price?: number | null; // This replaces budget for auto-booking
   preferred_payment_method_id?: string | null;
 }
 
@@ -46,10 +46,10 @@ export const tripFormSchema = z.object({
   }).max(30, {
     message: "Maximum duration cannot exceed 30 days",
   }),
-  budget: z.coerce.number().min(100, {
-    message: "Budget must be at least $100",
+  max_price: z.coerce.number().min(100, {
+    message: "Maximum price must be at least $100",
   }).max(10000, {
-    message: "Budget cannot exceed $10,000",
+    message: "Maximum price cannot exceed $10,000",
   }),
   nyc_airports: z.array(z.string()).optional(),
   other_departure_airport: z.string().optional(),
@@ -58,10 +58,10 @@ export const tripFormSchema = z.object({
   // New filter fields
   nonstop_required: z.boolean().default(true),
   baggage_included_required: z.boolean().default(false),
-  // Auto-booking fields - made optional for Phase 0
+  // Auto-booking fields
   auto_book_enabled: z.boolean().default(false).optional(),
-  max_price: z.coerce.number().min(100).max(10000).optional().nullable(),
   preferred_payment_method_id: z.string().optional().nullable(),
+  auto_book_consent: z.boolean().default(false).optional(),
 }).refine((data) => data.latestDeparture > data.earliestDeparture, {
   message: "Latest departure date must be after earliest departure date",
   path: ["latestDeparture"],
@@ -88,6 +88,24 @@ export const tripFormSchema = z.object({
 }, {
   message: "Please select a destination or enter a custom one",
   path: ["destination_airport"],
+}).refine((data) => {
+  // Auto-booking validation: require max_price and payment method when auto-booking is enabled
+  if (data.auto_book_enabled) {
+    return data.max_price && data.preferred_payment_method_id;
+  }
+  return true;
+}, {
+  message: "Maximum price and payment method are required for auto-booking",
+  path: ["preferred_payment_method_id"],
+}).refine((data) => {
+  // Auto-booking consent validation: require consent when auto-booking is enabled
+  if (data.auto_book_enabled) {
+    return data.auto_book_consent;
+  }
+  return true;
+}, {
+  message: "You must authorize auto-booking to continue",
+  path: ["auto_book_consent"],
 });
 
 // Form values type derived from the schema

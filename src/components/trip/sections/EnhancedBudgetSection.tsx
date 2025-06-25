@@ -19,12 +19,12 @@ const EnhancedBudgetSection = ({ control }: EnhancedBudgetSectionProps) => {
   return (
     <FormField
       control={control}
-      name="budget"
+      name="max_price"
       render={({ field }) => (
         <FormItem>
           <div className="flex items-center gap-2">
             <FormLabel className="text-base lg:text-lg font-semibold text-gray-900">
-              Budget (USD)
+              Maximum Price (USD)
             </FormLabel>
             <TooltipProvider>
               <Tooltip>
@@ -32,7 +32,7 @@ const EnhancedBudgetSection = ({ control }: EnhancedBudgetSectionProps) => {
                   <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Must be between $100–$10,000</p>
+                  <p>We will not charge above this amount; lower is possible.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
