@@ -1,7 +1,7 @@
 
 # Parker Flight
 
-An autonomous flight booking application that monitors flight prices and automatically books flights when user-defined criteria are met. Built with React/TypeScript frontend, Supabase backend, and integrated with flight data APIs (Amadeus for search, Duffel for booking) and secure payment processing.
+An autonomous flight booking application that monitors flight prices and automatically books flights when user-defined criteria are met. Built with React/TypeScript frontend, Supabase backend, and integrated with flight data APIs (Amadeus for search, Duffel for booking) and secure payment processing. Duffel acts as the Merchant of Record, handling all payment processes to reduce PCI scope.
 
 ## Core Features
 
@@ -85,17 +85,17 @@ Parker Flight is built on a modern, scalable architecture designed for autonomou
    - Real-time subscriptions for live updates
    - Row Level Security (RLS) for data protection
 
-3. **Payment Processing (Stripe)**
-   - Two-step payment authorization and capture
-   - Secure payment method storage
-   - Webhook handling for payment events
-   - PCI compliance through Stripe Elements
+3. **Dual-Provider Flight Integration**
+   - **Amadeus API**: Manual flight search and price monitoring
+   - **Duffel API**: Automated booking and ticketing (Merchant of Record)
+   - Seamless provider switching based on booking mode
+   - Comprehensive fallback mechanisms
 
-4. **Flight Data (Amadeus API)**
-   - Real-time flight search and pricing
-   - Background monitoring jobs
-   - Rate limiting and retry logic
-   - Booking URL generation for major airlines
+4. **Payment Processing (Duffel Payments)**
+   - Duffel acts as Merchant of Record for auto-bookings
+   - Secure payment tokenization with reduced PCI scope
+   - Real-time payment processing with 3D Secure support
+   - Automated refund handling through Duffel's system
 
 ### Current Implementation Status
 
@@ -129,8 +129,9 @@ Based on comprehensive analysis, Parker Flight has a remarkably advanced foundat
 
 **Complete Autonomous Booking Pipeline:**
 - ✅ **Advanced State Machine**: Full Saga pattern implementation with rollback capabilities in `/supabase/functions/auto-book/`
-- ✅ **Payment Authorization**: Two-step Stripe flow (authorize → capture) with manual capture method
-- ✅ **Amadeus Integration**: Production-ready flight booking API with HTTP-based calls
+- ✅ **Dual-Provider Architecture**: Amadeus for search, Duffel for booking (Merchant of Record)
+- ✅ **Payment Authorization**: Secure tokenization with reduced PCI scope via Duffel Payments
+- ✅ **Amadeus Integration**: Production-ready flight search API with HTTP-based calls
 - ✅ **Idempotency Protection**: `booking_attempts` table prevents duplicate processing
 - ✅ **International Support**: Traveler data validation for domestic/international flights
 - ✅ **Seat Selection**: Intelligent seat preference algorithms based on budget
@@ -171,17 +172,26 @@ Based on comprehensive analysis, Parker Flight has a remarkably advanced foundat
 
 ### 🔧 Immediate Production Tasks (2-3 weeks)
 
-**Phase 1: Legal & Compliance Foundation**
-- [ ] **User Consent Flow**: Implement explicit auto-booking authorization UI with FTC-compliant language
-- [ ] **Terms of Service**: Draft and implement ToS covering autonomous transactions and 24-hour cancellation
-- [ ] **Privacy Policy**: GDPR/CCPA compliant privacy policy with data handling procedures
-- [ ] **Emergency Controls**: "Stop All Auto-Bookings" toggle and individual watch cancellation
+**Phase 1: Duffel Integration (Technical Priority)**
+- [ ] **Database Migration**: Execute Duffel schema migration adding `duffel_order_id`, `provider`, `duffel_payment_methods` table
+- [ ] **Duffel API Integration**: Implement offer search, order creation, and payment processing via Duffel API
+- [ ] **Webhook Handler**: Build secure webhook endpoint for Duffel order updates and payment confirmations
+- [ ] **Fallback Logic**: Implement Amadeus fallback for failed Duffel bookings with state cleanup
+- [ ] **Payment Tokenization**: Replace Stripe direct integration with Duffel Payments tokenization
+- [ ] **Testing Environment**: Set up Duffel sandbox with "Duffel Airways" for comprehensive integration testing
 
-**Phase 2: Production Deployment**
-- [ ] **Amadeus Production Credentials**: Upgrade from test to production API access
-- [ ] **Consolidator Partnership**: Establish relationship with ARC/IATA-accredited consolidator for ticket issuance
-- [ ] **Stripe Production Setup**: Live payment processing with proper statement descriptors
-- [ ] **Environment Configuration**: Production secrets management and deployment
+**Phase 2: Legal & Compliance Foundation**
+- [ ] **User Consent Flow**: Implement explicit auto-booking authorization UI with FTC-compliant language
+- [ ] **Terms of Service**: Update ToS covering Duffel as Merchant of Record and autonomous transactions
+- [ ] **Privacy Policy**: GDPR/CCPA compliant privacy policy including Duffel data sharing
+- [ ] **Emergency Controls**: "Stop All Auto-Bookings" toggle and individual watch cancellation
+- [ ] **Dispute Handling**: Process for chargebacks appearing as "Duffel" on customer statements
+
+**Phase 3: Production Deployment**
+- [ ] **Duffel Production Credentials**: Upgrade from test to production Duffel API access
+- [ ] **Revenue Reconciliation**: Set up Duffel balance tracking and payout monitoring
+- [ ] **Amadeus Coexistence**: Maintain Amadeus for manual search while using Duffel for auto-booking
+- [ ] **Environment Configuration**: Production secrets management for dual-provider setup
 
 **Phase 3: User Experience Polish**
 - [ ] **Dashboard Enhancement**: Watch management interface with clear status indicators
