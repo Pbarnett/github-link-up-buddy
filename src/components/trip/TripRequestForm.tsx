@@ -24,6 +24,7 @@ import TripDurationInputs from "./sections/TripDurationInputs";
 import AutoBookingSection from "./sections/AutoBookingSection.tsx";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
+import LiveBookingSummary from "./LiveBookingSummary";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface TripRequestFormProps {
@@ -52,13 +53,14 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
   const { userId } = useCurrentUser();
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const isMobile = useIsMobile();
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(tripFormSchema),
     defaultValues: {
       min_duration: 3,
       max_duration: 7,
-      budget: 1000,
+      max_price: 1000, // Consolidated from budget
       nyc_airports: [],
       other_departure_airport: "",
       destination_airport: "",
@@ -66,7 +68,6 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       nonstop_required: true,
       baggage_included_required: false,
       auto_book_enabled: mode === 'auto', // Set based on mode
-      max_price: null,
       preferred_payment_method_id: null,
     },
   });
@@ -92,7 +93,7 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
               latestDeparture: tripData.latest_departure ? parseISO(tripData.latest_departure) : undefined,
               min_duration: tripData.min_duration,
               max_duration: tripData.max_duration,
-              budget: tripData.budget,
+              max_price: tripData.max_price || tripData.budget || 1000, // Use max_price, fallback to budget for backward compatibility
               nyc_airports: nycAirports,
               other_departure_airport: otherAirport,
               destination_airport: tripData.destination_airport?.length === 3 && tripData.destination_airport === tripData.destination_airport?.toUpperCase() ? tripData.destination_airport : "",
@@ -100,7 +101,6 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
               nonstop_required: tripData.nonstop_required ?? true,
               baggage_included_required: tripData.baggage_included_required ?? false,
               auto_book_enabled: tripData.auto_book_enabled ?? false, // Use nullish coalescing
-              max_price: tripData.max_price,
               preferred_payment_method_id: tripData.preferred_payment_method_id,
             });
           }
@@ -148,10 +148,10 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       latestDeparture: data.latestDeparture,
       min_duration: data.min_duration,
       max_duration: data.max_duration,
-      budget: data.budget,
+      budget: data.max_price, // Map max_price to budget field for backend compatibility
       departure_airports: departureAirports,
       destination_airport: destinationAirport,
-      destination_location_code: destinationAirport, // Add this mapping
+      destination_location_code: destinationAirport, // Same as destination_airport for now
       nonstop_required: data.nonstop_required,
       baggage_included_required: data.baggage_included_required,
       auto_book_enabled: data.auto_book_enabled,
@@ -224,6 +224,52 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       description: `Your trip request has been successfully ${actionText}!${autoBookText}`,
     });
     navigate(`/trip/offers?id=${tripRequest.id}&mode=${mode}`);
+  };
+
+  const handleContinueToPricing = async () => {
+    // Validate only Step 1 fields
+    const step1Fields = [
+      'destination_airport',
+      'destination_other', 
+      'nyc_airports',
+      'other_departure_airport',
+      'earliestDeparture',
+      'latestDeparture',
+      'min_duration',
+      'max_duration'
+    ];
+    
+    const isStep1Valid = await form.trigger(step1Fields);
+    
+    if (!isStep1Valid) {
+      // Validation failed - errors will be displayed automatically
+      return;
+    }
+    
+    // Advance to step 2
+    setCurrentStep(2);
+    
+    // Scroll to top and focus on max price field
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Give DOM time to paint, then move focus
+    requestAnimationFrame(() => {
+      const maxPriceInput = document.querySelector('input[name="max_price"]') as HTMLInputElement;
+      if (maxPriceInput) {
+        maxPriceInput.focus();
+      }
+    });
+  };
+
+  const handleStepSubmit = async (data: FormValues) => {
+    // For auto mode step 1, use the new continue handler
+    if (mode === 'auto' && currentStep === 1) {
+      await handleContinueToPricing();
+      return;
+    }
+    
+    // Otherwise, proceed with actual submission
+    await onSubmit(data);
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -305,31 +351,49 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
 
   // Check if required fields are filled for enabling submit button
   const watchedFields = form.watch();
-  const isFormValid = Boolean(
+  
+  const isStep1Valid = Boolean(
     watchedFields.earliestDeparture &&
     watchedFields.latestDeparture &&
-    watchedFields.budget &&
     watchedFields.min_duration &&
     watchedFields.max_duration &&
     ((watchedFields.nyc_airports && watchedFields.nyc_airports.length > 0) || watchedFields.other_departure_airport) &&
-    (watchedFields.destination_airport || watchedFields.destination_other) &&
-    // Additional validation for auto mode
-    (mode === 'manual' || (watchedFields.auto_book_enabled && watchedFields.max_price))
+    (watchedFields.destination_airport || watchedFields.destination_other)
   );
+  
+  const isStep2Valid = Boolean(
+    watchedFields.max_price &&
+    watchedFields.preferred_payment_method_id &&
+    (mode !== 'auto' || watchedFields.auto_book_consent)
+  );
+  
+  const isFormValid = mode === 'auto' 
+    ? (currentStep === 1 ? isStep1Valid : isStep1Valid && isStep2Valid)
+    : isStep1Valid && (mode === 'manual' || isStep2Valid);
 
-  const buttonText = mode === 'auto' 
-    ? (tripRequestId ? "Update Auto-Booking" : "Enable Auto-Booking")
-    : (watchedFields.auto_book_enabled 
-        ? (tripRequestId ? "Update Auto-Booking" : "Enable Auto-Booking")
-        : (tripRequestId ? "Update Trip Request" : "Search Now"));
+  const buttonText = () => {
+    if (mode === 'auto') {
+      if (currentStep === 1) return "Continue → Pricing";
+      return tripRequestId ? "Update Auto-Booking" : "Start Auto-Booking";
+    }
+    return watchedFields.auto_book_enabled 
+      ? (tripRequestId ? "Update Auto-Booking" : "Start Auto-Booking")
+      : (tripRequestId ? "Update Trip Request" : "Search Now");
+  };
 
   const getPageTitle = () => {
-    if (mode === 'auto') return 'Set Up Auto-Booking';
+    if (mode === 'auto') {
+      if (currentStep === 1) return 'Trip Basics';
+      return 'Price & Payment';
+    }
     return 'Plan Your Trip';
   };
 
   const getPageDescription = () => {
-    if (mode === 'auto') return 'Configure your travel preferences and booking criteria below.';
+    if (mode === 'auto') {
+      if (currentStep === 1) return 'Tell us where and when you want to travel.';
+      return 'Set your price limit and payment method.';
+    }
     return 'Enter the parameters for your trip below.';
   };
 
@@ -342,7 +406,11 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     </div>
   ) : (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm mx-auto w-full max-w-6xl">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className={`grid gap-6 ${mode === 'auto' && !isMobile ? 'lg:grid-cols-3' : 'grid-cols-1'}`}>
+          {/* Main Form Column */}
+          <div className={`${mode === 'auto' && !isMobile ? 'lg:col-span-2' : 'col-span-1'}`}>
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         {/* Header with back link */}
         <div className="p-6 pb-4 border-b border-gray-100">
           <button
@@ -363,44 +431,81 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
 
         <FormProvider {...form}>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="p-6">
-              {/* Primary Travel Details */}
-              <div className="bg-blue-50 rounded-lg border border-blue-200 p-6 mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</span>
-                  Travel Details
-                </h2>
-                <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2 lg:gap-8'}`}>
-                  <EnhancedDestinationSection control={form.control} watch={form.watch} />
-                  <DepartureAirportsSection control={form.control} />
-                </div>
-                <div className="mt-6">
-                  <DateRangeField control={form.control} />
-                </div>
-              </div>
-
-              {/* Trip Preferences */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="bg-gray-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</span>
-                  Trip Preferences
-                </h2>
-                <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2 lg:gap-8'}`}>
-                  <EnhancedBudgetSection control={form.control} />
-                  <TripDurationInputs control={form.control} />
-                </div>
-              </div>
-
-              {/* Advanced Options - Only show for auto mode */}
+            <form onSubmit={form.handleSubmit(handleStepSubmit)} className="p-6">
+              {/* Step Indicator for Auto Mode */}
               {mode === 'auto' && (
-                <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <span className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
-                    Auto-Booking Settings
-                  </h2>
-                  <div className="space-y-6">
+                <div className="flex items-center justify-center mb-8">
+                  <div className="flex items-center space-x-4">
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                      currentStep === 1 ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'
+                    }`}>
+                      1
+                    </div>
+                    <div className="text-sm text-gray-500">Trip Basics</div>
+                    <div className="w-12 h-px bg-gray-300"></div>
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                      currentStep === 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500'
+                    }`}>
+                      2
+                    </div>
+                    <div className="text-sm text-gray-500">Price & Payment</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 1: Trip Basics (for auto mode) or All fields (for manual mode) */}
+              {(mode === 'manual' || currentStep === 1) && (
+                <>
+                  {/* Primary Travel Details */}
+                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      {mode === 'auto' ? 'Where & When' : 'Travel Details'}
+                    </h2>
+                    <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2 lg:gap-8'}`}>
+                      <EnhancedDestinationSection control={form.control} watch={form.watch} />
+                      <DepartureAirportsSection control={form.control} />
+                    </div>
+                    <div className="mt-6">
+                      <DateRangeField control={form.control} />
+                    </div>
+                  </div>
+
+                  {/* Trip Duration for Step 1 */}
+                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      Trip Length
+                    </h2>
+                    <TripDurationInputs control={form.control} />
+                  </div>
+                </>
+              )}
+
+              {/* Step 2: Price & Payment (auto mode only) */}
+              {mode === 'auto' && currentStep === 2 && (
+                <>
+                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      Maximum Price
+                    </h2>
+                    <EnhancedBudgetSection control={form.control} />
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      Payment & Authorization
+                    </h2>
                     <AutoBookingSection control={form.control} mode={mode} />
                   </div>
+                </>
+              )}
+
+              {/* Manual mode: Show budget in Trip Preferences */}
+              {mode === 'manual' && (
+                <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    Budget
+                  </h2>
+                  <EnhancedBudgetSection control={form.control} />
                 </div>
               )}
 
@@ -410,14 +515,21 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => navigate("/trip/new")} 
+                    onClick={() => {
+                      if (mode === 'auto' && currentStep === 2) {
+                        setCurrentStep(1);
+                      } else {
+                        navigate("/trip/new");
+                      }
+                    }} 
                     disabled={isSubmitting}
                     className="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 h-11"
                   >
-                    Back
+                    {mode === 'auto' && currentStep === 2 ? '← Back to Basics' : 'Back'}
                   </Button>
                   <Button 
-                    type="submit" 
+                    type={mode === 'auto' && currentStep === 1 ? "button" : "submit"}
+                    onClick={mode === 'auto' && currentStep === 1 ? handleContinueToPricing : undefined}
                     disabled={isSubmitting || !isFormValid} 
                     className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-medium disabled:opacity-50 min-w-[160px] h-11"
                   >
@@ -426,21 +538,34 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         {tripRequestId ? "Updating..." : "Processing..."}
                       </>
-                    ) : buttonText}
+                    ) : buttonText()}
                   </Button>
                 </div>
               </div>
             </form>
           </Form>
-        </FormProvider>
+            </FormProvider>
 
-        {/* Sticky Actions for Desktop */}
-        <StickyFormActions
-          isSubmitting={isSubmitting}
-          isFormValid={isFormValid}
-          buttonText={buttonText}
-          onSubmit={form.handleSubmit(onSubmit)}
-        />
+            {/* Sticky Actions for Desktop */}
+            <StickyFormActions
+              isSubmitting={isSubmitting}
+              isFormValid={isFormValid}
+              buttonText={buttonText()}
+              onSubmit={form.handleSubmit(handleStepSubmit)}
+            />
+            </div>
+          </div>
+
+          {/* Right Column: Live Summary (Auto Mode Only) */}
+          {mode === 'auto' && (
+            <div className={`${isMobile ? 'order-first' : 'lg:col-span-1'}`}>
+              <LiveBookingSummary 
+                control={form.control} 
+                isVisible={mode === 'auto'}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

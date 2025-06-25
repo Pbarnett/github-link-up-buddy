@@ -12,10 +12,9 @@ import { Input } from "@/components/ui/input";
 
 // Define the allowed field names as an enum for better extensibility
 export enum TripNumberFieldName {
-  Budget = "budget",
+  MaxPrice = "max_price",
   MinDuration = "min_duration",
-  MaxDuration = "max_duration",
-  MaxPrice = "max_price"
+  MaxDuration = "max_duration"
 }
 
 interface TripNumberFieldProps {

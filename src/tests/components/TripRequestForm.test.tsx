@@ -170,13 +170,13 @@ describe('TripRequestForm - Submission Logic', () => {
     fireEvent.change(screen.getByLabelText(/earliest departure date/i), { target: { value: '2024-08-15' } });
     fireEvent.change(screen.getByLabelText(/latest departure date/i), { target: { value: '2024-08-20' } });
 
-    // EnhancedBudgetSection - "What's your budget?"
-    // Input for budget, assume label "Budget" or similar. It uses InputWithSlider.
-    // The input inside InputWithSlider has id="budget" and type="number".
+    // EnhancedBudgetSection - "What's your maximum price?"
+    // Input for max_price, assume label "Maximum Price" or similar. It uses InputWithSlider.
+    // The input inside InputWithSlider has id="max_price" and type="number".
     // Let's try to find it by role 'spinbutton' (for type number) or a label if one is associated.
-    // The <Label htmlFor="budget">Budget</Label> exists.
-    await userEvent.clear(screen.getByLabelText(/budget/i)); // Clear default value
-    await userEvent.type(screen.getByLabelText(/budget/i), '1200');
+    // The <Label htmlFor="max_price">Maximum Price</Label> exists.
+    await userEvent.clear(screen.getByLabelText(/maximum price/i)); // Clear default value
+    await userEvent.type(screen.getByLabelText(/maximum price/i), '1200');
 
 
     // TripDurationInputs - "How long is your trip?"
@@ -207,7 +207,7 @@ describe('TripRequestForm - Submission Logic', () => {
     expect(submittedPayload).toHaveProperty('departure_airports', ['SFO']);
     expect(submittedPayload.earliest_departure).toMatch(/^2024-08-15T\d{2}:\d{2}:\d{2}\.\d{3}Z$/); // Check date format
     expect(submittedPayload.latest_departure).toMatch(/^2024-08-20T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-    expect(submittedPayload).toHaveProperty('budget', 1200);
+    expect(submittedPayload).toHaveProperty('budget', 1200); // Backend still expects budget field
     expect(submittedPayload).toHaveProperty('min_duration', 5);
     expect(submittedPayload).toHaveProperty('max_duration', 10);
     expect(submittedPayload).toHaveProperty('user_id', 'test-user-id');
@@ -236,8 +236,8 @@ const fillBaseFormFields = async () => {
   await userEvent.type(screen.getByPlaceholderText(/e\.g\. SFO, BOS/i), 'SFO');
   fireEvent.change(screen.getByLabelText(/earliest departure date/i), { target: { value: '2024-10-15' } });
   fireEvent.change(screen.getByLabelText(/latest departure date/i), { target: { value: '2024-10-20' } });
-  await userEvent.clear(screen.getByLabelText(/budget/i));
-  await userEvent.type(screen.getByLabelText(/budget/i), '1200');
+  await userEvent.clear(screen.getByLabelText(/maximum price/i));
+  await userEvent.type(screen.getByLabelText(/maximum price/i), '1200');
   await userEvent.clear(screen.getByLabelText(/minimum trip duration/i));
   await userEvent.type(screen.getByLabelText(/minimum trip duration/i), '5');
   await userEvent.clear(screen.getByLabelText(/maximum trip duration/i));
@@ -368,7 +368,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
 
     // Do NOT fill max_price
 
-    const submitButton = screen.getByRole('button', { name: /enable auto-booking/i });
+    const submitButton = screen.getByRole('button', { name: /start auto-booking/i });
     await userEvent.click(submitButton);
 
     await waitFor(() => {
@@ -426,7 +426,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     await userEvent.click(paymentMethodSelect);
     await userEvent.click(screen.getByText(/Visa •••• 4242 \(Default\) \(Work Card\)/i));
 
-    const submitButton = screen.getByRole('button', { name: /enable auto-booking/i });
+    const submitButton = screen.getByRole('button', { name: /start auto-booking/i });
     await userEvent.click(submitButton);
 
     await waitFor(() => expect(mockInsert).toHaveBeenCalledTimes(1));
