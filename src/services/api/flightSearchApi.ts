@@ -32,31 +32,35 @@ export interface FlightSearchDetail {
 }
 
 /**
- * Expected successful response structure from the 'flight-search' Supabase edge function.
+ * Expected successful response structure from the 'flight-search-v2' Supabase edge function.
  */
 export interface FlightSearchResponse {
-  /** Number of trip requests processed by the function. */
-  requestsProcessed: number;
-  /** Total number of new flight matches inserted into the database. */
-  matchesInserted: number;
-  /** Total time taken for the function to execute, in milliseconds. */
-  totalDurationMs: number;
-  /** Indicates if relaxed criteria were used for any part of the search. */
-  relaxedCriteriaUsed: boolean;
-  /** Indicates if the search was restricted to exact destinations only. */
-  exactDestinationOnly: boolean;
-  /** Detailed results for each processed trip request. */
-  details: FlightSearchDetail[];
+  /** Number of flight offers inserted by the function. */
+  inserted: number;
+  /** Success message from the function. */
+  message: string;
   /** Optional: A top-level success indicator, true if no major errors transforming the function's output. */
   success?: boolean; // Kept as optional, can be set by invokeFlightSearch wrapper
-  /** Optional: A top-level message, mainly for client-side use if needed. */
-  message?: string; // Kept as optional, can be set by invokeFlightSearch wrapper
-  /** Pool 1: Best Value/Perfect offers */
-  pool1: ScoredOffer[];
-  /** Pool 2: Low Cost/Close offers */
-  pool2: ScoredOffer[];
-  /** Pool 3: Premium/Backup offers */
-  pool3: ScoredOffer[];
+  
+  // Legacy fields for backward compatibility
+  /** @deprecated Use inserted instead */
+  requestsProcessed?: number;
+  /** @deprecated Use inserted instead */
+  matchesInserted?: number;
+  /** @deprecated Not used in v2 */
+  totalDurationMs?: number;
+  /** @deprecated Not used in v2 */
+  relaxedCriteriaUsed?: boolean;
+  /** @deprecated Not used in v2 */
+  exactDestinationOnly?: boolean;
+  /** @deprecated Not used in v2 */
+  details?: FlightSearchDetail[];
+  /** @deprecated Not used in v2 */
+  pool1?: ScoredOffer[];
+  /** @deprecated Not used in v2 */
+  pool2?: ScoredOffer[];
+  /** @deprecated Not used in v2 */
+  pool3?: ScoredOffer[];
 }
 
 // FlightSearchResponseWithPools interface removed
@@ -93,7 +97,7 @@ export const invokeFlightSearch = async (
   logger.info("[🔍 FLIGHT-SEARCH-DEBUG] Starting flight search with payload:", payload);
   
   const { data, error: invokeError } = await supabase.functions.invoke(
-    "flight-search",
+    "flight-search-v2",
     { body: payload }
   );
   
@@ -117,18 +121,24 @@ export const invokeFlightSearch = async (
     } as FlightSearchError;
   }
 
-  // Assuming 'data' from Supabase function might contain poolA, poolB, poolC
-  // and other fields of FlightSearchResponse directly.
-  if (data && typeof data.requestsProcessed === 'number') {
-    const { poolA, poolB, poolC, ...restOfData } = data;
+  // Handle flight-search-v2 response structure
+  if (data && typeof data.inserted === 'number') {
+    // New V2 response format
     return {
-        ...restOfData,
-        pool1: poolA || [],
-        pool2: poolB || [],
-        pool3: poolC || [],
+        inserted: data.inserted,
+        message: data.message,
         success: true,
-        message: `Flight search processed ${data.requestsProcessed} request(s).`
-    } as FlightSearchResponse; // Cast to ensure type compatibility
+        // Legacy compatibility fields
+        requestsProcessed: 1,
+        matchesInserted: data.inserted,
+        totalDurationMs: 0,
+        relaxedCriteriaUsed: payload.relaxedCriteria,
+        exactDestinationOnly: true,
+        details: [],
+        pool1: [],
+        pool2: [],
+        pool3: [],
+    } as FlightSearchResponse;
   }
 
   logger.warn("Flight search function returned unexpected data format:", { responseData: data });
