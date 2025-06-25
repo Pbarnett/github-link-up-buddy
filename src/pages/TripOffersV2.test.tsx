@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor, within, cleanup } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach, type Mock } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import TripOffersV2 from './TripOffersV2';
 import * as useFlightOffersHook from '@/flightSearchV2/useFlightOffers';
 import { FlightOfferV2 } from '@/flightSearchV2/types';
@@ -7,12 +8,13 @@ import { FlightOfferV2 } from '@/flightSearchV2/types';
 // Mock the useFlightOffers hook
 vi.mock('@/flightSearchV2/useFlightOffers');
 
-// Mock react-router-dom
+// Mock react-router-dom hooks only
 vi.mock('react-router-dom', async () => {
     const actual = await import('react-router-dom');
     return {
         ...actual,
         useParams: () => ({ tripId: 'test-trip-id' }), // Default mock for useParams
+        useNavigate: () => vi.fn(), // Mock useNavigate
     };
 });
 
@@ -37,6 +39,15 @@ vi.mock('@/components/TripOffersV2Skeleton', () => ({
     default: () => <div data-testid="trip-offers-v2-skeleton">Loading Skeleton...</div>,
 }));
 
+// Helper function to render component wrapped in MemoryRouter
+const renderWithRouter = (component: React.ReactElement) => {
+  return render(
+    <MemoryRouter>
+      {component}
+    </MemoryRouter>
+  );
+};
+
 
 describe('TripOffersV2 Component', () => {
   beforeEach(() => {
@@ -50,7 +61,7 @@ describe('TripOffersV2 Component', () => {
 
   it('should display FlagDisabledPlaceholder when feature is not enabled', () => {
     mockUseFlightOffers.mockReturnValueOnce({ ...defaultMockHookReturn, isFeatureEnabled: false });
-    render(<TripOffersV2 />);
+    renderWithRouter(<TripOffersV2 />);
     expect(screen.getByText('Feature Disabled')).toBeInTheDocument();
     expect(screen.getByText(/The Flight Search V2 feature is currently disabled/)).toBeInTheDocument();
     expect(screen.queryByTestId('trip-offers-v2-skeleton')).not.toBeInTheDocument();
@@ -59,7 +70,7 @@ describe('TripOffersV2 Component', () => {
 
   it('should display loading skeleton when isLoading is true and feature is enabled', () => {
     mockUseFlightOffers.mockReturnValueOnce({ ...defaultMockHookReturn, isLoading: true, isFeatureEnabled: true });
-    render(<TripOffersV2 />);
+    renderWithRouter(<TripOffersV2 />);
     expect(screen.getByTestId('trip-offers-v2-skeleton')).toBeInTheDocument();
     expect(screen.getByText('Loading Skeleton...')).toBeInTheDocument();
   });
@@ -68,7 +79,7 @@ describe('TripOffersV2 Component', () => {
     const errorMessage = 'Failed to fetch offers';
     const refetchMock = vi.fn();
     mockUseFlightOffers.mockReturnValueOnce({ ...defaultMockHookReturn, error: new Error(errorMessage), isFeatureEnabled: true, refetch: refetchMock });
-    render(<TripOffersV2 />);
+    renderWithRouter(<TripOffersV2 />);
     expect(screen.getByText('Error Loading Offers')).toBeInTheDocument();
     expect(screen.getByText(errorMessage)).toBeInTheDocument();
 
@@ -80,14 +91,14 @@ describe('TripOffersV2 Component', () => {
 
   it('should display "No Offers Found Yet" empty state card when no offers and not loading/error, and feature is enabled', () => {
     mockUseFlightOffers.mockReturnValueOnce({ ...defaultMockHookReturn, offers: [], isFeatureEnabled: true });
-    render(<TripOffersV2 />);
+    renderWithRouter(<TripOffersV2 />);
     expect(screen.getByText('No Offers Found Yet')).toBeInTheDocument();
     expect(screen.getByText(/We couldn't find any flight offers matching your criteria/)).toBeInTheDocument();
   });
 
   it('should display table with flight offers data when offers are available and feature is enabled', () => {
     mockUseFlightOffers.mockReturnValueOnce({ ...defaultMockHookReturn, offers: mockOffersData, isFeatureEnabled: true });
-    render(<TripOffersV2 />);
+    renderWithRouter(<TripOffersV2 />);
 
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Route' })).toBeInTheDocument();
@@ -131,7 +142,7 @@ describe('TripOffersV2 Component', () => {
   it('should format currency correctly (e.g., EUR)', () => {
     const offerWithEUR = { ...mockOffersData[0], priceTotal: 150.00, priceCurrency: 'EUR' };
     mockUseFlightOffers.mockReturnValueOnce({ ...defaultMockHookReturn, offers: [offerWithEUR], isFeatureEnabled: true });
-    render(<TripOffersV2 />);
+    renderWithRouter(<TripOffersV2 />);
     expect(screen.getByText(/€150\.00/)).toBeInTheDocument();
   });
 
@@ -144,7 +155,7 @@ describe('TripOffersV2 Component', () => {
         { ...mockOffersData[0], id:'offer-invalid-date', departDt: 'invalid-date-string', returnDt: null, originIata: 'INV', destinationIata: 'LID' }
     ];
     mockUseFlightOffers.mockReturnValueOnce({ ...defaultMockHookReturn, offers: offersWithSpecificDates, isFeatureEnabled: true });
-    render(<TripOffersV2 />);
+    renderWithRouter(<TripOffersV2 />);
 
     // For offer-valid-no-return (originIata: DT1)
     const validNoReturnRow = screen.getByText(/DT1 →/).closest('tr');
@@ -179,7 +190,7 @@ describe('TripOffersV2 Component', () => {
   it('should call refetch when the main "Refresh Offers" button (data state) is clicked', () => {
     const refetchMock = vi.fn();
     mockUseFlightOffers.mockReturnValueOnce({ ...defaultMockHookReturn, offers: mockOffersData, isLoading: false, isFeatureEnabled: true, refetch: refetchMock });
-    const { container } = render(<TripOffersV2 />);
+    const { container } = renderWithRouter(<TripOffersV2 />);
 
     // Assuming the data state's refresh button is the one inside the main card content, possibly styled differently
     // Let's assume it's the one that's a direct child of a div with class "mt-6 flex justify-end"
@@ -198,7 +209,7 @@ describe('TripOffersV2 Component', () => {
   it('should call refetch when "Refresh Offers" button (empty state) is clicked', () => {
     const refetchMock = vi.fn();
     mockUseFlightOffers.mockReturnValueOnce({ ...defaultMockHookReturn, offers: [], isLoading: false, isFeatureEnabled: true, refetch: refetchMock });
-    render(<TripOffersV2 />);
+    renderWithRouter(<TripOffersV2 />);
 
     // Ensure we are in the empty state by looking for the EmptyStateCard's title
     const emptyStateCard = screen.getByText('No Offers Found Yet').closest('div[class*="shadow-lg"]'); // Find the card containing the title
@@ -228,13 +239,17 @@ describe('TripOffersV2 Component', () => {
 
     // Initial: Loading
     mockUseFlightOffers.mockImplementation(() => ({ ...defaultMockHookReturn, isLoading: true, isFeatureEnabled: true, refetch: refetchMock }));
-    const { rerender } = render(<TripOffersV2 />); // Initial render in loading state
+    const { rerender } = renderWithRouter(<TripOffersV2 />); // Initial render in loading state
     expect(screen.getByTestId('trip-offers-v2-skeleton')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument(); // Table should not be there
 
     // Update: Data loaded
     mockUseFlightOffers.mockImplementation(() => ({ ...defaultMockHookReturn, isLoading: false, offers: mockOffersData, isFeatureEnabled: true, refetch: refetchMock }));
-    rerender(<TripOffersV2 />); // Rerender with new mock state (data loaded)
+    rerender(
+      <MemoryRouter>
+        <TripOffersV2 />
+      </MemoryRouter>
+    ); // Rerender with new mock state (data loaded)
 
     await waitFor(() => {
         // Skeleton should be gone
@@ -250,13 +265,17 @@ describe('TripOffersV2 Component', () => {
 
     // Initial: Loading
     mockUseFlightOffers.mockImplementation(() => ({ ...defaultMockHookReturn, isLoading: true, isFeatureEnabled: true, refetch: refetchMock }));
-    const { rerender } = render(<TripOffersV2 />); // Initial render in loading state
+    const { rerender } = renderWithRouter(<TripOffersV2 />); // Initial render in loading state
     expect(screen.getByTestId('trip-offers-v2-skeleton')).toBeInTheDocument();
     expect(screen.queryByText('No Offers Found Yet')).not.toBeInTheDocument(); // Empty state should not be there
 
     // Update: Empty data
     mockUseFlightOffers.mockImplementation(() => ({ ...defaultMockHookReturn, isLoading: false, offers: [], isFeatureEnabled: true, refetch: refetchMock }));
-    rerender(<TripOffersV2 />); // Rerender with new mock state (empty data)
+    rerender(
+      <MemoryRouter>
+        <TripOffersV2 />
+      </MemoryRouter>
+    ); // Rerender with new mock state (empty data)
 
     await waitFor(() => {
         // Skeleton should be gone
