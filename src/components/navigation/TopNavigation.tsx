@@ -10,17 +10,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   PlaneTakeoff,
-  Search,
+  Home,
   Calendar,
-  User,
-  Wallet,
   Settings,
+  User,
+  CreditCard,
   LogOut,
   Menu,
-  X
+  ChevronDown,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
@@ -41,6 +46,7 @@ const TopNavigation = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     // Get initial user
@@ -66,30 +72,34 @@ const TopNavigation = () => {
     navigate('/');
   };
 
-  const navigationItems = [
+  const handleFindFlights = async () => {
+    setIsNavigating(true);
+    navigate('/trip/new');
+    // Reset after a short delay to handle the loading state
+    setTimeout(() => setIsNavigating(false), 1000);
+  };
+
+  // Primary navigation items (left side)
+  const primaryNavItems = [
     {
-      name: 'Search Flights',
-      href: '/trip/new',
-      icon: Search,
-      description: 'Find and book flights'
+      name: 'Dashboard',
+      href: '/dashboard',
+      icon: Home,
     },
     {
       name: 'Auto-Booking',
       href: '/trip/new?mode=auto',
       icon: Settings,
-      description: 'Set up automatic booking'
-    },
-    {
-      name: 'My Trips',
-      href: '/dashboard',
-      icon: Calendar,
-      description: 'View your bookings'
     }
   ];
 
   const isActive = (path: string) => {
-    if (path === '/dashboard' && location.pathname === '/dashboard') return true;
-    if (path === '/trip/new' && location.pathname.startsWith('/trip')) return true;
+    if (path === '/dashboard') {
+      return location.pathname === '/dashboard';
+    }
+    if (path === '/trip/new?mode=auto') {
+      return location.pathname === '/trip/new' && location.search.includes('mode=auto');
+    }
     return location.pathname === path;
   };
 
@@ -126,48 +136,106 @@ const TopNavigation = () => {
           </span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-1 flex-1">
-          {navigationItems.map((item) => {
+        {/* Primary Navigation (left side) - Desktop */}
+        <div className="hidden md:flex items-center space-x-6 flex-1">
+          {primaryNavItems.map((item) => {
             const Icon = item.icon;
+            const active = isActive(item.href);
             return (
               <Link
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  "flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                  isActive(item.href)
-                    ? "bg-primary/10 text-primary border border-primary/20"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  "nav-link px-3 py-2 inline-flex items-center gap-2 text-sm font-medium transition-all duration-200 relative",
+                  active
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground hover:border-b-2 hover:border-primary"
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="w-4 h-4" />
                 <span>{item.name}</span>
-                {isActive(item.href) && (
-                  <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                    Active
-                  </Badge>
-                )}
               </Link>
             );
           })}
         </div>
 
-        {/* Right side - User menu */}
+        {/* Right side actions */}
         <div className="flex items-center space-x-4 ml-auto">
-          {/* Mobile menu button */}
+          {/* Find Flights CTA - Desktop */}
           <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            onClick={handleFindFlights}
+            className="hidden md:inline-flex bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2"
+            disabled={isNavigating}
+            aria-busy={isNavigating}
           >
-            {isMobileMenuOpen ? (
-              <X className="h-5 w-5" />
+            {isNavigating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
             ) : (
-              <Menu className="h-5 w-5" />
+              'Find Flights'
             )}
           </Button>
+
+          {/* Mobile menu button */}
+          <Popover open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 mr-4" align="end">
+              <div className="space-y-4">
+                {/* Mobile navigation items */}
+                <div className="space-y-2">
+                  {primaryNavItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.href);
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={cn(
+                          "flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full",
+                          active
+                            ? "bg-primary/10 text-primary border border-primary/20"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        )}
+                      >
+                        <Icon className="h-5 w-5" />
+                        <span>{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+                
+                {/* Mobile Find Flights CTA */}
+                <Button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    handleFindFlights();
+                  }}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3"
+                  disabled={isNavigating}
+                >
+                  {isNavigating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    'Find Flights'
+                  )}
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {/* User dropdown */}
           {user && !isLoading ? (
@@ -183,6 +251,7 @@ const TopNavigation = () => {
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
+                  <ChevronDown className="h-3 w-3 absolute -bottom-1 -right-1 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -197,6 +266,9 @@ const TopNavigation = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                  Profile & Settings
+                </DropdownMenuLabel>
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="flex items-center">
                     <User className="mr-2 h-4 w-4" />
@@ -205,8 +277,8 @@ const TopNavigation = () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/wallet" className="flex items-center">
-                    <Wallet className="mr-2 h-4 w-4" />
-                    <span>Wallet</span>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    <span>Payment Methods</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -224,43 +296,6 @@ const TopNavigation = () => {
           )}
         </div>
       </div>
-
-      {/* Mobile Navigation Menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur">
-          <div className="container py-4 space-y-2">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200",
-                    isActive(item.href)
-                      ? "bg-primary/10 text-primary border border-primary/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  <div className="flex flex-col">
-                    <span>{item.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {item.description}
-                    </span>
-                  </div>
-                  {isActive(item.href) && (
-                    <Badge variant="secondary" className="text-xs px-1.5 py-0.5 ml-auto">
-                      Active
-                    </Badge>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </nav>
   );
 };
