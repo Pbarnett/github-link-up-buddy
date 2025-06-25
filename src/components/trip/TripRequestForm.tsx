@@ -528,7 +528,8 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                     {mode === 'auto' && currentStep === 2 ? '← Back to Basics' : 'Back'}
                   </Button>
                   <Button 
-                    type="submit" 
+                    type={mode === 'auto' && currentStep === 1 ? "button" : "submit"}
+                    onClick={mode === 'auto' && currentStep === 1 ? handleContinueToPricing : undefined}
                     disabled={isSubmitting || !isFormValid} 
                     className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-medium disabled:opacity-50 min-w-[160px] h-11"
                   >
