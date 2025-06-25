@@ -26,14 +26,23 @@ export default defineConfig({
       ],
     },
 
-    setupFiles: ['src/tests/setupTests.ts'],
+    setupFiles: ['src/tests/setupTests.ts', 'src/tests/setupEdgeFunctions.ts'],
     types: ['@testing-library/jest-dom'],
 
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Map npm: imports to actual npm packages for testing
+      'npm:resend': path.resolve(__dirname, 'node_modules/resend'),
+      // Map Deno imports to mocks for testing
+      'https://deno.land/std@0.177.0/http/server.ts': path.resolve(__dirname, 'src/tests/mocks/deno-server.ts'),
+      'https://esm.sh/@supabase/supabase-js@2': path.resolve(__dirname, 'node_modules/@supabase/supabase-js'),
     },
+  },
+  define: {
+    // Mock Deno environment for edge function tests
+    'typeof Deno': '"object"',
   },
   optimizeDeps: {
     include: [
