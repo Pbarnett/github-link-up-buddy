@@ -81,7 +81,7 @@ describe('TripRequestForm Mode Handling', () => {
 
     expect(screen.getByText('Set Up Auto-Booking')).toBeInTheDocument();
     expect(screen.getByText('Configure your travel preferences and booking criteria below.')).toBeInTheDocument();
-    expect(screen.getByText('Enable Auto-Booking')).toBeInTheDocument();
+    expect(screen.getByText('Start Auto-Booking')).toBeInTheDocument();
   });
 
   test('should show auto-booking section in auto mode', () => {

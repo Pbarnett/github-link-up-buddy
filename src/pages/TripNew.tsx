@@ -105,12 +105,12 @@ const TripNew = () => {
                     Set maximum price limits
                   </li>
                 </ul>
-                <Button 
-                  onClick={() => navigate('/trip/new?mode=auto')}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3"
-                >
-                  Set Up Auto-Booking
-                </Button>
+                  <Button 
+                    onClick={() => navigate('/trip/new?mode=auto')}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3"
+                  >
+                    Start Auto-Booking
+                  </Button>
               </CardContent>
             </Card>
           </div>
