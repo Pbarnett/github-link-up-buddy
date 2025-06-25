@@ -1,6 +1,7 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getAmadeusAccessToken, priceWithAmadeus } from '../lib/amadeus.ts';
 
 // Define a type for the expected request payload
 interface FlightSearchRequest {
@@ -335,9 +336,11 @@ serve(async (req: Request) => {
       });
     }
 
+
     // In a real app, you'd fetch trip details (origin, dest, dates) from your DB using tripRequestId
     // For now, we pass tripRequestId and maxPrice to the mock Amadeus fetcher.
     const amadeusOffers = await fetchAmadeusOffers(tripRequestId, maxPrice, supabaseClient);
+
 
     if (amadeusOffers.length === 0) {
       return new Response(JSON.stringify({ inserted: 0, message: 'No flight offers found from Amadeus matching criteria.' }), {
