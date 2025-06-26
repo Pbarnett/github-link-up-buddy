@@ -25,6 +25,9 @@ RUN pnpm build
 # Production stage
 FROM nginx:alpine AS production
 
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 # Copy custom nginx configuration
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 
