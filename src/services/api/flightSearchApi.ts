@@ -14,6 +14,13 @@ export interface FlightSearchRequestBody {
   tripRequestId: string;
   /** Whether to use relaxed criteria for the search. */
   relaxedCriteria: boolean;
+  /** Optional filter options for the new filtering architecture */
+  filterOptions?: {
+    budget?: number;
+    currency?: string;
+    nonstop?: boolean;
+    pipelineType?: 'standard' | 'budget' | 'fast';
+  };
 }
 
 /**
@@ -123,50 +130,58 @@ export const invokeFlightSearch = async (
 
   // Handle flight-search-v2 response structure
   if (data && typeof data.inserted === 'number') {
-    // After V2 function inserts offers, fetch them with proper round-trip filtering
-    logger.info('[FlightSearchAPI] V2 function inserted offers, now fetching filtered pools');
+    // After V2 function inserts offers, fetch them using the new filtering architecture
+    logger.info('[FlightSearchAPI] V2 function inserted offers, now fetching filtered pools with new architecture');
     
     try {
-      // Get trip request details to determine if round-trip
-      const { data: tripRequest } = await supabase
-        .from('trip_requests')
-        .select('return_date')
-        .eq('id', payload.tripRequestId)
-        .single();
+      // Import the filtering service here to avoid circular dependencies
+      const { fetchTripOffers } = await import('@/services/tripOffersService');
       
-      const isRoundTrip = !!(tripRequest?.return_date);
+      // Use the new filtering architecture to get filtered offers
+      const filteredOffers = await fetchTripOffers(
+        payload.tripRequestId,
+        payload.filterOptions
+      );
       
-      // Build filtered query
-      let query = supabase
-        .from('flight_offers_v2')
-        .select('*')
-        .eq('trip_request_id', payload.tripRequestId);
+      logger.info(`[FlightSearchAPI] New filtering architecture returned ${filteredOffers.length} filtered offers`);
       
-      // Apply round-trip filter if needed
-      if (isRoundTrip) {
-        query = query.not('return_dt', 'is', null);
-        logger.info('[FlightSearchAPI] Applied round-trip filter to offers query');
-      }
-      
-      const { data: offers } = await query
-        .order('price_total', { ascending: true })
-        .limit(50);
-      
-      // Transform V2 offers to pool format (simple distribution)
-      const transformedOffers = (offers || []).map(offer => ({
+      // Transform to pool format
+      const transformedOffers = filteredOffers.map(offer => ({
         id: offer.id,
-        price: offer.price_total,
-        airline: offer.origin_iata + '-' + offer.destination_iata,
+        price: offer.price,
+        airline: offer.airline,
         score: 1.0,
-        isRoundTrip: !!offer.return_dt
+        isRoundTrip: !!(offer.return_date && offer.return_date.trim() !== '')
       }));
       
-      logger.info(`[FlightSearchAPI] Fetched ${transformedOffers.length} ${isRoundTrip ? 'round-trip' : 'any'} offers for pools`);
+      // Distribute offers into pools using different strategies based on filter type
+      const pipelineType = payload.filterOptions?.pipelineType || 'standard';
+      let pool1: any[], pool2: any[], pool3: any[];
       
-      // Distribute offers into pools (simple strategy)
-      const pool1 = transformedOffers.slice(0, 17);
-      const pool2 = transformedOffers.slice(17, 34);
-      const pool3 = transformedOffers.slice(34, 50);
+      switch (pipelineType) {
+        case 'budget':
+          // Budget-focused distribution: cheapest first
+          const sortedByPrice = [...transformedOffers].sort((a, b) => a.price - b.price);
+          pool1 = sortedByPrice.slice(0, 20);
+          pool2 = sortedByPrice.slice(20, 35);
+          pool3 = sortedByPrice.slice(35, 50);
+          break;
+        
+        case 'fast':
+          // Fast distribution: smaller pools for quicker loading
+          pool1 = transformedOffers.slice(0, 10);
+          pool2 = transformedOffers.slice(10, 20);
+          pool3 = transformedOffers.slice(20, 30);
+          break;
+        
+        case 'standard':
+        default:
+          // Standard distribution: balanced pools
+          pool1 = transformedOffers.slice(0, 17);
+          pool2 = transformedOffers.slice(17, 34);
+          pool3 = transformedOffers.slice(34, 50);
+          break;
+      }
       
       return {
         inserted: data.inserted,
@@ -223,15 +238,25 @@ export const invokeFlightSearch = async (
 /**
  * Fetches flight search results, including specific pools.
  * This function now directly returns the result of invokeFlightSearch as its structure is aligned.
+ * Now supports the new filtering architecture via filterOptions parameter.
  */
 export const fetchFlightSearch = async (
   tripRequestId: string,
-  relaxedCriteria: boolean = false
+  relaxedCriteria: boolean = false,
+  filterOptions?: {
+    budget?: number;
+    currency?: string;
+    nonstop?: boolean;
+    pipelineType?: 'standard' | 'budget' | 'fast';
+  }
 ): Promise<FlightSearchResponse> => { // Updated return type
   const payload: FlightSearchRequestBody = {
     tripRequestId,
     relaxedCriteria,
+    filterOptions,
   };
+  
+  logger.info("[🔍 FLIGHT-SEARCH-API] fetchFlightSearch called with filter options:", filterOptions);
   
   // invokeFlightSearch now returns data in the desired FlightSearchResponse structure
   // including pool1, pool2, pool3.

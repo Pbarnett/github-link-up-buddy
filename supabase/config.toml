@@ -40,3 +40,13 @@ verify_jwt = false
 
 [functions.flight-offers-v2]
 
+[functions.duffel-test]
+
+[functions.duffel-search]
+
+[functions.duffel-book]
+
+[functions.auto-book-duffel]
+
+[functions.debug-env]
+

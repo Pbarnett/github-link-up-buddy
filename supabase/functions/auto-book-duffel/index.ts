@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const DUFFEL_API_KEY = Deno.env.get('DUFFEL_API_KEY');
+const DUFFEL_API_KEY = Deno.env.get('DUFFEL_API_TOKEN_TEST');
 const DUFFEL_BASE_URL = 'https://api.duffel.com';
 
 interface TripRequest {
@@ -56,7 +56,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!DUFFEL_API_KEY) {
-      throw new Error('DUFFEL_API_KEY not configured');
+      throw new Error('DUFFEL_API_TOKEN_TEST not configured');
     }
 
     console.log(`[AutoBookDuffel] Processing trip ID: ${trip.id}`);
@@ -133,7 +133,7 @@ Deno.serve(async (req: Request) => {
       headers: {
         'Authorization': `Bearer ${DUFFEL_API_KEY}`,
         'Content-Type': 'application/json',
-        'Duffel-Version': 'v1',
+        'Duffel-Version': 'v2',
       },
       body: JSON.stringify({
         data: {
@@ -170,7 +170,7 @@ Deno.serve(async (req: Request) => {
     const offersResponse = await fetch(`${DUFFEL_BASE_URL}/air/offers?offer_request_id=${offerRequestId}&limit=10`, {
       headers: {
         'Authorization': `Bearer ${DUFFEL_API_KEY}`,
-        'Duffel-Version': 'v1',
+        'Duffel-Version': 'v2',
       },
     });
 
@@ -205,7 +205,7 @@ Deno.serve(async (req: Request) => {
       headers: {
         'Authorization': `Bearer ${DUFFEL_API_KEY}`,
         'Content-Type': 'application/json',
-        'Duffel-Version': 'v1',
+        'Duffel-Version': 'v2',
       },
       body: JSON.stringify({
         data: {

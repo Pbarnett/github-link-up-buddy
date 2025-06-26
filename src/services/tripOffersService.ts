@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import { FilterFactory, createFilterContext, normalizeOffers } from "@/lib/filtering";
 
 // Type for flight offers from the database (now using V2 table)
 export type Offer = {
@@ -82,85 +83,214 @@ function transformV2ToLegacy(v2Offer: any): Offer {
 }
 
 /**
- * Fetches all flight offers for a given trip request ID
+ * Fetches all flight offers for a given trip request ID with comprehensive filtering
  * First tries flight_offers_v2 table, then falls back to legacy flight_offers table
+ * Applies the new filtering architecture for consistent, robust filtering
  * @param tripRequestId - The UUID of the trip request
- * @returns Promise<Offer[]> - Array of flight offers
+ * @param filterOptions - Optional filtering parameters (budget, nonstop, etc.)
+ * @returns Promise<Offer[]> - Array of filtered flight offers
  */
-export async function fetchTripOffers(tripRequestId: string): Promise<Offer[]> {
-  console.log('[🔍 DB-DEBUG] Fetching trip offers for tripRequestId:', tripRequestId);
+export async function fetchTripOffers(
+  tripRequestId: string,
+  filterOptions?: {
+    budget?: number;
+    currency?: string;
+    nonstop?: boolean;
+    pipelineType?: 'standard' | 'budget' | 'fast';
+  }
+): Promise<Offer[]> {
+  console.log('[🔍 SERVICE] Fetching trip offers for tripRequestId:', tripRequestId);
+  console.log('[🔍 SERVICE] Filter options:', filterOptions);
   
-  // First get the trip request to determine if it's round-trip
+  // Get comprehensive trip request details for filtering context
   const { data: tripRequest, error: tripError } = await supabase
     .from('trip_requests')
-    .select('return_date')
+    .select('*')
     .eq('id', tripRequestId)
     .single();
 
   if (tripError) {
-    console.warn('[🔍 DB-DEBUG] Could not fetch trip request details for filtering:', tripError.message);
+    console.warn('[🔍 SERVICE] Could not fetch trip request details for filtering:', tripError.message);
+    throw new Error(`Failed to fetch trip request: ${tripError.message}`);
   }
 
-  const isRoundTripRequest = !!(tripRequest?.return_date);
-  console.log(`[🔍 DB-DEBUG] Trip request is ${isRoundTripRequest ? 'round-trip' : 'one-way'}`);
+  if (!tripRequest) {
+    throw new Error(`Trip request not found: ${tripRequestId}`);
+  }
+
+  const isRoundTripRequest = !!(tripRequest.return_date);
+  console.log(`[🔍 SERVICE] Trip request is ${isRoundTripRequest ? 'round-trip' : 'one-way'}`);
   
-  // Build query for flight_offers_v2 table with round-trip filtering
+  // Fetch raw offers from V2 table first (without database-level filtering)
   let v2Query = supabase
     .from('flight_offers_v2')
     .select('*')
     .eq('trip_request_id', tripRequestId);
 
-  // Apply round-trip filtering at the database level for V2 table
-  if (isRoundTripRequest) {
-    v2Query = v2Query.not('return_dt', 'is', null);
-    console.log('[🔍 DB-DEBUG] Applied round-trip filter to V2 query (return_dt IS NOT NULL)');
-  }
-
   const { data: v2Data, error: v2Error } = await v2Query.order('price_total', { ascending: true });
 
+  let rawOffers: any[] = [];
+  let usingV2Table = false;
+
   if (!v2Error && v2Data && v2Data.length > 0) {
-    console.log(`[🔍 DB-DEBUG] Found ${v2Data.length} ${isRoundTripRequest ? 'round-trip' : 'any'} offers in flight_offers_v2 table`);
+    console.log(`[🔍 SERVICE] Found ${v2Data.length} raw offers in flight_offers_v2 table`);
+    rawOffers = v2Data;
+    usingV2Table = true;
+  } else {
+    // Fall back to legacy flight_offers table
+    console.log('[🔍 SERVICE] No V2 offers found, checking legacy flight_offers table...');
     
-    // Transform V2 data to legacy format for compatibility
-    const transformedOffers = v2Data.map(transformV2ToLegacy);
+    const { data: legacyData, error: legacyError } = await supabase
+      .from('flight_offers')
+      .select('*')
+      .eq('trip_request_id', tripRequestId)
+      .order('price', { ascending: true });
+
+    if (legacyError) {
+      console.error('[🔍 SERVICE] Error fetching from both tables:', { v2Error, legacyError });
+      throw new Error(`Failed to fetch trip offers: ${legacyError.message}`);
+    }
+
+    rawOffers = legacyData || [];
+    usingV2Table = false;
+  }
+
+  console.log(`[🔍 SERVICE] Retrieved ${rawOffers.length} raw offers from ${usingV2Table ? 'V2' : 'legacy'} table`);
+
+  if (rawOffers.length === 0) {
+    console.log('[🔍 SERVICE] No offers found, returning empty array');
+    return [];
+  }
+
+  // Apply new filtering architecture
+  try {
+    // Create filter context from trip request and options
+    const filterContext = createFilterContext({
+      tripType: isRoundTripRequest ? 'roundtrip' : 'oneway',
+      origin: tripRequest.origin_iata || tripRequest.origin || '',
+      destination: tripRequest.destination_iata || tripRequest.destination || '',
+      departureDate: tripRequest.departure_date || '',
+      returnDate: tripRequest.return_date || undefined,
+      budget: filterOptions?.budget || tripRequest.budget,
+      currency: filterOptions?.currency || tripRequest.currency || 'USD',
+      nonstop: filterOptions?.nonstop ?? tripRequest.nonstop ?? false,
+      passengers: tripRequest.passengers || 1,
+    });
+
+    console.log('[🔍 SERVICE] Created filter context:', {
+      tripType: filterContext.tripType,
+      budget: filterContext.budget,
+      currency: filterContext.currency,
+      nonstop: filterContext.nonstop,
+      offerCount: rawOffers.length
+    });
+
+    // Normalize offers to unified format
+    const normalizedOffers = normalizeOffers(rawOffers, usingV2Table ? 'duffel' : 'amadeus');
+    console.log(`[🔍 SERVICE] Normalized ${normalizedOffers.length} offers`);
+
+    // Create and execute filtering pipeline
+    const pipelineType = filterOptions?.pipelineType || 'standard';
+    const filterPipeline = FilterFactory.createPipeline(pipelineType);
     
-    console.log('[🔍 DB-DEBUG] Sample V2 offers (transformed):', transformedOffers.slice(0, 2));
+    console.log(`[🔍 SERVICE] Executing ${pipelineType} filtering pipeline with ${filterPipeline.getFilters().length} filters`);
+    
+    const filteredOffers = await filterPipeline.execute(normalizedOffers, filterContext);
+    
+    console.log(`[🔍 SERVICE] Filtering completed: ${rawOffers.length} → ${filteredOffers.length} offers`);
+    
+    // Transform filtered offers back to service format
+    const transformedOffers = filteredOffers.map(offer => {
+      if (usingV2Table) {
+        // Find original V2 offer to get complete data
+        const originalOffer = rawOffers.find(raw => raw.id === offer.id);
+        return originalOffer ? transformV2ToLegacy(originalOffer) : transformUnifiedToLegacy(offer);
+      } else {
+        // For legacy offers, find original and return as-is
+        const originalOffer = rawOffers.find(raw => raw.id === offer.id);
+        return originalOffer as Offer || transformUnifiedToLegacy(offer);
+      }
+    });
+
+    console.log(`[🔍 SERVICE] Successfully processed ${transformedOffers.length} filtered offers`);
+    
+    // Log sample of final offers for debugging
+    if (transformedOffers.length > 0) {
+      console.log('[🔍 SERVICE] Sample filtered offers:', transformedOffers.slice(0, 2).map(o => ({
+        id: o.id,
+        price: o.price,
+        airline: o.airline,
+        nonstop: o.nonstop
+      })));
+    }
+
     return transformedOffers;
+
+  } catch (filterError) {
+    console.error('[🔍 SERVICE] Error during filtering:', filterError);
+    
+    // Fallback: return raw offers transformed to legacy format
+    console.log('[🔍 SERVICE] Falling back to raw offers without filtering');
+    
+    if (usingV2Table) {
+      const fallbackOffers = rawOffers.map(transformV2ToLegacy);
+      // Apply basic round-trip filtering as fallback
+      return isRoundTripRequest 
+        ? fallbackOffers.filter(offer => offer.return_date && offer.return_date.trim() !== '')
+        : fallbackOffers;
+    } else {
+      const fallbackOffers = rawOffers as Offer[];
+      // Apply basic round-trip filtering as fallback
+      return isRoundTripRequest 
+        ? fallbackOffers.filter(offer => offer.return_date && offer.return_date.trim() !== '')
+        : fallbackOffers;
+    }
   }
+}
 
-  // Fall back to legacy flight_offers table
-  console.log('[🔍 DB-DEBUG] No V2 offers found, checking legacy flight_offers table...');
-  
-  // Build query for legacy table with round-trip filtering
-  let legacyQuery = supabase
-    .from('flight_offers')
-    .select('*')
-    .eq('trip_request_id', tripRequestId);
+/**
+ * Transform unified offer format back to legacy format
+ * Used when original offer data is not available
+ */
+function transformUnifiedToLegacy(unifiedOffer: any): Offer {
+  const parseDateTime = (isoString: string) => {
+    if (!isoString) return { date: '', time: '' };
+    try {
+      const date = new Date(isoString);
+      return {
+        date: date.toISOString().split('T')[0],
+        time: date.toTimeString().split(' ')[0].substring(0, 5)
+      };
+    } catch {
+      return { date: '', time: '' };
+    }
+  };
 
-  // Apply round-trip filtering at the database level for legacy table
-  if (isRoundTripRequest) {
-    legacyQuery = legacyQuery.not('return_date', 'is', null);
-    console.log('[🔍 DB-DEBUG] Applied round-trip filter to legacy query (return_date IS NOT NULL)');
-  }
-  
-  const { data: legacyData, error: legacyError } = await legacyQuery.order('price', { ascending: true });
+  const departure = parseDateTime(unifiedOffer.segments?.[0]?.departure?.at || '');
+  const returnInfo = parseDateTime(unifiedOffer.segments?.[1]?.departure?.at || '');
 
-  console.log('[🔍 DB-DEBUG] Legacy table response:', { data: legacyData, error: legacyError, count: legacyData?.length || 0 });
-
-  if (legacyError) {
-    console.error('[🔍 DB-DEBUG] Error fetching from both tables:', { v2Error, legacyError });
-    throw new Error(`Failed to fetch trip offers: ${legacyError.message}`);
-  }
-
-  const offers = (legacyData || []) as Offer[];
-  console.log(`[🔍 DB-DEBUG] Successfully fetched ${offers.length} offers from legacy table`);
-  
-  // Log first few offers for debugging
-  if (offers.length > 0) {
-    console.log('[🔍 DB-DEBUG] Sample legacy offers:', offers.slice(0, 3));
-  }
-
-  return offers;
+  return {
+    id: unifiedOffer.id,
+    trip_request_id: unifiedOffer.tripRequestId || '',
+    price: unifiedOffer.totalAmount || 0,
+    airline: unifiedOffer.segments?.[0]?.marketingCarrier?.name || 'Unknown',
+    flight_number: unifiedOffer.segments?.[0]?.marketingCarrier?.flightNumber || 'N/A',
+    departure_date: departure.date,
+    departure_time: departure.time,
+    return_date: returnInfo.date,
+    return_time: returnInfo.time,
+    duration: unifiedOffer.duration || 'N/A',
+    booking_url: unifiedOffer.bookingUrl,
+    carrier_code: unifiedOffer.segments?.[0]?.marketingCarrier?.iataCode,
+    origin_airport: unifiedOffer.segments?.[0]?.origin?.iataCode,
+    destination_airport: unifiedOffer.segments?.[0]?.destination?.iataCode,
+    price_total: unifiedOffer.totalAmount,
+    price_currency: unifiedOffer.currency,
+    cabin_class: unifiedOffer.cabinClass,
+    nonstop: unifiedOffer.isNonstop,
+    bags_included: unifiedOffer.bagsIncluded,
+    mode: 'filtered',
+  };
 }
 
 /**

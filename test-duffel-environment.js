@@ -34,7 +34,7 @@ envFiles.forEach(file => {
   if (exists && file.includes('.env') && !file.includes('example')) {
     try {
       const content = fs.readFileSync(filePath, 'utf8');
-      const hasDuffelKey = content.includes('DUFFEL_API_KEY=duffel_');
+      const hasDuffelKey = content.includes('DUFFEL_API_TOKEN_TEST=duffel_') || content.includes('DUFFEL_API_KEY=duffel_');
       const hasWebhookSecret = content.includes('DUFFEL_WEBHOOK_SECRET=');
       
       console.log(`      ${hasDuffelKey ? '✅' : '❌'} Contains Duffel API key`);
@@ -51,7 +51,7 @@ console.log();
 console.log('2️⃣ Checking environment variables...');
 
 const envVars = [
-  'DUFFEL_API_KEY',
+  'DUFFEL_API_TOKEN_TEST',
   'DUFFEL_WEBHOOK_SECRET',
   'DUFFEL_LIVE'
 ];
@@ -61,7 +61,7 @@ envVars.forEach(varName => {
   const exists = !!value;
   console.log(`   ${exists ? '✅' : '❌'} ${varName} ${exists ? 'set' : 'not set'}`);
   
-  if (exists && varName === 'DUFFEL_API_KEY') {
+  if (exists && varName === 'DUFFEL_API_TOKEN_TEST') {
     const isValidFormat = value.startsWith('duffel_test_') || value.startsWith('duffel_live_');
     console.log(`      ${isValidFormat ? '✅' : '❌'} Valid format ${isValidFormat ? '(duffel_test_* or duffel_live_*)' : '(should start with duffel_test_ or duffel_live_)'}`);
   }
@@ -130,7 +130,7 @@ let needsApiKey = true;
 if (supabaseEnvExists) {
   try {
     const content = fs.readFileSync(path.join(__dirname, 'supabase/.env'), 'utf8');
-    needsApiKey = !content.includes('DUFFEL_API_KEY=duffel_');
+    needsApiKey = !content.includes('DUFFEL_API_TOKEN_TEST=duffel_') && !content.includes('DUFFEL_API_KEY=duffel_');
   } catch (err) {
     // File exists but can't read it
   }
@@ -147,7 +147,7 @@ if (needsApiKey) {
   console.log('      1. Sign up at: https://app.duffel.com/signup');
   console.log('      2. Go to Settings → API Keys');
   console.log('      3. Create test API key');
-  console.log('      4. Add to supabase/.env: DUFFEL_API_KEY=duffel_test_YOUR_KEY');
+  console.log('      4. Add to supabase/.env: DUFFEL_API_TOKEN_TEST=duffel_test_YOUR_KEY');
   console.log();
 }
 

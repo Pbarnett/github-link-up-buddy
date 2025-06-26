@@ -1,179 +1,270 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders } from '../_shared/cors.ts'
+import { createDuffelClient, logDuffelOperation } from '../lib/duffel.ts'
 
-const DUFFEL_API_KEY = Deno.env.get('DUFFEL_API_KEY');
-const DUFFEL_BASE_URL = 'https://api.duffel.com';
-
-interface SearchRequest {
-  origin: string;
-  destination: string;
-  departure_date: string;
-  return_date?: string;
-  passengers: Array<{
-    type: 'adult' | 'child' | 'infant_without_seat';
-  }>;
-  cabin_class?: 'economy' | 'premium_economy' | 'business' | 'first';
+interface DuffelSearchRequest {
+  tripRequestId: string
+  maxPrice?: number
+  cabinClass?: 'economy' | 'premium_economy' | 'business' | 'first'
+  maxResults?: number
 }
 
-console.log('[DuffelSearch] Function initialized');
+interface DuffelSearchResponse {
+  success: boolean
+  inserted: number
+  offersFound: number
+  message: string
+  error?: {
+    message: string
+    phase: string
+    timestamp: string
+  }
+}
 
-Deno.serve(async (req: Request) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  };
+console.log('Starting Duffel Search Function...')
 
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    console.log('🔍 Phase 2: Duffel flight search initiated')
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    )
 
-    if (!DUFFEL_API_KEY) {
-      throw new Error('DUFFEL_API_KEY not configured');
+    if (req.method !== 'POST') {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: { message: 'Method not allowed', phase: 'Request validation', timestamp: new Date().toISOString() }
+      }), {
+        status: 405,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
-    const searchParams: SearchRequest = await req.json();
-    console.log('[DuffelSearch] Search request:', JSON.stringify(searchParams, null, 2));
-
-    // 1. Create offer request with Duffel
-    const offerRequestResponse = await fetch(`${DUFFEL_BASE_URL}/air/offer_requests`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${DUFFEL_API_KEY}`,
-        'Content-Type': 'application/json',
-        'Duffel-Version': 'v1',
-      },
-      body: JSON.stringify({
-        data: {
-          slices: [
-            {
-              origin: searchParams.origin,
-              destination: searchParams.destination,
-              departure_date: searchParams.departure_date,
-            },
-            ...(searchParams.return_date ? [{
-              origin: searchParams.destination,
-              destination: searchParams.origin,
-              departure_date: searchParams.return_date,
-            }] : []),
-          ],
-          passengers: searchParams.passengers,
-          cabin_class: searchParams.cabin_class || 'economy',
-        },
-      }),
-    });
-
-    if (!offerRequestResponse.ok) {
-      const errorText = await offerRequestResponse.text();
-      console.error('[DuffelSearch] Offer request failed:', errorText);
-      throw new Error(`Duffel offer request failed: ${errorText}`);
-    }
-
-    const offerRequestData = await offerRequestResponse.json();
-    const offerRequestId = offerRequestData.data.id;
+    const payload: DuffelSearchRequest = await req.json()
+    console.log('🔍 Search payload:', JSON.stringify(payload, null, 2))
     
-    console.log('[DuffelSearch] Offer request created:', offerRequestId);
+    const { tripRequestId, maxPrice, cabinClass = 'economy', maxResults = 50 } = payload
 
-    // 2. Wait briefly then fetch offers
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    const offersResponse = await fetch(`${DUFFEL_BASE_URL}/air/offers?offer_request_id=${offerRequestId}&limit=50`, {
-      headers: {
-        'Authorization': `Bearer ${DUFFEL_API_KEY}`,
-        'Duffel-Version': 'v1',
-      },
-    });
-
-    if (!offersResponse.ok) {
-      const errorText = await offersResponse.text();
-      console.error('[DuffelSearch] Offers fetch failed:', errorText);
-      throw new Error(`Duffel offers fetch failed: ${errorText}`);
+    if (!tripRequestId) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: { 
+          message: 'tripRequestId is required',
+          phase: 'Request validation',
+          timestamp: new Date().toISOString()
+        }
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
-    const offersData = await offersResponse.json();
-    let offers = offersData.data || [];
+    // Step 1: Get trip request details
+    console.log('🔍 Step 1: Fetching trip request details')
+    const { data: tripRequest, error: tripError } = await supabaseClient
+      .from('trip_requests')
+      .select('*')
+      .eq('id', tripRequestId)
+      .single()
+
+    if (tripError || !tripRequest) {
+      throw new Error(`Trip request not found: ${tripError?.message}`)
+    }
+
+    console.log('🔍 Trip request details:', {
+      origin: tripRequest.departure_airports?.[0] || 'No origin',
+      destination: tripRequest.destination_location_code,
+      departureDate: tripRequest.departure_date,
+      returnDate: tripRequest.return_date,
+      isRoundTrip: !!tripRequest.return_date
+    })
+
+    // Step 2: Create Duffel client and search for flights
+    console.log('🔍 Step 2: Creating Duffel offer request')
+    const duffel = createDuffelClient()
+
+    // Build the offer request
+    const offerRequest = {
+      cabin_class: cabinClass,
+      passengers: [{ type: 'adult' as const }],
+      slices: [
+        {
+          origin: tripRequest.departure_airports?.[0] || 'JFK',
+          destination: tripRequest.destination_location_code || 'LAX',
+          departure_date: tripRequest.departure_date || '2025-07-15'
+        }
+      ]
+    }
+
+    // Add return slice for round-trip
+    if (tripRequest.return_date) {
+      offerRequest.slices.push({
+        origin: tripRequest.destination_location_code || 'LAX',
+        destination: tripRequest.departure_airports?.[0] || 'JFK',
+        departure_date: tripRequest.return_date
+      })
+    }
+
+    logDuffelOperation('Creating offer request', offerRequest)
+
+    // Create offer request with Duffel
+    const createdOfferRequest = await duffel.createOfferRequest(offerRequest)
     
-    console.log(`[DuffelSearch] Retrieved ${offers.length} offers`);
+    logDuffelOperation('Offer request created', {
+      id: createdOfferRequest.id,
+      passengers: createdOfferRequest.passengers.length,
+      slices: createdOfferRequest.slices.length
+    })
 
-    // ROUND-TRIP FILTERING: Ensure only true round-trip results for round-trip searches
-    if (searchParams.return_date) {
-      const beforeFilter = offers.length;
-      
-      // Filter to ensure offers have both outbound and return slices
-      offers = offers.filter((offer: any) => {
-        return offer.slices && offer.slices.length === 2;
-      });
-      
-      // Verify proper routing for round-trip
-      offers = offers.filter((offer: any) => {
-        if (!offer.slices || offer.slices.length !== 2) return false;
-        
-        const outbound = offer.slices[0];
-        const inbound = offer.slices[1];
-        
-        // Verify outbound goes from origin to destination
-        const outboundOrigin = outbound.segments?.[0]?.origin?.iata_code;
-        const outboundDestination = outbound.segments?.[outbound.segments.length - 1]?.destination?.iata_code;
-        
-        // Verify inbound goes from destination back to origin
-        const inboundOrigin = inbound.segments?.[0]?.origin?.iata_code;
-        const inboundDestination = inbound.segments?.[inbound.segments.length - 1]?.destination?.iata_code;
-        
-        return (
-          outboundOrigin === searchParams.origin &&
-          outboundDestination === searchParams.destination &&
-          inboundOrigin === searchParams.destination &&
-          inboundDestination === searchParams.origin
-        );
-      });
-      
-      console.log(`[DuffelSearch] Round-trip filtering: ${beforeFilter} -> ${offers.length} offers (removed ${beforeFilter - offers.length} non-round-trip offers)`);
-    } else {
-      // For one-way searches, ensure offers have only 1 slice
-      const beforeFilter = offers.length;
-      offers = offers.filter((offer: any) => {
-        return offer.slices && offer.slices.length === 1;
-      });
-      console.log(`[DuffelSearch] One-way filtering: ${beforeFilter} -> ${offers.length} offers (removed ${beforeFilter - offers.length} multi-slice offers)`);
+    // Step 3: Get offers from the request
+    console.log('🔍 Step 3: Fetching offers from Duffel')
+    const offers = await duffel.getOffers(createdOfferRequest.id)
+    
+    console.log(`🔍 Retrieved ${offers.length} offers from Duffel`)
+
+    // Step 4: Filter offers by price if specified
+    let filteredOffers = offers
+    if (maxPrice) {
+      filteredOffers = offers.filter(offer => {
+        const price = parseFloat(offer.total_amount)
+        return price <= maxPrice
+      })
+      console.log(`🔍 Filtered to ${filteredOffers.length} offers under $${maxPrice}`)
     }
 
-    // 3. Store offers in flight_offers_v2 table for consistency
-    if (offers.length > 0) {
-      const transformedOffers = offers.map((offer: any) => ({
-        id: offer.id,
-        trip_request_id: null, // Will be set by caller if needed
-        provider: 'duffel',
-        total_amount: parseFloat(offer.total_amount),
-        total_currency: offer.total_currency,
-        raw_response: offer,
-        created_at: new Date().toISOString(),
-      }));
-
-      console.log(`[DuffelSearch] Transformed ${transformedOffers.length} offers for storage`);
+    // Limit results
+    if (filteredOffers.length > maxResults) {
+      filteredOffers = filteredOffers.slice(0, maxResults)
+      console.log(`🔍 Limited to ${maxResults} offers`)
     }
 
-    return new Response(JSON.stringify({
+    if (filteredOffers.length === 0) {
+      return new Response(JSON.stringify({
+        success: true,
+        inserted: 0,
+        offersFound: offers.length,
+        message: `Found ${offers.length} offers but none matched your criteria`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      })
+    }
+
+    // Step 5: Transform Duffel offers to your database schema
+    console.log('🔍 Step 4: Transforming offers for database')
+    const dbOffers = filteredOffers.map(offer => {
+      // Determine if it's nonstop (all segments have 0 stops)
+      const isNonstop = offer.slices?.every(slice => 
+        slice.segments?.every(segment => segment.stops === 0)
+      ) || false
+
+      // Get first slice details for primary route info
+      const firstSlice = offer.slices?.[0]
+      const firstSegment = firstSlice?.segments?.[0]
+      const lastSegment = firstSlice?.segments?.[firstSlice.segments.length - 1]
+
+      // Calculate return date from second slice if exists
+      let returnDt = null
+      if (offer.slices && offer.slices.length > 1) {
+        const returnSlice = offer.slices[1]
+        const returnFirstSegment = returnSlice?.segments?.[0]
+        if (returnFirstSegment?.departing_at) {
+          returnDt = new Date(returnFirstSegment.departing_at).toISOString()
+        }
+      }
+
+      return {
+        trip_request_id: tripRequestId,
+        mode: 'AUTO' as const,
+        price_total: parseFloat(offer.total_amount),
+        price_currency: offer.total_currency,
+        price_carry_on: null, // Duffel doesn't separate carry-on pricing
+        bags_included: false, // Would need to check service offerings
+        cabin_class: cabinClass.toUpperCase(),
+        nonstop: isNonstop,
+        origin_iata: firstSegment?.origin?.iata_code || tripRequest.departure_airports?.[0] || 'JFK',
+        destination_iata: lastSegment?.destination?.iata_code || tripRequest.destination_location_code || 'LAX',
+        depart_dt: firstSegment?.departing_at ? new Date(firstSegment.departing_at).toISOString() : new Date().toISOString(),
+        return_dt: returnDt,
+        booking_url: null, // Would need to create booking URL
+        external_offer_id: offer.id,
+        raw_offer_payload: offer as Record<string, any>
+      }
+    })
+
+    console.log('🔍 Sample transformed offer:', JSON.stringify(dbOffers[0], null, 2))
+
+    // Step 6: Insert offers into database
+    console.log('🔍 Step 5: Inserting offers into flight_offers_v2 table')
+    const { data: insertedOffers, error: insertError } = await supabaseClient
+      .from('flight_offers_v2')
+      .insert(dbOffers)
+      .select()
+
+    if (insertError) {
+      console.error('🔍 Database insertion error:', insertError)
+      throw new Error(`Failed to insert offers: ${insertError.message}`)
+    }
+
+    const insertedCount = insertedOffers?.length || 0
+    console.log(`🔍 Successfully inserted ${insertedCount} offers`)
+
+    logDuffelOperation('Flight search completed', {
+      tripRequestId,
+      offersFound: offers.length,
+      filteredOffers: filteredOffers.length,
+      inserted: insertedCount,
+      maxPrice,
+      cabinClass
+    })
+
+    // Success response
+    const result: DuffelSearchResponse = {
       success: true,
-      offer_request_id: offerRequestId,
-      offers: offers,
-      count: offers.length,
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      inserted: insertedCount,
+      offersFound: offers.length,
+      message: `Successfully found and inserted ${insertedCount} flight offers from Duffel`
+    }
+
+    console.log('✅ Duffel search completed successfully')
+    
+    return new Response(
+      JSON.stringify(result, null, 2),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    )
 
   } catch (error) {
-    console.error('[DuffelSearch] Error:', error);
-    return new Response(JSON.stringify({
+    console.error('❌ Duffel search failed:', error)
+    
+    const errorResult: DuffelSearchResponse = {
       success: false,
-      error: error.message,
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      inserted: 0,
+      offersFound: 0,
+      message: 'Duffel flight search failed',
+      error: {
+        message: error.message,
+        phase: 'Flight search execution',
+        timestamp: new Date().toISOString()
+      }
+    }
+
+    return new Response(
+      JSON.stringify(errorResult, null, 2),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
+      }
+    )
   }
-});
+})
