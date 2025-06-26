@@ -128,9 +128,9 @@ describe('FilterFactory', () => {
       const pipeline = FilterFactory.createStandardPipeline();
       const filters = pipeline.getFilters();
       
-      expect(filters).toHaveLength(3);
-      expect(filters.map(f => f.name)).toEqual(['RoundTripFilter', 'BudgetFilter', 'NonstopFilter']);
-      expect(filters.map(f => f.priority)).toEqual([5, 10, 15]);
+    expect(filters).toHaveLength(5);
+    expect(filters.map(f => f.name)).toEqual(['RoundTripFilter', 'BudgetFilter', 'CarryOnFilter', 'NonstopFilter', 'AirlineFilter']);
+    expect(filters.map(f => f.priority)).toEqual([5, 10, 12, 15, 20]);
     });
 
     it('should create a budget pipeline with limited filters', () => {
@@ -395,6 +395,7 @@ describe('NonstopFilter', () => {
   it('should return all offers when nonstop not required', () => {
     const contextNoNonstop = {
       ...context,
+      nonstop: false,
       userPrefs: { ...context.userPrefs, nonstopRequired: false }
     };
 
@@ -445,7 +446,7 @@ describe('Integration Tests', () => {
     expect(result.filteredOffers.map(o => o.id)).toEqual(['perfect', 'good']);
     expect(result.originalCount).toBe(5);
     expect(result.finalCount).toBe(2);
-    expect(result.filterResults).toHaveLength(3); // Three filters applied
+    expect(result.filterResults).toHaveLength(5); // Five filters applied
   });
 
   it('should handle errors gracefully', async () => {

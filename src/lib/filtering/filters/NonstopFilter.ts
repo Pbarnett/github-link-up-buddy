@@ -1,8 +1,8 @@
 /**
  * Nonstop Filter Implementation
  * 
- * This filter handles user preferences for nonstop flights and maximum
- * connection requirements. It provides flexible stop-based filtering.
+ * This is a CORE APPLICATION FILTER that ensures ALL flights are non-stop.
+ * This is NOT a user preference - it's a business requirement of the app.
  */
 
 import {
@@ -14,20 +14,18 @@ import {
 
 export class NonstopFilter implements FlightFilter {
   readonly name = 'NonstopFilter';
-  readonly priority = 15; // Medium priority - preference-based filter
+  readonly priority = 15; // Core requirement - all flights must be non-stop
 
   apply(offers: FlightOffer[], context: FilterContext): FlightOffer[] {
     console.log(`[${this.name}] Starting nonstop filtering`);
     
-    const userPrefs = context.userPrefs;
-    
-    // If nonstop is not required, return all offers
-    if (!userPrefs.nonstopRequired) {
-      console.log(`[${this.name}] Nonstop not required, returning all ${offers.length} offers`);
+    // Check if nonstop is required in this context
+    if (!context.nonstop && !context.userPrefs.nonstopRequired) {
+      console.log(`[${this.name}] Nonstop not required, skipping filter`);
       return offers;
     }
-
-    console.log(`[${this.name}] Filtering for nonstop flights only`);
+    
+    console.log(`[${this.name}] Filtering for nonstop flights only (app requirement)`);
 
     const nonstopOffers = offers.filter(offer => {
       return this.isNonstopOffer(offer);

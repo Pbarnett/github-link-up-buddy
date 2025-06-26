@@ -1,4 +1,3 @@
-
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -58,7 +57,7 @@ describe('TripRequestForm Mode Handling', () => {
 
     expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
     expect(screen.getByText('Enter the parameters for your trip below.')).toBeInTheDocument();
-    // Use getAllByText for multiple buttons with same text
+    // Component has multiple "Search Now" buttons (main form + sticky actions)
     const searchButtons = screen.getAllByText('Search Now');
     expect(searchButtons.length).toBeGreaterThan(0);
   });
@@ -71,6 +70,7 @@ describe('TripRequestForm Mode Handling', () => {
     );
 
     expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
+    // Component has multiple "Search Now" buttons (main form + sticky actions)
     const searchButtons = screen.getAllByText('Search Now');
     expect(searchButtons.length).toBeGreaterThan(0);
   });
@@ -82,10 +82,14 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    // In auto mode step 1, the title should be "Trip Basics"
-    expect(screen.getByText('Trip Basics')).toBeInTheDocument();
+    // In auto mode step 1, the title should be "Trip Basics" (appears in both title and stepper)
+    const tripBasicsElements = screen.getAllByText('Trip Basics');
+    expect(tripBasicsElements.length).toBeGreaterThan(0);
+    
     expect(screen.getByText('Tell us where and when you want to travel.')).toBeInTheDocument();
-    expect(screen.getByText('Continue → Pricing')).toBeInTheDocument();
+    // Component has multiple "Continue → Pricing" buttons (main form + sticky actions)
+    const continueButtons = screen.getAllByText('Continue → Pricing');
+    expect(continueButtons.length).toBeGreaterThan(0);
   });
 
   test('should show step indicator in auto mode', () => {
@@ -95,8 +99,10 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    // Step indicator should be present
-    expect(screen.getByText('Trip Basics')).toBeInTheDocument();
+    // Step indicator should be present - "Trip Basics" appears in both title and stepper
+    const tripBasicsElements = screen.getAllByText('Trip Basics');
+    expect(tripBasicsElements.length).toBeGreaterThan(0);
+    
     expect(screen.getByText('Price & Payment')).toBeInTheDocument();
   });
 

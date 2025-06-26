@@ -92,14 +92,19 @@ export interface FilterContext {
   config?: FilterConfig;
 }
 
-// User preferences structure
+// User preferences structure (optional preferences, not core requirements)
 export interface UserPreferences {
-  nonstopRequired: boolean;
-  maxLayoverMinutes?: number;
+  // Optional airline preferences
   preferredAirlines?: string[];
   excludedAirlines?: string[];
+  
+  // Optional comfort preferences
   preferredCabinClass?: string;
   maxTotalTripTime?: string; // ISO duration
+  maxLayoverMinutes?: number; // Only applies if app allows connections in future
+  
+  // Note: nonstop, carry-on, and trip-type are CORE APP REQUIREMENTS,
+  // not user preferences, so they're handled by core filters
 }
 
 // Filter configuration for dynamic rule management

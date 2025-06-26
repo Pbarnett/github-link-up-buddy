@@ -88,7 +88,7 @@ const TopNavigation = () => {
     },
     {
       name: 'Auto-Booking',
-      href: '/trip/new?mode=auto',
+      href: '/auto-booking',
       icon: Settings,
     }
   ];

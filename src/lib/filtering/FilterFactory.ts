@@ -16,7 +16,9 @@ import {
 import { DefaultFilterPipeline, ConsolePerformanceLogger } from './core/FilterPipeline';
 import { BudgetFilter, SimpleCurrencyConverter } from './filters/BudgetFilter';
 import { RoundTripFilter } from './filters/RoundTripFilter';
+import { CarryOnFilter } from './filters/CarryOnFilter';
 import { NonstopFilter } from './filters/NonstopFilter';
+import { AirlineFilter } from './filters/AirlineFilter';
 
 /**
  * Pre-configured filter pipeline factory
@@ -69,7 +71,9 @@ export class FilterFactory {
     // Add filters in priority order (lower numbers = higher priority)
     pipeline.addFilter(new RoundTripFilter());                    // Priority 5
     pipeline.addFilter(new BudgetFilter(new SimpleCurrencyConverter())); // Priority 10
+    pipeline.addFilter(new CarryOnFilter());                     // Priority 12
     pipeline.addFilter(new NonstopFilter());                      // Priority 15
+    pipeline.addFilter(new AirlineFilter());                      // Priority 20
     
     console.log('[FilterFactory] Standard pipeline created with filters:', 
       pipeline.getFilters().map(f => `${f.name}(${f.priority})`).join(', '));
@@ -146,6 +150,8 @@ export class FilterFactory {
     nonstopRequired?: boolean;
     nonstop_required?: boolean;
     nonstop?: boolean;
+    carryOnRequired?: boolean;
+    baggage_included_required?: boolean;
     maxLayoverMinutes?: number;
     preferredAirlines?: string[];
     excludedAirlines?: string[];
@@ -166,8 +172,11 @@ export class FilterFactory {
     const returnDate = searchParams.returnDate || searchParams.return_date;
     const nonstopRequired = searchParams.nonstopRequired || searchParams.nonstop_required || false;
     
+    const carryOnRequired = searchParams.carryOnRequired || searchParams.baggage_included_required || false;
+    
     const userPrefs: UserPreferences = {
       nonstopRequired,
+      carryOnRequired,
       maxLayoverMinutes: searchParams.maxLayoverMinutes,
       preferredAirlines: searchParams.preferredAirlines,
       excludedAirlines: searchParams.excludedAirlines,
