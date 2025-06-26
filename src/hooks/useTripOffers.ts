@@ -150,7 +150,14 @@ export const useTripOffersPools = ({ tripId }: { tripId: string | null }): Pools
       }
 
       logger.info("[🔍 POOLS-DEBUG] Calling fetchFlightSearch for tripId:", tripId);
-      const response = await fetchFlightSearch(tripId, false);
+      // Use new filtering architecture through the service layer
+      const filterOptions = {
+        budget,
+        currency: 'USD', // Could be made configurable
+        pipelineType: mode === 'auto' ? 'fast' : 'standard' as 'standard' | 'budget' | 'fast'
+      };
+      
+      const response = await fetchFlightSearch(tripId, false, filterOptions);
       logger.info("[🔍 POOLS-DEBUG] fetchFlightSearch response:", {
         pool1Count: response.pool1?.length || 0,
         pool2Count: response.pool2?.length || 0,

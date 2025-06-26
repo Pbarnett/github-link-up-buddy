@@ -3,6 +3,10 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getAmadeusAccessToken, priceWithAmadeus } from '../lib/amadeus.ts';
 
+// Note: In Deno edge functions, we need to copy the filtering code or use a different approach
+// For now, we'll implement a simplified version that calls the core filtering logic
+// The full implementation would require copying the filtering files to the edge function directory
+
 // Define a type for the expected request payload
 interface FlightSearchRequest {
   tripRequestId: string;
@@ -138,67 +142,87 @@ const fetchAmadeusOffers = async (
       returnDate: tripRequest.return_date,
       adults: tripRequest.adults || 1,
       travelClass: 'ECONOMY', // Default to economy for now
-      nonStop: tripRequest.nonstop_required || false,
+      nonStop: tripRequest.nonstop_required, // Use required setting directly
       max: 10,  // Limit number of results for performance
     });
 
     console.log('[DEBUG] Successfully fetched', offers.length, 'offers from Amadeus');
     
-  // Filter by maxPrice if specified
-    let filteredOffers = offers;
-    if (maxPrice !== undefined) {
-      filteredOffers = offers.filter(offer => {
-        const price = parseFloat(offer.price?.total || '0');
-        return price <= maxPrice;
-      });
-      console.log('[DEBUG] Filtered to', filteredOffers.length, 'offers by max price:', maxPrice);
-    }
-
-    // ENHANCED ROUND-TRIP FILTERING: Multiple layers to ensure only true round-trip results
-    if (tripRequest.return_date) {
-      const beforeRoundTripFilter = filteredOffers.length;
-      
-      // Layer 1: Filter out offers explicitly marked as one-way
-      filteredOffers = filteredOffers.filter(offer => {
-        return !offer.oneWay;
-      });
-      
-      // Layer 2: Ensure offers have exactly 2 itineraries (outbound + return)
-      filteredOffers = filteredOffers.filter(offer => {
-        return offer.itineraries && offer.itineraries.length === 2;
+    console.log('[DEBUG] Applying new comprehensive filtering architecture...');
+    
+    // Replace old ad-hoc filtering with new comprehensive filtering system
+    try {
+      // Create filter context from trip request data
+      const filterContext = createFilterContext({
+        budget: maxPrice,
+        currency: 'USD', // Default to USD, could be extracted from trip request
+        originLocationCode: tripRequest.origin_location_code,
+        destinationLocationCode: tripRequest.destination_location_code,
+        departureDate: tripRequest.departure_date,
+        returnDate: tripRequest.return_date,
+        nonstopRequired: tripRequest.nonstop_required,
+        featureFlags: {
+          enableComprehensiveFiltering: true
+        }
       });
       
-      // Layer 3: Verify both itineraries have proper routing
-      filteredOffers = filteredOffers.filter(offer => {
-        if (!offer.itineraries || offer.itineraries.length !== 2) return false;
-        
-        const outbound = offer.itineraries[0];
-        const inbound = offer.itineraries[1];
-        
-        // Verify outbound goes from origin to destination
-        const outboundOrigin = outbound.segments?.[0]?.departure?.iataCode;
-        const outboundDestination = outbound.segments?.[outbound.segments.length - 1]?.arrival?.iataCode;
-        
-        // Verify inbound goes from destination back to origin
-        const inboundOrigin = inbound.segments?.[0]?.departure?.iataCode;
-        const inboundDestination = inbound.segments?.[inbound.segments.length - 1]?.arrival?.iataCode;
-        
-        return (
-          outboundOrigin === tripRequest.origin_location_code &&
-          outboundDestination === tripRequest.destination_location_code &&
-          inboundOrigin === tripRequest.destination_location_code &&
-          inboundDestination === tripRequest.origin_location_code
-        );
+      // Normalize Amadeus offers to our standard format
+      const rawOffers = offers.map(offer => ({ data: offer, provider: 'Amadeus' as const }));
+      const normalizedOffers = normalizeOffers(rawOffers, filterContext);
+      
+      console.log('[DEBUG] Normalized', normalizedOffers.length, 'Amadeus offers to standard format');
+      
+      // Create the appropriate filtering pipeline based on search parameters
+      const pipelineType = FilterFactory.recommendPipelineType({
+        budget: maxPrice,
+        nonstopRequired: tripRequest.nonstop_required,
+        returnDate: tripRequest.return_date
       });
       
-      console.log('[DEBUG] Enhanced round-trip filtering:', beforeRoundTripFilter, '-> filtered to', filteredOffers.length, 'true round-trip offers (removed', beforeRoundTripFilter - filteredOffers.length, 'non-round-trip offers)');
-    } else {
-      // For one-way searches, ensure offers have only 1 itinerary
-      const beforeOneWayFilter = filteredOffers.length;
-      filteredOffers = filteredOffers.filter(offer => {
-        return offer.itineraries && offer.itineraries.length === 1;
+      console.log('[DEBUG] Using', pipelineType, 'filtering pipeline');
+      
+      const pipeline = pipelineType === 'budget' 
+        ? FilterFactory.createBudgetPipeline()
+        : pipelineType === 'fast'
+        ? FilterFactory.createFastPipeline()
+        : FilterFactory.createStandardPipeline();
+      
+      // Execute the filtering pipeline
+      const filterResult = await pipeline.execute(normalizedOffers, filterContext);
+      
+      console.log('[DEBUG] Filtering pipeline results:', {
+        originalCount: filterResult.originalCount,
+        finalCount: filterResult.finalCount,
+        removedCount: filterResult.originalCount - filterResult.finalCount,
+        executionTimeMs: filterResult.executionTimeMs,
+        filtersApplied: filterResult.filterResults.map(r => r.filterName),
+        errors: filterResult.errors.length,
+        warnings: filterResult.warnings.length
       });
-      console.log('[DEBUG] One-way filtering:', beforeOneWayFilter, '-> filtered to', filteredOffers.length, 'one-way offers (removed', beforeOneWayFilter - filteredOffers.length, 'multi-itinerary offers)');
+      
+      // Log detailed filter execution results
+      filterResult.filterResults.forEach(result => {
+        console.log(`[DEBUG] ${result.filterName}: ${result.beforeCount} → ${result.afterCount} (removed ${result.removedOffers}, ${result.executionTimeMs}ms)`);
+      });
+      
+      // Log any filter errors or warnings
+      if (filterResult.errors.length > 0) {
+        console.warn('[DEBUG] Filter errors:', filterResult.errors.map(e => `${e.filterName}: ${e.error.message}`));
+      }
+      
+      if (filterResult.warnings.length > 0) {
+        console.warn('[DEBUG] Filter warnings:', filterResult.warnings.map(w => `${w.filterName}: ${w.message}`));
+      }
+      
+      // Convert back to Amadeus format for database insertion
+      filteredOffers = filterResult.filteredOffers.map(offer => offer.rawData || offer);
+      
+      console.log('[DEBUG] New filtering system processed', offers.length, '→', filteredOffers.length, 'offers in', filterResult.executionTimeMs, 'ms');
+      
+    } catch (filterError) {
+      console.error('[DEBUG] New filtering system failed, falling back to original offers:', filterError);
+      // Fallback to unfiltered offers if filtering fails
+      filteredOffers = offers;
     }
 
     return filteredOffers;

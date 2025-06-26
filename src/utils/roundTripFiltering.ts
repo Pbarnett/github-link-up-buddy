@@ -1,10 +1,14 @@
 /**
- * @file Round-trip flight filtering utilities
+ * @file DEPRECATED: Round-trip flight filtering utilities
  * 
- * This module provides comprehensive filtering functions to ensure that when users
- * search for round-trip flights, they only receive true round-trip results that
- * match their criteria. This implements the enhanced filtering requirements.
+ * ⚠️  DEPRECATED: This module is deprecated and will be removed in a future version.
+ * Use the new FilterFactory from @/lib/filtering/FilterFactory instead.
+ * 
+ * This module provides legacy filtering functions that are now replaced by
+ * the comprehensive filtering architecture in @/lib/filtering/
  */
+
+import { LegacyFilterAdapter } from '@/lib/filtering/FilterFactory';
 
 export interface FlightOffer {
   id: string;
@@ -46,6 +50,8 @@ export function filterAmadeusRoundTripOffers(
   offers: FlightOffer[],
   searchParams: TripSearchParams
 ): FlightOffer[] {
+  LegacyFilterAdapter.deprecatedWarning('filterAmadeusRoundTripOffers');
+  
   const isRoundTripSearch = !!(searchParams.returnDate || searchParams.return_date);
   
   if (!isRoundTripSearch) {
@@ -109,6 +115,8 @@ export function filterDuffelRoundTripOffers(
   offers: FlightOffer[],
   searchParams: TripSearchParams
 ): FlightOffer[] {
+  LegacyFilterAdapter.deprecatedWarning('filterDuffelRoundTripOffers');
+  
   const isRoundTripSearch = !!(searchParams.returnDate || searchParams.return_date);
   
   if (!isRoundTripSearch) {
