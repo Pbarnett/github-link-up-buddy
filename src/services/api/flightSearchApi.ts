@@ -123,12 +123,73 @@ export const invokeFlightSearch = async (
 
   // Handle flight-search-v2 response structure
   if (data && typeof data.inserted === 'number') {
-    // New V2 response format
-    return {
+    // After V2 function inserts offers, fetch them with proper round-trip filtering
+    logger.info('[FlightSearchAPI] V2 function inserted offers, now fetching filtered pools');
+    
+    try {
+      // Get trip request details to determine if round-trip
+      const { data: tripRequest } = await supabase
+        .from('trip_requests')
+        .select('return_date')
+        .eq('id', payload.tripRequestId)
+        .single();
+      
+      const isRoundTrip = !!(tripRequest?.return_date);
+      
+      // Build filtered query
+      let query = supabase
+        .from('flight_offers_v2')
+        .select('*')
+        .eq('trip_request_id', payload.tripRequestId);
+      
+      // Apply round-trip filter if needed
+      if (isRoundTrip) {
+        query = query.not('return_dt', 'is', null);
+        logger.info('[FlightSearchAPI] Applied round-trip filter to offers query');
+      }
+      
+      const { data: offers } = await query
+        .order('price_total', { ascending: true })
+        .limit(50);
+      
+      // Transform V2 offers to pool format (simple distribution)
+      const transformedOffers = (offers || []).map(offer => ({
+        id: offer.id,
+        price: offer.price_total,
+        airline: offer.origin_iata + '-' + offer.destination_iata,
+        score: 1.0,
+        isRoundTrip: !!offer.return_dt
+      }));
+      
+      logger.info(`[FlightSearchAPI] Fetched ${transformedOffers.length} ${isRoundTrip ? 'round-trip' : 'any'} offers for pools`);
+      
+      // Distribute offers into pools (simple strategy)
+      const pool1 = transformedOffers.slice(0, 17);
+      const pool2 = transformedOffers.slice(17, 34);
+      const pool3 = transformedOffers.slice(34, 50);
+      
+      return {
         inserted: data.inserted,
         message: data.message,
         success: true,
-        // Legacy compatibility fields
+        requestsProcessed: 1,
+        matchesInserted: data.inserted,
+        totalDurationMs: 0,
+        relaxedCriteriaUsed: payload.relaxedCriteria,
+        exactDestinationOnly: true,
+        details: [],
+        pool1,
+        pool2,
+        pool3,
+      } as FlightSearchResponse;
+      
+    } catch (poolsError) {
+      logger.error('[FlightSearchAPI] Error fetching filtered pools:', poolsError);
+      // Fallback to empty pools
+      return {
+        inserted: data.inserted,
+        message: data.message,
+        success: true,
         requestsProcessed: 1,
         matchesInserted: data.inserted,
         totalDurationMs: 0,
@@ -138,7 +199,8 @@ export const invokeFlightSearch = async (
         pool1: [],
         pool2: [],
         pool3: [],
-    } as FlightSearchResponse;
+      } as FlightSearchResponse;
+    }
   }
 
   logger.warn("Flight search function returned unexpected data format:", { responseData: data });

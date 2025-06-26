@@ -16,10 +16,18 @@ const createTrip = async (
   formData: ExtendedTripFormValues
 ): Promise<Tables<"trip_requests">> => {
   // Create a typed insert object for trip_requests
+  // Calculate departure and return dates for tripService
+  const departureDate = formData.earliestDeparture.toISOString().split('T')[0];
+  const returnDate = formData.returnDate || 
+    new Date(formData.earliestDeparture.getTime() + (formData.min_duration * 24 * 60 * 60 * 1000))
+      .toISOString().split('T')[0];
+  
   const tripRequestData: TablesInsert<"trip_requests"> = {
     user_id: userId,
     earliest_departure: formData.earliestDeparture.toISOString(),
     latest_departure: formData.latestDeparture.toISOString(),
+    departure_date: departureDate, // ✅ FIX: Add departure_date
+    return_date: returnDate, // ✅ FIX: Add return_date
     budget: formData.budget,
     // Include new fields if provided
     departure_airports: formData.departure_airports || [],
@@ -35,6 +43,12 @@ const createTrip = async (
     max_price: formData.max_price || null,
     preferred_payment_method_id: formData.preferred_payment_method_id || null
   };
+  
+  console.log('[TripService] Creating trip with payload:', {
+    departureDate: tripRequestData.departure_date,
+    returnDate: tripRequestData.return_date,
+    isRoundTrip: !!(tripRequestData.return_date)
+  });
   
   // Insert trip request into Supabase with proper types
   const tripRequestResult = await safeQuery<Tables<"trip_requests">>(() =>
@@ -100,11 +114,19 @@ export const createTripRequest = async (
     });
   }
   
-  // Fetch the newly created offers from the new V2 table
-  const { data: offers, error: offersError } = await supabase
+  // Fetch the newly created offers from the new V2 table with round-trip filtering
+  let offersQuery = supabase
     .from("flight_offers_v2")
     .select("*")
-    .eq("trip_request_id", tripRequest.id)
+    .eq("trip_request_id", tripRequest.id);
+
+  // Apply round-trip filtering if this was a round-trip request
+  if (formData.returnDate) {
+    console.log('[TripService] Applying round-trip filter for offers fetch');
+    offersQuery = offersQuery.not('return_dt', 'is', null);
+  }
+
+  const { data: offers, error: offersError } = await offersQuery
     .order("price_total", { ascending: true });
   
   if (offersError) {

@@ -15,6 +15,7 @@ export interface ExtendedTripFormValues extends TripFormValues {
   departure_airports?: string[];
   destination_airport?: string;
   destination_location_code?: string; // Add this field
+  returnDate?: string; // ✅ FIX: Add return date for round-trip detection
   // Filter fields
   nonstop_required?: boolean;
   baggage_included_required?: boolean;

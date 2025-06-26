@@ -108,11 +108,25 @@ export const getFlightOffers = async (
 
   console.log(`[ServerAction/getFlightOffers] Cache miss or stale for tripRequestId: ${tripRequestId}. Fetching from flight_offers_v2 table...`);
 
-  // Read from flight_offers_v2 table which has booking URLs
-  const { data: v2Data, error: v2Error } = await supabase
+  // First, check if this is a round-trip search by looking at the trip request
+  const { data: tripRequest, error: tripRequestError } = await supabase
+    .from('trip_requests')
+    .select('return_date')
+    .eq('id', tripRequestId)
+    .single();
+
+  let query = supabase
     .from('flight_offers_v2')
     .select('*')
     .eq('trip_request_id', tripRequestId);
+
+  // If this is a round-trip search (has return_date), exclude one-way flights
+  if (tripRequest?.return_date) {
+    console.log(`[ServerAction/getFlightOffers] Round-trip search detected, filtering out one-way flights`);
+    query = query.not('return_dt', 'is', null);
+  }
+
+  const { data: v2Data, error: v2Error } = await query;
     
   // If no V2 data, fall back to legacy table and transform
   if (v2Error || !v2Data || v2Data.length === 0) {

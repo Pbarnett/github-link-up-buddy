@@ -162,6 +162,12 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
 
   const createTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
     if (!userId) throw new Error("You must be logged in to create a trip request.");
+    
+    // Calculate departure and return dates based on trip duration
+    const departureDate = formData.earliestDeparture.toISOString().split('T')[0]; // YYYY-MM-DD
+    const returnDate = new Date(formData.earliestDeparture.getTime() + (formData.min_duration * 24 * 60 * 60 * 1000))
+      .toISOString().split('T')[0]; // Add min_duration days for return
+    
     const tripRequestData = {
       user_id: userId,
       destination_airport: formData.destination_airport,
@@ -169,6 +175,8 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
+      departure_date: departureDate, // ✅ FIX: Add departure_date
+      return_date: returnDate, // ✅ FIX: Add return_date (round-trip by default)
       min_duration: formData.min_duration,
       max_duration: formData.max_duration,
       budget: formData.budget,
@@ -178,6 +186,15 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       max_price: formData.max_price,
       preferred_payment_method_id: formData.preferred_payment_method_id,
     };
+    
+    console.log('[PAYLOAD-DEBUG] Trip request payload:', {
+      departureDate: tripRequestData.departure_date,
+      returnDate: tripRequestData.return_date,
+      isRoundTrip: !!(tripRequestData.return_date),
+      earliestDeparture: tripRequestData.earliest_departure,
+      latestDeparture: tripRequestData.latest_departure,
+      duration: `${formData.min_duration}-${formData.max_duration} days`
+    });
     const { data, error } = await supabase
       .from("trip_requests")
       .insert([tripRequestData])
@@ -190,12 +207,20 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
 
   const updateTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
     if (!userId || !tripRequestId) throw new Error("User ID or Trip Request ID is missing for update.");
+    
+    // Calculate departure and return dates for updates too
+    const departureDate = formData.earliestDeparture.toISOString().split('T')[0];
+    const returnDate = new Date(formData.earliestDeparture.getTime() + (formData.min_duration * 24 * 60 * 60 * 1000))
+      .toISOString().split('T')[0];
+    
     const tripRequestData = {
       destination_airport: formData.destination_airport,
       destination_location_code: formData.destination_airport, // Add this field
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
+      departure_date: departureDate, // ✅ FIX: Add departure_date
+      return_date: returnDate, // ✅ FIX: Add return_date
       min_duration: formData.min_duration,
       max_duration: formData.max_duration,
       budget: formData.budget,
@@ -205,6 +230,12 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       max_price: formData.max_price,
       preferred_payment_method_id: formData.preferred_payment_method_id,
     };
+    
+    console.log('[PAYLOAD-DEBUG] Trip request UPDATE payload:', {
+      departureDate: tripRequestData.departure_date,
+      returnDate: tripRequestData.return_date,
+      isRoundTrip: !!(tripRequestData.return_date)
+    });
     const { data, error } = await supabase
       .from("trip_requests")
       .update(tripRequestData)

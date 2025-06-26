@@ -209,8 +209,19 @@ const TripOffersV2: React.FC = () => {
   };
 
 
+  // Filter out one-way flights if this search expects round-trip flights
+  // Check if this is a round-trip search by looking for offers that have return dates
+  const hasRoundTripOffers = offers.some(offer => offer.returnDt);
+  const hasOneWayOffers = offers.some(offer => !offer.returnDt);
+  
+  const filteredOffers = hasRoundTripOffers ? 
+    offers.filter(offer => offer.returnDt) : // Only show round-trip flights if any exist
+    offers; // Show all flights (including one-way) if no round-trip offers exist
+  
+  const oneWayOffersFiltered = hasRoundTripOffers && hasOneWayOffers && filteredOffers.length < offers.length;
+  
   // Sort offers by price (cheapest first)
-  const sortedOffers = [...offers].sort((a, b) => a.priceTotal - b.priceTotal);
+  const sortedOffers = [...filteredOffers].sort((a, b) => a.priceTotal - b.priceTotal);
 
   return (
     <div className="container mx-auto p-4">
@@ -218,6 +229,16 @@ const TripOffersV2: React.FC = () => {
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-gray-800">Available Flight Offers</CardTitle>
           <p className="text-sm text-gray-600 mt-2">Sorted by price (lowest to highest)</p>
+          {oneWayOffersFiltered && (
+            <Alert className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Round-trip flights only</AlertTitle>
+              <AlertDescription>
+                One-way flights have been filtered out to show only nonstop round-trip options as requested.
+                {offers.length - filteredOffers.length} one-way flight{offers.length - filteredOffers.length !== 1 ? 's were' : ' was'} hidden.
+              </AlertDescription>
+            </Alert>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y divide-gray-100">

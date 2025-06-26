@@ -144,7 +144,7 @@ const fetchAmadeusOffers = async (
 
     console.log('[DEBUG] Successfully fetched', offers.length, 'offers from Amadeus');
     
-    // Filter by maxPrice if specified
+  // Filter by maxPrice if specified
     let filteredOffers = offers;
     if (maxPrice !== undefined) {
       filteredOffers = offers.filter(offer => {
@@ -152,6 +152,53 @@ const fetchAmadeusOffers = async (
         return price <= maxPrice;
       });
       console.log('[DEBUG] Filtered to', filteredOffers.length, 'offers by max price:', maxPrice);
+    }
+
+    // ENHANCED ROUND-TRIP FILTERING: Multiple layers to ensure only true round-trip results
+    if (tripRequest.return_date) {
+      const beforeRoundTripFilter = filteredOffers.length;
+      
+      // Layer 1: Filter out offers explicitly marked as one-way
+      filteredOffers = filteredOffers.filter(offer => {
+        return !offer.oneWay;
+      });
+      
+      // Layer 2: Ensure offers have exactly 2 itineraries (outbound + return)
+      filteredOffers = filteredOffers.filter(offer => {
+        return offer.itineraries && offer.itineraries.length === 2;
+      });
+      
+      // Layer 3: Verify both itineraries have proper routing
+      filteredOffers = filteredOffers.filter(offer => {
+        if (!offer.itineraries || offer.itineraries.length !== 2) return false;
+        
+        const outbound = offer.itineraries[0];
+        const inbound = offer.itineraries[1];
+        
+        // Verify outbound goes from origin to destination
+        const outboundOrigin = outbound.segments?.[0]?.departure?.iataCode;
+        const outboundDestination = outbound.segments?.[outbound.segments.length - 1]?.arrival?.iataCode;
+        
+        // Verify inbound goes from destination back to origin
+        const inboundOrigin = inbound.segments?.[0]?.departure?.iataCode;
+        const inboundDestination = inbound.segments?.[inbound.segments.length - 1]?.arrival?.iataCode;
+        
+        return (
+          outboundOrigin === tripRequest.origin_location_code &&
+          outboundDestination === tripRequest.destination_location_code &&
+          inboundOrigin === tripRequest.destination_location_code &&
+          inboundDestination === tripRequest.origin_location_code
+        );
+      });
+      
+      console.log('[DEBUG] Enhanced round-trip filtering:', beforeRoundTripFilter, '-> filtered to', filteredOffers.length, 'true round-trip offers (removed', beforeRoundTripFilter - filteredOffers.length, 'non-round-trip offers)');
+    } else {
+      // For one-way searches, ensure offers have only 1 itinerary
+      const beforeOneWayFilter = filteredOffers.length;
+      filteredOffers = filteredOffers.filter(offer => {
+        return offer.itineraries && offer.itineraries.length === 1;
+      });
+      console.log('[DEBUG] One-way filtering:', beforeOneWayFilter, '-> filtered to', filteredOffers.length, 'one-way offers (removed', beforeOneWayFilter - filteredOffers.length, 'multi-itinerary offers)');
     }
 
     return filteredOffers;
@@ -166,6 +213,38 @@ const fetchAmadeusOffers = async (
 // Mock data generator for testing when Amadeus API is unavailable
 const generateMockOffers = (tripRequest: any, maxPrice?: number): AmadeusFlightOffer[] => {
   console.log('[DEBUG] Generating mock flight offers for testing');
+  console.log('[DEBUG] Trip request has return_date:', tripRequest.return_date);
+  
+  const isRoundTrip = !!tripRequest.return_date;
+  const origin = tripRequest.origin_location_code || 'JFK';
+  const destination = tripRequest.destination_location_code || 'LAX';
+  const departureDate = tripRequest.departure_date || '2024-12-15';
+  const returnDate = tripRequest.return_date || '2024-12-18';
+  
+  // Helper function to create return itinerary
+  const createReturnItinerary = (carrierCode: string, flightNumber: string, segmentId: string) => ({
+    duration: 'PT6H45M',
+    segments: [{
+      departure: {
+        iataCode: destination,
+        terminal: '4',
+        at: `${returnDate}T16:00:00`
+      },
+      arrival: {
+        iataCode: origin,
+        terminal: '4', 
+        at: `${returnDate}T19:45:00`
+      },
+      carrierCode,
+      number: flightNumber,
+      aircraft: { code: '321' },
+      operating: { carrierCode },
+      duration: 'PT6H45M',
+      id: segmentId,
+      numberOfStops: 0,
+      blacklistedInEU: false
+    }]
+  });
   
   const mockOffers: AmadeusFlightOffer[] = [
     {
@@ -173,37 +252,42 @@ const generateMockOffers = (tripRequest: any, maxPrice?: number): AmadeusFlightO
       source: 'GDS',
       instantTicketingRequired: false,
       nonHomogeneous: false,
-      oneWay: !tripRequest.return_date,
+      oneWay: !isRoundTrip,
       lastTicketingDate: '2024-12-31',
       numberOfBookableSeats: 9,
-      itineraries: [{
-        duration: 'PT6H30M',
-        segments: [{
-          departure: {
-            iataCode: tripRequest.origin_location_code || 'JFK',
-            terminal: '4',
-            at: `${tripRequest.departure_date || '2024-12-15'}T08:00:00`
-          },
-          arrival: {
-            iataCode: tripRequest.destination_location_code || 'LAX',
-            terminal: '4',
-            at: `${tripRequest.departure_date || '2024-12-15'}T11:30:00`
-          },
-          carrierCode: 'AA',
-          number: '123',
-          aircraft: { code: '321' },
-          operating: { carrierCode: 'AA' },
+      itineraries: [
+        // Outbound itinerary
+        {
           duration: 'PT6H30M',
-          id: '1',
-          numberOfStops: 0,
-          blacklistedInEU: false
-        }]
-      }],
+          segments: [{
+            departure: {
+              iataCode: origin,
+              terminal: '4',
+              at: `${departureDate}T08:00:00`
+            },
+            arrival: {
+              iataCode: destination,
+              terminal: '4',
+              at: `${departureDate}T11:30:00`
+            },
+            carrierCode: 'AA',
+            number: '123',
+            aircraft: { code: '321' },
+            operating: { carrierCode: 'AA' },
+            duration: 'PT6H30M',
+            id: '1',
+            numberOfStops: 0,
+            blacklistedInEU: false
+          }]
+        },
+        // Return itinerary (only if round-trip)
+        ...(isRoundTrip ? [createReturnItinerary('AA', '124', '2')] : [])
+      ],
       price: {
         currency: 'USD',
-        total: '325.00',
-        base: '275.00',
-        fees: [{ amount: '50.00', type: 'SUPPLIER' }]
+        total: isRoundTrip ? '625.00' : '325.00',
+        base: isRoundTrip ? '550.00' : '275.00',
+        fees: [{ amount: isRoundTrip ? '75.00' : '50.00', type: 'SUPPLIER' }]
       },
       pricingOptions: {
         fareType: ['PUBLISHED'],
@@ -216,16 +300,26 @@ const generateMockOffers = (tripRequest: any, maxPrice?: number): AmadeusFlightO
         travelerType: 'ADULT',
         price: {
           currency: 'USD',
-          total: '325.00',
-          base: '275.00'
+          total: isRoundTrip ? '625.00' : '325.00',
+          base: isRoundTrip ? '550.00' : '275.00'
         },
-        fareDetailsBySegment: [{
-          segmentId: '1',
-          cabin: 'ECONOMY',
-          fareBasis: 'Y',
-          class: 'Y',
-          includedCheckedBags: { quantity: 0 }
-        }]
+        fareDetailsBySegment: [
+          {
+            segmentId: '1',
+            cabin: 'ECONOMY',
+            fareBasis: 'Y',
+            class: 'Y',
+            includedCheckedBags: { quantity: 0 }
+          },
+          // Return segment details (only if round-trip)
+          ...(isRoundTrip ? [{
+            segmentId: '2',
+            cabin: 'ECONOMY',
+            fareBasis: 'Y',
+            class: 'Y',
+            includedCheckedBags: { quantity: 0 }
+          }] : [])
+        ]
       }]
     },
     {
@@ -233,37 +327,64 @@ const generateMockOffers = (tripRequest: any, maxPrice?: number): AmadeusFlightO
       source: 'GDS',
       instantTicketingRequired: false,
       nonHomogeneous: false,
-      oneWay: !tripRequest.return_date,
+      oneWay: !isRoundTrip,
       lastTicketingDate: '2024-12-31',
       numberOfBookableSeats: 5,
-      itineraries: [{
-        duration: 'PT8H15M',
-        segments: [{
-          departure: {
-            iataCode: tripRequest.origin_location_code || 'JFK',
-            terminal: 'B',
-            at: `${tripRequest.departure_date || '2024-12-15'}T14:30:00`
-          },
-          arrival: {
-            iataCode: tripRequest.destination_location_code || 'LAX',
-            terminal: '7',
-            at: `${tripRequest.departure_date || '2024-12-15'}T19:45:00`
-          },
-          carrierCode: 'DL',
-          number: '456',
-          aircraft: { code: '737' },
-          operating: { carrierCode: 'DL' },
+      itineraries: [
+        // Outbound itinerary
+        {
           duration: 'PT8H15M',
-          id: '2',
-          numberOfStops: 1,
-          blacklistedInEU: false
-        }]
-      }],
+          segments: [{
+            departure: {
+              iataCode: origin,
+              terminal: 'B',
+              at: `${departureDate}T14:30:00`
+            },
+            arrival: {
+              iataCode: destination,
+              terminal: '7',
+              at: `${departureDate}T19:45:00`
+            },
+            carrierCode: 'DL',
+            number: '456',
+            aircraft: { code: '737' },
+            operating: { carrierCode: 'DL' },
+            duration: 'PT8H15M',
+            id: '3',
+            numberOfStops: 1,
+            blacklistedInEU: false
+          }]
+        },
+        // Return itinerary (only if round-trip)
+        ...(isRoundTrip ? [{
+          duration: 'PT7H30M',
+          segments: [{
+            departure: {
+              iataCode: destination,
+              terminal: '7',
+              at: `${returnDate}T10:15:00`
+            },
+            arrival: {
+              iataCode: origin,
+              terminal: 'B',
+              at: `${returnDate}T14:45:00`
+            },
+            carrierCode: 'DL',
+            number: '457',
+            aircraft: { code: '737' },
+            operating: { carrierCode: 'DL' },
+            duration: 'PT7H30M',
+            id: '4',
+            numberOfStops: 0,
+            blacklistedInEU: false
+          }]
+        }] : [])
+      ],
       price: {
         currency: 'USD',
-        total: '289.50',
-        base: '245.50',
-        fees: [{ amount: '44.00', type: 'SUPPLIER' }]
+        total: isRoundTrip ? '579.00' : '289.50',
+        base: isRoundTrip ? '490.00' : '245.50',
+        fees: [{ amount: isRoundTrip ? '89.00' : '44.00', type: 'SUPPLIER' }]
       },
       pricingOptions: {
         fareType: ['PUBLISHED'],
@@ -276,16 +397,26 @@ const generateMockOffers = (tripRequest: any, maxPrice?: number): AmadeusFlightO
         travelerType: 'ADULT',
         price: {
           currency: 'USD',
-          total: '289.50',
-          base: '245.50'
+          total: isRoundTrip ? '579.00' : '289.50',
+          base: isRoundTrip ? '490.00' : '245.50'
         },
-        fareDetailsBySegment: [{
-          segmentId: '2',
-          cabin: 'ECONOMY',
-          fareBasis: 'Y',
-          class: 'Y',
-          includedCheckedBags: { quantity: 1 }
-        }]
+        fareDetailsBySegment: [
+          {
+            segmentId: '3',
+            cabin: 'ECONOMY',
+            fareBasis: 'Y',
+            class: 'Y',
+            includedCheckedBags: { quantity: 1 }
+          },
+          // Return segment details (only if round-trip)
+          ...(isRoundTrip ? [{
+            segmentId: '4',
+            cabin: 'ECONOMY',
+            fareBasis: 'Y', 
+            class: 'Y',
+            includedCheckedBags: { quantity: 1 }
+          }] : [])
+        ]
       }]
     }
   ];
@@ -499,8 +630,25 @@ serve(async (req: Request) => {
     console.log('[DEBUG] Max price filter:', maxPrice);
 
 
-    // In a real app, you'd fetch trip details (origin, dest, dates) from your DB using tripRequestId
-    // For now, we pass tripRequestId and maxPrice to the mock Amadeus fetcher.
+    // Fetch trip details to determine if this is a round-trip search for proper filtering
+    const { data: tripRequest, error: tripError } = await supabaseClient
+      .from('trip_requests')
+      .select('return_date, origin_location_code, destination_location_code')
+      .eq('id', tripRequestId)
+      .single();
+
+    if (tripError) {
+      console.error('[DEBUG] Error fetching trip request:', tripError);
+      throw new Error(`Failed to fetch trip request: ${tripError.message}`);
+    }
+
+    console.log('[DEBUG] Trip request details:', {
+      tripRequestId,
+      returnDate: tripRequest?.return_date,
+      isRoundTrip: !!tripRequest?.return_date
+    });
+
+    // Fetch Amadeus offers with trip context for filtering
     const amadeusOffers = await fetchAmadeusOffers(tripRequestId, maxPrice, supabaseClient);
 
 
