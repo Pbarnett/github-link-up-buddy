@@ -13,6 +13,8 @@ import { toast } from "@/components/ui/use-toast";
 import { createDuffelBooking, DuffelTraveler, DuffelBookingResponse } from "@/services/api/duffelBookingApi";
 import { airportNames } from "@/data/airportLookup";
 import { airlineNames } from "@/data/airlineLookup";
+import OfferExpirationTimer from "./OfferExpirationTimer";
+import DuffelErrorHandler, { DuffelError } from "./DuffelErrorHandler";
 
 export interface DuffelFlightOffer {
   id: string;
@@ -46,6 +48,8 @@ export const DuffelBookingCard: React.FC<DuffelBookingCardProps> = ({
 }) => {
   const [isBooking, setIsBooking] = useState(false);
   const [bookingResult, setBookingResult] = useState<DuffelBookingResponse | null>(null);
+  const [isExpiredState, setIsExpiredState] = useState(false);
+  const [duffelError, setDuffelError] = useState<DuffelError | null>(null);
 
   // Format currency
   const formatPrice = (price: number, currency: string = 'USD') => {
@@ -273,9 +277,15 @@ export const DuffelBookingCard: React.FC<DuffelBookingCardProps> = ({
           {offer.expires_at && (
             <div className="text-right">
               <span className="text-gray-600 text-sm">Offer expires:</span>
-              <p className="text-sm font-medium">
-                {new Date(offer.expires_at).toLocaleString()}
-              </p>
+              <div className="flex flex-col items-end gap-1">
+                <OfferExpirationTimer 
+                  expiresAt={offer.expires_at}
+                  onExpired={() => setIsExpiredState(true)}
+                />
+                <p className="text-xs text-gray-500">
+                  {new Date(offer.expires_at).toLocaleString()}
+                </p>
+              </div>
             </div>
           )}
         </div>

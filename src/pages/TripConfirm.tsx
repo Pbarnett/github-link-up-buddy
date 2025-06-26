@@ -6,7 +6,7 @@ import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2, AlertCircle } from "l
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
-import { supabase } from "@/integrations/supabase/client";
+import { createDuffelBooking, checkBookingStatus } from "@/services/api/duffelBookingApi";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import TravelerDataForm, { TravelerData } from "@/components/TravelerDataForm";
 import { TablesInsert } from "@/integrations/supabase/types";
@@ -199,11 +199,7 @@ const TripConfirm = () => {
     const fetchBookingRequest = async () => {
       try {
         console.log("[TripConfirm] Fetching booking request status for sessionId:", sessionId);
-        const { data, error } = await supabase
-          .from('booking_requests')
-          .select('status')
-          .eq('checkout_session_id', sessionId)
-          .single();
+const { data, error } = await checkBookingStatus(bookingRequest.duffel_order_id);
           
         if (error) {
           console.error("[TripConfirm] Error fetching booking request:", error);
@@ -310,11 +306,10 @@ const TripConfirm = () => {
         user_id: userId 
       };
 
-      const { data: bookingRequest, error: bookingError } = await supabase
-        .from("booking_requests")
-        .insert(bookingRequestData)
-        .select()
-        .single();
+const { data: bookingRequest, error: bookingError } = await createDuffelBooking({
+        offerId: offer.id,
+        travelers: [data] // Assuming single traveler for now
+      });
 
       if (bookingError) {
         console.error("[TripConfirm] Error creating booking request:", bookingError);

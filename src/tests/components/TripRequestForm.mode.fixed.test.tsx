@@ -1,4 +1,3 @@
-
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -58,9 +57,7 @@ describe('TripRequestForm Mode Handling', () => {
 
     expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
     expect(screen.getByText('Enter the parameters for your trip below.')).toBeInTheDocument();
-    // Use getAllByText for multiple buttons with same text
-    const searchButtons = screen.getAllByText('Search Now');
-    expect(searchButtons.length).toBeGreaterThan(0);
+    expect(screen.getByText('Search Now')).toBeInTheDocument();
   });
 
   test('should show manual mode UI when mode=manual', () => {
@@ -71,8 +68,7 @@ describe('TripRequestForm Mode Handling', () => {
     );
 
     expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
-    const searchButtons = screen.getAllByText('Search Now');
-    expect(searchButtons.length).toBeGreaterThan(0);
+    expect(screen.getByText('Search Now')).toBeInTheDocument();
   });
 
   test('should show auto mode UI when mode=auto', () => {
@@ -95,8 +91,10 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    // Step indicator should be present
-    expect(screen.getByText('Trip Basics')).toBeInTheDocument();
+    // Step indicator should be present - "Trip Basics" appears in both title and stepper
+    const tripBasicsElements = screen.getAllByText('Trip Basics');
+    expect(tripBasicsElements.length).toBeGreaterThan(0);
+    
     expect(screen.getByText('Price & Payment')).toBeInTheDocument();
   });
 

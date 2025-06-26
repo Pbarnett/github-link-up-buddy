@@ -1,9 +1,10 @@
 /**
  * Round-Trip Filter Implementation
  * 
- * This filter replaces the old round-trip filtering logic with a comprehensive
- * implementation that ensures only true round-trip flights are returned when
- * users search for round-trip travel.
+ * This is a CORE APPLICATION FILTER that ensures flight offers match the search type.
+ * - For round-trip searches: Only returns offers with exactly 2 itineraries (outbound + return)
+ * - For one-way searches: Only returns offers with exactly 1 itinerary
+ * This is NOT a user preference - it's based on the search parameters.
  */
 
 import {
@@ -15,7 +16,7 @@ import {
 
 export class RoundTripFilter implements FlightFilter {
   readonly name = 'RoundTripFilter';
-  readonly priority = 5; // Early priority - basic validation
+  readonly priority = 5; // Core requirement - must match search type
 
   apply(offers: FlightOffer[], context: FilterContext): FlightOffer[] {
     console.log(`[${this.name}] Starting round-trip filtering`);

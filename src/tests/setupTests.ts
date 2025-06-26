@@ -1,10 +1,15 @@
 
-import { render as rtlRender } from '@testing-library/react'
+import { render as rtlRender, cleanup } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import React from 'react'
 
-import { vi } from 'vitest';
+import { vi, afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest'; // Import jest-dom matchers for Vitest
+
+// Cleanup after each test
+afterEach(() => {
+  cleanup();
+});
 
 // Wrap all components in a router for tests
 export function render(ui: React.ReactElement, options = {}) {
@@ -56,27 +61,67 @@ vi.mock('@/hooks/usePaymentMethods', () => ({
 }));
 
 // Mock supabase client
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({
-        data: { session: { access_token: 'mock-token' } },
-        error: null,
-      }),
-    },
+vi.mock('@/integrations/supabase/client', () => {
+  const createMockQueryBuilder = () => ({
     from: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
+    gt: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    lt: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
+    like: vi.fn().mockReturnThis(),
+    ilike: vi.fn().mockReturnThis(),
+    is: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    contains: vi.fn().mockReturnThis(),
+    containedBy: vi.fn().mockReturnThis(),
+    rangeGt: vi.fn().mockReturnThis(),
+    rangeGte: vi.fn().mockReturnThis(),
+    rangeLt: vi.fn().mockReturnThis(),
+    rangeLte: vi.fn().mockReturnThis(),
+    rangeAdjacent: vi.fn().mockReturnThis(),
+    overlaps: vi.fn().mockReturnThis(),
+    textSearch: vi.fn().mockReturnThis(),
+    match: vi.fn().mockReturnThis(),
+    not: vi.fn().mockReturnThis(),
+    or: vi.fn().mockReturnThis(),
+    filter: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue({ data: {}, error: null }),
-    rpc: vi.fn().mockResolvedValue({ data: {}, error: null }),
-    functions: {
-      invoke: vi.fn().mockResolvedValue({ data: {}, error: null }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: {}, error: null }),
+    then: vi.fn().mockResolvedValue({ data: [], error: null }),
+    // Add promise-like behavior for awaiting
+    catch: vi.fn(),
+    finally: vi.fn(),
+  });
+
+  return {
+    supabase: {
+      auth: {
+        getSession: vi.fn().mockResolvedValue({
+          data: { session: { access_token: 'mock-token' } },
+          error: null,
+        }),
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: 'test-user-id-123' } },
+          error: null,
+        }),
+      },
+      from: vi.fn().mockImplementation(() => createMockQueryBuilder()),
+      rpc: vi.fn().mockResolvedValue({ data: {}, error: null }),
+      functions: {
+        invoke: vi.fn().mockResolvedValue({ data: {}, error: null }),
+      },
     },
-  },
-}));
+  };
+});
 
 // Global mock for toast functionality
 vi.mock('@/components/ui/use-toast', () => {
@@ -89,13 +134,32 @@ vi.mock('@/components/ui/use-toast', () => {
 
 // Mock @tanstack/react-query
 vi.mock('@tanstack/react-query', () => ({
+  QueryClient: vi.fn().mockImplementation(() => ({
+    invalidateQueries: vi.fn(),
+    getQueryData: vi.fn(),
+    setQueryData: vi.fn(),
+    clear: vi.fn(),
+  })),
+  QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
   useQueryClient: vi.fn(() => ({
     invalidateQueries: vi.fn(),
+    getQueryData: vi.fn(),
+    setQueryData: vi.fn(),
   })),
   useQuery: vi.fn(() => ({
     data: undefined,
     isLoading: false,
     error: null,
+    isError: false,
+    refetch: vi.fn(),
+  })),
+  useMutation: vi.fn(() => ({
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+    isLoading: false,
+    isError: false,
+    error: null,
+    data: undefined,
   })),
 }));
 

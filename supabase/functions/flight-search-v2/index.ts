@@ -3,9 +3,15 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getAmadeusAccessToken, priceWithAmadeus } from '../lib/amadeus.ts';
 
-// Note: In Deno edge functions, we need to copy the filtering code or use a different approach
-// For now, we'll implement a simplified version that calls the core filtering logic
-// The full implementation would require copying the filtering files to the edge function directory
+// Import the Deno-compatible filtering system
+import {
+  createFilterContext,
+  normalizeOffers,
+  FilterFactory,
+  type FlightOffer,
+  type FilterContext,
+  type FilterResult
+} from '../_shared/filtering.ts';
 
 // Define a type for the expected request payload
 interface FlightSearchRequest {
@@ -160,10 +166,7 @@ const fetchAmadeusOffers = async (
         destinationLocationCode: tripRequest.destination_location_code,
         departureDate: tripRequest.departure_date,
         returnDate: tripRequest.return_date,
-        nonstopRequired: tripRequest.nonstop_required,
-        featureFlags: {
-          enableComprehensiveFiltering: true
-        }
+        nonstopRequired: tripRequest.nonstop_required
       });
       
       // Normalize Amadeus offers to our standard format
@@ -181,11 +184,7 @@ const fetchAmadeusOffers = async (
       
       console.log('[DEBUG] Using', pipelineType, 'filtering pipeline');
       
-      const pipeline = pipelineType === 'budget' 
-        ? FilterFactory.createBudgetPipeline()
-        : pipelineType === 'fast'
-        ? FilterFactory.createFastPipeline()
-        : FilterFactory.createStandardPipeline();
+      const pipeline = FilterFactory.createPipeline(pipelineType);
       
       // Execute the filtering pipeline
       const filterResult = await pipeline.execute(normalizedOffers, filterContext);
@@ -195,9 +194,7 @@ const fetchAmadeusOffers = async (
         finalCount: filterResult.finalCount,
         removedCount: filterResult.originalCount - filterResult.finalCount,
         executionTimeMs: filterResult.executionTimeMs,
-        filtersApplied: filterResult.filterResults.map(r => r.filterName),
-        errors: filterResult.errors.length,
-        warnings: filterResult.warnings.length
+        filtersApplied: filterResult.filterResults.map(r => r.filterName)
       });
       
       // Log detailed filter execution results
@@ -205,27 +202,18 @@ const fetchAmadeusOffers = async (
         console.log(`[DEBUG] ${result.filterName}: ${result.beforeCount} → ${result.afterCount} (removed ${result.removedOffers}, ${result.executionTimeMs}ms)`);
       });
       
-      // Log any filter errors or warnings
-      if (filterResult.errors.length > 0) {
-        console.warn('[DEBUG] Filter errors:', filterResult.errors.map(e => `${e.filterName}: ${e.error.message}`));
-      }
-      
-      if (filterResult.warnings.length > 0) {
-        console.warn('[DEBUG] Filter warnings:', filterResult.warnings.map(w => `${w.filterName}: ${w.message}`));
-      }
-      
       // Convert back to Amadeus format for database insertion
-      filteredOffers = filterResult.filteredOffers.map(offer => offer.rawData || offer);
+      let filteredOffers = filterResult.filteredOffers.map(offer => offer.rawData || offer);
       
       console.log('[DEBUG] New filtering system processed', offers.length, '→', filteredOffers.length, 'offers in', filterResult.executionTimeMs, 'ms');
+      
+      return filteredOffers;
       
     } catch (filterError) {
       console.error('[DEBUG] New filtering system failed, falling back to original offers:', filterError);
       // Fallback to unfiltered offers if filtering fails
-      filteredOffers = offers;
+      return offers;
     }
-
-    return filteredOffers;
   } catch (error) {
     console.warn('[DEBUG] Amadeus API failed, falling back to mock data:', error.message);
     

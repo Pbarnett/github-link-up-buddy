@@ -13,6 +13,8 @@ import { Loader2, TestTube, CheckCircle2, XCircle, User } from 'lucide-react';
 
 import useDuffelFlights from '@/hooks/useDuffelFlights';
 import DuffelBookingCard from '@/components/trip/DuffelBookingCard';
+import OfferExpirationTimer from '@/components/trip/OfferExpirationTimer';
+import DuffelErrorHandler, { DuffelError } from '@/components/trip/DuffelErrorHandler';
 import { DuffelTraveler } from '@/services/api/duffelBookingApi';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -109,22 +111,17 @@ const DuffelTest: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Dev Mode Notice */}
+      {/* Flight Search Header */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <User className="h-6 w-6" />
-            Development Mode
+            <TestTube className="h-6 w-6" />
+            Duffel Flight Search
           </CardTitle>
+          <p className="text-muted-foreground">
+            Search and book flights with real-time pricing from Duffel
+          </p>
         </CardHeader>
-        <CardContent>
-          <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-            <p className="text-yellow-800 text-sm">
-              🚧 <strong>Development Testing:</strong> This test page bypasses authentication for Duffel API testing.
-              Use any valid trip request ID from your database.
-            </p>
-          </div>
-        </CardContent>
       </Card>
 
       <Card>
@@ -231,12 +228,20 @@ const DuffelTest: React.FC = () => {
                       </div>
                       <div>
                         <span className="font-medium">Price:</span>
-                        <p className="text-lg font-bold">
-                          {new Intl.NumberFormat('en-US', {
-                            style: 'currency',
-                            currency: offer.currency || 'USD'
-                          }).format(offer.price)}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-lg font-bold">
+                            {new Intl.NumberFormat('en-US', {
+                              style: 'currency',
+                              currency: offer.currency || 'USD'
+                            }).format(offer.price)}
+                          </p>
+                          {offer.expires_at && (
+                            <OfferExpirationTimer 
+                              expiresAt={offer.expires_at}
+                              className="text-xs"
+                            />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </Card>

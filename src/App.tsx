@@ -113,8 +113,17 @@ const App = () => {
                   </AuthGuard>
                 }
               />
+              {/* Duffel Flight Search - Production Ready */}
               <Route
                 path="/duffel-test"
+                element={
+                  <AuthGuard>
+                    <DuffelTest />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/flight-search"
                 element={
                   <AuthGuard>
                     <DuffelTest />
