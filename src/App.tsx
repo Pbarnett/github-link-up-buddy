@@ -12,6 +12,9 @@ import TripOffersV2 from "./pages/TripOffersV2"; // Import the V2 component
 import TripConfirm from "./pages/TripConfirm";
 import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
+import DuffelTest from "./pages/DuffelTest";
+import AutoBookingDashboard from "./pages/AutoBookingDashboard";
+import AutoBookingNew from "./pages/AutoBookingNew";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 import TopNavigation from "./components/navigation/TopNavigation";
@@ -87,11 +90,34 @@ const App = () => {
                   </AuthGuard>
                 }
               />
-              <Route
-                path="/trips/:tripId/v2"
+              <Route path="/trips/:tripId/v2"
                 element={
                   <AuthGuard>
                     <TripOffersV2 />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/auto-booking"
+                element={
+                  <AuthGuard>
+                    <AutoBookingDashboard />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/auto-booking/new"
+                element={
+                  <AuthGuard>
+                    <AutoBookingNew />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/duffel-test"
+                element={
+                  <AuthGuard>
+                    <DuffelTest />
                   </AuthGuard>
                 }
               />
