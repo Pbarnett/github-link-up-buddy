@@ -13,13 +13,16 @@ export const useFeatureFlag = (flagName: string, defaultValue: boolean = false):
           .from('feature_flags')
           .select('enabled')
           .eq('name', flagName)
-          .single();
+          .maybeSingle();
 
         if (error) {
+          console.warn(`Error fetching feature flag '${flagName}':`, error.message);
+          setIsEnabled(defaultValue);
+        } else if (data) {
+          setIsEnabled(data.enabled);
+        } else {
           console.warn(`Feature flag '${flagName}' not found, using default value:`, defaultValue);
           setIsEnabled(defaultValue);
-        } else {
-          setIsEnabled(data.enabled);
         }
       } catch (error) {
         console.error(`Error fetching feature flag '${flagName}':`, error);

@@ -178,9 +178,56 @@ export async function searchFlightOffers(
     }
 
     const data = await response.json();
-    const offers = data.data || [];
+    let offers = data.data || [];
     
-    console.log(`[AmadeusSearch] Found ${offers.length} flight offers`);
+// ENHANCED ROUND-TRIP FILTERING: Multiple layers to ensure only true round-trip results
+    if (searchParams.returnDate) {
+      const beforeFilter = offers.length;
+      
+      // Layer 1: Filter out offers explicitly marked as one-way
+      offers = offers.filter((offer: any) => {
+        return !offer.oneWay;
+      });
+      
+      // Layer 2: Ensure offers have exactly 2 itineraries (outbound + return)
+      offers = offers.filter((offer: any) => {
+        return offer.itineraries && offer.itineraries.length === 2;
+      });
+      
+      // Layer 3: Verify both itineraries have proper routing
+      offers = offers.filter((offer: any) => {
+        if (!offer.itineraries || offer.itineraries.length !== 2) return false;
+        
+        const outbound = offer.itineraries[0];
+        const inbound = offer.itineraries[1];
+        
+        // Verify outbound goes from origin to destination
+        const outboundOrigin = outbound.segments?.[0]?.departure?.iataCode;
+        const outboundDestination = outbound.segments?.[outbound.segments.length - 1]?.arrival?.iataCode;
+        
+        // Verify inbound goes from destination back to origin
+        const inboundOrigin = inbound.segments?.[0]?.departure?.iataCode;
+        const inboundDestination = inbound.segments?.[inbound.segments.length - 1]?.arrival?.iataCode;
+        
+        return (
+          outboundOrigin === searchParams.originLocationCode &&
+          outboundDestination === searchParams.destinationLocationCode &&
+          inboundOrigin === searchParams.destinationLocationCode &&
+          inboundDestination === searchParams.originLocationCode
+        );
+      });
+      
+      console.log(`[AmadeusSearch] Round-trip filtering: ${beforeFilter} -> ${offers.length} offers (removed ${beforeFilter - offers.length} non-round-trip offers)`);
+    } else {
+      // For one-way searches, ensure offers have only 1 itinerary
+      const beforeFilter = offers.length;
+      offers = offers.filter((offer: any) => {
+        return offer.itineraries && offer.itineraries.length === 1;
+      });
+      console.log(`[AmadeusSearch] One-way filtering: ${beforeFilter} -> ${offers.length} offers (removed ${beforeFilter - offers.length} multi-itinerary offers)`);
+    }
+    
+    console.log(`[AmadeusSearch] Found ${offers.length} properly filtered flight offers`);
     
     // Add booking URLs to each offer
     offers.forEach((offer: any) => {

@@ -90,15 +90,36 @@ function transformV2ToLegacy(v2Offer: any): Offer {
 export async function fetchTripOffers(tripRequestId: string): Promise<Offer[]> {
   console.log('[🔍 DB-DEBUG] Fetching trip offers for tripRequestId:', tripRequestId);
   
-  // First, try the new flight_offers_v2 table
-  const { data: v2Data, error: v2Error } = await supabase
+  // First get the trip request to determine if it's round-trip
+  const { data: tripRequest, error: tripError } = await supabase
+    .from('trip_requests')
+    .select('return_date')
+    .eq('id', tripRequestId)
+    .single();
+
+  if (tripError) {
+    console.warn('[🔍 DB-DEBUG] Could not fetch trip request details for filtering:', tripError.message);
+  }
+
+  const isRoundTripRequest = !!(tripRequest?.return_date);
+  console.log(`[🔍 DB-DEBUG] Trip request is ${isRoundTripRequest ? 'round-trip' : 'one-way'}`);
+  
+  // Build query for flight_offers_v2 table with round-trip filtering
+  let v2Query = supabase
     .from('flight_offers_v2')
     .select('*')
-    .eq('trip_request_id', tripRequestId)
-    .order('price_total', { ascending: true });
+    .eq('trip_request_id', tripRequestId);
+
+  // Apply round-trip filtering at the database level for V2 table
+  if (isRoundTripRequest) {
+    v2Query = v2Query.not('return_dt', 'is', null);
+    console.log('[🔍 DB-DEBUG] Applied round-trip filter to V2 query (return_dt IS NOT NULL)');
+  }
+
+  const { data: v2Data, error: v2Error } = await v2Query.order('price_total', { ascending: true });
 
   if (!v2Error && v2Data && v2Data.length > 0) {
-    console.log(`[🔍 DB-DEBUG] Found ${v2Data.length} offers in flight_offers_v2 table`);
+    console.log(`[🔍 DB-DEBUG] Found ${v2Data.length} ${isRoundTripRequest ? 'round-trip' : 'any'} offers in flight_offers_v2 table`);
     
     // Transform V2 data to legacy format for compatibility
     const transformedOffers = v2Data.map(transformV2ToLegacy);
@@ -110,11 +131,19 @@ export async function fetchTripOffers(tripRequestId: string): Promise<Offer[]> {
   // Fall back to legacy flight_offers table
   console.log('[🔍 DB-DEBUG] No V2 offers found, checking legacy flight_offers table...');
   
-  const { data: legacyData, error: legacyError } = await supabase
+  // Build query for legacy table with round-trip filtering
+  let legacyQuery = supabase
     .from('flight_offers')
     .select('*')
-    .eq('trip_request_id', tripRequestId)
-    .order('price', { ascending: true });
+    .eq('trip_request_id', tripRequestId);
+
+  // Apply round-trip filtering at the database level for legacy table
+  if (isRoundTripRequest) {
+    legacyQuery = legacyQuery.not('return_date', 'is', null);
+    console.log('[🔍 DB-DEBUG] Applied round-trip filter to legacy query (return_date IS NOT NULL)');
+  }
+  
+  const { data: legacyData, error: legacyError } = await legacyQuery.order('price', { ascending: true });
 
   console.log('[🔍 DB-DEBUG] Legacy table response:', { data: legacyData, error: legacyError, count: legacyData?.length || 0 });
 

@@ -95,9 +95,51 @@ Deno.serve(async (req: Request) => {
     }
 
     const offersData = await offersResponse.json();
-    const offers = offersData.data || [];
+    let offers = offersData.data || [];
     
     console.log(`[DuffelSearch] Retrieved ${offers.length} offers`);
+
+    // ROUND-TRIP FILTERING: Ensure only true round-trip results for round-trip searches
+    if (searchParams.return_date) {
+      const beforeFilter = offers.length;
+      
+      // Filter to ensure offers have both outbound and return slices
+      offers = offers.filter((offer: any) => {
+        return offer.slices && offer.slices.length === 2;
+      });
+      
+      // Verify proper routing for round-trip
+      offers = offers.filter((offer: any) => {
+        if (!offer.slices || offer.slices.length !== 2) return false;
+        
+        const outbound = offer.slices[0];
+        const inbound = offer.slices[1];
+        
+        // Verify outbound goes from origin to destination
+        const outboundOrigin = outbound.segments?.[0]?.origin?.iata_code;
+        const outboundDestination = outbound.segments?.[outbound.segments.length - 1]?.destination?.iata_code;
+        
+        // Verify inbound goes from destination back to origin
+        const inboundOrigin = inbound.segments?.[0]?.origin?.iata_code;
+        const inboundDestination = inbound.segments?.[inbound.segments.length - 1]?.destination?.iata_code;
+        
+        return (
+          outboundOrigin === searchParams.origin &&
+          outboundDestination === searchParams.destination &&
+          inboundOrigin === searchParams.destination &&
+          inboundDestination === searchParams.origin
+        );
+      });
+      
+      console.log(`[DuffelSearch] Round-trip filtering: ${beforeFilter} -> ${offers.length} offers (removed ${beforeFilter - offers.length} non-round-trip offers)`);
+    } else {
+      // For one-way searches, ensure offers have only 1 slice
+      const beforeFilter = offers.length;
+      offers = offers.filter((offer: any) => {
+        return offer.slices && offer.slices.length === 1;
+      });
+      console.log(`[DuffelSearch] One-way filtering: ${beforeFilter} -> ${offers.length} offers (removed ${beforeFilter - offers.length} multi-slice offers)`);
+    }
 
     // 3. Store offers in flight_offers_v2 table for consistency
     if (offers.length > 0) {
