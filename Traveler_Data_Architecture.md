@@ -1,5 +1,34 @@
 # Traveler Data Architecture for Auto-Booking Campaigns
 
+## Executive Summary
+
+**Problem**: Parker Flight's new auto-booking feature requires storing sensitive traveler data (personal information, passport details, payment methods) for up to 12 months to automatically book flights via the Duffel API.
+
+**Solution**: A hybrid security architecture that separates data concerns while maintaining user experience:
+- **Payment Data**: Tokenized via Stripe (PCI-compliant)
+- **Personal Data**: Encrypted in Supabase with application-level controls
+- **Identity Verification**: Optional third-party services (Stripe Identity/Persona)
+
+**Key Decisions**:
+- Unified traveler profiles shared between manual and auto-booking flows
+- Zero-trust approach with encryption, tokenization, and minimal data retention
+- Phased 18-month implementation targeting SOC 2 compliance
+
+**Timeline**: MVP (3 months) → Production hardening (9 months) → Scale & multi-traveler (18+ months)
+
+---
+
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Architecture Overview](#architecture-overview) 
+3. [Data Flow & Security](#data-flow--security)
+4. [Compliance Framework](#compliance-framework)
+5. [Implementation Roadmap](#implementation-roadmap)
+6. [Risk Assessment](#risk-assessment)
+7. [Appendix: Detailed Analysis](#appendix-detailed-analysis)
+
+---
+
 ## Introduction
 
 This document outlines the data architecture for managing traveler data within the auto-booking campaigns feature. It focuses on secure data handling, storage practices, and integration with other system components.
