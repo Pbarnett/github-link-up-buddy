@@ -32,3 +32,5 @@ dist-ssr
 
 # Supabase secrets
 .env.supabase
+supabase/.env
+start-functions-with-env.sh
