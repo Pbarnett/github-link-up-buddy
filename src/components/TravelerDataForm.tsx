@@ -8,20 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { User, Calendar, FileText, Shield, AlertTriangle } from "lucide-react";
+import { travelerProfileService, TravelerProfile } from '@/services/travelerProfileService';
 
-interface TravelerData {
-  id?: string;
-  fullName: string;
-  dateOfBirth: string;
-  gender: 'MALE' | 'FEMALE' | 'OTHER';
-  email: string;
-  phone?: string;
-  passportNumber?: string;
-  passportCountry?: string;
-  passportExpiry?: string;
-  knownTravelerNumber?: string;
-  isPrimary?: boolean;
-}
+interface TravelerData extends TravelerProfile {}
 
 interface TravelerDataFormProps {
   onSubmit: (data: TravelerData) => void;
@@ -30,13 +19,18 @@ interface TravelerDataFormProps {
   mode?: 'create' | 'edit';
 }
 
-const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {} }: TravelerDataFormProps) => {
+const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode = 'create' }: TravelerDataFormProps) => {
   const [formData, setFormData] = useState<TravelerData>({
-    firstName: initialData.firstName || '',
-    lastName: initialData.lastName || '',
+    fullName: initialData.fullName || '',
     dateOfBirth: initialData.dateOfBirth || '',
-    gender: initialData.gender || '',
+    gender: initialData.gender || 'MALE',
+    email: initialData.email || '',
+    phone: initialData.phone || '',
     passportNumber: initialData.passportNumber || '',
+    passportCountry: initialData.passportCountry || '',
+    passportExpiry: initialData.passportExpiry || '',
+    knownTravelerNumber: initialData.knownTravelerNumber || '',
+    isPrimary: initialData.isPrimary || false,
   });
 
   const [errors, setErrors] = useState<Partial<TravelerData>>({});
@@ -44,12 +38,14 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {} }: Tra
   const validateForm = (): boolean => {
     const newErrors: Partial<TravelerData> = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
+    if (!formData.fullName?.trim()) {
+      newErrors.fullName = 'Full name is required';
     }
 
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
+    if (!formData.email?.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
     }
 
     if (!formData.dateOfBirth) {
@@ -58,7 +54,7 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {} }: Tra
       const birthDate = new Date(formData.dateOfBirth);
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
-      if (age < 18 || age > 120) {
+      if (age < 0 || age > 120) {
         newErrors.dateOfBirth = 'Please enter a valid date of birth';
       }
     }
@@ -67,8 +63,12 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {} }: Tra
       newErrors.gender = 'Gender is required';
     }
 
-    if (!formData.passportNumber.trim()) {
-      newErrors.passportNumber = 'Passport/ID number is required';
+    if (formData.passportNumber && formData.passportExpiry) {
+      const expiryDate = new Date(formData.passportExpiry);
+      const today = new Date();
+      if (expiryDate <= today) {
+        newErrors.passportExpiry = 'Passport must be valid for future travel';
+      }
     }
 
     setErrors(newErrors);
@@ -78,7 +78,24 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {} }: Tra
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      const submitAction = async () => {
+        try {
+          let response;
+          if (mode === 'edit' && initialData.id) {
+            response = await travelerProfileService.updateProfile(initialData.id, formData);
+            alert('Profile updated successfully!');
+          } else {
+            response = await travelerProfileService.createProfile(formData);
+            alert('Profile created successfully!');
+          }
+          onSubmit(response);
+        } catch (error) {
+          console.error('Error saving traveler profile:', error);
+          alert('Failed to save profile. Please try again.');
+        }
+      };
+
+      submitAction();
     }
   };
 
@@ -102,29 +119,30 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {} }: Tra
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="firstName">First Name *</Label>
+              <Label htmlFor="fullName">Full Name *</Label>
               <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                placeholder="Enter first name"
-                className={errors.firstName ? 'border-red-500' : ''}
+                id="fullName"
+                value={formData.fullName}
+                onChange={(e) => handleInputChange('fullName', e.target.value)}
+                placeholder="Enter full name"
+                className={errors.fullName ? 'border-red-500' : ''}
                 disabled={isLoading}
               />
-              {errors.firstName && <p className="text-sm text-red-500 mt-1">{errors.firstName}</p>}
+              {errors.fullName && <p className="text-sm text-red-500 mt-1">{errors.fullName}</p>}
             </div>
 
             <div>
-              <Label htmlFor="lastName">Last Name *</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                placeholder="Enter last name"
-                className={errors.lastName ? 'border-red-500' : ''}
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                placeholder="Enter email address"
+                className={errors.email ? 'border-red-500' : ''}
                 disabled={isLoading}
               />
-              {errors.lastName && <p className="text-sm text-red-500 mt-1">{errors.lastName}</p>}
+              {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
             </div>
           </div>
 
@@ -165,20 +183,71 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {} }: Tra
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="passportNumber">Passport/ID Number *</Label>
-            <div className="relative">
-              <FileText className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="phone">Phone Number</Label>
               <Input
-                id="passportNumber"
-                value={formData.passportNumber}
-                onChange={(e) => handleInputChange('passportNumber', e.target.value)}
-                placeholder="Enter passport or ID number"
-                className={`pl-10 ${errors.passportNumber ? 'border-red-500' : ''}`}
+                id="phone"
+                type="tel"
+                value={formData.phone || ''}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                placeholder="Enter phone number"
                 disabled={isLoading}
               />
             </div>
-            {errors.passportNumber && <p className="text-sm text-red-500 mt-1">{errors.passportNumber}</p>}
+
+            <div>
+              <Label htmlFor="knownTravelerNumber">Known Traveler Number</Label>
+              <Input
+                id="knownTravelerNumber"
+                value={formData.knownTravelerNumber || ''}
+                onChange={(e) => handleInputChange('knownTravelerNumber', e.target.value)}
+                placeholder="TSA PreCheck/Global Entry"
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="passportNumber">Passport Number</Label>
+              <div className="relative">
+                <FileText className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="passportNumber"
+                  value={formData.passportNumber || ''}
+                  onChange={(e) => handleInputChange('passportNumber', e.target.value)}
+                  placeholder="Enter passport number"
+                  className={`pl-10 ${errors.passportNumber ? 'border-red-500' : ''}`}
+                  disabled={isLoading}
+                />
+              </div>
+              {errors.passportNumber && <p className="text-sm text-red-500 mt-1">{errors.passportNumber}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor="passportCountry">Passport Country</Label>
+              <Input
+                id="passportCountry"
+                value={formData.passportCountry || ''}
+                onChange={(e) => handleInputChange('passportCountry', e.target.value)}
+                placeholder="USA, CAN, etc."
+                disabled={isLoading}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="passportExpiry">Passport Expiry</Label>
+              <Input
+                id="passportExpiry"
+                type="date"
+                value={formData.passportExpiry || ''}
+                onChange={(e) => handleInputChange('passportExpiry', e.target.value)}
+                className={errors.passportExpiry ? 'border-red-500' : ''}
+                disabled={isLoading}
+              />
+              {errors.passportExpiry && <p className="text-sm text-red-500 mt-1">{errors.passportExpiry}</p>}
+            </div>
           </div>
 
           <div className="bg-blue-50 p-3 rounded-md">
@@ -186,6 +255,16 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {} }: Tra
               <strong>Important:</strong> Please ensure all information matches your travel documents exactly. 
               Any discrepancies may result in boarding denial.
             </p>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isLoading ? 'Saving...' : mode === 'edit' ? 'Update Profile' : 'Save Profile'}
+            </Button>
           </div>
         </form>
       </CardContent>
