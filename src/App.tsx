@@ -3,6 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { SmartErrorBoundary } from "@/components/ErrorBoundary";
+import { useRetryQueue } from "@/utils/retryQueue";
+import { useEffect } from "react";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -20,13 +23,36 @@ import NotFound from "./pages/NotFound";
 import TopNavigation from "./components/navigation/TopNavigation";
 import Breadcrumbs from "./components/navigation/Breadcrumbs";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+    },
+  },
+});
+
+// Global middleware component
+const GlobalMiddleware = ({ children }: { children: React.ReactNode }) => {
+  // Initialize retry queue
+  useRetryQueue();
+  
+  // Initialize monitoring (already done in monitoring.ts)
+  useEffect(() => {
+    console.log('🚀 Parker Flight global middleware initialized');
+  }, []);
+  
+  return <>{children}</>;
+};
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
+    <SmartErrorBoundary level="global">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <GlobalMiddleware>
+            <Toaster />
         <a href="#main" className="skip-link">
           Skip to content
         </a>
@@ -135,8 +161,10 @@ const App = () => {
             </Routes>
           </main>
         </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+          </GlobalMiddleware>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </SmartErrorBoundary>
   );
 };
 
