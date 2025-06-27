@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Template for loading environment variables from .env file
+# Copy this to start-functions-with-env.sh and add your real API tokens
+
+export DUFFEL_API_TOKEN_TEST=${DUFFEL_API_TOKEN_TEST:-"your_duffel_test_token_here"}
+export DUFFEL_WEBHOOK_SECRET=${DUFFEL_WEBHOOK_SECRET:-"your_webhook_secret_here"}
+export DUFFEL_LIVE=${DUFFEL_LIVE:-"false"}
+export TEST_MODE=${TEST_MODE:-"true"}
+export AMADEUS_CLIENT_ID=${AMADEUS_CLIENT_ID:-"your_amadeus_client_id_here"}
+export AMADEUS_CLIENT_SECRET=${AMADEUS_CLIENT_SECRET:-"your_amadeus_client_secret_here"}
+export AMADEUS_API_KEY=${AMADEUS_API_KEY:-"your_amadeus_api_key_here"}
+export AMADEUS_API_SECRET=${AMADEUS_API_SECRET:-"your_amadeus_api_secret_here"}
+export AMADEUS_BASE_URL=https://test.api.amadeus.com
+export ALLOW_UNKNOWN_CARRYON=true
+export ENABLE_SEAT_SELECTION=true
+export DEBUG_BAGGAGE=false
+
+echo "🚀 Starting Supabase functions with environment variables..."
+echo "✅ DUFFEL_API_TOKEN_TEST: ${DUFFEL_API_TOKEN_TEST:0:20}..."
+echo "✅ DUFFEL_WEBHOOK_SECRET: ${DUFFEL_WEBHOOK_SECRET:0:20}..."
+echo "✅ DUFFEL_LIVE: $DUFFEL_LIVE"
+echo "📁 Using env file: supabase/.env"
+
+npx supabase functions serve --env-file supabase/.env
