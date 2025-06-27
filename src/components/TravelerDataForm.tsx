@@ -5,20 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Calendar, FileText } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { User, Calendar, FileText, Shield, AlertTriangle } from "lucide-react";
 
 interface TravelerData {
-  firstName: string;
-  lastName: string;
+  id?: string;
+  fullName: string;
   dateOfBirth: string;
-  gender: string;
-  passportNumber: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  email: string;
+  phone?: string;
+  passportNumber?: string;
+  passportCountry?: string;
+  passportExpiry?: string;
+  knownTravelerNumber?: string;
+  isPrimary?: boolean;
 }
 
 interface TravelerDataFormProps {
   onSubmit: (data: TravelerData) => void;
   isLoading?: boolean;
   initialData?: Partial<TravelerData>;
+  mode?: 'create' | 'edit';
 }
 
 const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {} }: TravelerDataFormProps) => {

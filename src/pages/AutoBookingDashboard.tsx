@@ -13,8 +13,9 @@ import { CampaignCard } from "@/components/autobooking/CampaignCard";
 import PageWrapper from "@/components/layout/PageWrapper";
 import TopNavigation from "@/components/navigation/TopNavigation";
 import Breadcrumbs from "@/components/navigation/Breadcrumbs";
+import { withErrorBoundary } from "@/components/ErrorBoundary";
 
-export default function AutoBookingDashboard() {
+function AutoBookingDashboard() {
   const navigate = useNavigate();
   const { userId } = useCurrentUser();
   const { campaigns, isLoading, error, refreshCampaigns, pauseCampaign, resumeCampaign, deleteCampaign } = useCampaigns();
@@ -222,3 +223,5 @@ export default function AutoBookingDashboard() {
     </PageWrapper>
   );
 }
+
+export default withErrorBoundary(AutoBookingDashboard, 'page');
