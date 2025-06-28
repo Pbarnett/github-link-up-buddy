@@ -319,7 +319,7 @@ const TripOffersV2Enhanced: React.FC = () => {
       </Card>
 
       {/* Pool Distribution Debug Info (Development Only) */}
-      {process.env.NODE_ENV === 'development' && (
+      {import.meta.env.DEV && (
         <Card className="bg-gray-50">
           <CardHeader>
             <CardTitle className="text-sm text-gray-600">Pool Distribution (Dev Info)</CardTitle>

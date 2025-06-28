@@ -14,4 +14,5 @@ export interface ScoredOffer extends BaseOffer {
   score: number;
   reasons: string[];
   pool: 1 | 2 | 3;
+  isRoundTrip: boolean;
 }

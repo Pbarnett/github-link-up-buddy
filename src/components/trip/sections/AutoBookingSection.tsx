@@ -3,8 +3,9 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Control, useWatch } from "react-hook-form";
+import { Control, useWatch, useFormContext } from "react-hook-form";
 import { FormValues } from "@/types/form";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, DollarSign, CreditCard, Shield } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,6 +18,7 @@ interface AutoBookingSectionProps {
 
 const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
   const { data: paymentMethods, isLoading: isLoadingPaymentMethods } = usePaymentMethods();
+  const { setValue } = useFormContext<FormValues>();
   
   // Watch the auto_book_enabled field to conditionally show fields
   const autoBookEnabled = useWatch({
@@ -33,6 +35,18 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
   // For auto mode, auto-booking should be enabled and section should be expanded
   const isAutoMode = mode === 'auto';
   const shouldShowFields = isAutoMode || autoBookEnabled;
+  
+  // In manual mode, automatically set consent when auto-booking is enabled
+  // This simulates the UI behavior where enabling auto-booking implies consent
+  React.useEffect(() => {
+    if (!isAutoMode && autoBookEnabled) {
+      // In manual mode, enabling auto-booking implies consent
+      setValue('auto_book_consent', true);
+    } else if (!autoBookEnabled) {
+      // Reset consent when auto-booking is disabled
+      setValue('auto_book_consent', false);
+    }
+  }, [autoBookEnabled, isAutoMode, setValue]);
 
   return (
     <Card className="border border-gray-200">

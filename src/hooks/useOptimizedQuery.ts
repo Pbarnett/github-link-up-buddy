@@ -76,7 +76,7 @@ export const useOptimizedQuery = <T>(
     
     // Adaptive caching based on connection
     staleTime: isSlowConnection ? 10 * 60 * 1000 : 5 * 60 * 1000, // 10min vs 5min
-    cacheTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes (renamed from cacheTime in v5)
     
     // Smart retry logic
     retry: (failureCount, error: any) => {

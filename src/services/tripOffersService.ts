@@ -134,6 +134,13 @@ export async function fetchTripOffers(
 
   if (!v2Error && v2Data && v2Data.length > 0) {
     console.log(`[🔍 SERVICE] Found ${v2Data.length} raw offers in flight_offers_v2 table`);
+    console.log('[🔍 V2-RAW-DEBUG] Sample raw V2 offers from database:', v2Data.slice(0, 2).map(offer => ({
+      id: offer.id,
+      price_total: offer.price_total,
+      price_currency: offer.price_currency,
+      typeof_price_total: typeof offer.price_total,
+      JSON_stringify: JSON.stringify(offer.price_total)
+    })));
     rawOffers = v2Data;
     usingV2Table = true;
   } else {
@@ -186,7 +193,70 @@ export async function fetchTripOffers(
     });
 
     // Normalize offers to unified format
-    const normalizedOffers = normalizeOffers(rawOffers, usingV2Table ? 'duffel' : 'amadeus');
+    let normalizedOffers;
+    
+    if (usingV2Table) {
+      // V2 table has a different structure - convert directly without provider adapters
+      normalizedOffers = rawOffers.map(v2Offer => {
+        const basePrice = parseFloat(v2Offer.price_total || '0');
+        const carryOnFee = parseFloat(v2Offer.price_carry_on || '0');
+        
+        console.error('🚨 [V2-NORMALIZATION-DEBUG] Processing V2 offer:', {
+          id: v2Offer.id,
+          price_total: v2Offer.price_total,
+          price_currency: v2Offer.price_currency,
+          parsed_basePrice: basePrice,
+          typeof_price_total: typeof v2Offer.price_total
+        });
+        
+        const normalizedOffer = {
+          provider: 'Amadeus',
+          id: v2Offer.id,
+          itineraries: [{
+            duration: 'N/A', // V2 table doesn't store duration
+            segments: [{
+              departure: {
+                iataCode: v2Offer.origin_iata,
+                at: v2Offer.depart_dt
+              },
+              arrival: {
+                iataCode: v2Offer.destination_iata,
+                at: v2Offer.return_dt || v2Offer.depart_dt // Fallback for one-way flights
+              },
+              carrierCode: 'Unknown',
+              flightNumber: 'N/A',
+              duration: 'N/A',
+              numberOfStops: v2Offer.nonstop ? 0 : 1
+            }]
+          }],
+          totalBasePrice: basePrice,
+          currency: v2Offer.price_currency || 'USD',
+          carryOnIncluded: v2Offer.bags_included || false,
+          carryOnFee: carryOnFee || 0,
+          totalPriceWithCarryOn: basePrice + (carryOnFee || 0),
+          stopsCount: v2Offer.nonstop ? 0 : 1,
+          validatingAirlines: [],
+          bookingUrl: v2Offer.booking_url,
+          rawData: v2Offer
+        };
+        
+        console.log('[🔍 V2-NORMALIZATION-DEBUG] Created normalized offer:', {
+          id: normalizedOffer.id,
+          totalBasePrice: normalizedOffer.totalBasePrice,
+          currency: normalizedOffer.currency,
+          typeof_totalBasePrice: typeof normalizedOffer.totalBasePrice
+        });
+        
+        return normalizedOffer;
+      });
+    } else {
+      // Use provider adapters for legacy data
+      const formattedOffers = rawOffers.map(offer => ({
+        data: offer,
+        provider: 'Amadeus' as 'Amadeus' | 'Duffel'
+      }));
+      normalizedOffers = normalizeOffers(formattedOffers, filterContext);
+    }
     console.log(`[🔍 SERVICE] Normalized ${normalizedOffers.length} offers`);
 
     // Create and execute filtering pipeline
@@ -195,12 +265,12 @@ export async function fetchTripOffers(
     
     console.log(`[🔍 SERVICE] Executing ${pipelineType} filtering pipeline with ${filterPipeline.getFilters().length} filters`);
     
-    const filteredOffers = await filterPipeline.execute(normalizedOffers, filterContext);
+    const pipelineResult = await filterPipeline.execute(normalizedOffers, filterContext);
     
-    console.log(`[🔍 SERVICE] Filtering completed: ${rawOffers.length} → ${filteredOffers.length} offers`);
+    console.log(`[🔍 SERVICE] Filtering completed: ${rawOffers.length} → ${pipelineResult.filteredOffers.length} offers`);
     
     // Transform filtered offers back to service format
-    const transformedOffers = filteredOffers.map(offer => {
+    const transformedOffers = pipelineResult.filteredOffers.map(offer => {
       if (usingV2Table) {
         // Find original V2 offer to get complete data
         const originalOffer = rawOffers.find(raw => raw.id === offer.id);

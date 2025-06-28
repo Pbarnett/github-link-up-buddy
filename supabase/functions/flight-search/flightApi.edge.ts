@@ -144,9 +144,13 @@ export function computeCarryOnFee(offer:any): number|null {
                 const baggageService = segDetail.additionalServices.find(
                 (s:any)=> s.type === 'BAGGAGE' && /CARRY ON|CABIN BAG/i.test(s.description?.toUpperCase() || '')
                 );
-                if (baggageService?.amount) {
-                    feeForThisTraveler += parseFloat(baggageService.amount) || 0;
+                if (baggageService) {
+                    // Found carry-on service, this means info is available
                     infoFoundForThisTraveler = true;
+                    if (baggageService.amount) {
+                        feeForThisTraveler += parseFloat(baggageService.amount) || 0;
+                    }
+                    // If no amount field, treat as free (fee remains 0)
                 }
             }
             // Check for included baggage as a sign that info is present
@@ -161,7 +165,7 @@ export function computeCarryOnFee(offer:any): number|null {
                 // If it's a basic/light fare and we haven't found explicit carry-on info (fee or free),
                 // then for this segment, it's opaque.
                 // The overall offer becomes opaque if *any* segment is basic/light AND opaque for carry-on.
-                if (!infoFoundForThisTraveler && !feeForThisTraveler) { // no fee found yet, and no other info like included bags
+                if (!infoFoundForThisTraveler) { // no info found yet (neither carry-on service nor included bags)
                     // console.log('[carry-on] Basic/Light fare segment without explicit carry-on fee/inclusion for offer:', offer?.id, 'segment:', segDetail.segmentId);
                     return null; // Opaque for this segment, thus for the offer
                 }

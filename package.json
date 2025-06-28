@@ -73,6 +73,7 @@
     "zustand": "^5.0.6"
   },
   "devDependencies": {
+    "@deno/vite-plugin": "^1.0.5",
     "@eslint/js": "^9.9.0",
     "@tailwindcss/typography": "^0.5.15",
     "@testing-library/jest-dom": "^6.6.3",
@@ -94,6 +95,7 @@
     "lovable-tagger": "^1.1.7",
     "postcss": "^8.4.47",
     "resend": "^4.6.0",
+    "stripe": "^18.2.1",
     "tailwindcss": "^3.4.11",
     "terser": "^5.40.0",
     "typescript": "^5.5.3",

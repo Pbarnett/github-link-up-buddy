@@ -97,7 +97,15 @@ function CampaignWizard() {
     try {
       // Combine all data for campaign creation
       const campaignData = {
-        ...wizardState.criteria,
+        name: wizardState.criteria.campaignName,
+        destination: wizardState.criteria.destination,
+        departureDates: `${wizardState.criteria.departureStart} to ${wizardState.criteria.departureEnd}`,
+        maxPrice: wizardState.criteria.maxPrice,
+        directFlightsOnly: wizardState.criteria.directFlightsOnly,
+        departureAirports: wizardState.criteria.origin ? [wizardState.criteria.origin] : undefined,
+        cabinClass: wizardState.criteria.cabinClass,
+        minDuration: wizardState.criteria.minDuration,
+        maxDuration: wizardState.criteria.maxDuration,
         traveler: wizardState.traveler,
         paymentMethodId: wizardState.paymentMethodId,
       };
@@ -260,5 +268,4 @@ function CampaignWizard() {
 }
 
 export default withErrorBoundary(CampaignWizard, 'page');
-}
 

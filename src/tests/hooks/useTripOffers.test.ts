@@ -110,6 +110,7 @@ const mockFlightSearchResponse = {
   pool1: [],
   pool2: [],
   pool3: [],
+  inserted: 2,
 };
 
 const mockFlightSearchResponseA: flightSearchApi.FlightSearchResponse = {
@@ -117,7 +118,7 @@ const mockFlightSearchResponseA: flightSearchApi.FlightSearchResponse = {
   pool1: [{ id: 'offerA1', score: 10 } as any], // Cast as any to simplify ScoredOffer structure for mock
   pool2: [],
   pool3: [],
-  success: true, message: 'Set A'
+  success: true, message: 'Set A', inserted: 1
 };
 
 const mockFlightSearchResponseB: flightSearchApi.FlightSearchResponse = {
@@ -125,7 +126,7 @@ const mockFlightSearchResponseB: flightSearchApi.FlightSearchResponse = {
   pool1: [{ id: 'offerB1', score: 20 } as any],
   pool2: [],
   pool3: [],
-  success: true, message: 'Set B'
+  success: true, message: 'Set B', inserted: 1
 };
 
 describe('useTripOffers', () => {
@@ -143,7 +144,8 @@ describe('useTripOffers', () => {
       ...mockFlightSearchResponse, // Spread to get all required fields
       pool1: [],
       pool2: [],
-      pool3: []
+      pool3: [],
+      inserted: 2
     });
     mockToast.mockImplementation(() => {});
     

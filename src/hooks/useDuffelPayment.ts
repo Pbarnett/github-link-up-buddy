@@ -65,7 +65,6 @@ export const useDuffelPayment = (): UseDuffelPaymentReturn => {
       const paymentData = await createStripePaymentIntent({
         amount: Math.round(options.amount * 100), // Convert to cents
         currency: options.currency.toLowerCase(),
-        description: options.description,
         metadata: {
           ...options.metadata,
           payment_type: 'duffel_flight_booking',

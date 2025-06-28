@@ -57,7 +57,8 @@ describe('TripRequestForm Mode Handling', () => {
 
     expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
     expect(screen.getByText('Enter the parameters for your trip below.')).toBeInTheDocument();
-    expect(screen.getByText('Search Now')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
   });
 
   test('should show manual mode UI when mode=manual', () => {
@@ -68,7 +69,8 @@ describe('TripRequestForm Mode Handling', () => {
     );
 
     expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
-    expect(screen.getByText('Search Now')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
   });
 
   test('should show auto mode UI when mode=auto', () => {

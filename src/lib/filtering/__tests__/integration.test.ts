@@ -220,7 +220,7 @@ describe('Phase 2 Integration: New Filtering Architecture', () => {
             }
           ]
         },
-        provider: 'Duffel'
+      provider: 'Duffel' as const
       }];
       
       const context = createFilterContext({
@@ -290,7 +290,7 @@ describe('Phase 2 Integration: New Filtering Architecture', () => {
             }
           ]
         },
-        provider: 'Amadeus'
+        provider: 'Amadeus' as const
       }];
       
       const context = createFilterContext({

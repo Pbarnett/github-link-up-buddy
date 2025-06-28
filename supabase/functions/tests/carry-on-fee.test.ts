@@ -1,165 +1,166 @@
 // supabase/functions/tests/carry-on-fee.test.ts
-import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts"; // Or appropriate version
+import { describe, it, expect } from 'vitest';
 import { computeCarryOnFee } from "../flight-search/flightApi.edge.ts";
 
 // Test case structure from user brief:
 // Deno.test('name', () => { const fee = computeCarryOnFee(mockOffer); assertEquals(fee, expected); });
 
-Deno.test('computeCarryOnFee: malformed travelerPricings handled (null)', () => {
-  const fee = computeCarryOnFee({ travelerPricings: null }); // Test with null travelerPricings
-  assertEquals(fee, null);
-});
-
-Deno.test('computeCarryOnFee: malformed travelerPricings handled (undefined)', () => {
-  const fee = computeCarryOnFee({}); // Test with travelerPricings undefined
-  assertEquals(fee, null);
-});
-
-Deno.test('computeCarryOnFee: empty travelerPricings array', () => {
-  const fee = computeCarryOnFee({ travelerPricings: [] });
-  assertEquals(fee, null);
-});
-
-Deno.test('computeCarryOnFee: travelerPricings with no fareDetailsBySegment', () => {
-  const fee = computeCarryOnFee({ travelerPricings: [{ fareDetailsBySegment: null }] });
-  assertEquals(fee, null);
-});
-
-Deno.test('computeCarryOnFee: travelerPricings with empty fareDetailsBySegment array', () => {
-  const fee = computeCarryOnFee({ travelerPricings: [{ fareDetailsBySegment: [] }] });
-  assertEquals(fee, null); // Logic iterates segments, if none, infoFoundForThisTraveler remains false
-});
-
-Deno.test('computeCarryOnFee: no additionalServices array', () => {
-  const fee = computeCarryOnFee({
-    travelerPricings: [{
-      fareDetailsBySegment: [{ additionalServices: null }]
-    }]
+describe('computeCarryOnFee', () => {
+  it('should handle malformed travelerPricings (null)', () => {
+    const fee = computeCarryOnFee({ travelerPricings: null }); // Test with null travelerPricings
+    expect(fee).toBe(null);
   });
-  assertEquals(fee, null); // No info found
-});
 
-Deno.test('computeCarryOnFee: additionalServices empty array', () => {
-  const fee = computeCarryOnFee({
-    travelerPricings: [{
-      fareDetailsBySegment: [{ additionalServices: [] }]
-    }]
+  it('should handle malformed travelerPricings (undefined)', () => {
+    const fee = computeCarryOnFee({}); // Test with travelerPricings undefined
+    expect(fee).toBe(null);
   });
-  assertEquals(fee, null); // No info found
-});
 
-Deno.test('computeCarryOnFee: BAGGAGE service present but no CARRY ON/CABIN BAG in description', () => {
-  const fee = computeCarryOnFee({
-    travelerPricings: [{
-      fareDetailsBySegment: [{
-        additionalServices: [{ type: 'BAGGAGE', description: 'CHECKED BAG', amount: '25.00' }]
+  it('should handle empty travelerPricings array', () => {
+    const fee = computeCarryOnFee({ travelerPricings: [] });
+    expect(fee).toBe(null);
+  });
+
+  it('should handle travelerPricings with no fareDetailsBySegment', () => {
+    const fee = computeCarryOnFee({ travelerPricings: [{ fareDetailsBySegment: null }] });
+    expect(fee).toBe(null);
+  });
+
+  it('should handle travelerPricings with empty fareDetailsBySegment array', () => {
+    const fee = computeCarryOnFee({ travelerPricings: [{ fareDetailsBySegment: [] }] });
+    expect(fee).toBe(null); // Logic iterates segments, if none, infoFoundForThisTraveler remains false
+  });
+
+  it('should handle no additionalServices array', () => {
+    const fee = computeCarryOnFee({
+      travelerPricings: [{
+        fareDetailsBySegment: [{ additionalServices: null }]
       }]
-    }]
+    });
+    expect(fee).toBe(null); // No info found
   });
-  assertEquals(fee, null); // No CARRY ON info found
-});
 
-Deno.test('computeCarryOnFee: CARRY ON service found with amount', () => {
-  const fee = computeCarryOnFee({
-    travelerPricings: [{
-      fareDetailsBySegment: [{
-        additionalServices: [{ type: 'BAGGAGE', description: 'CABIN BAG ALLOWANCE', amount: '30.00' }]
+  it('should handle additionalServices empty array', () => {
+    const fee = computeCarryOnFee({
+      travelerPricings: [{
+        fareDetailsBySegment: [{ additionalServices: [] }]
       }]
-    }]
+    });
+    expect(fee).toBe(null); // No info found
   });
-  assertEquals(fee, 30.00);
-});
 
-Deno.test('computeCarryOnFee: CARRY ON service found, amount is zero (free)', () => {
-  const fee = computeCarryOnFee({
-    travelerPricings: [{
-      fareDetailsBySegment: [{
-        additionalServices: [{ type: 'BAGGAGE', description: 'CARRY ON BAG', amount: '0.00' }]
+  it('should handle BAGGAGE service present but no CARRY ON/CABIN BAG in description', () => {
+    const fee = computeCarryOnFee({
+      travelerPricings: [{
+        fareDetailsBySegment: [{
+          additionalServices: [{ type: 'BAGGAGE', description: 'CHECKED BAG', amount: '25.00' }]
+        }]
       }]
-    }]
+    });
+    expect(fee).toBe(null); // No CARRY ON info found
   });
-  assertEquals(fee, 0);
-});
 
-Deno.test('computeCarryOnFee: CARRY ON service found, no amount (should be treated carefully, implies free or included but not priced)', () => {
-  // Current computeCarryOnFee logic: if (svc?.amount) { fee+=parseFloat(svc.amount)||0; info=true; }
-  // If amount is missing or not parseable, it's not added to fee, info might not be true.
-  // If info is false at the end, it returns null.
-  const fee = computeCarryOnFee({
-    travelerPricings: [{
-      fareDetailsBySegment: [{
-        additionalServices: [{ type: 'BAGGAGE', description: 'CARRY ON BAG' /* no amount */ }]
+  it('should find CARRY ON service with amount', () => {
+    const fee = computeCarryOnFee({
+      travelerPricings: [{
+        fareDetailsBySegment: [{
+          additionalServices: [{ type: 'BAGGAGE', description: 'CABIN BAG ALLOWANCE', amount: '30.00' }]
+        }]
       }]
-    }]
+    });
+    expect(fee).toBe(30.00);
   });
-  // If amount is undefined, parseFloat(undefined) is NaN, || 0 makes it 0. info becomes true because description matches.
-  // So, it should return 0 if description matches but no amount.
-  assertEquals(fee, 0);
-});
 
-Deno.test('computeCarryOnFee: Basic/Light fare, no explicit carry-on fee/inclusion info (opaque)', () => {
-  const fee = computeCarryOnFee({
-    travelerPricings: [{
-      fareDetailsBySegment: [{
-        fareBasis: 'BASICECONOMY',
-        // No additionalServices or includedCheckedBags that would set infoFoundForThisTraveler = true
+  it('should find CARRY ON service with zero amount (free)', () => {
+    const fee = computeCarryOnFee({
+      travelerPricings: [{
+        fareDetailsBySegment: [{
+          additionalServices: [{ type: 'BAGGAGE', description: 'CARRY ON BAG', amount: '0.00' }]
+        }]
       }]
-    }]
+    });
+    expect(fee).toBe(0);
   });
-  assertEquals(fee, null);
-});
 
-Deno.test('computeCarryOnFee: Basic/Light fare, but carry-on fee IS specified', () => {
-  const fee = computeCarryOnFee({
-    travelerPricings: [{
-      fareDetailsBySegment: [{
-        fareBasis: 'LIGHTFARE',
-        additionalServices: [{ type: 'BAGGAGE', description: 'CABIN BAG ALLOWANCE', amount: '45.00' }]
+  it('should handle CARRY ON service found with no amount', () => {
+    // Current computeCarryOnFee logic: if (svc?.amount) { fee+=parseFloat(svc.amount)||0; info=true; }
+    // If amount is missing or not parseable, it's not added to fee, info might not be true.
+    // If info is false at the end, it returns null.
+    const fee = computeCarryOnFee({
+      travelerPricings: [{
+        fareDetailsBySegment: [{
+          additionalServices: [{ type: 'BAGGAGE', description: 'CARRY ON BAG' /* no amount */ }]
+        }]
       }]
-    }]
+    });
+    // If amount is undefined, parseFloat(undefined) is NaN, || 0 makes it 0. info becomes true because description matches.
+    // So, it should return 0 if description matches but no amount.
+    expect(fee).toBe(0);
   });
-  assertEquals(fee, 45.00);
-});
 
-Deno.test('computeCarryOnFee: Basic/Light fare, includedCheckedBags sets infoFound (implies not opaque for carry-on, defaults to 0 fee if no specific carry-on service)', () => {
-  const fee = computeCarryOnFee({
-    travelerPricings: [{
-      fareDetailsBySegment: [{
-        fareBasis: 'LIGHT',
-        includedCheckedBags: { quantity: 1 } // This sets infoFoundForThisTraveler = true
-        // No explicit CARRY ON additionalService means fee remains 0 for carry-on
+  it('should handle Basic/Light fare with no explicit carry-on fee/inclusion info (opaque)', () => {
+    const fee = computeCarryOnFee({
+      travelerPricings: [{
+        fareDetailsBySegment: [{
+          fareBasis: 'BASICECONOMY',
+          // No additionalServices or includedCheckedBags that would set infoFoundForThisTraveler = true
+        }]
       }]
-    }]
+    });
+    expect(fee).toBe(null);
   });
-  assertEquals(fee, 0); // Because info was found, but no specific carry-on fee was added
-});
 
-Deno.test('computeCarryOnFee: Multiple segments, one has fee, one is free (should sum or take first/max - current sums)', () => {
-  // The current logic in computeCarryOnFee iterates segments for *one* travelerPricing
-  // and sums fees. If multiple travelerPricings, it breaks after the first one with info.
-  // This test focuses on multiple segments for one travelerPricing.
-  const fee = computeCarryOnFee({
-    travelerPricings: [{
-      fareDetailsBySegment: [
-        { additionalServices: [{ type: 'BAGGAGE', description: 'CARRY ON', amount: '20.00' }] },
-        { additionalServices: [{ type: 'BAGGAGE', description: 'CABIN BAG', amount: '0.00' }] }
+  it('should handle Basic/Light fare with specified carry-on fee', () => {
+    const fee = computeCarryOnFee({
+      travelerPricings: [{
+        fareDetailsBySegment: [{
+          fareBasis: 'LIGHTFARE',
+          additionalServices: [{ type: 'BAGGAGE', description: 'CABIN BAG ALLOWANCE', amount: '45.00' }]
+        }]
+      }]
+    });
+    expect(fee).toBe(45.00);
+  });
+
+  it('should handle Basic/Light fare with includedCheckedBags setting infoFound', () => {
+    const fee = computeCarryOnFee({
+      travelerPricings: [{
+        fareDetailsBySegment: [{
+          fareBasis: 'LIGHT',
+          includedCheckedBags: { quantity: 1 } // This sets infoFoundForThisTraveler = true
+          // No explicit CARRY ON additionalService means fee remains 0 for carry-on
+        }]
+      }]
+    });
+    expect(fee).toBe(0); // Because info was found, but no specific carry-on fee was added
+  });
+
+  it('should handle multiple segments, one has fee, one is free (should sum)', () => {
+    // The current logic in computeCarryOnFee iterates segments for *one* travelerPricing
+    // and sums fees. If multiple travelerPricings, it breaks after the first one with info.
+    // This test focuses on multiple segments for one travelerPricing.
+    const fee = computeCarryOnFee({
+      travelerPricings: [{
+        fareDetailsBySegment: [
+          { additionalServices: [{ type: 'BAGGAGE', description: 'CARRY ON', amount: '20.00' }] },
+          { additionalServices: [{ type: 'BAGGAGE', description: 'CABIN BAG', amount: '0.00' }] }
+        ]
+      }]
+    });
+    expect(fee).toBe(20.00); // 20 + 0 = 20
+  });
+
+  it('should use first travelerPricing with info', () => {
+    const fee = computeCarryOnFee({
+      travelerPricings: [
+        { fareDetailsBySegment: [{ additionalServices: null }] }, // No info here
+        { fareDetailsBySegment: [{ additionalServices: [{ type: 'BAGGAGE', description: 'CARRY ON', amount: '35.00' }] }] } // Info here
       ]
-    }]
+    });
+    expect(fee).toBe(35.00);
   });
-  assertEquals(fee, 20.00); // 20 + 0 = 20
-});
 
-Deno.test('computeCarryOnFee: Multiple travelerPricings, uses first one with info', () => {
-  const fee = computeCarryOnFee({
-    travelerPricings: [
-      { fareDetailsBySegment: [{ additionalServices: null }] }, // No info here
-      { fareDetailsBySegment: [{ additionalServices: [{ type: 'BAGGAGE', description: 'CARRY ON', amount: '35.00' }] }] } // Info here
-    ]
-  });
-  assertEquals(fee, 35.00);
-});
-
-Deno.test('computeCarryOnFee: Complex offer with mixed info, ensure correct fee or null', () => {
+  it('should handle complex offer with mixed info correctly', () => {
     const offer = {
         id: "test-offer-complex",
         price: { total: "200.00" },
@@ -193,10 +194,10 @@ Deno.test('computeCarryOnFee: Complex offer with mixed info, ensure correct fee 
         // ... other offer properties
     };
     const fee = computeCarryOnFee(offer);
-    assertEquals(fee, 0); // infoFound is true from checked bags, no explicit carry-on fee found, so defaults to 0
-});
+    expect(fee).toBe(0); // infoFound is true from checked bags, no explicit carry-on fee found, so defaults to 0
+  });
 
-Deno.test('computeCarryOnFee: Basic fare but included checked bags makes it not opaque', () => {
+  it('should handle Basic fare but included checked bags makes it not opaque', () => {
     const offer = {
         travelerPricings: [{
             fareDetailsBySegment: [{
@@ -206,10 +207,10 @@ Deno.test('computeCarryOnFee: Basic fare but included checked bags makes it not 
         }]
     };
     const fee = computeCarryOnFee(offer);
-    assertEquals(fee, 0); // Not opaque, and no carry-on fee specified, so 0.
-});
+    expect(fee).toBe(0); // Not opaque, and no carry-on fee specified, so 0.
+  });
 
-Deno.test('computeCarryOnFee: Basic fare, specific CARRY ON fee provided', () => {
+  it('should handle Basic fare with specific CARRY ON fee provided', () => {
     const offer = {
         travelerPricings: [{
             fareDetailsBySegment: [{
@@ -219,5 +220,6 @@ Deno.test('computeCarryOnFee: Basic fare, specific CARRY ON fee provided', () =>
         }]
     };
     const fee = computeCarryOnFee(offer);
-    assertEquals(fee, 25.99);
+    expect(fee).toBe(25.99);
+  });
 });

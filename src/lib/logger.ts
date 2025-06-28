@@ -8,7 +8,7 @@ const LOG_LEVELS = {
 
 // Basic environment check (can be improved with actual env variable like process.env.LOG_LEVEL)
 // For client-side code, process.env.NODE_ENV is typically available via build tools.
-const CURRENT_LOG_LEVEL = process.env.NODE_ENV === 'development' ? LOG_LEVELS.DEBUG : LOG_LEVELS.INFO;
+const CURRENT_LOG_LEVEL = import.meta.env.DEV ? LOG_LEVELS.DEBUG : LOG_LEVELS.INFO;
 
 interface Logger {
   debug: (...args: any[]) => void;

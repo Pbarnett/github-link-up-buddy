@@ -21,9 +21,15 @@ const TripDurationInputs = ({ control }: TripDurationInputsProps) => {
         name="min_duration"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">Trip Length (min days)</FormLabel>
+            <FormLabel 
+              htmlFor="min_duration_input" 
+              className="text-sm font-medium text-gray-900"
+            >
+              Minimum trip duration (days)
+            </FormLabel>
             <FormControl>
               <Input
+                id="min_duration_input"
                 type="number"
                 min="1"
                 max="30"
@@ -42,9 +48,15 @@ const TripDurationInputs = ({ control }: TripDurationInputsProps) => {
         name="max_duration"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-medium text-gray-900">(max days)</FormLabel>
+            <FormLabel 
+              htmlFor="max_duration_input" 
+              className="text-sm font-medium text-gray-900"
+            >
+              Maximum trip duration (days)
+            </FormLabel>
             <FormControl>
               <Input
+                id="max_duration_input"
                 type="number"
                 min="1"
                 max="30"

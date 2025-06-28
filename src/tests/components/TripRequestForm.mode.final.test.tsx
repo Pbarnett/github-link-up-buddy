@@ -55,7 +55,8 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
     expect(screen.getByText('Enter the parameters for your trip below.')).toBeInTheDocument();
     // Component has multiple "Search Now" buttons (main form + sticky actions)
     const searchButtons = screen.getAllByText('Search Now');
@@ -69,7 +70,8 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
     // Component has multiple "Search Now" buttons (main form + sticky actions)
     const searchButtons = screen.getAllByText('Search Now');
     expect(searchButtons.length).toBeGreaterThan(0);

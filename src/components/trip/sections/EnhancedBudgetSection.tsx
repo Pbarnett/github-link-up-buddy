@@ -23,8 +23,11 @@ const EnhancedBudgetSection = ({ control }: EnhancedBudgetSectionProps) => {
       render={({ field }) => (
         <FormItem>
           <div className="flex items-center gap-2">
-            <FormLabel className="text-base lg:text-lg font-semibold text-gray-900">
-              Maximum Price (USD)
+            <FormLabel 
+              htmlFor="max_price_input" 
+              className="text-base lg:text-lg font-semibold text-gray-900"
+            >
+              Maximum price
             </FormLabel>
             <TooltipProvider>
               <Tooltip>
@@ -41,6 +44,7 @@ const EnhancedBudgetSection = ({ control }: EnhancedBudgetSectionProps) => {
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">$</span>
               <Input
+                id="max_price_input"
                 type="number"
                 min="100"
                 max="10000"

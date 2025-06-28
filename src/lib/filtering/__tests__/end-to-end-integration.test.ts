@@ -5,7 +5,7 @@
  * through to frontend display, ensuring all components work together correctly.
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FilterFactory } from '../FilterFactory';
 import { createFilterContext, normalizeOffers } from '../index';
 import { AmadeusAdapter, DuffelAdapter } from '../adapters/ProviderAdapters';
@@ -138,7 +138,8 @@ describe('End-to-End Filtering Integration', () => {
 
   describe('Provider Adapter Integration', () => {
     it('should normalize Amadeus offers correctly', () => {
-      const normalized = AmadeusAdapter.normalize(mockAmadeusOffer, roundTripContext);
+      const adapter = new AmadeusAdapter();
+      const normalized = adapter.normalize(mockAmadeusOffer, roundTripContext);
 
       expect(normalized).toEqual({
         provider: 'Amadeus',
@@ -168,7 +169,8 @@ describe('End-to-End Filtering Integration', () => {
     });
 
     it('should normalize Duffel offers correctly', () => {
-      const normalized = DuffelAdapter.normalize(mockDuffelOffer, roundTripContext);
+      const adapter = new DuffelAdapter();
+      const normalized = adapter.normalize(mockDuffelOffer, roundTripContext);
 
       expect(normalized).toEqual({
         provider: 'Duffel',

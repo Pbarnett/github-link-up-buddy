@@ -103,6 +103,9 @@ export interface UserPreferences {
   maxTotalTripTime?: string; // ISO duration
   maxLayoverMinutes?: number; // Only applies if app allows connections in future
   
+  // Legacy compatibility field
+  nonstopRequired?: boolean;
+  
   // Note: nonstop, carry-on, and trip-type are CORE APP REQUIREMENTS,
   // not user preferences, so they're handled by core filters
 }

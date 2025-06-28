@@ -56,7 +56,8 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
     expect(screen.getByText('Enter the parameters for your trip below.')).toBeInTheDocument();
     // Use getAllByText for multiple buttons with same text
     const searchButtons = screen.getAllByText('Search Now');
@@ -70,7 +71,8 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
     const searchButtons = screen.getAllByText('Search Now');
     expect(searchButtons.length).toBeGreaterThan(0);
   });

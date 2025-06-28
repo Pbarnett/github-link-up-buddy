@@ -73,6 +73,20 @@ describe('send-reminder Edge Function', () => {
 
     // Default for duplicate notification check (no existing notification)
     mockSupabaseSingle.mockResolvedValue({ data: null, error: null });
+    
+    // Ensure the complex query chain works properly
+    mockSupabaseEq.mockReturnValue({
+      gte: mockSupabaseGte,
+      limit: mockSupabaseLimit,
+    });
+    
+    mockSupabaseGte.mockReturnValue({
+      lte: mockSupabaseLte,
+      lt: mockSupabaseLte, // Both lte and lt should work
+    });
+    
+    mockSupabaseLte.mockResolvedValue({ data: [], error: null });
+    mockSupabaseLimit.mockReturnValue({ maybeSingle: mockSupabaseSingle });
 
 
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});

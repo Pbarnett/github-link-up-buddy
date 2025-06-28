@@ -105,7 +105,8 @@ async function processBookingRequest(orderId: string) {
   }
 }
 
-serve(async (req: Request) => {
+// Export handler function for testing
+export async function handleStripeWebhook(req: Request): Promise<Response> {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -153,6 +154,166 @@ serve(async (req: Request) => {
 
     // Process the event based on its type
     switch (event.type) {
+      // Handle SetupIntent events for saving payment methods
+      case "setup_intent.succeeded": {
+        const setupIntent = event.data.object as Stripe.SetupIntent;
+        console.log(`[STRIPE-WEBHOOK] Processing setup_intent.succeeded: ${setupIntent.id}`);
+        
+        if (!setupIntent.payment_method || !setupIntent.customer) {
+          console.error("[STRIPE-WEBHOOK] SetupIntent missing payment_method or customer");
+          break;
+        }
+
+        // Get payment method details
+        const pm = await stripe.paymentMethods.retrieve(setupIntent.payment_method as string);
+        console.log(`[STRIPE-WEBHOOK] Retrieved payment method: ${pm.id}`);
+
+        // Find user by Stripe customer ID
+        const { data: profile, error: profileError } = await supabase
+          .from('traveler_profiles')
+          .select('user_id')
+          .eq('stripe_customer_id', setupIntent.customer as string)
+          .single();
+
+        if (profileError || !profile) {
+          console.error("[STRIPE-WEBHOOK] Cannot find user for customer:", setupIntent.customer);
+          break;
+        }
+
+        const userId = profile.user_id;
+
+        // Check if payment method already exists (idempotency)
+        const { data: existingPM } = await supabase
+          .from('payment_methods')
+          .select('id')
+          .eq('stripe_payment_method_id', pm.id)
+          .single();
+
+        if (existingPM) {
+          console.log(`[STRIPE-WEBHOOK] Payment method ${pm.id} already exists, skipping`);
+          break;
+        }
+
+        // Check if this is the user's first payment method
+        const { data: existingMethods } = await supabase
+          .from('payment_methods')
+          .select('id')
+          .eq('user_id', userId);
+
+        const isFirstMethod = !existingMethods || existingMethods.length === 0;
+
+        // If this will be the default, unset other defaults first
+        if (isFirstMethod) {
+          await supabase
+            .from('payment_methods')
+            .update({ is_default: false })
+            .eq('user_id', userId);
+        }
+
+        // Save payment method to database
+        const { error: insertError, data: insertedMethod } = await supabase
+          .from('payment_methods')
+          .insert({
+            user_id: userId,
+            stripe_customer_id: setupIntent.customer as string,
+            stripe_payment_method_id: pm.id,
+            brand: pm.card?.brand,
+            last4: pm.card?.last4,
+            exp_month: pm.card?.exp_month,
+            exp_year: pm.card?.exp_year,
+            is_default: isFirstMethod,
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error("[STRIPE-WEBHOOK] Error saving payment method:", insertError);
+          break;
+        }
+
+        // Create notification
+        await createNotification(userId, "payment_method_added", {
+          paymentMethodId: insertedMethod.id,
+          brand: pm.card?.brand,
+          last4: pm.card?.last4,
+          isDefault: isFirstMethod,
+          timestamp: new Date().toISOString()
+        });
+
+        console.log(`[STRIPE-WEBHOOK] ✅ Payment method ${pm.id} saved for user ${userId}`);
+        break;
+      }
+
+      // Handle PaymentIntent events for auto-booking charges
+      case "payment_intent.succeeded": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        console.log(`[STRIPE-WEBHOOK] Processing payment_intent.succeeded: ${paymentIntent.id}`);
+
+        // Check if this is an auto-booking payment
+        const isAutoBooking = paymentIntent.metadata?.auto_booking === 'true';
+        const campaignId = paymentIntent.metadata?.campaign_id;
+        const userId = paymentIntent.metadata?.user_id;
+
+        if (isAutoBooking && campaignId) {
+          console.log(`[STRIPE-WEBHOOK] Auto-booking payment succeeded for campaign: ${campaignId}`);
+          
+          // Create notification for successful auto-booking payment
+          if (userId) {
+            await createNotification(userId, "auto_booking_payment_succeeded", {
+              campaignId: campaignId,
+              paymentIntentId: paymentIntent.id,
+              amount: paymentIntent.amount / 100, // Convert from cents
+              currency: paymentIntent.currency,
+              route: paymentIntent.metadata?.route,
+              departureDate: paymentIntent.metadata?.departure_date,
+              timestamp: new Date().toISOString()
+            });
+          }
+
+          // The actual booking should already be triggered by prepare-auto-booking-charge
+          // This webhook serves as confirmation and audit trail
+        }
+        break;
+      }
+
+      case "payment_intent.payment_failed": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        console.log(`[STRIPE-WEBHOOK] Processing payment_intent.payment_failed: ${paymentIntent.id}`);
+
+        // Check if this is an auto-booking payment
+        const isAutoBooking = paymentIntent.metadata?.auto_booking === 'true';
+        const campaignId = paymentIntent.metadata?.campaign_id;
+        const userId = paymentIntent.metadata?.user_id;
+
+        if (isAutoBooking && campaignId && userId) {
+          console.log(`[STRIPE-WEBHOOK] Auto-booking payment failed for campaign: ${campaignId}`);
+          
+          // Update campaign status if payment failed
+          await supabase
+            .from('campaigns')
+            .update({ 
+              status: 'paused', // Pause campaign until payment issue is resolved
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', campaignId)
+            .eq('user_id', userId);
+
+          // Create notification for failed auto-booking payment
+          await createNotification(userId, "auto_booking_payment_failed", {
+            campaignId: campaignId,
+            paymentIntentId: paymentIntent.id,
+            amount: paymentIntent.amount / 100,
+            currency: paymentIntent.currency,
+            route: paymentIntent.metadata?.route,
+            failureReason: paymentIntent.last_payment_error?.message || 'Payment failed',
+            timestamp: new Date().toISOString()
+          });
+
+          console.log(`[STRIPE-WEBHOOK] Campaign ${campaignId} paused due to payment failure`);
+        }
+        break;
+      }
+
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.user_id;
@@ -175,62 +336,8 @@ serve(async (req: Request) => {
         }
 
         if (session.mode === "setup") {
-          // Handle setup mode - save new payment method
-          const setupIntentId = session.setup_intent as string;
-          if (!setupIntentId) {
-            throw new Error("Missing setup intent ID");
-          }
-          
-          console.log(`[STRIPE-WEBHOOK] Retrieving setup intent: ${setupIntentId}`);
-          const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
-          
-          if (!setupIntent.payment_method) {
-            throw new Error("Setup intent has no payment method");
-          }
-          
-          const pm = await stripe.paymentMethods.retrieve(setupIntent.payment_method as string);
-          console.log(`[STRIPE-WEBHOOK] Retrieved payment method: ${pm.id}`);
-          
-          // First unset any existing default payment methods
-          const { error: updateError } = await supabase
-            .from("payment_methods")
-            .update({ is_default: false })
-            .eq("user_id", userId);
-            
-          if (updateError) {
-            console.error("[STRIPE-WEBHOOK] Error unsetting default payment methods:", updateError);
-          }
-          
-          // Now insert the new payment method
-          const { error: insertError, data: insertedMethod } = await supabase
-            .from("payment_methods")
-            .insert({
-              user_id: userId,
-              stripe_pm_id: pm.id,
-              brand: pm.card?.brand,
-              last4: pm.card?.last4,
-              exp_month: pm.card?.exp_month,
-              exp_year: pm.card?.exp_year,
-              is_default: true,
-              nickname: session.metadata?.nickname || null,
-            })
-            .select()
-            .single();
-            
-          if (insertError) {
-            console.error("[STRIPE-WEBHOOK] Error inserting payment method:", insertError);
-            throw new Error(`Failed to save payment method: ${insertError.message}`);
-          }
-          
-          // Create notification for new payment method
-          await createNotification(userId, "payment_method_added", {
-            paymentMethodId: insertedMethod.id,
-            brand: pm.card?.brand,
-            last4: pm.card?.last4,
-            timestamp: new Date().toISOString()
-          });
-          
-          console.log(`[STRIPE-WEBHOOK] ✅ Payment method ${pm.id} saved for user ${userId}`);
+          // This is handled by setup_intent.succeeded above, but we can log for completeness
+          console.log(`[STRIPE-WEBHOOK] Setup session completed, setup_intent.succeeded should handle payment method saving`);
         } else if (session.mode === "payment") {
           // Handle payment mode - process booking request or complete order
           if (orderId) {
@@ -339,4 +446,12 @@ serve(async (req: Request) => {
       }
     );
   }
-});
+}
+
+// Only call serve when running in Deno (not in tests)
+if (typeof Deno !== 'undefined' && !Deno.env.get('VITEST')) {
+  serve(handleStripeWebhook);
+}
+
+// Export as default for compatibility
+export default handleStripeWebhook;
