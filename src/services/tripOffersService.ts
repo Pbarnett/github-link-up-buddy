@@ -134,13 +134,6 @@ export async function fetchTripOffers(
 
   if (!v2Error && v2Data && v2Data.length > 0) {
     console.log(`[🔍 SERVICE] Found ${v2Data.length} raw offers in flight_offers_v2 table`);
-    console.log('[🔍 V2-RAW-DEBUG] Sample raw V2 offers from database:', v2Data.slice(0, 2).map(offer => ({
-      id: offer.id,
-      price_total: offer.price_total,
-      price_currency: offer.price_currency,
-      typeof_price_total: typeof offer.price_total,
-      JSON_stringify: JSON.stringify(offer.price_total)
-    })));
     rawOffers = v2Data;
     usingV2Table = true;
   } else {
@@ -201,15 +194,7 @@ export async function fetchTripOffers(
         const basePrice = parseFloat(v2Offer.price_total || '0');
         const carryOnFee = parseFloat(v2Offer.price_carry_on || '0');
         
-        console.error('🚨 [V2-NORMALIZATION-DEBUG] Processing V2 offer:', {
-          id: v2Offer.id,
-          price_total: v2Offer.price_total,
-          price_currency: v2Offer.price_currency,
-          parsed_basePrice: basePrice,
-          typeof_price_total: typeof v2Offer.price_total
-        });
-        
-        const normalizedOffer = {
+        return {
           provider: 'Amadeus',
           id: v2Offer.id,
           itineraries: [{
@@ -239,15 +224,6 @@ export async function fetchTripOffers(
           bookingUrl: v2Offer.booking_url,
           rawData: v2Offer
         };
-        
-        console.log('[🔍 V2-NORMALIZATION-DEBUG] Created normalized offer:', {
-          id: normalizedOffer.id,
-          totalBasePrice: normalizedOffer.totalBasePrice,
-          currency: normalizedOffer.currency,
-          typeof_totalBasePrice: typeof normalizedOffer.totalBasePrice
-        });
-        
-        return normalizedOffer;
       });
     } else {
       // Use provider adapters for legacy data
