@@ -23,7 +23,8 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS', // Typically invoked by cron, but allow POST for manual trigger
 };
 
-serve(async (req: Request) => {
+// Export testable handler
+export const testableHandler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -158,4 +159,7 @@ serve(async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
-});
+};
+
+// Initialize and serve the handler
+serve(testableHandler);

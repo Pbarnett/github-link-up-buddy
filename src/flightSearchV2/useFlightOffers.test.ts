@@ -13,8 +13,8 @@ vi.mock('@/serverActions/getFlightOffers');
 const mockTripRequestId = 'test-trip-123';
 
 const mockDbRows: FlightOfferV2DbRow[] = [
-  { id: 'offer-db-1', trip_request_id: mockTripRequestId, mode: 'AUTO', price_total: 100, price_carry_on: null, bags_included: true, cabin_class: 'ECONOMY', nonstop: true, origin_iata: 'JFK', destination_iata: 'LAX', depart_dt: '2024-09-01T10:00:00Z', return_dt: null, seat_pref: null, created_at: '2024-08-01T12:00:00Z' },
-  { id: 'offer-db-2', trip_request_id: mockTripRequestId, mode: 'MANUAL', price_total: 150, price_carry_on: 25, bags_included: false, cabin_class: 'BUSINESS', nonstop: false, origin_iata: 'JFK', destination_iata: 'LAX', depart_dt: '2024-09-02T10:00:00Z', return_dt: null, seat_pref: 'AISLE', created_at: '2024-08-01T13:00:00Z' },
+  { id: 'offer-db-1', trip_request_id: mockTripRequestId, mode: 'AUTO', price_total: 100, price_currency: 'USD', price_carry_on: null, bags_included: true, cabin_class: 'ECONOMY', nonstop: true, origin_iata: 'JFK', destination_iata: 'LAX', depart_dt: '2024-09-01T10:00:00Z', return_dt: null, seat_pref: null, created_at: '2024-08-01T12:00:00Z', booking_url: null },
+  { id: 'offer-db-2', trip_request_id: mockTripRequestId, mode: 'MANUAL', price_total: 150, price_currency: 'USD', price_carry_on: 25, bags_included: false, cabin_class: 'BUSINESS', nonstop: false, origin_iata: 'JFK', destination_iata: 'LAX', depart_dt: '2024-09-02T10:00:00Z', return_dt: null, seat_pref: 'AISLE', created_at: '2024-08-01T13:00:00Z', booking_url: null },
 ];
 
 const expectedMappedOffers: FlightOfferV2[] = mockDbRows.map(mapFlightOfferDbRowToV2);
@@ -74,7 +74,7 @@ describe('useFlightOffers Hook', () => {
       expect(result.current.error).toBeNull();
     });
     expect(mockGetFlightOffers).toHaveBeenCalledTimes(1);
-    expect(mockGetFlightOffers).toHaveBeenCalledWith(mockTripRequestId);
+    expect(mockGetFlightOffers).toHaveBeenCalledWith(mockTripRequestId, false);
   });
 
   it('should handle errors from getFlightOffers server action', async () => {
@@ -147,7 +147,7 @@ describe('useFlightOffers Hook', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.offers).toEqual(initialData.map(mapFlightOfferDbRowToV2));
-    expect(mockGetFlightOffers).toHaveBeenCalledWith(initialId);
+    expect(mockGetFlightOffers).toHaveBeenCalledWith(initialId, false);
 
     mockGetFlightOffers.mockResolvedValueOnce(newData); // For the new ID
     rerender({ id: newId });
@@ -155,7 +155,7 @@ describe('useFlightOffers Hook', () => {
     expect(result.current.isLoading).toBe(true);
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.offers).toEqual(newData.map(mapFlightOfferDbRowToV2));
-    expect(mockGetFlightOffers).toHaveBeenCalledWith(newId);
+    expect(mockGetFlightOffers).toHaveBeenCalledWith(newId, false);
     expect(mockGetFlightOffers).toHaveBeenCalledTimes(2);
   });
 });

@@ -11,6 +11,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import TravelerDataForm, { TravelerData } from "@/components/TravelerDataForm";
 import { TablesInsert } from "@/integrations/supabase/types";
 import { toJsonSafe } from "@/utils/toJsonSafe";
+import { supabase } from "@/integrations/supabase/client";
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -199,17 +200,10 @@ const TripConfirm = () => {
     const fetchBookingRequest = async () => {
       try {
         console.log("[TripConfirm] Fetching booking request status for sessionId:", sessionId);
-const { data, error } = await checkBookingStatus(bookingRequest.duffel_order_id);
-          
-        if (error) {
-          console.error("[TripConfirm] Error fetching booking request:", error);
-          throw error;
-        }
-        
-        if (data) {
-          console.log("[TripConfirm] Found booking request with status:", data.status);
-          updateBookingStatusMessage(data.status);
-        }
+// TODO: Implement proper booking status check
+        // const { data, error } = await checkBookingStatus(bookingRequestId);
+        // For now, skip the status check
+        console.log('[TripConfirm] Booking status check not implemented yet');
       } catch (err: any) {
         console.error("[TripConfirm] Exception fetching booking request:", err);
         toast({ 
@@ -298,18 +292,21 @@ const { data, error } = await checkBookingStatus(bookingRequest.duffel_order_id)
     setError(null);
 
     try {
+      // For now, we'll create a simple booking request in the database
+      // TODO: Integrate with actual Duffel booking API
       const bookingRequestData: TablesInsert<"booking_requests"> = {
         offer_data: toJsonSafe(offer),
         offer_id: offer.id,
         traveler_data: toJsonSafe(data),
         status: 'new',
-        user_id: userId 
+        user_id: userId
       };
-
-const { data: bookingRequest, error: bookingError } = await createDuffelBooking({
-        offerId: offer.id,
-        travelers: [data] // Assuming single traveler for now
-      });
+      
+      const { data: bookingRequest, error: bookingError } = await supabase
+        .from('booking_requests')
+        .insert([bookingRequestData])
+        .select()
+        .single();
 
       if (bookingError) {
         console.error("[TripConfirm] Error creating booking request:", bookingError);
@@ -596,7 +593,7 @@ const { data: bookingRequest, error: bookingError } = await createDuffelBooking(
             <CardContent>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium">Name:</span> {travelerData.firstName} {travelerData.lastName}
+                  <span className="font-medium">Name:</span> {travelerData.fullName}
                 </div>
                 <div>
                   <span className="font-medium">Date of Birth:</span> {new Date(travelerData.dateOfBirth).toLocaleDateString()}

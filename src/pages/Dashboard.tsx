@@ -438,7 +438,7 @@ const Dashboard = () => {
           /* Active State - Mini Widgets When User Has Data */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Upcoming Trips Widget */}
-            <Card className="card-enhanced border-green-200 hover:border-green-300 cursor-pointer group" onClick={() => document.querySelector('[value="tripHistory"]')?.click()}>
+            <Card className="card-enhanced border-green-200 hover:border-green-300 cursor-pointer group" onClick={() => (document.querySelector('[value="tripHistory"]') as HTMLElement)?.click()}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
@@ -458,7 +458,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Active Watches Widget */}
-            <Card className="card-enhanced border-blue-200 hover:border-blue-300 cursor-pointer group" onClick={() => document.querySelector('[value="currentRequests"]')?.click()}>
+            <Card className="card-enhanced border-blue-200 hover:border-blue-300 cursor-pointer group" onClick={() => (document.querySelector('[value="currentRequests"]') as HTMLElement)?.click()}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">

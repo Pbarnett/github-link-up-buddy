@@ -63,15 +63,16 @@ export function usePoolsSafe(params: UsePoolsSafeParams): PoolsSafeResult {
     // Convert legacy offers to ScoredOffer format
     const convertedOffers: ScoredOffer[] = fallbackData.offers.map(offer => ({
       ...offer,
-      score: 1,
+      score: 95,
       priceStructure: {
         base: offer.price,
         carryOnFee: 0,
-        total: offer.price
+        total: offer.price,
       },
-      carryOnIncluded: offer.baggage_included || false,
-      reasons: ['Legacy fallback offer'],
-      pool: 1
+      carryOnIncluded: true,
+      reasons: ['Fallback offer'],
+      pool: 1 as const,
+      isRoundTrip: !!(offer.return_date && offer.return_date.trim()),
     }));
 
     return {

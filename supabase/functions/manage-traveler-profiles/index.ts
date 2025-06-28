@@ -37,7 +37,15 @@ serve(async (req) => {
     const { action, travelerData } = await req.json();
     switch (action) {
       case 'create': {
-        const { fullName, dateOfBirth, gender, email, phone } = travelerData;
+        const { fullName, dateOfBirth, gender, email, phone, passportNumber, passportCountry, passportExpiry, knownTravelerNumber } = travelerData;
+        
+        // Encrypt passport number if provided
+        let encryptedPassport = null;
+        if (passportNumber) {
+          const { data: encrypted } = await supabase.rpc('encrypt_passport_number', { passport_number: passportNumber });
+          encryptedPassport = encrypted;
+        }
+        
         const { data, error } = await supabase.from('traveler_profiles').insert({
           user_id: user.id,
           full_name: fullName,
@@ -45,9 +53,22 @@ serve(async (req) => {
           gender,
           email,
           phone,
+          passport_number_encrypted: encryptedPassport,
+          passport_country: passportCountry,
+          passport_expiry: passportExpiry,
+          known_traveler_number: knownTravelerNumber,
         }).select();
 
         if (error) throw error;
+        
+        // Log audit trail
+        await supabase.from('traveler_data_audit').insert({
+          user_id: user.id,
+          traveler_profile_id: data[0].id,
+          action: 'created',
+          field_accessed: 'full_profile',
+        });
+        
         return new Response(JSON.stringify(data[0]), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       case 'update': {

@@ -221,6 +221,7 @@ export const invokeFlightSearch = async (
   logger.warn("Flight search function returned unexpected data format:", { responseData: data });
   // Fallback case, now includes mandatory pool1, pool2, pool3
   return {
+    inserted: 0,
     requestsProcessed: 0,
     matchesInserted: 0,
     totalDurationMs: 0,

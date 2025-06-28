@@ -134,17 +134,7 @@ CREATE TRIGGER traveler_profiles_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_traveler_profile_updated_at();
 
--- Update campaigns table to reference traveler profiles
-ALTER TABLE campaigns 
-  ADD COLUMN IF NOT EXISTS traveler_profile_id UUID REFERENCES traveler_profiles(id) ON DELETE CASCADE;
-
--- Create index for campaigns-traveler relationship
-CREATE INDEX IF NOT EXISTS idx_campaigns_traveler_profile ON campaigns(traveler_profile_id);
-
--- Add payment method tracking to campaigns
-ALTER TABLE campaigns
-  ADD COLUMN IF NOT EXISTS payment_method_id TEXT, -- Stripe PaymentMethod ID
-  ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending', 'ready', 'failed', 'expired'));
+-- Note: Campaigns table updates are handled in 20250627000002_create_campaigns_and_payment_methods.sql
 
 -- Update trip_requests to support traveler profiles (for future multi-traveler)
 ALTER TABLE trip_requests

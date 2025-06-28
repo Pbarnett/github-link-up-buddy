@@ -143,6 +143,10 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       departureAirports.push(data.other_departure_airport);
     }
     const destinationAirport = data.destination_airport || data.destination_other || "";
+    
+    // Clean up auto-booking fields when auto-booking is disabled
+    const isAutoBookingEnabled = data.auto_book_enabled;
+    
     return {
       earliestDeparture: data.earliestDeparture,
       latestDeparture: data.latestDeparture,
@@ -154,9 +158,10 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       destination_location_code: destinationAirport, // Same as destination_airport for now
       nonstop_required: data.nonstop_required,
       baggage_included_required: data.baggage_included_required,
-      auto_book_enabled: data.auto_book_enabled,
-      max_price: data.max_price,
-      preferred_payment_method_id: data.preferred_payment_method_id,
+      auto_book_enabled: isAutoBookingEnabled,
+      // Only include auto-booking fields when auto-booking is enabled
+      max_price: isAutoBookingEnabled ? data.max_price : null,
+      preferred_payment_method_id: isAutoBookingEnabled ? data.preferred_payment_method_id : null,
     };
   };
 
@@ -270,7 +275,7 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       'max_duration'
     ];
     
-    const isStep1Valid = await form.trigger(step1Fields);
+    const isStep1Valid = await form.trigger(step1Fields as any);
     
     if (!isStep1Valid) {
       // Validation failed - errors will be displayed automatically
@@ -394,13 +399,16 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
   
   const isStep2Valid = Boolean(
     watchedFields.max_price &&
-    watchedFields.preferred_payment_method_id &&
+    // Only require payment method if auto-booking is enabled
+    (!watchedFields.auto_book_enabled || watchedFields.preferred_payment_method_id) &&
     (mode !== 'auto' || watchedFields.auto_book_consent)
   );
   
   const isFormValid = mode === 'auto' 
     ? (currentStep === 1 ? isStep1Valid : isStep1Valid && isStep2Valid)
-    : isStep1Valid && (mode === 'manual' || isStep2Valid);
+    : watchedFields.auto_book_enabled 
+      ? isStep1Valid && isStep2Valid
+      : isStep1Valid;
 
   const buttonText = () => {
     if (mode === 'auto') {
@@ -530,14 +538,32 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                 </>
               )}
 
-              {/* Manual mode: Show budget in Trip Preferences */}
+              {/* Manual mode: Show budget and filters in Trip Preferences */}
               {mode === 'manual' && (
-                <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Budget
-                  </h2>
-                  <EnhancedBudgetSection control={form.control} />
-                </div>
+                <>
+                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      Budget
+                    </h2>
+                    <EnhancedBudgetSection control={form.control} />
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      Flight Preferences
+                    </h2>
+                    <div className="space-y-4">
+                      <FilterTogglesSection control={form.control} />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      Auto-Booking (Optional)
+                    </h2>
+                    <AutoBookingSection control={form.control} mode={mode} />
+                  </div>
+                </>
               )}
 
               {/* Form Actions */}
@@ -562,6 +588,7 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                     type={mode === 'auto' && currentStep === 1 ? "button" : "submit"}
                     onClick={mode === 'auto' && currentStep === 1 ? handleContinueToPricing : undefined}
                     disabled={isSubmitting || !isFormValid} 
+                    data-testid="primary-submit-button"
                     className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-medium disabled:opacity-50 min-w-[160px] h-11"
                   >
                     {isSubmitting ? (

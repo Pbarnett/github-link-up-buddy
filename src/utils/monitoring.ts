@@ -3,7 +3,7 @@
  * Core Web Vitals, Error Tracking, and Analytics Setup
  */
 
-import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals';
+import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals';
 
 interface AnalyticsEvent {
   name: string;
@@ -19,11 +19,11 @@ export const generateCorrelationId = (): string => {
 // Core Web Vitals reporting
 export const initMonitoring = () => {
   // Report Core Web Vitals
-  getCLS(reportWebVital);
-  getFID(reportWebVital);
-  getFCP(reportWebVital);
-  getLCP(reportWebVital);
-  getTTFB(reportWebVital);
+  onCLS(reportWebVital);
+  onINP(reportWebVital); // INP replaces FID in v3+
+  onFCP(reportWebVital);
+  onLCP(reportWebVital);
+  onTTFB(reportWebVital);
 
   // Global error handlers
   window.addEventListener('error', (event) => {
@@ -130,11 +130,14 @@ export const observePerformance = () => {
   // Observe layout shifts
   const observer = new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
-      if (entry.entryType === 'layout-shift' && !entry.hadRecentInput) {
-        trackEvent('layout_shift', {
-          value: entry.value,
-          sources: entry.sources?.length || 0,
-        });
+      if (entry.entryType === 'layout-shift') {
+        const layoutShiftEntry = entry as any; // Type assertion for layout shift specific properties
+        if (!layoutShiftEntry.hadRecentInput) {
+          trackEvent('layout_shift', {
+            value: layoutShiftEntry.value,
+            sources: layoutShiftEntry.sources?.length || 0,
+          });
+        }
       }
     }
   });

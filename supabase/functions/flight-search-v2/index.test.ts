@@ -1,6 +1,5 @@
-import { assertEquals, assertSpyCall, spy } from 'https://deno.land/std@0.177.0/testing/asserts.ts';
-import { गाड़ी } from 'https://deno.land/x/गाडी/mod.ts'; // Mock HTTP server for Deno
-import * as supabaseJs from 'https://esm.sh/@supabase/supabase-js@2';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createClient } from '@supabase/supabase-js';
 
 // Import the server from the main module.
 // We need to make 'serve' and potentially other functions available for mocking or direct call.
@@ -15,17 +14,22 @@ import * as supabaseJs from 'https://esm.sh/@supabase/supabase-js@2';
 // And in test: import { handleRequest } from './index.ts';
 
 // --- Mocks ---
-// Mock Deno.env.get
-const originalEnvGet = Deno.env.get;
+// Mock Deno.env.get for Node.js environment
 const mockEnv = new Map<string, string>();
-Deno.env.get = (key: string) => mockEnv.get(key) || originalEnvGet(key);
+const originalProcess = process.env;
+vi.stubGlobal('process', {
+  ...process,
+  env: new Proxy(process.env, {
+    get: (target, prop: string) => mockEnv.get(prop) || target[prop]
+  })
+});
 
 // Mock createClient from Supabase
 let mockSupabaseInsertions: any[] = [];
 const mockSupabaseClient = {
-  from: spy((tableName: string) => {
+  from: vi.fn((tableName: string) => {
     return {
-      insert: spy((dataToInsert: any) => {
+      insert: vi.fn((dataToInsert: any) => {
         mockSupabaseInsertions.push(...(Array.isArray(dataToInsert) ? dataToInsert : [dataToInsert]));
         // Simulate Supabase returning the inserted data and a count
         const count = Array.isArray(dataToInsert) ? dataToInsert.length : 1;
@@ -35,7 +39,9 @@ const mockSupabaseClient = {
     };
   }),
 };
-const createClientSpy = spy(supabaseJs, 'createClient', () => mockSupabaseClient as any);
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn(() => mockSupabaseClient)
+}));
 
 
 // Mock fetchAmadeusOffers (if it were in a separate module, or we can try to redefine it)
@@ -60,31 +66,30 @@ console.warn(
 // Placeholder for the actual handler if it were exported from index.ts
 // async function testRequestHandler(req: Request): Promise<Response> { /* ... actual handler logic ... */ }
 
-Deno.test("Edge Function: flight-search-v2", async (t) => {
-  // Setup common environment variables for Supabase client
-  mockEnv.set('SUPABASE_URL', 'http://localhost:54321');
-  mockEnv.set('SUPABASE_ANON_KEY', 'test-anon-key');
+describe('Edge Function: flight-search-v2', () => {
+  beforeEach(() => {
+    // Setup common environment variables for Supabase client
+    mockEnv.set('SUPABASE_URL', 'http://localhost:54321');
+    mockEnv.set('SUPABASE_ANON_KEY', 'test-anon-key');
+  });
 
-  await t.step("OPTIONS request should return CORS headers", async () => {
+  it('OPTIONS request should return CORS headers', async () => {
     // This test would ideally use the actual `serve` from index.ts or an exported handler
     // For now, it's conceptual. If `index.ts` exports its handler, we'd call:
     // const response = await handleRequest(new Request("http://localhost/flight-search-v2", { method: "OPTIONS" }));
-    // assertEquals(response.status, 200);
-    // assertEquals(response.headers.get('Access-Control-Allow-Origin'), '*');
+    // expect(response.status).toBe(200);
+    // expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
     // This test is hard to implement correctly without running the actual server or refactoring index.ts
-    assertEquals(true, true); // Placeholder
+    expect(true).toBe(true); // Placeholder
   });
 
-  await t.step("POST with valid tripRequestId: Amadeus returns offers, Supabase insert succeeds", async () => {
+  it('POST with valid tripRequestId: Amadeus returns offers, Supabase insert succeeds', async () => {
     // Reset mocks for this specific test
     mockSupabaseInsertions = [];
-    createClientSpy.calls = []; // Reset spy calls
-    (mockSupabaseClient.from as any).calls = [];
-
+    vi.clearAllMocks();
 
     // Mock the global fetch if Amadeus calls were using it directly
-    const originalFetch = globalThis.fetch;
-    globalThis.fetch = spy(async (url: string, options: RequestInit) => {
+    const mockFetch = vi.fn(async (url: string, options: RequestInit) => {
       // This mock assumes fetchAmadeusOffers makes a call to a known Amadeus endpoint
       // For the internal mock, this global fetch override isn't strictly needed
       // but shown for a more realistic external API call scenario.
@@ -95,11 +100,13 @@ Deno.test("Edge Function: flight-search-v2", async (t) => {
            { id: 'amadeus-test-offer-2', price: { total: '150.00', currency: 'USD' }, itineraries: [{ segments: [{ numberOfStops: 0, departure: {iataCode: 'CCC', at: '2024-01-02T10:00:00Z'}, arrival: {iataCode: 'DDD', at: '2024-01-02T12:00:00Z'} }] }], travelerPricings: [{ fareDetailsBySegment: [{ cabin: 'BUSINESS', includedCheckedBags: {quantity: 0} }]}] },
         ]), { headers: { 'Content-Type': 'application/json' } }));
       }
-      return originalFetch(url, options);
+      return Promise.resolve(new Response('Not found', { status: 404 }));
     });
+    
+    vi.stubGlobal('fetch', mockFetch);
 
     // To test the function, we need to simulate a POST request.
-    // This is where ગાડી (Gaadi) or similar would be used if testing the full server.
+    // This is where integration testing would be used if testing the full server.
     // Or, if handler is exported:
     // const reqPayload = { tripRequestId: "test-trip-1", maxPrice: 200 };
     // const request = new Request("http://localhost/flight-search-v2", {
@@ -110,67 +117,59 @@ Deno.test("Edge Function: flight-search-v2", async (t) => {
     // const response = await handleRequest(request); // Assuming handleRequest is the exported handler
     // const body = await response.json();
 
-    // assertEquals(response.status, 200);
-    // assertEquals(body.inserted, 2); // Expect 2 offers based on mock
-    // assertEquals(body.message, "Successfully inserted 2 flight offers.");
-    // assertEquals(mockSupabaseInsertions.length, 2);
-    // assertEquals((mockSupabaseClient.from as any).calls[0].args[0], 'flight_offers_v2');
+    // expect(response.status).toBe(200);
+    // expect(body.inserted).toBe(2); // Expect 2 offers based on mock
+    // expect(body.message).toBe("Successfully inserted 2 flight offers.");
+    // expect(mockSupabaseInsertions.length).toBe(2);
+    // expect(mockSupabaseClient.from).toHaveBeenCalledWith('flight_offers_v2');
     // // Add more assertions on the structure of mockSupabaseInsertions[0]
 
-    globalThis.fetch = originalFetch; // Restore fetch
-    assertEquals(true, true); // Placeholder, as direct invocation is not straightforward from current index.ts
+    vi.unstubAllGlobals(); // Restore fetch
+    expect(true).toBe(true); // Placeholder, as direct invocation is not straightforward from current index.ts
   });
 
-  await t.step("POST with valid tripRequestId: Amadeus returns NO offers", async () => {
+  it('POST with valid tripRequestId: Amadeus returns NO offers', async () => {
     // Mock fetchAmadeusOffers to return empty array (or globalThis.fetch for Amadeus API)
     // ...
     // const response = await handleRequest(request);
     // const body = await response.json();
-    // assertEquals(response.status, 200);
-    // assertEquals(body.inserted, 0);
-    // assertEquals(body.message, "No flight offers found from Amadeus matching criteria.");
-    assertEquals(true, true); // Placeholder
+    // expect(response.status).toBe(200);
+    // expect(body.inserted).toBe(0);
+    // expect(body.message).toBe("No flight offers found from Amadeus matching criteria.");
+    expect(true).toBe(true); // Placeholder
   });
 
-  await t.step("POST with missing tripRequestId", async () => {
+  it('POST with missing tripRequestId', async () => {
     // const reqPayload = { maxPrice: 200 }; // Missing tripRequestId
     // ...
     // const response = await handleRequest(request);
     // const body = await response.json();
-    // assertEquals(response.status, 400);
-    // assertEquals(body.error, "tripRequestId is required");
-    assertEquals(true, true); // Placeholder
+    // expect(response.status).toBe(400);
+    // expect(body.error).toBe("tripRequestId is required");
+    expect(true).toBe(true); // Placeholder
   });
 
-  await t.step("GET request should be Method Not Allowed", async () => {
+  it('GET request should be Method Not Allowed', async () => {
     // const request = new Request("http://localhost/flight-search-v2", { method: "GET" });
     // const response = await handleRequest(request);
     // const body = await response.json();
-    // assertEquals(response.status, 405);
-    // assertEquals(body.error, "Method not allowed");
-    assertEquals(true, true); // Placeholder
+    // expect(response.status).toBe(405);
+    // expect(body.error).toBe("Method not allowed");
+    expect(true).toBe(true); // Placeholder
   });
 
-  await t.step("Supabase insert fails", async () => {
+  it('Supabase insert fails', async () => {
     // Mock supabaseClient.from().insert() to return an error
-    // createClientSpy.calls = [];
-    // (mockSupabaseClient.from as any).calls = [];
-    // const insertSpy = spy(mockSupabaseClient.from('flight_offers_v2'), 'insert', () => Promise.resolve({ data: null, error: new Error("Supabase DB error"), count: 0 }));
+    // vi.clearAllMocks();
+    // const insertSpy = vi.fn(() => Promise.resolve({ data: null, error: new Error("Supabase DB error"), count: 0 }));
 
     // ... make request ...
     // const response = await handleRequest(request);
     // const body = await response.json();
-    // assertEquals(response.status, 500);
-    // assert(body.message.includes("Supabase DB error"));
-    // insertSpy.restore();
-    assertEquals(true, true); // Placeholder
+    // expect(response.status).toBe(500);
+    // expect(body.message).toContain("Supabase DB error");
+    expect(true).toBe(true); // Placeholder
   });
-
-
-  // Restore Deno.env.get
-  Deno.env.get = originalEnvGet;
-  // Restore createClient spy
-  createClientSpy.restore();
 });
 
 // Note: To run these tests, you would typically use:

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface TravelerProfile {
   id?: string;
@@ -28,7 +28,7 @@ class TravelerProfileService {
 
   constructor() {
     // Use Supabase Edge Function URL
-    this.baseUrl = `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/secure-traveler-profiles`;
+    this.baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/secure-traveler-profiles`;
   }
 
   private async getAuthHeaders(): Promise<HeadersInit> {

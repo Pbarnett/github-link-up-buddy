@@ -35,7 +35,7 @@ function transformLegacyToV2(legacyOffer: LegacyFlightOffer): FlightOfferV2DbRow
     trip_request_id: legacyOffer.trip_request_id,
     mode: 'LEGACY', // All legacy offers are marked as LEGACY mode
     price_total: legacyOffer.price || 0,
-    price_currency: 'USD', // Default to USD for legacy offers
+    price_currency: 'USD', // Legacy offers assumed to be USD
     price_carry_on: null, // Legacy format doesn't have carry-on pricing
     bags_included: legacyOffer.baggage_included || true,
     cabin_class: null, // Legacy format doesn't specify cabin class

@@ -8,12 +8,21 @@ if (!globalThis.Deno) {
       get: vi.fn((key: string) => {
         // Default test environment variables
         const defaultEnv = {
-          'SUPABASE_URL': 'http://localhost:54321',
+          'VITEST': 'true', // Critical: prevents serve() calls in edge functions
+          'SUPABASE_URL': 'https://test.supabase.co',
           'SUPABASE_SERVICE_ROLE_KEY': 'test-service-role-key',
+          'SUPABASE_ANON_KEY': 'test-anon-key',
           'AMADEUS_BASE_URL': 'https://test.api.amadeus.com',
+          'AMADEUS_CLIENT_ID': process.env.AMADEUS_CLIENT_ID || 'test-client-id',
+          'AMADEUS_CLIENT_SECRET': process.env.AMADEUS_CLIENT_SECRET || 'test-client-secret',
           'AMADEUS_API_KEY': process.env.AMADEUS_API_KEY || 'test-key',
           'AMADEUS_API_SECRET': process.env.AMADEUS_API_SECRET || 'test-secret',
+          'RESEND_API_KEY': 're_test_mock_key',
+          'TWILIO_ACCOUNT_SID': 'AC_test_mock_sid',
+          'TWILIO_AUTH_TOKEN': 'test_mock_token',
+          'OPENAI_API_KEY': 'sk-test-mock-openai-key',
           'STRIPE_SECRET_KEY': 'sk_test_mock',
+          'STRIPE_WEBHOOK_SECRET': 'whsec_test_mock',
         };
         return defaultEnv[key] || process.env[key];
       }),
@@ -28,6 +37,16 @@ if (!globalThis.Deno) {
     }),
   } as any;
 }
+
+// Also set environment variables in process.env for Edge Functions that check both
+Object.assign(process.env, {
+  VITEST: 'true',
+  SUPABASE_URL: 'https://test.supabase.co',
+  SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
+  SUPABASE_ANON_KEY: 'test-anon-key',
+  STRIPE_SECRET_KEY: 'sk_test_mock',
+  STRIPE_WEBHOOK_SECRET: 'whsec_test_mock',
+});
 
 // Mock URL constructor to handle https: schemes
 const originalURL = globalThis.URL;

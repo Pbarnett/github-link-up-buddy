@@ -12,6 +12,7 @@ export const mapFlightOfferDbRowToV2 = (dbRow: FlightOfferV2DbRow): FlightOfferV
     tripRequestId: dbRow.trip_request_id,
     mode: dbRow.mode,
     priceTotal: dbRow.price_total,
+    priceCurrency: dbRow.price_currency,
     priceCarryOn: dbRow.price_carry_on,
     bagsIncluded: dbRow.bags_included,
     cabinClass: dbRow.cabin_class,

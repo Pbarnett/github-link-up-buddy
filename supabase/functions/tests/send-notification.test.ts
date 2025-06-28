@@ -15,16 +15,35 @@ vi.stubGlobal('Deno', {
 
 // --- Mock Supabase Client ---
 const mockSupabaseSingle = vi.fn();
-const mockSupabaseSelect = vi.fn(() => ({ single: mockSupabaseSingle }));
-const mockSupabaseInsert = vi.fn(() => ({ select: mockSupabaseSelect }));
-const mockSupabaseEq = vi.fn(() => ({ single: mockSupabaseSingle })); // For from('users').select().eq().single()
+const mockSupabaseSelect = vi.fn();
+const mockSupabaseInsert = vi.fn();
+const mockSupabaseEq = vi.fn();
 const mockAuthAdminGetUserById = vi.fn();
+
+// Create chainable mock methods
+mockSupabaseSelect.mockReturnValue({ single: mockSupabaseSingle });
+mockSupabaseInsert.mockReturnValue({ select: mockSupabaseSelect });
+mockSupabaseEq.mockReturnValue({ single: mockSupabaseSingle });
+
 const mockSupabaseClientInstance = {
-  from: vi.fn((_table: string) => ({ // Explicitly type _table if needed
-    insert: mockSupabaseInsert,
-    select: mockSupabaseSelect,
-    eq: mockSupabaseEq,
-  })),
+  from: vi.fn((tableName: string) => {
+    if (tableName === 'notifications') {
+      return {
+        insert: mockSupabaseInsert,
+      };
+    } else if (tableName === 'users') {
+      return {
+        select: mockSupabaseSelect,
+        eq: mockSupabaseEq,
+      };
+    }
+    // Default return
+    return {
+      insert: mockSupabaseInsert,
+      select: mockSupabaseSelect,
+      eq: mockSupabaseEq,
+    };
+  }),
   auth: { admin: { getUserById: mockAuthAdminGetUserById } },
 };
 vi.mock('@supabase/supabase-js', () => ({

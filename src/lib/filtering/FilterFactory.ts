@@ -176,7 +176,6 @@ export class FilterFactory {
     
     const userPrefs: UserPreferences = {
       nonstopRequired,
-      carryOnRequired,
       maxLayoverMinutes: searchParams.maxLayoverMinutes,
       preferredAirlines: searchParams.preferredAirlines,
       excludedAirlines: searchParams.excludedAirlines,

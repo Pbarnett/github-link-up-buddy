@@ -57,7 +57,8 @@ const StickyFormActions = ({
         <Button 
           type="button"
           onClick={onSubmit}
-          disabled={isSubmitting || !isFormValid} 
+          disabled={isSubmitting || !isFormValid}
+          data-testid="sticky-submit-button"
           className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 font-medium disabled:opacity-50"
         >
           {isSubmitting ? (
