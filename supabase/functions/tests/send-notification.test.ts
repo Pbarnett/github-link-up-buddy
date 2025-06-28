@@ -22,7 +22,7 @@ const mockAuthAdminGetUserById = vi.fn();
 
 // Create chainable mock methods
 mockSupabaseSelect.mockReturnValue({ single: mockSupabaseSingle });
-mockSupabaseInsert.mockReturnValue({ select: mockSupabaseSelect });
+mockSupabaseInsert.mockReturnValue({ select: vi.fn().mockReturnValue({ single: mockSupabaseSingle }) });
 mockSupabaseEq.mockReturnValue({ single: mockSupabaseSingle });
 
 const mockSupabaseClientInstance = {
@@ -46,9 +46,12 @@ const mockSupabaseClientInstance = {
   }),
   auth: { admin: { getUserById: mockAuthAdminGetUserById } },
 };
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(() => mockSupabaseClientInstance),
-}));
+vi.mock('@supabase/supabase-js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual,
+    createClient: vi.fn(() => mockSupabaseClientInstance),
+  };
+});
 
 // --- Mock Resend SDK ---
 const mockResendEmailsSend = vi.fn();
@@ -65,6 +68,11 @@ describe('send-notification Edge Function', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    
+    // Initialize spies before they're used
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     // Default environment variable mocks
     mockEnvGet.mockImplementation((key: string) => {
@@ -78,16 +86,17 @@ describe('send-notification Edge Function', () => {
       return envs[key];
     });
 
-    // Default Supabase client mocks
-    mockSupabaseSingle.mockResolvedValue({ data: { id: 'notification_id_123' }, error: null }); // For insert
+// Default Supabase client mocks
+mockSupabaseSingle.mockResolvedValue({ data: { id: 'notification_id_123' }, error: null }); // For valid insert
+    
+    // Set up the proper chaining for insert operation: .from().insert().select().single()
+    const selectChain = { single: mockSupabaseSingle };
+    const insertChain = { select: vi.fn().mockReturnValue(selectChain) };
+    mockSupabaseInsert.mockReturnValue(insertChain);
     mockAuthAdminGetUserById.mockResolvedValue({ data: { user: { id: 'user123', email: 'test@example.com' } }, error: null });
 
     // Default Resend mock
-    mockResendEmailsSend.mockResolvedValue({ data: { id: 'resend_email_id_123' }, error: null });
-
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mockResendEmailsSend.mockResolvedValue({ data: { id: 'resend_email_id_123' }, error: null, status: 200 });
 
     // Import the testable handler
     try {
@@ -137,6 +146,11 @@ describe('send-notification Edge Function', () => {
       throw new Error(`Handler not properly imported: ${responseText}`);
     }
     
+    if (response.status === 500) {
+      console.error('500 Error details:', responseText);
+      throw new Error(`Unexpected 500 error: ${responseText}`);
+    }
+    
     const body = JSON.parse(responseText);
 
     expect(response.status).toBe(200);
@@ -164,16 +178,25 @@ describe('send-notification Edge Function', () => {
   });
 
   it('4. Skips email if Resend API key is missing, logs warning', async () => {
+    // Clear mocks to reset state
+    vi.clearAllMocks();
+    
+    // Reset the environment to not have the Resend API key
     mockEnvGet.mockImplementation((key: string) => {
       const envs: Record<string, string | undefined> = {
         'SUPABASE_URL': 'http://mock-supabase.url',
         'SUPABASE_SERVICE_ROLE_KEY': 'mock-service-role-key',
         'VITE_RESEND_API_KEY': undefined, // Explicitly undefined for this test
+        'RESEND_API_KEY': undefined, // Also set fallback to undefined
         'RESEND_FROM_EMAIL': 'from@example.com',
         'VITE_TWILIO_ACCOUNT_SID': undefined,
       };
       return envs[key];
     });
+    
+    // Reset Supabase mocks for this test
+    mockSupabaseSingle.mockResolvedValue({ data: { id: 'notification_id_123' }, error: null });
+    mockAuthAdminGetUserById.mockResolvedValue({ data: { user: { id: 'user123', email: 'test@example.com' } }, error: null });
 
     const requestBody = { user_id: 'user123', type: 'booking_success', payload: {} };
     await sendNotificationHandler(createMockRequest(requestBody));
@@ -201,7 +224,7 @@ describe('send-notification Edge Function', () => {
     // Default Deno.env.get mock already returns undefined for VITE_TWILIO_ACCOUNT_SID
     const requestBody = { user_id: 'user123', type: 'booking_success', payload: {} };
     await sendNotificationHandler(createMockRequest(requestBody));
-    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('SMS (Twilio SID) not configured, skipping SMS'));
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('SMS (Twilio SID) not configured, skipping SMS for user user123'));
   });
 
   it('6. Skips email if user email not found, logs warning', async () => {

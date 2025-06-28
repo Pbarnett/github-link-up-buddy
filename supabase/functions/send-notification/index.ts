@@ -139,10 +139,19 @@ function validatePayload(payload: unknown): Record<string, any> {
   }
 }
 
+// Global environment helper function
+const getEnv = (key: string) => {
+  if (typeof Deno !== 'undefined' && Deno.env) {
+    return Deno.env.get(key);
+  }
+  // Fallback for test environment
+  return process?.env?.[key];
+};
+
 // Helper function to get Supabase admin client
 const getSupabaseAdmin = () => {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const supabaseUrl = getEnv('SUPABASE_URL');
+  const supabaseServiceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     console.error('[SendNotification] CRITICAL: Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars.');
@@ -244,7 +253,7 @@ export const testableHandler = async (req: Request): Promise<Response> => {
     if (userEmail) {
       console.log(`[SendNotification] User email fetched: ${userEmail} for user ${user_id}`);
       // 3. Send Email via Resend for booking-related types
-      const resendApiKey = Deno.env.get('VITE_RESEND_API_KEY') || Deno.env.get('RESEND_API_KEY');
+      const resendApiKey = getEnv('VITE_RESEND_API_KEY') || getEnv('RESEND_API_KEY');
       if (type.toLowerCase().includes('booking') || type === 'reminder_23h') {
         if (resendApiKey) {
           const ResendClass = await initializeResend();
@@ -293,7 +302,7 @@ export const testableHandler = async (req: Request): Promise<Response> => {
           try {
             console.log(`[SendNotification] Sending email to ${userEmail} for user ${user_id}, type ${type}`);
             await resend.emails.send({
-              from: Deno.env.get('RESEND_FROM_EMAIL') || 'noreply@yourdomain.com',
+              from: getEnv('RESEND_FROM_EMAIL') || 'noreply@yourdomain.com',
               to: [userEmail],
               subject: subject,
               html: htmlBody,
@@ -313,7 +322,7 @@ export const testableHandler = async (req: Request): Promise<Response> => {
     }
 
     // 4. SMS Fallback (Stub)
-    const twilioAccountSid = Deno.env.get('VITE_TWILIO_ACCOUNT_SID') || Deno.env.get('TWILIO_ACCOUNT_SID');
+    const twilioAccountSid = getEnv('VITE_TWILIO_ACCOUNT_SID') || getEnv('TWILIO_ACCOUNT_SID');
     if (!twilioAccountSid) {
       console.log(`[SendNotification] SMS (Twilio SID) not configured, skipping SMS for user ${user_id}.`);
     } else {

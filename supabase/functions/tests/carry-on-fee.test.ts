@@ -1,11 +1,22 @@
 // supabase/functions/tests/carry-on-fee.test.ts
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { mockSupabaseClient } from '@/tests/utils/supabaseMockFactory';
 import { computeCarryOnFee } from "../flight-search/flightApi.edge.ts";
 
 // Test case structure from user brief:
 // Deno.test('name', () => { const fee = computeCarryOnFee(mockOffer); assertEquals(fee, expected); });
 
 describe('computeCarryOnFee', () => {
+  beforeEach(() => {
+    // Inject the mock Supabase client
+    vi.mock('@supabase/supabase-js', () => ({
+      createClient: () => mockSupabaseClient
+    }));
+    
+    // Reset mock state before each test
+    vi.clearAllMocks();
+  });
+
   it('should handle malformed travelerPricings (null)', () => {
     const fee = computeCarryOnFee({ travelerPricings: null }); // Test with null travelerPricings
     expect(fee).toBe(null);

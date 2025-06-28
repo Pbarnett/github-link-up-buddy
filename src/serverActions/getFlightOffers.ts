@@ -1,12 +1,25 @@
 import { supabase } from '@/integrations/supabase/client';
 import { FlightOfferV2DbRow } from '@/flightSearchV2/types';
 import { Tables } from '@/integrations/supabase/types';
+import { invokeEdgeFn } from '@/lib/invokeEdgeFn';
 
 // Legacy flight offer type from flight_offers table
 type LegacyFlightOffer = Tables<'flight_offers'>;
 
-// Function to transform legacy format to V2 format
-function transformLegacyToV2(legacyOffer: LegacyFlightOffer): FlightOfferV2DbRow {
+// Dependencies interface for dependency injection
+export interface GetFlightOffersDeps {
+  supabaseClient: typeof supabase;
+  invokeEdgeFn: typeof invokeEdgeFn;
+}
+
+// Default dependencies
+const defaultDeps: GetFlightOffersDeps = {
+  supabaseClient: supabase,
+  invokeEdgeFn,
+};
+
+// Pure helper function to transform legacy format to V2 format
+export function transformLegacyToV2(legacyOffer: LegacyFlightOffer): FlightOfferV2DbRow {
   // Extract airport codes from full names if needed
   const extractIataCode = (airportName: string | null): string => {
     if (!airportName) return 'UNK';
@@ -50,7 +63,13 @@ function transformLegacyToV2(legacyOffer: LegacyFlightOffer): FlightOfferV2DbRow
   };
 }
 
-const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+// Pure helper function to transform an array of legacy offers
+export const transformLegacyOffers = (legacyOffers: LegacyFlightOffer[]): FlightOfferV2DbRow[] => {
+  return legacyOffers.map(transformLegacyToV2);
+};
+
+// Cache duration - use 0 in test environment to disable caching
+const CACHE_DURATION_MS = process.env.NODE_ENV === 'test' ? 0 : 5 * 60 * 1000; // 5 minutes
 
 interface CacheEntry {
   data: FlightOfferV2DbRow[];
@@ -63,59 +82,81 @@ interface EdgeFunctionError {
   error: string;
 }
 
+// Options interface for getFlightOffers
+export interface GetFlightOffersOptions {
+  tripRequestId: string;
+  refresh?: boolean;
+  useCache?: boolean;
+}
+
 /**
  * Server action to fetch flight offers for a given trip request ID.
  * If refresh=true, triggers a new search via edge function before reading from database.
  * Otherwise, reads directly from flight_offers_v2 table with 5-minute in-memory cache.
  *
- * @param tripRequestId The ID of the trip request.
-
- * @param refresh Optional boolean. If true, bypasses cache and calls the 'flight-search-v2' edge function
- *                to refresh data before fetching from 'flight-offers-v2'.
+ * @param options Options object containing tripRequestId, refresh flag, and cache preference
+ * @param deps Dependencies for testing (optional, defaults to production dependencies)
  * @returns A promise that resolves to an array of FlightOfferV2DbRow objects.
  * @throws Will throw an error if the fetch fails or the edge function returns an error.
  */
 export const getFlightOffers = async (
-  tripRequestId: string,
-  refresh: boolean = false
+  options: GetFlightOffersOptions | string, // Support legacy string parameter
+  deps: GetFlightOffersDeps = defaultDeps
 ): Promise<FlightOfferV2DbRow[]> => {
+  // Handle legacy string parameter for backward compatibility
+  const opts: GetFlightOffersOptions = typeof options === 'string' 
+    ? { tripRequestId: options, refresh: false, useCache: true }
+    : { useCache: true, ...options };
+  
+  const { tripRequestId, refresh = false, useCache = true } = opts;
+  const { supabaseClient, invokeEdgeFn } = deps;
+  
+  // Fallback safety check for undefined client
+  if (!supabaseClient) {
+    console.error('[ServerAction/getFlightOffers] Supabase client is undefined, using default deps');
+    return getFlightOffers(options, defaultDeps);
+  }
   if (refresh) {
     console.log(`[ServerAction/getFlightOffers] Refresh requested for tripRequestId: ${tripRequestId}. Invoking flight-search-v2...`);
     // Call the new flight-search-v2 edge function to update offers
-    // We expect this function to populate/update the flight_offers_v2 table.
-    // The response of flight-search-v2 might indicate success/failure or count of inserted items.
-    const { data: searchData, error: searchError } = await supabase.functions.invoke('flight-search-v2', {
-      body: { tripRequestId }, // Pass tripRequestId, add other params like maxPrice if needed by edge function
-    });
+    const edgeResult = await invokeEdgeFn('flight-search-v2', { tripRequestId });
 
-    if (searchError) {
-      console.error(`[ServerAction/getFlightOffers] Error invoking edge function 'flight-search-v2' for tripRequestId ${tripRequestId}:`, searchError);
-      throw new Error(`Failed to refresh flight offers via flight-search-v2: ${searchError.message}`);
+    if (edgeResult.error) {
+      console.error(`[ServerAction/getFlightOffers] Error invoking edge function 'flight-search-v2' for tripRequestId ${tripRequestId}:`, edgeResult.error);
+      throw new Error(`Failed to refresh flight offers via flight-search-v2: ${edgeResult.error.message}`);
     }
-    // Log the response from flight-search-v2, e.g., { inserted: number, message: string }
-    console.log(`[ServerAction/getFlightOffers] Response from 'flight-search-v2' for tripRequestId ${tripRequestId}:`, searchData);
+    
+    // Log the response from flight-search-v2
+    console.log(`[ServerAction/getFlightOffers] Response from 'flight-search-v2' for tripRequestId ${tripRequestId}:`, edgeResult.data);
 
     // Invalidate cache for this tripRequestId as we've triggered a refresh
     cache.delete(tripRequestId);
   }
 
-  // Check cache first
-  const cachedEntry = cache.get(tripRequestId);
-  if (cachedEntry && (Date.now() - cachedEntry.timestamp < CACHE_DURATION_MS)) {
-    console.log(`[ServerAction/getFlightOffers] Cache hit for tripRequestId: ${tripRequestId}`);
-    return cachedEntry.data;
+  // Check cache first (but only if useCache is true)
+  if (useCache) {
+    const cachedEntry = cache.get(tripRequestId);
+    if (cachedEntry && (Date.now() - cachedEntry.timestamp < CACHE_DURATION_MS)) {
+      console.log(`[ServerAction/getFlightOffers] Cache hit for tripRequestId: ${tripRequestId}`);
+      return cachedEntry.data;
+    }
   }
 
   console.log(`[ServerAction/getFlightOffers] Cache miss or stale for tripRequestId: ${tripRequestId}. Fetching from flight_offers_v2 table...`);
 
   // First, check if this is a round-trip search by looking at the trip request
-  const { data: tripRequest, error: tripRequestError } = await supabase
+  const { data: tripRequest, error: tripRequestError } = await supabaseClient
     .from('trip_requests')
     .select('return_date')
     .eq('id', tripRequestId)
     .single();
 
-  let query = supabase
+  if (tripRequestError) {
+    console.error(`[ServerAction/getFlightOffers] Error fetching trip request for tripRequestId ${tripRequestId}:`, tripRequestError);
+    throw new Error(`Failed to fetch trip request: ${tripRequestError.message}`);
+  }
+
+  let query = supabaseClient
     .from('flight_offers_v2')
     .select('*')
     .eq('trip_request_id', tripRequestId);
@@ -132,7 +173,7 @@ export const getFlightOffers = async (
   if (v2Error || !v2Data || v2Data.length === 0) {
     console.log(`[ServerAction/getFlightOffers] No V2 data found, falling back to legacy flight_offers table...`);
     
-    const { data: legacyData, error: legacyError } = await supabase
+    const { data: legacyData, error: legacyError } = await supabaseClient
       .from('flight_offers')
       .select('*')
       .eq('trip_request_id', tripRequestId);
@@ -143,12 +184,14 @@ export const getFlightOffers = async (
     }
     
     if (legacyData) {
-      // Transform legacy data to V2 format
-      const transformedData = (legacyData as LegacyFlightOffer[]).map(transformLegacyToV2);
+      // Transform legacy data to V2 format using the exported helper
+      const transformedData = transformLegacyOffers(legacyData as LegacyFlightOffer[]);
       console.log(`[ServerAction/getFlightOffers] Transformed ${transformedData.length} legacy offers to V2 format`);
       
-      // Cache the transformed data
-      cache.set(tripRequestId, { data: transformedData, timestamp: Date.now() });
+      // Cache the transformed data if caching is enabled
+      if (useCache) {
+        cache.set(tripRequestId, { data: transformedData, timestamp: Date.now() });
+      }
       return transformedData;
     }
     
@@ -159,8 +202,10 @@ export const getFlightOffers = async (
   if (v2Data && v2Data.length > 0) {
     console.log(`[ServerAction/getFlightOffers] Found ${v2Data.length} offers in flight_offers_v2 table`);
     
-    // Cache the V2 data
-    cache.set(tripRequestId, { data: v2Data as FlightOfferV2DbRow[], timestamp: Date.now() });
+    // Cache the V2 data if caching is enabled
+    if (useCache) {
+      cache.set(tripRequestId, { data: v2Data as FlightOfferV2DbRow[], timestamp: Date.now() });
+    }
     return v2Data as FlightOfferV2DbRow[];
   }
 

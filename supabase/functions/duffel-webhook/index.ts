@@ -1,9 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createHash, createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts';
+import { NotificationQueue, type NotificationJob } from '../_shared/queue.ts';
 
 const DUFFEL_WEBHOOK_SECRET = Deno.env.get('DUFFEL_WEBHOOK_SECRET');
 
-console.log('[DuffelWebhook] Function initialized');
+console.log('[DuffelWebhook] Function initialized with notification system');
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = {
@@ -25,13 +26,25 @@ Deno.serve(async (req: Request) => {
     const signature = req.headers.get('x-duffel-signature');
     const body = await req.text();
     
-    if (DUFFEL_WEBHOOK_SECRET && signature) {
+    // If webhook secret is configured, signature validation is required
+    if (DUFFEL_WEBHOOK_SECRET) {
+      if (!signature) {
+        console.error('[DuffelWebhook] Missing signature header');
+        return new Response('Missing signature', { status: 401 });
+      }
+      
       const expectedSignature = createHmac('sha256', DUFFEL_WEBHOOK_SECRET)
         .update(body)
         .digest('hex');
       
       if (signature !== `sha256=${expectedSignature}`) {
         console.error('[DuffelWebhook] Invalid signature');
+        return new Response('Invalid signature', { status: 401 });
+      }
+    } else {
+      // If no webhook secret is configured, still require signature header for security
+      if (!signature) {
+        console.error('[DuffelWebhook] Missing signature header - webhook secret not configured');
         return new Response('Invalid signature', { status: 401 });
       }
     }
@@ -148,7 +161,24 @@ async function handleOrderCreated(supabaseClient: any, event: any) {
   const order = event.object;
   console.log('[DuffelWebhook] Processing order.created:', order.id);
 
-  // Update booking with confirmed order details
+  // 1. Store event in event sourcing table
+  const { data: storedEvent, error: eventError } = await supabaseClient
+    .from('events')
+    .insert({
+      type: 'order.created',
+      payload: event,
+      source: 'duffel',
+      booking_id: order.id,
+      occurred_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+    
+  if (eventError) {
+    console.error('[DuffelWebhook] Failed to store event:', eventError);
+  }
+
+  // 2. Update booking with confirmed order details
   const { error } = await supabaseClient
     .rpc('rpc_update_duffel_booking_by_order', {
       p_duffel_order_id: order.id,
@@ -160,6 +190,22 @@ async function handleOrderCreated(supabaseClient: any, event: any) {
   if (error) {
     throw new Error(`Failed to update booking for order ${order.id}: ${error.message}`);
   }
+
+  // 3. Create notification and enqueue for delivery
+  await createAndEnqueueNotification(supabaseClient, {
+    type: 'booking_success',
+    user_id: order.passengers?.[0]?.id, // Adjust based on actual Duffel structure
+    booking_id: order.id,
+    event_id: storedEvent?.id,
+    data: {
+      pnr: order.booking_reference,
+      airline: order.slices?.[0]?.segments?.[0]?.operating_carrier?.name,
+      flight_number: order.slices?.[0]?.segments?.[0]?.operating_carrier_flight_number,
+      departure_datetime: order.slices?.[0]?.segments?.[0]?.departing_at,
+      arrival_datetime: order.slices?.[0]?.segments?.[0]?.arriving_at,
+      price: order.total_amount
+    }
+  });
 
   console.log('[DuffelWebhook] Order created processed successfully');
 }
@@ -202,4 +248,110 @@ async function handleOrderCancelled(supabaseClient: any, event: any) {
 
   // TODO: Send notification to user about cancellation
   console.log('[DuffelWebhook] Order cancellation processed successfully');
+}
+
+/**
+ * Create notification record and enqueue delivery jobs
+ */
+async function createAndEnqueueNotification(supabaseClient: any, params: {
+  type: string;
+  user_id: string;
+  booking_id: string;
+  event_id?: string;
+  data: Record<string, any>;
+}) {
+  try {
+    // Find the user ID from the booking if not provided
+    let userId = params.user_id;
+    if (!userId) {
+      const { data: booking } = await supabaseClient
+        .from('bookings')
+        .select('user_id')
+        .eq('duffel_order_id', params.booking_id)
+        .single();
+      
+      if (booking?.user_id) {
+        userId = booking.user_id;
+      } else {
+        console.warn('[DuffelWebhook] No user ID found for booking:', params.booking_id);
+        return;
+      }
+    }
+
+    // 1. Create notification record
+    const { data: notification, error: notificationError } = await supabaseClient
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        type: params.type,
+        title: getNotificationTitle(params.type),
+        content: params.data,
+        channels: ['email'], // Default to email, will be expanded based on user preferences
+        priority: getPriorityForType(params.type),
+        booking_id: params.booking_id,
+        event_id: params.event_id
+      })
+      .select()
+      .single();
+
+    if (notificationError) {
+      console.error('[DuffelWebhook] Failed to create notification:', notificationError);
+      return;
+    }
+
+    console.log('[DuffelWebhook] Created notification:', notification.id);
+
+    // 2. Get user preferences to determine channels
+    const { data: userPrefs } = await supabaseClient
+      .from('user_preferences')
+      .select('preferences')
+      .eq('user_id', userId)
+      .single();
+
+    const preferences = userPrefs?.preferences || {};
+    const typePrefs = preferences[params.type] || { email: true, sms: false };
+
+    // 3. Enqueue notification jobs for each enabled channel
+    const channels = Object.entries(typePrefs)
+      .filter(([_, enabled]) => enabled)
+      .map(([channel, _]) => channel);
+
+    for (const channel of channels) {
+      const job: NotificationJob = {
+        id: crypto.randomUUID(),
+        type: params.type,
+        user_id: userId,
+        notification_id: notification.id,
+        channel,
+        priority: getPriorityForType(params.type),
+        data: params.data
+      };
+
+      await NotificationQueue.enqueue(job);
+      console.log(`[DuffelWebhook] Enqueued ${channel} notification for user ${userId}`);
+    }
+
+  } catch (error) {
+    console.error('[DuffelWebhook] Error creating notification:', error);
+  }
+}
+
+function getNotificationTitle(type: string): string {
+  const titles = {
+    'booking_success': '✈️ Your flight is booked!',
+    'booking_failure': '⚠️ Flight booking issue',
+    'booking_canceled': 'ℹ️ Flight booking canceled',
+    'reminder_23h': '✈️ Flight reminder'
+  };
+  return titles[type] || 'Flight notification';
+}
+
+function getPriorityForType(type: string): 'low' | 'normal' | 'high' | 'critical' {
+  const priorities = {
+    'booking_success': 'critical',
+    'booking_failure': 'critical',
+    'booking_canceled': 'high',
+    'reminder_23h': 'normal'
+  };
+  return priorities[type] || 'normal';
 }

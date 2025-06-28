@@ -1,0 +1,52 @@
+export interface EdgeFunctionError {
+  message: string;
+  details?: any;
+}
+
+export interface EdgeFunctionResult<T = any> {
+  data: T | null;
+  error: EdgeFunctionError | null;
+}
+
+/**
+ * Invokes a Supabase edge function with dependency injection support for testing
+ * @param functionName - Name of the edge function to invoke
+ * @param body - Request body to send to the function
+ * @param fetchImpl - Fetch implementation (default: global fetch, can be mocked in tests)
+ */
+export const invokeEdgeFn = async <T = any>(
+  functionName: string,
+  body: any,
+  fetchImpl: typeof fetch = fetch
+): Promise<EdgeFunctionResult<T>> => {
+  try {
+    const response = await fetchImpl(`/functions/v1/${functionName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      return {
+        data: null,
+        error: {
+          message: `HTTP ${response.status}: ${response.statusText}`,
+          details: { status: response.status, statusText: response.statusText },
+        },
+      };
+    }
+
+    const data = await response.json();
+    return { data, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        details: error,
+      },
+    };
+  }
+};

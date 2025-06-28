@@ -26,10 +26,8 @@ vi.mock('@/integrations/supabase/client', () => ({
   }
 }));
 
-// Toast mock is now handled globally in setupTests.ts
-const mockToast = vi.fn();
+// Mock useCurrentUser hook
 vi.mock('@/hooks/useCurrentUser', () => ({
-
   useCurrentUser: vi.fn(() => ({
     userId: 'test-user-123',
     user: { id: 'test-user-123', email: 'test@example.com' },
@@ -37,23 +35,10 @@ vi.mock('@/hooks/useCurrentUser', () => ({
   })),
 }));
 
-
 describe('TripConfirm Page', () => {
-  beforeEach(async () => {
-    // Reset mocks before each test
-    vi.mocked(supabaseClient.from).mockClear();
-    vi.mocked(supabaseClient.auth.getUser).mockClear();
-    vi.mocked(supabaseClient.channel).mockClear();
-    vi.mocked(supabaseClient.functions.invoke).mockClear();
-    // If channel().on() etc. need reset, they can be done via re-mocking supabaseClient.channel
-
-    // (useToast as MockedFunction<any>).mockReset(); // Removed as new mock handles reset via vi.clearAllMocks()
-    mockToast.mockClear(); // Clear the global mockToast spy
-    // Get fresh reference to the mocked toast function
-    const { toast } = await import('@/components/ui/use-toast');
-    vi.mocked(toast).mockClear();
-
-    // vi.mocked(useCurrentUser) can be reset here if more granular control is needed per test
+  beforeEach(() => {
+    // All mocks are automatically reset by vi.clearAllMocks() in setupTests.ts
+    // No need to manually clear individual mocks here
   });
 
   // --- Tests for Auto-Book Banner and Book Now Button ---
@@ -76,7 +61,7 @@ describe('TripConfirm Page', () => {
       }
       return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: {}, error: null }) } as any;
     });
-    (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() });
+    // The global toast mock is already set up in setupTests.ts
 
     render(
 
@@ -114,7 +99,7 @@ describe('TripConfirm Page', () => {
       }
       return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: {}, error: null }) } as any;
     });
-    (useToast as MockedFunction<any>).mockReturnValue({ toast: vi.fn() });
+    // The global toast mock is already set up in setupTests.ts - no need to override
 
     render(
 
@@ -179,7 +164,9 @@ describe('TripConfirm Page', () => {
       unsubscribe: vi.fn()
     } as any); // Use 'as any' to simplify complex channel mock typing for this subtask
 
-    (useToast as MockedFunction<any>).mockReturnValue({ toast: mockToast });
+    // Use the global mock from setupTests.ts
+    const { useToast } = await import('@/components/ui/use-toast');
+    vi.mocked(useToast).mockReturnValue({ toast: mockToast });
 
     render(
 

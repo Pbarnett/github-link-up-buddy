@@ -9,56 +9,65 @@ interface ConstraintChipsProps {
   onToggleNonStop: () => void;
 }
 
+// Pure helper function for date formatting - exported for testing
+export const formatDateRange = (startDate: string, endDate: string, timezone?: string): string => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      timeZone: timezone
+    });
+  };
+  
+  return `${formatDate(startDate)} – ${formatDate(endDate)}`;
+};
+
 const ConstraintChips: React.FC<ConstraintChipsProps> = ({
   dateRange,
   nonStopOnly,
   onToggleNonStop,
 }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  };
 
   return (
     <div className="flex flex-wrap gap-2">
       {/* Carry-on included chip */}
-      <Badge variant="secondary" className="flex items-center gap-1">
-        <Lock className="h-3 w-3" />
-        Carry-on included
-      </Badge>
+      <span role="status" className="inline-flex">
+        <Badge variant="secondary" className="flex items-center gap-1" data-testid="chip-carry-on">
+          <Lock className="h-3 w-3" />
+          Carry-on included
+        </Badge>
+      </span>
 
       {/* Date range chip */}
-      <Badge variant="secondary" className="flex items-center gap-1">
-        <Lock className="h-3 w-3" />
-        {formatDate(dateRange.from)} – {formatDate(dateRange.to)}
-      </Badge>
+      <span role="status" className="inline-flex">
+        <Badge variant="secondary" className="flex items-center gap-1" data-testid="chip-date-range">
+          <Lock className="h-3 w-3" />
+          {formatDateRange(dateRange.from, dateRange.to)}
+        </Badge>
+      </span>
 
       {/* Non-stop only toggle chip */}
-      <Badge 
-        variant={nonStopOnly ? "default" : "outline"}
-        className="flex items-center gap-1 cursor-pointer hover:bg-opacity-80 transition-colors ring-focus"
+      <button
+        type="button"
+        className="inline-flex"
         onClick={onToggleNonStop}
-        tabIndex={0}
-        role="button"
         aria-pressed={nonStopOnly}
         aria-label={`Non-stop flights ${nonStopOnly ? 'enabled' : 'disabled'}`}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onToggleNonStop();
-          }
-        }}
+        data-testid="chip-nonstop"
       >
-        {nonStopOnly ? (
-          <ToggleRight className="h-3 w-3" />
-        ) : (
-          <ToggleLeft className="h-3 w-3" />
-        )}
-        Non-stop only
-      </Badge>
+        <Badge 
+          variant={nonStopOnly ? "default" : "outline"}
+          className="flex items-center gap-1 cursor-pointer hover:bg-opacity-80 transition-colors"
+        >
+          {nonStopOnly ? (
+            <ToggleRight className="h-3 w-3" />
+          ) : (
+            <ToggleLeft className="h-3 w-3" />
+          )}
+          Non-stop only
+        </Badge>
+      </button>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createSupabaseMock } from '../../../src/tests/mocks/supabase-mock';
 
 // Mock Stripe
 const mockStripeInstance = {
@@ -11,17 +12,8 @@ vi.mock('../lib/stripe.ts', () => ({
   stripe: mockStripeInstance,
 }));
 
-// Mock Supabase
-const mockSupabaseClient = {
-  from: vi.fn().mockReturnThis(),
-  select: vi.fn().mockReturnThis(),
-  eq: vi.fn().mockReturnThis(),
-  insert: vi.fn().mockReturnThis(),
-  single: vi.fn(),
-  functions: {
-    invoke: vi.fn(),
-  },
-};
+// Use the proven Supabase mock structure
+const { supabase: mockSupabaseClient, mocks } = createSupabaseMock();
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => mockSupabaseClient),
@@ -72,8 +64,8 @@ describe('prepare-auto-booking-charge', () => {
   });
 
   it('should successfully create PaymentIntent and booking request for valid campaign', async () => {
-    // Setup mocks
-    mockSupabaseClient.single
+    // Setup specific responses for each call
+    mocks.mockSingle
       .mockResolvedValueOnce({ data: mockCampaignData, error: null }) // Campaign lookup
       .mockResolvedValueOnce({ data: { id: 'booking_req_123' }, error: null }); // Booking request creation
 
@@ -87,9 +79,9 @@ describe('prepare-auto-booking-charge', () => {
     mockSupabaseClient.functions.invoke.mockResolvedValue({ data: null, error: null });
 
     // Import and test the handler
-    const { default: handler } = await import('../prepare-auto-booking-charge/index.ts');
+    const { handlePrepareAutoBookingCharge } = await import('../prepare-auto-booking-charge/index.ts');
     
-    const response = await handler(mockRequest({
+    const response = await handlePrepareAutoBookingCharge(mockRequest({
       campaign_id: 'campaign_123',
       flight_offer: mockFlightOffer,
     }));
@@ -122,7 +114,7 @@ describe('prepare-auto-booking-charge', () => {
     );
 
     // Verify booking request creation
-    expect(mockSupabaseClient.insert).toHaveBeenCalledWith(
+    expect(mocks.mockInsert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: 'user_456',
         campaign_id: 'campaign_123',
@@ -142,14 +134,11 @@ describe('prepare-auto-booking-charge', () => {
   it('should reject payment when flight price exceeds campaign budget', async () => {
     const expensiveOffer = { ...mockFlightOffer, price: 600 }; // Exceeds $500 budget
 
-    mockSupabaseClient.single.mockResolvedValueOnce({ 
-      data: mockCampaignData, 
-      error: null 
-    });
+    mocks.mockSingle.mockResolvedValueOnce({ data: mockCampaignData, error: null });
 
-    const { default: handler } = await import('../prepare-auto-booking-charge/index.ts');
+    const { handlePrepareAutoBookingCharge } = await import('../prepare-auto-booking-charge/index.ts');
     
-    const response = await handler(mockRequest({
+    const response = await handlePrepareAutoBookingCharge(mockRequest({
       campaign_id: 'campaign_123',
       flight_offer: expensiveOffer,
     }));
@@ -174,14 +163,11 @@ describe('prepare-auto-booking-charge', () => {
       },
     };
 
-    mockSupabaseClient.single.mockResolvedValueOnce({ 
-      data: campaignWithExpiredCard, 
-      error: null 
-    });
+    mocks.mockSingle.mockResolvedValueOnce({ data: campaignWithExpiredCard, error: null });
 
-    const { default: handler } = await import('../prepare-auto-booking-charge/index.ts');
+    const { handlePrepareAutoBookingCharge } = await import('../prepare-auto-booking-charge/index.ts');
     
-    const response = await handler(mockRequest({
+    const response = await handlePrepareAutoBookingCharge(mockRequest({
       campaign_id: 'campaign_123',
       flight_offer: mockFlightOffer,
     }));
@@ -197,10 +183,7 @@ describe('prepare-auto-booking-charge', () => {
   });
 
   it('should handle PaymentIntent requiring 3DS authentication', async () => {
-    mockSupabaseClient.single.mockResolvedValueOnce({ 
-      data: mockCampaignData, 
-      error: null 
-    });
+    mocks.mockSingle.mockResolvedValueOnce({ data: mockCampaignData, error: null });
 
     mockStripeInstance.paymentIntents.create.mockResolvedValue({
       id: 'pi_requires_action',
@@ -213,9 +196,9 @@ describe('prepare-auto-booking-charge', () => {
       },
     });
 
-    const { default: handler } = await import('../prepare-auto-booking-charge/index.ts');
+    const { handlePrepareAutoBookingCharge } = await import('../prepare-auto-booking-charge/index.ts');
     
-    const response = await handler(mockRequest({
+    const response = await handlePrepareAutoBookingCharge(mockRequest({
       campaign_id: 'campaign_123',
       flight_offer: mockFlightOffer,
     }));
@@ -229,14 +212,11 @@ describe('prepare-auto-booking-charge', () => {
     expect(responseData.error).toContain('requires additional authentication');
 
     // Verify no booking request was created
-    expect(mockSupabaseClient.insert).not.toHaveBeenCalled();
+    expect(mocks.mockInsert).not.toHaveBeenCalled();
   });
 
   it('should handle Stripe card declined error gracefully', async () => {
-    mockSupabaseClient.single.mockResolvedValueOnce({ 
-      data: mockCampaignData, 
-      error: null 
-    });
+    mocks.mockSingle.mockResolvedValueOnce({ data: mockCampaignData, error: null });
 
     const stripeError = new Error('Your card was declined.');
     stripeError.type = 'StripeCardError';
@@ -244,9 +224,9 @@ describe('prepare-auto-booking-charge', () => {
     
     mockStripeInstance.paymentIntents.create.mockRejectedValue(stripeError);
 
-    const { default: handler } = await import('../prepare-auto-booking-charge/index.ts');
+    const { handlePrepareAutoBookingCharge } = await import('../prepare-auto-booking-charge/index.ts');
     
-    const response = await handler(mockRequest({
+    const response = await handlePrepareAutoBookingCharge(mockRequest({
       campaign_id: 'campaign_123',
       flight_offer: mockFlightOffer,
     }));
@@ -261,10 +241,7 @@ describe('prepare-auto-booking-charge', () => {
   });
 
   it('should handle insufficient funds error', async () => {
-    mockSupabaseClient.single.mockResolvedValueOnce({ 
-      data: mockCampaignData, 
-      error: null 
-    });
+    mocks.mockSingle.mockResolvedValueOnce({ data: mockCampaignData, error: null });
 
     const stripeError = new Error('Your card has insufficient funds.');
     stripeError.type = 'StripeCardError';
@@ -272,9 +249,9 @@ describe('prepare-auto-booking-charge', () => {
     
     mockStripeInstance.paymentIntents.create.mockRejectedValue(stripeError);
 
-    const { default: handler } = await import('../prepare-auto-booking-charge/index.ts');
+    const { handlePrepareAutoBookingCharge } = await import('../prepare-auto-booking-charge/index.ts');
     
-    const response = await handler(mockRequest({
+    const response = await handlePrepareAutoBookingCharge(mockRequest({
       campaign_id: 'campaign_123',
       flight_offer: mockFlightOffer,
     }));
@@ -288,14 +265,11 @@ describe('prepare-auto-booking-charge', () => {
   });
 
   it('should return 404 for inactive campaign', async () => {
-    mockSupabaseClient.single.mockResolvedValueOnce({ 
-      data: null, 
-      error: { message: 'No rows returned' } 
-    });
+    mocks.mockSingle.mockResolvedValueOnce({ data: null, error: { message: 'No rows returned' } });
 
-    const { default: handler } = await import('../prepare-auto-booking-charge/index.ts');
+    const { handlePrepareAutoBookingCharge } = await import('../prepare-auto-booking-charge/index.ts');
     
-    const response = await handler(mockRequest({
+    const response = await handlePrepareAutoBookingCharge(mockRequest({
       campaign_id: 'inactive_campaign',
       flight_offer: mockFlightOffer,
     }));
@@ -311,9 +285,9 @@ describe('prepare-auto-booking-charge', () => {
   });
 
   it('should return 400 for missing required parameters', async () => {
-    const { default: handler } = await import('../prepare-auto-booking-charge/index.ts');
+    const { handlePrepareAutoBookingCharge } = await import('../prepare-auto-booking-charge/index.ts');
     
-    const response = await handler(mockRequest({
+    const response = await handlePrepareAutoBookingCharge(mockRequest({
       campaign_id: 'campaign_123',
       // Missing flight_offer
     }));
@@ -330,14 +304,11 @@ describe('prepare-auto-booking-charge', () => {
       payment_method: null,
     };
 
-    mockSupabaseClient.single.mockResolvedValueOnce({ 
-      data: campaignWithoutPayment, 
-      error: null 
-    });
+    mocks.mockSingle.mockResolvedValueOnce({ data: campaignWithoutPayment, error: null });
 
-    const { default: handler } = await import('../prepare-auto-booking-charge/index.ts');
+    const { handlePrepareAutoBookingCharge } = await import('../prepare-auto-booking-charge/index.ts');
     
-    const response = await handler(mockRequest({
+    const response = await handlePrepareAutoBookingCharge(mockRequest({
       campaign_id: 'campaign_123',
       flight_offer: mockFlightOffer,
     }));
@@ -353,7 +324,7 @@ describe('prepare-auto-booking-charge', () => {
   });
 
   it('should use traveler_data from request when provided', async () => {
-    mockSupabaseClient.single
+    mocks.mockSingle
       .mockResolvedValueOnce({ data: mockCampaignData, error: null })
       .mockResolvedValueOnce({ data: { id: 'booking_req_123' }, error: null });
 
@@ -369,16 +340,16 @@ describe('prepare-auto-booking-charge', () => {
       phone: '+9876543210',
     };
 
-    const { default: handler } = await import('../prepare-auto-booking-charge/index.ts');
+    const { handlePrepareAutoBookingCharge } = await import('../prepare-auto-booking-charge/index.ts');
     
-    await handler(mockRequest({
+    await handlePrepareAutoBookingCharge(mockRequest({
       campaign_id: 'campaign_123',
       flight_offer: mockFlightOffer,
       traveler_data: customTravelerData,
     }));
 
     // Verify booking request uses custom traveler data
-    expect(mockSupabaseClient.insert).toHaveBeenCalledWith(
+    expect(mocks.mockInsert).toHaveBeenCalledWith(
       expect.objectContaining({
         traveler_data: customTravelerData,
       })

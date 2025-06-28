@@ -5,32 +5,14 @@ import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vites
 import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed
 import { MemoryRouter } from 'react-router-dom'; // For <Link>
 
-// --- Mock Supabase client ---
+// Use global Supabase mock from setupTests.ts
+// Access the global mock for test-specific behavior
+import { supabase } from '@/integrations/supabase/client';
+
 // This variable will hold the mock promise resolver/rejecter for the final 'order' call
 let mockSupabaseQueryResolver: any;
 const mockOrder = vi.fn(() => new Promise((resolve, reject) => {
     mockSupabaseQueryResolver = { resolve, reject };
-}));
-
-const mockSupabaseClient = {
-  from: vi.fn((tableName: string) => {
-    if (tableName === 'bookings') {
-      return {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: mockOrder, // Use the mockOrder function here
-      };
-    }
-    // Fallback for other tables if any, though not expected for this component
-    return {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: [], error: null }),
-    };
-  }),
-};
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: mockSupabaseClient,
 }));
 
 // --- Mock react-router-dom ---
@@ -55,6 +37,24 @@ const mockBookingsData = [
 describe('TripHistory Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // Set up the global Supabase mock to use our custom order function for this test
+    const mockSupabaseClient = vi.mocked(supabase);
+    mockSupabaseClient.from.mockImplementation((tableName: string) => {
+      if (tableName === 'bookings') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: mockOrder,
+        } as any;
+      }
+      // Fallback for other tables
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      } as any;
+    });
   });
 
   const renderTripHistory = (userId = 'user-test-id') => {

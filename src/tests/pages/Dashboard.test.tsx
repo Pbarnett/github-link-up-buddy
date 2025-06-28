@@ -1,6 +1,7 @@
 
 // src/tests/pages/Dashboard.test.tsx
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import Dashboard from '@/pages/Dashboard';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -11,17 +12,12 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user-id', email: 'test@example.com' } }, error: null }),
-      onAuthStateChange: vi.fn(() => ({
-        data: { subscription: { unsubscribe: vi.fn() } },
-      })),
+      getUser: vi.fn(),
+      onAuthStateChange: vi.fn(),
       signOut: vi.fn(),
     },
     from: vi.fn(),
-    channel: vi.fn(() => ({
-      on: vi.fn().mockReturnThis(),
-      subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })),
-    })),
+    channel: vi.fn(),
     removeChannel: vi.fn(),
   },
 }));
@@ -65,8 +61,27 @@ describe('Dashboard Page', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    // Mock the implementation for each test
+    // Get access to the mocked supabase instance
     const { supabase } = await import('@/integrations/supabase/client');
+    
+    // Reset all mocks to default values
+    (supabase.auth.getUser as any).mockResolvedValue({ 
+      data: { user: { id: 'user-123', email: 'test@example.com' } }, 
+      error: null 
+    });
+    
+    (supabase.auth.onAuthStateChange as any).mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } },
+    });
+    
+    (supabase.auth.signOut as any).mockResolvedValue({ error: null });
+    
+    (supabase.channel as any).mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })),
+    });
+    
+    (supabase.removeChannel as any).mockImplementation(() => {});
     
     // Mock Supabase 'from' chained calls more robustly
     (supabase.from as any).mockImplementation((tableName: string) => {
@@ -107,58 +122,73 @@ describe('Dashboard Page', () => {
     const { supabase } = await import('@/integrations/supabase/client');
     (supabase.auth.getUser as any).mockImplementationOnce(() => new Promise(() => {})); // Simulate pending promise
     renderDashboardWithRouter();
-    expect(screen.getByText(/Loading.../i)).toBeInTheDocument();
+    // Look for loading skeleton elements - the Dashboard shows skeleton loaders with animate-pulse class
+    const pulseElements = document.querySelectorAll('.animate-pulse');
+    expect(pulseElements.length).toBeGreaterThan(0);
   });
 
-  it('2. Renders "Current Booking Requests" tab by default when authenticated', async () => {
+  it('2. Renders "Active Watches" tab by default when authenticated', async () => {
     renderDashboardWithRouter();
-    await waitFor(() => expect(screen.getByText(`Hello, ${mockUser.email}`)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(`Welcome back,`)).toBeInTheDocument());
+    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
 
-    expect(screen.getByRole('tab', { name: /Current Booking Requests/i, selected: true })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Active Watches/i, selected: true })).toBeInTheDocument();
     expect(screen.getByText(/TestAir TA101/i)).toBeInTheDocument();
     expect(screen.getByText(/FlyHigh FH202/i)).toBeInTheDocument();
     expect(screen.queryByTestId('trip-history-mock')).not.toBeInTheDocument();
   });
 
-  it('3. Switches to "Trip History" tab, renders TripHistory component with userId', async () => {
+  it('3. Switches to "My Trips" tab, renders TripHistory component with userId', async () => {
+    const user = userEvent.setup();
     renderDashboardWithRouter();
-    await waitFor(() => expect(screen.getByText(`Hello, ${mockUser.email}`)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(`Welcome back,`)).toBeInTheDocument());
+    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
 
-    const tripHistoryTabTrigger = screen.getByRole('tab', { name: /Trip History/i });
-    fireEvent.click(tripHistoryTabTrigger);
+    // Wait for booking requests to be displayed (indicating data has loaded)
+    await waitFor(() => expect(screen.getByText(/TestAir TA101/i)).toBeInTheDocument());
+    
+    // Now look for the tab and click it with userEvent for proper Radix UI interaction
+    const tripHistoryTabTrigger = await waitFor(() => screen.getByRole('tab', { name: /My Trips/i }));
+    await user.click(tripHistoryTabTrigger);
 
     await waitFor(() => expect(screen.getByTestId('trip-history-mock')).toBeInTheDocument());
     const { default: TripHistoryMock } = await import('@/components/dashboard/TripHistory');
-    expect(TripHistoryMock).toHaveBeenCalledWith({ userId: mockUser.id }, expect.anything());
+    expect(TripHistoryMock).toHaveBeenCalledWith(expect.objectContaining({ userId: mockUser.id }), expect.anything());
 
     expect(screen.queryByText(/TestAir TA101/i)).not.toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Trip History/i, selected: true })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /My Trips/i, selected: true })).toBeInTheDocument();
   });
 
-  it('4. Switches back to "Current Booking Requests" tab', async () => {
+  it('4. Switches back to "Active Watches" tab', async () => {
+    const user = userEvent.setup();
     renderDashboardWithRouter();
-    await waitFor(() => expect(screen.getByText(`Hello, ${mockUser.email}`)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(`Welcome back,`)).toBeInTheDocument());
+    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
 
-    const tripHistoryTabTrigger = screen.getByRole('tab', { name: /Trip History/i });
-    fireEvent.click(tripHistoryTabTrigger);
+    // Wait for booking requests to be displayed (indicating data has loaded)
+    await waitFor(() => expect(screen.getByText(/TestAir TA101/i)).toBeInTheDocument());
+
+    const tripHistoryTabTrigger = await waitFor(() => screen.getByRole('tab', { name: /My Trips/i }));
+    await user.click(tripHistoryTabTrigger);
     await waitFor(() => expect(screen.getByTestId('trip-history-mock')).toBeInTheDocument());
 
-    const currentRequestsTabTrigger = screen.getByRole('tab', { name: /Current Booking Requests/i });
-    fireEvent.click(currentRequestsTabTrigger);
+    const currentRequestsTabTrigger = screen.getByRole('tab', { name: /Active Watches/i });
+    await user.click(currentRequestsTabTrigger);
 
     await waitFor(() => expect(screen.getByText(/TestAir TA101/i)).toBeInTheDocument());
     expect(screen.queryByTestId('trip-history-mock')).not.toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Current Booking Requests/i, selected: true })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Active Watches/i, selected: true })).toBeInTheDocument();
   });
 
   it('5. Handles unauthenticated state (simulates redirect to /login)', async () => {
     const { supabase } = await import('@/integrations/supabase/client');
-    (supabase.auth.getUser as any).mockResolvedValue({ data: { user: null }, error: null });
+    (supabase.auth.getUser as any).mockResolvedValueOnce({ data: { user: null }, error: null });
     renderDashboardWithRouter();
 
     await waitFor(() => {
       expect(screen.getByTestId('navigate-mock')).toHaveTextContent('Redirecting to /login');
     });
-    expect(screen.queryByText(`Hello, ${mockUser.email}`)).not.toBeInTheDocument();
+    expect(screen.queryByText(`Welcome back,`)).not.toBeInTheDocument();
+    expect(screen.queryByText(mockUser.email)).not.toBeInTheDocument();
   });
 });

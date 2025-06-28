@@ -1,4 +1,4 @@
-// This file contains the legacy useTripOffers hook and its related definitions.
+// Legacy useTripOffers hook with dependency injection and improved testability.
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -345,4 +345,21 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
     handleOverrideSearch,
     handleRelaxCriteria,
   };
+};
+
+// Helper functions for testing - exported for unit testing pure logic
+export const _test = {
+  validateDuration: (offer: Offer, minDuration: number, maxDuration: number): boolean => {
+    if (!offer.departure_date || !offer.return_date) return false;
+    const departDate = new Date(offer.departure_date);
+    const returnDate = new Date(offer.return_date);
+    if (isNaN(departDate.getTime()) || isNaN(returnDate.getTime())) {
+      return false;
+    }
+    const tripDays = Math.round((returnDate.getTime() - departDate.getTime()) / (1000 * 60 * 60 * 24));
+    return tripDays >= minDuration && tripDays <= maxDuration;
+  },
+  buildCacheKey: (tripId: string, overrideFilter: boolean, relaxCriteria: boolean): string => {
+    return `legacy-${tripId}-${overrideFilter}-${relaxCriteria}`;
+  },
 };

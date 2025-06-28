@@ -19,7 +19,12 @@ COPY . .
 # Build stage
 FROM base AS build
 
-# Build the application
+# Set build-time environment variables for Vite
+ARG VITE_SUPABASE_URL=https://bbonngdyfyfjqfhvoljl.supabase.co
+ARG VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJib25uZ2R5ZnlmanFmaHZvbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNTE5NTQsImV4cCI6MjA2MjgyNzk1NH0.qoXypUh-SemZwFjTyONGztNbhoowqLMiKSRKgA7fRR0
+ARG VITE_FLAG_FS_V2=true
+
+# Build the application with environment variables
 RUN pnpm build
 
 # Production stage

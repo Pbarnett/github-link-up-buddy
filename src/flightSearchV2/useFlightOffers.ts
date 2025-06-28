@@ -71,7 +71,11 @@ export function useFlightOffers(
       try {
         // If this is a refetch (fetchTrigger > 0), force refresh to trigger flight search
         const shouldRefresh = fetchTrigger > 0;
-        const dbRows: FlightOfferV2DbRow[] = await getFlightOffers(tripRequestId, shouldRefresh);
+        const dbRows: FlightOfferV2DbRow[] = await getFlightOffers({
+          tripRequestId,
+          refresh: shouldRefresh,
+          useCache: true
+        });
 
         if (abortController.signal.aborted) {
           return;
