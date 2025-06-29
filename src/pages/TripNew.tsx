@@ -6,6 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Settings, ArrowLeft } from "lucide-react";
 import TripRequestForm from "@/components/trip/TripRequestForm";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { useBehavioralTriggers } from "@/hooks/useBehavioralTriggers";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { DynamicSocialProof } from "@/components/DynamicSocialProof";
+import { HowItWorksSection } from "@/components/HowItWorksSection";
+import { BehavioralTooltip } from "@/components/BehavioralTooltip";
 import { useEffect, useRef, useState } from "react";
 
 const TripNew = () => {
@@ -13,6 +18,13 @@ const TripNew = () => {
   const navigate = useNavigate();
   const mode = searchParams.get('mode') as 'manual' | 'auto' | null;
   const { trackCTAClick, trackCardView } = useAnalytics();
+  const { user } = useCurrentUser();
+  const {
+    showHesitationHelp,
+    showPriceProof,
+    userEngaged,
+    dismissHesitationHelp
+  } = useBehavioralTriggers();
   const autoCardRef = useRef<HTMLDivElement>(null);
   const manualCardRef = useRef<HTMLDivElement>(null);
 
@@ -29,16 +41,8 @@ const TripNew = () => {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-4xl mx-auto">
-          {/* Header with back link */}
+          {/* Header */}
           <div className="mb-8">
-            <button
-              type="button"
-              onClick={() => navigate("/dashboard")}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
-            </button>
             <div className="text-center">
               <h1 className="text-4xl font-bold text-gray-900 mb-3">
                 Let Parker Flight do the booking
@@ -157,7 +161,7 @@ const TripNew = () => {
 
           {/* Additional Info */}
           <div className="text-center mt-8 text-sm text-gray-500">
-            <p>You can always change between modes later from your dashboard</p>
+            <p>You can switch between booking methods anytime</p>
           </div>
         </div>
       </div>
