@@ -63,6 +63,14 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    
+    /* Primary button tokens */
+    --c-btn-primary: #0052FF;
+    --c-btn-secondary: transparent;
+    --c-btn-secondary-border: rgba(0, 82, 255, 0.5);
+    
+    /* Card scaling token */
+    --card-primary-scale: 1.08;
   }
 
   .dark {
@@ -207,6 +215,65 @@
     .transition-all {
       animation: none;
       transition: none;
+    }
+  }
+
+  /* Primary path design system */
+  .card-primary {
+    transform: scale(var(--card-primary-scale));
+    transition: transform 0.125s ease-out;
+  }
+
+  .btn-primary-new {
+    background-color: var(--c-btn-primary);
+    color: white;
+    border: none;
+  }
+
+  .btn-secondary-new {
+    background-color: var(--c-btn-secondary);
+    color: var(--c-btn-primary);
+    border: 1px solid var(--c-btn-secondary-border);
+  }
+
+  /* Auto-booking pulse animation with accessibility guard */
+  @media (prefers-reduced-motion: no-preference) {
+    .btn-primary[id*="auto"] {
+      animation: pulse 1.2s ease-out 2s alternate 2;
+    }
+  }
+
+  /* Card hover elevate */
+  .card:hover {
+    translate: 0 -4px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Success badge variant for inline use */
+  .badge-success {
+    @apply inline-flex items-center rounded-full border-transparent bg-green-100 text-green-800 px-2.5 py-0.5 text-xs font-semibold;
+  }
+
+  /* Pop-in animation for primary card */
+  .card-primary {
+    animation: popIn 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    transform-origin: center;
+  }
+
+  @keyframes popIn {
+    from { 
+      transform: scale(0.93); 
+      opacity: 0; 
+    }
+    to { 
+      transform: scale(1); 
+      opacity: 1; 
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-primary { 
+      animation: none; 
     }
   }
 }

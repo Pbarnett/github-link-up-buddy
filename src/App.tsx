@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { SmartErrorBoundary } from "@/components/ErrorBoundary";
 import { useRetryQueue } from "@/utils/retryQueue";
 import { useEffect } from "react";
@@ -35,6 +35,14 @@ const queryClient = new QueryClient({
   },
 });
 
+// Navigation wrapper to handle conditional props
+const NavigationWrapper = () => {
+  const location = useLocation();
+  const shouldHideFindFlights = location.pathname === '/trip/new';
+  
+  return <TopNavigation hideFindFlights={shouldHideFindFlights} />;
+};
+
 // Global middleware component
 const GlobalMiddleware = ({ children }: { children: React.ReactNode }) => {
   // Initialize retry queue
@@ -64,7 +72,7 @@ const App = () => {
             v7_relativeSplatPath: true
           }}
         >
-          <TopNavigation />
+          <NavigationWrapper />
           <Breadcrumbs />
           <main id="main" className="flex-1 overflow-auto">
             <Routes>

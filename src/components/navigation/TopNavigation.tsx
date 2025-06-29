@@ -40,7 +40,11 @@ interface User {
   };
 }
 
-const TopNavigation = () => {
+interface TopNavigationProps {
+  hideFindFlights?: boolean;
+}
+
+const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
@@ -162,21 +166,23 @@ const TopNavigation = () => {
         {/* Right side actions */}
         <div className="flex items-center space-x-4 ml-auto">
           {/* Find Flights CTA - Desktop */}
-          <Button
-            onClick={handleFindFlights}
-            className="hidden md:inline-flex bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2"
-            disabled={isNavigating}
-            aria-busy={isNavigating}
-          >
-            {isNavigating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              'Find Flights'
-            )}
-          </Button>
+          {!hideFindFlights && (
+            <Button
+              onClick={handleFindFlights}
+              className="hidden md:inline-flex bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2"
+              disabled={isNavigating}
+              aria-busy={isNavigating}
+            >
+              {isNavigating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                'Find Flights'
+              )}
+            </Button>
+          )}
 
           {/* Mobile menu button */}
           <Popover open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>

@@ -11,8 +11,6 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { CampaignCard } from "@/components/autobooking/CampaignCard";
 import PageWrapper from "@/components/layout/PageWrapper";
-import TopNavigation from "@/components/navigation/TopNavigation";
-import Breadcrumbs from "@/components/navigation/Breadcrumbs";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
 
 function AutoBookingDashboard() {
@@ -90,7 +88,6 @@ function AutoBookingDashboard() {
   if (!userId) {
     return (
       <PageWrapper>
-        <TopNavigation />
         <div className="container mx-auto py-8">
           <Alert>
             <AlertDescription>
@@ -104,9 +101,7 @@ function AutoBookingDashboard() {
 
   return (
     <PageWrapper>
-      <TopNavigation />
       <div className="container mx-auto py-8 space-y-6">
-        <Breadcrumbs />
         
         <div className="flex justify-between items-center">
           <div>
