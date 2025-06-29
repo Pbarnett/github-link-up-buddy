@@ -276,4 +276,108 @@
       animation: none; 
     }
   }
+
+  /* Hero section styling */
+  .hero-section {
+    background: #F9FBFF;
+    padding: 3.5rem 1rem 2rem;
+    text-align: center;
+  }
+  
+  .hero-title {
+    max-width: 28ch;
+    margin: 0 auto;
+  }
+  
+  .hero-lead {
+    font-size: 1.125rem;
+    color: #334155;
+    margin-top: 0.5rem;
+    max-width: 840px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .hero-sub {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+  }
+
+  /* Enhanced card grid */
+  .card-grid {
+    margin-top: -1.25rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    align-items: stretch;
+  }
+  
+  .card-primary-enhanced {
+    max-width: 440px;
+    margin: 0 auto;
+  }
+  
+  .card-secondary-enhanced {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  /* Enhanced hover states */
+  .card-enhanced:hover {
+    border-opacity: 0.4;
+    background-color: #FAFCFF;
+  }
+  
+  .card-enhanced:focus-within {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.5);
+  }
+  
+  .btn-secondary-enhanced:hover {
+    background-color: #F8FAFF;
+  }
+
+  /* Auto-booking CTA pulse animation */
+  @media (prefers-reduced-motion: no-preference) {
+    .btn-primary#auto-booking-primary {
+      animation: ctaPulse 1.5s ease-out 1.5s 2 alternate;
+    }
+    
+    @keyframes ctaPulse {
+      from { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.45); }
+      to { box-shadow: 0 0 0 12px rgba(29, 78, 216, 0); }
+    }
+  }
+
+  /* Stat banner styling */
+  .stat-banner {
+    background-color: #EEF4FF;
+    padding: 0.75rem 1rem;
+    border-radius: 0 0 0.5rem 0.5rem;
+    border-top: 1px solid #E0E7FF;
+  }
+
+  /* Partner logos */
+  .partner-logos {
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+  }
+  
+  .partner-logos:hover {
+    opacity: 1;
+  }
+
+  /* Dark mode support */
+  [data-theme='dark'] .hero-section {
+    background: #0f172a;
+  }
+  
+  [data-theme='dark'] .card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  
+  [data-theme='dark'] .text-muted {
+    color: #94a3b8;
+  }
 }
