@@ -34,3 +34,7 @@ dist-ssr
 .env.supabase
 supabase/.env
 start-functions-with-env.sh
+
+# SSL certificates for development
+.ssl/
+.env

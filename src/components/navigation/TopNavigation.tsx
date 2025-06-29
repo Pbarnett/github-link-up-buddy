@@ -86,13 +86,13 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
   // Primary navigation items (left side)
   const primaryNavItems = [
     {
-      name: 'Dashboard',
-      href: '/dashboard',
+      name: 'Auto-Booking',
+      href: '/auto-booking',
       icon: Home,
     },
     {
-      name: 'Auto-Booking',
-      href: '/auto-booking',
+      name: 'Dashboard',
+      href: '/dashboard',
       icon: Settings,
     }
   ];
@@ -129,7 +129,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
       <div className="container flex h-16 max-w-screen-2xl items-center">
         {/* Logo */}
         <Link 
-          to="/dashboard" 
+          to="/auto-booking" 
           className="flex items-center space-x-2 mr-8 hover:opacity-80 transition-opacity"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
