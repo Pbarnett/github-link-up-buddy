@@ -6,13 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Settings, ArrowLeft, Check } from "lucide-react";
 import TripRequestForm from "@/components/trip/TripRequestForm";
 import { useAnalytics } from "@/hooks/useAnalytics";
-import { useBehavioralTriggers } from "@/hooks/useBehavioralTriggers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { DynamicSocialProof } from "@/components/DynamicSocialProof";
-import { HowItWorksSection } from "@/components/HowItWorksSection";
-import { BehavioralTooltip } from "@/components/BehavioralTooltip";
-import { PartnerLogos } from "@/components/PartnerLogos";
 import { ActiveBookingsPill } from "@/components/ActiveBookingsPill";
+import ThreeStepExplainer from "@/components/ThreeStepExplainer";
+import SimplifiedSocialProof from "@/components/SimplifiedSocialProof";
 import { useEffect, useRef, useState } from "react";
 
 const TripNew = () => {
@@ -21,12 +18,6 @@ const TripNew = () => {
   const mode = searchParams.get('mode') as 'manual' | 'auto' | null;
   const { trackCTAClick, trackCardView } = useAnalytics();
   const { user } = useCurrentUser();
-  const {
-    showHesitationHelp,
-    showPriceProof,
-    userEngaged,
-    dismissHesitationHelp
-  } = useBehavioralTriggers();
   const autoCardRef = useRef<HTMLDivElement>(null);
   const manualCardRef = useRef<HTMLDivElement>(null);
 
@@ -45,17 +36,17 @@ const TripNew = () => {
   if (!mode) {
     return (
       <div className="min-h-screen bg-white">
-        {/* Hero Section */}
-        <section className="hero-section">
+        {/* Redesigned Hero Section */}
+        <section className="hero-redesigned">
           <div className="max-w-4xl mx-auto px-4">
-            <h1 className="hero-title text-4xl font-bold text-gray-900 mb-3">
-              Let Parker Flight do the booking
+            <h1 className="hero-title-redesigned">
+              ✈️ Skip the fare hunt.
             </h1>
-            <p className="hero-lead">
-              Tell us your ideal dates and max price once—we'll book automatically when a deal appears.
+            <p className="hero-lead-redesigned">
+              Tell us your perfect flight and price. We'll book it the moment it appears.
             </p>
-            <p className="hero-sub">
-              Sleep on it—wake up to a booked ticket that never busts your budget.
+            <p className="hero-sub-redesigned">
+              No endless searches, no price-tracking apps—just set it once and relax.
             </p>
           </div>
         </section>
@@ -64,14 +55,17 @@ const TripNew = () => {
         <div className="max-w-4xl mx-auto px-4 pb-12">
           {/* Active Bookings Pill for signed-in users */}
           {user && <ActiveBookingsPill count={activeBookingsCount} />}
+          
+          {/* 3-Step Explainer */}
+          <ThreeStepExplainer />
 
           {/* Mode Selection Cards - Auto-Booking First for Primary Path */}
-          <div className="card-grid max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-8">
             {/* Auto-Booking Card - Primary Path */}
             <Card 
               ref={autoCardRef}
               data-behavior="card"
-              className="card-primary-enhanced card-enhanced relative overflow-hidden border-2 border-blue-200 transition-all cursor-pointer group"
+              className="card-redesigned card-primary-redesigned relative overflow-hidden transition-all cursor-pointer group"
             >
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-3 mb-2">
@@ -102,17 +96,19 @@ const TripNew = () => {
                     <span>Cancel or tweak anytime in one click</span>
                   </li>
                 </ul>
-                <Button 
-                  id="auto-booking-primary"
-                  onClick={() => {
-                    trackCTAClick({ type: 'auto', cardPosition: 'left', timestamp: Date.now() });
-                    navigate('/trip/new?mode=auto');
-                  }}
-                  style={{ backgroundColor: 'var(--c-btn-primary)' }}
-                  className="w-full text-white border-none font-medium py-3 hover:opacity-90"
-                >
-                  Start Auto-Booking
-                </Button>
+                <div className="flex justify-center">
+                  <Button 
+                    id="auto-booking-primary"
+                    onClick={() => {
+                      trackCTAClick({ type: 'auto', cardPosition: 'left', timestamp: Date.now() });
+                      navigate('/trip/new?mode=auto');
+                    }}
+                    style={{ backgroundColor: 'var(--c-btn-primary)' }}
+                    className="btn-redesigned text-white border-none font-medium py-3 hover:opacity-90"
+                  >
+                    Start Auto-Booking
+                  </Button>
+                </div>
               </CardContent>
               {/* Enhanced stat banner */}
               <div className="stat-banner flex items-center justify-center gap-2">
@@ -127,7 +123,7 @@ const TripNew = () => {
             <Card 
               ref={manualCardRef}
               data-behavior="card"
-              className="card-secondary-enhanced card-enhanced relative overflow-hidden border border-gray-200 transition-all cursor-pointer group"
+              className="card-redesigned relative overflow-hidden transition-all cursor-pointer group"
             >
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-3 mb-2">
@@ -169,17 +165,8 @@ const TripNew = () => {
             </Card>
           </div>
 
-          {/* Partner Logos */}
-          <PartnerLogos />
-
-          {/* Progressive Disclosure: How It Works */}
-          {userEngaged && !user && (
-            <HowItWorksSection variant="marketing" />
-          )}
-          
-          {user && (
-            <HowItWorksSection variant="dashboard" />
-          )}
+          {/* Simplified Social Proof */}
+          <SimplifiedSocialProof />
 
           {/* Additional Info */}
           <div className="text-center mt-8 text-sm text-gray-500">

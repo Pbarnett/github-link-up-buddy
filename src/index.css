@@ -367,6 +367,166 @@
     opacity: 1;
   }
 
+  /* Redesigned hero section */
+  .hero-redesigned {
+    background: #F9FBFF;
+    padding: 2.5rem 1rem 1.5rem;
+    text-align: center;
+  }
+  
+  .hero-title-redesigned {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+    color: #0f172a;
+  }
+  
+  .hero-lead-redesigned {
+    font-size: 1.125rem;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .hero-sub-redesigned {
+    font-size: 0.875rem;
+    color: #6b7280;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* 3-step explainer */
+  .steps-container {
+    background: #EEF4FF;
+    border-radius: 0.75rem;
+    padding: 1.25rem 1rem;
+    margin: 2rem auto;
+    max-width: 700px;
+  }
+  
+  .step-item {
+    text-align: center;
+    flex: 1;
+  }
+  
+  .step-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  
+  .step-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0.25rem 0;
+    color: #1f2937;
+  }
+  
+  .step-detail {
+    font-size: 0.875rem;
+    color: #475569;
+    line-height: 1.4;
+  }
+  
+  .step-arrow {
+    color: #3b82f6;
+    font-weight: 600;
+    font-size: 1.25rem;
+    align-self: center;
+    margin: 0 1rem;
+  }
+  
+  /* Enhanced card styling for redesign */
+  .card-redesigned {
+    border-radius: 0.75rem;
+    border: 2px solid #e5e7eb;
+    transition: all 0.2s ease;
+    background: white;
+  }
+  
+  .card-redesigned:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  .card-primary-redesigned {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+  }
+  
+  .card-primary-redesigned:hover {
+    border-color: #2563eb;
+    background: linear-gradient(135deg, #dbeafe 0%, #ffffff 100%);
+  }
+  
+  /* Simplified social proof */
+  .social-proof-redesigned {
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-align: center;
+    margin-top: 1.5rem;
+    padding: 0 1rem;
+  }
+  
+  .social-proof-redesigned strong {
+    color: #374151;
+  }
+  
+  .live-indicator {
+    color: #10b981;
+    margin-left: 0.5rem;
+    animation: pulse 2s infinite;
+  }
+
+  /* Button width constraints */
+  .btn-redesigned {
+    width: 100%;
+  }
+  
+  @media (min-width: 768px) {
+    .btn-redesigned {
+      width: 240px;
+      margin: 0 auto;
+    }
+  }
+
+  /* Responsive mobile stack for steps */
+  @media (max-width: 767px) {
+    .steps-container {
+      padding: 1rem;
+    }
+    
+    .step-mobile {
+      display: flex;
+      align-items: center;
+      text-align: left;
+      margin-bottom: 1rem;
+    }
+    
+    .step-mobile:last-child {
+      margin-bottom: 0;
+    }
+    
+    .step-number {
+      background: #3b82f6;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-right: 1rem;
+      flex-shrink: 0;
+    }
+  }
+
   /* Dark mode support */
   [data-theme='dark'] .hero-section {
     background: #0f172a;
