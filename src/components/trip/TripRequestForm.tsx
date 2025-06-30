@@ -10,7 +10,7 @@ import { Form } from "@/components/ui/form";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { FormValues, tripFormSchema, ExtendedTripFormValues } from "@/types/form";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Search } from "lucide-react";
 import { TripRequestFromDB } from "@/hooks/useTripOffers";
 import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
@@ -445,33 +445,53 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     </div>
   ) : (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="mx-auto w-full max-w-7xl">
-        <div className={`grid gap-6 ${mode === 'auto' && !isMobile ? 'lg:grid-cols-3' : 'grid-cols-1'}`}>
-          {/* Main Form Column */}
-          <div className={`${mode === 'auto' && !isMobile ? 'lg:col-span-2' : 'col-span-1'}`}>
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        {/* Header with back link */}
-        <div className="p-6 pb-4 border-b border-gray-100">
-          <button
-            type="button"
-            onClick={() => navigate("/trip/new")}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {mode === 'auto' ? 'Auto-Booking Setup' : 'New Search'}
-          </button>
+      <div className="container mx-auto py-8 space-y-6">
+        {/* Page Header */}
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className={`font-bold text-gray-900 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
-              {getPageTitle()}
+            <button
+              type="button"
+              onClick={() => navigate("/trip/new")}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Search Options
+            </button>
+            <h1 className="text-3xl font-bold">
+              {mode === 'manual' ? 'Search Current Flights' : getPageTitle()}
             </h1>
-            <p className="text-gray-600 mt-1">{getPageDescription()}</p>
+            <p className="text-muted-foreground mt-2">
+              {mode === 'manual' 
+                ? 'Find and book flights available right now using live Amadeus data'
+                : getPageDescription()
+              }
+            </p>
           </div>
         </div>
 
-        <FormProvider {...form}>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleStepSubmit)} className="p-6">
-              {/* Step Indicator for Auto Mode */}
+        <div className={`grid gap-6 ${mode === 'auto' && !isMobile ? 'lg:grid-cols-3' : 'grid-cols-1'}`}>
+          {/* Main Form Column */}
+          <div className={`${mode === 'auto' && !isMobile ? 'lg:col-span-2' : 'col-span-1'}`}>
+            <div className="bg-white rounded-lg border shadow-sm">
+              <div className="p-6">
+                {mode === 'manual' && (
+                  <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-start gap-3">
+                      <Search className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <h3 className="font-medium text-blue-900">Live Flight Search</h3>
+                        <p className="text-sm text-blue-700 mt-1">
+                          We'll search real-time flight availability using Amadeus and show you current prices and booking options.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <FormProvider {...form}>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleStepSubmit)} className="space-y-6">
+                      {/* Step Indicator for Auto Mode */}
               {mode === 'auto' && (
                 <div className="flex items-center justify-center mb-8">
                   <div className="flex items-center space-x-4">
@@ -566,51 +586,52 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                 </>
               )}
 
-              {/* Form Actions */}
-              <div className="pt-8 border-t border-gray-200 mt-8">
-                <div className="flex flex-col sm:flex-row justify-center gap-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => {
-                      if (mode === 'auto' && currentStep === 2) {
-                        setCurrentStep(1);
-                      } else {
-                        navigate("/trip/new");
-                      }
-                    }} 
-                    disabled={isSubmitting}
-                    className="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 h-11"
-                  >
-                    {mode === 'auto' && currentStep === 2 ? '← Back to Basics' : 'Back'}
-                  </Button>
-                  <Button 
-                    type={mode === 'auto' && currentStep === 1 ? "button" : "submit"}
-                    onClick={mode === 'auto' && currentStep === 1 ? handleContinueToPricing : undefined}
-                    disabled={isSubmitting || !isFormValid} 
-                    data-testid="primary-submit-button"
-                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-medium disabled:opacity-50 min-w-[160px] h-11"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {tripRequestId ? "Updating..." : "Processing..."}
-                      </>
-                    ) : buttonText()}
-                  </Button>
-                </div>
-              </div>
-            </form>
-          </Form>
-            </FormProvider>
+                      {/* Form Actions */}
+                      <div className="pt-8 border-t border-gray-200 mt-8">
+                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              if (mode === 'auto' && currentStep === 2) {
+                                setCurrentStep(1);
+                              } else {
+                                navigate("/trip/new");
+                              }
+                            }} 
+                            disabled={isSubmitting}
+                            className="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 h-11"
+                          >
+                            {mode === 'auto' && currentStep === 2 ? '← Back to Basics' : 'Back'}
+                          </Button>
+                          <Button 
+                            type={mode === 'auto' && currentStep === 1 ? "button" : "submit"}
+                            onClick={mode === 'auto' && currentStep === 1 ? handleContinueToPricing : undefined}
+                            disabled={isSubmitting || !isFormValid} 
+                            data-testid="primary-submit-button"
+                            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-medium disabled:opacity-50 min-w-[160px] h-11"
+                          >
+                            {isSubmitting ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                {tripRequestId ? "Updating..." : "Processing..."}
+                              </>
+                            ) : buttonText()}
+                          </Button>
+                        </div>
+                      </div>
+                    </form>
+                  </Form>
+                </FormProvider>
 
-            {/* Sticky Actions for Desktop */}
-            <StickyFormActions
-              isSubmitting={isSubmitting}
-              isFormValid={isFormValid}
-              buttonText={buttonText()}
-              onSubmit={form.handleSubmit(handleStepSubmit)}
-            />
+                {/* Sticky Actions for Desktop */}
+                <StickyFormActions
+                  isSubmitting={isSubmitting}
+                  isFormValid={isFormValid}
+                  buttonText={buttonText()}
+                  onSubmit={form.handleSubmit(handleStepSubmit)}
+                />
+              </div>
             </div>
           </div>
 

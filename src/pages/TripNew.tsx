@@ -1,5 +1,5 @@
 
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,12 @@ import { useEffect, useRef, useState } from "react";
 const TripNew = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const mode = searchParams.get('mode') as 'manual' | 'auto' | null;
+  const location = useLocation();
+  
+  // Auto-set mode to 'manual' if accessing via /search route
+  const mode = location.pathname === '/search' 
+    ? 'manual' 
+    : (searchParams.get('mode') as 'manual' | 'auto' | null);
   const { trackCTAClick, trackCardView } = useAnalytics();
   const { user } = useCurrentUser();
   const autoCardRef = useRef<HTMLDivElement>(null);

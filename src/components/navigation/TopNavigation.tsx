@@ -25,7 +25,8 @@ import {
   LogOut,
   Menu,
   ChevronDown,
-  Loader2
+  Loader2,
+  Search
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
@@ -78,7 +79,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
 
   const handleFindFlights = async () => {
     setIsNavigating(true);
-    navigate('/trip/new');
+    navigate('/search');
     // Reset after a short delay to handle the loading state
     setTimeout(() => setIsNavigating(false), 1000);
   };
@@ -89,6 +90,11 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
       name: 'Auto-Booking',
       href: '/auto-booking',
       icon: Home,
+    },
+    {
+      name: 'Search Current Flights',
+      href: '/search',
+      icon: Search,
     },
     {
       name: 'Dashboard',

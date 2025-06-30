@@ -95,6 +95,14 @@ const App = () => {
                 }
               />
               <Route
+                path="/search"
+                element={
+                  <AuthGuard>
+                    <TripNew />
+                  </AuthGuard>
+                }
+              />
+              <Route
                 path="/trip/offers"
                 element={
                   <AuthGuard>
