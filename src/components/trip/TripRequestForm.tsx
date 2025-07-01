@@ -16,16 +16,17 @@ import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
 import { invokeFlightSearch } from "@/services/api/flightSearchApi";
 import { useIsMobile } from "@/hooks/use-mobile";
-import DateRangeField from "./DateRangeField";
 import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
-import TripDurationInputs from "./sections/TripDurationInputs";
+import ImprovedDatePickerSection from "./sections/ImprovedDatePickerSection";
 import AutoBookingSection from "./sections/AutoBookingSection.tsx";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
 import CollapsibleFiltersSection from "./sections/CollapsibleFiltersSection";
+import TripDurationInputs from "./sections/TripDurationInputs";
 import LiveBookingSummary from "./LiveBookingSummary";
+import TripSummaryChips from "./sections/TripSummaryChips";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface TripRequestFormProps {
@@ -505,30 +506,20 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                 </div>
               )}
 
-              {/* Step 1: Trip Basics (for auto mode) or All fields (for manual mode) */}
+                      {/* Step 1: Trip Basics (Google Flights-inspired layout) */}
               {(mode === 'manual' || currentStep === 1) && (
                 <>
-                  {/* Primary Travel Details */}
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 mb-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-                      {mode === 'auto' ? 'Where & When' : 'Travel Details'}
-                    </h2>
-                    <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2 lg:gap-8'}`}>
+                  {/* Trip Basics - Destination & Origin */}
+                  <div className="space-y-6 mb-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <EnhancedDestinationSection control={form.control} watch={form.watch} />
                       <DepartureAirportsSection control={form.control} />
                     </div>
-                    <div className="mt-6">
-                      <DateRangeField control={form.control} />
-                    </div>
                   </div>
 
-                  {/* Trip Duration for Step 1 */}
-                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      Trip Length
-                    </h2>
-                    <TripDurationInputs control={form.control} />
+                  {/* Dates & Trip Length */}
+                  <div className="space-y-6 mb-8">
+                    <ImprovedDatePickerSection control={form.control} />
                   </div>
                 </>
               )}
@@ -555,35 +546,52 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
               {/* Manual mode: Show budget and collapsible filters */}
               {mode === 'manual' && (
                 <>
-                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 mb-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                      <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
-                      Budget & Preferences
-                    </h2>
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-base font-semibold text-gray-900 mb-3">Maximum Price</h3>
-                        <EnhancedBudgetSection control={form.control} />
-                      </div>
-                      
-                      <div className="border-t border-gray-200 pt-6">
-                        <CollapsibleFiltersSection control={form.control} />
-                      </div>
+                  {/* Travelers & Cabin (compact single line) */}
+                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium text-gray-700">Travelers & Cabin</div>
+                      <div className="text-sm text-gray-600">1 Adult • Any cabin</div>
+                    </div>
+                  </div>
+
+                  {/* Budget Section */}
+                  <div className="space-y-4 mb-6">
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900 mb-3">Top price you'll pay</h3>
+                      <EnhancedBudgetSection control={form.control} />
                     </div>
                   </div>
                   
-                  <div className="bg-amber-50 rounded-xl border border-amber-200 shadow-sm p-6 mb-6">
-                    <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                      <span className="text-xl mr-2">💫</span>
-                      Auto-Booking (Optional)
-                    </h2>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Keep watching prices after you leave? Auto-Book will snap up a deal for you.
-                    </p>
-                    <AutoBookingSection control={form.control} mode={mode} />
+                  {/* Collapsible Filters */}
+                  <div className="mb-6">
+                    <CollapsibleFiltersSection control={form.control} />
+                  </div>
+                  
+                  {/* Auto-Booking Inline Toggle */}
+                  <div className="bg-blue-50/50 rounded-lg border border-blue-100 p-4 mb-6">
+                    <div className="flex items-start gap-3">
+                      <span className="text-lg">💫</span>
+                      <div className="flex-1">
+                        <h3 className="text-sm font-medium text-gray-900 mb-1">
+                          Keep watching prices after you leave?
+                        </h3>
+                        <p className="text-xs text-gray-600 mb-3">
+                          Auto-Book will snap up a deal for you.
+                        </p>
+                        <AutoBookingSection control={form.control} mode={mode} />
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
+
+                      {/* Trip Summary Chips */}
+                      <TripSummaryChips 
+                        control={form.control} 
+                        onClearField={(fieldName) => {
+                          form.setValue(fieldName as any, fieldName === 'nyc_airports' ? [] : undefined);
+                        }}
+                      />
 
                       {/* Form Actions */}
                       <div className="pt-8 border-t border-gray-200 mt-8">
