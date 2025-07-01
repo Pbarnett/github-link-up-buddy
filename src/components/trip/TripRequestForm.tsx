@@ -20,7 +20,7 @@ import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import ImprovedDatePickerSection from "./sections/ImprovedDatePickerSection";
-import AutoBookingSection from "./sections/AutoBookingSection.tsx";
+import TravelersAndCabinSection from "./sections/TravelersAndCabinSection";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
 import CollapsibleFiltersSection from "./sections/CollapsibleFiltersSection";
@@ -543,15 +543,13 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                 </>
               )}
 
-              {/* Manual mode: Show budget and collapsible filters */}
+              {/* Manual mode: Show travelers, budget and collapsible filters */}
               {mode === 'manual' && (
                 <>
-                  {/* Travelers & Cabin (compact single line) */}
-                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium text-gray-700">Travelers & Cabin</div>
-                      <div className="text-sm text-gray-600">1 Adult • Any cabin</div>
-                    </div>
+                  {/* Travelers & Cabin Class */}
+                  <div className="space-y-4 mb-6">
+                    <h3 className="text-base font-semibold text-gray-900">Travelers & Cabin</h3>
+                    <TravelersAndCabinSection control={form.control} />
                   </div>
 
                   {/* Budget Section */}
@@ -565,22 +563,6 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                   {/* Collapsible Filters */}
                   <div className="mb-6">
                     <CollapsibleFiltersSection control={form.control} />
-                  </div>
-                  
-                  {/* Auto-Booking Inline Toggle */}
-                  <div className="bg-blue-50/50 rounded-lg border border-blue-100 p-4 mb-6">
-                    <div className="flex items-start gap-3">
-                      <span className="text-lg">💫</span>
-                      <div className="flex-1">
-                        <h3 className="text-sm font-medium text-gray-900 mb-1">
-                          Keep watching prices after you leave?
-                        </h3>
-                        <p className="text-xs text-gray-600 mb-3">
-                          Auto-Book will snap up a deal for you.
-                        </p>
-                        <AutoBookingSection control={form.control} mode={mode} />
-                      </div>
-                    </div>
                   </div>
                 </>
               )}

@@ -104,12 +104,28 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
     });
   }
 
-  // Auto-booking chip
-  if (watchedFields.auto_book_enabled) {
+  // Travelers chip
+  if (watchedFields.travelers_count) {
+    const count = parseInt(watchedFields.travelers_count);
+    const label = count === 1 ? '1 Adult' : `${count} Adults`;
     chips.push({
-      label: '💫 Auto-Book ON',
-      value: 'auto_book',
-      field: 'auto_book_enabled'
+      label,
+      value: 'travelers',
+      field: 'travelers_count'
+    });
+  }
+
+  // Cabin class chip
+  if (watchedFields.cabin_class && watchedFields.cabin_class !== 'economy') {
+    const cabinLabels = {
+      'premium_economy': 'Premium Economy',
+      'business': 'Business',
+      'first': 'First Class'
+    };
+    chips.push({
+      label: cabinLabels[watchedFields.cabin_class as keyof typeof cabinLabels] || watchedFields.cabin_class,
+      value: 'cabin',
+      field: 'cabin_class'
     });
   }
 
@@ -130,7 +146,7 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
               Object.keys(clearMethods).forEach(field => {
                 if (['destination_airport', 'destination_other', 'nyc_airports', 'other_departure_airport', 
                      'earliestDeparture', 'latestDeparture', 'flexible_dates', 'min_duration', 'max_duration', 
-                     'max_price', 'nonstop_required', 'baggage_included_required', 'auto_book_enabled'].includes(field)) {
+                     'max_price', 'nonstop_required', 'baggage_included_required', 'travelers_count', 'cabin_class'].includes(field)) {
                   onClearField?.(field);
                 }
               });
