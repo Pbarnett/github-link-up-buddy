@@ -26,6 +26,10 @@ vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: () => false,
 }));
 
+vi.mock('@/components/trip/StickyFormActions', () => ({
+  default: () => null, // Mock to return null to avoid useWatch issues
+}));
+
 const TestWrapper = ({ children }: { children: React.ReactNode }) => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -55,8 +59,8 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
-    expect(screen.getByText('Enter the parameters for your trip below.')).toBeInTheDocument();
+    expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
+    expect(screen.getByText('Search real-time flight availability (Amadeus-powered)')).toBeInTheDocument();
     expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
     expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
   });
@@ -68,7 +72,7 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
+    expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
     expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
     expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
   });
@@ -80,10 +84,10 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    // In auto mode step 1, the title should be "Trip Basics"
-    expect(screen.getByText('Trip Basics')).toBeInTheDocument();
+    // In auto mode step 1, the title should be "Trip Basics" (appears in h1)
+    expect(screen.getByRole('heading', { level: 1, name: 'Trip Basics' })).toBeInTheDocument();
     expect(screen.getByText('Tell us where and when you want to travel.')).toBeInTheDocument();
-    expect(screen.getByText('Continue → Pricing')).toBeInTheDocument();
+    expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Continue → Pricing');
   });
 
   test('should show step indicator in auto mode', () => {

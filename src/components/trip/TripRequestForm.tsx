@@ -24,6 +24,7 @@ import TripDurationInputs from "./sections/TripDurationInputs";
 import AutoBookingSection from "./sections/AutoBookingSection.tsx";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
+import CollapsibleFiltersSection from "./sections/CollapsibleFiltersSection";
 import LiveBookingSummary from "./LiveBookingSummary";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
@@ -447,14 +448,14 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="container mx-auto py-8 space-y-6">
         {/* Page Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">
-              {mode === 'manual' ? 'Search Current Flights' : getPageTitle()}
+        <div className="mb-8">
+          <div className="text-center max-w-2xl mx-auto">
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+              {mode === 'manual' ? 'Search Live Flights' : getPageTitle()}
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-lg text-gray-600 leading-relaxed">
               {mode === 'manual' 
-                ? 'Find and book flights available right now using live Amadeus data'
+                ? 'Search real-time flight availability (Amadeus-powered)'
                 : getPageDescription()
               }
             </p>
@@ -464,8 +465,8 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
         <div className={`grid gap-6 ${mode === 'auto' && !isMobile ? 'lg:grid-cols-3' : 'grid-cols-1'}`}>
           {/* Main Form Column */}
           <div className={`${mode === 'auto' && !isMobile ? 'lg:col-span-2' : 'col-span-1'}`}>
-            <div className="bg-white rounded-lg border shadow-sm">
-              <div className="p-6">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-lg">
+              <div className="p-8">
                 {mode === 'manual' && (
                   <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <div className="flex items-start gap-3">
@@ -508,8 +509,9 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
               {(mode === 'manual' || currentStep === 1) && (
                 <>
                   {/* Primary Travel Details */}
-                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 mb-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
                       {mode === 'auto' ? 'Where & When' : 'Travel Details'}
                     </h2>
                     <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2 lg:gap-8'}`}>
@@ -550,29 +552,34 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                 </>
               )}
 
-              {/* Manual mode: Show budget and filters in Trip Preferences */}
+              {/* Manual mode: Show budget and collapsible filters */}
               {mode === 'manual' && (
                 <>
-                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      Budget
+                  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 mb-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                      Budget & Preferences
                     </h2>
-                    <EnhancedBudgetSection control={form.control} />
-                  </div>
-                  
-                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      Flight Preferences
-                    </h2>
-                    <div className="space-y-4">
-                      <FilterTogglesSection control={form.control} />
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-base font-semibold text-gray-900 mb-3">Maximum Price</h3>
+                        <EnhancedBudgetSection control={form.control} />
+                      </div>
+                      
+                      <div className="border-t border-gray-200 pt-6">
+                        <CollapsibleFiltersSection control={form.control} />
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  <div className="bg-amber-50 rounded-xl border border-amber-200 shadow-sm p-6 mb-6">
+                    <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                      <span className="text-xl mr-2">💫</span>
                       Auto-Booking (Optional)
                     </h2>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Keep watching prices after you leave? Auto-Book will snap up a deal for you.
+                    </p>
                     <AutoBookingSection control={form.control} mode={mode} />
                   </div>
                 </>
@@ -622,6 +629,7 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                   isFormValid={isFormValid}
                   buttonText={buttonText()}
                   onSubmit={form.handleSubmit(handleStepSubmit)}
+                  control={form.control}
                 />
               </div>
             </div>

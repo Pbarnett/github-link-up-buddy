@@ -45,7 +45,7 @@ describe('TripRequestForm - Basic Functionality', () => {
     );
 
     // Check for key form elements
-    expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
+    expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
     expect(screen.getByText('Travel Details')).toBeInTheDocument();
     expect(screen.getByText('Trip Length')).toBeInTheDocument();
     expect(screen.getByText('Budget')).toBeInTheDocument();
