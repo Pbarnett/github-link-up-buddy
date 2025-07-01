@@ -84,31 +84,29 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
     setTimeout(() => setIsNavigating(false), 1000);
   };
 
-  // Primary navigation items (left side)
+  // Primary navigation items (left side) - Simplified for cleaner dashboard
   const primaryNavItems = [
     {
-      name: 'Auto-Booking',
+      name: 'Auto-Bookings',
       href: '/auto-booking',
       icon: Home,
     },
     {
-      name: 'Search Current Flights',
+      name: 'Search Flights',
       href: '/search',
       icon: Search,
-    },
-    {
-      name: 'Dashboard',
-      href: '/dashboard',
-      icon: Settings,
     }
   ];
 
   const isActive = (path: string) => {
-    if (path === '/dashboard') {
-      return location.pathname === '/dashboard';
+    if (path === '/auto-booking') {
+      return location.pathname === '/auto-booking' || 
+             location.pathname === '/dashboard' ||
+             location.pathname.startsWith('/auto-booking/');
     }
-    if (path === '/trip/new?mode=auto') {
-      return location.pathname === '/trip/new' && location.search.includes('mode=auto');
+    if (path === '/search') {
+      return location.pathname === '/search' || 
+             location.pathname === '/trip/new';
     }
     return location.pathname === path;
   };

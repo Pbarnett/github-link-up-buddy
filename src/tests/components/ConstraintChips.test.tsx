@@ -38,7 +38,11 @@ describe('ConstraintChips', () => {
   it('shows different styling when nonStopOnly is true', () => {
     render(<ConstraintChips {...mockProps} nonStopOnly={true} />);
     
-    const nonStopChip = screen.getByText('Non-stop only');
-    expect(nonStopChip.closest('.badge')).toHaveClass('bg-primary');
+    const nonStopButton = screen.getByRole('button', { name: /non-stop flights enabled/i });
+    expect(nonStopButton).toHaveAttribute('aria-pressed', 'true');
+    
+    // Check that the badge has the default variant (not outline)
+    const badge = nonStopButton.querySelector('[data-testid="chip-nonstop"]') || nonStopButton.firstElementChild;
+    expect(badge).not.toHaveClass('border-input'); // outline variant has border-input class
   });
 });

@@ -116,9 +116,9 @@ describe('TripHistory Component', () => {
     expect(detailsLinks[1]).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[1].trip_request_id}`);
 
     // Check data for third booking (b3 - null pnr, null price)
-    expect(screen.getByRole('cell', { name: 'N/A' })).toBeInTheDocument(); // PNR is null
-    const priceCells = screen.getAllByRole('cell'); // Get all cells to find the N/A price
-    expect(priceCells.find(cell => cell.textContent === 'N/A')).toBeInTheDocument(); // Price is null
+    const pnrCells = screen.getAllByRole('cell', { name: 'N/A' });
+    expect(pnrCells[0]).toBeInTheDocument(); // PNR is null
+    expect(pnrCells).toHaveLength(2); // Ensure both PNR and Price are N/A
     expect(screen.getByRole('cell', { name: '5C' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: new Date(mockBookingsData[2].created_at).toLocaleDateString() })).toBeInTheDocument();
     expect(detailsLinks[2]).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[2].trip_request_id}`);

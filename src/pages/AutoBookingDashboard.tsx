@@ -18,10 +18,7 @@ function AutoBookingDashboard() {
   const { userId } = useCurrentUser();
   const { campaigns, isLoading, error, refreshCampaigns, pauseCampaign, resumeCampaign, deleteCampaign } = useCampaigns();
 
-  const breadcrumbItems = [
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Auto-booking", href: "/auto-booking" }
-  ];
+  // No breadcrumbs needed since this is the main dashboard page
 
   const handleCreateCampaign = () => {
     navigate("/auto-booking/new");
