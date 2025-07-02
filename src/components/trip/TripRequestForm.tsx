@@ -15,6 +15,9 @@ import { TripRequestFromDB } from "@/hooks/useTripOffers";
 import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
 import { invokeFlightSearch } from "@/services/api/flightSearchApi";
+import { TripRequestRepository, type TripRequestInsert, type TripRequestUpdate } from "@/lib/repositories";
+import { handleError, mapAmadeusError, ValidationError, BusinessLogicError, ErrorCode } from "@/lib/errors";
+import { retryHttpRequest, RetryDecorators } from "@/lib/resilience/retry";
 import { useIsMobile } from "@/hooks/use-mobile";
 import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
@@ -27,6 +30,7 @@ import CollapsibleFiltersSection from "./sections/CollapsibleFiltersSection";
 import TripDurationInputs from "./sections/TripDurationInputs";
 import LiveBookingSummary from "./LiveBookingSummary";
 import TripSummaryChips from "./sections/TripSummaryChips";
+import AutoBookingSection from "./sections/AutoBookingSection";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface TripRequestFormProps {
@@ -79,14 +83,8 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       const fetchTripDetails = async () => {
         setIsLoadingDetails(true);
         try {
-          // Use TripRequestFromDB for typing the response
-          const { data: tripData, error } = await supabase
-            .from("trip_requests")
-            .select("*")
-            .eq("id", tripRequestId)
-            .single<TripRequestFromDB>(); // Specify the type here
-
-          if (error) throw error;
+          const repository = new TripRequestRepository(supabase);
+          const tripData = await repository.findById(tripRequestId, { throwOnEmpty: true });
 
           if (tripData) {
             const { nycAirports, otherAirport } = categorizeAirports(tripData.departure_airports);
@@ -106,11 +104,11 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
               preferred_payment_method_id: tripData.preferred_payment_method_id,
             });
           }
-        } catch (err) {
-          const error = err as Error | PostgrestError;
+        } catch (error) {
+          const errorResponse = handleError(error, { operation: 'fetchTripDetails', tripRequestId });
           toast({
             title: "Error fetching trip details",
-            description: error.message || "Failed to load existing trip data.",
+            description: errorResponse.message,
             variant: "destructive",
           });
         } finally {
@@ -168,22 +166,17 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
   };
 
   const createTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
-    if (!userId) throw new Error("You must be logged in to create a trip request.");
+    if (!userId) throw new ValidationError("You must be logged in to create a trip request.");
     
-    // Calculate departure and return dates based on trip duration
-    const departureDate = formData.earliestDeparture.toISOString().split('T')[0]; // YYYY-MM-DD
-    const returnDate = new Date(formData.earliestDeparture.getTime() + (formData.min_duration * 24 * 60 * 60 * 1000))
-      .toISOString().split('T')[0]; // Add min_duration days for return
+    const repository = new TripRequestRepository(supabase);
     
-    const tripRequestData = {
+    const tripRequestData: TripRequestInsert = {
       user_id: userId,
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport, // Add this field
+      destination_location_code: formData.destination_airport,
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
-      departure_date: departureDate, // ✅ FIX: Add departure_date
-      return_date: returnDate, // ✅ FIX: Add return_date (round-trip by default)
       min_duration: formData.min_duration,
       max_duration: formData.max_duration,
       budget: formData.budget,
@@ -195,39 +188,31 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     };
     
     console.log('[PAYLOAD-DEBUG] Trip request payload:', {
-      departureDate: tripRequestData.departure_date,
-      returnDate: tripRequestData.return_date,
-      isRoundTrip: !!(tripRequestData.return_date),
+      isRoundTrip: true, // Always round-trip
       earliestDeparture: tripRequestData.earliest_departure,
       latestDeparture: tripRequestData.latest_departure,
-      duration: `${formData.min_duration}-${formData.max_duration} days`
+      duration: `${formData.min_duration}-${formData.max_duration} days`,
+      autoBookEnabled: tripRequestData.auto_book_enabled
     });
-    const { data, error } = await supabase
-      .from("trip_requests")
-      .insert([tripRequestData])
-      .select()
-      .single<TripRequestFromDB>();
-    if (error) throw error;
-    if (!data) throw new Error("Failed to create trip request or retrieve its data.");
-    return data;
+    
+    return await repository.createTripRequest(tripRequestData, {
+      context: { operation: 'createTripRequest', userId }
+    }) as TripRequestFromDB;
   };
 
   const updateTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
-    if (!userId || !tripRequestId) throw new Error("User ID or Trip Request ID is missing for update.");
+    if (!userId || !tripRequestId) {
+      throw new ValidationError("User ID or Trip Request ID is missing for update.");
+    }
     
-    // Calculate departure and return dates for updates too
-    const departureDate = formData.earliestDeparture.toISOString().split('T')[0];
-    const returnDate = new Date(formData.earliestDeparture.getTime() + (formData.min_duration * 24 * 60 * 60 * 1000))
-      .toISOString().split('T')[0];
+    const repository = new TripRequestRepository(supabase);
     
-    const tripRequestData = {
+    const tripRequestData: TripRequestUpdate = {
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport, // Add this field
+      destination_location_code: formData.destination_airport,
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
-      departure_date: departureDate, // ✅ FIX: Add departure_date
-      return_date: returnDate, // ✅ FIX: Add return_date
       min_duration: formData.min_duration,
       max_duration: formData.max_duration,
       budget: formData.budget,
@@ -239,19 +224,15 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     };
     
     console.log('[PAYLOAD-DEBUG] Trip request UPDATE payload:', {
-      departureDate: tripRequestData.departure_date,
-      returnDate: tripRequestData.return_date,
-      isRoundTrip: !!(tripRequestData.return_date)
+      isRoundTrip: true, // Always round-trip
+      earliestDeparture: tripRequestData.earliest_departure,
+      latestDeparture: tripRequestData.latest_departure,
+      autoBookEnabled: tripRequestData.auto_book_enabled
     });
-    const { data, error } = await supabase
-      .from("trip_requests")
-      .update(tripRequestData)
-      .eq("id", tripRequestId)
-      .select()
-      .single<TripRequestFromDB>();
-    if (error) throw error;
-    if (!data) throw new Error("Failed to update trip request or retrieve its data.");
-    return data;
+    
+    return await repository.updateTripRequest(tripRequestId, tripRequestData, {
+      context: { operation: 'updateTripRequest', tripRequestId, userId }
+    }) as TripRequestFromDB;
   };
 
   const navigateToConfirmation = (tripRequest: TripRequestFromDB): void => { // Typed parameter
@@ -374,12 +355,22 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       
       navigateToConfirmation(resultingTripRequest);
       
-    } catch (err) {
-      const error = err as Error | PostgrestError;
-      logger.error(`Error ${tripRequestId ? "updating" : "creating"} trip request:`, { tripRequestId, errorDetails: error });
+    } catch (error) {
+      const errorResponse = handleError(error, {
+        operation: tripRequestId ? 'updateTripRequest' : 'createTripRequest',
+        tripRequestId,
+        userId
+      });
+      
+      logger.error(`Error ${tripRequestId ? "updating" : "creating"} trip request:`, { 
+        tripRequestId, 
+        errorCode: errorResponse.code,
+        errorMessage: errorResponse.message 
+      });
+      
       toast({
         title: "Error",
-        description: error.message || `Failed to ${tripRequestId ? "update" : "create"} trip request. Please try again.`,
+        description: errorResponse.userMessage || errorResponse.message,
         variant: "destructive",
       });
     } finally {

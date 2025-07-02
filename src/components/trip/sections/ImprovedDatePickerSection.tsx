@@ -5,7 +5,6 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Slider } from '@/components/ui/slider';
 import { DateRange } from 'react-day-picker';
 import {
   Popover,
@@ -20,6 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import NightsRangeSection from './NightsRangeSection';
 
 interface ImprovedDatePickerSectionProps {
   control: Control<any>;
@@ -130,60 +130,7 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
       </div>
 
       {/* Trip Length */}
-      <div className="space-y-4">
-          <FormField
-            control={control}
-            name="trip_duration"
-            render={({ field }) => (
-              <FormItem>
-                <div className="flex items-center justify-between">
-                  <FormLabel className="text-sm font-medium text-gray-700">
-                    Trip Length
-                  </FormLabel>
-                  <span className="text-sm text-gray-500">
-                    {watchedFields?.min_duration || 3} - {watchedFields?.max_duration || 7} nights
-                  </span>
-                </div>
-                <div className="px-3">
-                  <FormField
-                    control={control}
-                    name="min_duration"
-                    render={({ field: minField }) => (
-                      <FormField
-                        control={control}
-                        name="max_duration"
-                        render={({ field: maxField }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Slider
-                                min={1}
-                                max={30}
-                                step={1}
-                                value={[minField.value || 3, maxField.value || 7]}
-                                onValueChange={(values) => {
-                                  minField.onChange(values[0]);
-                                  maxField.onChange(values[1]);
-                                }}
-                                className="w-full"
-                              />
-                            </FormControl>
-                            <div className="flex justify-between text-xs text-gray-500 mt-1">
-                              <span>1 night</span>
-                              <span>30 nights</span>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  />
-                </div>
-                <FormDescription className="text-xs text-gray-500">
-                  Total nights away from home
-                </FormDescription>
-              </FormItem>
-            )}
-          />
-      </div>
+      <NightsRangeSection control={control} />
     </div>
   );
 };

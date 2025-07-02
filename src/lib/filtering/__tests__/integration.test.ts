@@ -33,7 +33,7 @@ vi.mock('@/integrations/supabase/client', () => ({
               {
                 id: 'offer-1',
                 trip_request_id: 'test-trip-id',
-                price_total: 450,
+                price: { total: '450.00', currency: 'USD' },
                 provider: 'Amadeus',
                 origin_iata: 'LAX',
                 destination_iata: 'JFK',
@@ -41,12 +41,38 @@ vi.mock('@/integrations/supabase/client', () => ({
                 return_dt: '2024-01-22T15:00:00Z',
                 nonstop: false,
                 cabin_class: 'economy',
-                booking_url: 'https://example.com/book1'
+                booking_url: 'https://example.com/book1',
+                itineraries: [
+                  {
+                    duration: 'PT5H30M',
+                    segments: [
+                      {
+                        departure: { iataCode: 'LAX', at: '2024-01-15T10:00:00Z' },
+                        arrival: { iataCode: 'JFK', at: '2024-01-15T18:30:00Z' },
+                        carrierCode: 'AA',
+                        number: '123',
+                        numberOfStops: 0
+                      }
+                    ]
+                  },
+                  {
+                    duration: 'PT5H45M',
+                    segments: [
+                      {
+                        departure: { iataCode: 'JFK', at: '2024-01-22T15:00:00Z' },
+                        arrival: { iataCode: 'LAX', at: '2024-01-22T20:45:00Z' },
+                        carrierCode: 'AA',
+                        number: '456',
+                        numberOfStops: 0
+                      }
+                    ]
+                  }
+                ]
               },
               {
                 id: 'offer-2',
                 trip_request_id: 'test-trip-id',
-                price_total: 400, // Changed to be within budget
+                price: { total: '400.00', currency: 'USD' },
                 provider: 'Amadeus',
                 origin_iata: 'LAX',
                 destination_iata: 'JFK',
@@ -54,7 +80,33 @@ vi.mock('@/integrations/supabase/client', () => ({
                 return_dt: '2024-01-22T18:00:00Z',
                 nonstop: true,
                 cabin_class: 'economy',
-                booking_url: 'https://example.com/book2'
+                booking_url: 'https://example.com/book2',
+                itineraries: [
+                  {
+                    duration: 'PT5H30M',
+                    segments: [
+                      {
+                        departure: { iataCode: 'LAX', at: '2024-01-15T14:00:00Z' },
+                        arrival: { iataCode: 'JFK', at: '2024-01-15T19:30:00Z' },
+                        carrierCode: 'DL',
+                        number: '789',
+                        numberOfStops: 0
+                      }
+                    ]
+                  },
+                  {
+                    duration: 'PT5H45M',
+                    segments: [
+                      {
+                        departure: { iataCode: 'JFK', at: '2024-01-22T18:00:00Z' },
+                        arrival: { iataCode: 'LAX', at: '2024-01-22T23:45:00Z' },
+                        carrierCode: 'DL',
+                        number: '987',
+                        numberOfStops: 0
+                      }
+                    ]
+                  }
+                ]
               }
             ],
             error: null

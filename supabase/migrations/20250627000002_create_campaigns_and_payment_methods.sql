@@ -25,19 +25,19 @@ CREATE INDEX IF NOT EXISTS idx_payment_methods_default ON payment_methods(user_i
 ALTER TABLE payment_methods ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for payment methods
-CREATE POLICY "Users can view their own payment methods"
+CREATE POLICY IF NOT EXISTS "Users can view their own payment methods"
   ON payment_methods FOR SELECT
   USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own payment methods"
+CREATE POLICY IF NOT EXISTS "Users can insert their own payment methods"
   ON payment_methods FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own payment methods"
+CREATE POLICY IF NOT EXISTS "Users can update their own payment methods"
   ON payment_methods FOR UPDATE
   USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own payment methods"
+CREATE POLICY IF NOT EXISTS "Users can delete their own payment methods"
   ON payment_methods FOR DELETE
   USING (auth.uid() = user_id);
 
@@ -91,19 +91,19 @@ CREATE INDEX IF NOT EXISTS idx_campaigns_active_searches ON campaigns(status, ne
 ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for campaigns
-CREATE POLICY "Users can view their own campaigns"
+CREATE POLICY IF NOT EXISTS "Users can view their own campaigns"
   ON campaigns FOR SELECT
   USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own campaigns"
+CREATE POLICY IF NOT EXISTS "Users can insert their own campaigns"
   ON campaigns FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own campaigns"
+CREATE POLICY IF NOT EXISTS "Users can update their own campaigns"
   ON campaigns FOR UPDATE
   USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own campaigns"
+CREATE POLICY IF NOT EXISTS "Users can delete their own campaigns"
   ON campaigns FOR DELETE
   USING (auth.uid() = user_id);
 
@@ -146,11 +146,11 @@ CREATE INDEX IF NOT EXISTS idx_campaign_bookings_status ON campaign_bookings(boo
 ALTER TABLE campaign_bookings ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for campaign bookings
-CREATE POLICY "Users can view their own campaign bookings"
+CREATE POLICY IF NOT EXISTS "Users can view their own campaign bookings"
   ON campaign_bookings FOR SELECT
   USING (auth.uid() = user_id);
 
-CREATE POLICY "Service role can manage campaign bookings"
+CREATE POLICY IF NOT EXISTS "Service role can manage campaign bookings"
   ON campaign_bookings FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
 

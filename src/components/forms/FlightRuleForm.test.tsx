@@ -7,6 +7,15 @@ import { UnifiedFlightRuleForm } from '@/types/form';
 // Mock the date inputs to avoid timezone issues in tests
 const mockDate = new Date('2024-07-15T12:00:00.000Z');
 
+// Helper to get future dates
+const getFutureDate = (daysFromNow) => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  return date;
+};
+
+const formatDateForInput = (date) => date.toISOString().split('T')[0];
+
 describe('FlightRuleForm', () => {
   const mockOnSubmit = vi.fn();
 
@@ -43,11 +52,14 @@ describe('FlightRuleForm', () => {
 
   it('submits form with valid data', async () => {
     const user = userEvent.setup();
+    const futureOutbound = getFutureDate(7); // 7 days from now
+    const futureReturn = getFutureDate(14); // 14 days from now
+    
     const defaultValues: Partial<UnifiedFlightRuleForm> = {
       origin: ['JFK'],
       destination: 'LAX',
-      earliestOutbound: new Date('2024-07-15'),
-      latestReturn: new Date('2024-07-22'),
+      earliestOutbound: futureOutbound,
+      latestReturn: futureReturn,
       cabinClass: 'economy',
       budget: 800,
     };
@@ -64,7 +76,11 @@ describe('FlightRuleForm', () => {
           destination: 'LAX',
           cabinClass: 'economy',
           budget: 800,
-        })
+          autoBookEnabled: false,
+          earliestOutbound: expect.any(Date),
+          latestReturn: expect.any(Date),
+        }),
+        expect.any(Object) // The form event object
       );
     });
   });
@@ -73,13 +89,18 @@ describe('FlightRuleForm', () => {
     const user = userEvent.setup();
     render(<FlightRuleForm onSubmit={mockOnSubmit} />);
 
-    // Set outbound date to a future date
-    const outboundInput = screen.getByLabelText(/earliest outbound/i);
-    await user.type(outboundInput, '2024-07-22');
+    const futureOutbound = getFutureDate(14); // 14 days from now
+    const earlierReturn = getFutureDate(7); // 7 days from now (before outbound)
 
-    // Set return date to a date before outbound date
+    // Set outbound date to a later future date
+    const outboundInput = screen.getByLabelText(/earliest outbound/i);
+    await user.clear(outboundInput);
+    await user.type(outboundInput, formatDateForInput(futureOutbound));
+
+    // Set return date to an earlier future date
     const returnInput = screen.getByLabelText(/latest return/i);
-    await user.type(returnInput, '2024-07-15');
+    await user.clear(returnInput);
+    await user.type(returnInput, formatDateForInput(earlierReturn));
 
     const submitButton = screen.getByRole('button', { name: /submit/i });
     await user.click(submitButton);
@@ -106,25 +127,47 @@ describe('FlightRuleForm', () => {
 
   it('validates budget is within acceptable range', async () => {
     const user = userEvent.setup();
-    render(<FlightRuleForm onSubmit={mockOnSubmit} />);
-
-    const budgetInput = screen.getByLabelText(/budget/i);
     
-    // Test minimum budget validation
-    await user.clear(budgetInput);
-    await user.type(budgetInput, '50');
+    // Test with separate renders to avoid state conflicts
+    const futureOutbound = getFutureDate(7); 
+    const futureReturn = getFutureDate(14); 
+    
+    const defaultValues: Partial<UnifiedFlightRuleForm> = {
+      origin: ['JFK'],
+      destination: 'LAX',
+      earliestOutbound: futureOutbound,
+      latestReturn: futureReturn,
+      cabinClass: 'economy',
+      budget: 50, // Start with invalid budget below minimum
+    };
+
+    const { unmount } = render(<FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues} />);
 
     const submitButton = screen.getByRole('button', { name: /submit/i });
+    
+    // Test minimum budget validation
     await user.click(submitButton);
-
+    
     await waitFor(() => {
       expect(screen.getByText(/budget must be at least \$100/i)).toBeInTheDocument();
     });
 
-    // Test maximum budget validation
-    await user.clear(budgetInput);
-    await user.type(budgetInput, '15000');
-    await user.click(submitButton);
+    unmount();
+
+    // Test maximum budget validation with a new render
+    const maxDefaultValues: Partial<UnifiedFlightRuleForm> = {
+      origin: ['JFK'],
+      destination: 'LAX',
+      earliestOutbound: futureOutbound,
+      latestReturn: futureReturn,
+      cabinClass: 'economy',
+      budget: 15000, // Start with invalid budget above maximum
+    };
+
+    render(<FlightRuleForm onSubmit={mockOnSubmit} defaultValues={maxDefaultValues} />);
+    
+    const submitButton2 = screen.getByRole('button', { name: /submit/i });
+    await user.click(submitButton2);
 
     await waitFor(() => {
       expect(screen.getByText(/budget cannot exceed \$10,000/i)).toBeInTheDocument();
@@ -166,6 +209,7 @@ describe('FlightRuleForm', () => {
     render(<FlightRuleForm onSubmit={mockOnSubmit} />);
 
     const outboundInput = screen.getByLabelText(/earliest outbound/i);
+    await user.clear(outboundInput);
     await user.type(outboundInput, '2020-01-01');
 
     const submitButton = screen.getByRole('button', { name: /submit/i });

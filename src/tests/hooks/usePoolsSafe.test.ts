@@ -109,7 +109,16 @@ describe('usePoolsSafe', () => {
       expect(result.current.pool1).toHaveLength(2);
       expect(result.current.pool1[0]).toEqual({
         ...mockLegacyResult.offers[0],
-        score: 1
+        score: 95,
+        priceStructure: {
+          base: 500,
+          carryOnFee: 0,
+          total: 500,
+        },
+        carryOnIncluded: true,
+        reasons: ['Fallback offer'],
+        pool: 1,
+        isRoundTrip: false,
       });
       expect(result.current.pool2).toEqual([]);
       expect(result.current.pool3).toEqual([]);
@@ -175,8 +184,32 @@ describe('usePoolsSafe', () => {
       });
 
       expect(result.current.pool1).toEqual([
-        { ...mockLegacyResult.offers[0], score: 1 },
-        { ...mockLegacyResult.offers[1], score: 1 }
+        {
+          ...mockLegacyResult.offers[0],
+          score: 95,
+          priceStructure: {
+            base: 500,
+            carryOnFee: 0,
+            total: 500,
+          },
+          carryOnIncluded: true,
+          reasons: ['Fallback offer'],
+          pool: 1,
+          isRoundTrip: false,
+        },
+        {
+          ...mockLegacyResult.offers[1],
+          score: 95,
+          priceStructure: {
+            base: 750,
+            carryOnFee: 0,
+            total: 750,
+          },
+          carryOnIncluded: true,
+          reasons: ['Fallback offer'],
+          pool: 1,
+          isRoundTrip: false,
+        }
       ]);
     });
 

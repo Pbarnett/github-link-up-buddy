@@ -199,9 +199,13 @@ async function handleOrderCreated(supabaseClient: any, event: any) {
     event_id: storedEvent?.id,
     data: {
       pnr: order.booking_reference,
+      booking_reference: order.booking_reference,
+      origin: order.slices?.[0]?.origin?.iata_code,
+      destination: order.slices?.[0]?.destination?.iata_code,
       airline: order.slices?.[0]?.segments?.[0]?.operating_carrier?.name,
       flight_number: order.slices?.[0]?.segments?.[0]?.operating_carrier_flight_number,
       departure_datetime: order.slices?.[0]?.segments?.[0]?.departing_at,
+      departure_date: order.slices?.[0]?.segments?.[0]?.departing_at?.split('T')[0],
       arrival_datetime: order.slices?.[0]?.segments?.[0]?.arriving_at,
       price: order.total_amount
     }
@@ -331,6 +335,11 @@ async function createAndEnqueueNotification(supabaseClient: any, params: {
       console.log(`[DuffelWebhook] Enqueued ${channel} notification for user ${userId}`);
     }
 
+    // 4. Send immediate SMS notification as fallback (while queue system is being fixed)
+    if (channels.includes('sms') || params.type === 'booking_success') {
+      await sendImmediateSMS(supabaseClient, userId, params.type, params.data);
+    }
+
   } catch (error) {
     console.error('[DuffelWebhook] Error creating notification:', error);
   }
@@ -354,4 +363,55 @@ function getPriorityForType(type: string): 'low' | 'normal' | 'high' | 'critical
     'reminder_23h': 'normal'
   };
   return priorities[type] || 'normal';
+}
+
+/**
+ * Send immediate SMS notification as fallback while queue system is being fixed
+ */
+async function sendImmediateSMS(supabaseClient: any, userId: string, type: string, data: any) {
+  try {
+    // Get user phone number from auth metadata or preferences
+    const { data: { user }, error: userError } = await supabaseClient.auth.admin.getUserById(userId);
+    
+    if (userError || !user) {
+      console.log(`[DuffelWebhook] No user found for SMS: ${userId}`);
+      return;
+    }
+
+    // Check if user has phone number and wants SMS
+    const phoneNumber = user.user_metadata?.phone || user.phone;
+    const smsEnabled = user.user_metadata?.notification_preferences?.sms || 
+                       user.user_metadata?.notification_preferences?.[type]?.sms;
+    
+    if (!phoneNumber) {
+      console.log(`[DuffelWebhook] No phone number for user: ${userId}`);
+      return;
+    }
+
+    if (smsEnabled === false) {
+      console.log(`[DuffelWebhook] SMS disabled for user: ${userId}`);
+      return;
+    }
+
+    // Send SMS via our SMS function
+    const smsResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-sms-notification`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        type,
+        data,
+        phone_number: phoneNumber
+      })
+    });
+
+    const smsResult = await smsResponse.json();
+    console.log(`[DuffelWebhook] SMS notification result for ${userId}:`, smsResult);
+
+  } catch (error) {
+    console.error(`[DuffelWebhook] Failed to send immediate SMS:`, error);
+  }
 }

@@ -1,5 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '../../types/database';
 
 // Get environment variables with fallbacks for development
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://bbonngdyfyfjqfhvoljl.supabase.co';
@@ -24,12 +25,27 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 // Initialize and export the Supabase client with error handling
 let supabaseClient;
 try {
-  supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
       autoRefreshToken: true,
       persistSession: true,
-    }
+      detectSessionInUrl: true,
+      flowType: 'pkce', // Use PKCE for better security
+    },
+    global: {
+      headers: {
+        'x-client-info': 'github-link-up-buddy@1.0.0',
+      },
+    },
+    db: {
+      schema: 'public',
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
   });
   
   console.log('✅ Supabase client initialized successfully');

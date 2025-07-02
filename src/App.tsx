@@ -50,7 +50,8 @@ const BreadcrumbsWrapper = () => {
     location.pathname === '/auto-booking/new' ||
     location.pathname === '/dashboard' ||
     location.pathname === '/search' ||
-    location.pathname === '/trip/new'; // Hide on main dashboard and search pages
+    location.pathname === '/trip/new' ||
+    location.pathname.includes('/trips/') && location.pathname.includes('/v2'); // Hide on flight results pages
   
   if (shouldHideBreadcrumbs) {
     return null;
