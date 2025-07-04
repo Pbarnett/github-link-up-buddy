@@ -1,8 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft } from 'lucide-react';
 import PageWrapper from '@/components/layout/PageWrapper';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -10,11 +7,6 @@ import { withErrorBoundary } from '@/components/ErrorBoundary';
 const CampaignWizard = lazy(() => import('@/components/autobooking/CampaignWizard/CampaignWizard'));
 
 function AutoBookingNew() {
-  const navigate = useNavigate();
-
-  const handleBack = () => {
-    navigate("/auto-booking");
-  };
 
   const WizardSkeleton = () => (
     <div className="container mx-auto py-8 space-y-6 max-w-6xl">
@@ -40,18 +32,6 @@ function AutoBookingNew() {
   return (
     <PageWrapper>
       <div className="container mx-auto py-8 space-y-6">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBack}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Auto-booking
-          </Button>
-        </div>
-
         <Suspense fallback={<WizardSkeleton />}>
           <CampaignWizard />
         </Suspense>

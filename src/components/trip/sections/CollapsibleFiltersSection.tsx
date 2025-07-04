@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FilterTogglesSection from './FilterTogglesSection';
+import TripDurationInputs from './TripDurationInputs';
+import { Control } from 'react-hook-form';
 
-// No longer needs form control since this shows informational content only
 interface CollapsibleFiltersSectionProps {
-  control?: any; // Optional for backward compatibility but not used
+  control: Control<any>; // Now required for TripDurationInputs
 }
 
-const CollapsibleFiltersSection = () => {
+const CollapsibleFiltersSection = ({ control }: CollapsibleFiltersSectionProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -30,6 +31,13 @@ const CollapsibleFiltersSection = () => {
       
       {isExpanded && (
         <div className="mt-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+          {/* Trip Duration Controls */}
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h4 className="text-sm font-semibold text-gray-900 mb-3">Trip Length</h4>
+            <TripDurationInputs control={control} />
+          </div>
+          
+          {/* Flight Features Information */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <h4 className="text-sm font-semibold text-gray-900 mb-3">Flight Features</h4>
             <FilterTogglesSection />

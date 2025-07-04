@@ -168,7 +168,7 @@ const fetchAmadeusOffers = async (
       // Create filter context from trip request data
       const filterContext = createFilterContext({
         budget: maxPrice,
-        currency: 'USD', // Default to USD, could be extracted from trip request
+        currency: 'USD', // Fixed to USD to ensure consistency
         originLocationCode: originCode,
         destinationLocationCode: tripRequest.destination_location_code,
         departureDate: tripRequest.departure_date,

@@ -4,8 +4,20 @@ import { Link } from "react-router-dom";
 import { ProfileForm } from "@/components/ProfileForm";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTravelerProfile } from "@/hooks/useTravelerProfile";
+import { SimpleProfileStatus } from "@/components/profile/SimpleProfileStatus";
+import { toast } from "@/hooks/use-toast";
 
 function ProfilePage() {
+  const { profile, completion, calculateCompleteness } = useTravelerProfile();
+  
+  // Calculate completeness from profile data if completion tracking is not available
+  const completenessData = completion ? {
+    overall: completion.completion_percentage,
+    missing_fields: completion.missing_fields,
+    recommendations: completion.recommendations
+  } : (profile ? calculateCompleteness(profile) : { overall: 0, missing_fields: [], recommendations: [] });
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -27,6 +39,11 @@ function ProfilePage() {
             </TabsList>
             
             <TabsContent value="profile" className="space-y-6">
+              <SimpleProfileStatus 
+                completeness={completenessData}
+                onActionClick={(action) => toast({ title: 'Action:', description: action })}
+                className="mb-6"
+              />
               <ProfileForm />
             </TabsContent>
             

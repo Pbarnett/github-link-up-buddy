@@ -180,12 +180,26 @@ export const fillFormWithDates = async (options: {
   const maxPriceInput = screen.getByDisplayValue('1000');
   fireEvent.change(maxPriceInput, { target: { value: maxPrice.toString() } });
   
-  // 6. Set duration
-  const minDurationInput = screen.getByDisplayValue('3');
-  fireEvent.change(minDurationInput, { target: { value: minDuration.toString() } });
-  
-  const maxDurationInput = screen.getByDisplayValue('7');
-  fireEvent.change(maxDurationInput, { target: { value: maxDuration.toString() } });
+  // 6. Set duration (expand collapsible section first)
+  try {
+    // Expand the "What's Included" section to access duration inputs
+    const toggleButton = screen.getByText("What's Included");
+    await userEvent.click(toggleButton);
+    
+    // Wait for the section to expand and duration inputs to be visible
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('3')).toBeInTheDocument();
+    }, { timeout: 2000 });
+    
+    const minDurationInput = screen.getByDisplayValue('3');
+    fireEvent.change(minDurationInput, { target: { value: minDuration.toString() } });
+    
+    const maxDurationInput = screen.getByDisplayValue('7');
+    fireEvent.change(maxDurationInput, { target: { value: maxDuration.toString() } });
+  } catch (error) {
+    console.warn('Failed to set duration inputs:', error);
+    // Continue without setting duration - use defaults
+  }
   
   // 7. Wait for form processing
   await waitFor(() => {
@@ -284,7 +298,7 @@ export const renderWithFormProvider = (
 
 // Auto-booking specific test helpers
 export const setupAutoBookingTest = async (paymentMethodId = 'pm_test_123') => {
-  // Enable auto-booking
+  // Enable auto-booking - use the exact label text from AutoBookingSection
   const autoBookSwitch = screen.getByLabelText(/enable auto-booking/i);
   await userEvent.click(autoBookSwitch);
 

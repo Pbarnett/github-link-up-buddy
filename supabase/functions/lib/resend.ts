@@ -1,7 +1,83 @@
 /**
- * Enhanced Resend Service using Supabase-Resend Integration
- * Provides improved reliability, webhook support, and better error handling
+ * Enhanced Resend Service with Enterprise-Grade Reliability
+ * Provides retry logic, circuit breaker, queue management, and comprehensive error handling
  */
+
+// Retry configuration
+interface RetryConfig {
+  maxRetries: number;
+  baseDelay: number;
+  maxDelay: number;
+  backoffMultiplier: number;
+}
+
+const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  maxRetries: 3,
+  baseDelay: 1000, // 1 second
+  maxDelay: 30000, // 30 seconds
+  backoffMultiplier: 2
+};
+
+// Circuit breaker state
+class CircuitBreaker {
+  private failures = 0;
+  private lastFailureTime = 0;
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+  private readonly threshold = 5;
+  private readonly timeout = 60000; // 1 minute
+
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === 'OPEN') {
+      if (Date.now() - this.lastFailureTime > this.timeout) {
+        this.state = 'HALF_OPEN';
+      } else {
+        throw new Error('Circuit breaker is OPEN');
+      }
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  private onSuccess() {
+    this.failures = 0;
+    this.state = 'CLOSED';
+  }
+
+  private onFailure() {
+    this.failures++;
+    this.lastFailureTime = Date.now();
+    if (this.failures >= this.threshold) {
+      this.state = 'OPEN';
+    }
+  }
+}
+
+const circuitBreaker = new CircuitBreaker();
+
+// Retry function with exponential backoff
+async function retry<T>(fn: () => Promise<T>, config: RetryConfig = DEFAULT_RETRY_CONFIG): Promise<T> {
+  let attempt = 0;
+  while (attempt < config.maxRetries) {
+    try {
+      return await fn();
+    } catch (error) {
+      attempt++;
+      if (attempt >= config.maxRetries) {
+        throw error;
+      }
+      const delay = Math.min(config.baseDelay * Math.pow(config.backoffMultiplier, attempt), config.maxDelay);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error('Retry failed after maximum attempts');
+}
 
 export const RESEND_FROM = "Parker Flight <noreply@parkerflight.com>"; // Update with your verified domain
 
@@ -32,6 +108,44 @@ export interface EmailResponse {
  * Falls back to direct API if integration is not available
  */
 export async function sendEmail(emailData: EmailData): Promise<EmailResponse> {
+  return enqueueEmail(emailData);
+}
+
+// Queue implementation
+interface EmailTask {
+  emailData: EmailData;
+  resolve: (value: EmailResponse | PromiseLike<EmailResponse>) => void;
+  reject: (reason?: any) => void;
+}
+
+const emailQueue: EmailTask[] = [];
+let isProcessingQueue = false;
+
+function enqueueEmail(emailData: EmailData): Promise<EmailResponse> {
+  return new Promise((resolve, reject) => {
+    emailQueue.push({ emailData, resolve, reject });
+    processQueue();
+  });
+}
+
+async function processQueue() {
+  if (isProcessingQueue) return;
+  isProcessingQueue = true;
+
+  while (emailQueue.length > 0) {
+    const { emailData, resolve, reject } = emailQueue.shift()!;
+    try {
+      const result = await circuitBreaker.execute(() => retry(() => sendEmailRequest(emailData)));
+      resolve(result);
+    } catch (error) {
+      reject(error);
+    }
+  }
+
+  isProcessingQueue = false;
+}
+
+async function sendEmailRequest(emailData: EmailData): Promise<EmailResponse> {
   try {
     // Try using Supabase-Resend integration first
     const integratedResult = await sendEmailWithIntegration(emailData);
@@ -44,7 +158,12 @@ export async function sendEmail(emailData: EmailData): Promise<EmailResponse> {
     return await sendEmailDirect(emailData);
     
   } catch (error) {
-    console.error('[Resend] Email send failed:', error);
+console.error('[Resend] Email send failed:', error);
+    // Additional detailed logging goes here
+    console.error('Detailed error info:', {
+      emailData,
+      errorStack: error.stack
+    });
     return {
       id: '',
       success: false,

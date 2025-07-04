@@ -360,8 +360,8 @@ export class ErrorHandler {
  */
 export const errorHandler = new ErrorHandler({
   logger: new ConsoleLogger(),
-  includeStackTrace: process.env.NODE_ENV === 'development',
-  sanitizeErrors: process.env.NODE_ENV === 'production'
+  includeStackTrace: import.meta.env.MODE === 'development',
+  sanitizeErrors: import.meta.env.MODE === 'production'
 });
 
 /**

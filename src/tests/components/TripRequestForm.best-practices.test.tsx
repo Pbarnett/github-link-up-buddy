@@ -270,15 +270,15 @@ describe('TripRequestForm - Best Practices Implementation', () => {
     });
   });
 
-  describe('Auto-booking Validation (Business Logic Focus)', () => {
-    it('should validate auto-booking requires payment method', async () => {
+  describe('Manual Mode Form Validation (Core Focus)', () => {
+    it('should submit successfully in manual mode when all requirements are met', async () => {
       render(
         <MemoryRouter>
-          <TripRequestForm />
+          <TripRequestForm mode="manual" />
         </MemoryRouter>
       );
 
-      // Fill base form fields
+      // Fill form with all required fields for manual mode
       await fillFormWithDates({
         destination: 'MVY',
         departureAirport: 'SFO', 
@@ -286,41 +286,38 @@ describe('TripRequestForm - Best Practices Implementation', () => {
         useProgrammaticDates: false,
       });
 
-      // Enable auto-booking but don't select payment method
-      const autoBookSwitch = screen.getByLabelText(/enable auto-booking/i);
-      await userEvent.click(autoBookSwitch);
+      // Manual mode should be valid with just basic fields
+      await waitForFormValid();
 
-      // Wait for payment method section to appear
-      await waitFor(() => {
-        expect(screen.getByLabelText(/payment method/i)).toBeVisible();
-      });
-
-      // Don't select a payment method - this should cause validation failure
-      const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-      const submitButton = submitButtons.find(btn => !btn.hasAttribute('disabled')) || submitButtons[0];
-      
+      // Submit the form
+      const submitButtons = screen.getAllByRole('button', { name: /search now/i });
+      const submitButton = submitButtons.find(btn => !btn.hasAttribute('disabled'))!;
       await userEvent.click(submitButton);
 
-      // Should NOT submit due to validation
+      // Should submit successfully
       await waitFor(() => {
-        expect(mockInsert).not.toHaveBeenCalled();
+        expect(mockInsert).toHaveBeenCalledTimes(1);
       });
 
-      // Should show validation error (checking for form validation message)
-      await waitFor(() => {
-        // Look for validation message or ensure form doesn't submit
-        expect(mockInsert).not.toHaveBeenCalled();
+      // Verify submitted data
+      assertFormSubmissionData(mockInsert, {
+        destination_airport: 'MVY',
+        destination_location_code: 'MVY',
+        departure_airports: ['SFO'],
+        budget: 2000,
+        user_id: 'test-user-id',
+        auto_book_enabled: false, // Manual mode = no auto-booking
       });
     });
 
-    it('should submit successfully with auto-booking when all requirements are met', async () => {
+    it('should validate that manual mode does not have auto-booking functionality', async () => {
       render(
         <MemoryRouter>
-          <TripRequestForm />
+          <TripRequestForm mode="manual" />
         </MemoryRouter>
       );
 
-      // Fill form with auto-booking
+      // Fill basic form fields
       await fillFormWithDates({
         destination: 'MVY',
         departureAirport: 'SFO',
@@ -328,35 +325,60 @@ describe('TripRequestForm - Best Practices Implementation', () => {
         useProgrammaticDates: false,
       });
 
-      // Setup auto-booking (helper handles the complex UI interactions)
-      await setupAutoBookingTest('pm_123');
+      // Auto-booking switch should NOT exist in manual mode
+      expect(screen.queryByLabelText(/enable auto-booking/i)).not.toBeInTheDocument();
+      
+      // Payment method selection should NOT be visible in manual mode
+      expect(screen.queryByLabelText(/payment method/i)).not.toBeInTheDocument();
+      
+      // Form should be valid for manual search without auto-booking
+      await waitForFormValid();
+      
+      // Verify button text is for manual search
+      const searchButtons = screen.getAllByText(/search now/i);
+      expect(searchButtons.length).toBeGreaterThan(0);
+      expect(searchButtons[0]).toBeVisible();
+    });
+  });
 
-      // Check if consent checkbox is needed and check it
-      try {
-        const consentCheckbox = screen.getByLabelText(/i authorize parker flight/i);
-        if (consentCheckbox && !consentCheckbox.checked) {
-          await userEvent.click(consentCheckbox);
-        }
-      } catch (error) {
-        // Consent checkbox might not be required in manual mode
-      }
+  describe('Auto Mode Form Validation (Auto-booking Focus)', () => {
+    it('should enable auto-booking functionality in auto mode', async () => {
+      render(
+        <MemoryRouter>
+          <TripRequestForm mode="auto" />
+        </MemoryRouter>
+      );
 
+      // Fill basic form fields (step 1)
+      await fillFormWithDates({
+        destination: 'MVY',
+        departureAirport: 'SFO', 
+        maxPrice: 2000,
+        useProgrammaticDates: false,
+      });
+
+      // Form should be valid for step 1
       await waitForFormValid();
 
-      // For this test, verify that the auto-booking flow is properly set up
-      // Note: The actual submission may be blocked by additional validation
-      // (e.g., consent checkbox, two-step validation) which is expected behavior
-      
-      // The test succeeds if we can enable auto-booking and see the payment section
-      expect(screen.getByLabelText(/payment method/i)).toBeVisible();
-      
-      // Verify button text changed to indicate auto-booking mode
-      const autoBookingButtons = screen.getAllByText('Start Auto-Booking');
-      expect(autoBookingButtons.length).toBeGreaterThan(0);
-      expect(autoBookingButtons[0]).toBeVisible();
-      
-      // This demonstrates the business logic flow is working correctly
-      // In a real app, additional validation steps may prevent immediate submission
+      // Continue to step 2
+      const continueButtons = screen.getAllByRole('button', { name: /continue to pricing/i });
+      const continueButton = continueButtons.find(btn => !btn.hasAttribute('disabled'))!;
+      await userEvent.click(continueButton);
+
+      // Should be on step 2 now
+      await waitFor(() => {
+        expect(screen.getByText(/payment & authorization/i)).toBeInTheDocument();
+      });
+
+      // Auto-booking should be enabled by default in auto mode
+      // Payment method selection should be visible
+      await waitFor(() => {
+        expect(screen.getByLabelText(/payment method/i)).toBeInTheDocument();
+      });
+
+      // Verify auto-booking UI elements are present
+      expect(screen.getByText(/enable auto-booking/i)).toBeInTheDocument();
+      expect(screen.getByText(/i authorize parker flight/i)).toBeInTheDocument();
     });
   });
 
@@ -384,39 +406,43 @@ describe('TripRequestForm - Best Practices Implementation', () => {
     });
   });
 
-  describe('Filter Toggle Logic (UI State Testing)', () => {
-    it('should toggle nonstop flights filter', async () => {
+  describe('Filter Information Display (Updated UI)', () => {
+    it('should show nonstop flights information badge', async () => {
       render(
         <MemoryRouter>
           <TripRequestForm />
         </MemoryRouter>
       );
 
-      const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
-      expect(nonstopSwitch).toBeChecked(); // Default true
+      // Expand the collapsible section to see filter information
+      const toggleButton = screen.getByText("What's Included");
+      await userEvent.click(toggleButton);
 
-      await userEvent.click(nonstopSwitch);
-      expect(nonstopSwitch).not.toBeChecked();
-
-      await userEvent.click(nonstopSwitch);
-      expect(nonstopSwitch).toBeChecked();
+      // Check for informational badge instead of toggle switch
+      await waitFor(() => {
+        expect(screen.getByText('Nonstop flights only')).toBeInTheDocument();
+        expect(screen.getByText('All flights shown are direct with no stops.')).toBeInTheDocument();
+        expect(screen.getAllByText('Included')).toHaveLength(2); // Both nonstop and baggage
+      });
     });
 
-    it('should toggle baggage filter', async () => {
+    it('should show baggage information badge', async () => {
       render(
         <MemoryRouter>
           <TripRequestForm />
         </MemoryRouter>
       );
 
-      const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
-      expect(baggageSwitch).not.toBeChecked(); // Default false
+      // Expand the collapsible section to see filter information
+      const toggleButton = screen.getByText("What's Included");
+      await userEvent.click(toggleButton);
 
-      await userEvent.click(baggageSwitch);
-      expect(baggageSwitch).toBeChecked();
-
-      await userEvent.click(baggageSwitch);
-      expect(baggageSwitch).not.toBeChecked();
+      // Check for informational badge instead of toggle switch
+      await waitFor(() => {
+        expect(screen.getByText('Carry-on + personal item')).toBeInTheDocument();
+        expect(screen.getByText('All prices include carry-on baggage and personal item.')).toBeInTheDocument();
+        expect(screen.getAllByText('Included')).toHaveLength(2); // Both nonstop and baggage
+      });
     });
   });
 });

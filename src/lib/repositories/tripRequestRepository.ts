@@ -33,7 +33,7 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
       client,
       tableName: 'trip_requests',
       enableRetry: true,
-      logQueries: process.env.NODE_ENV === 'development'
+      logQueries: import.meta.env.MODE === 'development'
     });
   }
 

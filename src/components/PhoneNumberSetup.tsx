@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 
 interface PhoneNumberSetupProps {
   userId?: string;
@@ -16,7 +16,10 @@ export function PhoneNumberSetup({ userId, onPhoneVerified, className = '' }: Ph
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient(
+    import.meta.env.VITE_SUPABASE_URL!,
+    import.meta.env.VITE_SUPABASE_ANON_KEY!
+  );
 
   useEffect(() => {
     loadExistingPhone();
@@ -109,13 +112,16 @@ export function PhoneNumberSetup({ userId, onPhoneVerified, className = '' }: Ph
       });
 
       // Send SMS via our SMS function
-      const response = await fetch('/api/send-verification-sms', {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms-notification`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'phone_verification',
           user_id: user.id,
           phone_number: phone,
-          verification_code: code
+          data: {
+            verification_code: code
+          }
         })
       });
 

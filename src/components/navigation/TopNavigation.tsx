@@ -87,12 +87,17 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
   // Primary navigation items (left side) - Simplified for cleaner dashboard
   const primaryNavItems = [
     {
-      name: 'Auto-Bookings',
+      name: 'My Bookings',
       href: '/auto-booking',
       icon: Home,
     },
     {
-      name: 'Search Flights',
+      name: 'Set Auto-Booking',
+      href: '/auto-booking/new',
+      icon: Calendar,
+    },
+    {
+      name: 'Search Available Flights',
       href: '/search',
       icon: Search,
     }
@@ -101,8 +106,10 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
   const isActive = (path: string) => {
     if (path === '/auto-booking') {
       return location.pathname === '/auto-booking' || 
-             location.pathname === '/dashboard' ||
-             location.pathname.startsWith('/auto-booking/');
+             location.pathname === '/dashboard';
+    }
+    if (path === '/auto-booking/new') {
+      return location.pathname === '/auto-booking/new';
     }
     if (path === '/search') {
       return location.pathname === '/search' || 

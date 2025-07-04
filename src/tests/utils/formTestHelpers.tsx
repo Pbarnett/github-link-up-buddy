@@ -156,8 +156,10 @@ export const fillBaseFormFields = async (options: {
   
   // 2. Wait for form to update after destination selection
   await waitFor(() => {
-    expect(screen.getByDisplayValue('1000')).toBeInTheDocument();
-  });
+    // Look for budget input by placeholder instead of display value
+    const budgetInput = screen.getByPlaceholderText('1000');
+    expect(budgetInput).toBeInTheDocument();
+  }, { timeout: 3000 });
   
   // 3. Set departure airport
   const otherAirportInput = screen.getByPlaceholderText(/e\.g\., BOS/i);
@@ -166,9 +168,10 @@ export const fillBaseFormFields = async (options: {
   // 4. Set dates (with fallback strategy)
   await setDateFields('fallback');
   
-  // 5. Set price
-  const maxPriceInput = screen.getByDisplayValue('1000');
+  // 5. Set price - find by placeholder instead of display value
+  const maxPriceInput = screen.getByPlaceholderText('1000');
   fireEvent.change(maxPriceInput, { target: { value: maxPrice.toString() } });
+  fireEvent.blur(maxPriceInput); // Trigger validation
   
   // 6. Set duration
   const minDurationInput = screen.getByDisplayValue('3');
@@ -359,9 +362,10 @@ export const fillBaseFormFieldsWithDates = async (options: {
   // 3. Set dates with robust fallback
   await setDatesRobust();
   
-  // 4. Set price
-  const maxPriceInput = screen.getByDisplayValue('1000');
+  // 4. Set price - find by placeholder instead of display value
+  const maxPriceInput = screen.getByPlaceholderText('1000');
   fireEvent.change(maxPriceInput, { target: { value: maxPrice.toString() } });
+  fireEvent.blur(maxPriceInput); // Trigger validation
   
   // 5. Set duration
   const minDurationInput = screen.getByDisplayValue('3');
@@ -379,11 +383,13 @@ export const fillBaseFormFieldsWithDates = async (options: {
   // 7. Wait for form to process updates
   if (!skipValidation) {
     await waitFor(() => {
-      expect(screen.getByDisplayValue(maxPrice.toString())).toBeInTheDocument();
+      // Verify the budget field has the correct value
+      const budgetInput = screen.getByPlaceholderText('1000');
+      expect(budgetInput).toHaveValue(maxPrice);
     }, { timeout: 5000 });
     
-    // Give extra time for form validation
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Give extra time for form validation to complete
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
   console.log('[TEST] Form fields filled successfully');

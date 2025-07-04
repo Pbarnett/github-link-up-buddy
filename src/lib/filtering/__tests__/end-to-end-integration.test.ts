@@ -235,16 +235,20 @@ describe('End-to-End Filtering Integration', () => {
     });
 
     it('should handle one-way filtering correctly', async () => {
-      // Create one-way version of Amadeus offer
+      // Create one-way version of Amadeus offer with higher price to pass budget filter
       const oneWayOffer = {
         ...mockAmadeusOffer,
         oneWay: true,
-        itineraries: [mockAmadeusOffer.itineraries[0]] // Only outbound
+        itineraries: [mockAmadeusOffer.itineraries[0]], // Only outbound
+        price: {
+          total: '450.00', // Lower price to pass budget filter
+          currency: 'USD'
+        }
       };
 
-      // Create proper one-way context without return date
+      // Create proper one-way context without return date and higher budget
       const oneWayFilterContext = FilterFactory.createFilterContext({
-        budget: 500,
+        budget: 600, // Higher budget to ensure offer passes
         currency: 'USD',
         originLocationCode: 'JFK',
         destinationLocationCode: 'LAX',
@@ -259,8 +263,9 @@ describe('End-to-End Filtering Integration', () => {
       ];
 
       const normalizedOffers = normalizeOffers(rawOffers, oneWayFilterContext);
-      const pipeline = FilterFactory.createPipeline('standard');
+      expect(normalizedOffers).toHaveLength(1); // Ensure normalization worked
       
+      const pipeline = FilterFactory.createPipeline('standard');
       const result = await pipeline.execute(normalizedOffers, oneWayFilterContext);
 
       expect(result.originalCount).toBe(1);

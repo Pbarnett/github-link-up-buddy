@@ -371,50 +371,93 @@ Deno.serve(async (req: Request) => {
     }
     // --- End Conditional Seat Selection ---
 
-    // 3. Amadeus Flight Order Booking (using HTTP helper)
-    console.log(`[AutoBook] Creating flight order via HTTP for trip ID: ${trip.id}. Chosen seat(s): ${seatSelections.length > 0 ? JSON.stringify(seatSelections) : 'None'}`);
-
-    const travelerDataPayload: TravelerData = {
-        firstName: trip.traveler_data?.firstName || "TestFirstName",
-        lastName: trip.traveler_data?.lastName || "TestLastName",
-        dateOfBirth: trip.traveler_data?.dateOfBirth, // Format YYYY-MM-DD
-        gender: (trip.traveler_data?.gender?.toUpperCase() as "MALE" | "FEMALE" | undefined) || "MALE",
-        email: user.email,
-        phone: user.phone,
-        documents: trip.traveler_data?.passportNumber ? [{
-            documentType: 'PASSPORT',
-            number: trip.traveler_data.passportNumber,
-            expiryDate: trip.traveler_data.passportExpiry,
-            nationality: trip.traveler_data.nationality,
-            issuanceCountry: trip.traveler_data.issuanceCountry,
-        }] : undefined,
-    };
-
-    const bookingResult = await bookWithAmadeus(
-        pricedOffer,
-        travelerDataPayload,
-        seatSelections, // Pass the conditionally populated seatSelections array
-        accessToken
+    // 3. Duffel Flight Booking Integration
+    console.log(`[AutoBook] Creating Duffel booking for trip ID: ${trip.id}`);
+    
+    // Import Duffel service - using relative path from function directory
+    const DuffelService = await import('../../../src/services/duffelService.ts');
+    
+    // Create Duffel offer request from Amadeus search results
+    const duffelOfferRequest = DuffelService.mapAmadeusSearchToDuffelRequest(
+        {
+            origin: trip.origin_location_code,
+            destination: trip.destination_location_code,
+            departure_date: trip.departure_date,
+            cabin_class: trip.travel_class?.toLowerCase(),
+            max_connections: trip.nonstop_required ? 0 : undefined
+        },
+        { adults: trip.adults }
     );
-
-    if (!bookingResult.success || !bookingResult.bookingReference) { // Ensure bookingReference exists
-        console.error(`[AutoBook] Amadeus booking via HTTP failed for trip ID: ${trip.id}. Error: ${bookingResult.error}`);
-        throw new Error(bookingResult.error || 'Amadeus booking via HTTP failed.');
+    
+    // Get Duffel offers
+    console.log(`[AutoBook] Fetching Duffel offers for trip ID: ${trip.id}`);
+    const duffelOffers = await DuffelService.createOfferRequest(duffelOfferRequest);
+    
+    if (!duffelOffers || duffelOffers.length === 0) {
+        console.error(`[AutoBook] No Duffel offers found for trip ID: ${trip.id}`);
+        throw new Error('No bookable offers found via Duffel');
     }
-
-    flightOrderIdForRollback = bookingResult.bookingReference; // Store for potential rollback
-    const airlinePnr = bookingResult.confirmationNumber || bookingResult.bookingReference; // Define airlinePnr correctly
-    // Attempt to get final price from bookingResult.bookingData, fallback to pricedOffer.price.total
-    const bookingDataFinalPrice = bookingResult.bookingData?.flightOffers?.[0]?.price?.total || bookingResult.bookingData?.price?.total;
-    const finalPrice = Number(bookingDataFinalPrice || pricedOffer.price?.total);
-
-    if (isNaN(finalPrice)) {
-        console.error('[AutoBook] Could not determine final price from booking response. PricedOffer price: ' + pricedOffer?.price?.total + ', BookingResult data: ', bookingResult.bookingData);
-        throw new Error('Amadeus booking succeeded but final price is unclear.');
+    
+    // Select the best offer (first one for now)
+    const selectedOffer = duffelOffers[0];
+    console.log(`[AutoBook] Selected Duffel offer ${selectedOffer.id} with price ${selectedOffer.total_amount} ${selectedOffer.total_currency}`);
+    
+    // Store Duffel offer in booking_requests for reference
+    if (associatedBookingRequestId) {
+        await supabaseClient
+            .from('booking_requests')
+            .update({
+                duffel_offer_id: selectedOffer.id,
+                duffel_offer_data: selectedOffer
+            })
+            .eq('id', associatedBookingRequestId);
     }
-    console.log(`[AutoBook] Final confirmed price: ${finalPrice} for trip ID: ${trip.id}`);
+    
+    // Convert traveler data to Duffel format
+    const duffelPassenger = DuffelService.mapPassengerToDuffel({
+        title: 'mr', // Example title
+        gender: trip.traveler_data?.gender?.toLowerCase() || 'male',
+        first_name: trip.traveler_data?.firstName || "TestFirstName",
+        last_name: trip.traveler_data?.lastName || "TestLastName",
+        date_of_birth: trip.traveler_data?.dateOfBirth,
+        email: user.email,
+        phone_number: user.phone,
+        passport_number: trip.traveler_data?.passportNumber,
+        passport_country: trip.traveler_data?.nationality || 'US',
+        passport_expiry: trip.traveler_data?.passportExpiry
+    });
+    
+    // Create Duffel order request
+    const duffelOrderRequest = {
+        offer_id: selectedOffer.id,
+        passengers: [duffelPassenger],
+        payments: [{
+            type: 'balance' as const,
+            amount: selectedOffer.total_amount,
+            currency: selectedOffer.total_currency
+        }]
+    };
+    
+    // Generate idempotency key for Duffel booking
+    const idempotencyKey = `${trip.id}-${bookingAttemptId || Date.now()}`;
+    
+    console.log(`[AutoBook] Creating Duffel order for trip ID: ${trip.id} with idempotency key: ${idempotencyKey}`);
+    
+    // Create the Duffel booking
+    const duffelOrder = await DuffelService.createOrder(duffelOrderRequest, idempotencyKey);
+    
+    if (!duffelOrder || !duffelOrder.id) {
+        console.error(`[AutoBook] Duffel order creation failed for trip ID: ${trip.id}`);
+        throw new Error('Duffel booking failed');
+    }
+    
+    flightOrderIdForRollback = duffelOrder.id; // Store for potential rollback
+    const airlinePnr = duffelOrder.booking_reference;
+    const finalPrice = Number(selectedOffer.total_amount);
+    
+    console.log(`[AutoBook] Duffel order created successfully: ${duffelOrder.id}, PNR: ${airlinePnr}, Price: ${finalPrice} for trip ID: ${trip.id}`);
 
-    // 5. Stripe PaymentIntent Capture (logic remains largely the same)
+    // 4. Stripe PaymentIntent Capture (updated numbering)
     console.log(`[AutoBook] Initiating Stripe payment capture for trip ID: ${trip.id}. Flight Order ID: ${flightOrderIdForRollback}`);
     const paymentIntentId = trip.payment_intent_id;
     if (!paymentIntentId) {

@@ -7,32 +7,56 @@ services:
       dockerfile: Dockerfile
       target: production
       args:
-        - VITE_SUPABASE_URL=https://bbonngdyfyfjqfhvoljl.supabase.co
-        - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJib25uZ2R5ZnlmanFmaHZvbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNTE5NTQsImV4cCI6MjA2MjgyNzk1NH0.qoXypUh-SemZwFjTyONGztNbhoowqLMiKSRKgA7fRR0
-        - VITE_FLAG_FS_V2=true
-    container_name: parker-flight-app
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+        - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+        - VITE_FLAG_FS_V2=${VITE_FLAG_FS_V2:-true}
+        - VITE_STRIPE_PUBLISHABLE_KEY=${VITE_STRIPE_PUBLISHABLE_KEY}
+        - NODE_ENV=${NODE_ENV:-production}
+        - BUILD_DATE=${BUILD_DATE:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}
+        - VERSION=${APP_VERSION:-1.5.0}
+        - VCS_REF=${VCS_REF:-$(git rev-parse --short HEAD)}
+        - PORT=${PORT:-80}
+    container_name: ${APP_NAME:-parker-flight}-app
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "${PORT:-80}:${PORT:-80}"
+    env_file:
+      - .env.production
     environment:
-      - NODE_ENV=production
-      - VITE_SUPABASE_URL=https://bbonngdyfyfjqfhvoljl.supabase.co
-      - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJib25uZ2R5ZnlmanFmaHZvbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNTE5NTQsImV4cCI6MjA2MjgyNzk1NH0.qoXypUh-SemZwFjTyONGztNbhoowqLMiKSRKgA7fRR0
-      - VITE_FLAG_FS_V2=true
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-80}
     volumes:
-      # Optional: Custom nginx config override
+      # Custom nginx config
       - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Logs volume for debugging
+      - app_logs:/var/log/nginx
     networks:
       - parker-flight-network
     labels:
       - "com.docker.compose.service=parker-flight"
-      - "version=1.5.0"
+      - "version=${APP_VERSION:-1.5.0}"
+      - "environment=production"
+      - "maintainer=parker-flight"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-80}/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    # Security settings
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run
+      - /var/cache/nginx
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
 
   # Optional: Add a reverse proxy with SSL termination
   # Uncomment if you want HTTPS support

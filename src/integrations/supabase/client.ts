@@ -3,14 +3,16 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../../types/database';
 
 // Get environment variables with fallbacks for development
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://bbonngdyfyfjqfhvoljl.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJib25uZ2R5ZnlmanFmaHZvbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNTE5NTQsImV4cCI6MjA2MjgyNzk1NH0.qoXypUh-SemZwFjTyONGztNbhoowqLMiKSRKgA7fRR0';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Log for debugging
 console.log('🔍 Supabase client initialization:', {
   hasURL: !!SUPABASE_URL,
   hasKey: !!SUPABASE_ANON_KEY,
-  url: SUPABASE_URL ? `${SUPABASE_URL.substring(0, 20)}...` : 'missing'
+  url: SUPABASE_URL ? `${SUPABASE_URL.substring(0, 20)}...` : 'missing',
+  fullURL: SUPABASE_URL, // Show full URL for debugging
+  env: import.meta.env.MODE
 });
 
 // Check if environment variables are available

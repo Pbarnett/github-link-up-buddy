@@ -2,12 +2,13 @@
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { SmartErrorBoundary } from "@/components/ErrorBoundary";
 import { useRetryQueue } from "@/utils/retryQueue";
 import { useEffect } from "react";
 // Import dev auth for easy development authentication
 import "@/utils/devAuth";
+import "@/utils/authTest";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import TripNew from "./pages/TripNew";
@@ -105,11 +106,7 @@ const App = () => {
                   />
                   <Route
                     path="/trip/new"
-                    element={
-                      <AuthGuard>
-                        <TripNew />
-                      </AuthGuard>
-                    }
+                    element={<Navigate to="/auto-booking/new" replace />}
                   />
                   <Route
                     path="/search"

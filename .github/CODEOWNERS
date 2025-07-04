@@ -1,0 +1,63 @@
+# Parker Flight CODEOWNERS
+# 
+# This file defines who owns different parts of the codebase and will be
+# automatically requested for review when changes are made to those areas.
+
+# Global owner for everything
+* @parker
+
+# Core architecture and configuration
+/docs/ @parker
+/infra/ @parker
+/.github/ @parker
+/scripts/ @parker
+/tests/ @parker
+
+# Frontend components and pages
+/src/components/ @parker
+/src/pages/ @parker
+/src/hooks/ @parker
+
+# Backend services and edge functions
+/supabase/ @parker
+/src/services/ @parker
+
+# Database and migrations
+/supabase/migrations/ @parker
+/database/ @parker
+
+# Security and authentication
+/src/lib/security/ @parker
+/docs/SECURITY.md @parker
+/docs/SECRETS.md @parker
+
+# Payment processing
+/src/services/api/paymentApi.ts @parker
+/src/services/api/paymentMethodsApiKMS.ts @parker
+/supabase/functions/stripe-webhook/ @parker
+/supabase/functions/create-payment-session/ @parker
+
+# Flight search and booking
+/src/services/api/flightSearchApi.ts @parker
+/src/services/api/duffelSearchApi.ts @parker
+/supabase/functions/flight-search/ @parker
+/supabase/functions/auto-book/ @parker
+
+# Configuration files
+package.json @parker
+tsconfig.json @parker
+vite.config.ts @parker
+tailwind.config.ts @parker
+.env.example @parker
+
+# Docker and deployment
+Dockerfile @parker
+docker-compose.yml @parker
+vercel.json @parker
+
+# Documentation
+README.md @parker
+CHANGELOG.md @parker
+/docs/ARCHITECTURE.md @parker
+/docs/DEPLOYMENT.md @parker
+/docs/CONTRIBUTING.md @parker

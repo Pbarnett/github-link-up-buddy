@@ -37,7 +37,7 @@ describe('TripRequestForm - Basic Functionality', () => {
     vi.clearAllMocks();
   });
 
-  it('should render the form with basic elements', () => {
+  it('should render the form with basic elements', async () => {
     render(
       <MemoryRouter>
         <TripRequestForm />
@@ -47,7 +47,12 @@ describe('TripRequestForm - Basic Functionality', () => {
     // Check for key form elements that actually exist in the UI
     expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
     expect(screen.getByText('Destination')).toBeInTheDocument();
-    // Check for form inputs by their display values instead of labels
+    
+    // Expand the collapsible section to access duration inputs
+    const toggleButton = screen.getByText("What's Included");
+    await userEvent.click(toggleButton);
+    
+    // Now check for form inputs by their display values
     expect(screen.getByDisplayValue('3')).toBeInTheDocument(); // min duration
     expect(screen.getByDisplayValue('7')).toBeInTheDocument(); // max duration
   });
@@ -105,12 +110,16 @@ describe('TripRequestForm - Basic Functionality', () => {
     });
   });
 
-  it('should render date picker components', () => {
+  it('should render date picker components', async () => {
     render(
       <MemoryRouter>
         <TripRequestForm />
       </MemoryRouter>
     );
+
+    // Expand the collapsible section to access duration inputs
+    const toggleButton = screen.getByText("What's Included");
+    await userEvent.click(toggleButton);
 
     // Check for duration inputs directly (this confirms date section exists)
     expect(screen.getByDisplayValue('3')).toBeInTheDocument(); // min duration
@@ -129,6 +138,10 @@ describe('TripRequestForm - Basic Functionality', () => {
     const departureInput = screen.getByPlaceholderText(/e\.g\., BOS/i);
     fireEvent.change(departureInput, { target: { value: 'SFO' } });
     expect(departureInput).toHaveValue('SFO');
+
+    // Expand the collapsible section to access duration inputs
+    const toggleButton = screen.getByText("What's Included");
+    await userEvent.click(toggleButton);
 
     // Fill out duration fields (numeric inputs return numbers, not strings)
     const minDurationInput = screen.getByDisplayValue('3');

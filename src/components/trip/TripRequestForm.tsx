@@ -27,7 +27,6 @@ import TravelersAndCabinSection from "./sections/TravelersAndCabinSection";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
 import CollapsibleFiltersSection from "./sections/CollapsibleFiltersSection";
-import TripDurationInputs from "./sections/TripDurationInputs";
 import LiveBookingSummary from "./LiveBookingSummary";
 import TripSummaryChips from "./sections/TripSummaryChips";
 import AutoBookingSection from "./sections/AutoBookingSection";
