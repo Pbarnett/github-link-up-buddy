@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import { render, RenderOptions, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
@@ -207,31 +207,26 @@ export const TestData = {
 export const QueryHelpers = {
   // Get by role with better error messages
   getButton: (name: string | RegExp) => {
-    const { screen } = require('@testing-library/react');
     return screen.getByRole('button', { name });
   },
   
   // Get form elements
   getTextInput: (labelText: string | RegExp) => {
-    const { screen } = require('@testing-library/react');
     return screen.getByLabelText(labelText);
   },
   
   // Get by test id with prefix
   getByTestId: (testId: string) => {
-    const { screen } = require('@testing-library/react');
     return screen.getByTestId(testId);
   },
   
   // Find async elements
   findText: async (text: string | RegExp) => {
-    const { screen } = require('@testing-library/react');
     return screen.findByText(text);
   },
   
   // Query for optional elements
   queryText: (text: string | RegExp) => {
-    const { screen } = require('@testing-library/react');
     return screen.queryByText(text);
   },
 };
@@ -241,14 +236,14 @@ export const ComponentHelpers = {
   // Dashboard helpers
   dashboard: {
     async switchToTripHistory() {
-      const { screen, userEvent } = await import('@testing-library/react');
+      const { userEvent } = await import('@testing-library/user-event');
       const user = userEvent.setup();
       const tab = screen.getByRole('tab', { name: /trip history/i });
       await user.click(tab);
     },
     
     async switchToCurrentRequests() {
-      const { screen, userEvent } = await import('@testing-library/react');
+      const { userEvent } = await import('@testing-library/user-event');
       const user = userEvent.setup();
       const tab = screen.getByRole('tab', { name: /current booking requests/i });
       await user.click(tab);
