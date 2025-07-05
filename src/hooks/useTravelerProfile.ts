@@ -47,15 +47,7 @@ export function useTravelerProfile() {
       
       const { data, error } = await supabase
         .from("traveler_profiles")
-        .select(`
-          *,
-          profile_completion_tracking(
-            completion_percentage,
-            missing_fields,
-            recommendations,
-            last_calculated
-          )
-        `)
+        .select("*")
         .eq("user_id", userId)
         .eq("is_primary", true)
         .maybeSingle();

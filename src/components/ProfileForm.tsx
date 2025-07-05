@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { CheckCircle, AlertTriangle, User, Shield, FileText, Bell, Calendar } from "lucide-react";
 import { profileCompletenessService, ProfileRecommendation } from "@/services/profileCompletenessService";
 import { useTravelerProfile } from "@/hooks/useTravelerProfile";
+import { useProfile } from "@/hooks/useProfile";
 
 export function ProfileForm() {
   const { profile, isLoading, updateProfile, isUpdating } = useProfile();

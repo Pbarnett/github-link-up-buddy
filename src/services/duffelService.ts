@@ -1,7 +1,17 @@
 /**
  * Duffel API Service for Parker Flight
  * Handles flight booking through Duffel as Merchant of Record
+ * 
+ * Enhanced with:
+ * - Comprehensive error handling and user-friendly messages
+ * - Circuit breaker pattern for resilience
+ * - Offer validation and expiration management
+ * - Performance monitoring and logging
  */
+
+import { DuffelAPIError, throwDuffelError } from '../lib/errors/duffelErrors';
+import { withCircuitBreaker, CIRCUIT_BREAKER_CONFIGS } from '../lib/resilience/circuitBreaker';
+import { validateOfferForBooking, type DuffelOfferSummary } from '../lib/services/offerValidation';
 
 // Duffel API Types
 export interface DuffelPassenger {
@@ -83,6 +93,10 @@ function getDuffelToken(): string {
   return token;
 }
 
+/**
+ * Enhanced Duffel API request with comprehensive error handling, 
+ * performance monitoring, and circuit breaker protection
+ */
 async function duffelRequest<T>(
   endpoint: string, 
   options: RequestInit & { idempotencyKey?: string } = {}
@@ -93,6 +107,8 @@ async function duffelRequest<T>(
     'Content-Type': 'application/json',
     'Duffel-Version': DUFFEL_VERSION,
     'Authorization': `Bearer ${getDuffelToken()}`,
+    'Accept': 'application/json',
+    'Accept-Encoding': 'gzip',
     ...fetchOptions.headers as Record<string, string>
   };
 
@@ -100,36 +116,108 @@ async function duffelRequest<T>(
     headers['Idempotency-Key'] = idempotencyKey;
   }
 
-  const response = await fetch(`${DUFFEL_API_URL}${endpoint}`, {
-    ...fetchOptions,
-    headers
-  });
-
-  const responseText = await response.text();
+  // Determine circuit breaker config based on endpoint type
+  const isBookingEndpoint = endpoint.includes('/orders') || endpoint.includes('/payment');
+  const circuitBreakerConfig = isBookingEndpoint 
+    ? CIRCUIT_BREAKER_CONFIGS.CRITICAL_API 
+    : CIRCUIT_BREAKER_CONFIGS.SEARCH_API;
   
-  if (!response.ok) {
-    let errorMessage = `Duffel API error: ${response.status}`;
-    try {
-      const errorData = JSON.parse(responseText);
-      errorMessage = errorData.errors?.[0]?.message || errorMessage;
-    } catch {
-      // Response is not JSON
+  // Create protected function with circuit breaker
+  const protectedFetch = withCircuitBreaker(
+    `duffel-${isBookingEndpoint ? 'booking' : 'search'}`,
+    circuitBreakerConfig,
+    async () => {
+      const startTime = performance.now();
+      
+      try {
+        // Add timeout for requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+        
+        const response = await fetch(`${DUFFEL_API_URL}${endpoint}`, {
+          ...fetchOptions,
+          headers,
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        // Log performance metrics
+        const duration = performance.now() - startTime;
+        console.log(`[DuffelService] ${fetchOptions.method || 'GET'} ${endpoint} - ${response.status} (${duration.toFixed(2)}ms)`);
+        
+        // Log slow requests
+        if (duration > 5000) {
+          console.warn(`[DuffelService] Slow request detected: ${duration.toFixed(2)}ms for ${endpoint}`);
+        }
+        
+        const responseText = await response.text();
+        
+        if (!response.ok) {
+          let errorData;
+          try {
+            errorData = JSON.parse(responseText);
+          } catch {
+            // Response is not JSON, create error structure
+            errorData = {
+              errors: [{
+                type: 'api_error',
+                title: `HTTP ${response.status}`,
+                detail: `Request failed with status ${response.status}`,
+              }]
+            };
+          }
+          
+          console.error('[DuffelService] API Error:', {
+            status: response.status,
+            endpoint,
+            method: fetchOptions.method || 'GET',
+            response: responseText.substring(0, 500) // Limit log size
+          });
+          
+          throwDuffelError(errorData, response.status);
+        }
+        
+        try {
+          return JSON.parse(responseText);
+        } catch {
+          throw new DuffelAPIError({
+            errors: [{
+              type: 'invalid_response',
+              title: 'Invalid Response',
+              detail: 'Received invalid JSON response from Duffel API'
+            }]
+          });
+        }
+      } catch (error) {
+        // Handle timeout and network errors
+        if (error.name === 'AbortError') {
+          throw new DuffelAPIError({
+            errors: [{
+              type: 'timeout_error',
+              title: 'Request Timeout',
+              detail: 'Request to Duffel API timed out'
+            }]
+          });
+        }
+        
+        if (error instanceof DuffelAPIError) {
+          throw error;
+        }
+        
+        // Handle other network errors
+        throw new DuffelAPIError({
+          errors: [{
+            type: 'network_error',
+            title: 'Network Error',
+            detail: error.message || 'Failed to connect to Duffel API'
+          }]
+        });
+      }
     }
-    
-    console.error('Duffel API Error:', {
-      status: response.status,
-      endpoint,
-      response: responseText
-    });
-    
-    throw new Error(errorMessage);
-  }
-
-  try {
-    return JSON.parse(responseText);
-  } catch {
-    throw new Error('Invalid JSON response from Duffel API');
-  }
+  );
+  
+  return protectedFetch();
 }
 
 /**
@@ -148,12 +236,28 @@ export async function createOfferRequest(request: DuffelOfferRequest): Promise<D
 }
 
 /**
+ * Get a Duffel offer by ID for validation
+ */
+export async function getDuffelOffer(offerId: string): Promise<DuffelOfferSummary> {
+  const response = await duffelRequest<{ data: DuffelOfferSummary }>(
+    `/air/offers/${offerId}`
+  );
+  return response.data;
+}
+
+/**
  * Create a booking order with Duffel
+ * Includes offer validation before booking attempt
  */
 export async function createOrder(
   orderRequest: DuffelOrderRequest,
   idempotencyKey: string
 ): Promise<DuffelOrder> {
+  // Validate offer before attempting to book
+  await validateOfferForBooking(orderRequest.offer_id, getDuffelOffer);
+  
+  console.log(`[DuffelService] Creating order for offer ${orderRequest.offer_id} with idempotency key ${idempotencyKey}`);
+  
   const response = await duffelRequest<{ data: DuffelOrder }>(
     '/orders',
     {
@@ -163,6 +267,7 @@ export async function createOrder(
     }
   );
 
+  console.log(`[DuffelService] Order created successfully: ${response.data.id}`);
   return response.data;
 }
 

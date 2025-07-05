@@ -313,19 +313,28 @@ describe('Phase 3: Frontend Integration Tests', () => {
     it('should persist filters to localStorage when enabled', async () => {
       vi.clearAllMocks();
       
+      // Reset the mock to ensure it's properly tracked
+      const mockSetItem = vi.fn();
+      mockLocalStorage.setItem = mockSetItem;
+      
       const { result } = renderHook(() => 
         useFilterState({}, { persist: true, storageKey: 'test-filters' })
       );
       
+      // Wait for initial render to complete
+      await waitFor(() => {
+        expect(result.current.filterState).toBeDefined();
+      });
+      
       await act(async () => {
         result.current.updateFilters({ budget: 500 });
-        // Wait for any async updates
-        await new Promise(resolve => setTimeout(resolve, 10));
+        // Wait for persistence to occur
+        await new Promise(resolve => setTimeout(resolve, 50));
       });
       
       // Check that setItem was called with the correct data
       await waitFor(() => {
-        expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        expect(mockSetItem).toHaveBeenCalledWith(
           'test-filters',
           JSON.stringify({
             currency: 'USD',
@@ -333,7 +342,7 @@ describe('Phase 3: Frontend Integration Tests', () => {
             budget: 500,
           })
         );
-      }, { timeout: 100 });
+      }, { timeout: 500 });
     });
 
     it('should load persisted filters on initialization', () => {

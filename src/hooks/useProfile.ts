@@ -38,13 +38,14 @@ export function useProfile() {
     mutationFn: async (updates: Partial<Omit<Profile, "id" | "created_at" | "updated_at">>) => {
       if (!userId) throw new Error("User not authenticated");
       
+      // Use upsert to handle both insert and update cases
       const { data, error } = await supabase
         .from("profiles")
-        .update({
+        .upsert({
+          id: userId,
           ...updates,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", userId)
         .select()
         .single();
       

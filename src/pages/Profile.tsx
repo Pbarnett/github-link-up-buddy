@@ -1,15 +1,17 @@
 
 import AuthGuard from "@/components/AuthGuard";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ProfileForm } from "@/components/ProfileForm";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTravelerProfile } from "@/hooks/useTravelerProfile";
 import { SimpleProfileStatus } from "@/components/profile/SimpleProfileStatus";
 import { toast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 function ProfilePage() {
   const { profile, completion, calculateCompleteness } = useTravelerProfile();
+  const [activeTab, setActiveTab] = useState("profile");
   
   // Calculate completeness from profile data if completion tracking is not available
   const completenessData = completion ? {
@@ -17,6 +19,52 @@ function ProfilePage() {
     missing_fields: completion.missing_fields,
     recommendations: completion.recommendations
   } : (profile ? calculateCompleteness(profile) : { overall: 0, missing_fields: [], recommendations: [] });
+  
+  const handleActionClick = (action: string) => {
+    switch (action) {
+      case 'complete_profile':
+        // Focus on the profile tab and show guidance
+        setActiveTab('profile');
+        toast({ 
+          title: 'Complete Your Profile', 
+          description: 'Fill out the form below to complete your profile setup.',
+        });
+        // Scroll to the form
+        setTimeout(() => {
+          const formElement = document.querySelector('[id^="first_name"]');
+          if (formElement) {
+            formElement.focus();
+          }
+        }, 100);
+        break;
+      case 'verify_phone':
+        setActiveTab('profile');
+        toast({ 
+          title: 'Phone Verification', 
+          description: 'Update your phone number in the form below, then verify it.',
+        });
+        break;
+      case 'add_phone':
+        setActiveTab('profile');
+        toast({ 
+          title: 'Add Phone Number', 
+          description: 'Add your phone number in the form below for SMS notifications.',
+        });
+        break;
+      case 'add_passport':
+        setActiveTab('profile');
+        toast({ 
+          title: 'Add Passport Information', 
+          description: 'Add your passport details for international travel bookings.',
+        });
+        break;
+      default:
+        toast({ 
+          title: 'Action Required', 
+          description: `Please complete: ${action.replace(/_/g, ' ')}`,
+        });
+    }
+  };
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -32,7 +80,7 @@ function ProfilePage() {
             </Link>
           </div>
           
-          <Tabs defaultValue="profile" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="profile">Profile Information</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -41,7 +89,7 @@ function ProfilePage() {
             <TabsContent value="profile" className="space-y-6">
               <SimpleProfileStatus 
                 completeness={completenessData}
-                onActionClick={(action) => toast({ title: 'Action:', description: action })}
+                onActionClick={handleActionClick}
                 className="mb-6"
               />
               <ProfileForm />
