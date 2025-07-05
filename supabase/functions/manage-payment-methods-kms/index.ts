@@ -102,7 +102,7 @@ serve(async (req) => {
           const decryptedMethods = await Promise.all(
             paymentMethods.map(async (method) => {
               try {
-                let decryptedMethod = { ...method };
+                const decryptedMethod = { ...method };
                 
                 if (method.encryption_version === 2) {
                   // KMS encrypted payment method
@@ -287,7 +287,7 @@ serve(async (req) => {
             );
           }
 
-          let updateData: any = {};
+          const updateData: any = {};
 
           // If setting as default, unset other defaults first
           if (is_default === true) {

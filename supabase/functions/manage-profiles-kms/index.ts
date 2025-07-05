@@ -98,7 +98,7 @@ serve(async (req) => {
           }
 
           // Decrypt encrypted fields if they exist
-          let decryptedProfile = { ...profile };
+          const decryptedProfile = { ...profile };
           
           if (profile.encryption_version === 2) {
             // KMS encrypted profile
@@ -154,7 +154,7 @@ serve(async (req) => {
           const { first_name, last_name, phone } = body;
 
           // Encrypt PII data using KMS
-          let encryptedData: any = {
+          const encryptedData: any = {
             updated_at: new Date().toISOString(),
             encryption_version: 2 // Mark as KMS encrypted
           };

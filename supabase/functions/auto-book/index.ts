@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
   let trip: TripRequest | null = null;
   let bookingAttemptId: string | null = null;
   let mainOperationSuccessful = false;
-  let flightOrderIdForRollback: string | null = null;
+  const flightOrderIdForRollback: string | null = null;
   let capturedErrorObject: any = null; // Using 'any' for simplicity, can be 'Error | null'
   let accessToken: string | null = null; // Scoped accessToken, initialized to null
   let stripePaymentCapturedByAutoBook = false; // New flag
@@ -504,7 +504,7 @@ Deno.serve(async (req: Request) => {
     
     let duffelService: any;
     let selectedOffer: any = null;
-    let duffelOrder: any = null;
+    const duffelOrder: any = null;
     
     try {
         // Initialize Duffel service with appropriate environment

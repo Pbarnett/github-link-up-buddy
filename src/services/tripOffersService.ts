@@ -122,7 +122,7 @@ export async function fetchTripOffers(
   console.log(`[🔍 SERVICE] Trip request is ${isRoundTripRequest ? 'round-trip' : 'one-way'}`);
   
   // Fetch raw offers from V2 table first (without database-level filtering)
-  let v2Query = supabase
+  const v2Query = supabase
     .from('flight_offers_v2')
     .select('*')
     .eq('trip_request_id', tripRequestId);

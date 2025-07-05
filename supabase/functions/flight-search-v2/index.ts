@@ -210,7 +210,7 @@ const fetchAmadeusOffers = async (
       });
       
       // Convert back to Amadeus format for database insertion
-      let filteredOffers = filterResult.filteredOffers.map(offer => offer.rawData || offer);
+      const filteredOffers = filterResult.filteredOffers.map(offer => offer.rawData || offer);
       
       console.log('[DEBUG] New filtering system processed', offers.length, '→', filteredOffers.length, 'offers in', filterResult.executionTimeMs, 'ms');
       
