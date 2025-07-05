@@ -52,13 +52,11 @@ const createTrip = async (
   
   // Insert trip request into Supabase with proper types
   const tripRequestResult = await safeQuery<Tables<"trip_requests">>(() =>
-    Promise.resolve(
-      supabase
-        .from("trip_requests")
-        .insert(tripRequestData)
-        .select()
-        .single()
-    )
+    supabase
+      .from("trip_requests")
+      .insert(tripRequestData)
+      .select()
+      .single()
   );
   
   if (tripRequestResult.error) {
