@@ -18,16 +18,9 @@ export function usePoolsSafe(params: UsePoolsSafeParams): PoolsSafeResult {
   const [isUsingFallback, setIsUsingFallback] = useState(false);
   const [fallbackData, setFallbackData] = useState<UseTripOffersReturn | null>(null);
 
-  // Try to use the pools hook first
-  let poolsResult: PoolsHookResult | null = null;
-  let poolsError: Error | null = null;
-
-  try {
-    poolsResult = useTripOffersPools(params);
-  } catch (error) {
-    poolsError = error as Error;
-    logger.error('[usePoolsSafe] Pools hook failed:', error);
-  }
+  // Always call the pools hook (hooks must be called unconditionally)
+  // Note: We cannot wrap hooks in try-catch as it violates rules of hooks
+  const poolsResult = useTripOffersPools(params);
 
   // Fallback to legacy hook if pools failed
   const legacyResult = useTripOffers({ 
@@ -36,7 +29,10 @@ export function usePoolsSafe(params: UsePoolsSafeParams): PoolsSafeResult {
   });
 
   useEffect(() => {
-    if (poolsError && !isUsingFallback) {
+    // Check if pools result indicates an error state
+    const hasPoolsError = poolsResult?.hasError || poolsResult?.errorMessage;
+    
+    if (hasPoolsError && !isUsingFallback) {
       setIsUsingFallback(true);
       setFallbackData(legacyResult);
       
@@ -47,16 +43,17 @@ export function usePoolsSafe(params: UsePoolsSafeParams): PoolsSafeResult {
       });
 
       // Aggressive cache recovery for suspected cache corruption
-      if (poolsError?.message?.includes('cache') || poolsError?.message?.includes('stale')) {
+      const errorMsg = poolsResult?.errorMessage || '';
+      if (errorMsg.includes('cache') || errorMsg.includes('stale')) {
         clearUnifiedCache();
-        logger.info("[usePoolsSafe] Cache cleared due to suspected corruption:", poolsError.message);
+        logger.info("[usePoolsSafe] Cache cleared due to suspected corruption:", errorMsg);
       } else {
         // Clear cache for any pools error to prevent persistence
         clearUnifiedCache();
-        logger.info("[usePoolsSafe] Cache cleared due to pools error:", poolsError.message);
+        logger.info("[usePoolsSafe] Cache cleared due to pools error:", errorMsg);
       }
     }
-  }, [poolsError, isUsingFallback, legacyResult]);
+  }, [poolsResult?.hasError, poolsResult?.errorMessage, isUsingFallback, legacyResult]);
 
   // If we're using fallback, return legacy data in pools format
   if (isUsingFallback && fallbackData) {
