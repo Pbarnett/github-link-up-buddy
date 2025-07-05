@@ -1,5 +1,6 @@
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { createClient } from '@supabase/supabase-js';
+import StripeServerModule from 'stripe';
 
 // Initialize Stripe
 let stripePromise: Promise<Stripe | null>;
@@ -234,7 +235,7 @@ export class StripeService {
     signature: string,
     endpointSecret: string
   ) {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const stripe = new StripeServerModule(process.env.STRIPE_SECRET_KEY!);
     
     try {
       const event = stripe.webhooks.constructEvent(payload, signature, endpointSecret);
