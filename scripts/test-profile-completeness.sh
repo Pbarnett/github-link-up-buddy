@@ -51,74 +51,17 @@ if ! npm list vitest >/dev/null 2>&1; then
     npm install --save-dev vitest @vitest/ui jsdom @testing-library/react @testing-library/jest-dom
 fi
 
-print_status "Running Profile Completeness Service Tests..."
+print_status "Running Profile Completeness Test Suite with Coverage..."
 
-# Run service tests with coverage
-npx vitest run src/tests/unit/services/profileCompletenessService.enhanced.test.ts \
-    --config=src/tests/vitest.config.ts \
-    --coverage \
-    --reporter=verbose \
-    --reporter=json \
-    --outputFile=src/tests/reports/service-tests.json
+# Single comprehensive test run with coverage
+pnpm vitest run --coverage
 
 if [ $? -eq 0 ]; then
-    print_success "Profile Completeness Service tests passed!"
+    print_success "All profile completeness tests passed with coverage!"
 else
-    print_error "Profile Completeness Service tests failed!"
+    print_error "Profile completeness tests failed or coverage threshold not met!"
     exit 1
 fi
-
-print_status "Running Database Trigger Function Tests..."
-
-# Run database tests
-npx vitest run src/tests/unit/database/profileCompleteness.trigger.test.ts \
-    --config=src/tests/vitest.config.ts \
-    --coverage \
-    --reporter=verbose \
-    --reporter=json \
-    --outputFile=src/tests/reports/database-tests.json
-
-if [ $? -eq 0 ]; then
-    print_success "Database trigger function tests passed!"
-else
-    print_error "Database trigger function tests failed!"
-    exit 1
-fi
-
-print_status "Running All Profile Completeness Tests Together..."
-
-# Run all tests together to check for interactions
-npx vitest run src/tests/unit/services/profileCompletenessService.enhanced.test.ts src/tests/unit/database/profileCompleteness.trigger.test.ts \
-    --config=src/tests/vitest.config.ts \
-    --coverage \
-    --reporter=verbose \
-    --reporter=html \
-    --outputFile=src/tests/reports/full-test-results.json
-
-if [ $? -eq 0 ]; then
-    print_success "All profile completeness tests passed!"
-else
-    print_error "Some profile completeness tests failed!"
-    exit 1
-fi
-
-print_status "Generating Test Coverage Report..."
-
-# Generate detailed coverage report
-npx vitest run src/tests/unit/**/*.test.ts \
-    --config=src/tests/vitest.config.ts \
-    --coverage \
-    --coverage.reporter=html \
-    --coverage.reporter=text-summary \
-    --coverage.reporter=json-summary
-
-print_status "Running Performance Benchmarks..."
-
-# Run performance-specific tests
-npx vitest run src/tests/unit/services/profileCompletenessService.enhanced.test.ts \
-    --config=src/tests/vitest.config.ts \
-    --testNamePattern="Performance" \
-    --reporter=verbose
 
 # Check coverage thresholds
 print_status "Checking Coverage Thresholds..."

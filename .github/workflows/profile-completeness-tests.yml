@@ -44,6 +44,9 @@ jobs:
       VITE_SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL || 'https://test.supabase.co' }}
       VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY || 'test-key' }}
       SUPABASE_TEST_DB_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      TWILIO_PHONE_NUMBER: "+16466871851"
+      TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+      TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
 
     steps:
       - name: Checkout code
@@ -75,65 +78,10 @@ jobs:
           ls -la src/tests/
           echo "✅ Test structure verified"
 
-      - name: Run Profile Completeness Service Tests
+      - name: Run Profile Completeness Test Suite
         run: |
-          npx vitest run src/tests/unit/services/profileCompletenessService.enhanced.test.ts \
-            --config=src/tests/vitest.config.ts \
-            --coverage \
-            --reporter=verbose \
-            --reporter=github-actions
-
-      - name: Run Database Trigger Tests
-        run: |
-          npx vitest run src/tests/unit/database/profileCompleteness.trigger.test.ts \
-            --config=src/tests/vitest.config.ts \
-            --coverage \
-            --reporter=verbose \
-            --reporter=github-actions
-
-      - name: Run Complete Profile Completeness Test Suite
-        run: |
-          npx vitest run src/tests/unit/services/profileCompletenessService.enhanced.test.ts src/tests/unit/database/profileCompleteness.trigger.test.ts \
-            --config=src/tests/vitest.config.ts \
-            --coverage \
-            --reporter=verbose \
-            --reporter=github-actions
-        continue-on-error: false
-
-      - name: Check Coverage Thresholds
-        run: |
-          npx vitest run src/tests/unit/services/profileCompletenessService.enhanced.test.ts \
-            --config=src/tests/vitest.config.ts \
-            --coverage \
-            --coverage.reporter=json-summary
-          
-          # Check if coverage meets minimum 90% threshold
-          if [ -f "coverage/coverage-summary.json" ]; then
-            echo "Coverage report found, checking thresholds..."
-            node -e "
-              const coverage = require('./coverage/coverage-summary.json');
-              const profileService = coverage['src/services/profileCompletenessService.ts'];
-              if (profileService) {
-                const { lines, functions, branches, statements } = profileService;
-                console.log('Profile Completeness Service Coverage:');
-                console.log('Lines:', lines.pct + '%');
-                console.log('Functions:', functions.pct + '%');
-                console.log('Branches:', branches.pct + '%');
-                console.log('Statements:', statements.pct + '%');
-                
-                if (lines.pct < 90 || functions.pct < 90 || branches.pct < 90 || statements.pct < 90) {
-                  console.error('❌ Coverage below 90% threshold');
-                  process.exit(1);
-                } else {
-                  console.log('✅ Coverage meets 90% threshold');
-                }
-              } else {
-                console.log('No coverage data for profile completeness service');
-              }
-            "
-          else
-            echo "⚠️ No coverage report generated"
-          fi
+          chmod +x scripts/test-profile-completeness.sh
+          ./scripts/test-profile-completeness.sh
 
       - name: Upload Coverage Reports
         uses: actions/upload-artifact@v4
@@ -153,15 +101,6 @@ jobs:
           path: src/tests/reports/
           retention-days: 30
 
-      - name: Performance Benchmark Check
-        run: |
-          echo "Running performance benchmarks..."
-          npx vitest run src/tests/unit/services/profileCompletenessService.enhanced.test.ts \
-            --config=src/tests/vitest.config.ts \
-            --testNamePattern="Performance" \
-            --reporter=verbose
-          
-          echo "✅ Performance benchmarks completed"
 
       - name: Comment Coverage on PR
         if: github.event_name == 'pull_request'
