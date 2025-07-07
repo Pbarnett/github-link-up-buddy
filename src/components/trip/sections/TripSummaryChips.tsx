@@ -142,13 +142,12 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
             type="button"
             onClick={() => {
               // Clear all relevant fields
-              const clearMethods = control._subjects.current || {};
-              Object.keys(clearMethods).forEach(field => {
-                if (['destination_airport', 'destination_other', 'nyc_airports', 'other_departure_airport', 
+              const fieldsToReset = ['destination_airport', 'destination_other', 'nyc_airports', 'other_departure_airport', 
                      'earliestDeparture', 'latestDeparture', 'flexible_dates', 'min_duration', 'max_duration', 
-                     'max_price', 'nonstop_required', 'baggage_included_required', 'travelers_count', 'cabin_class'].includes(field)) {
-                  onClearField?.(field);
-                }
+                     'max_price', 'nonstop_required', 'baggage_included_required', 'travelers_count', 'cabin_class'];
+              
+              fieldsToReset.forEach(field => {
+                onClearField?.(field);
               });
             }}
             className="text-xs text-gray-500 hover:text-gray-700"

@@ -149,6 +149,7 @@ class MasterTestRunner {
       
       // Run existing integration test scripts
       const integrationScripts = [
+        'node scripts/test-google-auth-optimized.js --fast',
         'node test-kms-integration.js',
         'node validate-profile-architecture.js',
         'node test-env-validation.js --local'

@@ -15,7 +15,6 @@ import { retry, RetryDecorators } from '../resilience/retry';
  */
 export interface RepositoryConfig {
   client: SupabaseClient<Database>;
-  tableName: string;
   enableRetry?: boolean;
   logQueries?: boolean;
 }
@@ -63,11 +62,11 @@ export abstract class BaseRepository<
   TUpdate = TablesUpdate<TTable>
 > {
   protected client: SupabaseClient<Database>;
-  protected tableName: string;
+  protected tableName: TTable;
   protected enableRetry: boolean;
   protected logQueries: boolean;
 
-  constructor(config: RepositoryConfig) {
+  constructor(config: RepositoryConfig & { tableName: TTable }) {
     this.client = config.client;
     this.tableName = config.tableName;
     this.enableRetry = config.enableRetry ?? true;
@@ -78,7 +77,7 @@ export abstract class BaseRepository<
    * Execute a database operation with retry and error handling
    */
   protected async executeQuery<T>(
-    operation: () => Promise<{ data: T | null; error: any }>,
+    operation: () => any,
     context?: ErrorContext
   ): Promise<T> {
     const executeOperation = async () => {
@@ -198,11 +197,11 @@ export abstract class BaseRepository<
     options: QueryOptions = {}
   ): Promise<TRow | null> {
     try {
-      const query = this.client
-        .from(this.tableName)
-        .select(options.select || '*')
-        .eq('id', id)
-        .maybeSingle();
+    const query = this.client
+      .from(this.tableName as any)
+      .select(options.select || '*')
+      .eq('id', id)
+      .maybeSingle();
 
       const result = await this.executeQuery(
         () => query,
@@ -225,7 +224,7 @@ export abstract class BaseRepository<
     filters: FilterCondition[] = [],
     options: QueryOptions = {}
   ): Promise<TRow[]> {
-    let query = this.client.from(this.tableName);
+    let query = this.client.from(this.tableName as any);
     
     // Apply filters
     query = this.applyFilters(query, filters);
@@ -260,8 +259,8 @@ export abstract class BaseRepository<
     options: QueryOptions = {}
   ): Promise<TRow> {
     const query = this.client
-      .from(this.tableName)
-      .insert(data)
+      .from(this.tableName as any)
+      .insert(data as any)
       .select(options.select || '*')
       .single();
 
@@ -288,8 +287,8 @@ export abstract class BaseRepository<
     options: QueryOptions = {}
   ): Promise<TRow[]> {
     const query = this.client
-      .from(this.tableName)
-      .insert(data)
+      .from(this.tableName as any)
+      .insert(data as any)
       .select(options.select || '*');
 
     const result = await this.executeQuery(
@@ -309,8 +308,8 @@ export abstract class BaseRepository<
     options: QueryOptions = {}
   ): Promise<TRow> {
     const query = this.client
-      .from(this.tableName)
-      .update(data)
+      .from(this.tableName as any)
+      .update(data as any)
       .eq('id', id)
       .select(options.select || '*')
       .single();
@@ -339,8 +338,8 @@ export abstract class BaseRepository<
     options: QueryOptions = {}
   ): Promise<TRow[]> {
     let query = this.client
-      .from(this.tableName)
-      .update(data)
+      .from(this.tableName as any)
+      .update(data as any)
       .select(options.select || '*');
 
     // Apply filters
@@ -362,7 +361,7 @@ export abstract class BaseRepository<
     options: QueryOptions = {}
   ): Promise<void> {
     const query = this.client
-      .from(this.tableName)
+      .from(this.tableName as any)
       .delete()
       .eq('id', id);
 
@@ -379,7 +378,7 @@ export abstract class BaseRepository<
     filters: FilterCondition[],
     options: QueryOptions = {}
   ): Promise<void> {
-    let query = this.client.from(this.tableName).delete();
+    let query = this.client.from(this.tableName as any).delete();
 
     // Apply filters
     query = this.applyFilters(query, filters);
@@ -398,7 +397,7 @@ export abstract class BaseRepository<
     options: QueryOptions = {}
   ): Promise<number> {
     let query = this.client
-      .from(this.tableName)
+      .from(this.tableName as any)
       .select('*', { count: 'exact', head: true });
 
     // Apply filters
@@ -409,7 +408,7 @@ export abstract class BaseRepository<
       { operation: 'count', filters, ...options.context }
     );
 
-    return result?.length || 0;
+    return (result as any)?.length || 0;
   }
 
   /**
@@ -432,7 +431,7 @@ export abstract class BaseRepository<
     options: QueryOptions = {}
   ): Promise<T> {
     const result = await this.executeQuery(
-      () => this.client.rpc(functionName, parameters),
+      () => this.client.rpc(functionName as any, parameters),
       { operation: 'rpc', functionName, parameters, ...options.context }
     );
 

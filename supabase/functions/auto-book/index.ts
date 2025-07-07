@@ -238,7 +238,7 @@ Deno.serve(async (req: Request) => {
     // Phone number validation (recommended)
     if (!traveler?.phone?.trim()) {
         validationWarnings.push('A phone number is recommended for travel notifications.');
-    } else if (!/^\+?[\d\s\-\(\)]+$/.test(traveler.phone)) {
+    } else if (!/^\+?[\d\s\-()]+$/.test(traveler.phone)) {
         validationWarnings.push('Please verify your phone number format is correct.');
     }
 

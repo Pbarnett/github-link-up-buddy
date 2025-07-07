@@ -95,14 +95,25 @@ CREATE POLICY "Service role can manage all booking attempts" ON booking_attempts
     FOR ALL USING (auth.role() = 'service_role');
 
 -- RLS Policies for webhook events (service role only)
-CREATE POLICY "Service role can manage webhook events" ON duffel_webhook_events
-    FOR ALL USING (auth.role() = 'service_role');
+DO $$ 
+BEGIN
+    -- Only create the policy if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' 
+        AND tablename = 'duffel_webhook_events' 
+        AND policyname = 'Service role can manage webhook events'
+    ) THEN
+        CREATE POLICY "Service role can manage webhook events" ON duffel_webhook_events
+            FOR ALL USING (auth.role() = 'service_role');
+    END IF;
+END $$;
 
 -- RPC: Create booking attempt with idempotency
 CREATE OR REPLACE FUNCTION rpc_create_booking_attempt(
     p_trip_request_id UUID,
     p_idempotency_key TEXT
-) RETURNS JSON AS $$
+) RETURNS jsonb AS $$
 DECLARE
     v_existing_attempt booking_attempts%ROWTYPE;
     v_new_attempt booking_attempts%ROWTYPE;
@@ -112,7 +123,7 @@ BEGIN
     SELECT EXISTS(SELECT 1 FROM trip_requests WHERE id = p_trip_request_id) INTO v_trip_exists;
     
     IF NOT v_trip_exists THEN
-        RETURN json_build_object(
+        RETURN jsonb_build_object(
             'success', false,
             'error', 'Trip request not found',
             'error_code', 'TRIP_NOT_FOUND'
@@ -125,7 +136,7 @@ BEGIN
     WHERE idempotency_key = p_idempotency_key;
     
     IF v_existing_attempt.id IS NOT NULL THEN
-        RETURN json_build_object(
+        RETURN jsonb_build_object(
             'success', true,
             'existing', true,
             'attempt_id', v_existing_attempt.id,
@@ -138,7 +149,7 @@ BEGIN
     VALUES (p_trip_request_id, p_idempotency_key)
     RETURNING * INTO v_new_attempt;
     
-    RETURN json_build_object(
+    RETURN jsonb_build_object(
         'success', true,
         'existing', false,
         'attempt_id', v_new_attempt.id,
@@ -185,7 +196,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION rpc_fail_booking_attempt(
     p_attempt_id UUID,
     p_error_message TEXT,
-    p_error_code TEXT DEFAULT NULL
+    p_stripe_refund_id TEXT DEFAULT NULL
 ) RETURNS BOOLEAN AS $$
 DECLARE
     v_current_attempt booking_attempts%ROWTYPE;
@@ -204,11 +215,15 @@ BEGIN
     UPDATE booking_attempts SET
         status = 'failed',
         error_message = p_error_message,
-        error_code = p_error_code,
-        retry_count = retry_count + 1,
-        updated_at = NOW(),
-        completed_at = NOW()
+        ended_at = NOW()
     WHERE id = p_attempt_id;
+    
+    -- Log refund if provided
+    IF p_stripe_refund_id IS NOT NULL THEN
+        UPDATE booking_attempts SET
+            error_message = error_message || ' (Refunded: ' || p_stripe_refund_id || ')'
+        WHERE id = p_attempt_id;
+    END IF;
     
     GET DIAGNOSTICS v_updated_count = ROW_COUNT;
     RETURN v_updated_count > 0;
@@ -216,15 +231,16 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Monitoring view for booking attempts
-CREATE OR REPLACE VIEW booking_attempts_summary AS
+DROP VIEW IF EXISTS booking_attempts_summary;
+CREATE VIEW booking_attempts_summary AS
 SELECT 
     DATE_TRUNC('hour', created_at) AS hour,
     status,
     COUNT(*) AS count,
-    AVG(EXTRACT(EPOCH FROM (completed_at - created_at))) AS avg_duration_seconds,
-    SUM(CASE WHEN retry_count > 0 THEN 1 ELSE 0 END) AS retry_count
+    AVG(EXTRACT(EPOCH FROM (ended_at - created_at))) AS avg_duration_seconds,
+    MIN(created_at) AS first_attempt,
+    MAX(created_at) AS last_attempt
 FROM booking_attempts
-WHERE created_at >= NOW() - INTERVAL '24 hours'
 GROUP BY DATE_TRUNC('hour', created_at), status
 ORDER BY hour DESC, status;
 
@@ -261,7 +277,7 @@ CREATE OR REPLACE FUNCTION rpc_complete_duffel_booking(
     p_price DECIMAL,
     p_currency TEXT,
     p_raw_order JSONB
-) RETURNS JSON AS $$
+) RETURNS jsonb AS $$
 DECLARE
     v_booking_id UUID;
     v_trip_request booking_attempts%ROWTYPE;
@@ -274,7 +290,7 @@ BEGIN
     WHERE ba.id = p_attempt_id;
     
     IF v_trip_request.id IS NULL THEN
-        RETURN json_build_object(
+        RETURN jsonb_build_object(
             'success', false,
             'error', 'Booking attempt not found'
         );
@@ -317,7 +333,7 @@ BEGIN
         completed_at = NOW()
     WHERE id = p_attempt_id;
     
-    RETURN json_build_object(
+    RETURN jsonb_build_object(
         'success', true,
         'booking_id', v_booking_id,
         'duffel_order_id', p_duffel_order_id

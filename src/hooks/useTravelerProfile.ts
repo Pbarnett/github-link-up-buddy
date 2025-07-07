@@ -187,7 +187,20 @@ export function useTravelerProfile() {
 
   // Calculate client-side completeness (fallback if DB calculation not available)
   const calculateCompleteness = (profile: TravelerProfile | null) => {
-    if (!profile) return { overall: 0, recommendations: [] };
+    if (!profile) {
+      return {
+        overall: 0,
+        categories: {
+          basic_info: 0,
+          contact_info: 0,
+          travel_documents: 0,
+          preferences: 0,
+          verification: 0
+        },
+        missing_fields: [],
+        recommendations: []
+      };
+    }
     return profileCompletenessService.calculateCompleteness(profile);
   };
 

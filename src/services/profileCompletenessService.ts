@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { TravelerProfile } from './travelerProfileService';
+import { TravelerProfile } from '@/hooks/useTravelerProfile';
 
 export interface ProfileCompletenessScore {
   overall: number; // 0-100

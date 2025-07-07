@@ -166,7 +166,11 @@ describe('TripConfirm Page', () => {
 
     // Use the global mock from setupTests.ts
     const { useToast } = await import('@/components/ui/use-toast');
-    vi.mocked(useToast).mockReturnValue({ toast: mockToast });
+    vi.mocked(useToast).mockReturnValue({
+      toast: mockToast,
+      dismiss: vi.fn(),
+      toasts: []
+    });
 
     render(
 

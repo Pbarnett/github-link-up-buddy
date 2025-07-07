@@ -265,52 +265,60 @@ async function main() {
 
   try {
     switch (command) {
-      case 'migration-status':
+      case 'migration-status': {
         const migrationStatus = await getMigrationStatus();
         printMigrationStatus(migrationStatus);
         break;
+      }
 
-      case 'migrate':
+      case 'migrate': {
         const batchSize = parseInt(args[1]) || 10;
         const entityType = args[2] || 'all';
         const migrationResult = await runMigration(batchSize, entityType);
         console.log("✅ Migration batch complete:", migrationResult);
         break;
+      }
 
-      case 'migrate-all':
+      case 'migrate-all': {
         await runFullMigration();
         break;
+      }
 
-      case 'rotation-status':
+      case 'rotation-status': {
         const rotationStatus = await getRotationStatus();
         printRotationStatus(rotationStatus);
         break;
+      }
 
-      case 'rotate':
+      case 'rotate': {
         const keyType = (args[1] as 'PII' | 'PAYMENT') || 'PII';
         const rotationBatchSize = parseInt(args[2]) || 50;
         const rotationResult = await rotateKey(keyType, rotationBatchSize);
         console.log(`✅ ${keyType} key rotation complete:`, rotationResult);
         break;
+      }
 
-      case 'schedule-rotation':
+      case 'schedule-rotation': {
         const scheduleKeyType = (args[1] as 'PII' | 'PAYMENT') || 'PII';
         const intervalDays = parseInt(args[2]) || 90;
         const scheduleResult = await scheduleKeyRotation(scheduleKeyType, intervalDays);
         console.log("✅ Key rotation scheduled:", scheduleResult);
         break;
+      }
 
-      case 'setup-rotation':
+      case 'setup-rotation': {
         await setupKeyRotation();
         break;
+      }
 
-      case 'full-setup':
+      case 'full-setup': {
         console.log("🚀 Running full encryption setup (migration + key rotation)...\n");
         await runFullMigration();
         console.log("\n" + "=".repeat(60) + "\n");
         await setupKeyRotation();
         console.log("\n🎉 Full encryption setup complete!");
         break;
+      }
 
       default:
         console.log("Usage: deno run --allow-net --allow-env manage-encryption.ts <command> [options]");

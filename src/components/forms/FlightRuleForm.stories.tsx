@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
+// Simple mock function for stories
+const mockFn = () => {};
 import { FlightRuleForm } from './FlightRuleForm';
 
 const meta: Meta<typeof FlightRuleForm> = {
@@ -19,13 +20,13 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    onSubmit: action('onSubmit'),
+    onSubmit: mockFn,
   },
 };
 
 export const WithDefaults: Story = {
   args: {
-    onSubmit: action('onSubmit'),
+    onSubmit: mockFn,
     defaultValues: {
       origin: ['JFK'],
       destination: 'LAX',
@@ -39,7 +40,7 @@ export const WithDefaults: Story = {
 
 export const AutoBookingEnabled: Story = {
   args: {
-    onSubmit: action('onSubmit'),
+    onSubmit: mockFn,
     defaultValues: {
       origin: ['JFK', 'LGA'],
       destination: 'SFO',
@@ -55,7 +56,7 @@ export const AutoBookingEnabled: Story = {
 
 export const PremiumSearch: Story = {
   args: {
-    onSubmit: action('onSubmit'),
+    onSubmit: mockFn,
     defaultValues: {
       origin: ['EWR'],
       destination: 'LHR',

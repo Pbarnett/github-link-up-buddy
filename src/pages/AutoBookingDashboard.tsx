@@ -15,7 +15,7 @@ import { withErrorBoundary } from "@/components/ErrorBoundary";
 
 function AutoBookingDashboard() {
   const navigate = useNavigate();
-  const { userId } = useCurrentUser();
+  const { userId, loading } = useCurrentUser();
   const { campaigns, isLoading, error, refreshCampaigns, pauseCampaign, resumeCampaign, deleteCampaign } = useCampaigns();
 
   // No breadcrumbs needed since this is the main dashboard page
@@ -82,6 +82,24 @@ function AutoBookingDashboard() {
   const pausedCampaigns = campaigns?.filter(c => c.status === 'paused') || [];
   const completedCampaigns = campaigns?.filter(c => c.status === 'booked' || c.status === 'completed') || [];
 
+  // Show loading state while authentication is being checked
+  if (loading) {
+    return (
+      <PageWrapper>
+        <div className="container mx-auto py-8">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-96" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  // Show login prompt only after loading is complete and user is not authenticated
   if (!userId) {
     return (
       <PageWrapper>

@@ -98,7 +98,7 @@ export const tripFormSchema = z.object({
 }, {
   message: "Maximum price and payment method are required for auto-booking",
   path: ["preferred_payment_method_id"],
-}).refine((data, ctx) => {
+}).refine((data) => {
   // Auto-booking consent validation: require consent when auto-booking is enabled AND in auto mode
   // In manual mode, consent is implicit when user enables auto-booking
   if (data.auto_book_enabled) {

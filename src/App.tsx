@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-route
 import { SmartErrorBoundary } from "@/components/ErrorBoundary";
 import { useRetryQueue } from "@/utils/retryQueue";
 import { useEffect } from "react";
+import { BusinessRulesProvider } from "./hooks/useBusinessRules";
 // Import dev auth for easy development authentication
 import "@/utils/devAuth";
 import "@/utils/authTest";
@@ -20,6 +21,7 @@ import Wallet from "./pages/Wallet";
 import DuffelTest from "./pages/DuffelTest";
 import AutoBookingDashboard from "./pages/AutoBookingDashboard";
 import AutoBookingNew from "./pages/AutoBookingNew";
+import { FormAnalyticsDashboard } from "./components/forms/analytics/FormAnalyticsDashboard";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 import TopNavigation from "./components/navigation/TopNavigation";
@@ -78,8 +80,9 @@ const App = () => {
   return (
     <SmartErrorBoundary level="global">
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <GlobalMiddleware>
+        <BusinessRulesProvider>
+          <TooltipProvider>
+            <GlobalMiddleware>
             <Toaster />
             <a href="#main" className="skip-link">
               Skip to content
@@ -188,13 +191,22 @@ const App = () => {
                       </AuthGuard>
                     }
                   />
+                  <Route
+                    path="/form-analytics"
+                    element={
+                      <AuthGuard>
+                        <FormAnalyticsDashboard />
+                      </AuthGuard>
+                    }
+                  />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
             </BrowserRouter>
-          </GlobalMiddleware>
-        </TooltipProvider>
+            </GlobalMiddleware>
+          </TooltipProvider>
+        </BusinessRulesProvider>
       </QueryClientProvider>
     </SmartErrorBoundary>
   );

@@ -1,0 +1,98 @@
+groups:
+  - name: parker-flight-high-form-error
+    rules:
+      - alert: HighFormErrorRate
+        expr: |
+          (
+            sum(rate(form_validation_errors_total{app="parker-flight-api"}[5m])) /
+            sum(rate(form_submissions_total{app="parker-flight-api"}[5m]))
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: parker-flight-api
+          alert_type: form_error
+        annotations:
+          summary: "High form error rate detected"
+          description: "Form error rate is {{ $value }}% over the last 5 minutes, which exceeds the 5% threshold"
+          runbook_url: "https://github.com/parker-flight/runbooks/form-troubleshooting.md"
+
+  - name: parker-flight-search-success-drop
+    rules:
+      - alert: SearchSuccessRateDrop
+        expr: |
+          (
+            sum(rate(search_success_total{app="parker-flight-api"}[5m])) /
+            sum(rate(search_attempts_total{app="parker-flight-api"}[5m]))
+          ) * 100 < 90
+        for: 2m
+        labels:
+          severity: critical
+          service: parker-flight-api
+          alert_type: search_failure
+        annotations:
+          summary: "Search success rate dropped below 90%"
+          description: "Search success rate is {{ $value }}% over the last 5 minutes, which is below the 90% threshold"
+          runbook_url: "https://github.com/parker-flight/runbooks/search-troubleshooting.md"
+
+  - name: parker-flight-config-drift
+    rules:
+      - alert: ConfigDriftDetected
+        expr: config_version_mismatch{app="parker-flight-api"} == 1
+        for: 1m
+        labels:
+          severity: warning
+          service: parker-flight-api
+          alert_type: config_drift
+        annotations:
+          summary: "Configuration drift detected"
+          description: "Deployed config version does not match latest config version for environment {{ $labels.environment }}"
+          runbook_url: "https://github.com/parker-flight/runbooks/config-management.md"
+
+  - name: parker-flight-feature-flag-rollback
+    rules:
+      - alert: FeatureFlagRollback
+        expr: feature_flag_rollback_triggered{app="parker-flight-api"} == 1
+        for: 0m
+        labels:
+          severity: info
+          service: parker-flight-api
+          alert_type: feature_flag
+        annotations:
+          summary: "Feature flag rollback triggered"
+          description: "Feature flag {{ $labels.flag }} has been rolled back in environment {{ $labels.environment }}"
+          runbook_url: "https://github.com/parker-flight/runbooks/feature-flag-management.md"
+
+  - name: parker-flight-business-rules-health
+    rules:
+      - alert: BusinessRulesConfigFailure
+        expr: |
+          sum by (environment) (
+            rate(business_rules_config_requests_total{app="parker-flight-api",status="error"}[5m])
+          ) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          service: parker-flight-api
+          alert_type: config_failure
+        annotations:
+          summary: "Business rules config requests failing"
+          description: "Business rules config requests are failing at {{ $value }} requests/sec in {{ $labels.environment }}"
+          runbook_url: "https://github.com/parker-flight/runbooks/config-management.md"
+
+  - name: parker-flight-aws-operations
+    rules:
+      - alert: HighAWSOperationErrors
+        expr: |
+          sum by (operation) (
+            rate(aws_operations_total{app="parker-flight-api",status="error"}[5m])
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: parker-flight-api
+          alert_type: aws_error
+        annotations:
+          summary: "High AWS operation error rate"
+          description: "AWS {{ $labels.operation }} operations are failing at {{ $value }} operations/sec"
+          runbook_url: "https://github.com/parker-flight/runbooks/aws-troubleshooting.md"

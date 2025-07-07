@@ -1,24 +1,52 @@
 
 import AuthGuard from "@/components/AuthGuard";
-import { Link, useNavigate } from "react-router-dom";
 import { ProfileForm } from "@/components/ProfileForm";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTravelerProfile } from "@/hooks/useTravelerProfile";
 import { SimpleProfileStatus } from "@/components/profile/SimpleProfileStatus";
 import { toast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { ProfileCompletenessScore } from "@/services/profileCompletenessService";
 
 function ProfilePage() {
   const { profile, completion, calculateCompleteness } = useTravelerProfile();
   const [activeTab, setActiveTab] = useState("profile");
   
   // Calculate completeness from profile data if completion tracking is not available
-  const completenessData = completion ? {
-    overall: completion.completion_percentage,
-    missing_fields: completion.missing_fields,
-    recommendations: completion.recommendations
-  } : (profile ? calculateCompleteness(profile) : { overall: 0, missing_fields: [], recommendations: [] });
+  const completenessData: ProfileCompletenessScore = useMemo(() => {
+    if (completion) {
+      return {
+        overall: completion.completion_percentage,
+        categories: {
+          basic_info: 0,
+          contact_info: 0,
+          travel_documents: 0,
+          preferences: 0,
+          verification: 0
+        },
+        missing_fields: completion.missing_fields || [],
+        recommendations: completion.recommendations || []
+      };
+    }
+    
+    if (profile) {
+      return calculateCompleteness(profile);
+    }
+    
+    return {
+      overall: 0,
+      categories: {
+        basic_info: 0,
+        contact_info: 0,
+        travel_documents: 0,
+        preferences: 0,
+        verification: 0
+      },
+      missing_fields: [],
+      recommendations: []
+    };
+  }, [completion, profile, calculateCompleteness]);
   
   const handleActionClick = (action: string) => {
     switch (action) {
@@ -32,7 +60,7 @@ function ProfilePage() {
         // Scroll to the form
         setTimeout(() => {
           const formElement = document.querySelector('[id^="first_name"]');
-          if (formElement) {
+          if (formElement && formElement instanceof HTMLElement) {
             formElement.focus();
           }
         }, 100);
@@ -72,12 +100,6 @@ function ProfilePage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-            <Link
-              to="/dashboard"
-              className="inline-flex items-center text-indigo-600 hover:text-indigo-500 font-medium"
-            >
-              ← Back to Dashboard
-            </Link>
           </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

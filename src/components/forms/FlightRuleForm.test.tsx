@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FlightRuleForm } from './FlightRuleForm';
-import { UnifiedFlightRuleForm } from '@/types/form';
+import { UnifiedFlightRuleForm } from './FlightRuleForm';
 
 // Mock the date inputs to avoid timezone issues in tests
 const mockDate = new Date('2024-07-15T12:00:00.000Z');

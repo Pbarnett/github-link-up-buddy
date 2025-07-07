@@ -223,7 +223,7 @@ export function validateTravelerData(
   // Phone number validation (recommended for all travel)
   if (!traveler.phone?.trim()) {
     warnings.push('A phone number is recommended for travel notifications.');
-  } else if (!/^\+?[\d\s\-\(\)]+$/.test(traveler.phone)) {
+  } else if (!/^\+?[\d\s\-()]+$/.test(traveler.phone)) {
     warnings.push('Please verify your phone number format is correct.');
   }
   

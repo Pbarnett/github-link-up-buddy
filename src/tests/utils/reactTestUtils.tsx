@@ -267,8 +267,8 @@ export const ComponentHelpers = {
     },
     
     async submitForm() {
-      const { screen, userEvent } = await import('@testing-library/react');
-      const user = userEvent.setup();
+      const userEvent = await import('@testing-library/user-event');
+      const user = userEvent.default.setup();
       const submitButton = screen.getByRole('button', { name: /submit/i });
       await user.click(submitButton);
     },

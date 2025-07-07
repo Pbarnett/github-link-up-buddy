@@ -106,7 +106,7 @@ export const setDateFields = async (strategy: 'ui' | 'programmatic' | 'fallback'
       
     } catch (error) {
       console.warn('UI date interaction failed, falling back to programmatic approach');
-      if (strategy !== 'fallback') throw error;
+      if (strategy === 'ui') throw error;
       // Fall through to programmatic approach
     }
   }

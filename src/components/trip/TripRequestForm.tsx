@@ -31,6 +31,7 @@ import LiveBookingSummary from "./LiveBookingSummary";
 import TripSummaryChips from "./sections/TripSummaryChips";
 import AutoBookingSection from "./sections/AutoBookingSection";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import ConfigDrivenTripRequestForm from "./TripRequestForm.config-driven";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -52,7 +53,8 @@ const categorizeAirports = (airports: string[] | null | undefined): { nycAirport
   return { nycAirports: nycSelected, otherAirport: other };
 };
 
-const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProps) => {
+// Legacy implementation (preserved for fallback)
+const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProps) => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { userId } = useCurrentUser();
@@ -627,6 +629,13 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
         </div>
       </div>
     </div>
+  );
+};
+
+// Progressive migration wrapper component
+const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProps) => {
+  return (
+    <ConfigDrivenTripRequestForm tripRequestId={tripRequestId} mode={mode} />
   );
 };
 

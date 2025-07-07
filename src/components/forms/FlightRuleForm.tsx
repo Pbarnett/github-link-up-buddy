@@ -24,7 +24,7 @@ const unifiedFlightFormSchema = z.object({
   path: ['latestReturn'],
 });
 
-type UnifiedFlightRuleForm = z.infer<typeof unifiedFlightFormSchema>;
+export type UnifiedFlightRuleForm = z.infer<typeof unifiedFlightFormSchema>;
 
 interface FlightRuleFormProps {
   onSubmit: (data: UnifiedFlightRuleForm) => void;

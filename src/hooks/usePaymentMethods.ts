@@ -13,6 +13,9 @@ export interface PaymentMethod {
   exp_year: number;
   created_at: string;
   encryption_version?: number;
+  // Commonly used properties for display
+  last4?: string;
+  nickname?: string;
 }
 
 export interface UsePaymentMethodsReturn {
@@ -48,7 +51,10 @@ export const usePaymentMethods = (): UsePaymentMethodsReturn => {
         exp_month: method.exp_month,
         exp_year: method.exp_year,
         created_at: method.created_at,
-        encryption_version: method.encryption_version
+        encryption_version: method.encryption_version,
+        // Extract last4 from card_number_masked (e.g., "****1234" -> "1234")
+        last4: method.card_number_masked?.slice(-4),
+        nickname: method.cardholder_name // Use cardholder_name as nickname for now
       }));
       
       setData(transformedMethods);
