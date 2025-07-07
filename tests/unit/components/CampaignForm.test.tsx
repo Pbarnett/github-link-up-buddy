@@ -11,12 +11,14 @@ import { CampaignFormData } from '@/types/campaign';
 
 // Mock the hooks
 vi.mock('@/hooks/useBusinessRules', () => ({
-  useBusinessRules: vi.fn()
+  useBusinessRules: vi.fn(),
+  BusinessRulesProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock('@/hooks/useFormAnalytics', () => ({
   useFormAnalytics: vi.fn(),
-  useSessionId: vi.fn()
+  useSessionId: vi.fn(),
+  FormAnalyticsProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock('@/hooks/useCurrentUser', () => ({
@@ -24,7 +26,8 @@ vi.mock('@/hooks/useCurrentUser', () => ({
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({
-  toast: vi.fn()
+  toast: vi.fn(),
+  useToast: vi.fn(() => ({ toast: vi.fn() })),
 }));
 
 const mockBusinessRules = {
