@@ -61,3 +61,4 @@ build/
 # Scripts with secrets
 scripts/**/*.secret.*
 scripts/**/*-with-secrets.*
+.env*

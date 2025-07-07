@@ -77,8 +77,9 @@ async function testTwilioSMS() {
   }
 
   try {
-    const testNumber = '+15005550006'; // Twilio magic number that succeeds
-    const messageBody = `Test SMS from Parker Flight - ${new Date().toISOString()}`;
+    // Use real phone number from environment or fallback to magic number for tests
+    const testNumber = process.env.TWILIO_TEST_NUMBER || '+15005550006'; // Twilio magic number that succeeds
+    const messageBody = `Test SMS from Parker Flight production setup - ${new Date().toISOString()}`;
 
     const smsUrl = `https://api.twilio.com/2010-04-01/Accounts/${config.accountSid}/Messages.json`;
     
@@ -141,8 +142,8 @@ async function testSMSEdgeFunction() {
 
   try {
     const testPayload = {
-      phone: '+15005550006', // Twilio magic number
-      message: 'Test from Parker Flight SMS system'
+      phone: process.env.TWILIO_TEST_NUMBER || '+15005550006', // Use real or magic number
+      message: 'Test from Parker Flight SMS Edge Function'
     };
 
     const response = await fetch(edgeFunctionUrl, {
