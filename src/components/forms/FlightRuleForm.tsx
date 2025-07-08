@@ -32,11 +32,19 @@ interface FlightRuleFormProps {
 }
 
 export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaultValues }) => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  
   const form = useForm<UnifiedFlightRuleForm>({
     resolver: zodResolver(unifiedFlightFormSchema),
+    mode: 'onSubmit',
     defaultValues: {
       origin: [],
       destination: '',
+      earliestOutbound: tomorrow,
+      latestReturn: nextWeek,
       cabinClass: 'economy',
       budget: 500,
       autoBookEnabled: false,
@@ -58,7 +66,10 @@ export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaul
                   id="origin" 
                   placeholder="Enter origin airports" 
                   value={Array.isArray(field.value) ? field.value.join(', ') : ''}
-                  onChange={(e) => field.onChange(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+                  onChange={(e) => {
+                    const value = e.target.value.trim();
+                    field.onChange(value ? value.split(',').map(s => s.trim()).filter(Boolean) : []);
+                  }}
                 />
               </FormControl>
               <FormMessage />
