@@ -90,46 +90,48 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
     setError(null);
 
     try {
-      // Fetch user profile data - following data minimization principle
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('first_name')
-        .eq('id', userId)
-        .single();
+      // Use the deployed edge function for personalization data
+      const { data: personalizationResult, error: functionError } = await supabase.functions.invoke(
+        'get-personalization-data',
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-      if (profileError) {
-        throw new Error(`Profile fetch failed: ${profileError.message}`);
+      if (functionError) {
+        throw new Error(`Edge function failed: ${functionError.message}`);
       }
 
-      // Fetch next trip data from trip_requests (optional enhancement)
-      const { data: nextTrip, error: tripError } = await supabase
-        .from('trip_requests')
-        .select('destination_airport, destination_location_code')
-        .eq('user_id', userId)
-        .eq('auto_book_enabled', true)
-        .order('earliest_departure', { ascending: true })
-        .limit(1)
-        .maybeSingle(); // Use maybeSingle to handle no results gracefully
-
-      // Note: tripError for no results is expected and not an error condition
-      if (tripError && tripError.code !== 'PGRST116') {
-        console.warn('Next trip fetch failed:', tripError);
+      if (!personalizationResult) {
+        throw new Error('No personalization data returned from edge function');
       }
 
-      // Build personalization data with privacy-safe defaults
-      const personalizationResult: PersonalizationData = {
-        firstName: profile?.first_name || undefined,
-        nextTripCity: nextTrip?.destination_airport || nextTrip?.destination_location_code || undefined,
+      // Edge function returns: { firstName, nextTripCity, personalizationEnabled }
+      const personalizationData: PersonalizationData = {
+        firstName: personalizationResult.firstName || undefined,
+        nextTripCity: personalizationResult.nextTripCity || undefined,
         // loyaltyTier: undefined, // Can be added later
       };
 
-      setPersonalizationData(personalizationResult);
+      setPersonalizationData(personalizationData);
       
       // Log analytics event (without exposing personal data)
-      console.log('🎯 Personalization data loaded:', {
-        hasFirstName: !!personalizationResult.firstName,
-        hasNextTrip: !!personalizationResult.nextTripCity,
+      console.log('🎯 Personalization data loaded from edge function:', {
+        hasFirstName: !!personalizationData.firstName,
+        hasNextTrip: !!personalizationData.nextTripCity,
         userId: userId.slice(0, 8), // Log only partial ID for debugging
+        functionResponse: {
+          personalizationEnabled: personalizationResult.personalizationEnabled,
+        },
+      });
+
+      // Track successful data fetch
+      await trackPersonalizationEvent('exposure', 'data_fetched', {
+        hasFirstName: !!personalizationData.firstName,
+        hasNextTrip: !!personalizationData.nextTripCity,
+        source: 'edge_function',
       });
 
     } catch (err) {
@@ -145,6 +147,12 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
       setPersonalizationData(null);
       
       console.error('❌ Personalization fetch failed:', personalizationError);
+      
+      // Track error event
+      await trackPersonalizationEvent('exposure', 'data_fetch_failed', {
+        error: errorMessage,
+        source: 'edge_function',
+      });
     } finally {
       setLoading(false);
     }
