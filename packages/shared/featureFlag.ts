@@ -59,3 +59,26 @@ export interface FeatureFlagResponse {
   bucket?: number;
   rollout_percentage?: number;
 }
+
+/**
+ * Check if a feature flag is enabled for a specific user
+ * This is the main function used throughout the application
+ * @param flag - The feature flag object from the database
+ * @param userId - The user ID to check
+ * @returns true if the feature should be enabled for this user
+ */
+export function isEnabled(flag: FeatureFlag, userId: string): boolean {
+  if (!flag.enabled) return false;
+  
+  const rollout = flag.rollout_percentage ?? 100;
+  return userInBucket(userId, rollout);
+}
+
+/**
+ * Get the feature flag hash for a user (for debugging/monitoring)
+ * @param userId - The user ID to hash
+ * @returns hash value used for bucketing
+ */
+export function getFeatureFlagHash(userId: string): number {
+  return murmur.murmur3(userId) % 100;
+}
