@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { userInBucket } from '../../../packages/shared/featureFlag';
+import { userInBucket } from '@shared/featureFlag';
 
 interface FeatureFlagResponse {
   enabled: boolean;

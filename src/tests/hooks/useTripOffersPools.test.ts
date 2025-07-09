@@ -9,7 +9,7 @@ vi.mock('@/integrations/supabase/client', () => ({
     from: vi.fn(() => ({
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
-          single: vi.fn()
+          single: vi.fn(() => ({ data: { id: 'test-trip-id', earliest_departure: '', latest_departure: '', min_duration: 0, max_duration: 0, budget: 1000 }, error: null }))
         }))
       }))
     }))
@@ -21,7 +21,13 @@ vi.mock('react-router-dom', () => ({
 }));
 
 vi.mock('@/services/api/flightSearchApi', () => ({
-  fetchFlightSearch: vi.fn()
+  fetchFlightSearch: vi.fn(() => Promise.resolve({
+    pool1: [],
+    pool2: [],
+    pool3: [],
+    success: true,
+    message: 'Test success'
+  }))
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({

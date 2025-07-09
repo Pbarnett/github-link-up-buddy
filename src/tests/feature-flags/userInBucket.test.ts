@@ -1,4 +1,4 @@
-import { userInBucket, getUserBucket } from '../../../packages/shared/featureFlag';
+import { userInBucket, getUserBucket } from '@shared/featureFlag';
 
 describe('userInBucket', () => {
   // Test that verifies the hash algorithm produces consistent results
