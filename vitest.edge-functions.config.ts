@@ -16,7 +16,7 @@ export default defineConfig({
     globals: true,
     environment: 'node', // Edge functions run in Node-like environment
     setupFiles: ['./src/tests/setupEdgeFunctionTests.ts'],
-    include: ['supabase/functions/**/*.test.ts'],
+    include: ['supabase/functions/**/*.test.ts', 'tests/edge/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       statements: 90,
