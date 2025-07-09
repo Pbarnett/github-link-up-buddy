@@ -23,13 +23,15 @@ class MockResizeObserver {
   disconnect() {}
 }
 
-Object.defineProperty(window, 'ResizeObserver', {
-  writable: true,
-  configurable: true,
-  value: MockResizeObserver,
-});
-
-global.ResizeObserver = MockResizeObserver;
+// Only define ResizeObserver if it doesn't exist
+if (!window.ResizeObserver) {
+  Object.defineProperty(window, 'ResizeObserver', {
+    writable: true,
+    configurable: true,
+    value: MockResizeObserver,
+  });
+  global.ResizeObserver = MockResizeObserver;
+}
 
 // Mock UI components to avoid complex rendering issues
 vi.mock('@/components/ui/slider', () => ({

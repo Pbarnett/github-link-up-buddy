@@ -39,27 +39,29 @@ describe('FlightRuleForm', () => {
   });
 
   it('displays validation errors for empty required fields', async () => {
-    const user = userEvent.setup();           // real timers
+    const user = userEvent.setup();
     render(<FlightRuleForm onSubmit={mockOnSubmit} />);
 
-    // Clear required fields to make them invalid
+    // Get inputs
     const originInput = screen.getByLabelText(/origin airports/i);
     const destinationInput = screen.getByLabelText(/destination/i);
     
-    await user.clear(originInput);
-    await user.clear(destinationInput);
+    // For onChange mode, we need to actually type and delete to trigger validation
+    await user.type(originInput, 'JFK');
+    await user.clear(originInput); // This should trigger validation for empty array
+    
+    await user.type(destinationInput, 'LAX');
+    await user.clear(destinationInput); // This should trigger validation for empty string
 
-    // submit
-    await user.click(screen.getByRole('button', { name: /submit/i }));
-
-    // wait for first error message to appear - using exact text from Zod schema
+    // With onChange mode, errors should appear immediately
     expect(
       await screen.findByText('At least one departure airport must be selected')
     ).toBeInTheDocument();
     
-    // chain other expectations with exact error messages
     expect(await screen.findByText('Please provide a destination')).toBeInTheDocument();
 
+    // Form submission should be blocked
+    await user.click(screen.getByRole('button', { name: /submit/i }));
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
@@ -77,8 +79,9 @@ describe('FlightRuleForm', () => {
 
     render(<FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues} />);
 
-    // submit
-    await user.click(screen.getByRole('button', { name: /submit/i }));
+    // submit using fireEvent.submit directly on the form
+    const form = screen.getByRole('form');
+    fireEvent.submit(form);
 
     // wait for form submission
     await waitFor(() => expect(mockOnSubmit).toHaveBeenCalled());
@@ -154,8 +157,6 @@ describe('FlightRuleForm', () => {
     // Fill required fields
     const originInput = screen.getByLabelText(/origin airports/i);
     const destinationInput = screen.getByLabelText(/destination/i);
-    const outboundInput = screen.getByLabelText(/earliest outbound/i);
-    const returnInput = screen.getByLabelText(/latest return/i);
     const budgetInput = screen.getByLabelText(/budget/i);
     
     await user.clear(originInput);
@@ -163,24 +164,15 @@ describe('FlightRuleForm', () => {
     await user.clear(destinationInput);
     await user.type(destinationInput, 'LAX');
     
-    const validOutboundDate = new Date();
-    validOutboundDate.setDate(validOutboundDate.getDate() + 8);
-    const validReturnDate = new Date();
-    validReturnDate.setDate(validReturnDate.getDate() + 15);
-    
-    fireEvent.change(outboundInput, { target: { value: validOutboundDate.toISOString().split('T')[0] } });
-    fireEvent.change(returnInput, { target: { value: validReturnDate.toISOString().split('T')[0] } });
-    
-    // Test minimum budget validation
-    await user.clear(budgetInput);
-    await user.type(budgetInput, '50');
+    // Test minimum budget validation with onChange mode
+    // Use fireEvent.change to directly set the value
+    fireEvent.change(budgetInput, { target: { value: '50' } });
 
-    const submitButton = screen.getByRole('button', { name: /submit/i });
-    
-    await user.click(submitButton);
-    
+    // With onChange mode, error should appear immediately after typing
     expect(await screen.findByText('Budget must be at least $100')).toBeInTheDocument();
 
+    // Form submission should be blocked
+    await user.click(screen.getByRole('button', { name: /submit/i }));
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 

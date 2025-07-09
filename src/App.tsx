@@ -7,6 +7,8 @@ import { SmartErrorBoundary } from "@/components/ErrorBoundary";
 import { useRetryQueue } from "@/utils/retryQueue";
 import { useEffect } from "react";
 import { BusinessRulesProvider } from "./hooks/useBusinessRules";
+import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 // Import dev auth for easy development authentication
 import "@/utils/devAuth";
 import "@/utils/authTest";
@@ -76,6 +78,17 @@ const GlobalMiddleware = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Personalization wrapper to provide user context
+const PersonalizationWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { userId } = useCurrentUser();
+  
+  return (
+    <PersonalizationProvider userId={userId || undefined}>
+      {children}
+    </PersonalizationProvider>
+  );
+};
+
 const App = () => {
   return (
     <SmartErrorBoundary level="global">
@@ -93,9 +106,10 @@ const App = () => {
                 v7_relativeSplatPath: true
               }}
             >
-              <NavigationWrapper />
-              <BreadcrumbsWrapper />
-              <main id="main" className="flex-1 overflow-auto">
+              <PersonalizationWrapper>
+                <NavigationWrapper />
+                <BreadcrumbsWrapper />
+                <main id="main" className="flex-1 overflow-auto">
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
@@ -202,7 +216,8 @@ const App = () => {
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </main>
+                </main>
+              </PersonalizationWrapper>
             </BrowserRouter>
             </GlobalMiddleware>
           </TooltipProvider>

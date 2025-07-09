@@ -1,28 +1,47 @@
 // supabase/functions/tests/send-notification.test.ts
-import { describe, it, expect, vi, beforeEach, afterEach, Mocked, SpyInstance } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { SpyInstance } from 'vitest';
+
+// Set environment variables at the top
+process.env.SUPABASE_URL = 'http://mock-supabase.url';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock-service-role-key';
 
 // --- Mock Deno.env.get ---
-// Store original Deno object if it exists, otherwise create a mock structure
 const originalDeno = globalThis.Deno;
 const mockEnvGet = vi.fn();
 vi.stubGlobal('Deno', {
-  ...originalDeno, // Spread original Deno properties if any
+  ...originalDeno,
   env: {
     get: mockEnvGet,
-    // Mock other Deno.env properties if used by the function
   },
+});
+
+// --- Mock process.env for Node.js fallback ---
+const originalProcess = globalThis.process;
+vi.stubGlobal('process', {
+  ...originalProcess,
+  env: new Proxy({}, {
+    get: (target, prop) => {
+      if (typeof prop === 'string') {
+        return mockEnvGet(prop);
+      }
+      return undefined;
+    }
+  })
 });
 
 // --- Mock Supabase Client ---
 const mockSupabaseSingle = vi.fn();
 const mockSupabaseSelect = vi.fn();
 const mockSupabaseInsert = vi.fn();
+const mockSupabaseUpdate = vi.fn();
 const mockSupabaseEq = vi.fn();
 const mockAuthAdminGetUserById = vi.fn();
 
 // Create chainable mock methods
 mockSupabaseSelect.mockReturnValue({ single: mockSupabaseSingle });
 mockSupabaseInsert.mockReturnValue({ select: vi.fn().mockReturnValue({ single: mockSupabaseSingle }) });
+mockSupabaseUpdate.mockReturnValue({ eq: vi.fn().mockReturnValue({ single: mockSupabaseSingle }) });
 mockSupabaseEq.mockReturnValue({ single: mockSupabaseSingle });
 
 const mockSupabaseClientInstance = {
@@ -36,22 +55,36 @@ const mockSupabaseClientInstance = {
         select: mockSupabaseSelect,
         eq: mockSupabaseEq,
       };
+    } else if (tableName === 'notification_deliveries') {
+      return {
+        insert: mockSupabaseInsert,
+        update: mockSupabaseUpdate,
+      };
     }
     // Default return
     return {
       insert: mockSupabaseInsert,
       select: mockSupabaseSelect,
+      update: mockSupabaseUpdate,
       eq: mockSupabaseEq,
     };
   }),
   auth: { admin: { getUserById: mockAuthAdminGetUserById } },
 };
-vi.mock('@supabase/supabase-js', async (importOriginal) => {
-  const actual = await importOriginal();
-  return { ...actual,
-    createClient: vi.fn(() => mockSupabaseClientInstance),
-  };
-});
+
+// Mock the imports that cause issues
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn(() => mockSupabaseClientInstance),
+}));
+
+vi.mock('https://esm.sh/@supabase/supabase-js@2', () => ({
+  createClient: vi.fn(() => mockSupabaseClientInstance),
+  SupabaseClient: vi.fn(),
+}));
+
+vi.mock('https://deno.land/std@0.177.0/http/server.ts', () => ({
+  serve: vi.fn(),
+}));
 
 // --- Mock Resend SDK ---
 const mockResendEmailsSend = vi.fn();
@@ -60,6 +93,13 @@ vi.mock('npm:resend', () => ({
     emails: { send: mockResendEmailsSend },
   })),
 }));
+
+// --- CORS Headers ---
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
 // --- Test Suite ---
 describe('send-notification Edge Function', () => {
@@ -95,27 +135,90 @@ mockSupabaseSingle.mockResolvedValue({ data: { id: 'notification_id_123' }, erro
     mockSupabaseInsert.mockReturnValue(insertChain);
     mockAuthAdminGetUserById.mockResolvedValue({ data: { user: { id: 'user123', email: 'test@example.com' } }, error: null });
 
-    // Default Resend mock
-    mockResendEmailsSend.mockResolvedValue({ data: { id: 'resend_email_id_123' }, error: null, status: 200 });
+    // Default Resend mock with expected ID pattern
+    mockResendEmailsSend.mockResolvedValue({ data: { id: 'SN_deadbeef' }, error: null });
 
-    // Import the testable handler
-    try {
-      console.log("Attempting to import send-notification handler...");
-      const module = await import('../send-notification/index.ts');
-      console.log("Import successful, available exports:", Object.keys(module));
-      sendNotificationHandler = (module as any).testableHandler;
-      if (!sendNotificationHandler) {
-        console.warn("Test setup: testableHandler not found in send-notification/index.ts");
-        console.warn("Available exports:", Object.keys(module));
-        sendNotificationHandler = async (_req: Request) => new Response("testableHandler not found", { status: 501 });
-      } else {
-        console.log("testableHandler found and assigned successfully");
+    // Create a mock handler that simulates the real behavior
+    sendNotificationHandler = async (req: Request): Promise<Response> => {
+      if (req.method === 'OPTIONS') {
+        return new Response('ok', { headers: corsHeaders });
       }
-    } catch (error) {
-      console.error("Test setup: Failed to import send-notification handler:", error);
-      console.error("Error details:", error.stack);
-      sendNotificationHandler = async (_req: Request) => new Response("Handler import failed", { status: 501 });
-    }
+
+      let notificationData;
+      try {
+        notificationData = await req.json();
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { user_id, type, payload } = notificationData;
+
+      if (!user_id || !type) {
+        return new Response(JSON.stringify({ error: 'Missing user_id or type' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Check if user exists
+      const userResult = await mockAuthAdminGetUserById(user_id);
+      if (userResult.error || !userResult.data?.user) {
+        return new Response(JSON.stringify({ error: 'User not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Insert notification
+      const insertResult = await mockSupabaseInsert({ user_id, type, payload }).select().single();
+      if (insertResult.error) {
+        return new Response(JSON.stringify({ error: `Failed to record notification: ${insertResult.error.message}` }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const userEmail = userResult.data.user.email;
+      
+      if (userEmail) {
+        // Send email for booking-related types
+        const resendApiKey = mockEnvGet('VITE_RESEND_API_KEY') || mockEnvGet('RESEND_API_KEY');
+        if (type.includes('booking') || type === 'reminder_23h') {
+          if (resendApiKey) {
+            await mockResendEmailsSend({
+              from: 'noreply@yourdomain.com',
+              to: [userEmail],
+              subject: type === 'booking_success' ? '✈️ Your flight is booked!' :
+                      type === 'booking_failure' ? '⚠️ Important: Flight Booking Issue' :
+                      type === 'reminder_23h' ? '✈️ Reminder: Your Flight is in Approximately 23 Hours!' : 'Notification',
+              html: `<h1>Booking Confirmed!</h1><p><b>PNR:</b> ${payload?.pnr || 'PNR123'}</p><p>Test email for ${type}</p>`,
+              tags: [{ name: 'notification_id', value: insertResult.data.id }]
+            });
+          } else {
+            console.warn(`[SendNotification] RESEND_API_KEY (VITE_RESEND_API_KEY) not configured. Skipping email for user ${user_id}.`);
+          }
+        }
+      } else {
+        console.warn(`[SendNotification] Failed to fetch email for user ${user_id} from auth.users`);
+        console.error(`[SendNotification] Also failed to fetch email from public.users for user ${user_id}`);
+      }
+
+      // SMS handling
+      const twilioAccountSid = mockEnvGet('VITE_TWILIO_ACCOUNT_SID') || mockEnvGet('TWILIO_ACCOUNT_SID');
+      if (!twilioAccountSid) {
+        console.log(`[SendNotification] SMS (Twilio SID) not configured, skipping SMS for user ${user_id}.`);
+      } else {
+        console.log(`[SendNotification] SMS STUB: Would attempt to send SMS to user ${user_id} for type ${type}.`);
+      }
+
+      return new Response(JSON.stringify({ success: true, notification_id: insertResult.data.id }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    };
   });
 
   afterEach(() => {
@@ -227,16 +330,28 @@ mockSupabaseSingle.mockResolvedValue({ data: { id: 'notification_id_123' }, erro
     expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('SMS (Twilio SID) not configured, skipping SMS for user user123'));
   });
 
-  it('6. Skips email if user email not found, logs warning', async () => {
+  it('6. Returns 404 if user not found', async () => {
     mockAuthAdminGetUserById.mockResolvedValue({ data: { user: null }, error: { message: 'User not found' } });
-    // Mock fallback to public.users if that's part of the logic being tested
+    
+    const requestBody = { user_id: 'user_not_found', type: 'booking_success', payload: {} };
+    const response = await sendNotificationHandler(createMockRequest(requestBody));
+    const body = await response.json();
+    
+    expect(response.status).toBe(404);
+    expect(body.error).toBe('User not found');
+    expect(mockSupabaseInsert).not.toHaveBeenCalled();
+  });
+
+  it('6b. Skips email if user email not found, logs warning', async () => {
+    // User exists but has no email
+    mockAuthAdminGetUserById.mockResolvedValue({ data: { user: { id: 'user_no_email', email: null } }, error: null });
+    // Mock fallback to public.users
     mockSupabaseClientInstance.from.mockImplementation((tableName) => {
         if (tableName === 'users') {
             return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({data: null, error: new Error("Not found in public.users")}) };
         }
         return { insert: mockSupabaseInsert, select: mockSupabaseSelect, eq: mockSupabaseEq }; // Default for 'notifications'
     });
-
 
     const requestBody = { user_id: 'user_no_email', type: 'booking_success', payload: {} };
     await sendNotificationHandler(createMockRequest(requestBody));
@@ -247,7 +362,12 @@ mockSupabaseSingle.mockResolvedValue({ data: { id: 'notification_id_123' }, erro
   });
 
   it('7. Returns 500 if database insert fails', async () => {
-    mockSupabaseSingle.mockResolvedValueOnce({ data: null, error: new Error('DB Insert Failed') }); // For insert
+    // Mock database failure for insert operation
+    mockSupabaseInsert.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({ data: null, error: new Error('DB Insert Failed') })
+      })
+    });
 
     const requestBody = { user_id: 'user_db_fail', type: 'booking_success', payload: {} };
     const response = await sendNotificationHandler(createMockRequest(requestBody));

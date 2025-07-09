@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { CampaignFormData } from "@/types/campaign";
 import { Calendar, MapPin, DollarSign, Plane, User, CreditCard } from "lucide-react";
-import { ConfigDrivenCampaignForm } from "./CampaignForm.config-driven";
+// import { ConfigDrivenCampaignForm } from "./CampaignForm.config-driven";
 
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
@@ -275,9 +275,13 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
 // Progressive migration wrapper component
 export const CampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, initialData }: CampaignFormProps) => {
   return (
-    }>
-      <ConfigDrivenCampaignForm onSubmit={onSubmit} onCancel={onCancel} isSubmitting={isSubmitting} submitLabel={submitLabel} initialData={initialData} />
-    
+    <LegacyCampaignForm 
+      onSubmit={onSubmit} 
+      onCancel={onCancel} 
+      isSubmitting={isSubmitting} 
+      submitLabel={submitLabel} 
+      initialData={initialData} 
+    />
   );
 };
 

@@ -31,7 +31,6 @@ import LiveBookingSummary from "./LiveBookingSummary";
 import TripSummaryChips from "./sections/TripSummaryChips";
 import AutoBookingSection from "./sections/AutoBookingSection";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import ConfigDrivenTripRequestForm from "./TripRequestForm.config-driven";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -635,7 +634,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
 // Progressive migration wrapper component
 const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProps) => {
   return (
-    <ConfigDrivenTripRequestForm tripRequestId={tripRequestId} mode={mode} />
+    <LegacyTripRequestForm tripRequestId={tripRequestId} mode={mode} />
   );
 };
 

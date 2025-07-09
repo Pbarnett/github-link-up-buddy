@@ -8,6 +8,30 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 // --- Mock Dependencies ---
 
+// Mock personalization hook
+vi.mock('@/contexts/PersonalizationContext', async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    usePersonalization: () => ({
+      personalizationData: { firstName: 'John' },
+      loading: false,
+      error: null,
+      abTestVariant: 'treatment',
+      experimentConfig: {},
+      trackPersonalizationEvent: vi.fn(),
+      isPersonalizationEnabled: true,
+    }),
+  };
+});
+
+// Mock useAnalytics hook
+vi.mock('@/hooks/useAnalytics', () => ({
+  useAnalytics: () => ({
+    track: vi.fn(),
+  }),
+}));
+
 // Mock Supabase client
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
@@ -129,8 +153,8 @@ describe('Dashboard Page', () => {
 
   it('2. Renders "Active Watches" tab by default when authenticated', async () => {
     renderDashboardWithRouter();
-    await waitFor(() => expect(screen.getByText(`Welcome back,`)).toBeInTheDocument());
-    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
+    await screen.findByText(/welcome back, john/i);
+    expect(screen.getByText(new RegExp(mockUser.email.split('@')[0], 'i'))).toBeInTheDocument();
 
     expect(screen.getByRole('tab', { name: /Active Watches/i, selected: true })).toBeInTheDocument();
     expect(screen.getByText(/TestAir TA101/i)).toBeInTheDocument();
@@ -141,8 +165,8 @@ describe('Dashboard Page', () => {
   it('3. Switches to "My Trips" tab, renders TripHistory component with userId', async () => {
     const user = userEvent.setup();
     renderDashboardWithRouter();
-    await waitFor(() => expect(screen.getByText(`Welcome back,`)).toBeInTheDocument());
-    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
+    await screen.findByText(/welcome back, john/i);
+    expect(screen.getByText(new RegExp(mockUser.email.split('@')[0], 'i'))).toBeInTheDocument();
 
     // Wait for booking requests to be displayed (indicating data has loaded)
     await waitFor(() => expect(screen.getByText(/TestAir TA101/i)).toBeInTheDocument());
@@ -162,8 +186,8 @@ describe('Dashboard Page', () => {
   it('4. Switches back to "Active Watches" tab', async () => {
     const user = userEvent.setup();
     renderDashboardWithRouter();
-    await waitFor(() => expect(screen.getByText(`Welcome back,`)).toBeInTheDocument());
-    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
+    await screen.findByText(/welcome back, john/i);
+    expect(screen.getByText(new RegExp(mockUser.email.split('@')[0], 'i'))).toBeInTheDocument();
 
     // Wait for booking requests to be displayed (indicating data has loaded)
     await waitFor(() => expect(screen.getByText(/TestAir TA101/i)).toBeInTheDocument());
@@ -188,7 +212,7 @@ describe('Dashboard Page', () => {
     await waitFor(() => {
       expect(screen.getByTestId('navigate-mock')).toHaveTextContent('Redirecting to /login');
     });
-    expect(screen.queryByText(`Welcome back,`)).not.toBeInTheDocument();
-    expect(screen.queryByText(mockUser.email)).not.toBeInTheDocument();
+    expect(screen.queryByText(/welcome back, john/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(new RegExp(mockUser.email.split('@')[0], 'i'))).not.toBeInTheDocument();
   });
 });

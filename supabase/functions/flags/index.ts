@@ -98,13 +98,17 @@ export default async function handler(req: Request): Promise<Response> {
       rollout_percentage: row.rollout_percentage
     };
 
-    // Add canary header for monitoring
+    // Add comprehensive monitoring headers
     const headers = {
       ...corsHeaders,
       'Content-Type': 'application/json',
       'x-canary': enabled.toString(),
       'x-user-bucket': userBucket.toString(),
-      'x-rollout-percentage': row.rollout_percentage.toString()
+      'x-rollout-percentage': row.rollout_percentage.toString(),
+      'x-flag-name': flag,
+      'x-flag-enabled': row.enabled.toString(),
+      'x-timestamp': new Date().toISOString(),
+      'x-function-version': '1.0.0'
     };
 
     return new Response(

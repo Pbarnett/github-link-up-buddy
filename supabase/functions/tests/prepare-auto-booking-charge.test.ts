@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createSupabaseMock } from '../../../src/tests/mocks/supabase-mock';
 
+// Use the proven Supabase mock structure
+const { supabase: mockSupabaseClient, mocks } = createSupabaseMock();
+
 // Mock Stripe
 const mockStripeInstance = {
   paymentIntents: {
@@ -12,12 +15,31 @@ vi.mock('../lib/stripe.ts', () => ({
   stripe: mockStripeInstance,
 }));
 
-// Use the proven Supabase mock structure
-const { supabase: mockSupabaseClient, mocks } = createSupabaseMock();
+// Mock the HTTPS imports that cause ESM loader issues
+vi.mock('https://deno.land/std@0.168.0/http/server.ts', () => ({
+  serve: vi.fn(),
+}));
+
+vi.mock('https://esm.sh/@supabase/supabase-js@2.45.0', () => ({
+  createClient: vi.fn(() => mockSupabaseClient),
+}));
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => mockSupabaseClient),
 }));
+
+// Mock Deno environment
+vi.stubGlobal('Deno', {
+  env: {
+    get: vi.fn((key: string) => {
+      const envVars: Record<string, string> = {
+        'SUPABASE_URL': 'http://localhost:54321',
+        'SUPABASE_SERVICE_ROLE_KEY': 'test-service-role-key'
+      };
+      return envVars[key];
+    })
+  }
+});
 
 describe('prepare-auto-booking-charge', () => {
   beforeEach(() => {

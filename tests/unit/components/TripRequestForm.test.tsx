@@ -114,9 +114,10 @@ describe('TripRequestForm Mode Handling', () => {
     expect(screen.getByText('Destination')).toBeInTheDocument();
     expect(screen.getByText('Departure Airports')).toBeInTheDocument();
     
-    // The travel date section might have a different label or be split across elements
-    // Let's check for more flexible text matching
-    expect(screen.getByText(/travel/i)).toBeInTheDocument();
+    // Check for the specific heading instead of generic 'travel' text
+    expect(screen.getByRole('heading', { name: /Trip Basics/i })).toBeInTheDocument();
+    // Or check for specific travel-related labels
+    expect(screen.getByText(/When do you want to travel\?/i)).toBeInTheDocument();
     
     // Should NOT show auto-booking section in step 1
     expect(screen.queryByText('Maximum Price')).not.toBeInTheDocument();

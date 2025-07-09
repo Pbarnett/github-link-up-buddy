@@ -22,6 +22,19 @@ scrape_configs:
     params:
       format: ['prometheus']
 
+  # Parker Flight Health endpoint (Supabase Edge Function)
+  - job_name: 'parker-flight-health'
+    static_configs:
+      - targets: ['YOUR_SUPABASE_PROJECT_ID.supabase.co']
+    metrics_path: '/functions/v1/health'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    scheme: https
+    params:
+      format: ['prometheus']
+    headers:
+      Authorization: 'Bearer YOUR_SUPABASE_ANON_KEY'
+
 alerting:
   alertmanagers:
     - static_configs:

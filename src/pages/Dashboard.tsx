@@ -10,6 +10,7 @@ import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye, PlusCircle, Plane, Calendar, DollarSign, Activity, TrendingUp } from 'lucide-react';
 import TripHistory from '@/components/dashboard/TripHistory'; // Added import
+import { DashboardGreeting } from '@/components/personalization/GreetingBanner';
 
 interface BookingRequest {
   id: string;
@@ -380,9 +381,11 @@ const Dashboard = () => {
             <h1 className="heading-primary bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
               Dashboard
             </h1>
-            <p className="text-lg text-gray-600 font-medium">
-              Welcome back, <span className="text-brand-blue font-semibold">{user.email}</span>
-            </p>
+            <DashboardGreeting 
+              userId={user.id}
+              variant="default"
+              className="text-lg text-gray-600 font-medium"
+            />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <Button

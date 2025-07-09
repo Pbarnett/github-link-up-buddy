@@ -1,75 +1,68 @@
+import { useQuery } from '@tanstack/react-query';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { userInBucket } from '../../../packages/shared/featureFlag';
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+interface FeatureFlagResponse {
+  enabled: boolean;
+  bucket?: number;
+  rollout_percentage?: number;
+}
 
-export const useFeatureFlag = (flagName: string, defaultValue: boolean = false): boolean => {
-  const [isEnabled, setIsEnabled] = useState(defaultValue);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchFeatureFlag = async () => {
+export const useFeatureFlag = (flagName: string, defaultValue: boolean = false) => {
+  const { user } = useCurrentUser();
+  
+  return useQuery({
+    queryKey: ['feature-flag', flagName, user?.id],
+    queryFn: async (): Promise<boolean> => {
+      if (!user?.id) return defaultValue;
+      
       try {
-        // Check if supabase client is available
-        if (!supabase) {
-          console.warn(`Supabase client not available for feature flag '${flagName}', using default:`, defaultValue);
-          setIsEnabled(defaultValue);
-          setIsLoading(false);
-          return;
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        const response = await fetch(`${supabaseUrl}/functions/v1/flags`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`,
+          },
+          body: JSON.stringify({ 
+            flag: flagName, 
+            user_id: user.id 
+          }),
+        });
+        
+        if (!response.ok) {
+          console.warn(`Feature flag API error for '${flagName}':`, response.status);
+          return defaultValue;
         }
-
-        const { data, error } = await supabase
-          .from('feature_flags')
-          .select('enabled')
-          .eq('name', flagName)
-          .maybeSingle();
-
-        if (error) {
-          console.warn(`Error fetching feature flag '${flagName}':`, error.message);
-          // For specific flags, use production defaults when DB fails
-          if (flagName === 'use_new_pools_ui') {
-            console.warn('Using production default: enabling new pools UI');
-            setIsEnabled(true);
-          } else if (flagName === 'flight_search_v2_enabled') {
-            console.warn('Using production default: enabling V2 flight search');
-            setIsEnabled(true);
-          } else {
-            setIsEnabled(defaultValue);
-          }
-        } else if (data) {
-          setIsEnabled(data.enabled);
-        } else {
-          console.warn(`Feature flag '${flagName}' not found, using default value:`, defaultValue);
-          // For specific flags, use production defaults when not found
-          if (flagName === 'use_new_pools_ui') {
-            console.warn('Flag not found: enabling new pools UI as production default');
-            setIsEnabled(true);
-          } else if (flagName === 'flight_search_v2_enabled') {
-            console.warn('Flag not found: enabling V2 flight search as production default');
-            setIsEnabled(true);
-          } else {
-            setIsEnabled(defaultValue);
-          }
-        }
+        
+        const data: FeatureFlagResponse = await response.json();
+        return data.enabled;
       } catch (error) {
         console.error(`Error fetching feature flag '${flagName}':`, error);
-        // For specific flags, use production defaults when errors occur
-        if (flagName === 'use_new_pools_ui') {
-          console.warn('Error fetching flag: enabling new pools UI as production default');
-          setIsEnabled(true);
-        } else if (flagName === 'flight_search_v2_enabled') {
-          console.warn('Error fetching flag: enabling V2 flight search as production default');
-          setIsEnabled(true);
-        } else {
-          setIsEnabled(defaultValue);
-        }
-      } finally {
-        setIsLoading(false);
+        return defaultValue;
       }
-    };
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+    refetchOnWindowFocus: false,
+  });
+};
 
-    fetchFeatureFlag();
-  }, [flagName, defaultValue]);
+// Legacy hook for backward compatibility
+export const useFeatureFlagLegacy = (flagName: string, defaultValue: boolean = false): boolean => {
+  const result = useFeatureFlag(flagName, defaultValue);
+  return result.data ?? defaultValue;
+};
 
-  // Return the default value while loading to prevent UI flicker
-  return isLoading ? defaultValue : isEnabled;
+// Client-side feature flag evaluation (for cases where you have the rollout percentage)
+export const useClientFeatureFlag = (flagName: string, rolloutPercentage: number, defaultValue: boolean = false): boolean => {
+  const { user } = useCurrentUser();
+  
+  if (!user?.id) return defaultValue;
+  
+  return userInBucket(user.id, rolloutPercentage);
 };

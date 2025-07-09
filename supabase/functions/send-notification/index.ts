@@ -175,7 +175,7 @@ const corsHeaders = {
 };
 
 // Export the handler for testing
-export const testableHandler = async (req: Request): Promise<Response> => {
+export const handler = async (req: Request): Promise<Response> => {
   // Initialize environment if not already done
   if (!createClient) {
     await initializeEnvironment();
@@ -205,7 +205,17 @@ export const testableHandler = async (req: Request): Promise<Response> => {
     });
   }
 
+  // Check if user exists first
   const supabaseAdmin = getSupabaseAdmin();
+  const { data: { user: userExists }, error: userCheckError } = await supabaseAdmin.auth.admin.getUserById(user_id);
+  
+  if (userCheckError || !userExists) {
+    console.warn(`[SendNotification] User not found: ${user_id}`);
+    return new Response(JSON.stringify({ error: 'User not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
   let userEmail: string | null = null;
 
   try {
@@ -379,10 +389,13 @@ export const testableHandler = async (req: Request): Promise<Response> => {
   }
 };
 
+export const testableHandler = handler;
+export default handler;
+
 // Initialize and serve the handler when running in Deno
 if (typeof Deno !== 'undefined') {
   initializeEnvironment().then(() => {
-    serve(testableHandler);
+    serve(handler);
   }).catch(error => {
     console.error('Failed to initialize Deno environment:', error);
   });

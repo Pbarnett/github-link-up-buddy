@@ -24,7 +24,7 @@ const corsHeaders = {
 };
 
 // Export testable handler
-export const testableHandler = async (req: Request): Promise<Response> => {
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -161,5 +161,8 @@ export const testableHandler = async (req: Request): Promise<Response> => {
   }
 };
 
+export const testableHandler = handler;
+export default handler;
+
 // Initialize and serve the handler
-serve(testableHandler);
+serve(handler);
