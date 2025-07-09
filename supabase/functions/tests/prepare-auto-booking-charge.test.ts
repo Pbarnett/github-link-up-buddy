@@ -15,14 +15,10 @@ vi.mock('../lib/stripe.ts', () => ({
   stripe: mockStripeInstance,
 }));
 
-// Mock the HTTPS imports that cause ESM loader issues
-vi.mock('https://deno.land/std@0.168.0/http/server.ts', () => ({
+// Mock the standard library serve function for Deno edge functions
+vi.mock('deno-serve', () => ({
   serve: vi.fn(),
-}));
-
-vi.mock('https://esm.sh/@supabase/supabase-js@2.45.0', () => ({
-  createClient: vi.fn(() => mockSupabaseClient),
-}));
+}), { virtual: true });
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => mockSupabaseClient),

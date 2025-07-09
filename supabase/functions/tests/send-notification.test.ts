@@ -77,14 +77,10 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => mockSupabaseClientInstance),
 }));
 
-vi.mock('https://esm.sh/@supabase/supabase-js@2', () => ({
-  createClient: vi.fn(() => mockSupabaseClientInstance),
-  SupabaseClient: vi.fn(),
-}));
-
-vi.mock('https://deno.land/std@0.177.0/http/server.ts', () => ({
+// Mock the standard library serve function for Deno edge functions
+vi.mock('deno-serve', () => ({
   serve: vi.fn(),
-}));
+}), { virtual: true });
 
 // --- Mock Resend SDK ---
 const mockResendEmailsSend = vi.fn();
