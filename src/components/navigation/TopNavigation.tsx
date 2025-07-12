@@ -25,7 +25,8 @@ import {
   LogOut,
   Menu,
   ChevronDown,
-  Loader2
+  Loader2,
+  Search
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
@@ -78,31 +79,41 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
 
   const handleFindFlights = async () => {
     setIsNavigating(true);
-    navigate('/trip/new');
+    navigate('/search');
     // Reset after a short delay to handle the loading state
     setTimeout(() => setIsNavigating(false), 1000);
   };
 
-  // Primary navigation items (left side)
+  // Primary navigation items (left side) - Simplified for cleaner dashboard
   const primaryNavItems = [
     {
-      name: 'Dashboard',
-      href: '/dashboard',
+      name: 'My Bookings',
+      href: '/auto-booking',
       icon: Home,
     },
     {
-      name: 'Auto-Booking',
-      href: '/auto-booking',
-      icon: Settings,
+      name: 'Set Auto-Booking',
+      href: '/auto-booking/new',
+      icon: Calendar,
+    },
+    {
+      name: 'Search Available Flights',
+      href: '/search',
+      icon: Search,
     }
   ];
 
   const isActive = (path: string) => {
-    if (path === '/dashboard') {
-      return location.pathname === '/dashboard';
+    if (path === '/auto-booking') {
+      return location.pathname === '/auto-booking' || 
+             location.pathname === '/dashboard';
     }
-    if (path === '/trip/new?mode=auto') {
-      return location.pathname === '/trip/new' && location.search.includes('mode=auto');
+    if (path === '/auto-booking/new') {
+      return location.pathname === '/auto-booking/new';
+    }
+    if (path === '/search') {
+      return location.pathname === '/search' || 
+             location.pathname === '/trip/new';
     }
     return location.pathname === path;
   };
@@ -129,7 +140,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
       <div className="container flex h-16 max-w-screen-2xl items-center">
         {/* Logo */}
         <Link 
-          to="/dashboard" 
+          to="/auto-booking" 
           className="flex items-center space-x-2 mr-8 hover:opacity-80 transition-opacity"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">

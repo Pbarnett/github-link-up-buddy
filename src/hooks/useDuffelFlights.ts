@@ -4,22 +4,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-// import { fetchDuffelFlights, DuffelSearchResponse } from '@/services/api/duffelSearchApi'; // Temporarily commented - file missing
+import { fetchDuffelFlights, DuffelSearchResponse } from '@/services/api/duffelSearchApi';
 import logger from '@/lib/logger';
-
-// Temporary types until the API is implemented
-interface DuffelSearchResponse {
-  success: boolean;
-  offersFound?: number;
-  inserted?: number;
-  error?: { message: string };
-}
-
-// Temporary function until the API is implemented
-const fetchDuffelFlights = async (tripRequestId: string, options: DuffelSearchOptions): Promise<DuffelSearchResponse> => {
-  logger.warn('[useDuffelFlights] fetchDuffelFlights not implemented yet');
-  return { success: false, error: { message: 'Not implemented' } };
-};
 
 export interface DuffelSearchOptions {
   maxPrice?: number;

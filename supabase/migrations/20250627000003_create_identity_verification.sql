@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS identity_verifications (
   )),
   
   -- Optional campaign reference (if verification is for a specific booking)
-  campaign_id UUID REFERENCES campaigns(id) ON DELETE SET NULL,
+  campaign_id UUID,
   
   -- Verification metadata
   verified_at TIMESTAMPTZ,
@@ -77,10 +77,25 @@ CREATE TRIGGER identity_verifications_updated_at
 GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT ALL ON TABLE identity_verifications TO authenticated;
 
+-- Add foreign key constraint for campaign_id after campaigns table exists
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'campaigns') THEN
+        ALTER TABLE identity_verifications 
+        ADD CONSTRAINT fk_identity_verifications_campaign_id 
+        FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
 -- Add verification requirement rules to campaigns
-ALTER TABLE campaigns 
-  ADD COLUMN IF NOT EXISTS requires_verification BOOLEAN DEFAULT FALSE,
-  ADD COLUMN IF NOT EXISTS verification_completed_at TIMESTAMPTZ;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'campaigns') THEN
+        ALTER TABLE campaigns 
+        ADD COLUMN IF NOT EXISTS requires_verification BOOLEAN DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS verification_completed_at TIMESTAMPTZ;
+    END IF;
+END $$;
 
 -- Add verification status to traveler profiles (already exists but ensure it's there)
 -- This was added in the previous migration but let's make sure

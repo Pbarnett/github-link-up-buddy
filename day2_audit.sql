@@ -1,0 +1,1 @@
+INSERT INTO ai_activity(agent,action,metadata) VALUES('Warp','day2_final','{"tests_after":54,"secrets_scrubbed":true,"coverage_config":"global_90","twilio_sms":"working","git_filter_repo":"executed","sms_message_sid":"SMbd61ea878d9aaea63482f429b27dcb37"}'::jsonb);

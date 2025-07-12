@@ -10,21 +10,26 @@ import { Form } from "@/components/ui/form";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { FormValues, tripFormSchema, ExtendedTripFormValues } from "@/types/form";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Search } from "lucide-react";
 import { TripRequestFromDB } from "@/hooks/useTripOffers";
 import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
 import { invokeFlightSearch } from "@/services/api/flightSearchApi";
+import { TripRequestRepository, type TripRequestInsert, type TripRequestUpdate } from "@/lib/repositories";
+import { handleError, mapAmadeusError, ValidationError, BusinessLogicError, ErrorCode } from "@/lib/errors";
+import { retryHttpRequest, RetryDecorators } from "@/lib/resilience/retry";
 import { useIsMobile } from "@/hooks/use-mobile";
-import DateRangeField from "./DateRangeField";
 import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
-import TripDurationInputs from "./sections/TripDurationInputs";
-import AutoBookingSection from "./sections/AutoBookingSection.tsx";
+import ImprovedDatePickerSection from "./sections/ImprovedDatePickerSection";
+import TravelersAndCabinSection from "./sections/TravelersAndCabinSection";
 import StickyFormActions from "./StickyFormActions";
 import FilterTogglesSection from "./sections/FilterTogglesSection";
+import CollapsibleFiltersSection from "./sections/CollapsibleFiltersSection";
 import LiveBookingSummary from "./LiveBookingSummary";
+import TripSummaryChips from "./sections/TripSummaryChips";
+import AutoBookingSection from "./sections/AutoBookingSection";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface TripRequestFormProps {
@@ -47,7 +52,8 @@ const categorizeAirports = (airports: string[] | null | undefined): { nycAirport
   return { nycAirports: nycSelected, otherAirport: other };
 };
 
-const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProps) => {
+// Legacy implementation (preserved for fallback)
+const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProps) => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { userId } = useCurrentUser();
@@ -77,14 +83,8 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       const fetchTripDetails = async () => {
         setIsLoadingDetails(true);
         try {
-          // Use TripRequestFromDB for typing the response
-          const { data: tripData, error } = await supabase
-            .from("trip_requests")
-            .select("*")
-            .eq("id", tripRequestId)
-            .single<TripRequestFromDB>(); // Specify the type here
-
-          if (error) throw error;
+          const repository = new TripRequestRepository(supabase);
+          const tripData = await repository.findById(tripRequestId, { throwOnEmpty: true });
 
           if (tripData) {
             const { nycAirports, otherAirport } = categorizeAirports(tripData.departure_airports);
@@ -104,11 +104,11 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
               preferred_payment_method_id: tripData.preferred_payment_method_id,
             });
           }
-        } catch (err) {
-          const error = err as Error | PostgrestError;
+        } catch (error) {
+          const errorResponse = handleError(error, { operation: 'fetchTripDetails', tripRequestId });
           toast({
             title: "Error fetching trip details",
-            description: error.message || "Failed to load existing trip data.",
+            description: errorResponse.message,
             variant: "destructive",
           });
         } finally {
@@ -166,22 +166,17 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
   };
 
   const createTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
-    if (!userId) throw new Error("You must be logged in to create a trip request.");
+    if (!userId) throw new ValidationError("You must be logged in to create a trip request.");
     
-    // Calculate departure and return dates based on trip duration
-    const departureDate = formData.earliestDeparture.toISOString().split('T')[0]; // YYYY-MM-DD
-    const returnDate = new Date(formData.earliestDeparture.getTime() + (formData.min_duration * 24 * 60 * 60 * 1000))
-      .toISOString().split('T')[0]; // Add min_duration days for return
+    const repository = new TripRequestRepository(supabase);
     
-    const tripRequestData = {
+    const tripRequestData: TripRequestInsert = {
       user_id: userId,
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport, // Add this field
+      destination_location_code: formData.destination_airport,
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
-      departure_date: departureDate, // ✅ FIX: Add departure_date
-      return_date: returnDate, // ✅ FIX: Add return_date (round-trip by default)
       min_duration: formData.min_duration,
       max_duration: formData.max_duration,
       budget: formData.budget,
@@ -193,39 +188,31 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     };
     
     console.log('[PAYLOAD-DEBUG] Trip request payload:', {
-      departureDate: tripRequestData.departure_date,
-      returnDate: tripRequestData.return_date,
-      isRoundTrip: !!(tripRequestData.return_date),
+      isRoundTrip: true, // Always round-trip
       earliestDeparture: tripRequestData.earliest_departure,
       latestDeparture: tripRequestData.latest_departure,
-      duration: `${formData.min_duration}-${formData.max_duration} days`
+      duration: `${formData.min_duration}-${formData.max_duration} days`,
+      autoBookEnabled: tripRequestData.auto_book_enabled
     });
-    const { data, error } = await supabase
-      .from("trip_requests")
-      .insert([tripRequestData])
-      .select()
-      .single<TripRequestFromDB>();
-    if (error) throw error;
-    if (!data) throw new Error("Failed to create trip request or retrieve its data.");
-    return data;
+    
+    return await repository.createTripRequest(tripRequestData, {
+      context: { operation: 'createTripRequest', userId }
+    }) as TripRequestFromDB;
   };
 
   const updateTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
-    if (!userId || !tripRequestId) throw new Error("User ID or Trip Request ID is missing for update.");
+    if (!userId || !tripRequestId) {
+      throw new ValidationError("User ID or Trip Request ID is missing for update.");
+    }
     
-    // Calculate departure and return dates for updates too
-    const departureDate = formData.earliestDeparture.toISOString().split('T')[0];
-    const returnDate = new Date(formData.earliestDeparture.getTime() + (formData.min_duration * 24 * 60 * 60 * 1000))
-      .toISOString().split('T')[0];
+    const repository = new TripRequestRepository(supabase);
     
-    const tripRequestData = {
+    const tripRequestData: TripRequestUpdate = {
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport, // Add this field
+      destination_location_code: formData.destination_airport,
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
-      departure_date: departureDate, // ✅ FIX: Add departure_date
-      return_date: returnDate, // ✅ FIX: Add return_date
       min_duration: formData.min_duration,
       max_duration: formData.max_duration,
       budget: formData.budget,
@@ -237,19 +224,15 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     };
     
     console.log('[PAYLOAD-DEBUG] Trip request UPDATE payload:', {
-      departureDate: tripRequestData.departure_date,
-      returnDate: tripRequestData.return_date,
-      isRoundTrip: !!(tripRequestData.return_date)
+      isRoundTrip: true, // Always round-trip
+      earliestDeparture: tripRequestData.earliest_departure,
+      latestDeparture: tripRequestData.latest_departure,
+      autoBookEnabled: tripRequestData.auto_book_enabled
     });
-    const { data, error } = await supabase
-      .from("trip_requests")
-      .update(tripRequestData)
-      .eq("id", tripRequestId)
-      .select()
-      .single<TripRequestFromDB>();
-    if (error) throw error;
-    if (!data) throw new Error("Failed to update trip request or retrieve its data.");
-    return data;
+    
+    return await repository.updateTripRequest(tripRequestId, tripRequestData, {
+      context: { operation: 'updateTripRequest', tripRequestId, userId }
+    }) as TripRequestFromDB;
   };
 
   const navigateToConfirmation = (tripRequest: TripRequestFromDB): void => { // Typed parameter
@@ -372,12 +355,22 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
       
       navigateToConfirmation(resultingTripRequest);
       
-    } catch (err) {
-      const error = err as Error | PostgrestError;
-      logger.error(`Error ${tripRequestId ? "updating" : "creating"} trip request:`, { tripRequestId, errorDetails: error });
+    } catch (error) {
+      const errorResponse = handleError(error, {
+        operation: tripRequestId ? 'updateTripRequest' : 'createTripRequest',
+        tripRequestId,
+        userId
+      });
+      
+      logger.error(`Error ${tripRequestId ? "updating" : "creating"} trip request:`, { 
+        tripRequestId, 
+        errorCode: errorResponse.code,
+        errorMessage: errorResponse.message 
+      });
+      
       toast({
         title: "Error",
-        description: error.message || `Failed to ${tripRequestId ? "update" : "create"} trip request. Please try again.`,
+        description: errorResponse.userMessage || errorResponse.message,
         variant: "destructive",
       });
     } finally {
@@ -445,33 +438,45 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
     </div>
   ) : (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="mx-auto w-full max-w-7xl">
-        <div className={`grid gap-6 ${mode === 'auto' && !isMobile ? 'lg:grid-cols-3' : 'grid-cols-1'}`}>
-          {/* Main Form Column */}
-          <div className={`${mode === 'auto' && !isMobile ? 'lg:col-span-2' : 'col-span-1'}`}>
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        {/* Header with back link */}
-        <div className="p-6 pb-4 border-b border-gray-100">
-          <button
-            type="button"
-            onClick={() => navigate("/trip/new")}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {mode === 'auto' ? 'Auto-Booking Setup' : 'New Search'}
-          </button>
-          <div>
-            <h1 className={`font-bold text-gray-900 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
-              {getPageTitle()}
+      <div className="container mx-auto py-8 space-y-6">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="text-center max-w-2xl mx-auto">
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+              {mode === 'manual' ? 'Search Live Flights' : getPageTitle()}
             </h1>
-            <p className="text-gray-600 mt-1">{getPageDescription()}</p>
+            <p className="text-lg text-gray-600 leading-relaxed">
+              {mode === 'manual' 
+                ? 'Search real-time flight availability (Amadeus-powered)'
+                : getPageDescription()
+              }
+            </p>
           </div>
         </div>
 
-        <FormProvider {...form}>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleStepSubmit)} className="p-6">
-              {/* Step Indicator for Auto Mode */}
+        <div className={`grid gap-6 ${mode === 'auto' && !isMobile ? 'lg:grid-cols-3' : 'grid-cols-1'}`}>
+          {/* Main Form Column */}
+          <div className={`${mode === 'auto' && !isMobile ? 'lg:col-span-2' : 'col-span-1'}`}>
+            <div className="bg-white rounded-xl border border-gray-200 shadow-lg">
+              <div className="p-8">
+                {mode === 'manual' && (
+                  <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-start gap-3">
+                      <Search className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <h3 className="font-medium text-blue-900">Live Flight Search</h3>
+                        <p className="text-sm text-blue-700 mt-1">
+                          We'll search real-time flight availability using Amadeus and show you current prices and booking options.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <FormProvider {...form}>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleStepSubmit)} className="space-y-6">
+                      {/* Step Indicator for Auto Mode */}
               {mode === 'auto' && (
                 <div className="flex items-center justify-center mb-8">
                   <div className="flex items-center space-x-4">
@@ -492,29 +497,20 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                 </div>
               )}
 
-              {/* Step 1: Trip Basics (for auto mode) or All fields (for manual mode) */}
+                      {/* Step 1: Trip Basics (Google Flights-inspired layout) */}
               {(mode === 'manual' || currentStep === 1) && (
                 <>
-                  {/* Primary Travel Details */}
-                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      {mode === 'auto' ? 'Where & When' : 'Travel Details'}
-                    </h2>
-                    <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-2 lg:gap-8'}`}>
+                  {/* Trip Basics - Destination & Origin */}
+                  <div className="space-y-6 mb-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <EnhancedDestinationSection control={form.control} watch={form.watch} />
                       <DepartureAirportsSection control={form.control} />
                     </div>
-                    <div className="mt-6">
-                      <DateRangeField control={form.control} />
-                    </div>
                   </div>
 
-                  {/* Trip Duration for Step 1 */}
-                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      Trip Length
-                    </h2>
-                    <TripDurationInputs control={form.control} />
+                  {/* Dates & Trip Length */}
+                  <div className="space-y-6 mb-8">
+                    <ImprovedDatePickerSection control={form.control} />
                   </div>
                 </>
               )}
@@ -538,79 +534,85 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
                 </>
               )}
 
-              {/* Manual mode: Show budget and filters in Trip Preferences */}
+              {/* Manual mode: Show travelers, budget and collapsible filters */}
               {mode === 'manual' && (
                 <>
-                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      Budget
-                    </h2>
-                    <EnhancedBudgetSection control={form.control} />
+                  {/* Travelers & Cabin Class */}
+                  <div className="space-y-4 mb-6">
+                    <h3 className="text-base font-semibold text-gray-900">Travelers & Cabin</h3>
+                    <TravelersAndCabinSection control={form.control} />
                   </div>
-                  
-                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      Flight Preferences
-                    </h2>
-                    <div className="space-y-4">
-                      <FilterTogglesSection control={form.control} />
+
+                  {/* Budget Section */}
+                  <div className="space-y-4 mb-6">
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900 mb-3">Top price you'll pay</h3>
+                      <EnhancedBudgetSection control={form.control} />
                     </div>
                   </div>
                   
-                  <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      Auto-Booking (Optional)
-                    </h2>
-                    <AutoBookingSection control={form.control} mode={mode} />
+                  {/* Collapsible Filters */}
+                  <div className="mb-6">
+                    <CollapsibleFiltersSection control={form.control} />
                   </div>
                 </>
               )}
 
-              {/* Form Actions */}
-              <div className="pt-8 border-t border-gray-200 mt-8">
-                <div className="flex flex-col sm:flex-row justify-center gap-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => {
-                      if (mode === 'auto' && currentStep === 2) {
-                        setCurrentStep(1);
-                      } else {
-                        navigate("/trip/new");
-                      }
-                    }} 
-                    disabled={isSubmitting}
-                    className="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 h-11"
-                  >
-                    {mode === 'auto' && currentStep === 2 ? '← Back to Basics' : 'Back'}
-                  </Button>
-                  <Button 
-                    type={mode === 'auto' && currentStep === 1 ? "button" : "submit"}
-                    onClick={mode === 'auto' && currentStep === 1 ? handleContinueToPricing : undefined}
-                    disabled={isSubmitting || !isFormValid} 
-                    data-testid="primary-submit-button"
-                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-medium disabled:opacity-50 min-w-[160px] h-11"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {tripRequestId ? "Updating..." : "Processing..."}
-                      </>
-                    ) : buttonText()}
-                  </Button>
-                </div>
-              </div>
-            </form>
-          </Form>
-            </FormProvider>
+                      {/* Trip Summary Chips */}
+                      <TripSummaryChips 
+                        control={form.control} 
+                        onClearField={(fieldName) => {
+                          form.setValue(fieldName as any, fieldName === 'nyc_airports' ? [] : undefined);
+                        }}
+                      />
 
-            {/* Sticky Actions for Desktop */}
-            <StickyFormActions
-              isSubmitting={isSubmitting}
-              isFormValid={isFormValid}
-              buttonText={buttonText()}
-              onSubmit={form.handleSubmit(handleStepSubmit)}
-            />
+                      {/* Form Actions */}
+                      <div className="pt-8 border-t border-gray-200 mt-8">
+                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              if (mode === 'auto' && currentStep === 2) {
+                                setCurrentStep(1);
+                              } else {
+                                navigate("/trip/new");
+                              }
+                            }} 
+                            disabled={isSubmitting}
+                            className="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 h-11"
+                          >
+                            {mode === 'auto' && currentStep === 2 ? '← Back to Basics' : 'Back'}
+                          </Button>
+                          <Button 
+                            type={mode === 'auto' && currentStep === 1 ? "button" : "submit"}
+                            onClick={mode === 'auto' && currentStep === 1 ? handleContinueToPricing : undefined}
+                            disabled={isSubmitting || !isFormValid} 
+                            data-testid="primary-submit-button"
+                            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-medium disabled:opacity-50 min-w-[160px] h-11"
+                          >
+                            {isSubmitting ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                {tripRequestId ? "Updating..." : "Processing..."}
+                              </>
+                            ) : buttonText()}
+                          </Button>
+                        </div>
+                      </div>
+                    </form>
+                  </Form>
+                </FormProvider>
+
+                {/* Sticky Actions for Desktop */}
+                <StickyFormActions
+                  isSubmitting={isSubmitting}
+                  isFormValid={isFormValid}
+                  buttonText={buttonText()}
+                  onSubmit={form.handleSubmit(handleStepSubmit)}
+                  control={form.control}
+                />
+              </div>
             </div>
           </div>
 
@@ -626,6 +628,13 @@ const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProp
         </div>
       </div>
     </div>
+  );
+};
+
+// Progressive migration wrapper component
+const TripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFormProps) => {
+  return (
+    <LegacyTripRequestForm tripRequestId={tripRequestId} mode={mode} />
   );
 };
 

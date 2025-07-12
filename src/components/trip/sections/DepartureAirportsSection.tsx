@@ -28,12 +28,9 @@ const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) =>
             <FormDescription className="text-sm text-gray-600">
               Select NYC area airports you can depart from.
             </FormDescription>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap gap-3 mt-3">
               {NYC_AIRPORTS.map((airport) => (
-                <FormItem
-                  key={airport.id}
-                  className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded cursor-pointer hover:bg-gray-50 transition-colors"
-                >
+                <FormItem key={airport.id} className="flex items-center">
                   <FormControl>
                     <Checkbox
                       checked={field.value?.includes(airport.id)}
@@ -43,10 +40,18 @@ const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) =>
                           : (field.value || []).filter((value: string) => value !== airport.id);
                         field.onChange(updatedValue);
                       }}
-                      className="form-checkbox text-blue-600"
+                      className="sr-only"
                     />
                   </FormControl>
-                  <FormLabel className="text-sm font-normal cursor-pointer">{airport.label}</FormLabel>
+                  <FormLabel 
+                    className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-all duration-200 border-2 ${
+                      field.value?.includes(airport.id) 
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm' 
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300 hover:bg-blue-50'
+                    }`}
+                  >
+                    {airport.label}
+                  </FormLabel>
                 </FormItem>
               ))}
             </div>

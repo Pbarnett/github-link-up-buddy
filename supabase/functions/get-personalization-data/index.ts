@@ -1,113 +1,150 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-interface PersonalizationData {
-  hasFirstName: boolean;
-  hasNextTrip: boolean;
-  isComplete: boolean;
-  success: boolean;
-  loading: boolean;
-  error: string | null;
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Cache-Control': 'max-age=300', // 5 minutes
+};
+
+// Simple rate limiting with a map (for demo purposes)
+const requestCounts = new Map<string, { count: number; resetTime: number }>();
+
+function checkRateLimit(key: string, limit: number = 30, windowMs: number = 60000): boolean {
+  const now = Date.now();
+  const record = requestCounts.get(key);
+  
+  if (!record || now > record.resetTime) {
+    requestCounts.set(key, { count: 1, resetTime: now + windowMs });
+    return true;
+  }
+  
+  if (record.count >= limit) {
+    return false;
+  }
+  
+  record.count++;
+  return true;
 }
 
-Deno.serve(async (req: Request) => {
-  // Handle CORS
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
-    )
-
-    const { userId } = await req.json()
-
-    if (!userId) {
+    // Check rate limit
+    const authHeader = req.headers.get('authorization');
+    const rateLimitKey = authHeader || req.headers.get('x-forwarded-for') || 'anonymous';
+    
+    if (!checkRateLimit(rateLimitKey)) {
       return new Response(
-        JSON.stringify({ error: 'User ID is required' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        JSON.stringify({ error: 'Rate limit exceeded' }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
-      )
+      );
     }
 
-    // Get user profile to check if they have a first name
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('first_name')
-      .eq('id', userId)
-      .maybeSingle()
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    // Get and validate JWT token
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Missing or invalid authorization header' }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
-    if (profileError) {
-      console.error('Error fetching profile:', profileError)
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    });
+
+    // Verify JWT and get user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const userId = user.id;
+
+    // Fetch user personalization data
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('id, first_name, next_trip_city, loyalty_tier, personalization_enabled, last_login_at')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Database error:', error);
       return new Response(
         JSON.stringify({ error: 'Failed to fetch profile data' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
-      )
+      );
     }
 
-    // Check if user has any upcoming trips
-    const { data: trips, error: tripsError } = await supabase
-      .from('trips')
-      .select('id')
-      .eq('user_id', userId)
-      .gte('departure_date', new Date().toISOString())
-      .limit(1)
-
-    if (tripsError) {
-      console.error('Error fetching trips:', tripsError)
+    if (!profile) {
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch trips data' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        JSON.stringify({ error: 'Profile not found' }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
-      )
+      );
     }
 
-    const hasFirstName = !!(profile?.first_name && profile.first_name.trim())
-    const hasNextTrip = !!(trips && trips.length > 0)
-    const isComplete = hasFirstName && hasNextTrip
+    // Log analytics event for data request
+    await supabase
+      .from('personalization_events')
+      .insert({
+        user_id: userId,
+        event_type: 'data_requested',
+        context: {
+          has_name: !!profile.first_name,
+          has_next_trip: !!profile.next_trip_city,
+          personalization_enabled: profile.personalization_enabled,
+        },
+      });
 
-    const personalizationData: PersonalizationData = {
-      hasFirstName,
-      hasNextTrip,
-      isComplete,
-      success: true,
-      loading: false,
-      error: null,
-    }
-
+    // Return personalization data in the required format
     return new Response(
-      JSON.stringify(personalizationData),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
-
-  } catch (error) {
-    console.error('Error in get-personalization-data:', error)
-    return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error',
-        hasFirstName: false,
-        hasNextTrip: false,
-        isComplete: false,
-        success: false,
-        loading: false,
+      JSON.stringify({
+        firstName: profile.first_name,
+        nextTripCity: profile.next_trip_city,
+        personalizationEnabled: profile.personalization_enabled,
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
-    )
+    );
+  } catch (error) {
+    console.error('Function error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
-})
+});

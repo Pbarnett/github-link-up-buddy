@@ -27,7 +27,7 @@ const EnhancedBudgetSection = ({ control }: EnhancedBudgetSectionProps) => {
               htmlFor="max_price_input" 
               className="text-base lg:text-lg font-semibold text-gray-900"
             >
-              Maximum price
+              Top price you'll pay
             </FormLabel>
             <TooltipProvider>
               <Tooltip>

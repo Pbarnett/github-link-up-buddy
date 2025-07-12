@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { stripe } from "../lib/stripe.ts";
+import { encryptPaymentData, decryptPaymentData } from "../shared/kms.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -206,6 +207,14 @@ async function confirmPaymentMethod(user: any, data: PaymentMethodData) {
 
     const isFirstMethod = !existingMethods || existingMethods.length === 0;
 
+    // Encrypt sensitive payment data using KMS
+    const encryptedCardData = await encryptPaymentData({
+      last4: paymentMethod.card?.last4,
+      brand: paymentMethod.card?.brand,
+      exp_month: paymentMethod.card?.exp_month,
+      exp_year: paymentMethod.card?.exp_year,
+    });
+
     // Save payment method to database
     const { data: savedMethod, error } = await supabase
       .from('payment_methods')
@@ -213,11 +222,11 @@ async function confirmPaymentMethod(user: any, data: PaymentMethodData) {
         user_id: user.id,
         stripe_customer_id: setupIntent.customer as string,
         stripe_payment_method_id: paymentMethodId,
-        last4: paymentMethod.card?.last4,
-        brand: paymentMethod.card?.brand,
-        exp_month: paymentMethod.card?.exp_month,
-        exp_year: paymentMethod.card?.exp_year,
+        encrypted_card_data: encryptedCardData,
+        last4: paymentMethod.card?.last4, // Keep for quick display
+        brand: paymentMethod.card?.brand,  // Keep for icons
         is_default: isFirstMethod, // First method becomes default
+        encryption_version: 2, // KMS encryption
       })
       .select()
       .single();

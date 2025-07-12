@@ -1,0 +1,52 @@
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alerts@parker-flight.com'
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 1h
+  receiver: 'parker-flight-webhook'
+  routes:
+    - match:
+        severity: critical
+      receiver: 'parker-flight-critical'
+      group_wait: 5s
+      repeat_interval: 30m
+    - match:
+        severity: warning
+      receiver: 'parker-flight-webhook'
+    - match:
+        severity: info
+      receiver: 'parker-flight-info'
+
+receivers:
+  - name: 'parker-flight-webhook'
+    webhook_configs:
+      - url: 'http://host.docker.internal:3002/webhook/alerts'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+
+  - name: 'parker-flight-critical'
+    webhook_configs:
+      - url: 'http://host.docker.internal:3002/webhook/alerts'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+
+  - name: 'parker-flight-info'
+    webhook_configs:
+      - url: 'http://host.docker.internal:3002/webhook/alerts'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service', 'instance']

@@ -20,7 +20,8 @@ export const invokeEdgeFn = async <T = any>(
   fetchImpl: typeof fetch = fetch
 ): Promise<EdgeFunctionResult<T>> => {
   try {
-    const response = await fetchImpl(`/functions/v1/${functionName}`, {
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321';
+    const response = await fetchImpl(`${SUPABASE_URL}/functions/v1/${functionName}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

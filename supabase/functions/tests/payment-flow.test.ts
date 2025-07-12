@@ -1,5 +1,5 @@
 // supabase/functions/tests/payment-flow.test.ts
-import { describe, it, expect, vi, beforeEach, afterEach, Mocked, SpyInstance } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, Mocked, SpyInstance, test } from 'vitest';
 
 // --- Mocking Configuration ---
 // We need to mock the actual module and then spy on its exports to change them per test
@@ -61,7 +61,7 @@ vi.mock('@supabase/supabase-js', () => ({
 
 
 // --- Test Suite ---
-describe.skip('Payment Flow Integration Tests', () => {
+describe.skip('Payment Flow Integration Tests', { timeout: 60_000 }, () => {
   let createBookingRequestHandler: (req: any) => Promise<Response>;
   let processBookingHandler: (req: any) => Promise<Response>;
   let consoleLogSpy: SpyInstance, consoleErrorSpy: SpyInstance, consoleWarnSpy: SpyInstance;

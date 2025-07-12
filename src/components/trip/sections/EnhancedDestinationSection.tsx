@@ -50,8 +50,8 @@ const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSecti
                 value={field.value || ""}
               >
                 <FormControl>
-                  <SelectTrigger className="h-11 bg-white border-gray-300">
-                    <SelectValue placeholder="Select destination" />
+                  <SelectTrigger className="h-12 bg-white border-gray-300 text-base font-medium hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                    <SelectValue placeholder="Where are you going?" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent className="max-h-64 overflow-auto bg-white z-50">

@@ -127,7 +127,7 @@ export const useTripOffersPools = ({ tripId }: { tripId: string | null }): Pools
           .from("trip_requests")
           .select("*")
           .eq("id", tripId)
-          .single<TripRequestFromDB>();
+          .single();
 
         if (tripError) throw tripError;
         if (!fetchedDbTripRequest) throw new Error("No trip data found for ID: " + tripId);

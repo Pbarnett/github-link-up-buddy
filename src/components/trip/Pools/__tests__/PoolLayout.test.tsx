@@ -3,11 +3,11 @@ import { describe, it, expect, vi, MockedFunction } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import PoolLayout from '../PoolLayout';
-import { useTripOffersPools } from '@/hooks/useTripOffers';
+import { usePoolsSafe } from '@/hooks/usePoolsSafe';
 
 // Mock the hook
-vi.mock('@/hooks/useTripOffers', () => ({
-  useTripOffersPools: vi.fn(() => ({
+vi.mock('@/hooks/usePoolsSafe', () => ({
+  usePoolsSafe: vi.fn(() => ({
     pool1: [],
     pool2: [],
     pool3: [],
@@ -21,14 +21,11 @@ vi.mock('@/hooks/useTripOffers', () => ({
     hasError: false,
     errorMessage: '',
     refreshPools: vi.fn(),
+    isUsingFallback: false,
   })),
-  mapTripRequestToTripDetails: vi.fn(),
-  clearUnifiedCache: vi.fn(),
-  unifiedCache: new Map(),
-  CACHE_DURATION: 5 * 60 * 1000,
 }));
 
-const mockedUseTripOffersPools = useTripOffersPools as MockedFunction<typeof useTripOffersPools>;
+const mockedUsePoolsSafe = usePoolsSafe as MockedFunction<typeof usePoolsSafe>;
 
 // Mock the utility
 vi.mock('@/utils/getPoolDisplayName', () => ({
@@ -56,7 +53,7 @@ describe('PoolLayout', () => {
   });
 
   it('shows loading skeleton when loading', () => {
-    mockedUseTripOffersPools.mockReturnValue({
+    mockedUsePoolsSafe.mockReturnValue({
       pool1: [],
       pool2: [],
       pool3: [],
@@ -70,6 +67,7 @@ describe('PoolLayout', () => {
       hasError: false,
       errorMessage: '',
       refreshPools: vi.fn(),
+      isUsingFallback: false,
     });
 
     renderWithRouter(<PoolLayout tripId="test-trip-id" />);
@@ -80,7 +78,7 @@ describe('PoolLayout', () => {
   });
 
   it('shows error message when there is an error', () => {
-    mockedUseTripOffersPools.mockReturnValue({
+    mockedUsePoolsSafe.mockReturnValue({
       pool1: [],
       pool2: [],
       pool3: [],
@@ -94,6 +92,7 @@ describe('PoolLayout', () => {
       hasError: true,
       errorMessage: 'Test error message',
       refreshPools: vi.fn(),
+      isUsingFallback: false,
     });
 
     renderWithRouter(<PoolLayout tripId="test-trip-id" />);

@@ -150,3 +150,16 @@ supabase/
 # Other development files
 Dockerfile.dev
 docker-compose.dev.yml
+
+# Docker-specific
+.dockerignore
+docker-compose.override.yml
+
+# Scripts and documentation
+scripts/
+docs/
+
+# Backups
+backups/
+*.backup
+*.bak

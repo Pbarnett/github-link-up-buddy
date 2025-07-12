@@ -1,6 +1,6 @@
 /**
  * Secure Traveler Profile Management
- * Handles CRUD operations for traveler profiles with encryption, audit logging, and compliance features
+ * Handles CRUD operations for traveler profiles with KMS encryption, audit logging, and compliance features
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -185,11 +185,37 @@ serve(async (req: Request) => {
           // Decrypt passport number if it exists
           let decryptedPassportNumber = null;
           if (profile.passport_number_encrypted) {
-            const { data: decryptResult, error: decryptError } = await supabase
-              .rpc('decrypt_passport_number', { encrypted_passport: profile.passport_number_encrypted });
-            
-            if (!decryptError) {
-              decryptedPassportNumber = decryptResult;
+            try {
+              if (profile.encryption_version === 2) {
+                // Use KMS decryption for version 2
+                const kmsResponse = await fetch(`${supabaseUrl}/functions/v1/kms-operations/decrypt`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${jwt}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ 
+                    encryptedData: profile.passport_number_encrypted,
+                    context: 'traveler_profile_access'
+                  }),
+                });
+
+                if (kmsResponse.ok) {
+                  const kmsResult = await kmsResponse.json();
+                  decryptedPassportNumber = kmsResult.plaintext;
+                }
+              } else {
+                // Use legacy decryption for version 1
+                const { data: decryptResult, error: decryptError } = await supabase
+                  .rpc('decrypt_passport_number_legacy', { encrypted_passport: profile.passport_number_encrypted });
+              
+                if (!decryptError) {
+                  decryptedPassportNumber = decryptResult;
+                }
+              }
+            } catch (decryptError) {
+              console.error('Decryption error:', decryptError);
+              // Don't fail the request, just don't return the passport number
             }
           }
 
@@ -230,20 +256,36 @@ serve(async (req: Request) => {
           );
         }
 
-        // Encrypt passport number if provided
+        // Encrypt passport number using KMS if provided
         let encryptedPassportNumber = null;
         if (profile.passportNumber) {
-          const { data: encryptResult, error: encryptError } = await supabase
-            .rpc('encrypt_passport_number', { passport_number: profile.passportNumber });
-          
-          if (encryptError) {
-            console.error('Encryption error:', encryptError);
+          try {
+            // Call KMS operations Edge Function for encryption
+            const kmsResponse = await fetch(`${supabaseUrl}/functions/v1/kms-operations/encrypt`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${jwt}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ 
+                plaintext: profile.passportNumber,
+                context: 'traveler_profile_creation'
+              }),
+            });
+
+            if (!kmsResponse.ok) {
+              throw new Error(`KMS encryption failed: ${kmsResponse.statusText}`);
+            }
+
+            const kmsResult = await kmsResponse.json();
+            encryptedPassportNumber = kmsResult.encryptedData;
+          } catch (encryptError) {
+            console.error('KMS encryption error:', encryptError);
             return new Response(
               JSON.stringify({ error: 'Failed to encrypt sensitive data' }),
               { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
           }
-          encryptedPassportNumber = encryptResult;
         }
 
         // Insert profile
@@ -257,6 +299,7 @@ serve(async (req: Request) => {
             email: profile.email,
             phone: profile.phone,
             passport_number_encrypted: encryptedPassportNumber,
+            encryption_version: encryptedPassportNumber ? 2 : null, // 2 = KMS encryption
             passport_country: profile.passportCountry,
             passport_expiry: profile.passportExpiry,
             known_traveler_number: profile.knownTravelerNumber,
@@ -319,20 +362,36 @@ serve(async (req: Request) => {
           );
         }
 
-        // Encrypt passport number if provided
+        // Encrypt passport number using KMS if provided
         let encryptedPassportNumber = null;
         if (profile.passportNumber) {
-          const { data: encryptResult, error: encryptError } = await supabase
-            .rpc('encrypt_passport_number', { passport_number: profile.passportNumber });
-          
-          if (encryptError) {
-            console.error('Encryption error:', encryptError);
+          try {
+            // Call KMS operations Edge Function for encryption
+            const kmsResponse = await fetch(`${supabaseUrl}/functions/v1/kms-operations/encrypt`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${jwt}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ 
+                plaintext: profile.passportNumber,
+                context: 'traveler_profile_update'
+              }),
+            });
+
+            if (!kmsResponse.ok) {
+              throw new Error(`KMS encryption failed: ${kmsResponse.statusText}`);
+            }
+
+            const kmsResult = await kmsResponse.json();
+            encryptedPassportNumber = kmsResult.encryptedData;
+          } catch (encryptError) {
+            console.error('KMS encryption error:', encryptError);
             return new Response(
               JSON.stringify({ error: 'Failed to encrypt sensitive data' }),
               { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
           }
-          encryptedPassportNumber = encryptResult;
         }
 
         // Update profile
@@ -349,6 +408,7 @@ serve(async (req: Request) => {
 
         if (encryptedPassportNumber !== null) {
           updateData.passport_number_encrypted = encryptedPassportNumber;
+          updateData.encryption_version = 2; // KMS encryption
         }
 
         const { data: updatedProfile, error: updateError } = await supabase
