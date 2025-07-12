@@ -1,0 +1,50 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run ESLint
+        run: npm run lint
+        
+      - name: Run TypeScript check
+        run: npm run tsc
+        
+      - name: Check for remote imports in test files
+        run: |
+          echo "🔍 Checking for remote HTTPS imports in test files..."
+          if grep -r --include="*.test.ts" --include="*.test.tsx" --include="*.spec.ts" --include="*.spec.tsx" -n -E "(from\s+['\"]https?://|import.*['\"]https?://)" supabase/functions/tests/ src/; then
+            echo "::error::❌ Remote HTTPS import found in test files. Use local SDK imports and mock them instead."
+            echo "::error::💡 Replace 'https://esm.sh/package' with 'package' and use vi.mock('package', ...) for mocking."
+            exit 1
+          else
+            echo "✅ No remote HTTPS imports found in test files."
+          fi
+          
+      - name: Check for remote imports in vi.mock statements
+        run: |
+          echo "🔍 Checking for remote HTTPS imports in vi.mock statements..."
+          if grep -r --include="*.test.ts" --include="*.test.tsx" --include="*.spec.ts" --include="*.spec.tsx" -n -E "vi\.mock\s*\(\s*['\"]https?://" supabase/functions/tests/ src/; then
+            echo "::error::❌ Remote HTTPS import found in vi.mock statements. Node.js ESM loader will fail before mocks can be applied."
+            echo "::error::💡 Change the import to use local package name and mock the local import instead."
+            exit 1
+          else
+            echo "✅ No remote HTTPS imports found in vi.mock statements."
+          fi

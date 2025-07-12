@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req: Request) => {
+export const handler = async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -74,6 +74,9 @@ serve(async (req: Request) => {
       }
     );
   }
-});
+};
+
+serve(handler);
+export default handler;
 
 console.log('Flight offers v2 function started...');

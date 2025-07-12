@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { UserInitializationService } from '@/services/userInitialization';
 
 type AuthGuardProps = {
   children: React.ReactNode;
@@ -11,12 +12,22 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
+const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
-      setIsAuthenticated(!!data.session);
+      const hasSession = !!data.session;
+      setIsAuthenticated(hasSession);
       
-      const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Initialize user preferences if session exists
+      if (hasSession && data.session?.user?.id) {
+        UserInitializationService.ensureUserPreferences(data.session.user.id);
+      }
+      
+      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
         setIsAuthenticated(!!session);
+        
+        if (event === 'SIGNED_IN' && session) {
+          UserInitializationService.handlePostSignin(session.user.id);
+        }
       });
       
       return () => {

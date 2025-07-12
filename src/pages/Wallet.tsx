@@ -9,6 +9,8 @@ import { toast } from "@/components/ui/use-toast";
 import { safeQuery } from "@/lib/supabaseUtils";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { AddPaymentMethodForm } from "@/components/AddPaymentMethodForm";
+import { Plus, X } from "lucide-react";
 
 function WalletPage() {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
@@ -18,6 +20,7 @@ function WalletPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string|null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
   const queryClient = useQueryClient();
 
   const handleSetDefault = async (paymentMethod: PaymentMethod) => {
@@ -204,6 +207,43 @@ function WalletPage() {
               <p className="text-gray-600 py-4">No payment methods saved yet.</p>
             )}
 
+            {/* Add Payment Method Section */}
+            <div className="border-t pt-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-medium">Add Payment Method</h2>
+                <Button
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  {showAddForm ? (
+                    <>
+                      <X className="h-4 w-4" />
+                      <span>Cancel</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      <span>Add New Card</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              {showAddForm && (
+                <div className="mt-4">
+                  <AddPaymentMethodForm
+                    onSuccess={() => {
+                      setShowAddForm(false);
+                      refetch();
+                    }}
+                    onCancel={() => setShowAddForm(false)}
+                  />
+                </div>
+              )}
+            </div>
+
             {!stripeKey && (
               <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4">
                 <p className="text-yellow-700">
@@ -211,40 +251,6 @@ function WalletPage() {
                   <code>.env</code>.
                 </p>
               </div>
-            )}
-
-            {stripeKey && supabaseUrl && (
-              <>
-                <Button
-                  disabled={isCreating}
-                  onClick={async () => {
-                    setFetchError(null);
-                    setIsCreating(true);
-                    try {
-                      const res = await fetch(
-                        `${supabaseUrl}/functions/v1/create-setup-session`, 
-                        {
-                          method: "POST",
-                          headers: { 
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-                          }
-                        }
-                      );
-                      const { url } = await res.json();
-                      window.location.href = url;
-                    } catch (err: any) {
-                      setFetchError(err.message);
-                    } finally {
-                      setIsCreating(false);
-                    }
-                  }}
-                  className="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                >
-                  {isCreating ? "Redirecting…" : "Add a new card"}
-                </Button>
-                {fetchError && <p className="text-red-600 mt-2">{fetchError}</p>}
-              </>
             )}
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">

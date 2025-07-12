@@ -157,6 +157,7 @@ export async function searchFlightOffers(
     departureDate: searchParams.departureDate,
     adults: String(searchParams.adults),
     max: String(searchParams.max || 250),
+    currencyCode: 'USD', // Ensure all prices are returned in USD
   });
 
   if (searchParams.returnDate) urlParams.append('returnDate', searchParams.returnDate);

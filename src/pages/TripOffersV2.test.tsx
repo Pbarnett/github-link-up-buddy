@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor, within, cleanup } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach, type Mock } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { format } from 'date-fns';
 import TripOffersV2 from './TripOffersV2';
 import * as useFlightOffersHook from '@/flightSearchV2/useFlightOffers';
 import { FlightOfferV2 } from '@/flightSearchV2/types';
@@ -121,7 +122,7 @@ describe('TripOffersV2 Component', () => {
   });
 
   it('should format dates correctly, including return date if present, and handle invalid dates gracefully', () => {
-    const { format } = require('date-fns'); // Ensure date-fns is available in test env
+    // Using imported format function from date-fns
     const offersWithSpecificDates = [
         // Use unique originIata for each offer to ensure `getByText` can find the specific row
         { ...mockOffersData[0], id:'offer-valid-no-return', departDt: '2024-12-01T10:00:00Z', returnDt: '2024-12-03T15:00:00Z', originIata: 'DT1' },

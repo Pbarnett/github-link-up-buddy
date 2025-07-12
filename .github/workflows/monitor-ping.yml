@@ -1,0 +1,147 @@
+name: Monitor Ping - Health Check
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch:  # Allow manual triggering
+    inputs:
+      environment:
+        description: 'Environment to monitor'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+
+jobs:
+  monitor-ping:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        environment: [production, staging]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Set environment variables
+        run: |
+          echo "ENVIRONMENT=${{ matrix.environment }}" >> $GITHUB_ENV
+          echo "MONITORING_API_URL=${{ secrets[format('{0}_MONITORING_API_URL', upper(matrix.environment))] }}" >> $GITHUB_ENV
+          echo "PROMETHEUS_PUSH_GATEWAY=${{ secrets.PROMETHEUS_PUSH_GATEWAY }}" >> $GITHUB_ENV
+        
+      - name: Run monitor ping
+        env:
+          NODE_ENV: ${{ matrix.environment }}
+          API_BASE_URL: ${{ secrets[format('{0}_API_BASE_URL', upper(matrix.environment))] }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          echo "🔍 Running monitor ping for ${{ matrix.environment }} environment..."
+          npm run monitor:ping
+          
+      - name: Push metrics to Prometheus Gateway
+        if: success()
+        run: |
+          echo "📊 Pushing metrics to Prometheus Push Gateway..."
+          # Extract metrics from the monitor ping output
+          TIMESTAMP=$(date +%s)
+          ENVIRONMENT="${{ matrix.environment }}"
+          
+          # Example: Push job completion metric
+          cat << EOF | curl --data-binary @- ${PROMETHEUS_PUSH_GATEWAY}/metrics/job/monitor-ping/instance/${ENVIRONMENT}
+          # TYPE monitor_ping_success gauge
+          # HELP monitor_ping_success 1 if monitor ping succeeded, 0 otherwise
+          monitor_ping_success{environment="${ENVIRONMENT}"} 1 ${TIMESTAMP}
+          
+          # TYPE monitor_ping_duration_seconds gauge  
+          # HELP monitor_ping_duration_seconds Duration of monitor ping execution
+          monitor_ping_duration_seconds{environment="${ENVIRONMENT}"} ${{ env.GITHUB_ACTION_DURATION || 30 }} ${TIMESTAMP}
+          
+          # TYPE monitor_ping_timestamp gauge
+          # HELP monitor_ping_timestamp Timestamp of last successful monitor ping
+          monitor_ping_timestamp{environment="${ENVIRONMENT}"} ${TIMESTAMP} ${TIMESTAMP}
+          EOF
+          
+      - name: Push failure metrics on error
+        if: failure()
+        run: |
+          echo "❌ Monitor ping failed, pushing failure metrics..."
+          TIMESTAMP=$(date +%s)
+          ENVIRONMENT="${{ matrix.environment }}"
+          
+          cat << EOF | curl --data-binary @- ${PROMETHEUS_PUSH_GATEWAY}/metrics/job/monitor-ping/instance/${ENVIRONMENT}
+          # TYPE monitor_ping_success gauge
+          monitor_ping_success{environment="${ENVIRONMENT}"} 0 ${TIMESTAMP}
+          
+          # TYPE monitor_ping_failure_timestamp gauge
+          monitor_ping_failure_timestamp{environment="${ENVIRONMENT}"} ${TIMESTAMP} ${TIMESTAMP}
+          EOF
+          
+      - name: Notify on failure
+        if: failure() && matrix.environment == 'production'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: |
+            🚨 Monitor ping failed for ${{ matrix.environment }} environment
+            
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            
+            Please check the logs and investigate immediately.
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  synthetic-tests:
+    runs-on: ubuntu-latest
+    needs: monitor-ping
+    if: github.event_name == 'schedule' || github.event.inputs.environment == 'production'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run synthetic E2E tests
+        env:
+          NODE_ENV: production
+          API_BASE_URL: ${{ secrets.PRODUCTION_API_BASE_URL }}
+          TEST_USER_EMAIL: ${{ secrets.SYNTHETIC_TEST_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.SYNTHETIC_TEST_PASSWORD }}
+        run: |
+          echo "🧪 Running synthetic E2E tests..."
+          npm run test:e2e:synthetic
+          
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-test-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7

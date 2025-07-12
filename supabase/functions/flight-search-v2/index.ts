@@ -140,17 +140,24 @@ const fetchAmadeusOffers = async (
   console.log('[DEBUG] Attempting to fetch offers from Amadeus...');
   
   try {
-    // Try to fetch offers from Amadeus
-    const offers = await searchFlightOffers({
-      originLocationCode: tripRequest.origin_location_code,
-      destinationLocationCode: tripRequest.destination_location_code,
-      departureDate: tripRequest.departure_date,
-      returnDate: tripRequest.return_date,
-      adults: tripRequest.adults || 1,
-      travelClass: 'ECONOMY', // Default to economy for now
-      nonStop: tripRequest.nonstop_required, // Use required setting directly
-      max: 10,  // Limit number of results for performance
-    });
+  // Try to fetch offers from Amadeus
+  // Use origin_location_code if available, otherwise use first departure airport
+  const originCode = tripRequest.origin_location_code || (tripRequest.departure_airports && tripRequest.departure_airports[0]);
+  
+  if (!originCode) {
+    throw new Error('No origin airport code available in trip request');
+  }
+  
+  const offers = await searchFlightOffers({
+    originLocationCode: originCode,
+    destinationLocationCode: tripRequest.destination_location_code,
+    departureDate: tripRequest.departure_date,
+    returnDate: tripRequest.return_date,
+    adults: tripRequest.adults || 1,
+    travelClass: 'ECONOMY', // Default to economy for now
+    nonStop: tripRequest.nonstop_required, // Use required setting directly
+    max: 10,  // Limit number of results for performance
+  });
 
     console.log('[DEBUG] Successfully fetched', offers.length, 'offers from Amadeus');
     
@@ -161,8 +168,8 @@ const fetchAmadeusOffers = async (
       // Create filter context from trip request data
       const filterContext = createFilterContext({
         budget: maxPrice,
-        currency: 'USD', // Default to USD, could be extracted from trip request
-        originLocationCode: tripRequest.origin_location_code,
+        currency: 'USD', // Fixed to USD to ensure consistency
+        originLocationCode: originCode,
         destinationLocationCode: tripRequest.destination_location_code,
         departureDate: tripRequest.departure_date,
         returnDate: tripRequest.return_date,
@@ -203,7 +210,7 @@ const fetchAmadeusOffers = async (
       });
       
       // Convert back to Amadeus format for database insertion
-      let filteredOffers = filterResult.filteredOffers.map(offer => offer.rawData || offer);
+      const filteredOffers = filterResult.filteredOffers.map(offer => offer.rawData || offer);
       
       console.log('[DEBUG] New filtering system processed', offers.length, '→', filteredOffers.length, 'offers in', filterResult.executionTimeMs, 'ms');
       
@@ -228,7 +235,7 @@ const generateMockOffers = (tripRequest: any, maxPrice?: number): AmadeusFlightO
   console.log('[DEBUG] Trip request has return_date:', tripRequest.return_date);
   
   const isRoundTrip = !!tripRequest.return_date;
-  const origin = tripRequest.origin_location_code || 'JFK';
+  const origin = tripRequest.origin_location_code || (tripRequest.departure_airports && tripRequest.departure_airports[0]) || 'JFK';
   const destination = tripRequest.destination_location_code || 'LAX';
   const departureDate = tripRequest.departure_date || '2024-12-15';
   const returnDate = tripRequest.return_date || '2024-12-18';

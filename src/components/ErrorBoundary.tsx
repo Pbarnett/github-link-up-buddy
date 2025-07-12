@@ -44,11 +44,18 @@ export class SmartErrorBoundary extends Component<Props, State> {
     this.setState({ errorInfo });
     
     // Report error with context
+    const safeProps = {
+      level: this.props.level || 'component',
+      // Only include safe props to avoid circular references
+      hasChildren: !!this.props.children,
+      hasFallback: !!this.props.fallback,
+    };
+    
     reportError(error, {
       componentStack: errorInfo.componentStack,
       level: this.props.level || 'component',
       retryCount: this.state.retryCount,
-      props: JSON.stringify(this.props, null, 2),
+      props: JSON.stringify(safeProps, null, 2),
     });
   }
 

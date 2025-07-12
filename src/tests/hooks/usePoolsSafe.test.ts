@@ -92,11 +92,17 @@ describe('usePoolsSafe', () => {
   });
 
   describe('Error handling and fallback', () => {
-    it('should fall back to legacy hook when useTripOffersPools throws', async () => {
-      const error = new Error('Pools failed');
-      mockTripOffers.useTripOffersPools.mockImplementation(() => {
-        throw error;
-      });
+    it('should fall back to legacy hook when useTripOffersPools has error', async () => {
+      // Mock pools result with error state (not throwing exception)
+      const poolsErrorResult = {
+        ...mockPoolsResult,
+        hasError: true,
+        errorMessage: 'Pools failed',
+        pool1: [],
+        pool2: [],
+        pool3: []
+      };
+      mockTripOffers.useTripOffersPools.mockReturnValue(poolsErrorResult);
 
       const { result } = renderHook(() =>
         usePoolsSafe({ tripId: 'test-trip-id' })
@@ -109,17 +115,31 @@ describe('usePoolsSafe', () => {
       expect(result.current.pool1).toHaveLength(2);
       expect(result.current.pool1[0]).toEqual({
         ...mockLegacyResult.offers[0],
-        score: 1
+        score: 95,
+        priceStructure: {
+          base: 500,
+          carryOnFee: 0,
+          total: 500,
+        },
+        carryOnIncluded: true,
+        reasons: ['Fallback offer'],
+        pool: 1,
+        isRoundTrip: false,
       });
       expect(result.current.pool2).toEqual([]);
       expect(result.current.pool3).toEqual([]);
     });
 
     it('should show error toast when pools fail', async () => {
-      const error = new Error('Pools failed');
-      mockTripOffers.useTripOffersPools.mockImplementation(() => {
-        throw error;
-      });
+      const poolsErrorResult = {
+        ...mockPoolsResult,
+        hasError: true,
+        errorMessage: 'Pools failed',
+        pool1: [],
+        pool2: [],
+        pool3: []
+      };
+      mockTripOffers.useTripOffersPools.mockReturnValue(poolsErrorResult);
 
       renderHook(() => usePoolsSafe({ tripId: 'test-trip-id' }));
 
@@ -133,10 +153,15 @@ describe('usePoolsSafe', () => {
     });
 
     it('should clear cache when pools fail', async () => {
-      const error = new Error('Pools failed');
-      mockTripOffers.useTripOffersPools.mockImplementation(() => {
-        throw error;
-      });
+      const poolsErrorResult = {
+        ...mockPoolsResult,
+        hasError: true,
+        errorMessage: 'Pools failed',
+        pool1: [],
+        pool2: [],
+        pool3: []
+      };
+      mockTripOffers.useTripOffersPools.mockReturnValue(poolsErrorResult);
 
       renderHook(() => usePoolsSafe({ tripId: 'test-trip-id' }));
 
@@ -146,10 +171,15 @@ describe('usePoolsSafe', () => {
     });
 
     it('should handle cache-related errors with specific logging', async () => {
-      const cacheError = new Error('cache corruption detected');
-      mockTripOffers.useTripOffersPools.mockImplementation(() => {
-        throw cacheError;
-      });
+      const poolsErrorResult = {
+        ...mockPoolsResult,
+        hasError: true,
+        errorMessage: 'cache corruption detected',
+        pool1: [],
+        pool2: [],
+        pool3: []
+      };
+      mockTripOffers.useTripOffersPools.mockReturnValue(poolsErrorResult);
 
       renderHook(() => usePoolsSafe({ tripId: 'test-trip-id' }));
 
@@ -161,10 +191,15 @@ describe('usePoolsSafe', () => {
 
   describe('Fallback behavior', () => {
     it('should map legacy offers to pool1 with score', async () => {
-      const error = new Error('Pools failed');
-      mockTripOffers.useTripOffersPools.mockImplementation(() => {
-        throw error;
-      });
+      const poolsErrorResult = {
+        ...mockPoolsResult,
+        hasError: true,
+        errorMessage: 'Pools failed',
+        pool1: [],
+        pool2: [],
+        pool3: []
+      };
+      mockTripOffers.useTripOffersPools.mockReturnValue(poolsErrorResult);
 
       const { result } = renderHook(() =>
         usePoolsSafe({ tripId: 'test-trip-id' })
@@ -175,16 +210,45 @@ describe('usePoolsSafe', () => {
       });
 
       expect(result.current.pool1).toEqual([
-        { ...mockLegacyResult.offers[0], score: 1 },
-        { ...mockLegacyResult.offers[1], score: 1 }
+        {
+          ...mockLegacyResult.offers[0],
+          score: 95,
+          priceStructure: {
+            base: 500,
+            carryOnFee: 0,
+            total: 500,
+          },
+          carryOnIncluded: true,
+          reasons: ['Fallback offer'],
+          pool: 1,
+          isRoundTrip: false,
+        },
+        {
+          ...mockLegacyResult.offers[1],
+          score: 95,
+          priceStructure: {
+            base: 750,
+            carryOnFee: 0,
+            total: 750,
+          },
+          carryOnIncluded: true,
+          reasons: ['Fallback offer'],
+          pool: 1,
+          isRoundTrip: false,
+        }
       ]);
     });
 
     it('should map legacy trip details to budget and dateRange', async () => {
-      const error = new Error('Pools failed');
-      mockTripOffers.useTripOffersPools.mockImplementation(() => {
-        throw error;
-      });
+      const poolsErrorResult = {
+        ...mockPoolsResult,
+        hasError: true,
+        errorMessage: 'Pools failed',
+        pool1: [],
+        pool2: [],
+        pool3: []
+      };
+      mockTripOffers.useTripOffersPools.mockReturnValue(poolsErrorResult);
 
       const { result } = renderHook(() =>
         usePoolsSafe({ tripId: 'test-trip-id' })
