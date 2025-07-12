@@ -39,6 +39,13 @@
 
 ## Key Conventions
 
+### Naming Conventions
+- **`use*`** - React hook (e.g., `useFlightOffers`, `useCurrentUser`)
+- **`*Service`** - Network API wrapper (e.g., `flightApi`, `campaignService`)
+- **`*.edge.ts`** - Edge-function client code
+- **`*Form.tsx`** - Form components using React Hook Form + Zod
+- **`*Context.tsx`** - React context providers
+
 ### Forms
 - **Location**: `src/components/forms/`
 - **Pattern**: React Hook Form + Zod validation
@@ -48,6 +55,7 @@
 - **Location**: `supabase/functions/[function-name]/`
 - **Entry**: Each function has `index.ts` as entry point
 - **Shared Code**: Common utilities in `supabase/functions/_shared/`
+- **How to call**: `invokeEdgeFn('function-name', { params })`
 
 ### Database
 - **Migrations**: `supabase/migrations/` with timestamp prefixes
