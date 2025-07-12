@@ -1,45 +1,44 @@
 -- Create campaigns and payment methods tables according to Traveler Data Architecture
 -- This completes the core data structures for Phase 1 implementation
 
--- Create payment methods table
-CREATE TABLE IF NOT EXISTS payment_methods (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  stripe_customer_id TEXT NOT NULL,
-  stripe_payment_method_id TEXT NOT NULL,
-  last4 TEXT,
-  brand TEXT,
-  exp_month INTEGER,
-  exp_year INTEGER,
-  is_default BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Enhance existing payment methods table to match campaign requirements
+-- payment_methods table already exists, so we'll add missing columns
+ALTER TABLE payment_methods 
+  ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
 
--- Create indexes for payment methods
-CREATE INDEX IF NOT EXISTS idx_payment_methods_user_id ON payment_methods(user_id);
+-- Add index for stripe_customer_id if it doesn't exist
 CREATE INDEX IF NOT EXISTS idx_payment_methods_stripe_customer ON payment_methods(stripe_customer_id);
+
+-- Create additional indexes for payment methods (user_id and default already exist)
 CREATE INDEX IF NOT EXISTS idx_payment_methods_default ON payment_methods(user_id, is_default);
 
 -- Enable Row Level Security on payment methods
 ALTER TABLE payment_methods ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for payment methods
-CREATE POLICY "Users can view their own payment methods"
-  ON payment_methods FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'payment_methods' AND policyname = 'Users can view their own payment methods') THEN
+    CREATE POLICY "Users can view their own payment methods" ON payment_methods FOR SELECT USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert their own payment methods"
-  ON payment_methods FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'payment_methods' AND policyname = 'Users can insert their own payment methods') THEN
+    CREATE POLICY "Users can insert their own payment methods" ON payment_methods FOR INSERT WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update their own payment methods"
-  ON payment_methods FOR UPDATE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'payment_methods' AND policyname = 'Users can update their own payment methods') THEN
+    CREATE POLICY "Users can update their own payment methods" ON payment_methods FOR UPDATE USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can delete their own payment methods"
-  ON payment_methods FOR DELETE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'payment_methods' AND policyname = 'Users can delete their own payment methods') THEN
+    CREATE POLICY "Users can delete their own payment methods" ON payment_methods FOR DELETE USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Create campaigns table
 CREATE TABLE IF NOT EXISTS campaigns (
@@ -91,21 +90,29 @@ CREATE INDEX IF NOT EXISTS idx_campaigns_active_searches ON campaigns(status, ne
 ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for campaigns
-CREATE POLICY "Users can view their own campaigns"
-  ON campaigns FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'campaigns' AND policyname = 'Users can view their own campaigns') THEN
+    CREATE POLICY "Users can view their own campaigns" ON campaigns FOR SELECT USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert their own campaigns"
-  ON campaigns FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'campaigns' AND policyname = 'Users can insert their own campaigns') THEN
+    CREATE POLICY "Users can insert their own campaigns" ON campaigns FOR INSERT WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update their own campaigns"
-  ON campaigns FOR UPDATE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'campaigns' AND policyname = 'Users can update their own campaigns') THEN
+    CREATE POLICY "Users can update their own campaigns" ON campaigns FOR UPDATE USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can delete their own campaigns"
-  ON campaigns FOR DELETE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'campaigns' AND policyname = 'Users can delete their own campaigns') THEN
+    CREATE POLICY "Users can delete their own campaigns" ON campaigns FOR DELETE USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Create bookings table for completed campaign bookings
 CREATE TABLE IF NOT EXISTS campaign_bookings (
@@ -146,13 +153,17 @@ CREATE INDEX IF NOT EXISTS idx_campaign_bookings_status ON campaign_bookings(boo
 ALTER TABLE campaign_bookings ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for campaign bookings
-CREATE POLICY "Users can view their own campaign bookings"
-  ON campaign_bookings FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'campaign_bookings' AND policyname = 'Users can view their own campaign bookings') THEN
+    CREATE POLICY "Users can view their own campaign bookings" ON campaign_bookings FOR SELECT USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Service role can manage campaign bookings"
-  ON campaign_bookings FOR ALL
-  USING (auth.jwt() ->> 'role' = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'campaign_bookings' AND policyname = 'Service role can manage campaign bookings') THEN
+    CREATE POLICY "Service role can manage campaign bookings" ON campaign_bookings FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
+  END IF;
+END $$;
 
 -- Create trigger functions for updated_at timestamps
 CREATE OR REPLACE FUNCTION update_payment_methods_updated_at()
@@ -213,7 +224,7 @@ COMMENT ON TABLE campaigns IS 'Auto-booking campaigns linking traveler profiles 
 COMMENT ON TABLE campaign_bookings IS 'Completed bookings from successful campaign matches';
 
 COMMENT ON COLUMN payment_methods.stripe_customer_id IS 'Stripe Customer ID for this user';
-COMMENT ON COLUMN payment_methods.stripe_payment_method_id IS 'Stripe PaymentMethod ID (tokenized card reference)';
+COMMENT ON COLUMN payment_methods.stripe_pm_id IS 'Stripe PaymentMethod ID (tokenized card reference)';
 COMMENT ON COLUMN campaigns.max_price IS 'Maximum price user is willing to pay for this campaign';
 COMMENT ON COLUMN campaigns.search_frequency_hours IS 'How often to search for deals (in hours)';
 COMMENT ON COLUMN campaign_bookings.duffel_order_id IS 'Duffel Order ID for the booked flight';

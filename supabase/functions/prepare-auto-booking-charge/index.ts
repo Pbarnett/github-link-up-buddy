@@ -1,15 +1,42 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { stripe } from "../lib/stripe.ts";
+// Dynamic imports for edge function compatibility
+let serve: any;
+let createClient: any;
+let stripe: any;
+let supabase: any;
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+// Initialize dependencies based on environment
+if (typeof Deno !== 'undefined' && !globalThis.process?.env?.VITEST) {
+  // Deno environment - use HTTPS imports
+  const { serve: denoServe } = await import("https://deno.land/std@0.168.0/http/server.ts");
+  const { createClient: supabaseCreateClient } = await import("https://esm.sh/@supabase/supabase-js@2.45.0");
+  const { stripe: denoStripe } = await import("../lib/stripe.ts");
+  
+  serve = denoServe;
+  createClient = supabaseCreateClient;
+  stripe = denoStripe;
+  
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  throw new Error("Missing Supabase environment variables");
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error("Missing Supabase environment variables");
+  }
+
+  supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+} else {
+  // Node.js/Test environment - use mocked versions
+  const { createClient: nodeCreateClient } = await import("@supabase/supabase-js");
+  const stripeModule = await import("stripe");
+  
+  createClient = nodeCreateClient;
+  stripe = new stripeModule.default(process?.env?.STRIPE_SECRET_KEY || "test_key");
+  
+  // In test environment, these will be mocked
+  const supabaseUrl = process?.env?.SUPABASE_URL || "http://localhost:54321";
+  const supabaseServiceRoleKey = process?.env?.SUPABASE_SERVICE_ROLE_KEY || "test-key";
+  
+  supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 }
-
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -320,7 +347,7 @@ export async function handlePrepareAutoBookingCharge(req: Request): Promise<Resp
 }
 
 // Only call serve when running in Deno (not in tests)
-if (typeof Deno !== 'undefined' && !Deno.env.get('VITEST')) {
+if (typeof Deno !== 'undefined' && !globalThis.process?.env?.VITEST && serve) {
   serve(handlePrepareAutoBookingCharge);
 }
 

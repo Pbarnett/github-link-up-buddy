@@ -34,3 +34,31 @@ dist-ssr
 .env.supabase
 supabase/.env
 start-functions-with-env.sh
+
+# Test artifacts
+tests/reports/
+tests/screenshots/
+tests/videos/
+test-results/
+playwright-report/
+blob-report/
+coverage/
+
+# Build artifacts
+.vercel
+.netlify
+build/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# AI/LLM generated files (optional)
+*.ai-generated
+.ai-context/
+
+# Scripts with secrets
+scripts/**/*.secret.*
+scripts/**/*-with-secrets.*
+.env*

@@ -1,4 +1,6 @@
 // Mock Stripe for testing
+import { vi } from 'vitest';
+
 export default class Stripe {
   customers = {
     create: vi.fn(),

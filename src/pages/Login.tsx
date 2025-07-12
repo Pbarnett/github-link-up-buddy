@@ -6,6 +6,18 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { UserInitializationService } from '@/services/userInitialization';
+
+/**
+ * LOGIN COMPONENT - GOOGLE-ONLY MVP
+ * 
+ * Magic Link functionality has been ARCHIVED (not deleted) for the MVP.
+ * To restore magic link authentication:
+ * 1. Uncomment the email state (around line 46)
+ * 2. Uncomment the handleEmailLogin function (around lines 73-119)
+ * 3. Uncomment the magic link form UI (around lines 202-232)
+ * 4. Update the card description and button styling as needed
+ */
 
 // Auth state cleanup utility
 const cleanupAuthState = () => {
@@ -32,24 +44,57 @@ const cleanupAuthState = () => {
 };
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  // ARCHIVED: Email state (not needed for Google-only MVP)
+  // const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check if user is already authenticated on mount
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      // console.log('Initial session check:', data.session); // Removed
-      setIsAuthenticated(!!data.session);
+    // Initialize auth state and handle any OAuth callbacks
+    const initializeAuth = async () => {
+      try {
+        // First, check for any OAuth callback in the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        
+        if (hashParams.has('access_token') || urlParams.has('code') || hashParams.has('refresh_token')) {
+          console.log('🔗 OAuth callback detected, waiting for Supabase to process...');
+          
+          // Give Supabase a moment to process the OAuth callback
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        // Now check the session
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Session check error:', error);
+          setIsAuthenticated(false);
+        } else {
+          console.log('🔍 Session check result:', data.session?.user?.id, !!data.session);
+          setIsAuthenticated(!!data.session);
+          
+          if (data.session) {
+            console.log('✅ User authenticated successfully');
+          }
+        }
+      } catch (error) {
+        console.error('❌ Auth initialization error:', error);
+        setIsAuthenticated(false);
+      }
     };
     
-    checkSession();
+    initializeAuth();
     
     // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      // console.log('Auth state changed:', event, session?.user?.id); // Removed
+const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔍 Auth state changed:', event, session?.user?.id, !!session);
       setIsAuthenticated(!!session);
+
+      if (event === 'SIGNED_IN' && session) {
+        // Call user initialization service
+        UserInitializationService.handlePostSignin(session.user.id);
+      }
     });
     
     // Clean up subscription on unmount
@@ -58,6 +103,9 @@ const Login = () => {
     };
   }, []);
 
+  // ARCHIVED: Magic Link Login (commented out for Google-only MVP)
+  // Uncomment this function to restore magic link functionality
+  /*
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -87,7 +135,7 @@ const Login = () => {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: window.location.origin + '/dashboard',
+          emailRedirectTo: window.location.origin + '/auto-booking',
         }
       });
       
@@ -103,6 +151,7 @@ const Login = () => {
       setLoading(false);
     }
   };
+  */
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -119,16 +168,6 @@ const Login = () => {
       //   autoRefreshToken: true, // Removed
       //   persistSession: true // Removed
       // }); // Removed
-      
-      // Clean up existing auth state
-      cleanupAuthState();
-      
-      // Attempt to sign out globally (ignore errors)
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (signOutError) {
-        // console.log('Sign out error (ignored):', signOutError); // Removed
-      }
       
       // Check for popup blockers
       const popupTest = window.open('about:blank', '_blank', 'width=1,height=1');
@@ -155,12 +194,10 @@ const Login = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/dashboard',
+          redirectTo: window.location.origin + '/login',
           skipBrowserRedirect: false
         }
       });
-      
-      // console.log("OAuth response:", data); // Removed
       
       if (error) throw error;
     } catch (error: any) {
@@ -170,7 +207,7 @@ const Login = () => {
   };
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to="/auto-booking" />;
   }
 
   return (
@@ -179,10 +216,13 @@ const Login = () => {
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
           <CardDescription>
-            Sign in to access your dashboard
+            Sign in with Google to access your dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* ARCHIVED: Magic Link Form (commented out for Google-only MVP) */}
+          {/* Uncomment this section to restore magic link functionality */}
+          {/*
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -212,14 +252,14 @@ const Login = () => {
               <span className="px-2 bg-white text-gray-500">Or continue with</span>
             </div>
           </div>
+          */}
           
           <Button 
-            variant="outline" 
             className="w-full" 
             onClick={handleGoogleLogin} 
             disabled={loading}
           >
-            Google
+            {loading ? 'Signing in...' : 'Sign in with Google'}
           </Button>
           
           <div className="pt-6 border-t border-gray-200">

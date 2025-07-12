@@ -1,12 +1,21 @@
-
-// src/tests/pages/Dashboard.test.tsx
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import Dashboard from '@/pages/Dashboard';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // --- Mock Dependencies ---
+
+// Mock Personalization Context
+vi.mock('@/contexts/PersonalizationContext', async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    usePersonalization: () => ({ firstName: 'Testy', flags: {} }),
+  };
+});
 
 // Mock Supabase client
 vi.mock('@/integrations/supabase/client', () => ({
@@ -20,6 +29,29 @@ vi.mock('@/integrations/supabase/client', () => ({
     channel: vi.fn(),
     removeChannel: vi.fn(),
   },
+}));
+
+// Mock personalization dependencies
+vi.mock('@/hooks/useFeatureFlag', () => ({
+  useFeatureFlag: vi.fn().mockReturnValue(true),
+}));
+
+vi.mock('@/lib/personalization/featureFlags', () => ({
+  enablePersonalizationForTesting: vi.fn().mockReturnValue(true),
+}));
+
+vi.mock('@/lib/personalization/abTesting', () => ({
+  getUserVariant: vi.fn().mockReturnValue('control'),
+  getExperimentConfig: vi.fn().mockReturnValue({ enablePersonalization: true }),
+  trackABTestEvent: vi.fn(),
+}));
+
+vi.mock('@/lib/personalization/voiceAndTone', () => ({
+  getGreeting: vi.fn().mockReturnValue('Welcome back, traveler! Where to next?'),
+}));
+
+vi.mock('@/hooks/useAnalytics', () => ({
+  useAnalytics: vi.fn().mockReturnValue({ track: vi.fn() }),
 }));
 
 // Mock TripHistory component
@@ -108,13 +140,23 @@ describe('Dashboard Page', () => {
   });
 
   const renderDashboardWithRouter = (initialEntries = ['/dashboard']) => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
     return render(
-      <MemoryRouter initialEntries={initialEntries}>
-        <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/login" element={<div>Login Page Mock</div>} />
-        </Routes>
-      </MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={initialEntries}>
+          <Routes>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/login" element={<div>Login Page Mock</div>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
     );
   };
 
@@ -129,8 +171,9 @@ describe('Dashboard Page', () => {
 
   it('2. Renders "Active Watches" tab by default when authenticated', async () => {
     renderDashboardWithRouter();
-    await waitFor(() => expect(screen.getByText(`Welcome back,`)).toBeInTheDocument());
-    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
+    // The actual greeting is "Welcome back, traveler! Where to next?"
+    await waitFor(() => expect(screen.getByText('Welcome back, traveler! Where to next?')).toBeInTheDocument());
+    // Note: Dashboard doesn't show user email in UI
 
     expect(screen.getByRole('tab', { name: /Active Watches/i, selected: true })).toBeInTheDocument();
     expect(screen.getByText(/TestAir TA101/i)).toBeInTheDocument();
@@ -141,8 +184,8 @@ describe('Dashboard Page', () => {
   it('3. Switches to "My Trips" tab, renders TripHistory component with userId', async () => {
     const user = userEvent.setup();
     renderDashboardWithRouter();
-    await waitFor(() => expect(screen.getByText(`Welcome back,`)).toBeInTheDocument());
-    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Welcome back, traveler! Where to next?')).toBeInTheDocument());
+    // Note: Dashboard doesn't show user email in UI
 
     // Wait for booking requests to be displayed (indicating data has loaded)
     await waitFor(() => expect(screen.getByText(/TestAir TA101/i)).toBeInTheDocument());
@@ -154,7 +197,6 @@ describe('Dashboard Page', () => {
     await waitFor(() => expect(screen.getByTestId('trip-history-mock')).toBeInTheDocument());
     const { default: TripHistoryMock } = await import('@/components/dashboard/TripHistory');
     expect(TripHistoryMock).toHaveBeenCalledWith(expect.objectContaining({ userId: mockUser.id }), expect.anything());
-
     expect(screen.queryByText(/TestAir TA101/i)).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /My Trips/i, selected: true })).toBeInTheDocument();
   });
@@ -162,8 +204,8 @@ describe('Dashboard Page', () => {
   it('4. Switches back to "Active Watches" tab', async () => {
     const user = userEvent.setup();
     renderDashboardWithRouter();
-    await waitFor(() => expect(screen.getByText(`Welcome back,`)).toBeInTheDocument());
-    expect(screen.getByText(mockUser.email)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Welcome back, traveler! Where to next?')).toBeInTheDocument());
+    // Note: Dashboard doesn't show user email in UI
 
     // Wait for booking requests to be displayed (indicating data has loaded)
     await waitFor(() => expect(screen.getByText(/TestAir TA101/i)).toBeInTheDocument());
@@ -189,6 +231,6 @@ describe('Dashboard Page', () => {
       expect(screen.getByTestId('navigate-mock')).toHaveTextContent('Redirecting to /login');
     });
     expect(screen.queryByText(`Welcome back,`)).not.toBeInTheDocument();
-    expect(screen.queryByText(mockUser.email)).not.toBeInTheDocument();
+    // Note: Dashboard doesn't show user email in UI anyway
   });
 });

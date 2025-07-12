@@ -58,7 +58,6 @@ const Breadcrumbs = () => {
     
     if (path === '/profile') {
       return [
-        { label: 'Dashboard', href: '/dashboard' },
         { label: 'Profile', isActive: true }
       ];
     }

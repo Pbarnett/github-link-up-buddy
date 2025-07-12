@@ -1,164 +1,173 @@
-import React, { createContext, useContext, useCallback, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { PersonalizationData, PersonalizationError } from '@/types/personalization';
 import { supabase } from '@/integrations/supabase/client';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-
-// Personalization data structure
-interface PersonalizationData {
-  hasFirstName: boolean;
-  hasNextTrip: boolean;
-  isComplete: boolean;
-  loading: boolean;
-  error: string | null;
-  success: boolean;
-}
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { enablePersonalizationForTesting } from '@/lib/personalization/featureFlags';
+import { 
+  getUserVariant, 
+  getExperimentConfig,
+  trackABTestEvent,
+  ABTestEvent 
+} from '@/lib/personalization/abTesting';
 
 interface PersonalizationContextType {
-  personalizationData: PersonalizationData;
-  refreshPersonalization: () => Promise<void>;
-  isLoading: boolean;
-  error: string | null;
+  personalizationData: PersonalizationData | null;
+  loading: boolean;
+  error: PersonalizationError | null;
+  refreshPersonalizationData: () => Promise<void>;
+  isPersonalizationEnabled: boolean;
+  abTestVariant: string | null;
+  experimentConfig: Record<string, any> | null;
+  trackPersonalizationEvent: (eventType: 'exposure' | 'conversion' | 'engagement', eventName: string, metadata?: Record<string, any>) => Promise<void>;
 }
 
 const PersonalizationContext = createContext<PersonalizationContextType | undefined>(undefined);
 
-// Check for test environment
-const isTestEnvironment = (): boolean => {
-  return (
-    typeof window !== 'undefined' &&
-    ((window as any).__PLAYWRIGHT_TEST__ || 
-     (window as any).__TEST_ENV__ ||
-     navigator.userAgent.includes('Playwright') ||
-     process.env.NODE_ENV === 'test')
-  );
-};
+interface PersonalizationProviderProps {
+  children: React.ReactNode;
+  userId?: string;
+}
 
-// Feature flag to enable/disable personalization
-const enablePersonalizationForTesting = (): boolean => {
-  if (isTestEnvironment()) {
-    return !(window as any).__DISABLE_PERSONALIZATION__;
-  }
-  return true;
-};
+export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = ({ 
+  children, 
+  userId 
+}) => {
+  const [personalizationData, setPersonalizationData] = useState<PersonalizationData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<PersonalizationError | null>(null);
+  
+  // A/B testing integration
+  const abTestVariant = userId ? getUserVariant(userId, 'personalizedGreetings') : null;
+  const experimentConfig = userId ? getExperimentConfig(userId, 'personalizedGreetings') : null;
+  
+  // Feature flag check for controlled rollout (Alpha/Beta phases)
+  // Now enhanced with A/B testing
+  const featureFlagEnabled = useFeatureFlag('personalizedGreetings') ?? false;
+  const temporaryFlagEnabled = enablePersonalizationForTesting();
+  const abTestPersonalizationEnabled = experimentConfig?.enablePersonalization ?? false;
+  const isPersonalizationEnabled = featureFlagEnabled || temporaryFlagEnabled || abTestPersonalizationEnabled;
 
-// Default personalization data
-const defaultPersonalizationData: PersonalizationData = {
-  hasFirstName: false,
-  hasNextTrip: false,
-  isComplete: false,
-  loading: false,
-  error: null,
-  success: true,
-};
+  // A/B testing event tracking function
+  const trackPersonalizationEvent = async (
+    eventType: 'exposure' | 'conversion' | 'engagement',
+    eventName: string,
+    metadata?: Record<string, any>
+  ) => {
+    if (!userId || !abTestVariant) return;
 
-// Mock data for testing
-const mockPersonalizationData: PersonalizationData = {
-  hasFirstName: true,
-  hasNextTrip: false,
-  isComplete: true,
-  loading: false,
-  error: null,
-  success: true,
-};
+    const event: ABTestEvent = {
+      experimentId: 'personalizedGreetings',
+      variantId: abTestVariant,
+      userId,
+      eventType,
+      eventName,
+      timestamp: new Date(),
+      metadata,
+    };
 
-let personalizationCallCount = 0;
-let personalizationCache: PersonalizationData | null = null;
+    await trackABTestEvent(event);
+  };
 
-export const PersonalizationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { userId } = useCurrentUser();
-  const [personalizationData, setPersonalizationData] = useState<PersonalizationData>(defaultPersonalizationData);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Memoized value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    personalizationData,
+    loading,
+    error,
+    refreshPersonalizationData: fetchPersonalizationData,
+    isPersonalizationEnabled,
+    abTestVariant,
+    experimentConfig,
+    trackPersonalizationEvent,
+  }), [personalizationData, loading, error, isPersonalizationEnabled, abTestVariant, experimentConfig]);
 
-  // Memoize the fetch function to prevent recreation on every render
-  const fetchPersonalizationData = useCallback(async (): Promise<PersonalizationData> => {
-    if (!userId) {
-      return defaultPersonalizationData;
+  async function fetchPersonalizationData(): Promise<void> {
+    if (!userId || !isPersonalizationEnabled) {
+      setPersonalizationData(null);
+      return;
     }
 
-    // Check if personalization is disabled for testing
-    if (!enablePersonalizationForTesting()) {
-      console.log('Personalization disabled for testing');
-      return mockPersonalizationData;
-    }
-
-    // Return cached data if available
-    if (personalizationCache) {
-      console.log('Returning cached personalization data');
-      return personalizationCache;
-    }
-
-    try {
-      personalizationCallCount++;
-      console.log(`Fetching personalization data (call #${personalizationCallCount})`);
-
-      const { data, error } = await supabase.functions.invoke('get-personalization-data', {
-        body: { userId }
-      });
-
-      if (error) {
-        console.error('Personalization fetch error:', error);
-        // Return cached data or default data on error
-        return personalizationCache || defaultPersonalizationData;
-      }
-
-      const result: PersonalizationData = {
-        hasFirstName: data?.hasFirstName ?? false,
-        hasNextTrip: data?.hasNextTrip ?? false,
-        isComplete: data?.isComplete ?? false,
-        loading: false,
-        error: null,
-        success: true,
-      };
-
-      // Cache the result
-      personalizationCache = result;
-      console.log('Personalization data cached:', result);
-      
-      return result;
-    } catch (error) {
-      console.error('Personalization fetch exception:', error);
-      // Return cached data or default data on exception
-      return personalizationCache || defaultPersonalizationData;
-    }
-  }, [userId]); // Only depend on userId
-
-  // Memoize the refresh function
-  const refreshPersonalization = useCallback(async (): Promise<void> => {
-    if (!userId) return;
-    
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
 
     try {
-      const data = await fetchPersonalizationData();
-      setPersonalizationData(data);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch personalization data';
-      setError(errorMessage);
-      console.error('Error in refreshPersonalization:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchPersonalizationData]);
+      // Use the deployed edge function for personalization data
+      const { data: personalizationResult, error: functionError } = await supabase.functions.invoke(
+        'get-personalization-data',
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-  // Effect to initialize personalization data
+      if (functionError) {
+        throw new Error(`Edge function failed: ${functionError.message}`);
+      }
+
+      if (!personalizationResult) {
+        throw new Error('No personalization data returned from edge function');
+      }
+
+      // Edge function returns: { firstName, nextTripCity, personalizationEnabled }
+      const personalizationData: PersonalizationData = {
+        firstName: personalizationResult.firstName || undefined,
+        nextTripCity: personalizationResult.nextTripCity || undefined,
+        // loyaltyTier: undefined, // Can be added later
+      };
+
+      setPersonalizationData(personalizationData);
+      
+      // Log analytics event (without exposing personal data)
+      console.log('🎯 Personalization data loaded from edge function:', {
+        hasFirstName: !!personalizationData.firstName,
+        hasNextTrip: !!personalizationData.nextTripCity,
+        userId: userId.slice(0, 8), // Log only partial ID for debugging
+        functionResponse: {
+          personalizationEnabled: personalizationResult.personalizationEnabled,
+        },
+      });
+
+      // Track successful data fetch
+      await trackPersonalizationEvent('exposure', 'data_fetched', {
+        hasFirstName: !!personalizationData.firstName,
+        hasNextTrip: !!personalizationData.nextTripCity,
+        source: 'edge_function',
+      });
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const personalizationError: PersonalizationError = {
+        type: 'fetch_failed',
+        message: errorMessage,
+        context: 'PersonalizationProvider.fetchPersonalizationData',
+        fallbackUsed: true,
+      };
+      
+      setError(personalizationError);
+      setPersonalizationData(null);
+      
+      console.error('❌ Personalization fetch failed:', personalizationError);
+      
+      // Track error event
+      await trackPersonalizationEvent('exposure', 'data_fetch_failed', {
+        error: errorMessage,
+        source: 'edge_function',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Fetch data when userId changes or feature is enabled
   useEffect(() => {
-    if (userId) {
-      refreshPersonalization();
+    if (userId && isPersonalizationEnabled) {
+      fetchPersonalizationData();
     } else {
-      // Reset to default when no user
-      setPersonalizationData(defaultPersonalizationData);
+      setPersonalizationData(null);
+      setLoading(false);
       setError(null);
     }
-  }, [userId, refreshPersonalization]);
-
-  // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    personalizationData,
-    refreshPersonalization,
-    isLoading,
-    error,
-  }), [personalizationData, refreshPersonalization, isLoading, error]);
+  }, [userId, isPersonalizationEnabled]);
 
   return (
     <PersonalizationContext.Provider value={contextValue}>
@@ -167,6 +176,7 @@ export const PersonalizationProvider: React.FC<{ children: React.ReactNode }> = 
   );
 };
 
+// Custom hook to use personalization context
 export const usePersonalization = (): PersonalizationContextType => {
   const context = useContext(PersonalizationContext);
   if (context === undefined) {
@@ -175,11 +185,8 @@ export const usePersonalization = (): PersonalizationContextType => {
   return context;
 };
 
-// Export for testing
-export { personalizationCallCount };
-
-// Reset function for testing
-export const resetPersonalizationForTesting = (): void => {
-  personalizationCallCount = 0;
-  personalizationCache = null;
+// Helper hook for easy access to personalization data
+export const usePersonalizationData = (): PersonalizationData | null => {
+  const { personalizationData, isPersonalizationEnabled } = usePersonalization();
+  return isPersonalizationEnabled ? personalizationData : null;
 };

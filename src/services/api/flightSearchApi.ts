@@ -1,90 +1,122 @@
-import { supabase } from "@/integrations/supabase/client";
-import logger from "@/lib/logger";
+import { supabase } from '@/integrations/supabase/client';
+import logger from '@/lib/logger';
+
+export interface ScoredOffer {
+  id: string;
+  score: number;
+  price: number;
+  // Add other properties as needed
+}
+
+export interface FlightSearchResponse {
+  requestsProcessed: number;
+  matchesInserted: number;
+  totalDurationMs: number;
+  relaxedCriteriaUsed: boolean;
+  exactDestinationOnly: boolean;
+  details: Array<{
+    tripRequestId: string;
+    matchesFound: number;
+    offersGenerated: number;
+    offersInserted: number;
+  }>;
+  success: boolean;
+  message: string;
+  pool1: ScoredOffer[];
+  pool2: ScoredOffer[];
+  pool3: ScoredOffer[];
+  inserted: number;
+}
 
 export interface FlightSearchRequestBody {
   tripRequestId: string;
   relaxedCriteria?: boolean;
-  filterOptions?: {
-    budget?: number;
-    currency?: string;
-    pipelineType?: 'standard' | 'budget' | 'fast';
-  };
-}
-
-export interface FlightSearchResponse {
-  success: boolean;
-  message: string;
-  inserted?: number;
-  pool1?: any[];
-  pool2?: any[];
-  pool3?: any[];
 }
 
 /**
- * Invokes the flight-search-v2 edge function
- * @param payload The flight search request payload
- * @returns Promise resolving to the flight search response
+ * Invoke flight search - triggers the flight search process
  */
-export const invokeFlightSearch = async (
+export async function invokeFlightSearch(
   payload: FlightSearchRequestBody
-): Promise<FlightSearchResponse> => {
+): Promise<FlightSearchResponse> {
   try {
-    logger.info("[invokeFlightSearch] Invoking flight-search-v2 with payload:", payload);
+    logger.info('[FlightSearchApi] Invoking flight search', payload);
     
-    const { data, error } = await supabase.functions.invoke<FlightSearchResponse>(
-      "flight-search-v2",
-      {
-        body: payload,
-      }
-    );
-
+    // Call the flight search edge function
+    const { data, error } = await supabase.functions.invoke('flight-search-v2', {
+      body: payload
+    });
+    
     if (error) {
-      logger.error("[invokeFlightSearch] Supabase function error:", error);
+      logger.error('[FlightSearchApi] Error from edge function:', error);
       throw new Error(`Flight search failed: ${error.message}`);
     }
-
-    if (!data) {
-      logger.warn("[invokeFlightSearch] No data returned from flight-search-v2");
-      return {
-        success: false,
-        message: "No data returned from flight search",
-      };
-    }
-
-    logger.info("[invokeFlightSearch] Flight search completed successfully:", {
-      success: data.success,
-      inserted: data.inserted,
-      message: data.message,
-    });
-
-    return data;
+    
+    logger.info('[FlightSearchApi] Flight search completed successfully');
+    return data as FlightSearchResponse;
   } catch (error) {
-    logger.error("[invokeFlightSearch] Error invoking flight search:", error);
+    logger.error('[FlightSearchApi] invokeFlightSearch error:', error);
     throw error;
   }
-};
+}
 
 /**
- * Fetches flight search results with filtering options
- * @param tripRequestId The trip request ID
- * @param relaxedCriteria Whether to use relaxed search criteria
- * @param filterOptions Optional filtering options
- * @returns Promise resolving to the flight search response
+ * Fetch flight search results with filtering options
  */
-export const fetchFlightSearch = async (
-  tripRequestId: string,
-  relaxedCriteria: boolean = false,
-  filterOptions?: {
+export async function fetchFlightSearch(
+  tripId: string,
+  relaxedCriteria = false,
+  filterOptions: {
     budget?: number;
     currency?: string;
     pipelineType?: 'standard' | 'budget' | 'fast';
-  }
-): Promise<FlightSearchResponse> => {
-  const payload: FlightSearchRequestBody = {
-    tripRequestId,
-    relaxedCriteria,
-    filterOptions,
-  };
+  } = {}
+): Promise<FlightSearchResponse> {
+  try {
+    logger.info('[FlightSearchApi] Fetching flight search results', {
+      tripId,
+      relaxedCriteria,
+      filterOptions
+    });
 
-  return invokeFlightSearch(payload);
-};
+    // For now, we'll use the existing edge function approach
+    // In the future, this could be enhanced with more sophisticated filtering
+    const payload: FlightSearchRequestBody = {
+      tripRequestId: tripId,
+      relaxedCriteria
+    };
+
+    const response = await invokeFlightSearch(payload);
+    
+    // Apply any additional filtering based on filterOptions
+    if (filterOptions.budget) {
+      // Filter pools by budget
+      const filterByBudget = (offers: ScoredOffer[]) => 
+        offers.filter(offer => offer.price <= filterOptions.budget!);
+      
+      response.pool1 = filterByBudget(response.pool1);
+      response.pool2 = filterByBudget(response.pool2);
+      response.pool3 = filterByBudget(response.pool3);
+    }
+    
+    return response;
+  } catch (error) {
+    logger.error('[FlightSearchApi] fetchFlightSearch error:', error);
+    
+    // Return a default response structure on error
+    return {
+      requestsProcessed: 0,
+      matchesInserted: 0,
+      totalDurationMs: 0,
+      relaxedCriteriaUsed: relaxedCriteria,
+      exactDestinationOnly: true,
+      details: [],
+      success: false,
+      message: `Flight search failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      pool1: [],
+      pool2: [],
+      pool3: [],
+      inserted: 0
+    };
+  }
+}

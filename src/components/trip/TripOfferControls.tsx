@@ -32,9 +32,9 @@ const TripOfferControls: React.FC<TripOfferControlsProps> = ({
       <div className="mb-4 flex flex-wrap items-center justify-between">
         {/* BACK TO SEARCH */}
         <Link
-          to="/trip/new"
+          to="/search"
           className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
-          aria-label="Return to search form"
+          aria-label="Return to search options"
         >
           <svg
             className="w-4 h-4 transform rotate-180 text-blue-600"
