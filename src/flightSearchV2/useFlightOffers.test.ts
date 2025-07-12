@@ -74,7 +74,11 @@ describe('useFlightOffers Hook', () => {
       expect(result.current.error).toBeNull();
     });
     expect(mockGetFlightOffers).toHaveBeenCalledTimes(1);
-    expect(mockGetFlightOffers).toHaveBeenCalledWith(mockTripRequestId, false);
+    expect(mockGetFlightOffers).toHaveBeenCalledWith({
+      tripRequestId: mockTripRequestId,
+      refresh: false,
+      useCache: true
+    });
   });
 
   it('should handle errors from getFlightOffers server action', async () => {
@@ -128,6 +132,12 @@ describe('useFlightOffers Hook', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(mockGetFlightOffers).toHaveBeenCalledTimes(2);
+    // Second call should have refresh: true
+    expect(mockGetFlightOffers).toHaveBeenNthCalledWith(2, {
+      tripRequestId: mockTripRequestId,
+      refresh: true,
+      useCache: true
+    });
     // Check if the offers updated based on the second mock call
     const expectedRefetchedOffer = mapFlightOfferDbRowToV2({ ...mockDbRows[0], id: 'refetched-offer' });
     expect(result.current.offers).toEqual([expectedRefetchedOffer]);
@@ -147,7 +157,11 @@ describe('useFlightOffers Hook', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.offers).toEqual(initialData.map(mapFlightOfferDbRowToV2));
-    expect(mockGetFlightOffers).toHaveBeenCalledWith(initialId, false);
+    expect(mockGetFlightOffers).toHaveBeenCalledWith({
+      tripRequestId: initialId,
+      refresh: false,
+      useCache: true
+    });
 
     mockGetFlightOffers.mockResolvedValueOnce(newData); // For the new ID
     rerender({ id: newId });
@@ -155,7 +169,11 @@ describe('useFlightOffers Hook', () => {
     expect(result.current.isLoading).toBe(true);
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.offers).toEqual(newData.map(mapFlightOfferDbRowToV2));
-    expect(mockGetFlightOffers).toHaveBeenCalledWith(newId, false);
+    expect(mockGetFlightOffers).toHaveBeenCalledWith({
+      tripRequestId: newId,
+      refresh: false,
+      useCache: true
+    });
     expect(mockGetFlightOffers).toHaveBeenCalledTimes(2);
   });
 });

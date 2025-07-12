@@ -88,13 +88,11 @@ const TripConfirm = () => {
 
       // 2. Get the trip_request_id from flight_offers using the flight offer ID
       const flightOfferResult = await safeQuery<{ trip_request_id: string }>(() =>
-        Promise.resolve(
-          supabase
-            .from('flight_offers')
-            .select('trip_request_id')
-            .eq('id', offer.id)
-            .single()
-        )
+        supabase
+          .from('flight_offers')
+          .select('trip_request_id')
+          .eq('id', offer.id)
+          .single()
       );
 
       if (flightOfferResult.error || !flightOfferResult.data) {
@@ -109,12 +107,10 @@ const TripConfirm = () => {
       };
 
       const bookingResult = await safeQuery<Tables<"bookings">>(() =>
-        Promise.resolve(
-          supabase
-            .from('bookings')
-            .insert(bookingData)
-            .select()
-        )
+        supabase
+          .from('bookings')
+          .insert(bookingData)
+          .select()
       );
 
       if (bookingResult.error) {

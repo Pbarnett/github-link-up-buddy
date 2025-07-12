@@ -1,5 +1,5 @@
 
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,12 @@ import { useEffect, useRef, useState } from "react";
 const TripNew = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const mode = searchParams.get('mode') as 'manual' | 'auto' | null;
+  const location = useLocation();
+  
+  // Auto-set mode to 'manual' if accessing via /search route
+  const mode = location.pathname === '/search' 
+    ? 'manual' 
+    : (searchParams.get('mode') as 'manual' | 'auto' | null);
   const { trackCTAClick, trackCardView } = useAnalytics();
   const { user } = useCurrentUser();
   const autoCardRef = useRef<HTMLDivElement>(null);
@@ -73,7 +78,7 @@ const TripNew = () => {
                     <Settings className="h-6 w-6 text-blue-600" />
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <CardTitle as="h2" className="text-xl">Set up Auto-Booking</CardTitle>
+                    <CardTitle className="text-xl">Set up Auto-Booking</CardTitle>
                     <Badge variant="success" className="text-xs flex-shrink-0">Most popular</Badge>
                   </div>
                 </div>
@@ -130,7 +135,7 @@ const TripNew = () => {
                   <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-gray-200 transition-colors">
                     <Search className="h-6 w-6 text-gray-600" />
                   </div>
-                  <CardTitle as="h2" className="text-xl text-gray-700">Manual Search</CardTitle>
+                  <CardTitle className="text-xl text-gray-700">Manual Search</CardTitle>
                 </div>
                 <CardDescription className="text-base text-gray-600">
                   Just need a seat right now? Run a one‑time search.

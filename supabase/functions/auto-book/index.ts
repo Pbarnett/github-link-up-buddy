@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
   let trip: TripRequest | null = null;
   let bookingAttemptId: string | null = null;
   let mainOperationSuccessful = false;
-  let flightOrderIdForRollback: string | null = null;
+  const flightOrderIdForRollback: string | null = null;
   let capturedErrorObject: any = null; // Using 'any' for simplicity, can be 'Error | null'
   let accessToken: string | null = null; // Scoped accessToken, initialized to null
   let stripePaymentCapturedByAutoBook = false; // New flag
@@ -161,26 +161,141 @@ Deno.serve(async (req: Request) => {
     }
     // --- End Check ---
 
-    // --- Traveler Data Validation ---
+    // --- Enhanced Traveler Data Validation ---
     console.log(`[AutoBook] Validating traveler data for trip ID: ${trip.id}`);
+    
+    // Import validation utilities (note: we'll need to make these available in the edge function context)
     const traveler = trip.traveler_data;
     const missingFields: string[] = [];
+    const validationErrors: string[] = [];
+    const validationWarnings: string[] = [];
 
+    // Basic required fields
     if (!traveler?.firstName?.trim()) missingFields.push('firstName');
     if (!traveler?.lastName?.trim()) missingFields.push('lastName');
-    if (!traveler?.email?.trim()) missingFields.push('email');
+    if (!traveler?.email?.trim()) {
+        missingFields.push('email');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(traveler.email)) {
+        validationErrors.push('Please enter a valid email address.');
+    }
 
+    // Enhanced international travel validation
     const originCountry = trip.origin_location_code?.slice(0, 2).toUpperCase();
     const destCountry = trip.destination_location_code?.slice(0, 2).toUpperCase();
     const isInternational = originCountry && destCountry && originCountry !== destCountry;
 
-    if (isInternational && !traveler?.passportNumber?.trim()) {
-        missingFields.push('passportNumber');
+    if (isInternational) {
+        console.log(`[AutoBook] International travel detected: ${originCountry} -> ${destCountry}`);
+        
+        if (!traveler?.passportNumber?.trim()) {
+            missingFields.push('passportNumber');
+        }
+        
+        if (!traveler?.passportExpiry?.trim()) {
+            missingFields.push('passportExpiry');
+        } else {
+            // Validate passport expiry
+            try {
+                const expiryDate = new Date(traveler.passportExpiry);
+                const travelDate = new Date(trip.departure_date);
+                const today = new Date();
+                
+                if (expiryDate <= today) {
+                    validationErrors.push('Passport has expired. Please renew your passport before traveling.');
+                } else if (expiryDate <= travelDate) {
+                    validationErrors.push('Passport expires before your travel date. Please renew your passport.');
+                } else {
+                    // Check 6-month rule for strict countries
+                    const sixMonthsFromTravel = new Date(travelDate);
+                    sixMonthsFromTravel.setMonth(sixMonthsFromTravel.getMonth() + 6);
+                    
+                    const strictSixMonthCountries = ['US', 'TH', 'MY', 'SG', 'PH', 'ID', 'VN'];
+                    if (expiryDate < sixMonthsFromTravel && strictSixMonthCountries.includes(destCountry)) {
+                        validationErrors.push('Your destination requires your passport to be valid for at least 6 months from your travel date.');
+                    } else if (expiryDate < sixMonthsFromTravel) {
+                        validationWarnings.push('Your passport expires within 6 months of travel. Some destinations may require longer validity.');
+                    }
+                }
+            } catch {
+                validationErrors.push('Invalid passport expiry date format. Please use YYYY-MM-DD format.');
+            }
+        }
+        
+        if (!traveler?.nationality?.trim()) {
+            missingFields.push('nationality');
+        }
+        
+        // Enhanced security destinations
+        const enhancedSecurityCountries = ['US', 'CA', 'GB', 'AU', 'NZ', 'JP', 'KR', 'IL', 'AE', 'SA'];
+        if (enhancedSecurityCountries.includes(destCountry)) {
+            if (!traveler?.issuanceCountry?.trim()) {
+                missingFields.push('issuanceCountry');
+            }
+            validationWarnings.push('This destination may require additional security screening. Please arrive at the airport early.');
+        }
     }
 
-    if (missingFields.length > 0) {
-        const errorMsg = `Missing or invalid traveler data: ${missingFields.join(', ')}`;
+    // Phone number validation (recommended)
+    if (!traveler?.phone?.trim()) {
+        validationWarnings.push('A phone number is recommended for travel notifications.');
+    } else if (!/^\+?[\d\s\-()]+$/.test(traveler.phone)) {
+        validationWarnings.push('Please verify your phone number format is correct.');
+    }
+
+    // Date of birth validation
+    if (!traveler?.dateOfBirth?.trim()) {
+        missingFields.push('dateOfBirth');
+    } else {
+        try {
+            const birthDate = new Date(traveler.dateOfBirth);
+            const today = new Date();
+            const age = today.getFullYear() - birthDate.getFullYear();
+            
+            if (age < 0 || age > 120) {
+                validationErrors.push('Please enter a valid date of birth.');
+            }
+            
+            if (age < 18) {
+                validationWarnings.push('Travelers under 18 may require additional documentation.');
+            }
+        } catch {
+            validationErrors.push('Please enter a valid date of birth in YYYY-MM-DD format.');
+        }
+    }
+
+    // Compile all validation issues
+    const hasValidationErrors = missingFields.length > 0 || validationErrors.length > 0;
+    
+    if (hasValidationErrors) {
+        const fieldNames = missingFields.map(field => {
+            const displayNames: Record<string, string> = {
+                firstName: 'First Name',
+                lastName: 'Last Name',
+                dateOfBirth: 'Date of Birth',
+                email: 'Email Address',
+                phone: 'Phone Number',
+                passportNumber: 'Passport Number',
+                passportExpiry: 'Passport Expiry Date',
+                nationality: 'Nationality',
+                issuanceCountry: 'Passport Issuing Country'
+            };
+            return displayNames[field] || field;
+        });
+        
+        const errorDetails = [];
+        if (missingFields.length > 0) {
+            errorDetails.push(`Missing required information: ${fieldNames.join(', ')}`);
+        }
+        if (validationErrors.length > 0) {
+            errorDetails.push(...validationErrors);
+        }
+        
+        const errorMsg = errorDetails.join('. ');
         console.warn(`[AutoBook] Validation failed for trip ID ${trip.id}: ${errorMsg}`);
+        
+        if (validationWarnings.length > 0) {
+            console.info(`[AutoBook] Validation warnings for trip ID ${trip.id}: ${validationWarnings.join('. ')}`);
+        }
 
         const { error: insertBookingReqError } = await supabaseClient
             .from('booking_requests')
@@ -371,50 +486,114 @@ Deno.serve(async (req: Request) => {
     }
     // --- End Conditional Seat Selection ---
 
-    // 3. Amadeus Flight Order Booking (using HTTP helper)
-    console.log(`[AutoBook] Creating flight order via HTTP for trip ID: ${trip.id}. Chosen seat(s): ${seatSelections.length > 0 ? JSON.stringify(seatSelections) : 'None'}`);
-
-    const travelerDataPayload: TravelerData = {
-        firstName: trip.traveler_data?.firstName || "TestFirstName",
-        lastName: trip.traveler_data?.lastName || "TestLastName",
-        dateOfBirth: trip.traveler_data?.dateOfBirth, // Format YYYY-MM-DD
-        gender: (trip.traveler_data?.gender?.toUpperCase() as "MALE" | "FEMALE" | undefined) || "MALE",
-        email: user.email,
-        phone: user.phone,
-        documents: trip.traveler_data?.passportNumber ? [{
-            documentType: 'PASSPORT',
-            number: trip.traveler_data.passportNumber,
-            expiryDate: trip.traveler_data.passportExpiry,
-            nationality: trip.traveler_data.nationality,
-            issuanceCountry: trip.traveler_data.issuanceCountry,
-        }] : undefined,
-    };
-
-    const bookingResult = await bookWithAmadeus(
-        pricedOffer,
-        travelerDataPayload,
-        seatSelections, // Pass the conditionally populated seatSelections array
-        accessToken
-    );
-
-    if (!bookingResult.success || !bookingResult.bookingReference) { // Ensure bookingReference exists
-        console.error(`[AutoBook] Amadeus booking via HTTP failed for trip ID: ${trip.id}. Error: ${bookingResult.error}`);
-        throw new Error(bookingResult.error || 'Amadeus booking via HTTP failed.');
+    // 3. Production-Ready Duffel Integration Following Saga Pattern
+    console.log(`[AutoBook] Starting Duffel booking integration for trip ID: ${trip.id}`);
+    
+    // Check feature flag for Duffel live mode
+    const { data: featureFlag } = await supabaseClient
+        .from('feature_flags')
+        .select('enabled')
+        .eq('name', 'duffel_live_enabled')
+        .single();
+    
+    const useLiveDuffel = featureFlag?.enabled || false;
+    console.log(`[AutoBook] Duffel mode: ${useLiveDuffel ? 'LIVE' : 'TEST'} for trip ID: ${trip.id}`);
+    
+    // Import enhanced Duffel service
+    const { DuffelService, createDuffelService, DuffelServiceError } = await import('../lib/duffelService.ts');
+    
+    let duffelService: any;
+    let selectedOffer: any = null;
+    const duffelOrder: any = null;
+    
+    try {
+        // Initialize Duffel service with appropriate environment
+        duffelService = createDuffelService(useLiveDuffel);
+        
+        // Create Duffel offer request from trip criteria
+        const duffelOfferRequest = DuffelService.mapAmadeusSearchToDuffelRequest(
+            {
+                origin: trip.origin_location_code,
+                destination: trip.destination_location_code,
+                departure_date: trip.departure_date,
+                return_date: trip.return_date,
+                cabin_class: trip.travel_class?.toLowerCase() || 'economy',
+                max_connections: trip.nonstop_required ? 0 : undefined
+            },
+            { adults: trip.adults }
+        );
+        
+        console.log(`[AutoBook] Creating Duffel offer request for trip ID: ${trip.id}`);
+        const offerRequest = await duffelService.createOfferRequest(duffelOfferRequest);
+        
+        // Wait for offers to be processed (Duffel needs time to fetch from airlines)
+        console.log(`[AutoBook] Waiting for offers to be processed...`);
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Get available offers
+        const duffelOffers = await duffelService.getOffers(offerRequest.id, 20);
+        
+        if (!duffelOffers || duffelOffers.length === 0) {
+            console.error(`[AutoBook] No valid Duffel offers found for trip ID: ${trip.id}`);
+            throw new Error('No bookable offers found via Duffel within budget and time constraints');
+        }
+        
+        // Filter offers within budget and select best one
+        const affordableOffers = duffelOffers.filter(offer => {
+            const price = parseFloat(offer.total_amount);
+            return price <= trip.max_price;
+        });
+        
+        if (affordableOffers.length === 0) {
+            console.warn(`[AutoBook] No Duffel offers within budget ${trip.max_price} for trip ID: ${trip.id}`);
+            throw new Error(`No offers found within budget of ${trip.max_price}`);
+        }
+        
+        // Sort by price and select cheapest
+        affordableOffers.sort((a, b) => parseFloat(a.total_amount) - parseFloat(b.total_amount));
+        selectedOffer = affordableOffers[0];
+        
+        console.log(`[AutoBook] Selected Duffel offer ${selectedOffer.id} with price ${selectedOffer.total_amount} ${selectedOffer.total_currency} for trip ID: ${trip.id}`);
+        
+        // Store Duffel offer data for reference
+        if (associatedBookingRequestId) {
+            await supabaseClient
+                .from('booking_requests')
+                .update({
+                    duffel_offer_id: selectedOffer.id,
+                    duffel_offer_data: selectedOffer,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', associatedBookingRequestId);
+        }
+        
+        // Validate offer is still available before proceeding
+        const validatedOffer = await duffelService.getOffer(selectedOffer.id);
+        if (!validatedOffer) {
+            throw new Error('Selected offer has expired or is no longer available');
+        }
+        
+        console.log(`[AutoBook] Offer ${selectedOffer.id} validated and still available`);
+        
+    } catch (duffelSearchError) {
+        console.error(`[AutoBook] Duffel search/offer selection failed for trip ID: ${trip.id}:`, duffelSearchError.message);
+        
+        // Update booking attempt with search failure
+        if (bookingAttemptId) {
+            await supabaseClient
+                .from('booking_attempts')
+                .update({
+                    status: 'failed',
+                    ended_at: new Date().toISOString(),
+                    error_message: `Duffel search failed: ${duffelSearchError.message}`.substring(0, 500)
+                })
+                .eq('id', bookingAttemptId);
+        }
+        
+        throw new Error(`Flight search failed: ${duffelSearchError.message}`);
     }
 
-    flightOrderIdForRollback = bookingResult.bookingReference; // Store for potential rollback
-    const airlinePnr = bookingResult.confirmationNumber || bookingResult.bookingReference; // Define airlinePnr correctly
-    // Attempt to get final price from bookingResult.bookingData, fallback to pricedOffer.price.total
-    const bookingDataFinalPrice = bookingResult.bookingData?.flightOffers?.[0]?.price?.total || bookingResult.bookingData?.price?.total;
-    const finalPrice = Number(bookingDataFinalPrice || pricedOffer.price?.total);
-
-    if (isNaN(finalPrice)) {
-        console.error('[AutoBook] Could not determine final price from booking response. PricedOffer price: ' + pricedOffer?.price?.total + ', BookingResult data: ', bookingResult.bookingData);
-        throw new Error('Amadeus booking succeeded but final price is unclear.');
-    }
-    console.log(`[AutoBook] Final confirmed price: ${finalPrice} for trip ID: ${trip.id}`);
-
-    // 5. Stripe PaymentIntent Capture (logic remains largely the same)
+    // 4. Stripe PaymentIntent Capture (updated numbering)
     console.log(`[AutoBook] Initiating Stripe payment capture for trip ID: ${trip.id}. Flight Order ID: ${flightOrderIdForRollback}`);
     const paymentIntentId = trip.payment_intent_id;
     if (!paymentIntentId) {

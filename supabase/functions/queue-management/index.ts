@@ -65,10 +65,10 @@ Deno.serve(async (req: Request) => {
     try {
       // Create the queue table and functions
       await NotificationQueue.enqueue({
-        id: 'test-init',
+        id: crypto.randomUUID(),
         type: 'system_test',
-        user_id: 'test-user',
-        notification_id: 'test-notification',
+        user_id: crypto.randomUUID(),
+        notification_id: crypto.randomUUID(),
         channel: 'email',
         priority: 'low',
         data: { test: true }

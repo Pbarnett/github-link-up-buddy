@@ -28,11 +28,11 @@ export const resetMockSupabaseClient = (client: MockSupabaseClient) => {
   // Reset all mock implementations
   Object.values(client).forEach((method) => {
     if (typeof method === 'function') {
-      method.mockClear();
+      (method as any).mockClear();
     } else if (typeof method === 'object') {
       Object.values(method).forEach((nestedMethod) => {
         if (typeof nestedMethod === 'function') {
-          nestedMethod.mockClear();
+          (nestedMethod as any).mockClear();
         }
       });
     }

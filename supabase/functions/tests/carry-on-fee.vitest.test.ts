@@ -1,6 +1,6 @@
 // src/tests/services/carry-on-fee.vitest.test.ts
 import { test, expect } from 'vitest';
-import { computeCarryOnFee } from "../../../supabase/functions/flight-search/flightApi.edge.ts";
+import { computeCarryOnFee } from "./helpers/computeCarryOnFeeTestable.ts";
 
 // Test case structure from user brief:
 // test('name', () => { const fee = computeCarryOnFee(mockOffer); expect(fee).toEqual(expected); });

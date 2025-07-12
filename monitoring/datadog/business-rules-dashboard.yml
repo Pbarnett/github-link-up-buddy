@@ -1,0 +1,92 @@
+title: "Parker Flight - Business Rules & Feature Flags"
+description: "Production monitoring dashboard for Parker Flight business rules config and feature flag system"
+template_variables:
+  - name: environment
+    default: production
+    prefix: env
+  - name: service
+    default: parker-flight-api
+    prefix: service
+
+widgets:
+  - title: "HTTP Request Rate"
+    type: timeseries
+    definition:
+      requests:
+        - q: "sum:parker_flight.http.requests{$environment,$service} by {method,route,status_code}.as_rate()"
+      yaxis:
+        label: "Requests/sec"
+        min: "0"
+      markers:
+        - value: "y = 100"
+          display_type: "error dashed"
+
+  - title: "Feature Flag Hits"
+    type: query_value
+    definition:
+      requests:
+        - q: "sum:parker_flight.feature_flag.hits{$environment,$service} by {flag,userInRollout}"
+      autoscale: true
+      precision: 0
+
+  - title: "Feature Flag Rollout Percentage"
+    type: timeseries
+    definition:
+      requests:
+        - q: "avg:parker_flight.feature_flag.rollout_percentage{$environment,$service} by {flag}"
+      yaxis:
+        label: "Percentage"
+        min: "0"
+        max: "100"
+
+  - title: "AWS Operations Rate"
+    type: timeseries
+    definition:
+      requests:
+        - q: "sum:parker_flight.aws.operations{$environment,$service} by {aws_service,operation,status}.as_rate()"
+      yaxis:
+        label: "Operations/sec"
+        min: "0"
+
+  - title: "API Response Time (95th percentile)"
+    type: timeseries
+    definition:
+      requests:
+        - q: "avg:parker_flight.http.response_time.95percentile{$environment,$service} by {endpoint}"
+      yaxis:
+        label: "Seconds"
+        min: "0"
+
+  - title: "Business Rules Config Requests"
+    type: timeseries
+    definition:
+      requests:
+        - q: "sum:parker_flight.business_rules.requests{$environment,$service} by {environment,status}.as_rate()"
+      yaxis:
+        label: "Requests/sec"
+        min: "0"
+
+  - title: "AWS Operations by Service"
+    type: toplist
+    definition:
+      requests:
+        - q: "top(sum:parker_flight.aws.operations{$environment,$service} by {aws_service}.as_rate(), 10, 'sum', 'desc')"
+
+  - title: "Error Rate"
+    type: query_value
+    definition:
+      requests:
+        - q: "sum:parker_flight.http.requests{$environment,$service,status_code:5*}.as_rate() / sum:parker_flight.http.requests{$environment,$service}.as_rate() * 100"
+      autoscale: true
+      precision: 2
+      conditional_formats:
+        - comparator: ">"
+          value: 5
+          palette: "red_on_white"
+        - comparator: "<="
+          value: 1
+          palette: "green_on_white"
+
+layout_type: ordered
+is_read_only: false
+notify_list: []

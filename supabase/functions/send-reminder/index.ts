@@ -1,17 +1,65 @@
 // supabase/functions/send-reminder/index.ts
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// Conditional imports for Deno vs Node.js environments
+let serve: any;
+let createClient: any;
+let SupabaseClient: any;
+
+async function initializeEnvironment() {
+  // Check if we're in test environment (vi/vitest globals present)
+  if (typeof globalThis !== 'undefined' && (globalThis as any).vi) {
+    // Test environment - createClient and serve are already mocked by vitest
+    // Just return to avoid dynamic imports
+    return;
+  }
+  
+  if (typeof Deno !== 'undefined') {
+    // Deno environment - use https imports
+    const { serve: denoServe } = await import('https://deno.land/std@0.177.0/http/server.ts');
+    const { createClient: denoCreateClient, SupabaseClient: denoSupabaseClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    serve = denoServe;
+    createClient = denoCreateClient;
+    SupabaseClient = denoSupabaseClient;
+  } else {
+    // Node.js/test environment - use npm packages
+    try {
+      const { createClient: nodeCreateClient } = await import('@supabase/supabase-js');
+      createClient = nodeCreateClient;
+      // Mock serve function for Node.js
+      serve = (handler: any) => console.log('Mock serve called with handler');
+    } catch (error) {
+      console.error('Failed to import Supabase in Node.js environment:', error);
+    }
+  }
+}
+
+// Global environment helper function
+const getEnv = (key: string) => {
+  if (typeof Deno !== 'undefined' && Deno.env) {
+    return Deno.env.get(key);
+  }
+  // Fallback for test environment
+  return process?.env?.[key];
+};
 
 // Helper function to get Supabase admin client
-const getSupabaseAdmin = () => {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const getSupabaseAdmin = async () => {
+  const supabaseUrl = getEnv('SUPABASE_URL');
+  const supabaseServiceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     console.error('[SendReminder] CRITICAL: Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env vars.');
     throw new Error('Server configuration error for SendReminder: Supabase credentials missing.');
   }
+  
+  // In test environment, use the mocked module
+  if (typeof globalThis !== 'undefined' && (globalThis as any).vi) {
+    const { createClient: testCreateClient } = await import('@supabase/supabase-js');
+    return testCreateClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: { persistSession: false }
+    });
+  }
+  
   return createClient(supabaseUrl, supabaseServiceRoleKey, {
     auth: { persistSession: false }
   });
@@ -24,7 +72,12 @@ const corsHeaders = {
 };
 
 // Export testable handler
-export const testableHandler = async (req: Request): Promise<Response> => {
+export const handler = async (req: Request): Promise<Response> => {
+  // Initialize environment if not already done
+  if (!createClient) {
+    await initializeEnvironment();
+  }
+  
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -36,9 +89,9 @@ export const testableHandler = async (req: Request): Promise<Response> => {
   // }
   console.log('[SendReminder] Function invoked.');
 
-  const supabaseAdmin = getSupabaseAdmin();
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const supabaseAdmin = await getSupabaseAdmin();
+  const supabaseUrl = getEnv('SUPABASE_URL');
+  const serviceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
 
   if (!supabaseUrl || !serviceRoleKey) {
     console.error('[SendReminder] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured for invoking other functions.');
@@ -161,5 +214,13 @@ export const testableHandler = async (req: Request): Promise<Response> => {
   }
 };
 
+export const testableHandler = handler;
+export default handler;
+
 // Initialize and serve the handler
-serve(testableHandler);
+if (typeof Deno !== 'undefined' && !(globalThis as any).vi) {
+  // Only initialize serve in Deno environment
+  initializeEnvironment().then(() => {
+    serve(handler);
+  });
+}

@@ -9,7 +9,7 @@ vi.stubGlobal('Deno', {
 });
 
 // Mock fetch for testing
-let mockFetch = vi.fn();
+const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
 describe('Amadeus Token Caching', () => {

@@ -1,0 +1,42 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "/etc/prometheus/alert-rules.yml"
+
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Parker Flight API metrics
+  - job_name: 'parker-flight-api'
+    static_configs:
+      - targets: ['host.docker.internal:5001']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+    scrape_timeout: 5s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+
+  # Parker Flight Health endpoint (Supabase Edge Function)
+  - job_name: 'parker-flight-health'
+    static_configs:
+      - targets: ['YOUR_SUPABASE_PROJECT_ID.supabase.co']
+    metrics_path: '/functions/v1/health'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    scheme: https
+    params:
+      format: ['prometheus']
+    headers:
+      Authorization: 'Bearer YOUR_SUPABASE_ANON_KEY'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093

@@ -2,16 +2,18 @@
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { SmartErrorBoundary } from "@/components/ErrorBoundary";
 import { useRetryQueue } from "@/utils/retryQueue";
 import { useEffect } from "react";
+import { BusinessRulesProvider } from "./hooks/useBusinessRules";
 import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 // Import dev auth for easy development authentication
 import "@/utils/devAuth";
+import "@/utils/authTest";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
 import TripNew from "./pages/TripNew";
 import TripOffers from "./pages/TripOffers";
 import TripOffersV2 from "./pages/TripOffersV2"; // Import the V2 component
@@ -21,6 +23,7 @@ import Wallet from "./pages/Wallet";
 import DuffelTest from "./pages/DuffelTest";
 import AutoBookingDashboard from "./pages/AutoBookingDashboard";
 import AutoBookingNew from "./pages/AutoBookingNew";
+import { FormAnalyticsDashboard } from "./components/forms/analytics/FormAnalyticsDashboard";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
 import TopNavigation from "./components/navigation/TopNavigation";
@@ -44,6 +47,24 @@ const NavigationWrapper = () => {
   return <TopNavigation hideFindFlights={shouldHideFindFlights} />;
 };
 
+// Breadcrumbs wrapper to conditionally hide on certain pages
+const BreadcrumbsWrapper = () => {
+  const location = useLocation();
+  const shouldHideBreadcrumbs = 
+    location.pathname === '/auto-booking' || 
+    location.pathname === '/auto-booking/new' ||
+    location.pathname === '/dashboard' ||
+    location.pathname === '/search' ||
+    location.pathname === '/trip/new' ||
+    location.pathname.includes('/trips/') && location.pathname.includes('/v2'); // Hide on flight results pages
+  
+  if (shouldHideBreadcrumbs) {
+    return null;
+  }
+  
+  return <Breadcrumbs />;
+};
+
 // Global middleware component
 const GlobalMiddleware = ({ children }: { children: React.ReactNode }) => {
   // Initialize retry queue
@@ -57,125 +78,150 @@ const GlobalMiddleware = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Personalization wrapper to provide user context
+const PersonalizationWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { userId } = useCurrentUser();
+  
+  return (
+    <PersonalizationProvider userId={userId || undefined}>
+      {children}
+    </PersonalizationProvider>
+  );
+};
+
 const App = () => {
   return (
     <SmartErrorBoundary level="global">
       <QueryClientProvider client={queryClient}>
-        <PersonalizationProvider>
+        <BusinessRulesProvider>
           <TooltipProvider>
             <GlobalMiddleware>
             <Toaster />
-        <a href="#main" className="skip-link">
-          Skip to content
-        </a>
-        <BrowserRouter 
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true
-          }}
-        >
-          <NavigationWrapper />
-          <Breadcrumbs />
-          <main id="main" className="flex-1 overflow-auto">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <AuthGuard>
-                    <Dashboard />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/trip/new"
-                element={
-                  <AuthGuard>
-                    <TripNew />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/trip/offers"
-                element={
-                  <AuthGuard>
-                    <TripOffers />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/trip/confirm"
-                element={
-                  <AuthGuard>
-                    <TripConfirm />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <AuthGuard>
-                    <Profile />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/wallet"
-                element={
-                  <AuthGuard>
-                    <Wallet />
-                  </AuthGuard>
-                }
-              />
-              <Route path="/trips/:tripId/v2"
-                element={
-                  <AuthGuard>
-                    <TripOffersV2 />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/auto-booking"
-                element={
-                  <AuthGuard>
-                    <AutoBookingDashboard />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/auto-booking/new"
-                element={
-                  <AuthGuard>
-                    <AutoBookingNew />
-                  </AuthGuard>
-                }
-              />
-              {/* Duffel Flight Search - Production Ready */}
-              <Route
-                path="/duffel-test"
-                element={
-                  <AuthGuard>
-                    <DuffelTest />
-                  </AuthGuard>
-                }
-              />
-              <Route
-                path="/flight-search"
-                element={
-                  <AuthGuard>
-                    <DuffelTest />
-                  </AuthGuard>
-                }
-              />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-        </BrowserRouter>
+            <a href="#main" className="skip-link">
+              Skip to content
+            </a>
+            <BrowserRouter 
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true
+              }}
+            >
+              <PersonalizationWrapper>
+                <NavigationWrapper />
+                <BreadcrumbsWrapper />
+                <main id="main" className="flex-1 overflow-auto">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <AuthGuard>
+                        <AutoBookingDashboard />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/trip/new"
+                    element={<Navigate to="/auto-booking/new" replace />}
+                  />
+                  <Route
+                    path="/search"
+                    element={
+                      <AuthGuard>
+                        <TripNew />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/trip/offers"
+                    element={
+                      <AuthGuard>
+                        <TripOffers />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/trip/confirm"
+                    element={
+                      <AuthGuard>
+                        <TripConfirm />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <AuthGuard>
+                        <Profile />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/wallet"
+                    element={
+                      <AuthGuard>
+                        <Wallet />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route path="/trips/:tripId/v2"
+                    element={
+                      <AuthGuard>
+                        <TripOffersV2 />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/auto-booking"
+                    element={
+                      <AuthGuard>
+                        <AutoBookingDashboard />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/auto-booking/new"
+                    element={
+                      <AuthGuard>
+                        <AutoBookingNew />
+                      </AuthGuard>
+                    }
+                  />
+                  {/* Duffel Flight Search - Production Ready */}
+                  <Route
+                    path="/duffel-test"
+                    element={
+                      <AuthGuard>
+                        <DuffelTest />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/flight-search"
+                    element={
+                      <AuthGuard>
+                        <DuffelTest />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/form-analytics"
+                    element={
+                      <AuthGuard>
+                        <FormAnalyticsDashboard />
+                      </AuthGuard>
+                    }
+                  />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                </main>
+              </PersonalizationWrapper>
+            </BrowserRouter>
             </GlobalMiddleware>
           </TooltipProvider>
-        </PersonalizationProvider>
+        </BusinessRulesProvider>
       </QueryClientProvider>
     </SmartErrorBoundary>
   );

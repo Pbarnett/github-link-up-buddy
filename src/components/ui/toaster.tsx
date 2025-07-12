@@ -8,7 +8,7 @@ import {
   ToastViewport,
 } from "@/components/ui/toast"
 
-export function Toaster() {
+function ToasterComponent() {
   const { toasts } = useToast()
 
   return (
@@ -31,3 +31,6 @@ export function Toaster() {
     </ToastProvider>
   )
 }
+
+// Named export
+export { ToasterComponent as Toaster }

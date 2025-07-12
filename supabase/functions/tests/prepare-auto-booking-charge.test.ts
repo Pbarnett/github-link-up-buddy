@@ -1,23 +1,47 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createSupabaseMock } from '../../../src/tests/mocks/supabase-mock';
 
-// Mock Stripe
+// Use the proven Supabase mock structure
+const { supabase: mockSupabaseClient, mocks } = createSupabaseMock();
+
+// Mock Stripe - matches the test structure
 const mockStripeInstance = {
   paymentIntents: {
     create: vi.fn(),
   },
 };
 
+// Mock the stripe module directly
+vi.mock('stripe', () => ({
+  default: vi.fn(() => mockStripeInstance),
+}));
+
+// Mock the local stripe lib
 vi.mock('../lib/stripe.ts', () => ({
   stripe: mockStripeInstance,
 }));
 
-// Use the proven Supabase mock structure
-const { supabase: mockSupabaseClient, mocks } = createSupabaseMock();
+// Mock the standard library serve function for Deno edge functions
+vi.mock('deno-serve', () => ({
+  serve: vi.fn(),
+}), { virtual: true });
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => mockSupabaseClient),
 }));
+
+// Mock Deno environment
+vi.stubGlobal('Deno', {
+  env: {
+    get: vi.fn((key: string) => {
+      const envVars: Record<string, string> = {
+        'SUPABASE_URL': 'http://localhost:54321',
+        'SUPABASE_SERVICE_ROLE_KEY': 'test-service-role-key'
+      };
+      return envVars[key];
+    })
+  }
+});
 
 describe('prepare-auto-booking-charge', () => {
   beforeEach(() => {

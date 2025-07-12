@@ -80,7 +80,7 @@ serve(async (req: Request) => {
     const fetchStart = Date.now();
     const { data: paymentMethod, error: fetchError } = await supabaseClient
       .from("payment_methods")
-      .select("stripe_pm_id, stripe_customer_id, is_default")
+      .select("stripe_payment_method_id, stripe_customer_id, is_default")
       .eq("id", id)
       .eq("user_id", user.id)
       .single();
@@ -111,10 +111,10 @@ serve(async (req: Request) => {
 
     // Detach the payment method from Stripe first
     try {
-      console.log(`Detaching payment method ${paymentMethod.stripe_pm_id} from Stripe`);
+      console.log(`Detaching payment method ${paymentMethod.stripe_payment_method_id} from Stripe`);
       
       const stripeDetachStart = Date.now();
-      await stripe.paymentMethods.detach(paymentMethod.stripe_pm_id);
+      await stripe.paymentMethods.detach(paymentMethod.stripe_payment_method_id);
       console.log("Stripe detach took:", Date.now() - stripeDetachStart, "ms");
 
       console.log("Successfully detached payment method from Stripe");
@@ -152,7 +152,7 @@ serve(async (req: Request) => {
       try {
         if (paymentMethod.stripe_customer_id) {
           const rollbackStart = Date.now();
-          await stripe.paymentMethods.attach(paymentMethod.stripe_pm_id, {
+          await stripe.paymentMethods.attach(paymentMethod.stripe_payment_method_id, {
             customer: paymentMethod.stripe_customer_id,
           });
           console.log("Stripe rollback took:", Date.now() - rollbackStart, "ms");

@@ -36,17 +36,9 @@ describe('Flight Offers v2 Edge Function', () => {
       },
     });
 
-    // Import and capture the handler
-    const { serve } = await import('https://deno.land/std@0.177.0/http/server.ts');
-    await import('./index.ts');
-    
-    // Get the handler function passed to serve
-    const mockServe = vi.mocked(serve);
-    if (mockServe.mock.calls.length > 0) {
-      handler = mockServe.mock.calls[0][0];
-    } else {
-      handler = async () => new Response('Mock not configured', { status: 500 });
-    }
+    // Import the handler directly
+    const module = await import('./index.ts');
+    handler = module.default;
   });
 
   it('should return 200 with empty array for valid tripRequestId', async () => {

@@ -1,7 +1,7 @@
 // supabase/functions/tests/carry-on-fee.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mockSupabaseClient } from '@/tests/utils/supabaseMockFactory';
-import { computeCarryOnFee } from "../flight-search/flightApi.edge.ts";
+import { computeCarryOnFee } from "./helpers/computeCarryOnFeeTestable.ts";
 
 // Test case structure from user brief:
 // Deno.test('name', () => { const fee = computeCarryOnFee(mockOffer); assertEquals(fee, expected); });

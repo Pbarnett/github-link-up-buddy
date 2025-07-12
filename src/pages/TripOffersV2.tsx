@@ -119,7 +119,12 @@ const TripOffersV2: React.FC = () => {
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     try {
-      return format(new Date(dateString), 'MMM dd, yyyy HH:mm');
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.error("Invalid date:", dateString);
+        return 'Invalid Date';
+      }
+      return format(date, 'MMM dd, yyyy HH:mm');
     } catch (e) {
       console.error("Error formatting date:", dateString, e);
       return 'Invalid Date';

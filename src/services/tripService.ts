@@ -52,13 +52,11 @@ const createTrip = async (
   
   // Insert trip request into Supabase with proper types
   const tripRequestResult = await safeQuery<Tables<"trip_requests">>(() =>
-    Promise.resolve(
-      supabase
-        .from("trip_requests")
-        .insert(tripRequestData)
-        .select()
-        .single()
-    )
+    supabase
+      .from("trip_requests")
+      .insert(tripRequestData)
+      .select()
+      .single()
   );
   
   if (tripRequestResult.error) {
@@ -79,10 +77,7 @@ export const createTripRequest = async (
   try {
     // Invoke the NEW flight-search-v2 edge function with real Amadeus integration
     console.log(`Invoking flight-search-v2 function for trip request ${tripRequest.id}`);
-    const { data: fsData, error: fsError } = await supabase.functions.invoke<{
-      inserted: number;
-      message: string;
-    }>("flight-search-v2", {
+    const { data: fsData, error: fsError } = await supabase.functions.invoke("flight-search-v2", {
       body: { tripRequestId: tripRequest.id }
     });
     
@@ -91,10 +86,11 @@ export const createTripRequest = async (
     } else {
       console.log("Flight search completed:", fsData);
       // Show information about the search results
-      if (fsData.inserted > 0) {
+      const typedFsData = fsData as { inserted: number; message: string };
+      if (typedFsData.inserted > 0) {
         toast({
           title: "Flight search completed",
-          description: `Found ${fsData.inserted} flight offers from Amadeus API`,
+          description: `Found ${typedFsData.inserted} flight offers from Amadeus API`,
         });
       } else {
         toast({

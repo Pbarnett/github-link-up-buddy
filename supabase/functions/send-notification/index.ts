@@ -175,7 +175,7 @@ const corsHeaders = {
 };
 
 // Export the handler for testing
-export const testableHandler = async (req: Request): Promise<Response> => {
+export const handler = async (req: Request): Promise<Response> => {
   // Initialize environment if not already done
   if (!createClient) {
     await initializeEnvironment();
@@ -205,7 +205,17 @@ export const testableHandler = async (req: Request): Promise<Response> => {
     });
   }
 
+  // Check if user exists first
   const supabaseAdmin = getSupabaseAdmin();
+  const { data: { user: userExists }, error: userCheckError } = await supabaseAdmin.auth.admin.getUserById(user_id);
+  
+  if (userCheckError || !userExists) {
+    console.warn(`[SendNotification] User not found: ${user_id}`);
+    return new Response(JSON.stringify({ error: 'User not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
   let userEmail: string | null = null;
 
   try {
@@ -301,15 +311,51 @@ export const testableHandler = async (req: Request): Promise<Response> => {
 
           try {
             console.log(`[SendNotification] Sending email to ${userEmail} for user ${user_id}, type ${type}`);
-            await resend.emails.send({
+            
+            // Create notification delivery record
+            const { data: deliveryRecord, error: deliveryError } = await supabaseAdmin
+              .from('notification_deliveries')
+              .insert({
+                notification_id: notificationRecord.id,
+                channel: 'email',
+                provider: 'resend',
+                status: 'queued'
+              })
+              .select('id')
+              .single();
+            
+            if (deliveryError) {
+              console.error(`[SendNotification] Failed to create delivery record: ${deliveryError.message}`);
+            }
+            
+            const emailResult = await resend.emails.send({
               from: getEnv('RESEND_FROM_EMAIL') || 'noreply@yourdomain.com',
               to: [userEmail],
               subject: subject,
               html: htmlBody,
+              tags: [
+                { name: 'notification_id', value: notificationRecord.id },
+                { name: 'type', value: type },
+                { name: 'user_id', value: user_id }
+              ]
             });
-            console.log(`[SendNotification] Email sent successfully to ${userEmail} via Resend for user ${user_id}.`);
+            
+            // Update delivery record with email ID
+            if (deliveryRecord && emailResult.data?.id) {
+              await supabaseAdmin
+                .from('notification_deliveries')
+                .update({
+                  status: 'sent',
+                  provider_response: { email_id: emailResult.data.id },
+                  sent_at: new Date().toISOString()
+                })
+                .eq('id', deliveryRecord.id);
+            }
+            
+            console.log(`[SendNotification] Email sent successfully to ${userEmail} via Resend for user ${user_id}. Email ID: ${emailResult.data?.id}`);
           } catch (emailError) {
             console.error(`[SendNotification] Error sending email via Resend for user ${user_id}: ${emailError.message}`, emailError);
+            // Error handling for email failure - deliveryRecord will be null here if it was in try block
           }
         } else {
           console.warn(`[SendNotification] RESEND_API_KEY (VITE_RESEND_API_KEY) not configured. Skipping email for user ${user_id}.`);
@@ -343,10 +389,13 @@ export const testableHandler = async (req: Request): Promise<Response> => {
   }
 };
 
+export const testableHandler = handler;
+export default handler;
+
 // Initialize and serve the handler when running in Deno
 if (typeof Deno !== 'undefined') {
   initializeEnvironment().then(() => {
-    serve(testableHandler);
+    serve(handler);
   }).catch(error => {
     console.error('Failed to initialize Deno environment:', error);
   });

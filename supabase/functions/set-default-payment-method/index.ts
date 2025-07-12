@@ -80,7 +80,7 @@ serve(async (req: Request) => {
     const fetchStart = Date.now();
     const { data: paymentMethod, error: fetchError } = await supabaseClient
       .from("payment_methods")
-      .select("stripe_pm_id, stripe_customer_id")
+      .select("stripe_payment_method_id, stripe_customer_id")
       .eq("id", id)
       .eq("user_id", user.id)
       .single();
@@ -106,7 +106,7 @@ serve(async (req: Request) => {
       try {
         const stripeRetrieveStart = Date.now();
         // Get the payment method from Stripe to find the customer
-        const stripePaymentMethod = await stripe.paymentMethods.retrieve(paymentMethod.stripe_pm_id);
+        const stripePaymentMethod = await stripe.paymentMethods.retrieve(paymentMethod.stripe_payment_method_id);
         stripeCustomerId = stripePaymentMethod.customer as string;
         console.log("Stripe PM retrieve took:", Date.now() - stripeRetrieveStart, "ms");
 
@@ -125,7 +125,7 @@ serve(async (req: Request) => {
         await supabaseClient
           .from("payment_methods")
           .update({ stripe_customer_id: stripeCustomerId })
-          .eq("stripe_pm_id", paymentMethod.stripe_pm_id);
+          .eq("stripe_payment_method_id", paymentMethod.stripe_payment_method_id);
         console.log("Customer ID update took:", Date.now() - updateCustomerStart, "ms");
 
         console.log(`Updated payment method with stripe_customer_id: ${stripeCustomerId}`);
@@ -143,12 +143,12 @@ serve(async (req: Request) => {
 
     // Update default payment method in Stripe first
     try {
-      console.log(`Updating Stripe customer ${stripeCustomerId} default payment method to ${paymentMethod.stripe_pm_id}`);
+      console.log(`Updating Stripe customer ${stripeCustomerId} default payment method to ${paymentMethod.stripe_payment_method_id}`);
       
       const stripeUpdateStart = Date.now();
       await stripe.customers.update(stripeCustomerId, {
         invoice_settings: {
-          default_payment_method: paymentMethod.stripe_pm_id,
+          default_payment_method: paymentMethod.stripe_payment_method_id,
         },
       });
       console.log("Stripe customer update took:", Date.now() - stripeUpdateStart, "ms");

@@ -122,7 +122,7 @@ export async function fetchTripOffers(
   console.log(`[🔍 SERVICE] Trip request is ${isRoundTripRequest ? 'round-trip' : 'one-way'}`);
   
   // Fetch raw offers from V2 table first (without database-level filtering)
-  let v2Query = supabase
+  const v2Query = supabase
     .from('flight_offers_v2')
     .select('*')
     .eq('trip_request_id', tripRequestId);
@@ -191,29 +191,63 @@ export async function fetchTripOffers(
     if (usingV2Table) {
       // V2 table has a different structure - convert directly without provider adapters
       normalizedOffers = rawOffers.map(v2Offer => {
-        const basePrice = parseFloat(v2Offer.price_total || '0');
+        // Handle both direct price_total and nested price.total structures
+        let basePrice = 0;
+        if (v2Offer.price_total) {
+          basePrice = parseFloat(v2Offer.price_total.toString());
+        } else if (v2Offer.price?.total) {
+          basePrice = parseFloat(v2Offer.price.total.toString());
+        }
+        
         const carryOnFee = parseFloat(v2Offer.price_carry_on || '0');
         
-        return {
-          provider: 'Amadeus',
-          id: v2Offer.id,
-          itineraries: [{
-            duration: 'N/A', // V2 table doesn't store duration
+        // For round-trip offers, create 2 itineraries; for one-way, create 1
+        const itineraries = [];
+        
+        // Always add outbound itinerary
+        itineraries.push({
+          duration: 'N/A', // V2 table doesn't store duration
+          segments: [{
+            departure: {
+              iataCode: v2Offer.origin_iata,
+              at: v2Offer.depart_dt
+            },
+            arrival: {
+              iataCode: v2Offer.destination_iata,
+              at: v2Offer.depart_dt // Simulate arrival time same day for simplicity
+            },
+            carrierCode: 'Unknown',
+            flightNumber: 'N/A',
+            duration: 'N/A',
+            numberOfStops: v2Offer.nonstop ? 0 : 1
+          }]
+        });
+        
+        // For round-trip, add return itinerary
+        if (v2Offer.return_dt && isRoundTripRequest) {
+          itineraries.push({
+            duration: 'N/A',
             segments: [{
               departure: {
-                iataCode: v2Offer.origin_iata,
-                at: v2Offer.depart_dt
+                iataCode: v2Offer.destination_iata,
+                at: v2Offer.return_dt
               },
               arrival: {
-                iataCode: v2Offer.destination_iata,
-                at: v2Offer.return_dt || v2Offer.depart_dt // Fallback for one-way flights
+                iataCode: v2Offer.origin_iata,
+                at: v2Offer.return_dt // Simulate arrival time same day for simplicity
               },
               carrierCode: 'Unknown',
               flightNumber: 'N/A',
               duration: 'N/A',
               numberOfStops: v2Offer.nonstop ? 0 : 1
             }]
-          }],
+          });
+        }
+        
+        return {
+          provider: 'Amadeus',
+          id: v2Offer.id,
+          itineraries,
           totalBasePrice: basePrice,
           currency: v2Offer.price_currency || 'USD',
           carryOnIncluded: v2Offer.bags_included || false,
