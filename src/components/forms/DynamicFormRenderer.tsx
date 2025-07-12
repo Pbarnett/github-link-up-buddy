@@ -110,7 +110,7 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
         const errors = form.formState.errors;
         onValidationError?.(
           Object.fromEntries(
-            Object.entries(errors).map(([key, error]) => [key, error?.message || 'Invalid value'])
+            Object.entries(errors).map(([key, error]) => [key, (error as any)?.message || 'Invalid value'])
           )
         );
         return;
@@ -199,7 +199,7 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
                   <ul className="list-disc list-inside space-y-1">
                     {Object.entries(form.formState.errors).map(([field, error]) => (
                       <li key={field} className="text-sm">
-                        {error?.message || `Invalid value for ${field}`}
+                        {(error as any)?.message || `Invalid value for ${field}`}
                       </li>
                     ))}
                   </ul>

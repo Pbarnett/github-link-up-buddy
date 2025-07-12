@@ -39,10 +39,21 @@ export interface FieldConfiguration {
   className?: string;
   defaultValue?: any;
   options?: FieldOption[]; // For select, radio, checkbox fields
+  
+  // Field-specific properties
+  rows?: number; // For textarea
+  autoComplete?: string; // For input fields
+  tooltip?: string; // For field tooltips
+  defaultCountry?: string; // For phone input
+  addressConfig?: any; // For address group fields
+  accept?: string; // For file upload
+  multiple?: boolean; // For file upload
+  maxSize?: number; // For file upload
+  allowHalf?: boolean; // For rating fields
 }
 
 export type FieldType = 
-  | 'text' | 'email' | 'phone' | 'number' | 'password' | 'textarea'
+  | 'text' | 'email' | 'phone' | 'number' | 'password' | 'textarea' | 'url'
   | 'select' | 'multi-select' | 'radio' | 'checkbox' | 'switch'
   | 'date' | 'datetime' | 'date-range' | 'date-range-flexible'
   | 'airport-autocomplete' | 'country-select' | 'currency-select'
@@ -95,6 +106,7 @@ export interface ValidationRules {
   email?: boolean;
   phone?: boolean;
   url?: boolean;
+  step?: number; // For number inputs
   custom?: string; // Custom validation function as string
   message?: string; // Custom error message
 }

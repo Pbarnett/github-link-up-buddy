@@ -22,7 +22,7 @@ const checkAuth = async () => {
         UserInitializationService.ensureUserPreferences(data.session.user.id);
       }
       
-      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      const { data: authListener } = supabase.auth.onAuthStateChange((event: any, session: any) => {
         setIsAuthenticated(!!session);
         
         if (event === 'SIGNED_IN' && session) {

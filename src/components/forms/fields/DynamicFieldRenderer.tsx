@@ -36,7 +36,7 @@ import { cn } from '@/lib/utils';
 
 import type {
   FieldConfiguration,
-  DynamicFormConfig
+  FormConfiguration
 } from '@/types/dynamic-forms';
 
 // Import specialized field components
@@ -63,7 +63,7 @@ export interface DynamicFieldRendererProps {
   /** Whether field is required */
   required?: boolean;
   /** Form configuration for context */
-  config?: DynamicFormConfig;
+  config?: FormConfiguration;
   /** Full form data for conditional logic */
   formData?: Record<string, any>;
   /** Additional CSS classes */
@@ -108,8 +108,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
 
   // Compute field state
   const fieldState = useMemo(() => {
-    const isRequired = required || field.required || field.validation?.required || false;
-    const isDisabled = disabled || field.disabled || false;
+    const isRequired = required || field.validation?.required || false;
+    const isDisabled = disabled || false;
     const hasError = Boolean(error);
 
     return {
@@ -117,7 +117,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       isDisabled,
       hasError
     };
-  }, [required, field.required, field.validation?.required, disabled, field.disabled, error]);
+  }, [required, field.validation?.required, disabled, error]);
 
   // Handle field change with validation
   const handleChange = useCallback((newValue: any) => {

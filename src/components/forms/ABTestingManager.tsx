@@ -34,10 +34,28 @@ import { cn } from '@/lib/utils';
 
 import type {
   FormConfiguration,
-  ABTestConfiguration,
-  ABTestResults,
+  ABTestResult,
   DeploymentStrategy
 } from '@/types/dynamic-forms';
+
+// Define ABTestConfiguration interface locally since it's not in the types file
+interface ABTestConfiguration {
+  id?: string;
+  name: string;
+  description?: string;
+  formId: string;
+  variants: Array<{
+    id: string;
+    name: string;
+    formConfigId: string;
+    trafficPercentage: number;
+  }>;
+  trafficSplit: number;
+  duration: number;
+  startDate?: string;
+  endDate?: string;
+  status?: 'draft' | 'running' | 'paused' | 'completed' | 'failed';
+}
 
 interface ABTestingManagerProps {
   formId: string;
