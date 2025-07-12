@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "warp-refresh": "tree -L 3 -I 'node_modules|.git|dist' > .warp_file_overview.txt",
     "tsc": "tsc",
     "dev": "vite --port 8080",
     "build": "vite build",

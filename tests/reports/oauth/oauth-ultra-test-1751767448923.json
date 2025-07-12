@@ -1,0 +1,186 @@
+{
+  "timestamp": "2025-07-06T02:04:08.875Z",
+  "version": "3.0.0-ultra",
+  "environment": "development",
+  "performance": {
+    "totalDuration": 48.39968300000001,
+    "testDurations": {
+      "Environment Variables Ultra": 1.4003909999999848,
+      "Supabase Connection Ultra": 1.0586929999999768,
+      "Google OAuth Config Ultra": 28.93964600000001,
+      "OAuth URL Generation Ultra": 4.782222999999988,
+      "Current Session Ultra": 0.8023890000000051,
+      "Config Files Ultra": 0.6858760000000075
+    },
+    "cacheHits": 0,
+    "cacheHitRatio": 0,
+    "parallelExecutions": 0,
+    "adaptiveTimeouts": 1,
+    "connectionPoolHits": 1,
+    "memoryUsage": {
+      "start": {
+        "rss": 59310080,
+        "heapTotal": 19140608,
+        "heapUsed": 11087704,
+        "external": 3391966,
+        "arrayBuffers": 78433
+      },
+      "peak": {
+        "rss": 60997632,
+        "heapTotal": 19402752,
+        "heapUsed": 12207832,
+        "external": 3543338,
+        "arrayBuffers": 80062
+      },
+      "end": {
+        "rss": 61001728,
+        "heapTotal": 19402752,
+        "heapUsed": 12213328,
+        "external": 3543338,
+        "arrayBuffers": 80062
+      }
+    },
+    "profilerMetrics": {
+      "Environment Variables Ultra": {
+        "duration": 1.6266080000000045,
+        "timestamp": 197.783602,
+        "type": "measure"
+      },
+      "Supabase Connection Ultra": {
+        "duration": 1.0742720000000077,
+        "timestamp": 199.914514,
+        "type": "measure"
+      },
+      "Google OAuth Config Ultra": {
+        "duration": 29.035451999999992,
+        "timestamp": 201.160867,
+        "type": "measure"
+      }
+    }
+  },
+  "passed": 15,
+  "failed": 0,
+  "warnings": 1,
+  "tests": [
+    {
+      "name": "VITE_SUPABASE_URL",
+      "passed": true,
+      "message": "Environment variable set",
+      "fix": null,
+      "timestamp": 1751767448885,
+      "memoryUsage": 11261376
+    },
+    {
+      "name": "VITE_SUPABASE_ANON_KEY",
+      "passed": true,
+      "message": "Environment variable set",
+      "fix": null,
+      "timestamp": 1751767448885,
+      "memoryUsage": 11263400
+    },
+    {
+      "name": "GOOGLE_CLIENT_ID",
+      "passed": true,
+      "message": "Environment variable set",
+      "fix": null,
+      "timestamp": 1751767448885,
+      "memoryUsage": 11264432
+    },
+    {
+      "name": "GOOGLE_CLIENT_SECRET",
+      "passed": true,
+      "message": "Environment variable set",
+      "fix": null,
+      "timestamp": 1751767448885,
+      "memoryUsage": 11265432
+    },
+    {
+      "name": "Supabase Connection",
+      "passed": true,
+      "message": "Successfully connected to Supabase (ultra)",
+      "fix": null,
+      "timestamp": 1751767448887,
+      "memoryUsage": 11326496
+    },
+    {
+      "name": "Google OAuth Enabled",
+      "passed": true,
+      "message": "Google OAuth is enabled in Supabase (ultra)",
+      "fix": null,
+      "timestamp": 1751767448916,
+      "memoryUsage": 11932600
+    },
+    {
+      "name": "Email Auth",
+      "passed": true,
+      "message": "Email auth enabled",
+      "fix": null,
+      "timestamp": 1751767448916,
+      "memoryUsage": 11933248
+    },
+    {
+      "name": "Signup Enabled",
+      "passed": true,
+      "message": "User signup enabled",
+      "fix": null,
+      "timestamp": 1751767448916,
+      "memoryUsage": 11933896
+    },
+    {
+      "name": "OAuth URL Generation",
+      "passed": true,
+      "message": "OAuth URL generated successfully (ultra)",
+      "fix": null,
+      "timestamp": 1751767448921,
+      "memoryUsage": 12119560
+    },
+    {
+      "name": "OAuth URL Host",
+      "passed": true,
+      "message": "OAuth URL uses local Supabase instance",
+      "fix": null,
+      "timestamp": 1751767448921,
+      "memoryUsage": 12121672
+    },
+    {
+      "name": "OAuth URL Parameters",
+      "passed": true,
+      "message": "Required parameters present",
+      "fix": null,
+      "timestamp": 1751767448921,
+      "memoryUsage": 12129160
+    },
+    {
+      "name": "Current Session",
+      "passed": true,
+      "message": "No active session (expected for testing)",
+      "fix": null,
+      "timestamp": 1751767448922,
+      "memoryUsage": 12178744
+    },
+    {
+      "name": "Dev Server",
+      "passed": true,
+      "message": "Skipped for ultra-fast execution",
+      "fix": null,
+      "timestamp": 1751767448922,
+      "memoryUsage": 12184232
+    },
+    {
+      "name": "Supabase Config",
+      "passed": true,
+      "message": "Google OAuth configured in supabase/config.toml (ultra)",
+      "fix": null,
+      "timestamp": 1751767448923,
+      "memoryUsage": 12206912
+    },
+    {
+      "name": "Google Credentials",
+      "passed": true,
+      "message": "Google credentials present in config",
+      "fix": null,
+      "timestamp": 1751767448923,
+      "memoryUsage": 12207576
+    }
+  ]
+}

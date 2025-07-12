@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { SmartErrorBoundary } from "@/components/ErrorBoundary";
 import { useRetryQueue } from "@/utils/retryQueue";
 import { useEffect } from "react";
+import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
 // Import dev auth for easy development authentication
 import "@/utils/devAuth";
 import Index from "./pages/Index";
@@ -60,8 +61,9 @@ const App = () => {
   return (
     <SmartErrorBoundary level="global">
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <GlobalMiddleware>
+        <PersonalizationProvider>
+          <TooltipProvider>
+            <GlobalMiddleware>
             <Toaster />
         <a href="#main" className="skip-link">
           Skip to content
@@ -171,8 +173,9 @@ const App = () => {
             </Routes>
           </main>
         </BrowserRouter>
-          </GlobalMiddleware>
-        </TooltipProvider>
+            </GlobalMiddleware>
+          </TooltipProvider>
+        </PersonalizationProvider>
       </QueryClientProvider>
     </SmartErrorBoundary>
   );

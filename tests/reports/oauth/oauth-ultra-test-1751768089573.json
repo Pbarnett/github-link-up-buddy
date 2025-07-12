@@ -1,0 +1,236 @@
+{
+  "timestamp": "2025-07-06T02:14:45.709Z",
+  "version": "3.0.0-ultra",
+  "environment": "development",
+  "performance": {
+    "totalDuration": 3864.0954429999997,
+    "testDurations": {
+      "Environment Variables Ultra": 14.655393000000004,
+      "Supabase Connection Ultra": 20.924859000000197,
+      "OAuth URL Generation Ultra": 20.0650270000001,
+      "Google OAuth Config Ultra": 40.09260399999994,
+      "Current Session Ultra": 0.3704579999998714,
+      "Dev Server Ultra": 23.834696999999778,
+      "Config Files Ultra": 1.185312999999951
+    },
+    "cacheHits": 0,
+    "cacheHitRatio": 0,
+    "parallelExecutions": 1,
+    "adaptiveTimeouts": 1,
+    "connectionPoolHits": 2,
+    "memoryUsage": {
+      "start": {
+        "rss": 57638912,
+        "heapTotal": 19664896,
+        "heapUsed": 11802048,
+        "external": 3506430,
+        "arrayBuffers": 78433
+      },
+      "peak": {
+        "rss": 61030400,
+        "heapTotal": 20066304,
+        "heapUsed": 13868776,
+        "external": 3670183,
+        "arrayBuffers": 80340
+      },
+      "end": {
+        "rss": 61038592,
+        "heapTotal": 20066304,
+        "heapUsed": 13875584,
+        "external": 3670183,
+        "arrayBuffers": 80340
+      }
+    },
+    "profilerMetrics": {
+      "Supabase Connection Ultra": {
+        "duration": 21.224236999999903,
+        "timestamp": 4040.601186,
+        "type": "measure"
+      },
+      "OAuth URL Generation Ultra": {
+        "duration": 20.084029999999984,
+        "timestamp": 4043.439387,
+        "type": "measure"
+      },
+      "Environment Variables Ultra": {
+        "duration": 14.677612999999837,
+        "timestamp": 4046.05335,
+        "type": "measure"
+      },
+      "Google OAuth Config Ultra": {
+        "duration": 40.11496500000021,
+        "timestamp": 4042.447299,
+        "type": "measure"
+      },
+      "Current Session Ultra": {
+        "duration": 0.4823700000001736,
+        "timestamp": 4082.789789,
+        "type": "measure"
+      }
+    }
+  },
+  "passed": 15,
+  "failed": 0,
+  "warnings": 1,
+  "tests": [
+    {
+      "name": "VITE_SUPABASE_URL",
+      "passed": true,
+      "message": "Environment variable set",
+      "fix": null,
+      "timestamp": 1751768089511,
+      "memoryUsage": 12500096
+    },
+    {
+      "name": "VITE_SUPABASE_ANON_KEY",
+      "passed": true,
+      "message": "Environment variable set",
+      "fix": null,
+      "timestamp": 1751768089511,
+      "memoryUsage": 12534088
+    },
+    {
+      "name": "GOOGLE_CLIENT_ID",
+      "passed": true,
+      "message": "Environment variable set",
+      "fix": null,
+      "timestamp": 1751768089511,
+      "memoryUsage": 12549408
+    },
+    {
+      "name": "GOOGLE_CLIENT_SECRET",
+      "passed": true,
+      "message": "Environment variable set",
+      "fix": null,
+      "timestamp": 1751768089511,
+      "memoryUsage": 12552232
+    },
+    {
+      "name": "Supabase Connection",
+      "passed": true,
+      "message": "Successfully connected to Supabase (ultra)",
+      "fix": null,
+      "timestamp": 1751768089526,
+      "memoryUsage": 12891952
+    },
+    {
+      "name": "OAuth URL Generation",
+      "passed": true,
+      "message": "OAuth URL generated successfully (ultra)",
+      "fix": null,
+      "timestamp": 1751768089527,
+      "memoryUsage": 12920312
+    },
+    {
+      "name": "OAuth URL Host",
+      "passed": true,
+      "message": "OAuth URL uses local Supabase instance",
+      "fix": null,
+      "timestamp": 1751768089527,
+      "memoryUsage": 12924056
+    },
+    {
+      "name": "OAuth URL Parameters",
+      "passed": true,
+      "message": "Required parameters present",
+      "fix": null,
+      "timestamp": 1751768089528,
+      "memoryUsage": 12926240
+    },
+    {
+      "name": "Google OAuth Enabled",
+      "passed": true,
+      "message": "Google OAuth is enabled in Supabase (ultra)",
+      "fix": null,
+      "timestamp": 1751768089546,
+      "memoryUsage": 13176512
+    },
+    {
+      "name": "Email Auth",
+      "passed": true,
+      "message": "Email auth enabled",
+      "fix": null,
+      "timestamp": 1751768089546,
+      "memoryUsage": 13177872
+    },
+    {
+      "name": "Signup Enabled",
+      "passed": true,
+      "message": "User signup enabled",
+      "fix": null,
+      "timestamp": 1751768089546,
+      "memoryUsage": 13178688
+    },
+    {
+      "name": "Current Session",
+      "passed": true,
+      "message": "No active session (expected for testing)",
+      "fix": null,
+      "timestamp": 1751768089547,
+      "memoryUsage": 13209648
+    },
+    {
+      "name": "Dev Server",
+      "passed": true,
+      "message": "Development server is running (ultra)",
+      "fix": null,
+      "timestamp": 1751768089571,
+      "memoryUsage": 13843168
+    },
+    {
+      "name": "Supabase Config",
+      "passed": true,
+      "message": "Google OAuth configured in supabase/config.toml (ultra)",
+      "fix": null,
+      "timestamp": 1751768089573,
+      "memoryUsage": 13867856
+    },
+    {
+      "name": "Google Credentials",
+      "passed": true,
+      "message": "Google credentials present in config",
+      "fix": null,
+      "timestamp": 1751768089573,
+      "memoryUsage": 13868520
+    }
+  ],
+  "resourceAdaptation": {
+    "systemInfo": {
+      "totalCores": 12,
+      "totalMemory": 34359738368,
+      "isMacOS": true,
+      "isCI": false
+    },
+    "adaptiveConfig": {
+      "optimalCores": 3,
+      "maxMemoryUsage": 10307921510.4,
+      "parallelismLevel": "low",
+      "timeoutMultiplier": 1.5,
+      "cachingStrategy": "conservative"
+    },
+    "performanceInsights": {
+      "currentLoad": {
+        "cpuUsage": 0.2441,
+        "memoryUsage": 0.999481201171875,
+        "loadAverage": 7.94189453125,
+        "activeProcesses": 764
+      },
+      "adaptiveConfig": {
+        "optimalCores": 3,
+        "maxMemoryUsage": 10307921510.4,
+        "parallelismLevel": "low",
+        "timeoutMultiplier": 1.5,
+        "cachingStrategy": "conservative"
+      },
+      "systemInfo": {
+        "totalCores": 12,
+        "totalMemory": 34359738368,
+        "isMacOS": true,
+        "isCI": false
+      },
+      "recentAdaptations": 1,
+      "averageSystemLoad": 7.94189453125,
+      "totalAdaptations": 1
+    }
+  }
+}
