@@ -32,7 +32,8 @@
 │   ├── api
 │   │   └── stripe
 │   ├── general
-│   └── legacy
+│   ├── legacy
+│   └── repo_overview.md
 ├── essential-schema-fixes.sql
 ├── final-20-errors.log
 ├── final-errors.log
@@ -167,6 +168,7 @@
 │   │   ├── getFlightOffers.test.ts
 │   │   └── getFlightOffers.ts
 │   ├── services
+│   │   ├── api
 │   │   ├── campaignService.ts
 │   │   ├── currencyService.ts
 │   │   ├── flightApi.client.ts
@@ -340,4 +342,4 @@
 ├── vercel.json
 └── vite.config.ts
 
-119 directories, 222 files
+120 directories, 223 files
