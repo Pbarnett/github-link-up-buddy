@@ -1,0 +1,76 @@
+{
+  "passed": 14,
+  "failed": 1,
+  "warnings": 1,
+  "totalDuration": 3509.999288000001,
+  "timestamp": "2025-07-06T02:34:57.364Z",
+  "performance": {
+    "totalDuration": 3509.999288000001,
+    "testDurations": {
+      "Environment Variables Ultra": 1001.9634900000001,
+      "Supabase Connection Ultra": 1223.231135,
+      "OAuth URL Generation Ultra": 1216.6914559999996,
+      "Google OAuth Config Ultra": 2104.612886000001,
+      "Current Session Ultra": 15.303325999999288,
+      "Dev Server Ultra": 667.9157539999997,
+      "Config Files Ultra": 15.93854299999839
+    },
+    "cacheHits": 0,
+    "cacheHitRatio": 0,
+    "parallelExecutions": 1,
+    "adaptiveTimeouts": 1,
+    "connectionPoolHits": 2,
+    "memoryUsage": {
+      "start": {
+        "rss": 58187776,
+        "heapTotal": 18878464,
+        "heapUsed": 11610712,
+        "external": 3495727,
+        "arrayBuffers": 67730
+      },
+      "peak": {
+        "rss": 61792256,
+        "heapTotal": 19804160,
+        "heapUsed": 13364664,
+        "external": 3659228,
+        "arrayBuffers": 69385
+      },
+      "end": {
+        "rss": 61804544,
+        "heapTotal": 19804160,
+        "heapUsed": 13379472,
+        "external": 3659228,
+        "arrayBuffers": 69385
+      }
+    },
+    "profilerMetrics": {
+      "Supabase Connection Ultra": {
+        "duration": 1224.1726640000006,
+        "timestamp": 8035.394502,
+        "type": "measure"
+      },
+      "Environment Variables Ultra": {
+        "duration": 1002.0443069999983,
+        "timestamp": 8204.121972,
+        "type": "measure"
+      },
+      "OAuth URL Generation Ultra": {
+        "duration": 1216.7652790000002,
+        "timestamp": 8155.271151,
+        "type": "measure"
+      },
+      "Google OAuth Config Ultra": {
+        "duration": 2104.699071,
+        "timestamp": 8039.535546,
+        "type": "measure"
+      },
+      "Current Session Ultra": {
+        "duration": 15.722674000000552,
+        "timestamp": 10160.806271,
+        "type": "measure"
+      }
+    }
+  },
+  "success": false,
+  "version": "3.0.0-ultra"
+}

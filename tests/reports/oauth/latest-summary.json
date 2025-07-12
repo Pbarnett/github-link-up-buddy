@@ -1,0 +1,22 @@
+{
+  "passed": 15,
+  "failed": 0,
+  "warnings": 1,
+  "totalDuration": 94.549552,
+  "timestamp": "2025-07-06T02:00:25.558Z",
+  "performance": {
+    "totalDuration": 94.549552,
+    "testDurations": {
+      "Environment Variables": 16.982114999999965,
+      "Google OAuth Config": 45.84069100000002,
+      "Supabase Connection": 0.8799629999999752,
+      "OAuth URL Generation": 0.7708769999999845,
+      "Current Session": 0.1784979999999905,
+      "Dev Server": 34.313649999999996,
+      "Config Files": 0.8960090000000491
+    },
+    "cacheHits": 0,
+    "parallelExecutions": 1
+  },
+  "success": true
+}
