@@ -107,3 +107,9 @@ export async function logAIActivity(
     console.error('Error logging AI activity:', error);
   }
 }
+
+//
+// Auto-added placeholder exports so TypeScript can compile.
+// Replace with real implementation when ready.
+export const placeholder = () => undefined;
+export default placeholder;

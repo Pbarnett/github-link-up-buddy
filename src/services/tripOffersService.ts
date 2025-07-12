@@ -392,3 +392,9 @@ export async function createTripOffer(offer: Omit<Offer, 'id' | 'created_at'>): 
 
   return data as Offer;
 }
+
+//
+// Auto-added placeholder exports so TypeScript can compile.
+// Replace with real implementation when ready.
+export const placeholder = () => undefined;
+export default placeholder;

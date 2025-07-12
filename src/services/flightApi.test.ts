@@ -266,3 +266,9 @@ describe("Retry Logic", () => {
     expect(callCount).toBe(1); // Should only be called once
   });
 });
+
+//
+// Auto-added placeholder exports so TypeScript can compile.
+// Replace with real implementation when ready.
+export const placeholder = () => undefined;
+export default placeholder;
