@@ -42,7 +42,7 @@ export interface DuffelBookingResponse {
   error?: {
     message: string;
     type: string;
-    details?: any;
+    details?: unknown;
   };
 }
 
@@ -83,12 +83,12 @@ export async function createDuffelBooking(
       success: true,
       order: data as DuffelOrder
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('[DuffelBookingApi] createDuffelBooking error:', error);
     return {
       success: false,
       error: {
-        message: error.message || 'Network error during booking',
+        message: error instanceof Error ? error.message : 'Network error during booking',
         type: 'network_error',
         details: error
       }

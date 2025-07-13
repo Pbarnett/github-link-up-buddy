@@ -6,7 +6,6 @@ import { usePaymentMethods, PaymentMethod } from "@/hooks/usePaymentMethods";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { safeQuery } from "@/lib/supabaseUtils";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { AddPaymentMethodForm } from "@/components/AddPaymentMethodForm";
@@ -17,9 +16,7 @@ function WalletPage() {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const { data, error, isLoading, refetch } = usePaymentMethods();
   const { user } = useCurrentUser();
-  const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
-  const [fetchError, setFetchError] = useState<string|null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const queryClient = useQueryClient();
 
@@ -70,11 +67,11 @@ function WalletPage() {
       });
       
       queryClient.invalidateQueries({ queryKey: ["payment_methods"] });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error setting default payment method:", err);
       toast({
         title: "Error",
-        description: err.message,
+        description: err instanceof Error ? err.message : 'An unknown error occurred',
         variant: "destructive",
       });
     } finally {
@@ -138,11 +135,11 @@ function WalletPage() {
       });
       
       queryClient.invalidateQueries({ queryKey: ["payment_methods"] });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error deleting payment method:", err);
       toast({
         title: "Error",
-        description: err.message,
+        description: err instanceof Error ? err.message : 'An unknown error occurred',
         variant: "destructive",
       });
     } finally {
