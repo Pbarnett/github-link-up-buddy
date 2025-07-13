@@ -24,7 +24,11 @@ interface MigrationStatus {
 }
 
 interface RotationStatus {
-  rotation_history: any[];
+  rotation_history: Array<{
+    operation: string;
+    timestamp: string;
+    success: boolean;
+  }>;
   current_pii_key_version: number | null;
   current_payment_key_version: number | null;
   last_rotation: string | null;
@@ -75,7 +79,12 @@ async function getMigrationStatus(): Promise<MigrationStatus> {
   return await response.json();
 }
 
-async function runMigration(batchSize: number = 10, entityType: string = 'all'): Promise<any> {
+async function runMigration(batchSize: number = 10, entityType: string = 'all'): Promise<{
+  migratedProfiles: number;
+  migratedPaymentMethods: number;
+  totalTime: number;
+  errors: string[];
+}> {
   console.log(`🚀 Starting migration (batch size: ${batchSize}, entity type: ${entityType})...`);
   
   const response = await makeAuthenticatedRequest('migrate-legacy-data?action=migrate', {
@@ -105,7 +114,11 @@ async function getRotationStatus(): Promise<RotationStatus> {
   return await response.json();
 }
 
-async function rotateKey(keyType: 'PII' | 'PAYMENT', batchSize: number = 50): Promise<any> {
+async function rotateKey(keyType: 'PII' | 'PAYMENT', batchSize: number = 50): Promise<{
+  reencryptedRecords: number;
+  totalTime: number;
+  message?: string;
+}> {
   console.log(`🔄 Starting ${keyType} key rotation (batch size: ${batchSize})...`);
   
   const response = await makeAuthenticatedRequest('key-rotation?action=rotate', {
@@ -123,7 +136,10 @@ async function rotateKey(keyType: 'PII' | 'PAYMENT', batchSize: number = 50): Pr
   return await response.json();
 }
 
-async function scheduleKeyRotation(keyType: 'PII' | 'PAYMENT', intervalDays: number = 90): Promise<any> {
+async function scheduleKeyRotation(keyType: 'PII' | 'PAYMENT', intervalDays: number = 90): Promise<{
+  message: string;
+  next_rotation: string;
+}> {
   console.log(`📅 Scheduling ${keyType} key rotation (every ${intervalDays} days)...`);
   
   const response = await makeAuthenticatedRequest('key-rotation?action=schedule', {
@@ -163,7 +179,7 @@ function printRotationStatus(status: RotationStatus) {
   
   if (status.rotation_history.length > 0) {
     console.log("\nRecent Rotations:");
-    status.rotation_history.slice(0, 3).forEach((rotation: any) => {
+    status.rotation_history.slice(0, 3).forEach((rotation) => {
       console.log(`  • ${rotation.operation} - ${new Date(rotation.timestamp).toLocaleString()} - ${rotation.success ? '✅' : '❌'}`);
     });
   }

@@ -57,7 +57,12 @@ export interface MockFlightOffer {
  * This simulates the Amadeus API response structure exactly
  */
 export function generateMockOffers(
-  tripRequest: any,
+  tripRequest: {
+    origin_location_code?: string;
+    destination_location_code?: string;
+    departure_date?: string;
+    return_date?: string;
+  },
   maxPrice?: number
 ): MockFlightOffer[] {
   console.log('[MOCK MODE] Generating mock flight offers for testing');
