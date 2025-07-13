@@ -2,6 +2,28 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { NotificationQueue } from '../_shared/queue.ts';
 import { createTwilioService, SMSTemplateRenderer, TwilioService } from '../lib/twilio.ts';
 
+// Type definitions
+interface NotificationJobData {
+  user_id: string;
+  type: string;
+  channel: string;
+  data: Record<string, unknown>;
+  notification_id?: string;
+  retry_count?: number;
+  scheduled_for?: string;
+}
+
+interface NotificationTemplate {
+  id: string;
+  notification_type: string;
+  channel: string;
+  subject?: string;
+  body_html?: string;
+  body_text: string;
+  active: boolean;
+  version: number;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -54,7 +76,7 @@ async function processNotifications() {
   }
 }
 
-async function processJob(supabaseClient: any, job: any) {
+async function processJob(supabaseClient: ReturnType<typeof createClient>, job: { id: string; message: NotificationJobData }) {
   const jobData = job.message;
   
   console.log(`[NotificationWorker] Processing ${jobData.channel} notification for user ${jobData.user_id}`);
@@ -159,7 +181,7 @@ async function processJob(supabaseClient: any, job: any) {
   console.log(`[NotificationWorker] Successfully sent ${jobData.channel} notification to user ${jobData.user_id}`);
 }
 
-async function sendEmail(user: any, template: any, data: any): Promise<{ success: boolean; messageId?: string; error?: string }> {
+async function sendEmail(user: { id: string; email: string; user_metadata?: Record<string, unknown> }, template: NotificationTemplate, data: Record<string, unknown>): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     // Dynamic import for Deno environment
     const { Resend } = await import('npm:resend');
@@ -184,7 +206,7 @@ async function sendEmail(user: any, template: any, data: any): Promise<{ success
   }
 }
 
-async function sendSMS(user: any, template: any, data: any): Promise<{ success: boolean; messageId?: string; error?: string }> {
+async function sendSMS(user: { id: string; email: string; phone?: string; user_metadata?: Record<string, unknown> }, template: NotificationTemplate, data: Record<string, unknown>): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     // Get user's phone number (you'll need to add this to user metadata or a separate table)
     const phoneNumber = user.phone || user.user_metadata?.phone;
@@ -241,7 +263,10 @@ async function sendSMS(user: any, template: any, data: any): Promise<{ success: 
   }
 }
 
-async function sendPush(user: any, template: any, data: any): Promise<{ success: boolean; messageId?: string; error?: string }> {
+async function sendPush(user: { id: string; email: string; user_metadata?: Record<string, unknown> }, template: NotificationTemplate, data: Record<string, unknown>): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Suppress unused variable warnings
+  void template;
+  void data;
   try {
     // Push notification implementation would go here
     console.log(`[NotificationWorker] Push notification would be sent to user ${user.id}`);
@@ -252,7 +277,7 @@ async function sendPush(user: any, template: any, data: any): Promise<{ success:
   }
 }
 
-async function sendNotificationFallback(supabaseClient: any, jobData: any) {
+async function sendNotificationFallback(supabaseClient: ReturnType<typeof createClient>, jobData: NotificationJobData) {
   // Call the existing send-notification function as fallback
   try {
     const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-notification`, {
@@ -279,7 +304,7 @@ async function sendNotificationFallback(supabaseClient: any, jobData: any) {
   }
 }
 
-function renderTemplate(template: any, data: any): { subject: string; html: string; text: string } {
+function renderTemplate(template: NotificationTemplate, data: Record<string, unknown>): { subject: string; html: string; text: string } {
   const subject = template.subject?.replace(/\{\{(\w+)\}\}/g, (match: string, key: string) => data[key] || match) || '';
   const html = template.body_html?.replace(/\{\{(\w+)\}\}/g, (match: string, key: string) => data[key] || match) || '';
   const text = template.body_text.replace(/\{\{(\w+)\}\}/g, (match: string, key: string) => data[key] || match);
@@ -287,7 +312,7 @@ function renderTemplate(template: any, data: any): { subject: string; html: stri
   return { subject, html, text };
 }
 
-function shouldSend(preferences: any, type: string, channel: string): boolean {
+function shouldSend(preferences: Record<string, Record<string, boolean>> | null | undefined, type: string, channel: string): boolean {
   // Default to true for critical notifications
   const criticalTypes = ['booking_success', 'booking_failure'];
   if (criticalTypes.includes(type)) return true;
@@ -297,7 +322,7 @@ function shouldSend(preferences: any, type: string, channel: string): boolean {
   return pref !== false; // Default to true if not explicitly disabled
 }
 
-function isInQuietHours(quietHours: any, timezone: string = 'America/New_York'): boolean {
+function isInQuietHours(quietHours: { start: number; end: number } | null | undefined, timezone: string = 'America/New_York'): boolean {
   if (!quietHours?.start || !quietHours?.end) return false;
   
   try {
@@ -320,7 +345,7 @@ function isInQuietHours(quietHours: any, timezone: string = 'America/New_York'):
   }
 }
 
-function getNextAllowedSendTime(quietHours: any, timezone: string = 'America/New_York'): string {
+function getNextAllowedSendTime(quietHours: { start: number; end: number } | null | undefined, timezone: string = 'America/New_York'): string {
   try {
     const now = new Date();
     const userTime = new Date(now.toLocaleString("en-US", { timeZone: timezone }));
@@ -353,7 +378,7 @@ function getProviderForChannel(channel: string): string {
   return providers[channel] || 'unknown';
 }
 
-async function handleJobFailure(job: any, queueName: string, error: any) {
+async function handleJobFailure(job: { id: string; message: NotificationJobData }, queueName: string, error: unknown) {
   const retryCount = (job.message.retry_count || 0) + 1;
   const maxRetries = 5;
   

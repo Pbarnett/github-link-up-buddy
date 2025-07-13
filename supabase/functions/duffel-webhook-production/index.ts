@@ -23,7 +23,7 @@ interface DuffelWebhookEvent {
   created_at: string;
   data: {
     id: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -32,7 +32,7 @@ interface OrderStatusUpdate {
   status: string;
   bookingReference?: string;
   ticketNumbers?: string[];
-  scheduledChanges?: any[];
+  scheduledChanges?: unknown[];
 }
 
 console.log('[DuffelWebhookProduction] Function initialized');
@@ -150,7 +150,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Step 6: Process webhook event based on type
-    let processingResult: any = null;
+    let processingResult: unknown = null;
     let processingError: string | null = null;
 
     try {
@@ -270,9 +270,9 @@ async function verifyWebhookSignature(
  * Handle order created events
  */
 async function handleOrderCreated(
-  supabaseClient: any,
+  supabaseClient: ReturnType<typeof createClient>,
   event: DuffelWebhookEvent
-): Promise<any> {
+): Promise<{ handled: boolean; reason?: string; bookingId?: string; orderId?: string; status?: string }> {
   
   const order = event.data;
   console.log(`[DuffelWebhookProduction] Processing order.created: ${order.id}`);
@@ -317,9 +317,9 @@ async function handleOrderCreated(
  * Handle order updated events
  */
 async function handleOrderUpdated(
-  supabaseClient: any,
+  supabaseClient: ReturnType<typeof createClient>,
   event: DuffelWebhookEvent
-): Promise<any> {
+): Promise<{ handled: boolean; reason?: string; bookingId?: string; orderId?: string; newStatus?: string }> {
   
   const order = event.data;
   console.log(`[DuffelWebhookProduction] Processing order.updated: ${order.id}`);
@@ -343,7 +343,7 @@ async function handleOrderUpdated(
       p_booking_id: booking.id,
       p_duffel_order_id: order.id,
       p_pnr: order.booking_reference,
-      p_ticket_numbers: order.tickets?.map((t: any) => t.number) || null,
+      p_ticket_numbers: order.tickets?.map((t: { number: string }) => t.number) || null,
       p_duffel_status: duffelStatus,
       p_raw_order: order
     });
@@ -373,9 +373,9 @@ async function handleOrderUpdated(
  * Handle order cancelled events
  */
 async function handleOrderCancelled(
-  supabaseClient: any,
+  supabaseClient: ReturnType<typeof createClient>,
   event: DuffelWebhookEvent
-): Promise<any> {
+): Promise<{ handled: boolean; reason?: string; bookingId?: string; orderId?: string; status?: string }> {
   
   const order = event.data;
   console.log(`[DuffelWebhookProduction] Processing order.cancelled: ${order.id}`);
@@ -424,9 +424,9 @@ async function handleOrderCancelled(
  * Handle schedule changed events
  */
 async function handleScheduleChanged(
-  supabaseClient: any,
+  supabaseClient: ReturnType<typeof createClient>,
   event: DuffelWebhookEvent
-): Promise<any> {
+): Promise<{ handled: boolean; reason?: string; bookingId?: string; orderId?: string; status?: string }> {
   
   const order = event.data;
   console.log(`[DuffelWebhookProduction] Processing order.schedule_changed: ${order.id}`);
@@ -488,7 +488,7 @@ function mapDuffelStatusToLocal(duffelStatus: string): string {
  * Send status update notification to user
  */
 async function sendStatusUpdateNotification(
-  supabaseClient: any,
+  supabaseClient: ReturnType<typeof createClient>,
   userId: string,
   update: OrderStatusUpdate
 ): Promise<void> {
