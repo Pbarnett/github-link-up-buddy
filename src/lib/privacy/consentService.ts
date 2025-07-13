@@ -66,9 +66,9 @@ export function saveConsent(preferences: ConsentPreferences, userId?: string): v
     // Log consent for audit trail (in production, send to secure backend)
     console.log('🔒 Consent saved:', {
       userId: userId?.slice(0, 8) + '...' || 'anonymous',
-      preferences: Object.entries(preferences).filter(([key, value]) => 
-        key !== 'timestamp' && key !== 'version'
-      ).map(([key, value]) => `${key}: ${value}`).join(', '),
+    preferences: Object.entries(preferences).filter(([key]) => 
+      key !== 'timestamp' && key !== 'version'
+    ).map(([key, value]) => `${key}: ${value}`).join(', '),
       timestamp: consentRecord.timestamp.toISOString(),
     });
 
@@ -121,7 +121,15 @@ export function shouldShowConsentBanner(): boolean {
 }
 
 // Data subject rights - get user data (GDPR Article 15)
-export function getUserData(userId: string): Promise<any> {
+export interface UserDataExport {
+  userId: string;
+  consentRecord: ConsentPreferences | null;
+  personalData: {
+    message: string;
+  };
+}
+
+export function getUserData(userId: string): Promise<UserDataExport> {
   // In a real implementation, this would call backend API
   return Promise.resolve({
     userId,
