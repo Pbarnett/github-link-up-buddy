@@ -47,7 +47,7 @@ export interface DuffelOffer {
   id: string;
   total_amount: string;
   total_currency: string;
-  slices: any[];
+  slices: Record<string, unknown>[];
   expires_at: string;
 }
 
@@ -297,20 +297,20 @@ export async function cancelOrder(orderId: string): Promise<DuffelOrder> {
 /**
  * Convert Parker Flight passenger data to Duffel format
  */
-export function mapPassengerToDuffel(passenger: any): DuffelPassenger {
+export function mapPassengerToDuffel(passenger: Record<string, unknown>): DuffelPassenger {
   return {
-    title: passenger.title || 'mr',
-    gender: passenger.gender || 'male',
-    given_name: passenger.first_name,
-    family_name: passenger.last_name,
-    born_on: passenger.date_of_birth, // Should be YYYY-MM-DD
-    email: passenger.email,
-    phone_number: passenger.phone_number,
+    title: (passenger.title as string) || 'mr',
+    gender: (passenger.gender as string) || 'male',
+    given_name: String(passenger.first_name || ''),
+    family_name: String(passenger.last_name || ''),
+    born_on: String(passenger.date_of_birth || ''), // Should be YYYY-MM-DD
+    email: String(passenger.email || ''),
+    phone_number: String(passenger.phone_number || ''),
     identity_documents: passenger.passport_number ? [{
       type: 'passport',
-      number: passenger.passport_number,
-      issuing_country_code: passenger.passport_country || 'US',
-      expires_on: passenger.passport_expiry
+      number: String(passenger.passport_number),
+      issuing_country_code: String(passenger.passport_country || 'US'),
+      expires_on: String(passenger.passport_expiry || '')
     }] : undefined
   };
 }
@@ -319,7 +319,7 @@ export function mapPassengerToDuffel(passenger: any): DuffelPassenger {
  * Convert Amadeus search results to Duffel offer request format
  */
 export function mapAmadeusSearchToDuffelRequest(
-  searchParams: any,
+  searchParams: Record<string, unknown>,
   passengerCount: { adults: number; children?: number; infants?: number }
 ): DuffelOfferRequest {
   const passengers: Array<{ type: 'adult' | 'child' | 'infant_without_seat' }> = [];
@@ -341,12 +341,12 @@ export function mapAmadeusSearchToDuffelRequest(
 
   return {
     slices: [{
-      origin: searchParams.origin,
-      destination: searchParams.destination,
-      departure_date: searchParams.departure_date
+      origin: String(searchParams.origin || ''),
+      destination: String(searchParams.destination || ''),
+      departure_date: String(searchParams.departure_date || '')
     }],
     passengers,
-    cabin_class: searchParams.cabin_class || 'economy',
-    max_connections: searchParams.max_connections
+    cabin_class: (searchParams.cabin_class as 'first' | 'business' | 'premium_economy' | 'economy') || 'economy',
+    max_connections: Number(searchParams.max_connections) || undefined
   };
 }

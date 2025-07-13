@@ -111,11 +111,18 @@ async function handleGetPaymentMethods(userId: string) {
   });
 }
 
-async function handleCreatePaymentMethod(user: any, action: string, requestData: any) {
+async function handleCreatePaymentMethod(user: { id: string; email: string }, action: string, requestData: unknown) {
   if (action === 'create_setup_intent') {
     return await createSetupIntent(user);
   } else if (action === 'confirm_payment_method') {
-    return await confirmPaymentMethod(user, requestData);
+    // Type guard for requestData
+    if (!requestData || typeof requestData !== 'object') {
+      return new Response(JSON.stringify({ error: 'Invalid request data' }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+    return await confirmPaymentMethod(user, requestData as PaymentMethodData);
   } else {
     return new Response(JSON.stringify({ error: 'Invalid action' }), {
       status: 400,
@@ -124,7 +131,7 @@ async function handleCreatePaymentMethod(user: any, action: string, requestData:
   }
 }
 
-async function createSetupIntent(user: any) {
+async function createSetupIntent(user: { id: string; email: string }) {
   try {
     // Get or create Stripe customer
     let stripeCustomerId: string;
@@ -175,7 +182,7 @@ async function createSetupIntent(user: any) {
   }
 }
 
-async function confirmPaymentMethod(user: any, data: PaymentMethodData) {
+async function confirmPaymentMethod(user: { id: string; email: string }, data: PaymentMethodData) {
   const { setup_intent_id } = data;
   
   if (!setup_intent_id) {

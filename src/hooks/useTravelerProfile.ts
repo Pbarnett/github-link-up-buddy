@@ -21,8 +21,8 @@ export interface TravelerProfile {
   is_verified?: boolean;
   verification_level?: 'basic' | 'enhanced' | 'premium';
   profile_completeness_score?: number;
-  travel_preferences?: any;
-  notification_preferences?: any;
+  travel_preferences?: Record<string, unknown>;
+  notification_preferences?: Record<string, unknown>;
   created_at?: string;
   updated_at?: string;
   last_profile_update?: string;
@@ -31,7 +31,7 @@ export interface TravelerProfile {
 export interface ProfileCompletionData {
   completion_percentage: number;
   missing_fields: string[];
-  recommendations: any[];
+  recommendations: Record<string, unknown>[];
   last_calculated: string;
 }
 

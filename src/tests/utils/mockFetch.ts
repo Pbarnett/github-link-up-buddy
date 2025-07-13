@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 interface MockFetchOptions {
   status?: number;
   ok?: boolean;
-  body?: any;
+  body?: unknown;
   headers?: Record<string, string>;
 }
 
@@ -21,10 +21,10 @@ export function mockFetch({ status = 200, ok = true, body, headers = {} }: MockF
   return vi.fn().mockResolvedValue(mockResponse);
 }
 
-export function mockFetchSuccess(body: any) {
+export function mockFetchSuccess(body: unknown) {
   return mockFetch({ status: 200, ok: true, body });
 }
 
-export function mockFetchError(status: number = 500, body: any = { error: 'Server error' }) {
+export function mockFetchError(status: number = 500, body: unknown = { error: 'Server error' }) {
   return mockFetch({ status, ok: false, body });
 }
