@@ -6,7 +6,7 @@ import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2, AlertCircle } from "l
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
-import { createDuffelBooking, checkBookingStatus } from "@/services/api/duffelBookingApi";
+// import { createDuffelBooking, checkBookingStatus } from "@/services/api/duffelBookingApi";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import TravelerDataForm, { TravelerData } from "@/components/TravelerDataForm";
 import { TablesInsert } from "@/integrations/supabase/types";
@@ -28,7 +28,7 @@ const TripConfirm = () => {
   const [isCheckingOffer, setIsCheckingOffer] = useState(false);
   const [autoBookEnabled, setAutoBookEnabled] = useState<boolean | null>(null);
   const [isLoadingAutoBookStatus, setIsLoadingAutoBookStatus] = useState(true);
-  const { user, userId, loading: userLoading } = useCurrentUser();
+  const { userId, loading: userLoading } = useCurrentUser();
   const searchParams = new URLSearchParams(location.search);
   const sessionId = searchParams.get('session_id');
 
@@ -94,9 +94,10 @@ const TripConfirm = () => {
             } else {
               console.log("[TripConfirm] Process-booking response:", data);
             }
-          } catch (err: any) {
+          } catch (err: unknown) {
             console.error("[TripConfirm] Exception processing booking:", err);
-            setError(`Booking processing error: ${err.message}`);
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            setError(`Booking processing error: ${errorMessage}`);
             setBookingStatus("❌ Booking failed");
           }
         };
@@ -181,7 +182,7 @@ const TripConfirm = () => {
       };
 
       initializeOfferAndAutoBookStatus();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("[TripConfirm] Error parsing offer details:", error);
       setHasError(true);
       toast({
@@ -190,7 +191,7 @@ const TripConfirm = () => {
         variant: "destructive",
       });
     }
-  }, [location.search, sessionId, navigate]);
+  }, [location.search, sessionId, navigate, checkOfferForExternalBooking]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -204,11 +205,12 @@ const TripConfirm = () => {
         // const { data, error } = await checkBookingStatus(bookingRequestId);
         // For now, skip the status check
         console.log('[TripConfirm] Booking status check not implemented yet');
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("[TripConfirm] Exception fetching booking request:", err);
+        const errorMessage = err instanceof Error ? err.message : "Could not retrieve your booking status at this time.";
         toast({ 
           title: "Error Fetching Booking Details", 
-          description: err.message || "Could not retrieve your booking status at this time.", 
+          description: errorMessage, 
           variant: "destructive" 
         });
         setError("Could not retrieve booking status.");
@@ -227,7 +229,7 @@ const TripConfirm = () => {
           table: 'booking_requests',
           filter: `checkout_session_id=eq.${sessionId}`,
         },
-        (payload: any) => {
+        (payload: { new: { status: string } }) => {
           console.log("[TripConfirm] Received booking status update:", payload);
           updateBookingStatusMessage(payload.new.status);
         }
@@ -238,7 +240,7 @@ const TripConfirm = () => {
       console.log("[TripConfirm] Unsubscribing from realtime channel");
       channel.unsubscribe();
     };
-  }, [sessionId]);
+  }, [sessionId, updateBookingStatusMessage]);
   
   const updateBookingStatusMessage = (status: string) => {
     console.log("[TripConfirm] Updating booking status message for status:", status);
@@ -322,12 +324,13 @@ const TripConfirm = () => {
         title: "Traveler Information Saved",
         description: "You can now proceed to payment.",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[TripConfirm] Exception saving traveler data:", err);
-      setError(err.message || "Failed to save traveler information");
+      const errorMessage = err instanceof Error ? err.message : "Failed to save traveler information";
+      setError(errorMessage);
       toast({
         title: "Error",
-        description: err.message || "Failed to save traveler information. Please try again.",
+        description: errorMessage || "Failed to save traveler information. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -391,12 +394,13 @@ const TripConfirm = () => {
       
       console.log("[TripConfirm] Redirecting to Stripe checkout:", res.data.url);
       window.location.href = res.data.url;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[TripConfirm] Exception during confirmation:", err);
-      setError(err.message || "There was a problem setting up the booking");
+      const errorMessage = err instanceof Error ? err.message : "There was a problem setting up the booking";
+      setError(errorMessage);
       toast({
         title: "Booking Failed",
-        description: err.message || "There was a problem setting up your booking. Please try again.",
+        description: errorMessage || "There was a problem setting up your booking. Please try again.",
         variant: "destructive",
       });
       setIsConfirming(false);

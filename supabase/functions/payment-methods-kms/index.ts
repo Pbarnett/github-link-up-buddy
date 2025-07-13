@@ -17,7 +17,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripe = {
   customers: {
-    create: async (params: any) => {
+    create: async (params: Record<string, string>) => {
       const response = await fetch('https://api.stripe.com/v1/customers', {
         method: 'POST',
         headers: {
@@ -36,7 +36,7 @@ const stripe = {
       });
       return await response.json();
     },
-    update: async (id: string, params: any) => {
+    update: async (id: string, params: Record<string, string>) => {
       const response = await fetch(`https://api.stripe.com/v1/customers/${id}`, {
         method: 'POST',
         headers: {
@@ -49,7 +49,7 @@ const stripe = {
     }
   },
   paymentMethods: {
-    create: async (params: any) => {
+    create: async (params: Record<string, string>) => {
       const response = await fetch('https://api.stripe.com/v1/payment_methods', {
         method: 'POST',
         headers: {
@@ -60,7 +60,7 @@ const stripe = {
       });
       return await response.json();
     },
-    attach: async (id: string, params: any) => {
+    attach: async (id: string, params: Record<string, string>) => {
       const response = await fetch(`https://api.stripe.com/v1/payment_methods/${id}/attach`, {
         method: 'POST',
         headers: {
@@ -83,7 +83,11 @@ const stripe = {
   }
 };
 
-async function getOrCreateStripeCustomer(user: any) {
+async function getOrCreateStripeCustomer(user: {
+  id: string;
+  email: string;
+  user_metadata?: { name?: string };
+}) {
   // Check if customer already exists
   const { data: existingCustomer } = await supabase
     .from('stripe_customers')

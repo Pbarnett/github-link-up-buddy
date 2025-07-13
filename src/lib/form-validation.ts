@@ -140,8 +140,8 @@ export const generateFieldSchema = (field: FieldConfiguration): z.ZodTypeAny | n
   if (field.validation?.required) {
     // For string fields, ensure they're not empty
     if (['text', 'textarea', 'password', 'email', 'phone'].includes(field.type)) {
-      // Check if schema still has min method (might be modified by custom validation)
-      if (typeof (schema as any).min === 'function') {
+        // Check if schema still has min method (might be modified by custom validation)
+        if (typeof (schema as z.ZodString).min === 'function') {
         schema = (schema as z.ZodString).min(1, field.validation.message || `${field.label} is required`);
       } else {
         // Use refine for complex schemas
@@ -197,7 +197,7 @@ const applyValidationRules = (
         updatedSchema = updatedSchema.regex(regex, 
           rules.message || 'Invalid format'
         );
-      } catch (error) {
+      } catch {
         console.warn(`Invalid regex pattern for field: ${rules.pattern}`);
       }
     }
@@ -259,7 +259,7 @@ const applyValidationRules = (
  */
 export const validateFieldValue = (
   field: FieldConfiguration,
-  value: any
+  value: unknown
 ): { isValid: boolean; error?: string } => {
   try {
     const fieldSchema = generateFieldSchema(field);
@@ -288,7 +288,7 @@ export const validateFieldValue = (
  */
 export const validateFormValues = (
   configuration: FormConfiguration,
-  values: Record<string, any>
+  values: Record<string, unknown>
 ): { isValid: boolean; errors: Record<string, string> } => {
   try {
     const schema = generateZodSchema(configuration);
@@ -312,8 +312,8 @@ export const validateFormValues = (
 /**
  * Get default values from form configuration
  */
-export const getDefaultValues = (configuration: FormConfiguration): Record<string, any> => {
-  const defaults: Record<string, any> = {};
+export const getDefaultValues = (configuration: FormConfiguration): Record<string, unknown> => {
+  const defaults: Record<string, unknown> = {};
 
   configuration.sections.forEach(section => {
     section.fields.forEach(field => {

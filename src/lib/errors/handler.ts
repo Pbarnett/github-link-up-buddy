@@ -9,7 +9,7 @@ import {
   AppError, 
   ErrorCode, 
   ValidationError, 
-  ExternalApiError, 
+  ExternalApiError as AppExternalApiError, 
   DatabaseError,
   BusinessLogicError,
   AMADEUS_ERROR_MAPPINGS,
@@ -36,29 +36,78 @@ export interface ErrorResponse {
  * Logger interface for dependency injection
  */
 export interface Logger {
-  error(message: string, meta?: any): void;
-  warn(message: string, meta?: any): void;
-  info(message: string, meta?: any): void;
-  debug(message: string, meta?: any): void;
+  error(message: string, meta?: unknown): void;
+  warn(message: string, meta?: unknown): void;
+  info(message: string, meta?: unknown): void;
+  debug(message: string, meta?: unknown): void;
+}
+
+/**
+ * External API error structures
+ */
+export interface AmadeusError {
+  errors?: Array<{
+    code?: string;
+    detail?: string;
+    message?: string;
+  }>;
+  error?: {
+    code?: string;
+    message?: string;
+  };
+  code?: string;
+  message?: string;
+}
+
+export interface DuffelError {
+  errors?: Array<{
+    type?: string;
+    message?: string;
+  }>;
+  error?: {
+    type?: string;
+    message?: string;
+  };
+  type?: string;
+  message?: string;
+}
+
+export interface StripeError {
+  code?: string;
+  type?: string;
+  message?: string;
+  user_message?: string;
+}
+
+export type ExternalApiError = AmadeusError | DuffelError | StripeError;
+
+/**
+ * Unknown error structure for general error handling
+ */
+interface UnknownError {
+  code?: string;
+  message?: string;
+  details?: unknown;
+  [key: string]: unknown;
 }
 
 /**
  * Default console logger implementation
  */
 class ConsoleLogger implements Logger {
-  error(message: string, meta?: any): void {
+  error(message: string, meta?: unknown): void {
     console.error(`[ERROR] ${message}`, meta ? JSON.stringify(meta, null, 2) : '');
   }
 
-  warn(message: string, meta?: any): void {
+  warn(message: string, meta?: unknown): void {
     console.warn(`[WARN] ${message}`, meta ? JSON.stringify(meta, null, 2) : '');
   }
 
-  info(message: string, meta?: any): void {
+  info(message: string, meta?: unknown): void {
     console.info(`[INFO] ${message}`, meta ? JSON.stringify(meta, null, 2) : '');
   }
 
-  debug(message: string, meta?: any): void {
+  debug(message: string, meta?: unknown): void {
     console.debug(`[DEBUG] ${message}`, meta ? JSON.stringify(meta, null, 2) : '');
   }
 }
@@ -118,7 +167,7 @@ export class ErrorHandler {
       }
 
       if (this.isNetworkError(error)) {
-        return new ExternalApiError(
+        return new AppExternalApiError(
           'Network',
           error.message,
           context,
@@ -163,7 +212,7 @@ export class ErrorHandler {
    */
   public mapExternalApiError(
     provider: 'amadeus' | 'duffel' | 'stripe',
-    error: any,
+    error: ExternalApiError,
     context?: ErrorContext
   ): AppError {
     const mappings = provider === 'amadeus' 
@@ -195,7 +244,7 @@ export class ErrorHandler {
     }
 
     // Fallback to generic external API error
-    return new ExternalApiError(
+    return new AppExternalApiError(
       provider,
       errorMessage,
       { 
@@ -284,8 +333,10 @@ export class ErrorHandler {
   /**
    * Type guards and utility methods
    */
-  private isPostgrestError(error: any): error is PostgrestError {
-    return error && typeof error.code === 'string' && error.message && error.details;
+  private isPostgrestError(error: unknown): error is PostgrestError {
+    return error && typeof error === 'object' && 
+           'code' in error && typeof (error as UnknownError).code === 'string' && 
+           'message' in error && 'details' in error;
   }
 
   private isValidationError(error: Error): boolean {
@@ -304,54 +355,60 @@ export class ErrorHandler {
            message.includes('connection');
   }
 
-  private extractErrorCode(error: any, provider: string): string | null {
+  private extractErrorCode(error: ExternalApiError, provider: string): string | null {
     if (provider === 'amadeus') {
-      return error?.errors?.[0]?.code || 
-             error?.error?.code || 
-             error?.code || 
+      const amadeusError = error as AmadeusError;
+      return amadeusError?.errors?.[0]?.code || 
+             amadeusError?.error?.code || 
+             amadeusError?.code || 
              null;
     }
     
     if (provider === 'duffel') {
-      return error?.errors?.[0]?.type || 
-             error?.error?.type || 
-             error?.type || 
+      const duffelError = error as DuffelError;
+      return duffelError?.errors?.[0]?.type || 
+             duffelError?.error?.type || 
+             duffelError?.type || 
              null;
     }
 
     if (provider === 'stripe') {
-      return error?.code || 
-             error?.type || 
+      const stripeError = error as StripeError;
+      return stripeError?.code || 
+             stripeError?.type || 
              null;
     }
 
     return null;
   }
 
-  private extractErrorMessage(error: any, provider: string): string {
+  private extractErrorMessage(error: ExternalApiError, provider: string): string {
     const defaultMessage = `${provider} API error occurred`;
 
     if (provider === 'amadeus') {
-      return error?.errors?.[0]?.detail || 
-             error?.error?.message || 
-             error?.message || 
+      const amadeusError = error as AmadeusError;
+      return amadeusError?.errors?.[0]?.detail || 
+             amadeusError?.error?.message || 
+             amadeusError?.message || 
              defaultMessage;
     }
     
     if (provider === 'duffel') {
-      return error?.errors?.[0]?.message || 
-             error?.error?.message || 
-             error?.message || 
+      const duffelError = error as DuffelError;
+      return duffelError?.errors?.[0]?.message || 
+             duffelError?.error?.message || 
+             duffelError?.message || 
              defaultMessage;
     }
 
     if (provider === 'stripe') {
-      return error?.message || 
-             error?.user_message || 
+      const stripeError = error as StripeError;
+      return stripeError?.message || 
+             stripeError?.user_message || 
              defaultMessage;
     }
 
-    return error?.message || defaultMessage;
+    return 'message' in error && typeof error.message === 'string' ? error.message : defaultMessage;
   }
 }
 
@@ -360,8 +417,8 @@ export class ErrorHandler {
  */
 export const errorHandler = new ErrorHandler({
   logger: new ConsoleLogger(),
-  includeStackTrace: import.meta.env.MODE === 'development',
-  sanitizeErrors: import.meta.env.MODE === 'production'
+  includeStackTrace: process.env.NODE_ENV === 'development',
+  sanitizeErrors: process.env.NODE_ENV === 'production'
 });
 
 /**
@@ -375,14 +432,14 @@ export function handleAndThrowError(error: unknown, context?: ErrorContext): nev
   return errorHandler.handleAndThrow(error, context);
 }
 
-export function mapAmadeusError(error: any, context?: ErrorContext): AppError {
+export function mapAmadeusError(error: AmadeusError, context?: ErrorContext): AppError {
   return errorHandler.mapExternalApiError('amadeus', error, context);
 }
 
-export function mapDuffelError(error: any, context?: ErrorContext): AppError {
+export function mapDuffelError(error: DuffelError, context?: ErrorContext): AppError {
   return errorHandler.mapExternalApiError('duffel', error, context);
 }
 
-export function mapStripeError(error: any, context?: ErrorContext): AppError {
+export function mapStripeError(error: StripeError, context?: ErrorContext): AppError {
   return errorHandler.mapExternalApiError('stripe', error, context);
 }

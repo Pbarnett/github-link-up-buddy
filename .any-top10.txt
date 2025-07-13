@@ -1,0 +1,10 @@
+  15 src/lib/errors/handler.ts
+  13 src/lib/services/compensationService.ts
+  11 src/tests/components/profile/SimpleProfileStatus.test.tsx
+  11 src/hooks/useDynamicForm.ts
+   7 src/components/filtering/__tests__/frontend-integration.test.tsx
+   6 src/tests/utils/reactTestUtils.tsx
+   6 src/pages/TripConfirm.tsx.bak_original_content_tripconfirm
+   6 src/pages/TripConfirm.tsx.bak_original_content
+   6 src/pages/TripConfirm.tsx.bak
+   6 src/pages/TripConfirm.tsx

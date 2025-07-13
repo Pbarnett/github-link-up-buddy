@@ -22,7 +22,9 @@ import type {
   FormSection,
   FieldConfiguration,
   FieldType,
-  FieldTemplate
+  FieldTemplate,
+  SecurityValidationResult,
+  SecurityViolation
 } from '@/types/dynamic-forms';
 
 import { DynamicFormRenderer } from './DynamicFormRenderer';
@@ -49,7 +51,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
   const [activeTab, setActiveTab] = useState('builder');
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
-  const [validationResults, setValidationResults] = useState<any>(null);
+  const [validationResults, setValidationResults] = useState<SecurityValidationResult | null>(null);
 
   const {
     validateConfiguration,
@@ -409,7 +411,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                           <div className="space-y-2">
                             <p>Form configuration has validation issues:</p>
                             <ul className="list-disc list-inside space-y-1">
-                              {validationResults.violations.map((violation: any, index: number) => (
+                              {validationResults.violations.map((violation: SecurityViolation, index: number) => (
                                 <li key={index} className="text-sm">
                                   {violation.message}
                                 </li>
