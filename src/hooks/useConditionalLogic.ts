@@ -31,7 +31,7 @@ export interface UseConditionalLogicReturn {
   /** Check if a specific section is visible */
   isSectionVisible: (sectionId: string) => boolean;
   /** Re-evaluate all conditional logic */
-  evaluateConditions: (formData: Record<string, any>) => void;
+  evaluateConditions: (formData: Record<string, unknown>) => void;
   /** Get fields that depend on a specific field */
   getDependentFields: (fieldId: string) => string[];
   /** Validation errors in conditional logic setup */
@@ -42,7 +42,7 @@ export interface UseConditionalLogicReturn {
 
 export const useConditionalLogic = (
   config: DynamicFormConfig | null,
-  formData: Record<string, any>
+  formData: Record<string, unknown>
 ): UseConditionalLogicReturn => {
   
   // Create dependency graph
@@ -193,7 +193,7 @@ export const useConditionalLogic = (
   }, [sectionStates]);
 
   // Re-evaluate all conditional logic (useful for manual triggers)
-  const evaluateConditions = useCallback((newFormData: Record<string, any>) => {
+  const evaluateConditions = useCallback((newFormData: Record<string, unknown>) => {
     // This will trigger a re-render with new formData
     // The useMemo hooks above will recalculate based on the new data
     console.log('Re-evaluating conditions with new form data:', newFormData);

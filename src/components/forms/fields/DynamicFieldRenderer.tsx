@@ -351,7 +351,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'date-range-flexible':
         return (
           <DateRangeField
-            value={value as any}
+value={value as Record<string, unknown>}
             onChange={handleChange}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
@@ -375,7 +375,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'airport-autocomplete':
         return (
           <AirportAutocompleteField
-            value={value as any}
+value={value as Record<string, unknown>}
             onChange={handleChange}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
@@ -398,7 +398,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'address-group':
         return (
           <AddressGroupField
-            value={value as any}
+value={value as Record<string, unknown>}
             onChange={handleChange}
             disabled={fieldState.isDisabled}
             error={error}

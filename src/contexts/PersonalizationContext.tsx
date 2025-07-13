@@ -17,8 +17,8 @@ interface PersonalizationContextType {
   refreshPersonalizationData: () => Promise<void>;
   isPersonalizationEnabled: boolean;
   abTestVariant: string | null;
-  experimentConfig: Record<string, any> | null;
-  trackPersonalizationEvent: (eventType: 'exposure' | 'conversion' | 'engagement', eventName: string, metadata?: Record<string, any>) => Promise<void>;
+experimentConfig: Record<string, unknown> | null;
+  trackPersonalizationEvent: (eventType: 'exposure' | 'conversion' | 'engagement', eventName: string, metadata?: Record<string, unknown>) => Promise<void>;
 }
 
 const PersonalizationContext = createContext<PersonalizationContextType | undefined>(undefined);
@@ -51,7 +51,7 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
   const trackPersonalizationEvent = async (
     eventType: 'exposure' | 'conversion' | 'engagement',
     eventName: string,
-    metadata?: Record<string, any>
+metadata?: Record<string, unknown>
   ) => {
     if (!userId || !abTestVariant) return;
 
