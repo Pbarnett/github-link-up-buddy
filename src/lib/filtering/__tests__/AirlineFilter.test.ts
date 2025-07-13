@@ -291,8 +291,8 @@ vi.clearAllMocks();
       });
       
       // Mock the extractAirlineCodesFromOffer to throw an error
-      const originalMethod = (filter as any).extractAirlineCodesFromOffer;
-(filter as any).extractAirlineCodesFromOffer = vi.fn(() => {
+      const originalMethod = (filter as unknown as { extractAirlineCodesFromOffer: unknown }).extractAirlineCodesFromOffer;
+(filter as unknown as { extractAirlineCodesFromOffer: unknown }).extractAirlineCodesFromOffer = vi.fn(() => {
         throw new Error('Test error');
       });
       
@@ -309,7 +309,7 @@ vi.clearAllMocks();
       );
       
       // Restore original method
-      (filter as any).extractAirlineCodesFromOffer = originalMethod;
+      (filter as unknown as { extractAirlineCodesFromOffer: unknown }).extractAirlineCodesFromOffer = originalMethod;
     });
   });
 
