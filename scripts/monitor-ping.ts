@@ -15,6 +15,17 @@ interface MetricCheck {
   value?: string;
 }
 
+interface PrometheusTarget {
+  labels: {
+    job: string;
+    [key: string]: string;
+  };
+  health: string;
+  lastError?: string;
+  lastScrape?: string;
+  scrapeUrl?: string;
+}
+
 async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -147,7 +158,7 @@ async function checkPrometheusConnection(): Promise<boolean> {
     
     if (response.ok && data.status === 'success') {
       const targets = data.data.activeTargets;
-      const parkerFlightTarget = targets.find((target: any) => 
+      const parkerFlightTarget = targets.find((target: PrometheusTarget) => 
         target.labels.job === 'parker-flight-api'
       );
       
@@ -162,7 +173,7 @@ async function checkPrometheusConnection(): Promise<boolean> {
       console.log('❌ Prometheus API not responding correctly');
       return false;
     }
-  } catch (error) {
+  } catch {
     console.log('⚠️  Prometheus not accessible (may not be running)');
     return false;
   }

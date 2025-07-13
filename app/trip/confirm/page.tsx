@@ -126,11 +126,12 @@ const TripConfirm = () => {
       // Redirect to dashboard
       router.push('/dashboard');
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating booking:", error);
+      const errorMessage = error instanceof Error ? error.message : "There was a problem creating your booking. Please try again.";
       toast({
         title: "Booking Failed",
-        description: error.message || "There was a problem creating your booking. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
