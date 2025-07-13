@@ -29,7 +29,7 @@ export interface PaymentIntentParams {
 
 export interface PaymentMethodParams {
   type: 'card';
-  card: any; // Stripe card element
+  card: unknown; // Stripe card element
   billing_details?: {
     name?: string;
     email?: string;
@@ -111,7 +111,7 @@ export class StripeService {
     clientSecret: string;
     paymentMethod: PaymentMethodParams;
     offerId: string;
-    passengers: any[];
+    passengers: Record<string, unknown>[];
     returnUrl?: string;
   }) {
     if (!this.stripe) {
@@ -164,7 +164,7 @@ export class StripeService {
   }: {
     offerId: string;
     paymentMethod: PaymentMethodParams;
-    passengers: any[];
+    passengers: Record<string, unknown>[];
   }): Promise<DuffelPaymentSession> {
     try {
       // Create temporary card with Duffel

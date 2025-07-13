@@ -26,14 +26,14 @@ interface FlightSearchParams {
 
 // Utility functions moved directly into the edge function
 function decideSeatPreference(
-  offer: any,
-  trip: { max_price: number }
+  _offer: unknown,
+  _trip: { max_price: number }
 ): "AISLE" | "WINDOW" | "MIDDLE" | null {
   // TODO: Jules will fill in the actual parsing of offer.seat_map or offer.fare_details.
   return "MIDDLE"; // placeholder so our smoke test always picks "MIDDLE"
 }
 
-function offerIncludesCarryOnAndPersonal(offer: any): boolean {
+function offerIncludesCarryOnAndPersonal(_offer: unknown): boolean {
   // TODO: Implement actual baggage checking logic
   return false; // placeholder
 }
@@ -80,7 +80,7 @@ serve(async (req: Request) => {
       try {
         const body = await req.json();
         tripRequestId = body.tripRequestId || "test-trip-id";
-      } catch (e) {
+      } catch {
         console.log('🔧 [LOCAL-DEV] Could not parse request body, using default tripRequestId');
       }
     }
@@ -114,21 +114,6 @@ serve(async (req: Request) => {
       const maxDuration = tripRequest?.max_duration || 7;
       const budget = tripRequest?.budget || 1000;
       
-      // Calculate realistic dates within the trip window
-      const depDate1 = new Date(earliestDep.getTime() + Math.random() * (latestDep.getTime() - earliestDep.getTime()));
-      const depDate2 = new Date(earliestDep.getTime() + Math.random() * (latestDep.getTime() - earliestDep.getTime()));
-      
-      // Calculate return dates based on duration
-      const duration1 = minDuration + Math.floor(Math.random() * (maxDuration - minDuration + 1));
-      const duration2 = minDuration + Math.floor(Math.random() * (maxDuration - minDuration + 1));
-      
-      const retDate1 = new Date(depDate1.getTime() + duration1 * 24 * 60 * 60 * 1000);
-      const retDate2 = new Date(depDate2.getTime() + duration2 * 24 * 60 * 60 * 1000);
-      
-      // Generate realistic prices within budget
-      const price1 = Math.floor(budget * 0.6 + Math.random() * budget * 0.4);
-      const price2 = Math.floor(budget * 0.4 + Math.random() * budget * 0.6);
-      
       // Generate realistic airline codes based on route
       const airlines = [
         { name: "Test Airlines", code: "TA" },
@@ -136,9 +121,6 @@ serve(async (req: Request) => {
         { name: "Express Airways", code: "EA" },
         { name: "Quick Jet", code: "QJ" }
       ];
-      
-      const airline1 = airlines[Math.floor(Math.random() * airlines.length)];
-      const airline2 = airlines[Math.floor(Math.random() * airlines.length)];
       
       console.log(`🔧 [LOCAL-DEV] Generating mock flights for ${originAirport} → ${destinationAirport}`);
       
@@ -251,12 +233,12 @@ serve(async (req: Request) => {
     
     // Parse request body for optional tripRequestId
     let tripRequestId: string | null = null;
-    let body: any = {};
+    let body: Record<string, unknown> = {};
     let relaxedCriteria = false;
     
     if (req.method === "POST") {
-      body = await req.json();
-      tripRequestId = body.tripRequestId || null;
+      body = await req.json() as Record<string, unknown>;
+      tripRequestId = (body.tripRequestId as string) || null;
       relaxedCriteria = body.relaxedCriteria === true;
 
       if (relaxedCriteria) {
@@ -517,7 +499,7 @@ serve(async (req: Request) => {
         // Insert matches, avoiding duplicates with onConflict option
         let newInserts = 0;
         if (matchesToInsert.length > 0) {
-          const { data: insertedMatches, error: matchesError, count: matchCount } = await supabaseClient
+          const { error: matchesError, count: matchCount } = await supabaseClient
             .from("flight_matches")
             .upsert(matchesToInsert, { 
               onConflict: ["trip_request_id", "flight_offer_id"],

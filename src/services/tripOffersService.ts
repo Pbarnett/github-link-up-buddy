@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
 import { FilterFactory, createFilterContext, normalizeOffers } from "@/lib/filtering";
 
 // Type for flight offers from the database (now using V2 table)
@@ -32,7 +31,7 @@ export type Offer = {
 /**
  * Transform V2 offer to legacy format for compatibility
  */
-function transformV2ToLegacy(v2Offer: any): Offer {
+function transformV2ToLegacy(v2Offer: Record<string, unknown>): Offer {
   // Extract IATA code from longer airport codes
   const extractIataCode = (airportCode: string): string => {
     if (!airportCode) return '';
@@ -53,32 +52,32 @@ function transformV2ToLegacy(v2Offer: any): Offer {
     }
   };
 
-  const departure = parseDateTime(v2Offer.depart_dt);
-  const returnInfo = parseDateTime(v2Offer.return_dt);
+  const departure = parseDateTime(String(v2Offer.depart_dt || ''));
+  const returnInfo = parseDateTime(String(v2Offer.return_dt || ''));
 
   return {
-    id: v2Offer.id,
-    trip_request_id: v2Offer.trip_request_id,
-    price: v2Offer.price_total || 0,
-    airline: extractIataCode(v2Offer.origin_iata) + '-' + extractIataCode(v2Offer.destination_iata), // Simplified airline representation
-    flight_number: 'V2-' + v2Offer.id.substring(0, 8), // Generated flight number
+    id: String(v2Offer.id || ''),
+    trip_request_id: String(v2Offer.trip_request_id || ''),
+    price: Number(v2Offer.price_total) || 0,
+    airline: extractIataCode(String(v2Offer.origin_iata || '')) + '-' + extractIataCode(String(v2Offer.destination_iata || '')), // Simplified airline representation
+    flight_number: 'V2-' + String(v2Offer.id || '').substring(0, 8), // Generated flight number
     departure_date: departure.date,
     departure_time: departure.time,
     return_date: returnInfo.date,
     return_time: returnInfo.time,
     duration: '1 day', // Simplified duration
-    booking_url: v2Offer.booking_url,
-    carrier_code: extractIataCode(v2Offer.origin_iata),
-    origin_airport: v2Offer.origin_iata,
-    destination_airport: v2Offer.destination_iata,
+    booking_url: String(v2Offer.booking_url || ''),
+    carrier_code: extractIataCode(String(v2Offer.origin_iata || '')),
+    origin_airport: String(v2Offer.origin_iata || ''),
+    destination_airport: String(v2Offer.destination_iata || ''),
     // Pass through V2 fields
-    price_total: v2Offer.price_total,
-    price_currency: v2Offer.price_currency,
-    cabin_class: v2Offer.cabin_class,
-    nonstop: v2Offer.nonstop,
-    bags_included: v2Offer.bags_included,
-    mode: v2Offer.mode,
-    created_at: v2Offer.created_at,
+    price_total: Number(v2Offer.price_total) || undefined,
+    price_currency: String(v2Offer.price_currency || '') || undefined,
+    cabin_class: String(v2Offer.cabin_class || '') || undefined,
+    nonstop: Boolean(v2Offer.nonstop),
+    bags_included: Boolean(v2Offer.bags_included),
+    mode: String(v2Offer.mode || '') || undefined,
+    created_at: String(v2Offer.created_at || '') || undefined,
   };
 }
 
@@ -129,7 +128,7 @@ export async function fetchTripOffers(
 
   const { data: v2Data, error: v2Error } = await v2Query.order('price_total', { ascending: true });
 
-  let rawOffers: any[] = [];
+  let rawOffers: Record<string, unknown>[] = [];
   let usingV2Table = false;
 
   if (!v2Error && v2Data && v2Data.length > 0) {
@@ -332,7 +331,7 @@ export async function fetchTripOffers(
  * Transform unified offer format back to legacy format
  * Used when original offer data is not available
  */
-function transformUnifiedToLegacy(unifiedOffer: any): Offer {
+function transformUnifiedToLegacy(unifiedOffer: Record<string, unknown>): Offer {
   const parseDateTime = (isoString: string) => {
     if (!isoString) return { date: '', time: '' };
     try {
@@ -346,29 +345,33 @@ function transformUnifiedToLegacy(unifiedOffer: any): Offer {
     }
   };
 
-  const departure = parseDateTime(unifiedOffer.segments?.[0]?.departure?.at || '');
-  const returnInfo = parseDateTime(unifiedOffer.segments?.[1]?.departure?.at || '');
+  const segments = Array.isArray(unifiedOffer.segments) ? unifiedOffer.segments : [];
+  const firstSegment = segments[0] as Record<string, unknown> || {};
+  const secondSegment = segments[1] as Record<string, unknown> || {};
+  
+  const departure = parseDateTime(String(firstSegment.departure?.at || ''));
+  const returnInfo = parseDateTime(String(secondSegment.departure?.at || ''));
 
   return {
-    id: unifiedOffer.id,
-    trip_request_id: unifiedOffer.tripRequestId || '',
-    price: unifiedOffer.totalAmount || 0,
-    airline: unifiedOffer.segments?.[0]?.marketingCarrier?.name || 'Unknown',
-    flight_number: unifiedOffer.segments?.[0]?.marketingCarrier?.flightNumber || 'N/A',
+    id: String(unifiedOffer.id || ''),
+    trip_request_id: String(unifiedOffer.tripRequestId || ''),
+    price: Number(unifiedOffer.totalAmount) || 0,
+    airline: String(firstSegment.marketingCarrier?.name || 'Unknown'),
+    flight_number: String(firstSegment.marketingCarrier?.flightNumber || 'N/A'),
     departure_date: departure.date,
     departure_time: departure.time,
     return_date: returnInfo.date,
     return_time: returnInfo.time,
-    duration: unifiedOffer.duration || 'N/A',
-    booking_url: unifiedOffer.bookingUrl,
-    carrier_code: unifiedOffer.segments?.[0]?.marketingCarrier?.iataCode,
-    origin_airport: unifiedOffer.segments?.[0]?.origin?.iataCode,
-    destination_airport: unifiedOffer.segments?.[0]?.destination?.iataCode,
-    price_total: unifiedOffer.totalAmount,
-    price_currency: unifiedOffer.currency,
-    cabin_class: unifiedOffer.cabinClass,
-    nonstop: unifiedOffer.isNonstop,
-    bags_included: unifiedOffer.bagsIncluded,
+    duration: String(unifiedOffer.duration || 'N/A'),
+    booking_url: String(unifiedOffer.bookingUrl || ''),
+    carrier_code: String(firstSegment.marketingCarrier?.iataCode || ''),
+    origin_airport: String(firstSegment.origin?.iataCode || ''),
+    destination_airport: String(firstSegment.destination?.iataCode || ''),
+    price_total: Number(unifiedOffer.totalAmount) || undefined,
+    price_currency: String(unifiedOffer.currency || ''),
+    cabin_class: String(unifiedOffer.cabinClass || ''),
+    nonstop: Boolean(unifiedOffer.isNonstop),
+    bags_included: Boolean(unifiedOffer.bagsIncluded),
     mode: 'filtered',
   };
 }
