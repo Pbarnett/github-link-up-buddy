@@ -97,7 +97,7 @@ export class CircuitBreaker {
       return result;
     } catch (error) {
       // Record failure
-      this.onFailure(now, error);
+      this.onFailure(now);
       this.logCall('FAILURE', 0, error);
       
       // Re-throw the original error
@@ -126,7 +126,7 @@ export class CircuitBreaker {
   /**
    * Handle failed call
    */
-  private onFailure(timestamp: number, error: any): void {
+  private onFailure(timestamp: number): void {
     this.failureCount++;
     this.consecutiveFailures++;
     this.lastFailureTime = timestamp;
@@ -251,10 +251,10 @@ export class CircuitBreaker {
   /**
    * Log circuit breaker events
    */
-  private logCall(type: 'SUCCESS' | 'FAILURE', duration: number, error?: any): void {
+  private logCall(type: 'SUCCESS' | 'FAILURE', duration: number, error?: unknown): void {
     const message = type === 'SUCCESS' 
       ? `[CircuitBreaker:${this.name}] Call succeeded in ${duration.toFixed(2)}ms`
-      : `[CircuitBreaker:${this.name}] Call failed: ${error?.message || 'Unknown error'}`;
+      : `[CircuitBreaker:${this.name}] Call failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
     
     if (type === 'SUCCESS') {
       console.log(message);
@@ -343,7 +343,7 @@ export const circuitBreakerRegistry = new CircuitBreakerRegistry();
 /**
  * Helper function to create a protected version of any async function
  */
-export function withCircuitBreaker<T extends any[], R>(
+export function withCircuitBreaker<T extends unknown[], R>(
   name: string,
   config: CircuitBreakerConfig,
   fn: (...args: T) => Promise<R>
