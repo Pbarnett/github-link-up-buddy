@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -6,7 +6,7 @@ import TripRequestForm from '@/components/trip/TripRequestForm';
 
 // Mock react-day-picker at the top level to avoid complex interactions
 vi.mock('react-day-picker', () => ({
-  DayPicker: ({ onSelect }: any) => (
+  DayPicker: ({ onSelect }: { onSelect?: (date: Date) => void }) => (
     <div data-testid="mock-calendar" role="grid">
       <button 
         onClick={() => onSelect && onSelect(new Date('2024-08-15'))}
@@ -20,7 +20,7 @@ vi.mock('react-day-picker', () => ({
 
 // Mock Calendar component
 vi.mock('@/components/ui/calendar', () => ({
-  Calendar: ({ onSelect }: any) => (
+  Calendar: ({ onSelect }: { onSelect?: (date: Date) => void }) => (
     <div data-testid="mock-calendar" role="grid">
       <button 
         onClick={() => onSelect && onSelect(new Date('2024-08-15'))}

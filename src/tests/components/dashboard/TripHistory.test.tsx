@@ -10,7 +10,7 @@ import { MemoryRouter } from 'react-router-dom'; // For <Link>
 import { supabase } from '@/integrations/supabase/client';
 
 // This variable will hold the mock promise resolver/rejecter for the final 'order' call
-let mockSupabaseQueryResolver: any;
+let mockSupabaseQueryResolver: { resolve: (value: unknown) => void; reject: (reason?: unknown) => void };
 const mockOrder = vi.fn(() => new Promise((resolve, reject) => {
     mockSupabaseQueryResolver = { resolve, reject };
 }));
@@ -46,14 +46,14 @@ describe('TripHistory Component', () => {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
           order: mockOrder,
-        } as any;
+        } as { select: ReturnType<typeof vi.fn>; eq: ReturnType<typeof vi.fn>; order: typeof mockOrder };
       }
       // Fallback for other tables
       return {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         order: vi.fn().mockResolvedValue({ data: [], error: null }),
-      } as any;
+      } as { select: ReturnType<typeof vi.fn>; eq: ReturnType<typeof vi.fn>; order: ReturnType<typeof vi.fn> };
     });
   });
 
@@ -136,7 +136,7 @@ describe('TripHistory Component', () => {
     });
     // Check that the mocked Link component was called with the correct `to` prop
     const { Link } = await import('react-router-dom');
-    const LinkMock = Link as unknown as MockedFunction<any>;
+    const LinkMock = Link as unknown as MockedFunction<React.ComponentType<{ to: string; children: React.ReactNode }>>;
     expect(LinkMock).toHaveBeenCalledWith(
         expect.objectContaining({ to: `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}` }),
         expect.anything()

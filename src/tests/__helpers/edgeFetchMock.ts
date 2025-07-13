@@ -4,8 +4,8 @@ export interface EdgeFunctionResponse {
   success?: boolean;
   message?: string;
   inserted?: number;
-  data?: any;
-  error?: any;
+  data?: unknown;
+  error?: unknown;
 }
 
 export const createEdgeFetchMock = (responseData: EdgeFunctionResponse = { success: true }) => {
@@ -17,7 +17,7 @@ export const createEdgeFetchMock = (responseData: EdgeFunctionResponse = { succe
   );
 };
 
-export const createEdgeFetchErrorMock = (errorMessage: string, status: number = 500) => {
+export const createEdgeFetchErrorMock = (errorMessage: string) => {
   return vi.fn().mockRejectedValue(
     new Error(errorMessage)
   );
