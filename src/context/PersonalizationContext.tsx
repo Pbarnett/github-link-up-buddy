@@ -11,7 +11,7 @@ interface PersonalizationContextType {
   personalizationData: PersonalizationData | null;
   isLoading: boolean;
   error: Error | null;
-  trackEvent: (eventType: string, context?: any) => void;
+  trackEvent: (eventType: string, context?: unknown) => void;
   refetch: () => void;
 }
 
@@ -38,7 +38,7 @@ export function PersonalizationProvider({
     personalizationData,
     isLoading,
     error,
-    trackEvent: useCallback((eventType: string, context?: any) => {
+    trackEvent: useCallback((eventType: string, context?: unknown) => {
       trackEvent({ eventType, context });
     }, [trackEvent]),
     refetch
