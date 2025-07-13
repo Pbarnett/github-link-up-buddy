@@ -27,7 +27,7 @@ describe('Feature Flag System', () => {
     });
 
     it('handles null/undefined rollout percentage as 100%', () => {
-      const flag = { ...createTestFlag(true, 100), rollout_percentage: null } as any;
+      const flag = { ...createTestFlag(true, 100), rollout_percentage: null } as FeatureFlag;
       expect(isEnabled(flag, 'user123')).toBe(true);
     });
 

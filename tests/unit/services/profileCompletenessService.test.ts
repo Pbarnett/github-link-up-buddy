@@ -20,7 +20,7 @@ describe('ProfileCompletenessService', () => {
       const emptyProfile = createBasicProfile({
         full_name: '',
         date_of_birth: '',
-        gender: undefined as any,
+        gender: undefined as unknown as TravelerProfile['gender'],
         email: '',
       });
 
