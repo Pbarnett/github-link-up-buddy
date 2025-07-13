@@ -88,9 +88,9 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
         setVerificationSession(data.verification_session);
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error checking verification requirement:', err);
-      setError(err.message || 'Failed to check verification requirement');
+      setError(err instanceof Error ? err.message : 'Failed to check verification requirement');
     } finally {
       setIsLoading(false);
     }
@@ -117,9 +117,9 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
         setVerificationSession(data.verification_session);
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating verification session:', err);
-      setError(err.message || 'Failed to create verification session');
+      setError(err instanceof Error ? err.message : 'Failed to create verification session');
     } finally {
       setIsLoading(false);
     }
@@ -152,9 +152,9 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
         onVerificationComplete?.(data.is_verified);
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error checking verification status:', err);
-      setError(err.message || 'Failed to check verification status');
+      setError(err instanceof Error ? err.message : 'Failed to check verification status');
     } finally {
       setIsLoading(false);
     }
