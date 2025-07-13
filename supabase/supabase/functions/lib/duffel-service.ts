@@ -66,8 +66,8 @@ export interface DuffelOrder {
   created_at: string;
   total_amount: string;
   total_currency: string;
-  metadata: Record<string, any>;
-  documents: any[];
+  metadata: Record<string, unknown>;
+  documents: unknown[];
   slices: DuffelSlice[];
   passengers: DuffelOrderPassenger[];
 }
@@ -91,7 +91,7 @@ export interface CreateOrderRequest {
     currency: string;
   }>;
   passengers: DuffelOrderPassenger[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface DuffelError {
@@ -106,12 +106,12 @@ export interface DuffelError {
 
 export interface DuffelApiResponse<T> {
   data: T;
-  meta?: any;
+  meta?: unknown;
 }
 
 export interface DuffelErrorResponse {
   errors: DuffelError[];
-  meta?: any;
+  meta?: unknown;
 }
 
 /**
@@ -224,7 +224,7 @@ export class DuffelService {
         lastError = error instanceof Error ? error : new Error(String(error));
         
         // Don't retry for client errors or DuffelApiError
-        if (error instanceof DuffelApiError || (error as any)?.status < 500) {
+        if (error instanceof DuffelApiError || (error as { status?: number })?.status < 500) {
           throw error;
         }
 
@@ -302,7 +302,7 @@ export class DuffelService {
     totalAmount: string,
     currency: string,
     idempotencyKey: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<DuffelOrder> {
     console.log("[DuffelService] Creating order for offer:", offerId);
 
@@ -357,7 +357,7 @@ export class DuffelService {
   /**
    * Cancel an order
    */
-  async cancelOrder(orderId: string): Promise<any> {
+  async cancelOrder(orderId: string): Promise<unknown> {
     console.log("[DuffelService] Cancelling order:", orderId);
 
     return await this.makeRequest(`air/orders/${orderId}/actions/cancel`, {

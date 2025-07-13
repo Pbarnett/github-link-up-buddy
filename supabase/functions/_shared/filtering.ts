@@ -23,7 +23,7 @@ export interface FlightOffer {
   totalPriceWithCarryOn: number;
   stopsCount: number;
   validatingAirlines: string[];
-  rawData?: Record<string, any>;
+  rawData?: Record<string, unknown>;
 }
 
 export interface Itinerary {
@@ -83,15 +83,15 @@ export interface FilterExecutionResult {
 // =============================================
 
 export class AmadeusEdgeAdapter {
-  static normalize(rawOffer: any, context: FilterContext): FlightOffer {
+  static normalize(rawOffer: Record<string, unknown>, /* _context: FilterContext */): FlightOffer {
     const id = rawOffer.id || `amadeus-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const price = this.extractPrice(rawOffer);
     const carryOnInfo = this.extractCarryOnInfo(rawOffer);
-    const itineraries = this.normalizeItineraries(rawOffer.itineraries || []);
+    const itineraries = this.normalizeItineraries((rawOffer.itineraries as unknown[]) || []);
     
     return {
       provider: 'Amadeus',
-      id,
+      id: String(id),
       itineraries,
       totalBasePrice: price.base,
       currency: price.currency,
@@ -99,30 +99,32 @@ export class AmadeusEdgeAdapter {
       carryOnFee: carryOnInfo.fee,
       totalPriceWithCarryOn: price.base + (carryOnInfo.fee || 0),
       stopsCount: this.calculateStopsCount(itineraries),
-      validatingAirlines: rawOffer.validatingAirlineCodes || [],
+      validatingAirlines: (rawOffer.validatingAirlineCodes as string[]) || [],
       rawData: rawOffer
     };
   }
 
-  private static extractPrice(rawOffer: any): { base: number; currency: string } {
-    const price = rawOffer.price || {};
+  private static extractPrice(rawOffer: Record<string, unknown>): { base: number; currency: string } {
+    const price = (rawOffer.price as Record<string, unknown>) || {};
     return {
-      base: parseFloat(price.total || price.base || '0'),
-      currency: price.currency || 'USD'
+      base: parseFloat(String(price.total || price.base || '0')),
+      currency: String(price.currency || 'USD')
     };
   }
 
-  private static extractCarryOnInfo(rawOffer: any): { included: boolean; fee?: number } {
+  private static extractCarryOnInfo(rawOffer: Record<string, unknown>): { included: boolean; fee?: number } {
     // Simplified carry-on detection for edge function
     // Default to included for most airlines unless explicitly marked as basic economy
-    const travelerPricings = rawOffer.travelerPricings || [];
+    const travelerPricings = (rawOffer.travelerPricings as unknown[]) || [];
     
     for (const pricing of travelerPricings) {
-      const fareDetails = pricing.fareDetailsBySegment || [];
+      const pricingObj = pricing as Record<string, unknown>;
+      const fareDetails = (pricingObj.fareDetailsBySegment as unknown[]) || [];
       for (const segment of fareDetails) {
+        const segmentObj = segment as Record<string, unknown>;
         // Check for basic economy markers
-        if (segment.cabin === 'ECONOMY' && 
-            (segment.fareBasis?.includes('BASIC') || segment.brandedFare?.includes('BASIC'))) {
+        if (segmentObj.cabin === 'ECONOMY' && 
+            (String(segmentObj.fareBasis || '').includes('BASIC') || String(segmentObj.brandedFare || '').includes('BASIC'))) {
           return { included: false, fee: 50 }; // Default carry-on fee
         }
       }
@@ -131,30 +133,39 @@ export class AmadeusEdgeAdapter {
     return { included: true, fee: undefined };
   }
 
-  private static normalizeItineraries(rawItineraries: any[]): Itinerary[] {
-    return rawItineraries.map(itinerary => ({
-      duration: itinerary.duration || '',
-      segments: this.normalizeSegments(itinerary.segments || [])
-    }));
+  private static normalizeItineraries(rawItineraries: unknown[]): Itinerary[] {
+    return rawItineraries.map(itinerary => {
+      const itineraryObj = itinerary as Record<string, unknown>;
+      return {
+        duration: String(itineraryObj.duration || ''),
+        segments: this.normalizeSegments((itineraryObj.segments as unknown[]) || [])
+      };
+    });
   }
 
-  private static normalizeSegments(rawSegments: any[]): Segment[] {
-    return rawSegments.map(segment => ({
-      departure: {
-        iataCode: segment.departure?.iataCode || '',
-        terminal: segment.departure?.terminal,
-        at: segment.departure?.at || ''
-      },
-      arrival: {
-        iataCode: segment.arrival?.iataCode || '',
-        terminal: segment.arrival?.terminal,
-        at: segment.arrival?.at || ''
-      },
-      carrierCode: segment.carrierCode || '',
-      flightNumber: segment.number || '',
-      duration: segment.duration || '',
-      numberOfStops: segment.numberOfStops || 0
-    }));
+  private static normalizeSegments(rawSegments: unknown[]): Segment[] {
+    return rawSegments.map(segment => {
+      const segmentObj = segment as Record<string, unknown>;
+      const departure = (segmentObj.departure as Record<string, unknown>) || {};
+      const arrival = (segmentObj.arrival as Record<string, unknown>) || {};
+      
+      return {
+        departure: {
+          iataCode: String(departure.iataCode || ''),
+          terminal: departure.terminal ? String(departure.terminal) : undefined,
+          at: String(departure.at || '')
+        },
+        arrival: {
+          iataCode: String(arrival.iataCode || ''),
+          terminal: arrival.terminal ? String(arrival.terminal) : undefined,
+          at: String(arrival.at || '')
+        },
+        carrierCode: String(segmentObj.carrierCode || ''),
+        flightNumber: String(segmentObj.number || ''),
+        duration: String(segmentObj.duration || ''),
+        numberOfStops: Number(segmentObj.numberOfStops || 0)
+      };
+    });
   }
 
   private static calculateStopsCount(itineraries: Itinerary[]): number {
@@ -282,7 +293,7 @@ export class CarryOnFilter extends BaseFilter {
   name = 'CarryOnFilter';
   priority = 12;
 
-  apply(offers: FlightOffer[], context: FilterContext): FlightOffer[] {
+  apply(offers: FlightOffer[], /* _context: FilterContext */): FlightOffer[] {
     console.log(`[${this.name}] Ensuring all offers include carry-on (app requirement)`);
     
     // Update prices with carry-on fees and filter out non-compliant offers
@@ -452,7 +463,7 @@ export function createFilterContext(params: {
 }
 
 export function normalizeOffers(
-  rawOffers: Array<{ data: any; provider: 'Amadeus' | 'Duffel' }>,
+  rawOffers: Array<{ data: Record<string, unknown>; provider: 'Amadeus' | 'Duffel' }>,
   context: FilterContext
 ): FlightOffer[] {
   const normalizedOffers: FlightOffer[] = [];
@@ -478,7 +489,11 @@ export class FilterFactory {
     return new EdgeFilterPipeline(type);
   }
   
-  static recommendPipelineType(params: any): 'standard' | 'budget' | 'fast' {
+  static recommendPipelineType(params: {
+    budget?: number;
+    preferredAirlines?: string[];
+    nonstopRequired?: boolean;
+  }): 'standard' | 'budget' | 'fast' {
     if (params.budget && params.budget < 500) {
       return 'budget';
     }

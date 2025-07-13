@@ -1,9 +1,10 @@
 // supabase/functions/send-notification/index.ts
 
 // Conditional imports for Deno vs Node.js environments
-let serve: any;
-let createClient: any;
-let SupabaseClient: any;
+let serve: ((handler: (req: Request) => Promise<Response>) => void) | undefined;
+let createClient: (supabaseUrl: string, supabaseServiceKey: string, options?: { auth: { persistSession: boolean } }) => typeof import("@supabase/supabase-js").createClient;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let SupabaseClient: unknown = undefined;
 
 async function initializeEnvironment() {
   if (typeof Deno !== 'undefined') {
@@ -19,7 +20,7 @@ async function initializeEnvironment() {
       const { createClient: nodeCreateClient } = await import('@supabase/supabase-js');
       createClient = nodeCreateClient;
       // Mock serve function for Node.js
-      serve = (handler: any) => console.log('Mock serve called with handler');
+      serve = () => console.log('Mock serve called with handler');
     } catch (error) {
       console.error('Failed to import Supabase in Node.js environment:', error);
     }
@@ -27,7 +28,7 @@ async function initializeEnvironment() {
 }
 
 // Handle Resend import - use dynamic import for Deno environment
-let Resend: any;
+let Resend: { new(apiKey: string): { emails: { send: (details: { from: string, to: string[], subject: string, html: string, tags: { name: string, value: string }[] }) => Promise<{ data: { id: string }, error: null }> } } } | undefined;
 
 async function initializeResend() {
   if (Resend) return Resend; // Already initialized
@@ -42,7 +43,7 @@ async function initializeResend() {
       console.error('Failed to import Resend in Deno environment:', error);
       // Fallback mock class
       Resend = class MockResend {
-        constructor(apiKey: string) {}
+        constructor() {}
         emails = { send: async () => ({ data: { id: 'mock-id' }, error: null }) };
       };
       return Resend;
@@ -53,10 +54,11 @@ async function initializeResend() {
       const { Resend: ResendClass } = await import('resend');
       Resend = ResendClass;
       return ResendClass;
-    } catch (error) {
+    } catch (error: unknown) {
+      console.warn('Failed to import Resend in test environment:', error);
       // Fallback mock for test environment
       Resend = class MockResend {
-        constructor(apiKey: string) {}
+        constructor() {}
         emails = { send: async () => ({ data: { id: 'mock-id' }, error: null }) };
       };
       return Resend;
@@ -65,7 +67,7 @@ async function initializeResend() {
 }
 
 // Helper function to safely convert values to valid JSON
-function toJsonSafe(value: unknown): any {
+function toJsonSafe(value: unknown): unknown {
   // 1. Primitives & null
   if (
     value === null ||
@@ -88,7 +90,7 @@ function toJsonSafe(value: unknown): any {
 
   // 4. Plain object → recurse on each entry
   if (typeof value === "object" && value !== null) {
-    const plain: { [key: string]: any } = {};
+    const plain: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
       // Skip undefined-valued keys so we don't insert `"key": undefined`
       if (val === undefined) continue;
@@ -102,7 +104,7 @@ function toJsonSafe(value: unknown): any {
 }
 
 // Helper function to validate and sanitize payload
-function validatePayload(payload: unknown): Record<string, any> {
+function validatePayload(payload: unknown): Record<string, unknown> {
   try {
     // If payload is undefined or null, return empty object
     if (payload === undefined || payload === null) {
