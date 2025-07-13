@@ -21,12 +21,12 @@ interface TestResult {
   testName: string;
   status: 'PASS' | 'FAIL' | 'SKIP';
   duration: number;
-  details: any;
+  details: Record<string, unknown> | null;
   error?: string;
   critical: boolean;
 }
 
-async function runTest(testName: string, testFn: () => Promise<any>, critical = true): Promise<TestResult> {
+async function runTest(testName: string, testFn: () => Promise<Record<string, unknown>>, critical = true): Promise<TestResult> {
   const startTime = Date.now();
   try {
     const result = await testFn();
@@ -257,7 +257,7 @@ serve(async (req) => {
         });
         await kmsClient.send(invalidDecrypt);
         tests.push({ test: "invalid_ciphertext", result: "FAIL - should have thrown" });
-      } catch (error) {
+      } catch {
         tests.push({ test: "invalid_ciphertext", result: "PASS - correctly threw error" });
       }
       
@@ -270,7 +270,7 @@ serve(async (req) => {
         });
         await kmsClient.send(emptyEncrypt);
         tests.push({ test: "empty_plaintext", result: "PASS - handled empty data" });
-      } catch (error) {
+      } catch {
         tests.push({ test: "empty_plaintext", result: "EXPECTED - empty data rejected" });
       }
       
