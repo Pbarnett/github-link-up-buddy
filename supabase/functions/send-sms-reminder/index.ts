@@ -73,7 +73,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const offerData = bookingRequest.offer_data as any;
+    const offerData = bookingRequest.offer_data as Record<string, unknown>;
     const message = `Hi ${profile.first_name || 'traveler'}! Reminder: Your flight ${offerData.flight_number || ''} to ${offerData.destination || ''} departs tomorrow at ${offerData.departure_time || ''}. Have a great trip! ✈️`;
 
     // TODO: Implement actual Twilio SMS sending here

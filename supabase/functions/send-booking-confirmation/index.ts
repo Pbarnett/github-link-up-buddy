@@ -71,7 +71,7 @@ const handler = async (req: Request): Promise<Response> => {
       new URL("../templates/booking-confirmation.html", import.meta.url)
     );
 
-    const offerData = bookingRequest.offer_data as any;
+    const offerData = bookingRequest.offer_data as Record<string, unknown>;
     const filledHtml = htmlTemplate
       .replace("{{destination}}", offerData.destination || "N/A")
       .replace("{{departureDate}}", offerData.departure_date || "N/A")
