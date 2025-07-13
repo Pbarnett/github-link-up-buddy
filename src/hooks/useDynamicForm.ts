@@ -33,7 +33,7 @@ export interface UseDynamicFormOptions {
   /** Direct configuration object (bypasses loading) */
   configuration?: DynamicFormConfig;
   /** Initial form data */
-  initialData?: Record<string, any>;
+  initialData?: Record<string, unknown>;
   /** Enable real-time validation */
   realTimeValidation?: boolean;
   /** Enable analytics tracking */
@@ -41,40 +41,56 @@ export interface UseDynamicFormOptions {
   /** Form submission handler */
   onSubmit?: (data: FormSubmission) => void | Promise<void>;
   /** Field change handler */
-  onFieldChange?: (fieldId: string, value: any) => void;
+  onFieldChange?: (fieldId: string, value: unknown) => void;
   /** Error handler */
   onError?: (error: Error) => void;
   /** Configuration load handler */
   onConfigLoad?: (config: DynamicFormConfig) => void;
 }
 
+// Type for form data structure
+type FormData = Record<string, unknown>;
+
+// Type for validation results
+interface ValidationResult {
+  isValid: boolean;
+  errors: Record<string, string>;
+}
+
+// Type for exported form data
+interface ExportedFormData {
+  formId?: string;
+  data: FormData;
+  timestamp: string;
+}
+
 export interface UseDynamicFormReturn {
   // Form management
-  form: UseFormReturn<any>;
+  form: UseFormReturn<FormData>;
   formConfig: DynamicFormConfig | null;
   isLoading: boolean;
   error: string | null;
 
   // Form data and state
-  formData: Record<string, any>;
+  formData: FormData;
   isSubmitting: boolean;
   isDirty: boolean;
   isValid: boolean;
 
   // Field management
   visibleFields: FieldConfiguration[];
-  setValue: (fieldId: string, value: any) => void;
-  getValue: (fieldId: string) => any;
-  watchField: (fieldId: string) => any;
+  setValue: (fieldId: string, value: unknown) => void;
+  getValue: (fieldId: string) => unknown;
+  watchField: (fieldId: string) => unknown;
 
   // Conditional logic
   isFieldVisible: (fieldId: string) => boolean;
   isFieldEnabled: (fieldId: string) => boolean;
-  evaluateConditions: (formData: Record<string, any>) => void;
+  evaluateConditions: (formData: FormData) => void;
 
   // Validation
-  validateField: (fieldId: string, value: any) => Promise<any>;
-  validateForm: (formData?: Record<string, any>) => Promise<any>;
+  validateField: (fieldId: string, value: unknown) => Promise<ValidationResult>;
+  validateForm: (formData?: FormData) => Promise<ValidationResult>;
   validationErrors: Record<string, string>;
   clearFieldError: (fieldId: string) => void;
 
@@ -85,12 +101,12 @@ export interface UseDynamicFormReturn {
 
   // Analytics
   trackFieldInteraction: (fieldId: string, interactionType: string) => void;
-  trackFormEvent: (eventType: string, data?: any) => void;
+  trackFormEvent: (eventType: string, data?: Record<string, unknown>) => void;
 
   // Utility
   getFieldConfig: (fieldId: string) => FieldConfiguration | null;
-  exportFormData: () => any;
-  importFormData: (data: any) => void;
+  exportFormData: () => ExportedFormData;
+  importFormData: (data: FormData) => void;
 }
 
 export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormReturn => {
@@ -138,7 +154,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
     mode: realTimeValidation ? 'onChange' : 'onSubmit'
   });
 
-  const { watch, setValue, getValue, formState, reset, handleSubmit } = form;
+  const { watch, setValue, getValue, formState, reset } = form;
 
   // Watch all form values for conditional logic
   const formData = watch();
@@ -151,8 +167,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
     visibleFields,
     isFieldVisible,
     isFieldEnabled,
-    evaluateConditions,
-    conditionalErrors
+    evaluateConditions
   } = useConditionalLogic(formConfig, formData);
 
   // Validation
@@ -171,7 +186,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
   }, [formConfig, onConfigLoad]);
 
   // Handle field changes
-  const handleFieldChange = useCallback((fieldId: string, value: any) => {
+  const handleFieldChange = useCallback((fieldId: string, value: unknown) => {
     setValue(fieldId, value, { shouldValidate: true, shouldDirty: true });
     onFieldChange?.(fieldId, value);
 
@@ -185,7 +200,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
 
     // Re-evaluate conditional logic
     evaluateConditions({ ...formData, [fieldId]: value });
-  }, [setValue, onFieldChange, enableAnalytics, formConfig, clearFieldError, evaluateConditions, formData]);
+  }, [setValue, onFieldChange, enableAnalytics, formConfig, clearFieldError, evaluateConditions, formData, trackFieldInteraction]);
 
   // Submit form
   const submitForm = useCallback(async () => {
@@ -250,7 +265,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
     } finally {
       setIsSubmitting(false);
     }
-  }, [formConfig, formData, onSubmit, validateForm, enableAnalytics, visibleFields.length, validationErrors, onError]);
+  }, [formConfig, formData, onSubmit, validateForm, enableAnalytics, visibleFields.length, validationErrors, onError, trackFormEvent]);
 
   // Reset form
   const resetForm = useCallback(() => {
@@ -260,7 +275,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
     if (enableAnalytics && formConfig) {
       trackFormEvent('form_reset', { formId: formConfig.id });
     }
-  }, [reset, initialData, formStateHook, enableAnalytics, formConfig]);
+  }, [reset, initialData, formStateHook, enableAnalytics, formConfig, trackFormEvent]);
 
   // Reload configuration
   const reloadConfig = useCallback(async () => {
@@ -281,7 +296,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
     });
   }, [enableAnalytics, formConfig]);
 
-  const trackFormEvent = useCallback((eventType: string, data?: any) => {
+  const trackFormEvent = useCallback((eventType: string, data?: Record<string, unknown>) => {
     if (!enableAnalytics || !formConfig) return;
 
     formConfigService.logAnalytics(formConfig.id, eventType, {
@@ -310,7 +325,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
     };
   }, [formConfig, formData]);
 
-  const importFormData = useCallback((data: any) => {
+  const importFormData = useCallback((data: FormData) => {
     if (data && typeof data === 'object') {
       Object.entries(data).forEach(([key, value]) => {
         setValue(key, value);
@@ -323,7 +338,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
   }, [setValue, enableAnalytics, formConfig, trackFormEvent]);
 
   // Enhanced setValue with analytics tracking
-  const enhancedSetValue = useCallback((fieldId: string, value: any) => {
+  const enhancedSetValue = useCallback((fieldId: string, value: unknown) => {
     handleFieldChange(fieldId, value);
   }, [handleFieldChange]);
 
