@@ -120,8 +120,8 @@ export const useDuffelFlights = (
         setError(errorMessage);
         setOffers([]);
       }
-    } catch (err: any) {
-      const errorMessage = err.message || 'Network error during search';
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Network error during search';
       logger.error('[useDuffelFlights] Search exception:', err);
       setError(errorMessage);
       setOffers([]);
@@ -187,7 +187,7 @@ export const useDuffelFlights = (
         setOffers([]);
         logger.info('[useDuffelFlights] No offers found in database');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('[useDuffelFlights] Exception fetching offers from database:', err);
       // Don't set error state here since the search itself might have been successful
       // Just log the issue and leave offers empty

@@ -12,8 +12,8 @@ import { AmadeusAdapter, DuffelAdapter } from '../adapters/ProviderAdapters';
 import type { FlightOffer, FilterContext } from '../core/types';
 
 describe('End-to-End Filtering Integration', () => {
-  let mockAmadeusOffer: any;
-  let mockDuffelOffer: any;
+  let mockAmadeusOffer: Record<string, unknown>;
+  let mockDuffelOffer: Record<string, unknown>;
   let roundTripContext: FilterContext;
   let oneWayContext: FilterContext;
   let budgetContext: FilterContext;
