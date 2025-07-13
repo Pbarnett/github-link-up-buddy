@@ -229,6 +229,7 @@ serve(async (req: Request) => {
           });
 
           // Remove encrypted field and add decrypted value
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { passport_number_encrypted, ...profileData } = profile;
           const responseProfile = {
             ...profileData,
@@ -395,7 +396,7 @@ serve(async (req: Request) => {
         }
 
         // Update profile
-        const updateData: any = {
+        const updateData: Record<string, unknown> = {
           full_name: profile.fullName,
           date_of_birth: profile.dateOfBirth,
           gender: profile.gender,

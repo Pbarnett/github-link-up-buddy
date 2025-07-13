@@ -26,8 +26,8 @@ const supabase = createClient(
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function processBookingRequest(bookingRequest: any) {
-  console.log(`[PROCESS-BOOKING] Processing booking request ${bookingRequest.id}, Attempts: ${bookingRequest.attempts || 0}`);
+async function processBookingRequest(bookingRequest: Record<string, unknown>) {
+  console.log(`[PROCESS-BOOKING] Processing booking request ${bookingRequest.id}, Attempts: ${(bookingRequest.attempts as number) || 0}`);
   let amadeusOrderId: string | null = null; // To store Amadeus Order ID for potential rollback
   let newBookingRecordId: string | null = null; // To store ID of the record in 'bookings' table
 
@@ -35,7 +35,7 @@ async function processBookingRequest(bookingRequest: any) {
     await supabase
       .from("booking_requests")
       .update({ status: "processing", processed_at: new Date().toISOString() })
-      .eq("id", bookingRequest.id);
+      .eq("id", bookingRequest.id as string);
 
     console.log("[PROCESS-BOOKING] Calling Amadeus booking with offer data for BR ID:", bookingRequest.id);
     const travelerData = bookingRequest.traveler_data || {
