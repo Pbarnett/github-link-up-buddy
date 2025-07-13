@@ -21,8 +21,16 @@ interface PaymentFormProps {
   amount: number;
   currency: string;
   offerId: string;
-  passengers: any[];
-  onSuccess: (paymentResult: any) => void;
+  passengers: Array<{
+    given_name?: string;
+    family_name?: string;
+    email?: string;
+    [key: string]: unknown;
+  }>;
+  onSuccess: (paymentResult: {
+    booking: unknown;
+    payment: unknown;
+  }) => void;
   onError: (error: string) => void;
   onProcessing: (processing: boolean) => void;
 }
@@ -159,7 +167,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     }
   };
 
-  const create3DSecureSession = async (offerId: string, cardElement: any) => {
+  const create3DSecureSession = async (offerId: string, cardElement: unknown) => {
     try {
       // Create temporary card with Duffel
       const { data: cardData, error: cardError } = await supabase.functions.invoke('duffel-create-card', {
@@ -199,7 +207,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     }
   };
 
-  const processDuffelBooking = async (bookingData: any) => {
+  const processDuffelBooking = async (bookingData: Record<string, unknown>) => {
     try {
       const { data, error } = await supabase.functions.invoke('duffel-book', {
         body: bookingData
