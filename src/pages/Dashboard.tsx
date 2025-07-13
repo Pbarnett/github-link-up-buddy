@@ -19,7 +19,7 @@ interface BookingRequest {
   processed_at: string | null;
   error_message: string | null;
   attempts: number;
-  offer_data: unknown;
+  offer_data: Record<string, unknown> | null;
 }
 
 interface TripRequest {
@@ -585,7 +585,7 @@ const Dashboard = () => {
                                   <div className="flex-1 min-w-0">
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
                                       <p className="font-medium text-gray-900 truncate">
-                                        {request.offer_data?.airline} {request.offer_data?.flight_number}
+                                        {request.offer_data && typeof request.offer_data === 'object' && 'airline' in request.offer_data ? String(request.offer_data.airline) : ''} {request.offer_data && typeof request.offer_data === 'object' && 'flight_number' in request.offer_data ? String(request.offer_data.flight_number) : ''}
                                       </p>
                                       <Badge 
                                         variant={getStatusBadgeVariant(request.status)}
@@ -596,10 +596,10 @@ const Dashboard = () => {
                                     </div>
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-1 text-sm text-gray-500">
                                       <span>Created {new Date(request.created_at).toLocaleDateString()}</span>
-                                      {request.offer_data?.price && (
+                                      {request.offer_data && typeof request.offer_data === 'object' && 'price' in request.offer_data && request.offer_data.price && (
                                         <span className="flex items-center">
                                           <DollarSign className="h-3 w-3 mr-1" />
-                                          ${request.offer_data.price}
+                                          ${String(request.offer_data.price)}
                                         </span>
                                       )}
                                       {request.attempts > 0 && (

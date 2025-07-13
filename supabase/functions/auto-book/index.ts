@@ -502,9 +502,9 @@ Deno.serve(async (req: Request) => {
     // Import enhanced Duffel service
     const { DuffelService, createDuffelService, DuffelServiceError } = await import('../lib/duffelService.ts');
     
-    let duffelService: unknown;
-    let selectedOffer: unknown = null;
-    const duffelOrder: unknown = null;
+    let duffelService: Record<string, unknown>;
+    let selectedOffer: Record<string, unknown> | null = null;
+    const duffelOrder: Record<string, unknown> | null = null;
     
     try {
         // Initialize Duffel service with appropriate environment
@@ -524,14 +524,14 @@ Deno.serve(async (req: Request) => {
         );
         
         console.log(`[AutoBook] Creating Duffel offer request for trip ID: ${trip.id}`);
-        const offerRequest = await duffelService.createOfferRequest(duffelOfferRequest);
+        const offerRequest = await (duffelService as Record<string, unknown>).createOfferRequest(duffelOfferRequest);
         
         // Wait for offers to be processed (Duffel needs time to fetch from airlines)
         console.log(`[AutoBook] Waiting for offers to be processed...`);
         await new Promise(resolve => setTimeout(resolve, 3000));
         
         // Get available offers
-        const duffelOffers = await duffelService.getOffers(offerRequest.id, 20);
+        const duffelOffers = await (duffelService as Record<string, unknown>).getOffers(offerRequest.id, 20);
         
         if (!duffelOffers || duffelOffers.length === 0) {
             console.error(`[AutoBook] No valid Duffel offers found for trip ID: ${trip.id}`);
@@ -568,7 +568,7 @@ Deno.serve(async (req: Request) => {
         }
         
         // Validate offer is still available before proceeding
-        const validatedOffer = await duffelService.getOffer(selectedOffer.id);
+        const validatedOffer = await (duffelService as Record<string, unknown>).getOffer(selectedOffer.id);
         if (!validatedOffer) {
             throw new Error('Selected offer has expired or is no longer available');
         }
