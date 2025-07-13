@@ -16,7 +16,7 @@ import type {
 
 export const useFormState = (
   configuration: FormConfiguration | null,
-  form: UseFormReturn<any>
+  form: UseFormReturn<Record<string, unknown>>
 ): UseFormStateReturn => {
   const [formState, setFormState] = useState<FormState>({
     values: {},
@@ -44,7 +44,7 @@ export const useFormState = (
   }, [form]);
 
   // Set field value
-  const setValue = useCallback((fieldId: string, value: any) => {
+  const setValue = useCallback((fieldId: string, value: unknown) => {
     form.setValue(fieldId, value, { shouldValidate: true, shouldTouch: true });
     
     setFormState(prevState => ({
@@ -98,7 +98,7 @@ export const useFormState = (
   // Evaluate conditional rule
   const evaluateConditionalRule = useCallback((
     rule: ConditionalRule,
-    values: Record<string, any>
+    values: Record<string, unknown>
   ): boolean => {
     const fieldValue = values[rule.field];
     

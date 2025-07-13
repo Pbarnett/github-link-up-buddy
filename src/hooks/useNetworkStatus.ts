@@ -78,10 +78,20 @@ export const useNetworkStatus = (): NetworkStatus => {
 };
 
 // Helper to get connection information
-const getConnectionInfo = () => {
-  return (navigator as any)?.connection || 
-         (navigator as any)?.mozConnection || 
-         (navigator as any)?.webkitConnection;
+interface ConnectionInfo {
+  type?: string;
+  effectiveType?: string;
+  addEventListener?: (event: string, listener: () => void) => void;
+  removeEventListener?: (event: string, listener: () => void) => void;
+}
+
+const getConnectionInfo = (): ConnectionInfo | undefined => {
+  const nav = navigator as {
+    connection?: ConnectionInfo;
+    mozConnection?: ConnectionInfo;
+    webkitConnection?: ConnectionInfo;
+  };
+  return nav?.connection || nav?.mozConnection || nav?.webkitConnection;
 };
 
 // Helper to determine connection type
