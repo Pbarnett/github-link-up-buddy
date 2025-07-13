@@ -20,7 +20,7 @@ export interface PaymentMethodData {
   three_d_secure_usage?: {
     supported: boolean;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface EncryptedPaymentData {
@@ -137,8 +137,8 @@ export function createEncryptionAuditLog(
   operation: 'encrypt' | 'decrypt' | 'rotate',
   success: boolean,
   keyId: string = KMS_KEY_ID,
-  metadata?: Record<string, any>
-): Record<string, any> {
+  metadata?: Record<string, unknown>
+): Record<string, unknown> {
   return {
     operation,
     success,
