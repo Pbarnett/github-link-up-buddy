@@ -7,7 +7,7 @@ import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals';
 
 interface AnalyticsEvent {
   name: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   correlationId?: string;
 }
 
@@ -46,7 +46,13 @@ export const initMonitoring = () => {
 };
 
 // Report Web Vitals
-const reportWebVital = (metric: any) => {
+const reportWebVital = (metric: {
+  name: string;
+  value: number;
+  id: string;
+  delta: number;
+  entries: PerformanceEntry[];
+}) => {
   const data = {
     name: metric.name,
     value: metric.value,
@@ -65,7 +71,7 @@ const reportWebVital = (metric: any) => {
 };
 
 // Error reporting
-export const reportError = (error: Error, context?: Record<string, any>) => {
+export const reportError = (error: Error, context?: Record<string, unknown>) => {
   const errorData = {
     message: error.message,
     stack: error.stack,
@@ -92,7 +98,7 @@ export const reportError = (error: Error, context?: Record<string, any>) => {
 };
 
 // Analytics event tracking
-export const trackEvent = (eventName: string, properties: Record<string, any> = {}) => {
+export const trackEvent = (eventName: string, properties: Record<string, unknown> = {}) => {
   const event: AnalyticsEvent = {
     name: eventName,
     properties: {
@@ -131,7 +137,11 @@ export const observePerformance = () => {
   const observer = new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
       if (entry.entryType === 'layout-shift') {
-        const layoutShiftEntry = entry as any; // Type assertion for layout shift specific properties
+        const layoutShiftEntry = entry as PerformanceEntry & {
+          value: number;
+          hadRecentInput: boolean;
+          sources?: { length: number };
+        };
         if (!layoutShiftEntry.hadRecentInput) {
           trackEvent('layout_shift', {
             value: layoutShiftEntry.value,
@@ -153,7 +163,7 @@ export const observePerformance = () => {
 export const trackCampaignEvent = (
   eventName: string,
   campaignId: string,
-  properties: Record<string, any> = {}
+  properties: Record<string, unknown> = {}
 ) => {
   trackEvent(eventName, {
     ...properties,
@@ -173,10 +183,10 @@ if (typeof window !== 'undefined') {
 declare global {
   interface Window {
     analytics?: {
-      track: (event: string, properties: Record<string, any>) => void;
+      track: (event: string, properties: Record<string, unknown>) => void;
     };
     Sentry?: {
-      captureException: (error: Error, options?: { extra?: Record<string, any> }) => void;
+      captureException: (error: Error, options?: { extra?: Record<string, unknown> }) => void;
     };
   }
 }

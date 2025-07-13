@@ -43,7 +43,7 @@ export const getTestDates = () => {
 
 // Programmatic form data setter (recommended approach)
 export const setFormDatesDirectly = async (
-  form: any, 
+  form: { setValue: (name: string, value: unknown) => void; trigger: (names: string[]) => Promise<boolean> }, 
   earliestDate: Date = getTestDates().tomorrow, 
   latestDate: Date = getTestDates().nextWeek
 ) => {
@@ -82,7 +82,7 @@ export const selectDestination = async (destinationCode: string) => {
     });
     
   } catch (error) {
-    console.warn('Standard destination selection failed, trying custom input fallback');
+    console.warn('Standard destination selection failed, trying custom input fallback:', error);
     
     // Fallback to custom destination input using fireEvent for non-focusable inputs
     const customInput = screen.getByLabelText(/custom destination/i);
@@ -137,7 +137,7 @@ export const fillFormWithDates = async (options: {
   minDuration?: number;
   maxDuration?: number;
   useProgrammaticDates?: boolean; // Recommended: true
-  getFormRef?: () => any; // Required for programmatic dates
+  getFormRef?: () => { setValue: (name: string, value: unknown) => void; trigger: (names: string[]) => Promise<boolean> }; // Required for programmatic dates
 } = {}) => {
   const {
     destination = 'MVY', // Martha's Vineyard
@@ -168,7 +168,7 @@ export const fillFormWithDates = async (options: {
       await setFormDatesDirectly(form);
       console.log('✅ Used programmatic date setting (recommended)');
     } catch (error) {
-      console.warn('Programmatic date setting failed, falling back to UI interaction');
+      console.warn('Programmatic date setting failed, falling back to UI interaction:', error);
       await setDatesWithMockedCalendar();
     }
   } else {
@@ -232,8 +232,8 @@ export const expectFormInvalid = (reason?: string) => {
 export const renderWithFormProvider = (
   component: React.ReactElement,
   formOptions: {
-    defaultValues?: Record<string, any>;
-    schema?: any;
+    defaultValues?: Record<string, unknown>;
+    schema?: unknown;
     mode?: 'onChange' | 'onBlur' | 'onSubmit' | 'onTouched' | 'all';
   } = {}
 ) => {
@@ -243,7 +243,7 @@ export const renderWithFormProvider = (
     mode = 'onChange'
   } = formOptions;
 
-  let formRef: any = null;
+  let formRef: { setValue: (name: string, value: unknown) => void; trigger: (names: string[]) => Promise<boolean>; getValues: (name: string) => unknown; handleSubmit: (handler: () => void) => () => void; formState: { isValid: boolean } } | null = null;
   
   const TestWrapper = ({ children }: { children: React.ReactNode }) => {
     const formMethods = useForm({
@@ -278,10 +278,10 @@ export const renderWithFormProvider = (
   return {
     ...renderResult,
     getForm: () => formRef,
-    setFormValue: (name: string, value: any) => {
+    setFormValue: (name: string, value: unknown) => {
       if (formRef) {
         formRef.setValue(name, value);
-        return formRef.trigger(name);
+        return formRef.trigger([name]);
       }
       throw new Error('Form ref not available');
     },
@@ -304,7 +304,7 @@ export const getFormErrors = () => {
 };
 
 // Assertion helpers for common form states
-export const assertFormSubmissionData = (mockInsert: any, expectedData: Record<string, any>) => {
+export const assertFormSubmissionData = (mockInsert: { mock: { calls: [unknown[]][] } }, expectedData: Record<string, unknown>) => {
   expect(mockInsert).toHaveBeenCalledTimes(1);
   const submittedPayload = mockInsert.mock.calls[0][0][0];
   

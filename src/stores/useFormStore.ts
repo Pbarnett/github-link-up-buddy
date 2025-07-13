@@ -26,7 +26,7 @@ interface FormStore {
   // Runtime state
   formInstances: Map<string, {
     configId: string;
-    values: Record<string, any>;
+    values: Record<string, unknown>;
     errors: Record<string, string>;
     touched: Record<string, boolean>;
     isSubmitting: boolean;
@@ -66,7 +66,7 @@ interface FormStore {
   // Form instance management
   createFormInstance: (instanceId: string, configId: string) => void;
   updateFormInstance: (instanceId: string, updates: {
-    values?: Record<string, any>;
+    values?: Record<string, unknown>;
     errors?: Record<string, string>;
     touched?: Record<string, boolean>;
     isSubmitting?: boolean;
@@ -74,7 +74,7 @@ interface FormStore {
   removeFormInstance: (instanceId: string) => void;
   
   // Analytics
-  logFormEvent: (configId: string, eventType: string, eventData?: any) => Promise<void>;
+  logFormEvent: (configId: string, eventType: string, eventData?: unknown) => Promise<void>;
   loadAnalytics: (configId: string, timeRange?: string) => Promise<void>;
   
   // Validation
@@ -336,9 +336,9 @@ export const useFormStore = create<FormStore>()(
           },
 
           // Analytics
-          logFormEvent: async (configId: string, eventType: string, eventData?: any) => {
+          logFormEvent: async (configId: string, eventType: string, eventData?: unknown) => {
             try {
-              await formConfigService.logUsageAnalytics(configId, eventType as any, eventData);
+              await formConfigService.logUsageAnalytics(configId, eventType as string, eventData);
             } catch (error) {
               console.warn('Failed to log form event:', error);
             }
@@ -351,7 +351,7 @@ export const useFormStore = create<FormStore>()(
             });
 
             try {
-              const data = await formConfigService.getFormAnalytics(configId, timeRange as any);
+              const data = await formConfigService.getFormAnalytics(configId, timeRange as string);
               // Store analytics data (simplified for now)
               console.log('Analytics data:', data);
             } catch (error) {
@@ -422,8 +422,14 @@ export const useFormStore = create<FormStore>()(
           onRehydrateStorage: () => (state) => {
             if (state) {
               // Convert persisted arrays back to Maps
-              state.configurations = new Map(state.configurations as any);
-              state.formInstances = new Map(state.formInstances as any);
+              state.configurations = new Map(state.configurations as [string, FormConfiguration][]);
+              state.formInstances = new Map(state.formInstances as [string, {
+                configId: string;
+                values: Record<string, unknown>;
+                errors: Record<string, string>;
+                touched: Record<string, boolean>;
+                isSubmitting: boolean;
+              }][]);
             }
           },
         }

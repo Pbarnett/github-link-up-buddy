@@ -4,7 +4,14 @@ import { vi, beforeEach, describe, it, expect } from 'vitest';
 
 // Import real implementation - we want to test the actual logic
 vi.doUnmock('../useFormAnalytics');
-const { useFormAnalytics, useSessionId } = await vi.importActual('../useFormAnalytics') as any;
+const { useFormAnalytics, useSessionId } = await vi.importActual('../useFormAnalytics') as {
+  useFormAnalytics: (config: { formConfig: { id: string; name: string; version: number } | null; sessionId: string; userId: string }) => {
+    trackFormSubmit: (data: Record<string, unknown>) => Promise<void>;
+    trackFieldInteraction: (fieldId: string, fieldType: string) => void;
+    trackFieldError: (fieldId: string, fieldType: string, error: string) => void;
+  };
+  useSessionId: () => string;
+};
 
 // Mock Supabase
 vi.mock('@/integrations/supabase/client', () => ({
@@ -27,13 +34,6 @@ const localStorageMock = (() => {
   };
 })();
 
-// Helper for setting up RPC mock sequences
-function mockRpcSequence(responses: Array<{ data?: any; error?: any }>) {
-  const fn = vi.fn();
-  responses.forEach(r => fn.mockResolvedValueOnce(r));
-  return fn;
-}
-
 // Helper to flush promises
 const flushPromises = () => new Promise(resolve => queueMicrotask(resolve));
 
@@ -54,7 +54,7 @@ describe('useFormAnalytics', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.clear();
-    (supabase.rpc as any).mockResolvedValue({ error: null });
+    (supabase.rpc as unknown as { mockResolvedValue: (value: { error: null }) => void }).mockResolvedValue({ error: null });
     vi.useFakeTimers();
   });
 
@@ -156,7 +156,7 @@ describe('useFormAnalytics', () => {
   it('should retry on 500 error and eventually succeed', async () => {
     vi.clearAllMocks();
     
-    (supabase.rpc as any)
+    (supabase.rpc as unknown as { mockResolvedValueOnce: (value: { data?: unknown; error?: { status: number } | null }) => unknown })
       .mockResolvedValueOnce({ data: {}, error: null })                 // form_view
       .mockResolvedValueOnce({ data: null, error: { status: 500 } })    // submit #1
       .mockResolvedValueOnce({ data: null, error: { status: 500 } })    // retry #1
@@ -180,7 +180,7 @@ describe('useFormAnalytics', () => {
   it('should queue events locally after max retries exceeded', async () => {
     vi.clearAllMocks();
 
-    (supabase.rpc as any)
+    (supabase.rpc as unknown as { mockResolvedValueOnce: (value: { data?: unknown; error?: { status: number } | null }) => unknown; mockResolvedValue: (value: { data?: unknown; error?: { status: number } | null }) => unknown })
       .mockResolvedValueOnce({ data: {}, error: null })                 // form_view
       .mockResolvedValue({ data: null, error: { status: 500 } });       // 4× submit attempts fail
 
@@ -203,7 +203,6 @@ describe('useFormAnalytics', () => {
     expect(result.current.trackFormSubmit).toBeDefined();
     
     // If queueing worked, we'd see events in localStorage
-    const queued = JSON.parse(localStorage.getItem('pf_analytics_queue') ?? '[]');
     // This test verifies the hook doesn't crash when retries are exhausted
   });
 
@@ -213,7 +212,7 @@ describe('useFormAnalytics', () => {
       throw new Error('Storage quota exceeded');
     });
 
-    (supabase.rpc as any).mockRejectedValue(new Error('Network Error'));
+    (supabase.rpc as unknown as { mockRejectedValue: (value: Error) => void }).mockRejectedValue(new Error('Network Error'));
 
     const { result } = renderHook(() => 
       useFormAnalytics({
@@ -236,7 +235,7 @@ describe('useFormAnalytics', () => {
   it('should not track events when formConfig is missing', async () => {
     const { result } = renderHook(() => 
       useFormAnalytics({
-        formConfig: null as any,
+        formConfig: null,
         sessionId: mockSessionId,
         userId: mockUserId
       })
