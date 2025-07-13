@@ -52,7 +52,8 @@ serve(async (req: Request) => {
     let body;
     try {
         body = await req.json();
-    } catch (e) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_e) {
         return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     bookingId = body.booking_id;
@@ -123,7 +124,7 @@ serve(async (req: Request) => {
         throw new Error('Amadeus Order ID/PNR missing for cancellation despite ticketed status.');
     }
 
-    let amadeusCancellationSuccessful = false;
+    let _amadeusCancellationSuccessful = false;
     try {
         console.log(`[CancelBooking] Attempting Amadeus cancellation for Order ID: ${amadeusOrderIdToCancel}`);
         const accessToken = await getAmadeusAccessToken();
@@ -133,7 +134,8 @@ serve(async (req: Request) => {
         if (!amadeusResult.success) {
             console.error(`[CancelBooking] Amadeus cancellation failed for Order ID ${amadeusOrderIdToCancel}:`, amadeusResult.error);
         } else {
-            amadeusCancellationSuccessful = true;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            _amadeusCancellationSuccessful = true;
             console.log(`[CancelBooking] Amadeus cancellation successful for Order ID: ${amadeusOrderIdToCancel}`);
         }
     } catch (amadeusErr) {
@@ -146,8 +148,9 @@ serve(async (req: Request) => {
     try {
         const stripeRefund = await stripe.refunds.create({ payment_intent: booking.payment_intent_id, reason: 'requested_by_customer' });
         console.log(`[CancelBooking] Stripe refund succeeded for PI ${booking.payment_intent_id} (booking ${bookingId}), refund ID: ${stripeRefund.id}`);
-    } catch (stripeErr: any) {
-        console.error(`[CancelBooking] Stripe refund error for PI ${booking.payment_intent_id} (booking ${bookingId}): ${stripeErr.message}`);
+    } catch (stripeErr: unknown) {
+        const errorMessage = stripeErr && typeof stripeErr === 'object' && 'message' in stripeErr ? stripeErr.message : 'Unknown error';
+        console.error(`[CancelBooking] Stripe refund error for PI ${booking.payment_intent_id} (booking ${bookingId}): ${errorMessage}`);
         return new Response( // Exit on Stripe refund failure
             JSON.stringify({ error: "Stripe refund failed. Please contact support." }),
             { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
