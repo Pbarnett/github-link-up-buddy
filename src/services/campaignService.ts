@@ -132,8 +132,8 @@ class CampaignService {
       user_id: row.user_id,
       trip_request_id: row.trip_request_id,
       status: row.status as Campaign['status'],
-      criteria: row.criteria as any, // Type assertion since it's stored as JSONB
-      price_history: (row.price_history as any) || [],
+      criteria: row.criteria as Record<string, unknown>, // Type assertion since it's stored as JSONB
+      price_history: (row.price_history as Record<string, unknown>[]) || [],
       latest_booking_request_id: row.latest_booking_request_id || undefined,
       created_at: row.created_at || '',
       updated_at: row.updated_at || '',

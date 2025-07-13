@@ -222,8 +222,8 @@ export const createFieldByType = (type: FieldType, overrides: Partial<FieldConfi
 /**
  * Create mock form values that match a form configuration
  */
-export const createMockFormValues = (configuration: FormConfiguration): Record<string, any> => {
-  const values: Record<string, any> = {};
+export const createMockFormValues = (configuration: FormConfiguration): Record<string, unknown> => {
+  const values: Record<string, unknown> = {};
   
   configuration.sections.forEach(section => {
     section.fields.forEach(field => {
