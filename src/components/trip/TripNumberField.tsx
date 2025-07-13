@@ -17,13 +17,21 @@ export enum TripNumberFieldName {
   MaxDuration = "max_duration"
 }
 
+// Form data interface for trip number fields
+interface TripNumberFormData {
+  max_price?: number;
+  min_duration?: number;
+  max_duration?: number;
+  [key: string]: unknown; // Allow additional fields for flexibility
+}
+
 interface TripNumberFieldProps {
   name: TripNumberFieldName | string; // Allow string to keep compatibility
   label: string;
   description: string;
   placeholder: string;
   prefix?: string;
-  control: Control<any>;
+  control: Control<TripNumberFormData>;
 }
 
 const TripNumberField = ({
