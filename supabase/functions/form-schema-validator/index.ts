@@ -6,7 +6,7 @@
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { 
   FormConfigKMSService, 
@@ -210,11 +210,14 @@ async function performBasicValidation(config: FormConfiguration): Promise<Securi
  */
 async function performComprehensiveValidation(
   config: FormConfiguration,
-  supabase: any,
-  kmsService: FormConfigKMSService
+  supabase: SupabaseClient,
+  _kmsService: FormConfigKMSService
 ): Promise<SecurityValidationResult> {
   // Start with security validation
   const securityResults = await validateFormConfiguration(config);
+  
+  // Ignore unused parameter for now (future enhancement)
+  void _kmsService;
 
   // Add database-specific validations
   const dbViolations = await validateAgainstDatabase(config, supabase);
@@ -241,8 +244,14 @@ async function performComprehensiveValidation(
  */
 async function validateAgainstDatabase(
   config: FormConfiguration,
-  supabase: any
-): Promise<any[]> {
+  supabase: SupabaseClient
+): Promise<Array<{
+  type: string;
+  severity: string;
+  message: string;
+  field?: string;
+  details?: Record<string, unknown>;
+}>> {
   const violations = [];
 
   try {
@@ -261,13 +270,13 @@ async function validateAgainstDatabase(
         details: { error }
       });
     } else if (existingForms && existingForms.length > 0) {
-      const maxVersion = Math.max(...existingForms.map((f: any) => f.version));
+      const maxVersion = Math.max(...existingForms.map((f: { version: number }) => f.version));
       if (config.version <= maxVersion) {
         violations.push({
           type: 'version_conflict',
           severity: 'high',
           message: `Form version ${config.version} already exists. Use version ${maxVersion + 1} or higher.`,
-          details: { existingVersions: existingForms.map((f: any) => f.version) }
+          details: { existingVersions: existingForms.map((f: { version: number }) => f.version) }
         });
       }
     }
@@ -300,8 +309,19 @@ async function validateAgainstDatabase(
  */
 async function validateAgainstBusinessRules(
   config: FormConfiguration,
-  rules: any[]
-): Promise<any[]> {
+  rules: Array<{
+    name: string;
+    rule_type: string;
+    rule_data: Record<string, unknown>;
+    severity: string;
+    error_message: string;
+  }>
+): Promise<Array<{
+  type: string;
+  severity: string;
+  message: string;
+  details?: Record<string, unknown>;
+}>> {
   const violations = [];
 
   for (const rule of rules) {
@@ -390,7 +410,13 @@ async function validateAgainstBusinessRules(
 /**
  * Validate API integrations
  */
-async function validateIntegrations(config: FormConfiguration): Promise<any[]> {
+async function validateIntegrations(config: FormConfiguration): Promise<Array<{
+  type: string;
+  severity: string;
+  message: string;
+  field?: string;
+  details?: Record<string, unknown>;
+}>> {
   const violations = [];
 
   if (!config.integrations) {
@@ -451,7 +477,7 @@ async function validateIntegrations(config: FormConfiguration): Promise<any[]> {
           });
         }
       }
-    } catch (urlError) {
+    } catch {
       violations.push({
         type: 'integration_invalid_url',
         severity: 'high',
@@ -468,7 +494,12 @@ async function validateIntegrations(config: FormConfiguration): Promise<any[]> {
 /**
  * Validate accessibility compliance
  */
-function validateAccessibility(config: FormConfiguration): any[] {
+function validateAccessibility(config: FormConfiguration): Array<{
+  type: string;
+  severity: string;
+  message: string;
+  field?: string;
+}> {
   const violations = [];
 
   config.sections.forEach((section, sectionIndex) => {
@@ -621,7 +652,12 @@ function generateSuggestions(
 /**
  * Generate basic recommendations
  */
-function generateBasicRecommendations(violations: any[]): string[] {
+function generateBasicRecommendations(violations: Array<{
+  type: string;
+  severity: string;
+  message: string;
+  field?: string;
+}>): string[] {
   const recommendations = [];
   
   if (violations.some(v => v.field?.includes('name'))) {
@@ -642,7 +678,7 @@ function generateBasicRecommendations(violations: any[]): string[] {
 /**
  * Helper functions
  */
-function createSuccessResponse(data: any): Response {
+function createSuccessResponse(data: ValidationResponse): Response {
   return new Response(
     JSON.stringify(data),
     { 

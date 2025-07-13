@@ -6,27 +6,27 @@ import { ProfileCompletenessScore } from '@/services/profileCompletenessService'
 
 // Mock the UI components
 vi.mock('@/components/ui/card', () => ({
-  Card: ({ children, className }: any) => <div className={className}>{children}</div>,
-  CardContent: ({ children, className }: any) => <div className={className}>{children}</div>,
-  CardDescription: ({ children }: any) => <div>{children}</div>,
-  CardHeader: ({ children, className }: any) => <div className={className}>{children}</div>,
-  CardTitle: ({ children, className }: any) => <h3 className={className}>{children}</h3>,
+Card: ({ children, className }: { children: React.ReactNode, className?: string }) => <div className={className}>{children}</div>,
+CardContent: ({ children, className }: { children: React.ReactNode, className?: string }) => <div className={className}>{children}</div>,
+  CardDescription: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  CardHeader: ({ children, className }: { children: React.ReactNode, className?: string }) => <div className={className}>{children}</div>,
+  CardTitle: ({ children, className }: { children: React.ReactNode, className?: string }) => <h3 className={className}>{children}</h3>,
 }));
 
 vi.mock('@/components/ui/progress', () => ({
-  Progress: ({ value, className }: any) => (
+Progress: ({ value, className }: { value: number, className?: string }) => (
     <div className={className} data-testid="progress-bar" data-value={value}>{value}%</div>
   ),
 }));
 
 vi.mock('@/components/ui/badge', () => ({
-  Badge: ({ children, variant, className }: any) => (
+Badge: ({ children, variant, className }: { children: React.ReactNode, variant?: string, className?: string }) => (
     <span className={className} data-variant={variant}>{children}</span>
   ),
 }));
 
 vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick, variant, size, className }: any) => (
+Button: ({ children, onClick, variant, size, className }: { children: React.ReactNode, onClick?: () => void, variant?: string, size?: string, className?: string }) => (
     <button 
       onClick={onClick} 
       className={className}
@@ -39,8 +39,8 @@ vi.mock('@/components/ui/button', () => ({
 }));
 
 vi.mock('@/components/ui/alert', () => ({
-  Alert: ({ children }: any) => <div data-testid="alert">{children}</div>,
-  AlertDescription: ({ children }: any) => <div>{children}</div>,
+Alert: ({ children }: { children: React.ReactNode }) => <div data-testid="alert">{children}</div>,
+  AlertDescription: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
 // Mock lucide-react icons
@@ -60,7 +60,14 @@ describe('SimpleProfileStatus', () => {
     mockOnActionClick.mockClear();
   });
 
-  const createMockCompleteness = (overall: number, recommendations: any[] = []): ProfileCompletenessScore => ({
+const createMockCompleteness = (overall: number, recommendations: Array<{
+    category: string;
+    priority: 'high' | 'medium' | 'low';
+    title: string;
+    description: string;
+    action: string;
+    points_value: number;
+}> = []): ProfileCompletenessScore => ({
     overall,
     categories: {
       basic_info: 80,
