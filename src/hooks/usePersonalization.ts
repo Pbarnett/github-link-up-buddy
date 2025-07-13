@@ -4,7 +4,7 @@ import { PersonalizationData } from '@/context/PersonalizationContext';
 
 interface TrackEventParams {
   eventType: string;
-  context?: any;
+  context?: Record<string, unknown>;
 }
 
 /**

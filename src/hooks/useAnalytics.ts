@@ -111,7 +111,7 @@ export const useAnalytics = () => {
     trackCardView: cardViewRef.current || (() => {}),
     trackFormDropOff: analyticsTracker.trackFormDropOff.bind(analyticsTracker),
     // Generic track method for personalization events
-    track: (eventName: string, eventData?: any) => {
+    track: (eventName: string, eventData?: Record<string, unknown>) => {
       console.log(`[Analytics] ${eventName}:`, eventData);
       // In production, this would send to your analytics service
     },

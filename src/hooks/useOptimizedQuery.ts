@@ -79,9 +79,9 @@ export const useOptimizedQuery = <T>(
     gcTime: 15 * 60 * 1000, // 15 minutes (renamed from cacheTime in v5)
     
     // Smart retry logic
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: unknown) => {
       // Don't retry on 404s
-      if (error?.status === 404) return false;
+      if (error && typeof error === 'object' && 'status' in error && error.status === 404) return false;
       
       // Don't retry when offline (unless enableOfflineFirst)
       if (!isOnline && !enableOfflineFirst) return false;
