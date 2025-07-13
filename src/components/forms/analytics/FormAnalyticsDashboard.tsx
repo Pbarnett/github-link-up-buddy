@@ -12,10 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   BarChart3, 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
-  MousePointer, 
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -87,7 +83,7 @@ export const FormAnalyticsDashboard: React.FC = () => {
       if (analyticsError) throw analyticsError;
 
       // Aggregate data by form
-      const formAnalytics = (analyticsData || []).reduce((acc: Record<string, FormAnalytics>, curr: any) => {
+      const formAnalytics = (analyticsData || []).reduce((acc: Record<string, FormAnalytics>, curr: FormAnalytics) => {
         const key = curr.form_name;
         if (!acc[key]) {
           acc[key] = {
