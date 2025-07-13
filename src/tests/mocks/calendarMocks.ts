@@ -27,7 +27,14 @@ export const getTestDates = () => {
 };
 
 // Simple mock DayPicker component
-const MockDayPicker = ({ selected, onSelect, disabled, ...props }: any) => {
+interface MockDayPickerProps {
+  selected?: Date | Date[];
+  onSelect?: (date: Date) => void;
+  disabled?: (date: Date) => boolean;
+  [key: string]: unknown;
+}
+
+const MockDayPicker = ({ onSelect, disabled }: MockDayPickerProps) => {
   const { tomorrow, nextWeek } = getTestDates();
   
   const handleDateClick = (date: Date) => {

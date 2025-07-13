@@ -13,7 +13,7 @@ import { useTravelerInfoCheck } from '@/hooks/useTravelerInfoCheck';
 // Import our new best-practice testing utilities
 import {
   getTestDates,
-  setFormDatesDirectly,
+  // setFormDatesDirectly,
   fillFormWithDates,
   waitForFormValid,
   expectFormInvalid,
@@ -82,7 +82,7 @@ describe('TripRequestForm - Best Practices Implementation', () => {
   let mockNavigate: Mock;
   let mockToastFn: Mock;
   let mockInsert: Mock;
-  const formRef: any = null;
+  // const formRef: React.RefObject<HTMLFormElement> | null = null;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -200,7 +200,7 @@ describe('TripRequestForm - Best Practices Implementation', () => {
         
         const option = screen.getByRole('option', { name: /MVY/i });
         await userEvent.click(option);
-      } catch (error) {
+      } catch {
         // If destination selection fails, that's OK for this test
         console.log('Destination selection failed, which is expected in this test context');
       }
@@ -337,7 +337,7 @@ describe('TripRequestForm - Best Practices Implementation', () => {
         if (consentCheckbox && !consentCheckbox.checked) {
           await userEvent.click(consentCheckbox);
         }
-      } catch (error) {
+      } catch {
         // Consent checkbox might not be required in manual mode
       }
 
@@ -362,7 +362,7 @@ describe('TripRequestForm - Best Practices Implementation', () => {
 
   describe('Date Range Validation (Programmatic Testing)', () => {
     it('should accept valid future date ranges', async () => {
-      const { tomorrow, nextWeek } = getTestDates();
+      // const { tomorrow, nextWeek } = getTestDates();
       
       render(
         <MemoryRouter>

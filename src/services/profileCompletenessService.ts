@@ -4,7 +4,7 @@
  * Enhanced with database integration and unified profile architecture
  */
 
-import { supabase } from '@/integrations/supabase/client';
+// import { supabase } from '@/integrations/supabase/client';
 import { TravelerProfile } from '@/hooks/useTravelerProfile';
 
 export interface ProfileCompletenessScore {
@@ -264,7 +264,7 @@ class ProfileCompletenessService {
 
   private generateRecommendations(
     profile: TravelerProfile, 
-    scores: any
+    _scores: Record<string, number>
   ): ProfileRecommendation[] {
     const recommendations: ProfileRecommendation[] = [];
 
