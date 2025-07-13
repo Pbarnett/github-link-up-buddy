@@ -7,8 +7,8 @@ interface DebugInfoProps {
 }
 
 export default function DebugInfo({ tripId }: DebugInfoProps) {
-  const [featureFlags, setFeatureFlags] = useState<any[]>([]);
-  const [tripData, setTripData] = useState<any>(null);
+  const [_featureFlags, setFeatureFlags] = useState<Record<string, unknown>[]>([]); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [tripData, setTripData] = useState<Record<string, unknown> | null>(null);
   const [offersCount, setOffersCount] = useState<number>(0);
   
   // Current feature flags being used
