@@ -49,5 +49,8 @@ export const testAuth = async () => {
 
 // Make it available globally for testing
 if (typeof window !== 'undefined') {
-  (window as any).testAuth = testAuth;
+  interface WindowWithTestAuth extends Window {
+    testAuth: typeof testAuth;
+  }
+  (window as WindowWithTestAuth).testAuth = testAuth;
 }

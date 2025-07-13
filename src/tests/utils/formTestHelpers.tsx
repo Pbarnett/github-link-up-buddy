@@ -32,7 +32,7 @@ export const getTestDates = () => {
  */
 
 // Helper to set dates using form setValue instead of UI interaction
-export const setFormDatesDirectly = async (getFormRef: () => any, earliestDate: Date, latestDate: Date) => {
+export const setFormDatesDirectly = async (getFormRef: () => { setValue: (field: string, value: unknown) => void; trigger: (fields: string[]) => Promise<boolean> } | null, earliestDate: Date, latestDate: Date) => {
   const form = getFormRef();
   if (form) {
     form.setValue('earliestDeparture', earliestDate);
@@ -215,7 +215,7 @@ export const getFormErrors = () => {
 
 // NEW: Programmatic date setting using calendar mocks
 export const setDatesWithMockedCalendar = async () => {
-  const { tomorrow, nextWeek } = getTestDates();
+  // const { tomorrow, nextWeek } = getTestDates();
   
   try {
     // Open earliest date picker
@@ -265,7 +265,7 @@ export const selectDestinationRobust = async (destination: string) => {
     const option = screen.getByRole('option', { name: new RegExp(destination, 'i') });
     await userEvent.click(option);
     return;
-  } catch (error) {
+  } catch {
     console.warn('Combobox destination selection failed, trying custom input');
   }
   
@@ -275,7 +275,7 @@ export const selectDestinationRobust = async (destination: string) => {
     await userEvent.clear(customInput);
     await userEvent.type(customInput, destination);
     return;
-  } catch (error) {
+  } catch {
     console.warn('Custom destination input failed, using direct value setting');
   }
   
@@ -292,7 +292,7 @@ export const setDatesRobust = async () => {
   try {
     await setDatesWithMockedCalendar();
     return;
-  } catch (error) {
+  } catch {
     console.warn('Mocked calendar failed, trying direct input approach');
   }
   

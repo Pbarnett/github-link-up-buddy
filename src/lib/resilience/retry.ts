@@ -161,7 +161,7 @@ export async function retry<T>(
 /**
  * Create a retry wrapper for a function
  */
-export function withRetry<TArgs extends any[], TReturn>(
+export function withRetry<TArgs extends unknown[], TReturn>(
   fn: (...args: TArgs) => Promise<TReturn>,
   options: RetryOptions = {}
 ): (...args: TArgs) => Promise<TReturn> {
@@ -317,7 +317,7 @@ export const RetryDecorators = {
     ...RetryPresets.quick,
     maxAttempts: 2, // Be very careful with payments
     ...options,
-    shouldRetry: (error: unknown, attempt: number) => {
+    shouldRetry: (error: unknown) => {
       if (error instanceof AppError) {
         // Only retry for clear network/timeout errors in payments
         return error.code === ErrorCode.NETWORK_ERROR ||

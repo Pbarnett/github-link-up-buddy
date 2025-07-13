@@ -13,12 +13,12 @@ const mockDatabase = {
   from: vi.fn()
 };
 
-// Mock trigger function results
-const mockTriggerResults = {
-  calculate_profile_completeness_enhanced: vi.fn(),
-  validate_profile_fields: vi.fn(),
-  log_ai_activity: vi.fn()
-};
+// Mock trigger function results (for future use)
+// const mockTriggerResults = {
+//   calculate_profile_completeness_enhanced: vi.fn(),
+//   validate_profile_fields: vi.fn(),
+//   log_ai_activity: vi.fn()
+// };
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: mockDatabase
@@ -29,7 +29,7 @@ describe('Database Profile Completeness Trigger Tests', () => {
     vi.clearAllMocks();
     
     // Setup default mock implementations
-    mockDatabase.rpc.mockImplementation((functionName, params) => {
+    mockDatabase.rpc.mockImplementation((functionName) => {
       switch (functionName) {
         case 'calculate_profile_completeness_enhanced':
           return Promise.resolve({
@@ -485,7 +485,7 @@ describe('Database Profile Completeness Trigger Tests', () => {
 
       // Add many custom fields
       for (let i = 0; i < 100; i++) {
-        (largeProfile as any)[`custom_field_${i}`] = `value_${i}`;
+        (largeProfile as Record<string, unknown>)[`custom_field_${i}`] = `value_${i}`;
       }
 
       const startTime = Date.now();
