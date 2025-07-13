@@ -19,9 +19,14 @@ vi.mock('@/lib/logger', () => ({
   },
 }));
 
-const mockTripOffers = useTripOffers as any;
-const mockTripOffersLegacy = useTripOffersLegacy as any;
-const mockToast = toast as any;
+const mockTripOffers = useTripOffers as {
+  useTripOffersPools: ReturnType<typeof vi.fn>;
+  clearUnifiedCache: ReturnType<typeof vi.fn>;
+};
+const mockTripOffersLegacy = useTripOffersLegacy as {
+  useTripOffers: ReturnType<typeof vi.fn>;
+};
+const mockToast = toast as ReturnType<typeof vi.fn>;
 
 const mockPoolsResult = {
   pool1: [{ id: 'offer-1', score: 10 }],
