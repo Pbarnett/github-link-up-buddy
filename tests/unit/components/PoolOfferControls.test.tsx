@@ -36,7 +36,7 @@ describe('PoolOfferControls', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useTripOffersPools as any).mockReturnValue(mockHookData);
+    (useTripOffersPools as vi.MockedFunction<typeof useTripOffersPools>).mockReturnValue(mockHookData);
   });
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -64,7 +64,7 @@ describe('PoolOfferControls', () => {
   });
 
   it('disables budget button when bumpsUsed >= 3', () => {
-    (useTripOffersPools as any).mockReturnValue({
+    (useTripOffersPools as vi.MockedFunction<typeof useTripOffersPools>).mockReturnValue({
       ...mockHookData,
       bumpsUsed: 3,
     });
@@ -76,7 +76,7 @@ describe('PoolOfferControls', () => {
   });
 
   it('disables budget button when budget >= maxBudget', () => {
-    (useTripOffersPools as any).mockReturnValue({
+    (useTripOffersPools as vi.MockedFunction<typeof useTripOffersPools>).mockReturnValue({
       ...mockHookData,
       budget: 3000,
       maxBudget: 3000,
@@ -102,7 +102,7 @@ describe('PoolOfferControls', () => {
   });
 
   it('shows bumps used indicator when bumpsUsed > 0', () => {
-    (useTripOffersPools as any).mockReturnValue({
+    (useTripOffersPools as vi.MockedFunction<typeof useTripOffersPools>).mockReturnValue({
       ...mockHookData,
       bumpsUsed: 2,
     });
