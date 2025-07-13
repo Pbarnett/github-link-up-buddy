@@ -1,6 +1,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../../types/database';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Get environment variables with fallbacks for development
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -16,7 +17,27 @@ console.log('🔍 Supabase client initialization:', {
 });
 
 // Create the Supabase client with proper error handling for testing
-let supabaseClient: any;
+let supabaseClient: SupabaseClient<Database> | MockSupabaseClient;
+
+// Mock client interface for testing
+interface MockSupabaseClient {
+  from: (table: string) => {
+    select: (columns?: string) => {
+      eq: (column: string, value: unknown) => {
+        then: (callback: (result: { data: unknown[]; error: null }) => void) => Promise<{ data: unknown[]; error: null }>;
+        not: (column: string, value: unknown) => { then: (callback: (result: { data: unknown[]; error: null }) => void) => Promise<{ data: unknown[]; error: null }> };
+        single: () => Promise<{ data: unknown; error: null }>;
+      };
+    };
+  };
+  auth: {
+    getUser: () => Promise<{ data: { user: null }; error: null }>;
+    getSession: () => Promise<{ data: { session: null }; error: null }>;
+  };
+  functions: {
+    invoke: (functionName: string, options?: unknown) => Promise<{ data: null; error: null }>;
+  };
+}
 
 // Check if environment variables are available
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {

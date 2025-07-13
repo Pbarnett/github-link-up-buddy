@@ -46,7 +46,7 @@ export enum ErrorCode {
 }
 
 export interface ErrorContext {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ErrorDetails {
