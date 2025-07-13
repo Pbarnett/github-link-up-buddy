@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderHook, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import AdvancedFilterControls, { FilterOptions, FilterState } from '../AdvancedFilterControls';
+import AdvancedFilterControls, { FilterState } from '../AdvancedFilterControls';
 import { useFilterState } from '@/hooks/useFilterState';
 import { ScoredOffer } from '@/types/offer';
 
@@ -34,8 +34,14 @@ if (!window.ResizeObserver) {
 }
 
 // Mock UI components to avoid complex rendering issues
+interface SliderProps {
+  value?: number[];
+  onValueChange?: (value: number[]) => void;
+  [key: string]: unknown;
+}
+
 vi.mock('@/components/ui/slider', () => ({
-  Slider: ({ value, onValueChange, ...props }: any) => (
+  Slider: ({ value, onValueChange, ...props }: SliderProps) => (
     <input
       type="range"
       role="slider"
@@ -46,8 +52,31 @@ vi.mock('@/components/ui/slider', () => ({
   ),
 }));
 
+interface SelectProps {
+  children?: React.ReactNode;
+  value?: string;
+  onValueChange?: (value: string) => void;
+}
+
+interface SelectContentProps {
+  children?: React.ReactNode;
+}
+
+interface SelectItemProps {
+  value: string;
+  children?: React.ReactNode;
+}
+
+interface SelectTriggerProps {
+  children?: React.ReactNode;
+}
+
+interface SelectValueProps {
+  placeholder?: string;
+}
+
 vi.mock('@/components/ui/select', () => ({
-  Select: ({ children, value, onValueChange }: any) => (
+  Select: ({ children, value, onValueChange }: SelectProps) => (
     <select
       role="combobox"
       value={value || ''}
@@ -56,16 +85,22 @@ vi.mock('@/components/ui/select', () => ({
       {children}
     </select>
   ),
-  SelectContent: ({ children }: any) => <>{children}</>,
-  SelectItem: ({ value, children }: any) => (
+  SelectContent: ({ children }: SelectContentProps) => <>{children}</>,
+  SelectItem: ({ value, children }: SelectItemProps) => (
     <option value={value}>{children}</option>
   ),
-  SelectTrigger: ({ children }: any) => <div>{children}</div>,
-  SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>,
+  SelectTrigger: ({ children }: SelectTriggerProps) => <div>{children}</div>,
+  SelectValue: ({ placeholder }: SelectValueProps) => <span>{placeholder}</span>,
 }));
 
+interface SwitchProps {
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
+  [key: string]: unknown;
+}
+
 vi.mock('@/components/ui/switch', () => ({
-  Switch: ({ checked, onCheckedChange, ...props }: any) => (
+  Switch: ({ checked, onCheckedChange, ...props }: SwitchProps) => (
     <input
       type="checkbox"
       role="switch"
