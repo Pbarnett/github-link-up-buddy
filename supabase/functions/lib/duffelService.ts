@@ -463,7 +463,7 @@ export class DuffelService {
     return {
       slices,
       passengers: duffelPassengers,
-      cabin_class: searchCriteria.cabin_class as any,
+      cabin_class: searchCriteria.cabin_class as "economy" | "premium_economy" | "business" | "first",
       max_connections: searchCriteria.max_connections
     };
   }
@@ -484,7 +484,7 @@ export class DuffelService {
     passport_expiry?: string;
   }): DuffelPassenger {
     return {
-      title: (passenger.title?.toLowerCase() as any) || 'mr',
+      title: (passenger.title?.toLowerCase() as "mr" | "ms" | "mrs" | "dr") || 'mr',
       gender: passenger.gender?.toUpperCase() === 'FEMALE' ? 'F' : 'M',
       given_name: passenger.first_name,
       family_name: passenger.last_name,
@@ -519,7 +519,7 @@ export function createDuffelService(useLive: boolean = false): DuffelService {
  */
 export function logDuffelOperation(
   operation: string, 
-  details: any, 
+  details: Record<string, unknown>,
   duration?: number,
   error?: Error
 ) {
