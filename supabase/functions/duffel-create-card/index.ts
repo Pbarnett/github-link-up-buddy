@@ -9,11 +9,18 @@ const corsHeaders = {
 interface CardCreationRequest {
   payment_method: {
     type: 'card';
-    card: any;
+    card: Record<string, unknown>;
     billing_details?: {
       name?: string;
       email?: string;
-      address?: any;
+      address?: {
+        city?: string;
+        country?: string;
+        line1?: string;
+        line2?: string;
+        postal_code?: string;
+        state?: string;
+      };
     };
   };
   cardholder_name: string;
@@ -148,7 +155,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Card creation failed',
-        details: error.message,
+        details: error instanceof Error ? error.message : 'Unknown error',
         // Provide mock data for development
         card_id: 'tcd_mock_dev_' + Date.now()
       }),

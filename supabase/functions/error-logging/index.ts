@@ -32,7 +32,7 @@ interface ErrorLogEntry {
   error_type: string;
   error_message: string;
   severity: ErrorSeverity;
-  context: any;
+  context: Record<string, unknown>;
   user_id?: string;
   function_name?: string;
   stack_trace?: string;
@@ -64,7 +64,7 @@ async function logError(errorEntry: ErrorLogEntry) {
     // Log to Sentry (if configured)
     // if (sentryDsn) {
     //   Sentry.captureException(new Error(errorEntry.error_message), {
-    //     level: errorEntry.severity as any,
+    //     level: errorEntry.severity as 'fatal' | 'error' | 'warning' | 'info' | 'debug',
     //     contexts: {
     //       profile_system: errorEntry.context
     //     },
@@ -93,10 +93,10 @@ async function logError(errorEntry: ErrorLogEntry) {
   }
 }
 
-async function handleProfileCompletionError(errorData: any) {
+async function handleProfileCompletionError(errorData: Record<string, unknown>) {
   const errorEntry: ErrorLogEntry = {
     error_type: 'profile_completion_trigger_error',
-    error_message: errorData.message || 'Unknown profile completion error',
+    error_message: (typeof errorData.message === 'string' ? errorData.message : 'Unknown profile completion error'),
     severity: ErrorSeverity.MEDIUM,
     context: {
       trigger_name: 'trigger_update_profile_completeness',
@@ -105,9 +105,9 @@ async function handleProfileCompletionError(errorData: any) {
       operation: errorData.operation,
       timestamp: new Date().toISOString()
     },
-    user_id: errorData.user_id,
+    user_id: typeof errorData.user_id === 'string' ? errorData.user_id : undefined,
     function_name: 'update_profile_completeness',
-    stack_trace: errorData.stack_trace,
+    stack_trace: typeof errorData.stack_trace === 'string' ? errorData.stack_trace : undefined,
     environment: Deno.env.get("ENVIRONMENT") || 'development'
   };
 
@@ -193,7 +193,7 @@ serve(async (req) => {
     try {
       await logError({
         error_type: 'error_logging_service_failure',
-        error_message: error.message,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
         severity: ErrorSeverity.CRITICAL,
         context: { 
           original_request: req.url,
