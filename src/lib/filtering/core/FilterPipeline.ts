@@ -271,11 +271,11 @@ export class ConsolePerformanceLogger implements PerformanceLogger {
     console.log(`[PerformanceLogger] ${filterName}: ${beforeCount}→${afterCount} (${durationMs}ms)`);
   }
 
-  logError(filterName: string, error: Error, context?: Record<string, any>): void {
+  logError(filterName: string, error: Error, context?: Record<string, unknown>): void {
     console.error(`[PerformanceLogger] ERROR in ${filterName}:`, error.message, context);
   }
 
-  logWarning(filterName: string, message: string, context?: Record<string, any>): void {
+  logWarning(filterName: string, message: string, context?: Record<string, unknown>): void {
     console.warn(`[PerformanceLogger] WARNING in ${filterName}:`, message, context);
   }
 

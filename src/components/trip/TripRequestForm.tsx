@@ -5,19 +5,19 @@ import { useForm, FormProvider } from "react-hook-form";
 import { parseISO } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { FormValues, tripFormSchema, ExtendedTripFormValues } from "@/types/form";
-import { Loader2, ArrowLeft, Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { TripRequestFromDB } from "@/hooks/useTripOffers";
-import { PostgrestError } from "@supabase/supabase-js";
+// import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
 import { invokeFlightSearch } from "@/services/api/flightSearchApi";
 import { TripRequestRepository, type TripRequestInsert, type TripRequestUpdate } from "@/lib/repositories";
-import { handleError, mapAmadeusError, ValidationError, BusinessLogicError, ErrorCode } from "@/lib/errors";
-import { retryHttpRequest, RetryDecorators } from "@/lib/resilience/retry";
+import { handleError, ValidationError } from "@/lib/errors";
+// import { retryHttpRequest, RetryDecorators } from "@/lib/resilience/retry";
 import { useIsMobile } from "@/hooks/use-mobile";
 import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
@@ -25,12 +25,12 @@ import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import ImprovedDatePickerSection from "./sections/ImprovedDatePickerSection";
 import TravelersAndCabinSection from "./sections/TravelersAndCabinSection";
 import StickyFormActions from "./StickyFormActions";
-import FilterTogglesSection from "./sections/FilterTogglesSection";
+// import FilterTogglesSection from "./sections/FilterTogglesSection";
 import CollapsibleFiltersSection from "./sections/CollapsibleFiltersSection";
 import LiveBookingSummary from "./LiveBookingSummary";
 import TripSummaryChips from "./sections/TripSummaryChips";
 import AutoBookingSection from "./sections/AutoBookingSection";
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+// import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -258,7 +258,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       'max_duration'
     ];
     
-    const isStep1Valid = await form.trigger(step1Fields as any);
+    const isStep1Valid = await form.trigger(step1Fields as (keyof FormValues)[]);
     
     if (!isStep1Valid) {
       // Validation failed - errors will be displayed automatically
@@ -562,7 +562,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
                       <TripSummaryChips 
                         control={form.control} 
                         onClearField={(fieldName) => {
-                          form.setValue(fieldName as any, fieldName === 'nyc_airports' ? [] : undefined);
+                          form.setValue(fieldName as keyof FormValues, fieldName === 'nyc_airports' ? [] : undefined);
                         }}
                       />
 
