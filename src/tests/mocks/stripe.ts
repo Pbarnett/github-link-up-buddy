@@ -27,7 +27,7 @@ export default class Stripe {
     constructEvent: vi.fn(),
   };
   
-  constructor(secretKey: string, options?: any) {
+  constructor(secretKey: string, options?: Record<string, unknown>) {
     // Mock constructor
   }
 }

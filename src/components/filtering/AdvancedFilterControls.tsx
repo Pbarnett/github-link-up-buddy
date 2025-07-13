@@ -78,7 +78,7 @@ const AdvancedFilterControls: React.FC<AdvancedFilterControlsProps> = ({
     [onFiltersChange]
   );
 
-  const updateFilter = useCallback((key: keyof FilterOptions, value: any) => {
+  const updateFilter = useCallback((key: keyof FilterOptions, value: unknown) => {
     const newOptions = { ...localOptions, [key]: value };
     setLocalOptions(newOptions);
     debouncedUpdate(newOptions);
@@ -391,7 +391,7 @@ const AdvancedFilterControls: React.FC<AdvancedFilterControlsProps> = ({
 };
 
 // Utility function for debouncing
-function debounce<T extends (...args: any[]) => any>(
+function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): T {
