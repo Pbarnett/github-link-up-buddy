@@ -21,7 +21,7 @@ interface FormSectionProps {
   section: FormSectionType;
   sectionIndex: number;
   formState: FormState;
-  onFieldChange: (fieldId: string, value: any) => void;
+  onFieldChange: (fieldId: string, value: unknown) => void;
   isFieldVisible: (field: FieldConfiguration) => boolean;
   isFieldEnabled: (field: FieldConfiguration) => boolean;
   disabled?: boolean;
