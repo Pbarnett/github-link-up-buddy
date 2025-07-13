@@ -1,6 +1,6 @@
 // supabase/functions/lib/seatSelector.test.ts
 import { describe, it, expect } from 'vitest'; // Or Jest equivalent
-import { selectSeat, SeatInfo } from './seatSelector'; // Adjust path if needed
+import { selectSeat } from './seatSelector'; // Adjust path if needed
 
 // Helper to create mock seat objects easily
 const createMockSeat = (
@@ -18,7 +18,7 @@ const createMockSeat = (
 });
 
 // Helper to create a mock segment with seats, matching the structure selectSeat iterates through
-const createMockSegment = (seats: any[]) => ({
+const createMockSegment = (seats: unknown[]) => ({
     decks: [{ // selectSeat: for (const deck of segment.decks)
         rows: [{ // selectSeat: for (const row of deck.rows)
             seats // selectSeat: for (const seat of row.seats)
