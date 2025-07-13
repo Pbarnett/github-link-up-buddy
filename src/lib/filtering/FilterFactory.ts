@@ -224,7 +224,7 @@ export class FilterFactory {
   /**
    * Validation helper for search parameters
    */
-  static validateSearchParams(searchParams: any): {
+  static validateSearchParams(searchParams: Record<string, unknown>): {
     isValid: boolean;
     errors: string[];
     warnings: string[];
@@ -282,7 +282,7 @@ export class FilterFactory {
   /**
    * Helper to determine the best pipeline type for given search parameters
    */
-  static recommendPipelineType(searchParams: any): 'standard' | 'budget' | 'fast' {
+  static recommendPipelineType(searchParams: Record<string, unknown>): 'standard' | 'budget' | 'fast' {
     // Budget-focused if budget is specified and relatively low
     if (searchParams.budget && searchParams.budget < 500) {
       return 'budget';
@@ -325,10 +325,10 @@ export class LegacyFilterAdapter {
    * Replace old roundTripFiltering.ts functions
    */
   static async filterRoundTripOffers(
-    offers: any[],
-    searchParams: any,
+    offers: unknown[],
+    searchParams: Record<string, unknown>,
     provider: 'Amadeus' | 'Duffel' = 'Amadeus'
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     console.log('[LegacyFilterAdapter] Migrating old round-trip filtering to new system');
     
     // Create new filtering system
@@ -352,27 +352,33 @@ export class LegacyFilterAdapter {
   /**
    * Adapt legacy offer formats to new normalized format
    */
-  private static adaptLegacyOffers(offers: any[], provider: 'Amadeus' | 'Duffel'): any[] {
+  private static adaptLegacyOffers(offers: unknown[], provider: 'Amadeus' | 'Duffel'): unknown[] {
     // This would use the provider adapters to normalize
     // For now, return as-is with provider info
-    return offers.map(offer => ({
-      ...offer,
-      provider,
-      // Add any missing required fields with defaults
-      id: offer.id || `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      itineraries: offer.itineraries || offer.slices || [],
-      totalBasePrice: offer.price?.total || offer.total_amount || 0,
-      currency: offer.price?.currency || offer.total_currency || 'USD',
-      carryOnIncluded: true, // Default assumption
-      totalPriceWithCarryOn: offer.price?.total || offer.total_amount || 0,
-      stopsCount: 0, // Will be calculated by filters
-      validatingAirlines: offer.validatingAirlineCodes || [],
-      rawData: {
-        ...offer,
-        // Ensure oneWay is properly set for round-trip filtering
-        oneWay: offer.oneWay || (offer.itineraries && offer.itineraries.length === 1)
-      }
-    }));
+    return offers.map(offer => {
+      const offerRecord = offer as Record<string, unknown>;
+      const price = offerRecord.price as Record<string, unknown> | undefined;
+      const itineraries = offerRecord.itineraries as unknown[] | undefined;
+      
+      return {
+        ...offerRecord,
+        provider,
+        // Add any missing required fields with defaults
+        id: offerRecord.id || `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        itineraries: itineraries || offerRecord.slices || [],
+        totalBasePrice: price?.total || offerRecord.total_amount || 0,
+        currency: price?.currency || offerRecord.total_currency || 'USD',
+        carryOnIncluded: true, // Default assumption
+        totalPriceWithCarryOn: price?.total || offerRecord.total_amount || 0,
+        stopsCount: 0, // Will be calculated by filters
+        validatingAirlines: offerRecord.validatingAirlineCodes || [],
+        rawData: {
+          ...offerRecord,
+          // Ensure oneWay is properly set for round-trip filtering
+          oneWay: offerRecord.oneWay || (itineraries && itineraries.length === 1)
+        }
+      };
+    });
   }
 
   /**
