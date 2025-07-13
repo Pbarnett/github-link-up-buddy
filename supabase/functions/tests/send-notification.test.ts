@@ -143,7 +143,8 @@ mockSupabaseSingle.mockResolvedValue({ data: { id: 'notification_id_123' }, erro
       let notificationData;
       try {
         notificationData = await req.json();
-      } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_e) {
         return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -223,7 +224,7 @@ mockSupabaseSingle.mockResolvedValue({ data: { id: 'notification_id_123' }, erro
     consoleWarnSpy.mockRestore();
   });
 
-  const createMockRequest = (body: any, method = 'POST') =>
+  const createMockRequest = (body: Record<string, unknown>, method = 'POST') =>
     new Request('http://localhost/send-notification', {
       method,
       headers: { 'Content-Type': 'application/json' },
