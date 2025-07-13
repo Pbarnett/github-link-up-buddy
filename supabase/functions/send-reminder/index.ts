@@ -1,13 +1,13 @@
 // supabase/functions/send-reminder/index.ts
 
 // Conditional imports for Deno vs Node.js environments
-let serve: any;
-let createClient: any;
-let SupabaseClient: any;
+let serve: ((handler: (req: Request) => Promise<Response>) => void) | undefined;
+let createClient: ((url: string, key: string, options?: { auth?: { persistSession?: boolean } }) => unknown) | undefined;
+let SupabaseClient: unknown;
 
 async function initializeEnvironment() {
   // Check if we're in test environment (vi/vitest globals present)
-  if (typeof globalThis !== 'undefined' && (globalThis as any).vi) {
+  if (typeof globalThis !== 'undefined' && (globalThis as { vi?: unknown }).vi) {
     // Test environment - createClient and serve are already mocked by vitest
     // Just return to avoid dynamic imports
     return;
@@ -26,7 +26,7 @@ async function initializeEnvironment() {
       const { createClient: nodeCreateClient } = await import('@supabase/supabase-js');
       createClient = nodeCreateClient;
       // Mock serve function for Node.js
-      serve = (handler: any) => console.log('Mock serve called with handler');
+      serve = (handler: (req: Request) => Promise<Response>) => console.log('Mock serve called with handler');
     } catch (error) {
       console.error('Failed to import Supabase in Node.js environment:', error);
     }
@@ -53,7 +53,7 @@ const getSupabaseAdmin = async () => {
   }
   
   // In test environment, use the mocked module
-  if (typeof globalThis !== 'undefined' && (globalThis as any).vi) {
+  if (typeof globalThis !== 'undefined' && (globalThis as { vi?: unknown }).vi) {
     const { createClient: testCreateClient } = await import('@supabase/supabase-js');
     return testCreateClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: { persistSession: false }
@@ -218,7 +218,7 @@ export const testableHandler = handler;
 export default handler;
 
 // Initialize and serve the handler
-if (typeof Deno !== 'undefined' && !(globalThis as any).vi) {
+if (typeof Deno !== 'undefined' && !(globalThis as { vi?: unknown }).vi) {
   // Only initialize serve in Deno environment
   initializeEnvironment().then(() => {
     serve(handler);

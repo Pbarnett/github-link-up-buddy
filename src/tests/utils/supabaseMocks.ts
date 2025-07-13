@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 
 // Comprehensive Supabase Mock Factory
-export function createSupabaseStub(defaultData: any = null, defaultError: any = null) {
+export function createSupabaseStub(defaultData: unknown = null, defaultError: unknown = null) {
   const mockData = vi.fn().mockReturnValue(defaultData);
   const mockError = vi.fn().mockReturnValue(defaultError);
 
@@ -103,8 +103,8 @@ export function createSupabaseStub(defaultData: any = null, defaultError: any = 
       }),
     },
     // Helper methods for tests
-    __setData: (data: any) => mockData.mockReturnValue(data),
-    __setError: (error: any) => mockError.mockReturnValue(error),
+    __setData: (data: unknown) => mockData.mockReturnValue(data),
+    __setError: (error: unknown) => mockError.mockReturnValue(error),
     __reset: () => {
       mockData.mockReturnValue(defaultData);
       mockError.mockReturnValue(defaultError);
@@ -154,7 +154,7 @@ export function createDenoEnvironmentStub(envVars: Record<string, string> = {}) 
 // Mock factory for different test scenarios
 export const TestScenarios = {
   // Successful database operations
-  success: (data: any) => createSupabaseStub(data, null),
+  success: (data: unknown) => createSupabaseStub(data, null),
   
   // Database error scenarios
   dbError: (errorMessage: string = 'Database error') => 
@@ -168,7 +168,7 @@ export const TestScenarios = {
   empty: () => createSupabaseStub([], null),
   
   // Flight offers data
-  flightOffers: (offers: any[] = []) => createSupabaseStub(offers, null),
+  flightOffers: (offers: unknown[] = []) => createSupabaseStub(offers, null),
   
   // User authentication scenarios
   authenticatedUser: (userId: string = 'test-user-id') => {
