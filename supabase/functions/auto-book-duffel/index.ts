@@ -184,9 +184,9 @@ Deno.serve(async (req: Request) => {
     console.log(`[AutoBookDuffel] Found ${offers.length} offers`);
 
     // 5. Find best offer within budget
-    const validOffers = offers.filter((offer: any) => {
-      const price = parseFloat(offer.total_amount);
-      return price <= trip.max_price && new Date(offer.expires_at) > new Date();
+    const validOffers = offers.filter((offer: Record<string, unknown>) => {
+      const price = parseFloat(offer.total_amount as string);
+      return price <= trip.max_price && new Date(offer.expires_at as string) > new Date();
     });
 
     if (validOffers.length === 0) {
@@ -194,7 +194,9 @@ Deno.serve(async (req: Request) => {
     }
 
     // Sort by price and select cheapest
-    validOffers.sort((a: any, b: any) => parseFloat(a.total_amount) - parseFloat(b.total_amount));
+    validOffers.sort((a: Record<string, unknown>, b: Record<string, unknown>) => 
+      parseFloat(a.total_amount as string) - parseFloat(b.total_amount as string)
+    );
     const selectedOffer = validOffers[0];
     
     console.log(`[AutoBookDuffel] Selected offer: ${selectedOffer.id}, Price: ${selectedOffer.total_amount}`);
@@ -300,7 +302,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({
       success: false,
       trip_id: trip?.id,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

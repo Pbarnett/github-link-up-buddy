@@ -12,7 +12,7 @@ export interface NotificationJob {
   notification_id: string;
   channel: string;
   priority: 'low' | 'normal' | 'high' | 'critical';
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   retry_count?: number;
   scheduled_for?: string;
 }
@@ -68,7 +68,7 @@ export class NotificationQueue {
   /**
    * Dequeue a notification job for processing
    */
-  static async dequeue(queueName: string = 'notifications'): Promise<any> {
+  static async dequeue(queueName: string = 'notifications'): Promise<NotificationJob | null> {
     try {
       const { data, error } = await supabase
         .rpc('dequeue_notification_job', {
@@ -205,7 +205,7 @@ export class NotificationQueue {
   /**
    * Get queue statistics
    */
-  static async getQueueStats(queueName?: string): Promise<any> {
+  static async getQueueStats(queueName?: string): Promise<Record<string, { total_pending: number; ready_to_process: number; scheduled_future: number }> | null> {
     try {
       const query = supabase
         .from('notification_queue')
@@ -234,7 +234,7 @@ export class NotificationQueue {
       }
 
       // Group by queue name
-      const statsByQueue: Record<string, any> = {};
+      const statsByQueue: Record<string, { total_pending: number; ready_to_process: number; scheduled_future: number }> = {};
       data?.forEach(job => {
         if (!statsByQueue[job.queue_name]) {
           statsByQueue[job.queue_name] = {
