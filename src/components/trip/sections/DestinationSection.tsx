@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { POPULAR_DESTINATIONS } from "@/data/airports";
 
 interface DestinationSectionProps {
-  control: Control<any>;
-  watch: UseFormWatch<any>;
+  control: Control<Record<string, unknown>>;
+  watch: UseFormWatch<Record<string, unknown>>;
 }
 
 const DestinationSection = ({ control, watch }: DestinationSectionProps) => {

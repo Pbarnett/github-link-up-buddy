@@ -15,8 +15,8 @@ import { HelpCircle } from "lucide-react";
 import { POPULAR_DESTINATIONS } from "@/data/airports";
 
 interface EnhancedDestinationSectionProps {
-  control: Control<any>;
-  watch: UseFormWatch<any>;
+  control: Control<Record<string, unknown>>;
+  watch: UseFormWatch<Record<string, unknown>>;
 }
 
 const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSectionProps) => {
