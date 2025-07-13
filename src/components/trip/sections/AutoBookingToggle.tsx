@@ -4,13 +4,18 @@ import {
   FormControl, 
   FormField, 
   FormItem, 
-  FormLabel, 
-  FormMessage 
+  FormLabel
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 
+// Auto-booking form data interface
+interface AutoBookingFormData {
+  auto_book_enabled?: boolean;
+  [key: string]: unknown;
+}
+
 interface AutoBookingToggleProps {
-  control: Control<any>;
+  control: Control<AutoBookingFormData>;
 }
 
 const AutoBookingToggle = ({ control }: AutoBookingToggleProps) => {

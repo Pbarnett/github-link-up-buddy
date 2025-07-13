@@ -5,8 +5,15 @@ import FilterTogglesSection from './FilterTogglesSection';
 import TripDurationInputs from './TripDurationInputs';
 import { Control } from 'react-hook-form';
 
+// Collapsible filters form data interface
+interface CollapsibleFiltersFormData {
+  minDuration?: number;
+  maxDuration?: number;
+  [key: string]: unknown;
+}
+
 interface CollapsibleFiltersSectionProps {
-  control: Control<any>; // Now required for TripDurationInputs
+  control: Control<CollapsibleFiltersFormData>; // Now required for TripDurationInputs
 }
 
 const CollapsibleFiltersSection = ({ control }: CollapsibleFiltersSectionProps) => {
