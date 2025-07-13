@@ -1,29 +1,16 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useFlightOffers } from '@/flightSearchV2/useFlightOffers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Terminal, PlaneTakeoff, PlaneLanding, ShoppingBag, CalendarDays, AlertCircle, ExternalLink, Filter } from "lucide-react";
+import { Terminal, AlertCircle, Filter } from "lucide-react";
 import TripOffersV2Skeleton from '@/components/TripOffersV2Skeleton';
 import AdvancedFilterControls, { FilterOptions } from '@/components/filtering/AdvancedFilterControls';
 import { useFilterState } from '@/hooks/useFilterState';
 import { useTripOffersPools } from '@/hooks/useTripOffers';
-import { format } from 'date-fns';
 import { toast } from '@/components/ui/use-toast';
 
-// Placeholder for a component to show when the feature flag is disabled
-const FlagDisabledPlaceholder: React.FC = () => (
-  <Alert variant="destructive">
-    <Terminal className="h-4 w-4" />
-    <AlertTitle>Feature Disabled</AlertTitle>
-    <AlertDescription>
-      The Flight Search V2 feature is currently disabled. Please contact support if you believe this is an error.
-    </AlertDescription>
-  </Alert>
-);
 
 const EmptyStateCard: React.FC = () => (
   <Card className="shadow-lg">
@@ -67,8 +54,7 @@ const TripOffersV2Enhanced: React.FC = () => {
     updateFilters,
     resetFilters,
     setOffers,
-    isApplyingFilters,
-    getBackendFilterOptions
+    isApplyingFilters
   } = useFilterState(
     { budget: tripBudget, currency: 'USD' },
     { persist: true, storageKey: `trip-filters-${tripId}` }
@@ -91,7 +77,6 @@ const TripOffersV2Enhanced: React.FC = () => {
     updateFilters(newOptions);
     
     // Check if this requires a backend refresh (budget, nonstop, pipelineType changes)
-    const backendFilterOptions = getBackendFilterOptions();
     const needsBackendRefresh = 
       newOptions.budget !== filterState.options.budget ||
       newOptions.nonstop !== filterState.options.nonstop ||
@@ -105,7 +90,7 @@ const TripOffersV2Enhanced: React.FC = () => {
       
       try {
         await refreshPools();
-      } catch (error) {
+      } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
         toast({
           title: "Error",
           description: "Failed to refresh results. Please try again.",
@@ -172,20 +157,24 @@ const TripOffersV2Enhanced: React.FC = () => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
   };
 
-  const handleBookOffer = (offer: any) => {
-    console.log('Booking offer:', offer.id);
+  const handleBookOffer = (offer: Record<string, unknown>) => {
+    const offerId = typeof offer.id === 'string' ? offer.id : String(offer.id);
+    const offerPrice = typeof offer.price === 'number' ? offer.price : Number(offer.price);
+    const offerAirline = typeof offer.airline === 'string' ? offer.airline : String(offer.airline);
+    
+    console.log('Booking offer:', offerId);
     
     toast({
       title: "Flight Selected",
-      description: `You've selected a flight for ${formatCurrency(offer.price)} for booking.`,
+      description: `You've selected a flight for ${formatCurrency(offerPrice)} for booking.`,
     });
     
     // Navigate to booking confirmation
     const params = new URLSearchParams();
-    params.set('id', offer.id);
-    params.set('airline', offer.airline);
-    params.set('flight_number', offer.id.slice(0, 8)); // Use part of ID as flight number
-    params.set('price', offer.price.toString());
+    params.set('id', offerId);
+    params.set('airline', offerAirline);
+    params.set('flight_number', offerId.slice(0, 8)); // Use part of ID as flight number
+    params.set('price', offerPrice.toString());
     params.set('departure_date', new Date().toISOString().split('T')[0]); // Placeholder
     params.set('departure_time', '08:00'); // Placeholder
     params.set('return_date', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]); // Placeholder
