@@ -15,6 +15,7 @@ import { CreditCard, Shield, AlertTriangle } from 'lucide-react';
 import { AddCardModalProps } from '@/types/wallet';
 import { useWallet } from '@/contexts/WalletContext';
 import { useToast } from '@/hooks/use-toast';
+import type { StripeCardElementChangeEvent } from '@stripe/stripe-js';
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!);
@@ -110,7 +111,7 @@ function AddCardForm({ onSuccess, onClose }: AddCardFormProps) {
     }
   };
 
-  const handleCardChange = (event: any) => {
+  const handleCardChange = (event: StripeCardElementChangeEvent) => {
     setCardComplete(event.complete);
     if (event.error) {
       setError(event.error.message);

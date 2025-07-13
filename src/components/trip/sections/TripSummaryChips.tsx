@@ -5,8 +5,30 @@ import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
+// Trip form data interface
+interface TripFormData {
+  destination_airport?: string;
+  destination_other?: string;
+  nyc_airports?: string[];
+  other_departure_airport?: string;
+  flexible_dates?: {
+    from: Date;
+    to: Date;
+  };
+  earliestDeparture?: Date;
+  latestDeparture?: Date;
+  min_duration?: number;
+  max_duration?: number;
+  max_price?: number;
+  nonstop_required?: boolean;
+  baggage_included_required?: boolean;
+  travelers_count?: string;
+  cabin_class?: 'economy' | 'premium_economy' | 'business' | 'first';
+  [key: string]: unknown;
+}
+
 interface TripSummaryChipsProps {
-  control: Control<any>;
+  control: Control<TripFormData>;
   onClearField?: (fieldName: string) => void;
 }
 
