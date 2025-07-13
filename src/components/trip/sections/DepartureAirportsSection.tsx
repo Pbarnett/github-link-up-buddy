@@ -11,8 +11,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { NYC_AIRPORTS } from "@/data/airports";
 
+// Departure airports form data interface
+interface DepartureAirportsFormData {
+  nyc_airports?: string[];
+  other_departure_airport?: string;
+  [key: string]: unknown;
+}
+
 interface DepartureAirportsSectionProps {
-  control: Control<any>;
+  control: Control<DepartureAirportsFormData>;
 }
 
 const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) => {
