@@ -22,7 +22,7 @@ async function logAIActivity(
   agentId: string,
   action: string,
   result: string | null = null,
-  context: any = {},
+  context: Record<string, unknown> = {},
   userId?: string
 ) {
   try {
@@ -43,7 +43,7 @@ async function logAIActivity(
 async function logProfileActivity(
   userId: string,
   activityType: string,
-  activityDetails: any = {},
+  activityDetails: Record<string, unknown> = {},
   scoreBefore?: number,
   scoreAfter?: number,
   ipAddress?: string,
@@ -203,7 +203,7 @@ serve(async (req) => {
           const currentScore = currentProfile?.profile_completeness_score || 0;
 
           // Update or create profile
-          const profileData: any = {
+          const profileData: Record<string, unknown> = {
             user_id: user.id,
             is_primary: true,
             updated_at: new Date().toISOString()
