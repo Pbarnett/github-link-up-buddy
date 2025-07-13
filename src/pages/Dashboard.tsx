@@ -19,7 +19,7 @@ interface BookingRequest {
   processed_at: string | null;
   error_message: string | null;
   attempts: number;
-  offer_data: any;
+  offer_data: unknown;
 }
 
 interface TripRequest {
@@ -32,7 +32,7 @@ interface TripRequest {
 }
 
 const Dashboard = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([]);
   const [tripRequests, setTripRequests] = useState<TripRequest[]>([]);
@@ -231,10 +231,10 @@ const Dashboard = () => {
         title: "🔄 Retry Initiated",
         description: "Your booking request has been queued for retry",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Retry Failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Unknown error',
         variant: "destructive",
       });
     }
@@ -253,10 +253,10 @@ const Dashboard = () => {
       toast({
         title: "Signed out successfully",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error signing out",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Unknown error',
         variant: "destructive",
       });
     }

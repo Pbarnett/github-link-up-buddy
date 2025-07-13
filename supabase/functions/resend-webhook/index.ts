@@ -113,7 +113,7 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-async function updateNotificationStatus(supabaseClient: any, notificationId: string, event: ResendWebhookEvent) {
+async function updateNotificationStatus(supabaseClient: { from: (table: string) => { update: (data: unknown) => { eq: (col: string, val: string) => unknown } } }, notificationId: string, event: ResendWebhookEvent) {
   try {
     let status = 'sent';
     
@@ -145,7 +145,7 @@ async function updateNotificationStatus(supabaseClient: any, notificationId: str
   }
 }
 
-async function handleBounce(supabaseClient: any, event: ResendWebhookEvent) {
+async function handleBounce(supabaseClient: { from: (table: string) => { upsert: (data: unknown) => unknown } }, event: ResendWebhookEvent) {
   try {
     // Add email to suppression list
     const email = event.data.to[0];
@@ -165,7 +165,7 @@ async function handleBounce(supabaseClient: any, event: ResendWebhookEvent) {
   }
 }
 
-async function handleComplaint(supabaseClient: any, event: ResendWebhookEvent) {
+async function handleComplaint(supabaseClient: { from: (table: string) => { upsert: (data: unknown) => unknown } }, event: ResendWebhookEvent) {
   try {
     // Add email to suppression list
     const email = event.data.to[0];
@@ -185,7 +185,7 @@ async function handleComplaint(supabaseClient: any, event: ResendWebhookEvent) {
   }
 }
 
-async function trackEngagement(supabaseClient: any, event: ResendWebhookEvent, engagementType: string) {
+async function trackEngagement(supabaseClient: { from: (table: string) => { insert: (data: unknown) => unknown } }, event: ResendWebhookEvent, engagementType: string) {
   try {
     // Track email engagement metrics
     await supabaseClient

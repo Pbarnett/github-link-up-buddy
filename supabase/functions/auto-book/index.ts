@@ -54,7 +54,7 @@ Deno.serve(async (req: Request) => {
   let bookingAttemptId: string | null = null;
   let mainOperationSuccessful = false;
   const flightOrderIdForRollback: string | null = null;
-  let capturedErrorObject: any = null; // Using 'any' for simplicity, can be 'Error | null'
+  let capturedErrorObject: Error | null = null; // Error or null
   let accessToken: string | null = null; // Scoped accessToken, initialized to null
   let stripePaymentCapturedByAutoBook = false; // New flag
   let associatedBookingRequestId: string | null = null;
@@ -502,9 +502,9 @@ Deno.serve(async (req: Request) => {
     // Import enhanced Duffel service
     const { DuffelService, createDuffelService, DuffelServiceError } = await import('../lib/duffelService.ts');
     
-    let duffelService: any;
-    let selectedOffer: any = null;
-    const duffelOrder: any = null;
+    let duffelService: unknown;
+    let selectedOffer: unknown = null;
+    const duffelOrder: unknown = null;
     
     try {
         // Initialize Duffel service with appropriate environment
