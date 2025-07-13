@@ -111,18 +111,22 @@ export class AirlineFilter implements FlightFilter {
   /**
    * Extract airline codes from raw provider data
    */
-  private extractFromRawData(rawData: Record<string, any>, airlineCodes: Set<string>): void {
+  private extractFromRawData(rawData: Record<string, unknown>, airlineCodes: Set<string>): void {
     try {
       // Duffel format: marketing_carrier and operating_carrier
       if (rawData.slices) {
-        rawData.slices.forEach((slice: any) => {
-          if (slice.segments) {
-            slice.segments.forEach((segment: any) => {
-              if (segment.marketing_carrier?.iata_code) {
-                airlineCodes.add(segment.marketing_carrier.iata_code);
+        (rawData.slices as unknown[]).forEach((slice: unknown) => {
+          const sliceRecord = slice as Record<string, unknown>;
+          if (sliceRecord.segments) {
+            (sliceRecord.segments as unknown[]).forEach((segment: unknown) => {
+              const segmentRecord = segment as Record<string, unknown>;
+              const marketingCarrier = segmentRecord.marketing_carrier as Record<string, unknown> | undefined;
+              const operatingCarrier = segmentRecord.operating_carrier as Record<string, unknown> | undefined;
+              if (marketingCarrier?.iata_code) {
+                airlineCodes.add(marketingCarrier.iata_code as string);
               }
-              if (segment.operating_carrier?.iata_code) {
-                airlineCodes.add(segment.operating_carrier.iata_code);
+              if (operatingCarrier?.iata_code) {
+                airlineCodes.add(operatingCarrier.iata_code as string);
               }
             });
           }
@@ -131,16 +135,18 @@ export class AirlineFilter implements FlightFilter {
 
       // Amadeus format: validatingAirlineCodes
       if (rawData.validatingAirlineCodes) {
-        rawData.validatingAirlineCodes.forEach((code: string) => airlineCodes.add(code));
+        (rawData.validatingAirlineCodes as string[]).forEach((code: string) => airlineCodes.add(code));
       }
 
       // Amadeus itineraries
       if (rawData.itineraries) {
-        rawData.itineraries.forEach((itinerary: any) => {
-          if (itinerary.segments) {
-            itinerary.segments.forEach((segment: any) => {
-              if (segment.carrierCode) {
-                airlineCodes.add(segment.carrierCode);
+        (rawData.itineraries as unknown[]).forEach((itinerary: unknown) => {
+          const itineraryRecord = itinerary as Record<string, unknown>;
+          if (itineraryRecord.segments) {
+            (itineraryRecord.segments as unknown[]).forEach((segment: unknown) => {
+              const segmentRecord = segment as Record<string, unknown>;
+              if (segmentRecord.carrierCode) {
+                airlineCodes.add(segmentRecord.carrierCode as string);
               }
             });
           }
@@ -148,8 +154,9 @@ export class AirlineFilter implements FlightFilter {
       }
 
       // Duffel owner (main airline)
-      if (rawData.owner?.iata_code) {
-        airlineCodes.add(rawData.owner.iata_code);
+      const owner = rawData.owner as Record<string, unknown> | undefined;
+      if (owner?.iata_code) {
+        airlineCodes.add(owner.iata_code as string);
       }
 
     } catch (error) {
@@ -230,7 +237,7 @@ export function getAvailableAirlinesFromOffers(offers: FlightOffer[]): Array<{ c
 
   offers.forEach(offer => {
     // Use the same extraction logic as the filter
-    const airlines = (airlineFilter as any).extractAirlineCodesFromOffer(offer);
+    const airlines = (airlineFilter as unknown as { extractAirlineCodesFromOffer: (offer: FlightOffer) => string[] }).extractAirlineCodesFromOffer(offer);
     airlines.forEach(code => {
       airlineCount.set(code, (airlineCount.get(code) || 0) + 1);
     });
