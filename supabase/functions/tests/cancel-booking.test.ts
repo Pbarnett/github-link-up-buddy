@@ -1,5 +1,5 @@
 // supabase/functions/tests/cancel-booking.test.ts
-import { describe, it, expect, vi, beforeEach, afterEach, MockedFunction, SpyInstance } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type SpyInstance } from 'vitest';
 
 // --- Mock Deno.env.get ---
 const originalDeno = globalThis.Deno;
@@ -23,7 +23,7 @@ const mockSupabaseFromChainedMethods = {
 };
 const mockSupabaseAuthGetUser = vi.fn();
 const mockSupabaseClientInstance = {
-  from: vi.fn((_tableName: string) => mockSupabaseFromChainedMethods),
+  from: vi.fn(() => mockSupabaseFromChainedMethods),
   auth: { getUser: mockSupabaseAuthGetUser },
 };
 vi.mock('@supabase/supabase-js', () => ({
@@ -187,8 +187,8 @@ describe('cancel-booking Edge Function', () => {
         });
 
         return new Response(JSON.stringify({ success: true, message: 'Booking canceled and refund initiated successfully.' }), { status: 200, headers: corsHeaders });
-      } catch (error: any) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' } });
+      } catch (error: unknown) {
+        return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), { status: 500, headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' } });
       }
     };
   });
@@ -199,7 +199,7 @@ describe('cancel-booking Edge Function', () => {
     consoleWarnSpy.mockRestore();
   });
 
-  const createMockCancelRequest = (body: any, token = 'mock-jwt') =>
+  const createMockCancelRequest = (body: Record<string, unknown>, token = 'mock-jwt') =>
     new Request('http://localhost/cancel-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
