@@ -138,13 +138,14 @@ export function parseDuffelError(error: unknown): {
   let originalError: DuffelError | undefined;
   
   // Handle Duffel API error response format
-  if (error && typeof error === 'object' && 'errors' in error && Array.isArray((error as any).errors) && (error as any).errors.length > 0) {
-    originalError = (error as any).errors[0];
+  if (error && typeof error === 'object' && 'errors' in error && Array.isArray((error as DuffelApiErrorResponse).errors) && (error as DuffelApiErrorResponse).errors.length > 0) {
+    originalError = (error as DuffelApiErrorResponse).errors[0];
     errorType = originalError?.type || originalError?.code || 'unknown_error';
   }
   // Handle HTTP response errors
   else if (error && typeof error === 'object' && 'status' in error) {
-    switch ((error as any).status) {
+    const statusError = error as { status: number };
+    switch (statusError.status) {
       case 400:
         errorType = DuffelErrorType.VALIDATION_ERROR;
         break;
@@ -171,15 +172,15 @@ export function parseDuffelError(error: unknown): {
     }
   }
   // Handle network/timeout errors
-  else if (error && typeof error === 'object' && ('name' in error && (error as any).name === 'AbortError' || 'message' in error && typeof (error as any).message === 'string' && (error as any).message.includes('timeout'))) {
+  else if (error && typeof error === 'object' && ('name' in error && (error as { name: string }).name === 'AbortError' || 'message' in error && typeof (error as { message: string }).message === 'string' && (error as { message: string }).message.includes('timeout'))) {
     errorType = 'timeout_error';
   }
-  else if (error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string' && (error as any).message.includes('fetch')) {
+  else if (error && typeof error === 'object' && 'message' in error && typeof (error as { message: string }).message === 'string' && (error as { message: string }).message.includes('fetch')) {
     errorType = 'network_error';
   }
   
   const userMessage = DUFFEL_ERROR_MESSAGES[errorType] || DUFFEL_ERROR_MESSAGES['unknown_error'];
-  const message = originalError?.detail || originalError?.title || (error && typeof error === 'object' && 'message' in error ? String((error as any).message) : 'Unknown error occurred');
+  const message = originalError?.detail || originalError?.title || (error && typeof error === 'object' && 'message' in error ? String((error as { message: unknown }).message) : 'Unknown error occurred');
   
   return {
     type: errorType,

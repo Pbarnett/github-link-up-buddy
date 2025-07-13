@@ -158,7 +158,6 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
 
       // Should have high priority recommendations first
       const highPriorityRecs = result.recommendations.filter(r => r.priority === 'high');
-      const mediumPriorityRecs = result.recommendations.filter(r => r.priority === 'medium');
       
       expect(highPriorityRecs.length).toBeGreaterThan(0);
       expect(result.recommendations[0].priority).toBe('high');
@@ -170,11 +169,11 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         date_of_birth: '1990-01-01',
         gender: 'OTHER',
         email: 'test@example.com',
-        phone: null as any,
-        passport_number: undefined as any,
-        passport_country: null as any,
-        travel_preferences: null as any,
-        notification_preferences: undefined as any
+        phone: null as string | null,
+        passport_number: undefined as string | undefined,
+        passport_country: null as string | null,
+        travel_preferences: null as Record<string, unknown> | null,
+        notification_preferences: undefined as Record<string, unknown> | undefined
       };
 
       expect(() => {
@@ -260,7 +259,7 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
       const corruptedProfile = {
         full_name: 'Test',
         date_of_birth: 'invalid-date',
-        gender: 'INVALID_GENDER' as any,
+        gender: 'INVALID_GENDER' as 'MALE' | 'FEMALE' | 'OTHER',
         email: 'test@example.com'
       } as TravelerProfile;
 
@@ -272,9 +271,9 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
     });
 
     it('should handle extremely large preference objects', () => {
-      const largePreferences = {};
+      const largePreferences: Record<string, string> = {};
       for (let i = 0; i < 1000; i++) {
-        (largePreferences as any)[`pref_${i}`] = `value_${i}`;
+        largePreferences[`pref_${i}`] = `value_${i}`;
       }
 
       const profileWithLargePrefs: TravelerProfile = {
