@@ -26,8 +26,8 @@ async function logAuditEvent(event: {
   action: string;
   table_name: string;
   record_id: string;
-  old_data?: any;
-  new_data?: any;
+  old_data?: Record<string, unknown>;
+  new_data?: Record<string, unknown>;
 }) {
   try {
     await supabase

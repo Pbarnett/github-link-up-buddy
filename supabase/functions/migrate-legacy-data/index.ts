@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { encryptData, decryptData } from "../_shared/kms.ts";
+import { encryptData } from "../_shared/kms.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -29,18 +29,19 @@ interface MigrationResult {
 }
 
 // Legacy decryption functions (for migration only)
-async function decryptLegacyData(encryptedData: string, keyName: string): Promise<string | null> {
-  try {
-    // Simulate legacy decryption - this would use your old encryption method
-    // For now, we'll assume it's base64 encoded for demonstration
-    // In reality, you'd use your actual legacy decryption logic here
-    const decoded = atob(encryptedData);
-    return decoded;
-  } catch (error) {
-    console.error(`Failed to decrypt legacy ${keyName}:`, error);
-    return null;
-  }
-}
+// Currently unused but kept for potential future use
+// async function decryptLegacyData(encryptedData: string, keyName: string): Promise<string | null> {
+//   try {
+//     // Simulate legacy decryption - this would use your old encryption method
+//     // For now, we'll assume it's base64 encoded for demonstration
+//     // In reality, you'd use your actual legacy decryption logic here
+//     const decoded = atob(encryptedData);
+//     return decoded;
+//   } catch (error) {
+//     console.error(`Failed to decrypt legacy ${keyName}:`, error);
+//     return null;
+//   }
+// }
 
 async function logMigrationAudit(operation: string, success: boolean, entityType: string, entityId?: string, error?: string) {
   try {
@@ -74,7 +75,7 @@ async function migrateProfileData(profileId: string, batchNumber: number): Promi
       return false;
     }
 
-    const updates: any = {
+    const updates: Record<string, unknown> = {
       encryption_version: 2,
       updated_at: new Date().toISOString()
     };
@@ -135,7 +136,8 @@ async function migrateProfileData(profileId: string, batchNumber: number): Promi
     return true;
 
   } catch (error) {
-    await logMigrationAudit('profile', false, 'profile', profileId, error.message);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await logMigrationAudit('profile', false, 'profile', profileId, errorMessage);
     console.error(`Profile ${profileId} (batch ${batchNumber}): Migration failed:`, error);
     return false;
   }
@@ -156,7 +158,7 @@ async function migratePaymentMethodData(paymentMethodId: string, batchNumber: nu
       return false;
     }
 
-    const updates: any = {
+    const updates: Record<string, unknown> = {
       encryption_version: 2,
       updated_at: new Date().toISOString()
     };
@@ -217,7 +219,8 @@ async function migratePaymentMethodData(paymentMethodId: string, batchNumber: nu
     return true;
 
   } catch (error) {
-    await logMigrationAudit('payment_method', false, 'payment_method', paymentMethodId, error.message);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await logMigrationAudit('payment_method', false, 'payment_method', paymentMethodId, errorMessage);
     console.error(`Payment method ${paymentMethodId} (batch ${batchNumber}): Migration failed:`, error);
     return false;
   }
@@ -401,10 +404,11 @@ serve(async (req) => {
           );
 
         } catch (error) {
-          await logMigrationAudit('batch_complete', false, 'batch', undefined, error.message);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          await logMigrationAudit('batch_complete', false, 'batch', undefined, errorMessage);
           console.error('Error during migration:', error);
           return new Response(
-            JSON.stringify({ error: 'Migration failed', details: error.message }),
+            JSON.stringify({ error: 'Migration failed', details: errorMessage }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -422,8 +426,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Migration service error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
