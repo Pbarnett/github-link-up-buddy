@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
@@ -31,7 +30,6 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 
 import type {
@@ -78,33 +76,11 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
   error,
   disabled = false,
   required = false,
-  config,
-  formData,
+  config: _config, // eslint-disable-line @typescript-eslint/no-unused-vars
+  formData: _formData, // eslint-disable-line @typescript-eslint/no-unused-vars
   className
 }) => {
   const form = useFormContext();
-
-  // Handle special field types that don't need FormField wrapper
-  if (field.type === 'section-header') {
-    return (
-      <div className={cn("form-field-header py-4", className)}>
-        <h3 className="text-lg font-semibold text-foreground">
-          {field.label}
-        </h3>
-        {field.description && (
-          <p className="text-sm text-muted-foreground mt-1">
-            {field.description}
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  if (field.type === 'divider') {
-    return (
-      <div className={cn("form-field-divider border-t pt-4 mt-6 mb-2", className)} />
-    );
-  }
 
   // Compute field state
   const fieldState = useMemo(() => {
@@ -131,16 +107,6 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
 
   // Render the actual field input
   const renderFieldInput = useCallback(() => {
-    const commonProps = {
-      value,
-      onChange: handleChange,
-      onBlur,
-      disabled: fieldState.isDisabled,
-      className: cn(
-        error && "border-destructive focus:border-destructive",
-        field.className
-      )
-    };
 
     switch (field.type) {
       case 'text':
@@ -448,6 +414,28 @@ value={value as Record<string, unknown>}
     }
   }, [field, value, handleChange, onBlur, fieldState, error]);
 
+  // Handle special field types that don't need FormField wrapper
+  if (field.type === 'section-header') {
+    return (
+      <div className={cn("form-field-header py-4", className)}>
+        <h3 className="text-lg font-semibold text-foreground">
+          {field.label}
+        </h3>
+        {field.description && (
+          <p className="text-sm text-muted-foreground mt-1">
+            {field.description}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (field.type === 'divider') {
+    return (
+      <div className={cn("form-field-divider border-t pt-4 mt-6 mb-2", className)} />
+    );
+  }
+
   // For checkbox and switch, don't show separate label
   const showLabel = field.label && !['checkbox', 'switch'].includes(field.type);
 
@@ -587,7 +575,7 @@ const FileUploadField: React.FC<{
   accept?: string;
   multiple?: boolean;
   maxSize?: number;
-}> = ({ value, onChange, disabled, error, accept, multiple, maxSize }) => {
+}> = ({ value: _value, onChange, disabled, error: _error, accept, multiple, maxSize }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
   return (
     <div className="border-2 border-dashed rounded-lg p-6 text-center">
       <Input
@@ -616,7 +604,7 @@ const RatingField: React.FC<{
   disabled?: boolean;
   max?: number;
   allowHalf?: boolean;
-}> = ({ value, onChange, disabled, max = 5, allowHalf }) => {
+}> = ({ value, onChange, disabled, max = 5, allowHalf: _allowHalf }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
   return (
     <div className="flex space-x-1">
       {Array.from({ length: max }, (_, i) => (
