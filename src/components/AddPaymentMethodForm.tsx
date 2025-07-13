@@ -170,10 +170,10 @@ export const AddPaymentMethodForm: React.FC<AddPaymentMethodFormProps> = ({
       });
       
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error adding payment method",
-        description: error.message || "Failed to add payment method. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to add payment method. Please try again.",
         variant: "destructive",
       });
     } finally {

@@ -5,19 +5,17 @@
  * Part of Phase 3: Advanced Features
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
-  TestTube, 
+  TestTube,
   Play, 
   Pause, 
-  BarChart3, 
-  Users, 
-  Target,
-  TrendingUp,
-  AlertCircle,
   CheckCircle,
   XCircle,
-  Settings
+  Settings,
+  Users,
+  Target,
+  BarChart3
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -28,15 +26,9 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
-import type {
-  FormConfiguration,
-  ABTestResult,
-  DeploymentStrategy
-} from '@/types/dynamic-forms';
+// Type imports would be used in a full implementation
 
 // Define ABTestConfiguration interface locally since it's not in the types file
 interface ABTestConfiguration {
@@ -128,30 +120,13 @@ const MOCK_AB_TESTS: ABTestSummary[] = [
   }
 ];
 
-const FORM_VARIANTS: FormConfiguration[] = [
-  {
-    id: 'flight-search-v1',
-    name: 'Flight Search - Original',
-    version: 1,
-    sections: []
-  },
-  {
-    id: 'flight-search-v2',
-    name: 'Flight Search - Simplified',
-    version: 2,
-    sections: []
-  },
-  {
-    id: 'payment-v1',
-    name: 'Payment Form - Single Page',
-    version: 1,
-    sections: []
-  }
-];
+// Form variants would be loaded dynamically in a real implementation
+// const FORM_VARIANTS: FormConfiguration[] = [...]
 
 export const ABTestingManager: React.FC<ABTestingManagerProps> = ({
-  formId,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onCreateTest,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onUpdateTest,
   onStartTest,
   onStopTest,
@@ -160,15 +135,8 @@ export const ABTestingManager: React.FC<ABTestingManagerProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [tests, setTests] = useState<ABTestSummary[]>(MOCK_AB_TESTS);
-  const [selectedTest, setSelectedTest] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [newTestConfig, setNewTestConfig] = useState<Partial<ABTestConfiguration>>({
-    name: '',
-    description: '',
-    trafficSplit: 50,
-    duration: 14,
-    variants: []
-  });
 
   // Get status color and icon
   const getStatusDisplay = (status: ABTestSummary['status']) => {

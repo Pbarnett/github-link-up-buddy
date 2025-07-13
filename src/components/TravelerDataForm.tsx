@@ -5,12 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { User, Calendar, FileText, Shield, AlertTriangle } from "lucide-react";
+import { User, Calendar, FileText } from "lucide-react";
 import { travelerProfileService, TravelerProfile } from '@/services/travelerProfileService';
 
-interface TravelerData extends TravelerProfile {}
+type TravelerData = TravelerProfile;
 
 interface TravelerDataFormProps {
   onSubmit: (data: TravelerData) => void;

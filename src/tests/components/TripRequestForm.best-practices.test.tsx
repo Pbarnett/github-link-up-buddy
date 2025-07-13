@@ -82,7 +82,7 @@ describe('TripRequestForm - Best Practices Implementation', () => {
   let mockNavigate: Mock;
   let mockToastFn: Mock;
   let mockInsert: Mock;
-  let formRef: any = null;
+  const formRef: any = null;
 
   beforeEach(() => {
     vi.clearAllMocks();
