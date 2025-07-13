@@ -1,6 +1,28 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { createHash, createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts';
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts';
 import { NotificationQueue, type NotificationJob } from '../_shared/queue.ts';
+
+// Type definitions for Duffel webhook events
+interface DuffelEvent {
+  id: string;
+  type: string;
+  object: {
+    id: string;
+    booking_reference?: string;
+    total_amount?: string;
+    passengers?: Array<{ id: string }>;
+    slices?: Array<{
+      origin?: { iata_code: string };
+      destination?: { iata_code: string };
+      segments?: Array<{
+        operating_carrier?: { name: string };
+        operating_carrier_flight_number?: string;
+        departing_at?: string;
+        arriving_at?: string;
+      }>;
+    }>;
+  };
+}
 
 const DUFFEL_WEBHOOK_SECRET = Deno.env.get('DUFFEL_WEBHOOK_SECRET');
 
@@ -51,18 +73,19 @@ Deno.serve(async (req: Request) => {
 
     const webhookData = JSON.parse(body);
     const { data: event } = webhookData;
+    const typedEvent = event as DuffelEvent;
     
     console.log('[DuffelWebhook] Received event:', {
-      id: event.id,
-      type: event.type,
-      object_id: event.object?.id,
+      id: typedEvent.id,
+      type: typedEvent.type,
+      object_id: typedEvent.object?.id,
     });
 
     // 2. Store webhook event for idempotency
     const { data: existingEvent, error: checkError } = await supabaseClient
       .from('duffel_webhook_events')
       .select('id, processed')
-      .eq('event_id', event.id)
+      .eq('event_id', typedEvent.id)
       .maybeSingle();
 
     if (checkError) {
@@ -72,19 +95,19 @@ Deno.serve(async (req: Request) => {
 
     if (existingEvent) {
       if (existingEvent.processed) {
-        console.log('[DuffelWebhook] Event already processed:', event.id);
+        console.log('[DuffelWebhook] Event already processed:', typedEvent.id);
         return new Response('OK', { status: 200 });
       }
-      console.log('[DuffelWebhook] Event exists but not processed, continuing:', event.id);
+      console.log('[DuffelWebhook] Event exists but not processed, continuing:', typedEvent.id);
     } else {
       // Insert new event
       const { error: insertError } = await supabaseClient
         .from('duffel_webhook_events')
         .insert({
-          event_id: event.id,
-          event_type: event.type,
-          order_id: event.object?.id,
-          payload: event,
+          event_id: typedEvent.id,
+          event_type: typedEvent.type,
+          order_id: typedEvent.object?.id,
+          payload: typedEvent,
           received_at: new Date().toISOString(),
         });
 
@@ -99,24 +122,24 @@ Deno.serve(async (req: Request) => {
     let processingError = null;
 
     try {
-      switch (event.type) {
+      switch (typedEvent.type) {
         case 'order.created':
-          await handleOrderCreated(supabaseClient, event);
+          await handleOrderCreated(supabaseClient, typedEvent);
           processed = true;
           break;
           
         case 'order.airline_initiated_change':
-          await handleOrderChanged(supabaseClient, event);
+          await handleOrderChanged(supabaseClient, typedEvent);
           processed = true;
           break;
           
         case 'order.cancelled':
-          await handleOrderCancelled(supabaseClient, event);
+          await handleOrderCancelled(supabaseClient, typedEvent);
           processed = true;
           break;
           
         default:
-          console.log('[DuffelWebhook] Unhandled event type:', event.type);
+          console.log('[DuffelWebhook] Unhandled event type:', typedEvent.type);
           processed = true; // Mark as processed to avoid retries
       }
     } catch (processingErr) {
@@ -133,7 +156,7 @@ Deno.serve(async (req: Request) => {
         processing_error: processingError,
         processed_at: processed ? new Date().toISOString() : null,
       })
-      .eq('event_id', event.id);
+      .eq('event_id', typedEvent.id);
 
     if (updateError) {
       console.error('[DuffelWebhook] Error updating event status:', updateError);
@@ -143,7 +166,7 @@ Deno.serve(async (req: Request) => {
       throw new Error(processingError || 'Failed to process event');
     }
 
-    console.log('[DuffelWebhook] Event processed successfully:', event.id);
+    console.log('[DuffelWebhook] Event processed successfully:', typedEvent.id);
     return new Response('OK', { status: 200 });
 
   } catch (error) {
@@ -157,7 +180,7 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-async function handleOrderCreated(supabaseClient: any, event: any) {
+async function handleOrderCreated(supabaseClient: SupabaseClient, event: DuffelEvent) {
   const order = event.object;
   console.log('[DuffelWebhook] Processing order.created:', order.id);
 
@@ -214,7 +237,7 @@ async function handleOrderCreated(supabaseClient: any, event: any) {
   console.log('[DuffelWebhook] Order created processed successfully');
 }
 
-async function handleOrderChanged(supabaseClient: any, event: any) {
+async function handleOrderChanged(supabaseClient: SupabaseClient, event: DuffelEvent) {
   const order = event.object;
   console.log('[DuffelWebhook] Processing order.airline_initiated_change:', order.id);
 
@@ -234,7 +257,7 @@ async function handleOrderChanged(supabaseClient: any, event: any) {
   console.log('[DuffelWebhook] Order change processed successfully');
 }
 
-async function handleOrderCancelled(supabaseClient: any, event: any) {
+async function handleOrderCancelled(supabaseClient: SupabaseClient, event: DuffelEvent) {
   const order = event.object;
   console.log('[DuffelWebhook] Processing order.cancelled:', order.id);
 
@@ -257,12 +280,12 @@ async function handleOrderCancelled(supabaseClient: any, event: any) {
 /**
  * Create notification record and enqueue delivery jobs
  */
-async function createAndEnqueueNotification(supabaseClient: any, params: {
+async function createAndEnqueueNotification(supabaseClient: SupabaseClient, params: {
   type: string;
   user_id: string;
   booking_id: string;
   event_id?: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }) {
   try {
     // Find the user ID from the booking if not provided
@@ -317,8 +340,8 @@ async function createAndEnqueueNotification(supabaseClient: any, params: {
 
     // 3. Enqueue notification jobs for each enabled channel
     const channels = Object.entries(typePrefs)
-      .filter(([_, enabled]) => enabled)
-      .map(([channel, _]) => channel);
+      .filter(([, enabled]) => enabled)
+      .map(([channel]) => channel);
 
     for (const channel of channels) {
       const job: NotificationJob = {
@@ -368,7 +391,7 @@ function getPriorityForType(type: string): 'low' | 'normal' | 'high' | 'critical
 /**
  * Send immediate SMS notification as fallback while queue system is being fixed
  */
-async function sendImmediateSMS(supabaseClient: any, userId: string, type: string, data: any) {
+async function sendImmediateSMS(supabaseClient: SupabaseClient, userId: string, type: string, data: unknown) {
   try {
     // Get user phone number from auth metadata or preferences
     const { data: { user }, error: userError } = await supabaseClient.auth.admin.getUserById(userId);
