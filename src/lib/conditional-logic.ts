@@ -12,7 +12,7 @@ import type { ConditionalRule, ConditionalLogic } from '@/types/dynamic-forms';
  */
 export const evaluateConditionalRule = (
   rule: ConditionalRule,
-  formData: Record<string, any>
+  formData: Record<string, unknown>
 ): boolean => {
   const fieldValue = formData[rule.field];
   
@@ -88,7 +88,7 @@ export const evaluateConditionalRule = (
  */
 export const evaluateConditionalLogic = (
   logic: ConditionalLogic,
-  formData: Record<string, any>
+  formData: Record<string, unknown>
 ): {
   visible: boolean;
   enabled: boolean;
@@ -129,7 +129,7 @@ export interface ComplexConditionalRule {
 
 export const evaluateComplexConditionalRule = (
   rule: ConditionalRule | ComplexConditionalRule,
-  formData: Record<string, any>
+  formData: Record<string, unknown>
 ): boolean => {
   // Simple rule
   if ('field' in rule) {
@@ -222,27 +222,27 @@ export const validateConditionalLogic = (
  * Create a dependency graph for conditional logic
  */
 export const createConditionalDependencyGraph = (
-  formConfig: any
+  formConfig: Record<string, unknown>
 ): Map<string, string[]> => {
   const dependencyGraph = new Map<string, string[]>();
 
   // Helper to process fields recursively
-  const processFields = (fields: any[]) => {
+  const processFields = (fields: Array<Record<string, unknown>>) => {
     fields.forEach(field => {
-      if (field.conditional) {
-        const dependencies = getConditionalDependencies(field.conditional);
+      if (field.conditional && typeof field.id === 'string') {
+        const dependencies = getConditionalDependencies(field.conditional as ConditionalLogic);
         dependencyGraph.set(field.id, dependencies);
-      } else {
+      } else if (typeof field.id === 'string') {
         dependencyGraph.set(field.id, []);
       }
     });
   };
 
   // Process sections and their fields
-  if (formConfig.sections) {
-    formConfig.sections.forEach((section: any) => {
-      if (section.fields) {
-        processFields(section.fields);
+  if (formConfig.sections && Array.isArray(formConfig.sections)) {
+    formConfig.sections.forEach((section: Record<string, unknown>) => {
+      if (section.fields && Array.isArray(section.fields)) {
+        processFields(section.fields as Array<Record<string, unknown>>);
       }
     });
   }
@@ -299,21 +299,21 @@ export const conditionalRules = {
   /**
    * Show field when another field equals a specific value
    */
-  showWhenEquals: (fieldId: string, value: any): ConditionalLogic => ({
+  showWhenEquals: (fieldId: string, value: unknown): ConditionalLogic => ({
     showWhen: { field: fieldId, operator: 'equals', value }
   }),
 
   /**
    * Hide field when another field equals a specific value
    */
-  hideWhenEquals: (fieldId: string, value: any): ConditionalLogic => ({
+  hideWhenEquals: (fieldId: string, value: unknown): ConditionalLogic => ({
     hideWhen: { field: fieldId, operator: 'equals', value }
   }),
 
   /**
    * Show field when another field is one of multiple values
    */
-  showWhenOneOf: (fieldId: string, values: any[]): ConditionalLogic => ({
+  showWhenOneOf: (fieldId: string, values: unknown[]): ConditionalLogic => ({
     showWhen: { field: fieldId, operator: 'oneOf', value: values }
   }),
 

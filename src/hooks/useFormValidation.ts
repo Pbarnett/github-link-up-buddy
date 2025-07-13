@@ -9,8 +9,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { z } from 'zod';
 import type { 
   DynamicFormConfig,
-  FieldConfiguration,
-  ValidationRule 
+  FieldConfiguration
 } from '@/types/dynamic-forms';
 import { generateValidationSchema, validateFormData } from '@/lib/form-validation';
 
@@ -22,9 +21,9 @@ export interface ValidationResult {
 
 export interface UseFormValidationReturn {
   /** Validate a single field */
-  validateField: (fieldId: string, value: any) => Promise<ValidationResult>;
+  validateField: (fieldId: string, value: unknown) => Promise<ValidationResult>;
   /** Validate the entire form */
-  validateForm: (formData: Record<string, any>) => Promise<ValidationResult>;
+  validateForm: (formData: Record<string, unknown>) => Promise<ValidationResult>;
   /** Current validation errors */
   validationErrors: Record<string, string>;
   /** Current validation warnings */
@@ -38,7 +37,7 @@ export interface UseFormValidationReturn {
   /** Add custom validation error */
   addCustomError: (fieldId: string, error: string) => void;
   /** Get validation schema for the form */
-  getValidationSchema: () => z.ZodSchema<any>;
+  getValidationSchema: () => z.ZodSchema<unknown>;
   /** Check if real-time validation is enabled */
   isRealTimeEnabled: boolean;
 }
@@ -77,7 +76,7 @@ export const useFormValidation = (
   // Validate a single field
   const validateField = useCallback(async (
     fieldId: string, 
-    value: any
+    value: unknown
   ): Promise<ValidationResult> => {
     const fieldConfig = getFieldConfig(fieldId);
     if (!fieldConfig) {
@@ -134,7 +133,7 @@ export const useFormValidation = (
 
   // Validate entire form
   const validateForm = useCallback(async (
-    formData: Record<string, any>
+    formData: Record<string, unknown>
   ): Promise<ValidationResult> => {
     if (!config) {
       return { isValid: true, errors: {}, warnings: {} };
@@ -223,8 +222,8 @@ export const useFormValidation = (
 };
 
 // Helper function to generate validation schema for a single field
-const generateFieldValidationSchema = (field: FieldConfiguration): z.ZodSchema<any> => {
-  let schema: z.ZodSchema<any>;
+const generateFieldValidationSchema = (field: FieldConfiguration): z.ZodSchema<unknown> => {
+  let schema: z.ZodSchema<unknown>;
 
   switch (field.type) {
     case 'text':
@@ -281,7 +280,7 @@ const generateFieldValidationSchema = (field: FieldConfiguration): z.ZodSchema<a
       break;
 
     default:
-      schema = z.any();
+      schema = z.unknown();
   }
 
   // Apply required validation
@@ -305,7 +304,7 @@ const generateFieldValidationSchema = (field: FieldConfiguration): z.ZodSchema<a
 // Execute custom validation function
 const executeCustomValidation = async (
   customValidationCode: string,
-  value: any,
+  value: unknown,
   fieldId: string
 ): Promise<{ isValid: boolean; error?: string }> => {
   try {
@@ -338,7 +337,7 @@ const executeCustomValidation = async (
 // Validate cross-field rules (like "confirm password" or date ranges)
 const validateCrossFieldRules = async (
   config: DynamicFormConfig,
-  formData: Record<string, any>
+  formData: Record<string, unknown>
 ): Promise<Record<string, string>> => {
   const errors: Record<string, string> = {};
 

@@ -41,8 +41,8 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   route?: string;
   
   // Auth options
-  user?: any;
-  session?: any;
+  user?: Record<string, unknown> | null;
+  session?: Record<string, unknown> | null;
   
   // Query client options
   queryClient?: QueryClient;
@@ -58,8 +58,8 @@ export function renderWithProviders(
   const {
     initialEntries = ['/'],
     route = '/*',
-    user = null,
-    session = null,
+    user = null, // eslint-disable-line @typescript-eslint/no-unused-vars
+    session = null, // eslint-disable-line @typescript-eslint/no-unused-vars
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -156,14 +156,14 @@ export function resetAllMocks() {
 
 // Test data factories
 export const TestData = {
-  user: (overrides: any = {}) => ({
+  user: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 'test-user-id',
     email: 'test@example.com',
     created_at: '2024-01-01T00:00:00Z',
     ...overrides,
   }),
   
-  flightOffer: (overrides: any = {}) => ({
+  flightOffer: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 'offer-1',
     airline: 'Test Airlines',
     departure_date: '2024-07-15',
@@ -178,7 +178,7 @@ export const TestData = {
     ...overrides,
   }),
   
-  tripRequest: (overrides: any = {}) => ({
+  tripRequest: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 'trip-1',
     user_id: 'test-user-id',
     origin: 'JFK',
@@ -191,7 +191,7 @@ export const TestData = {
     ...overrides,
   }),
   
-  booking: (overrides: any = {}) => ({
+  booking: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 'booking-1',
     user_id: 'test-user-id',
     trip_request_id: 'trip-1',
