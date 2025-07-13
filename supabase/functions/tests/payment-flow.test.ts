@@ -1,11 +1,11 @@
 // supabase/functions/tests/payment-flow.test.ts
-import { describe, it, expect, vi, beforeEach, afterEach, Mocked, SpyInstance, test } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, Mocked, SpyInstance } from 'vitest';
 
 // --- Mocking Configuration ---
 // We need to mock the actual module and then spy on its exports to change them per test
 let mockUseManualCapture = true;
 vi.mock('../lib/config.ts', async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = await importOriginal() as Record<string, unknown>;
   return {
     ...actual,
     get USE_MANUAL_CAPTURE() { return mockUseManualCapture; }, // Use getter to allow dynamic changes
@@ -62,8 +62,8 @@ vi.mock('@supabase/supabase-js', () => ({
 
 // --- Test Suite ---
 describe.skip('Payment Flow Integration Tests', { timeout: 60_000 }, () => {
-  let createBookingRequestHandler: (req: any) => Promise<Response>;
-  let processBookingHandler: (req: any) => Promise<Response>;
+  let createBookingRequestHandler: (req: Request) => Promise<Response>;
+  let processBookingHandler: (req: Request) => Promise<Response>;
   let consoleLogSpy: SpyInstance, consoleErrorSpy: SpyInstance, consoleWarnSpy: SpyInstance;
 
   beforeEach(async () => {
@@ -77,18 +77,18 @@ describe.skip('Payment Flow Integration Tests', { timeout: 60_000 }, () => {
     // Conceptual import of handlers. This assumes that the Deno.serve callback logic
     // is exported or otherwise made available for testing.
     try {
-      const createBookingModule = await import('../create-booking-request/index.ts');
-      createBookingRequestHandler = (createBookingModule as any).testableHandler ||
-        (async (_req:any) => new Response("createBookingRequestHandler not available for test", { status: 501 }));
-    } catch (e) {
-      createBookingRequestHandler = async (_req:any) => new Response("Failed to import create-booking-request", { status: 501 });
+      const createBookingModule = await import('../create-booking-request/index.ts') as { testableHandler?: (req: Request) => Promise<Response> };
+      createBookingRequestHandler = createBookingModule.testableHandler ||
+        (async () => new Response("createBookingRequestHandler not available for test", { status: 501 }));
+    } catch {
+      createBookingRequestHandler = async () => new Response("Failed to import create-booking-request", { status: 501 });
     }
     try {
-      const processBookingModule = await import('../process-booking/index.ts');
-      processBookingHandler = (processBookingModule as any).testableHandler ||
-        (async (_req:any) => new Response("processBookingHandler not available for test", { status: 501 }));
-    } catch (e) {
-      processBookingHandler = async (_req:any) => new Response("Failed to import process-booking", { status: 501 });
+      const processBookingModule = await import('../process-booking/index.ts') as { testableHandler?: (req: Request) => Promise<Response> };
+      processBookingHandler = processBookingModule.testableHandler ||
+        (async () => new Response("processBookingHandler not available for test", { status: 501 }));
+    } catch {
+      processBookingHandler = async () => new Response("Failed to import process-booking", { status: 501 });
     }
   });
 
@@ -98,11 +98,11 @@ describe.skip('Payment Flow Integration Tests', { timeout: 60_000 }, () => {
     consoleWarnSpy.mockRestore();
   });
 
-  const mockRequest = (body: any, headers?: any, method = 'POST') => ({
+  const mockRequest = (body: Record<string, unknown>, headers?: Record<string, string>, method = 'POST') => ({
     method,
     headers: new Headers(headers || { 'origin': 'http://localhost:3000' }),
     json: async () => body,
-  });
+  } as Request);
 
   describe('create-booking-request/index.ts', () => {
     const mockOffer = {
@@ -120,13 +120,13 @@ describe.skip('Payment Flow Integration Tests', { timeout: 60_000 }, () => {
 
     it('MANUAL CAPTURE: should create PaymentIntent and return client_secret', async () => {
       mockUseManualCapture = true;
-      (mockSupabaseClientInstance.single as Mocked<any>)
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>)
         .mockResolvedValueOnce({ data: mockOffer, error: null }) // fetch offer
         .mockResolvedValueOnce({ data: mockBookingReq, error: null }); // create booking_requests
 
       const mockPI = { id: 'pi_test_123', client_secret: 'pi_test_123_secret' };
       mockStripeInstance.paymentIntents.create.mockResolvedValue(mockPI);
-      (mockSupabaseClientInstance.single as Mocked<any>).mockResolvedValueOnce({ data: {}, error: null }); // update booking_requests with PI
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>).mockResolvedValueOnce({ data: {}, error: null }); // update booking_requests with PI
 
       const response = await createBookingRequestHandler(mockRequest({ userId: mockUserId, offerId: mockOffer.id }));
       const body = await response.json();
@@ -150,14 +150,14 @@ describe.skip('Payment Flow Integration Tests', { timeout: 60_000 }, () => {
 
     it('MANUAL CAPTURE: should cancel PI if DB update fails after PI creation', async () => {
       mockUseManualCapture = true;
-      (mockSupabaseClientInstance.single as Mocked<any>)
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>)
         .mockResolvedValueOnce({ data: mockOffer, error: null }) // fetch offer
         .mockResolvedValueOnce({ data: mockBookingReq, error: null }); // create booking_requests
 
       const mockPI = { id: 'pi_cancel_test', client_secret: 'pi_cancel_test_secret' };
       mockStripeInstance.paymentIntents.create.mockResolvedValue(mockPI);
       // Mock DB update failure
-      (mockSupabaseClientInstance.single as Mocked<any>).mockResolvedValueOnce({ data: null, error: new Error('DB update failed') });
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>).mockResolvedValueOnce({ data: null, error: new Error('DB update failed') });
       mockStripeInstance.paymentIntents.cancel.mockResolvedValue({ id: mockPI.id }); // PI cancel success
 
       const response = await createBookingRequestHandler(mockRequest({ userId: mockUserId, offerId: mockOffer.id }));
@@ -170,13 +170,13 @@ describe.skip('Payment Flow Integration Tests', { timeout: 60_000 }, () => {
 
     it('CHECKOUT SESSION: should create Checkout Session if USE_MANUAL_CAPTURE is false', async () => {
       mockUseManualCapture = false;
-      (mockSupabaseClientInstance.single as Mocked<any>)
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>)
         .mockResolvedValueOnce({ data: mockOffer, error: null })
         .mockResolvedValueOnce({ data: mockBookingReq, error: null });
 
       const mockSession = { id: 'cs_test_456', url: 'https://checkout.stripe.com/pay/cs_test_456' };
       mockStripeInstance.checkout.sessions.create.mockResolvedValue(mockSession);
-      (mockSupabaseClientInstance.single as Mocked<any>).mockResolvedValueOnce({ data: {}, error: null });
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>).mockResolvedValueOnce({ data: {}, error: null });
 
       const response = await createBookingRequestHandler(mockRequest({ userId: mockUserId, offerId: mockOffer.id }));
       const body = await response.json();
@@ -213,16 +213,16 @@ describe.skip('Payment Flow Integration Tests', { timeout: 60_000 }, () => {
 
     it('MANUAL CAPTURE: should capture payment and update statuses on success', async () => {
       mockUseManualCapture = true;
-      (mockSupabaseClientInstance.single as Mocked<any>) // fetch booking_request by PI
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>) // fetch booking_request by PI
         .mockResolvedValueOnce({ data: mockBookingRequestPI, error: null });
       mockBookWithAmadeus.mockResolvedValue(amadeusSuccessResult);
-      (mockSupabaseClientInstance.single as Mocked<any>) // insert into bookings
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>) // insert into bookings
         .mockResolvedValueOnce({ data: newBookingRecord, error: null });
       mockStripeInstance.paymentIntents.capture.mockResolvedValue({ status: 'succeeded', id: mockBookingRequestPI.payment_intent_id });
       // Mock DB updates after capture
-      (mockSupabaseClientInstance.single as Mocked<any>) // update bookings to ticketed
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>) // update bookings to ticketed
         .mockResolvedValueOnce({ data: {}, error: null });
-      (mockSupabaseClientInstance.single as Mocked<any>) // update booking_requests to done
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>) // update booking_requests to done
         .mockResolvedValueOnce({ data: {}, error: null });
 
       const response = await processBookingHandler(mockRequest({ payment_intent_id: mockBookingRequestPI.payment_intent_id }));
@@ -238,17 +238,17 @@ describe.skip('Payment Flow Integration Tests', { timeout: 60_000 }, () => {
 
     it('MANUAL CAPTURE: should cancel Amadeus order if Stripe capture fails', async () => {
       mockUseManualCapture = true;
-      (mockSupabaseClientInstance.single as Mocked<any>)
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>)
         .mockResolvedValueOnce({ data: mockBookingRequestPI, error: null }); // fetch booking_request
       mockBookWithAmadeus.mockResolvedValue(amadeusSuccessResult); // Amadeus booking succeeds
-      (mockSupabaseClientInstance.single as Mocked<any>)
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>)
         .mockResolvedValueOnce({ data: newBookingRecord, error: null }); // insert into bookings
       mockStripeInstance.paymentIntents.capture.mockRejectedValue(new Error('Stripe Capture Failed')); // Stripe fails
       mockAmadeusInstance.booking.flightOrders.cancel.post.mockResolvedValue({ data: {} }); // Amadeus cancel success
       // Mock DB updates for failure path
-      (mockSupabaseClientInstance.single as Mocked<any>) // update bookings to canceled_payment_failed
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>) // update bookings to canceled_payment_failed
         .mockResolvedValueOnce({ data: {}, error: null });
-      (mockSupabaseClientInstance.single as Mocked<any>) // update booking_requests to failed/pending
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>) // update booking_requests to failed/pending
         .mockResolvedValueOnce({ data: {}, error: null });
 
 
@@ -265,15 +265,15 @@ describe.skip('Payment Flow Integration Tests', { timeout: 60_000 }, () => {
 
     it('CHECKOUT SESSION: should NOT call Stripe capture and succeed if old flow', async () => {
       mockUseManualCapture = false;
-      (mockSupabaseClientInstance.single as Mocked<any>)
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>)
         .mockResolvedValueOnce({ data: mockBookingRequestCS, error: null }); // fetch by CS ID
       mockBookWithAmadeus.mockResolvedValue(amadeusSuccessResult);
-      (mockSupabaseClientInstance.single as Mocked<any>)
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>)
         .mockResolvedValueOnce({ data: newBookingRecord, error: null }); // insert into bookings
       // Mock DB updates for success (old flow)
-      (mockSupabaseClientInstance.single as Mocked<any>) // update bookings to ticketed
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>) // update bookings to ticketed
         .mockResolvedValueOnce({ data: {}, error: null });
-      (mockSupabaseClientInstance.single as Mocked<any>) // update booking_requests to done
+      (mockSupabaseClientInstance.single as Mocked<() => Promise<{ data: unknown; error: unknown }>>) // update booking_requests to done
         .mockResolvedValueOnce({ data: {}, error: null });
 
       const response = await processBookingHandler(mockRequest({ sessionId: mockBookingRequestCS.checkout_session_id }));
