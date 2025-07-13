@@ -1,6 +1,124 @@
 // Amadeus API integration for flight search only (like Google Flights)
 // This integration does NOT handle booking - users are redirected to airline websites
 
+// Types for Amadeus API responses
+interface AmadeusFlightOffer {
+  id: string;
+  source: string;
+  instantTicketingRequired: boolean;
+  nonRefundable: boolean;
+  oneWay?: boolean;
+  lastTicketingDate?: string;
+  numberOfBookableSeats?: number;
+  itineraries: {
+    duration: string;
+    segments: Array<{
+      departure: {
+        iataCode: string;
+        terminal?: string;
+        at: string;
+      };
+      arrival: {
+        iataCode: string;
+        terminal?: string;
+        at: string;
+      };
+      carrierCode: string;
+      number: string;
+      aircraft: {
+        code: string;
+      };
+      operating?: {
+        carrierCode: string;
+      };
+      duration: string;
+      id: string;
+      numberOfStops: number;
+      blacklistedInEU: boolean;
+    }>;
+  }[];
+  price: {
+    currency: string;
+    total: string;
+    base: string;
+    fees: Array<{
+      amount: string;
+      type: string;
+    }>;
+    grandTotal: string;
+    additionalServices?: Array<{
+      amount: string;
+      type: string;
+    }>;
+  };
+  pricingOptions: {
+    fareType: string[];
+    includedCheckedBagsOnly: boolean;
+  };
+  validatingAirlineCodes: string[];
+  travelerPricings: Array<{
+    travelerId: string;
+    fareOption: string;
+    travelerType: string;
+    price: {
+      currency: string;
+      total: string;
+      base: string;
+    };
+    fareDetailsBySegment: Array<{
+      segmentId: string;
+      cabin: string;
+      fareBasis: string;
+      brandedFare?: string;
+      class: string;
+      includedCheckedBags: {
+        weight?: number;
+        weightUnit?: string;
+        quantity?: number;
+      };
+    }>;
+  }>;
+  bookingUrl?: string;
+}
+
+interface AmadeusLocation {
+  type: string;
+  subType: string;
+  name: string;
+  detailedName: string;
+  id: string;
+  self: {
+    href: string;
+    methods: string[];
+  };
+  timeZoneOffset: string;
+  iataCode: string;
+  geoCode: {
+    latitude: number;
+    longitude: number;
+  };
+  address: {
+    cityName: string;
+    cityCode: string;
+    countryName: string;
+    countryCode: string;
+    regionCode: string;
+  };
+  analytics: {
+    travelers: {
+      score: number;
+    };
+  };
+}
+
+interface SearchParams {
+  originLocationCode: string;
+  destinationLocationCode: string;
+  departureDate: string;
+  returnDate?: string;
+  adults: number;
+}
+
 // Environment configuration
 function getAmadeusEnv() {
   return {
@@ -62,14 +180,8 @@ export async function getAmadeusAccessToken(): Promise<string> {
 
 // Generate booking URL for airline websites
 export function generateBookingUrl(
-  offer: any,
-  searchParams: {
-    originLocationCode: string;
-    destinationLocationCode: string;
-    departureDate: string;
-    returnDate?: string;
-    adults: number;
-  }
+  offer: AmadeusFlightOffer,
+  searchParams: SearchParams
 ): string {
   // Extract primary airline from the offer
   const validatingAirline = offer.validatingAirlineCodes?.[0];
@@ -82,7 +194,7 @@ export function generateBookingUrl(
   }
 
   // Airline-specific booking URLs
-  const airlineUrls: Record<string, (params: any) => string> = {
+  const airlineUrls: Record<string, (params: SearchParams) => string> = {
     'BA': () => `https://www.britishairways.com/travel/home/public/en_us`, // British Airways
     'DL': () => `https://www.delta.com/`, // Delta
     'AA': () => `https://www.aa.com/`, // American Airlines
@@ -104,13 +216,7 @@ export function generateBookingUrl(
   return generateGoogleFlightsUrl(searchParams);
 }
 
-function generateGoogleFlightsUrl(searchParams: {
-  originLocationCode: string;
-  destinationLocationCode: string;
-  departureDate: string;
-  returnDate?: string;
-  adults: number;
-}): string {
+function generateGoogleFlightsUrl(searchParams: SearchParams): string {
   const googleParams = new URLSearchParams({
     f: searchParams.returnDate ? '0' : '1', // 0=roundtrip, 1=oneway
     hl: 'en',
@@ -139,7 +245,7 @@ export async function searchFlightOffers(
     max?: number; // Max offers to return (default 250)
   },
   token?: string
-): Promise<any[]> {
+): Promise<AmadeusFlightOffer[]> {
   const { AMADEUS_BASE_URL } = getAmadeusEnv();
   
   if (!AMADEUS_BASE_URL) {
@@ -186,17 +292,17 @@ export async function searchFlightOffers(
       const beforeFilter = offers.length;
       
       // Layer 1: Filter out offers explicitly marked as one-way
-      offers = offers.filter((offer: any) => {
+      offers = offers.filter((offer: AmadeusFlightOffer) => {
         return !offer.oneWay;
       });
       
       // Layer 2: Ensure offers have exactly 2 itineraries (outbound + return)
-      offers = offers.filter((offer: any) => {
+      offers = offers.filter((offer: AmadeusFlightOffer) => {
         return offer.itineraries && offer.itineraries.length === 2;
       });
       
       // Layer 3: Verify both itineraries have proper routing
-      offers = offers.filter((offer: any) => {
+      offers = offers.filter((offer: AmadeusFlightOffer) => {
         if (!offer.itineraries || offer.itineraries.length !== 2) return false;
         
         const outbound = offer.itineraries[0];
@@ -222,7 +328,7 @@ export async function searchFlightOffers(
     } else {
       // For one-way searches, ensure offers have only 1 itinerary
       const beforeFilter = offers.length;
-      offers = offers.filter((offer: any) => {
+      offers = offers.filter((offer: AmadeusFlightOffer) => {
         return offer.itineraries && offer.itineraries.length === 1;
       });
       console.log(`[AmadeusSearch] One-way filtering: ${beforeFilter} -> ${offers.length} offers (removed ${beforeFilter - offers.length} multi-itinerary offers)`);
@@ -231,7 +337,7 @@ export async function searchFlightOffers(
     console.log(`[AmadeusSearch] Found ${offers.length} properly filtered flight offers`);
     
     // Add booking URLs to each offer
-    offers.forEach((offer: any) => {
+    offers.forEach((offer: AmadeusFlightOffer) => {
       offer.bookingUrl = generateBookingUrl(offer, {
         originLocationCode: searchParams.originLocationCode,
         destinationLocationCode: searchParams.destinationLocationCode,
@@ -254,7 +360,7 @@ export async function searchLocations(
   keyword: string,
   subType: 'AIRPORT' | 'CITY' | 'AIRPORT,CITY' = 'AIRPORT,CITY',
   token?: string
-): Promise<any[]> {
+): Promise<AmadeusLocation[]> {
   const { AMADEUS_BASE_URL } = getAmadeusEnv();
   
   if (!AMADEUS_BASE_URL) {
