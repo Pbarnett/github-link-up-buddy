@@ -1,5 +1,5 @@
 
-import { Control, UseFormWatch } from "react-hook-form";
+import { Control } from "react-hook-form";
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 
 interface AdvancedOptionsPanelProps {
-  control: Control<any>;
-  watch: UseFormWatch<any>;
+  control: Control<Record<string, unknown>>;
 }
 
-const AdvancedOptionsPanel = ({ control, watch }: AdvancedOptionsPanelProps) => {
+const AdvancedOptionsPanel = ({ control }: AdvancedOptionsPanelProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
