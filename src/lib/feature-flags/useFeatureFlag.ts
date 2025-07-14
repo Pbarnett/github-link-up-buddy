@@ -48,7 +48,7 @@ export function useFeatureFlag(flagName: string): FeatureFlagState {
         }
 
         // Check if user should see this feature based on rollout percentage
-        const shouldEnable = isEnabled(flag as FeatureFlag, user.id);
+        const shouldEnable = isEnabled(flag.name, user.id);
         
         setState({
           enabled: shouldEnable,

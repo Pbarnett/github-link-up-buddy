@@ -155,10 +155,10 @@ export function getGreeting(
 
   // Determine which greeting array to use
   let greetingArray: string[];
-  if (firstName && nextTripCity && contextGreetings.withFirstNameAndTrip) {
-    greetingArray = contextGreetings.withFirstNameAndTrip;
-  } else if (firstName && contextGreetings.withFirstName) {
-    greetingArray = contextGreetings.withFirstName;
+  if (firstName && nextTripCity && 'withFirstNameAndTrip' in contextGreetings) {
+    greetingArray = (contextGreetings as any).withFirstNameAndTrip;
+  } else if (firstName && 'withFirstName' in contextGreetings) {
+    greetingArray = (contextGreetings as any).withFirstName;
   } else {
     greetingArray = contextGreetings.generic;
   }
