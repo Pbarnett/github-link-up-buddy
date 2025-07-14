@@ -9,7 +9,6 @@ import { Plus, Save, Settings, Eye, Trash2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,7 +20,6 @@ import type {
   FormBuilderProps,
   FormSection,
   FieldConfiguration,
-  FieldType,
   FieldTemplate,
   SecurityValidationResult,
   SecurityViolation
@@ -271,7 +269,7 @@ export const FormBuilder: React.FC<FormBuilderProps> = ({
                 </div>
 
                 <div className="space-y-4">
-                  {configuration.sections.map((section, index) => (
+                  {configuration.sections.map((section) => (
                     <Card
                       key={section.id}
                       className={cn(

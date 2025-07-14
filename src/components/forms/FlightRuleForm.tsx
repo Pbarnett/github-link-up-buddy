@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useForm, FormProvider, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -79,25 +79,6 @@ export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaul
     onSubmit(data);
   };
 
-  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log('Form submit event triggered');
-    // Trigger validation for both date fields to ensure cross-field validation works
-    await form.trigger(['earliestOutbound', 'latestReturn']);
-    // Also trigger validation for the entire form
-    const isFormValid = await form.trigger();
-    console.log('Form validation result:', isFormValid);
-    console.log('Form state after validation:', form.formState);
-    console.log('Form errors:', form.formState.errors);
-    // Check if form is valid after triggering validation
-    if (isFormValid) {
-      console.log('Form is valid, submitting');
-      const data = form.getValues();
-      handleSubmit(data);
-    } else {
-      console.log('Form is invalid, not submitting');
-    }
-  };
 
   // Watch for changes in date fields and trigger validation
   const watchedEarliestOutbound = form.watch('earliestOutbound');

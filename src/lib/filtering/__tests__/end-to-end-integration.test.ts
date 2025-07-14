@@ -5,17 +5,16 @@
  * through to frontend display, ensuring all components work together correctly.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { FilterFactory } from '../FilterFactory';
 import { normalizeOffers } from '../index';
 import { AmadeusAdapter, DuffelAdapter } from '../adapters/ProviderAdapters';
-import type { FlightOffer, FilterContext } from '../core/types';
+import type { FilterContext } from '../core/types';
 
 describe('End-to-End Filtering Integration', () => {
   let mockAmadeusOffer: Record<string, unknown>;
   let mockDuffelOffer: Record<string, unknown>;
   let roundTripContext: FilterContext;
-  let oneWayContext: FilterContext;
   let budgetContext: FilterContext;
 
   beforeEach(() => {
@@ -110,16 +109,6 @@ describe('End-to-End Filtering Integration', () => {
       destinationLocationCode: 'LAX',
       departureDate: '2024-12-15',
       returnDate: '2024-12-18',
-      nonstopRequired: false,
-      passengers: 1
-    });
-
-    oneWayContext = FilterFactory.createFilterContext({
-      budget: 500,
-      currency: 'USD',
-      originLocationCode: 'JFK',
-      destinationLocationCode: 'LAX',
-      departureDate: '2024-12-15',
       nonstopRequired: false,
       passengers: 1
     });
