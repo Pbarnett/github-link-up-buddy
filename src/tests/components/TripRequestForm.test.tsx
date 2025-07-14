@@ -12,7 +12,7 @@ import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTravelerInfoCheck } from '@/hooks/useTravelerInfoCheck';
 
 // Import our new testing utilities
-import { fillBaseFormFieldsWithDates, setDatesWithMockedCalendar, waitForFormValid, getFormErrors } from '@/tests/utils/formTestHelpers';
+import { fillBaseFormFieldsWithDates, getFormErrors } from '@/tests/utils/formTestHelpers';
 
 // Mock dependencies
 vi.mock('@/integrations/supabase/client', () => ({
@@ -284,13 +284,16 @@ const selectDestination = async (destinationCode: string) => {
     await waitFor(() => {
       expect(screen.queryByRole('option', { name: new RegExp(destinationCode, 'i') })).not.toBeInTheDocument();
     });
-  } catch (error) {
+  } catch {
     console.warn('Destination selection failed, using fallback approach');
     // Fallback: use custom destination input
     const customInput = screen.getByLabelText(/custom destination/i);
     fireEvent.change(customInput, { target: { value: 'MVY' } });
   }
 };
+
+// Mark as potentially unused but keep for future use
+void selectDestination;
 
 // Enhanced helper function using mocked calendar
 const fillBaseFormFields = async () => {
@@ -561,7 +564,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
       if (!consentCheckbox.checked) {
         await userEvent.click(consentCheckbox);
       }
-    } catch (error) {
+    } catch {
       // In manual mode, consent checkbox is not rendered but we need to set the form value
       // Use direct form manipulation to set consent value
       console.log('Consent checkbox not found - setting consent programmatically for manual mode');

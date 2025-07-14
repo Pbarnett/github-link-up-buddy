@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { loadStripe, Stripe, StripeElements } from '@stripe/stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
   CardElement,
@@ -35,12 +35,7 @@ interface PaymentFormProps {
   onProcessing: (processing: boolean) => void;
 }
 
-interface DuffelPaymentDetails {
-  type: 'card';
-  three_d_secure_session_id?: string;
-  currency: string;
-  amount: string;
-}
+// Note: DuffelPaymentDetails interface removed as it's not used
 
 const PaymentForm: React.FC<PaymentFormProps> = ({
   amount,
@@ -77,7 +72,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         }
 
         setClientSecret(data.client_secret);
-      } catch (err) {
+      } catch {
         onError('Failed to initialize payment');
       }
     };
@@ -199,7 +194,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         sessionId: sessionData.session_id
       };
 
-    } catch (err) {
+    } catch {
       return {
         success: false,
         error: 'Payment verification failed'
@@ -218,7 +213,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       }
 
       return { success: true, booking: data };
-    } catch (err) {
+    } catch {
       return { success: false, error: 'Booking processing failed' };
     }
   };

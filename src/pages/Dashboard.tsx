@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye, PlusCircle, Plane, Calendar, DollarSign, Activity, TrendingUp } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye, PlusCircle, Plane, DollarSign, Activity } from 'lucide-react';
 import TripHistory from '@/components/dashboard/TripHistory'; // Added import
 import { DashboardGreeting } from '@/components/personalization/GreetingBanner';
 
@@ -35,10 +35,10 @@ const Dashboard = () => {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([]);
-  const [tripRequests, setTripRequests] = useState<TripRequest[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const [, setTripRequests] = useState<TripRequest[]>([]);
+  const [, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedError, setSelectedError] = useState<string | null>(null);
+  const [, setSelectedError] = useState<string | null>(null);
 
   // Track previous statuses for smart toast notifications
   const prevStatuses = useRef<Record<string, string>>({});
@@ -246,6 +246,9 @@ const Dashboard = () => {
     await loadDashboardData(user.id);
     setRefreshing(false);
   };
+  
+  // Mark as potentially unused but keep for future use
+  void refreshData;
 
   const handleSignOut = async () => {
     try {
