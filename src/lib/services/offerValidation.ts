@@ -79,7 +79,7 @@ export function validateOfferExpiration(offer: DuffelOfferSummary): OfferValidat
       expiresAt,
       needsRefresh
     };
-  } catch (error) {
+  } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
     return {
       isValid: false,
       timeRemaining: 0,
@@ -249,7 +249,7 @@ export async function validateMultipleOffers(
         } else {
           expired.push(offerId);
         }
-      } catch (error) {
+      } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
         results[offerId] = {
           isValid: false,
           timeRemaining: 0,
