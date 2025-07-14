@@ -334,9 +334,9 @@ export class ErrorHandler {
    * Type guards and utility methods
    */
   private isPostgrestError(error: unknown): error is PostgrestError {
-    return error && typeof error === 'object' && 
+    return !!(error && typeof error === 'object' && 
            'code' in error && typeof (error as UnknownError).code === 'string' && 
-           'message' in error && 'details' in error;
+           'message' in error && 'details' in error);
   }
 
   private isValidationError(error: Error): boolean {

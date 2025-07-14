@@ -138,7 +138,7 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     };
     
     supabaseClient = {
-      from: () => createQueryChain(),
+      from: () => createQueryChain() as any,
       auth: {
         getUser: () => Promise.resolve({ data: { user: null }, error: null }),
         getSession: () => Promise.resolve({ data: { session: null }, error: null }),
