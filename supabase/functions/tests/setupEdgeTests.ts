@@ -16,7 +16,7 @@ export function __resetMocks() {
   try {
     const { resetCounters } = require('../../tests/helpers/idGenerators.ts');
     resetCounters();
-  } catch (e) {
+  } catch {
     // Ignore if not available
   }
 }

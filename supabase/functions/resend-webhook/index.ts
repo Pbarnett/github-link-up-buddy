@@ -30,8 +30,6 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get the webhook signature (for verification if needed)
-    const _signature = req.headers.get('x-resend-signature');
     const webhookEvent: ResendWebhookEvent = await req.json();
 
     console.log('[ResendWebhook] Received event:', {
