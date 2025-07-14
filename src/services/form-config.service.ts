@@ -204,10 +204,10 @@ class FormConfigService implements FormConfigurationService {
 
   async deleteConfiguration(id: string): Promise<{ success: boolean; error?: { message: string } }> {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase
         .from('form_configurations')
         .delete()
-        .eq('id', id);
+        .eq('id', id) as any);
 
       if (error) {
         console.error('Error deleting form configuration:', error);

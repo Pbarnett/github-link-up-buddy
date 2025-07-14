@@ -132,7 +132,7 @@ export class StripeService {
 
       // Step 2: Confirm payment with Stripe
       const confirmResult = await this.stripe.confirmCardPayment(clientSecret, {
-        payment_method: paymentMethod,
+        payment_method: paymentMethod as any,
         return_url: returnUrl
       });
 

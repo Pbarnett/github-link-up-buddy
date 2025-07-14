@@ -341,13 +341,13 @@ class CurrencyService {
       throw new Error('User not authenticated');
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase
       .from('user_preferences')
       .upsert({
         user_id: user.id,
         preferred_currency: currency.toUpperCase(),
         updated_at: new Date().toISOString()
-      });
+      }) as any);
 
     if (error) {
       throw new Error(`Failed to update currency preference: ${error.message}`);
