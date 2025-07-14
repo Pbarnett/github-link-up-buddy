@@ -267,7 +267,7 @@ const Dashboard = () => {
             status: 'pending_booking',
             attempts: 0,
             error_message: null
-          })
+          } as any)
           .eq('id', requestId);
 
         if (error) throw error;

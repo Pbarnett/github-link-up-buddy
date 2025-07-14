@@ -33,7 +33,12 @@ const mockDbRows: FlightOfferV2DbRow[] = [
 
 describe('getFlightOffers server action', () => {
   // Use vi.mocked to get properly typed mock functions
-  const mockSupabaseClient = vi.mocked(supabase);
+const mockSupabaseClient = {
+  from: vi.fn(),
+  functions: {
+    invoke: vi.fn()
+  }
+} as any;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -43,8 +48,8 @@ describe('getFlightOffers server action', () => {
     vi.clearAllMocks();
 
     // Reset mock implementations - these are now guaranteed to have proper methods
-    mockSupabaseClient.from.mockClear();
-    mockSupabaseClient.functions.invoke.mockClear();
+mockSupabaseClient.from.mockClear?.();
+mockSupabaseClient.functions.invoke.mockClear?.();
 
     // Set up default query chain behavior for round trip detection
     const mockTripRequestSelect = {
@@ -288,7 +293,7 @@ describe('getFlightOffers server action', () => {
     
     // Clear mocks and set up new data for second call
     mockSupabaseClient.from.mockClear();
-    mockSupabaseClient.from.mockImplementation((tableName: string) => {
+mockSupabaseClient.from.mockImplementation((tableName: string) => {
       if (tableName === 'trip_requests') {
         return { select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
