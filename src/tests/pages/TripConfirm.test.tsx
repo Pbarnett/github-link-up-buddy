@@ -43,22 +43,22 @@ describe('TripConfirm Page', () => {
   // --- Tests for Auto-Book Banner and Book Now Button ---
 
   it('should display auto-booking banner if tripRequest.auto_book_enabled is true', async () => {
-    vi.mocked(supabaseClient.from).mockImplementation((tableName: string) => {
+    (vi.mocked(supabaseClient.from) as any).mockImplementation((tableName: string) => {
       if (tableName === 'flight_offers') {
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
           single: vi.fn().mockResolvedValueOnce({ data: { trip_request_id: 'test-trip-req-id-for-auto-book' }, error: null }),
-        } as ReturnType<typeof supabaseClient.from>;
+        } as unknown as ReturnType<typeof supabaseClient.from>;
       }
       if (tableName === 'trip_requests') {
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
           single: vi.fn().mockResolvedValueOnce({ data: { id: 'test-trip-1', auto_book_enabled: true, name: 'Test Trip AutoBook' }, error: null }),
-        } as ReturnType<typeof supabaseClient.from>;
+        } as unknown as ReturnType<typeof supabaseClient.from>;
       }
-      return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: {}, error: null }) } as ReturnType<typeof supabaseClient.from>;
+      return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: {}, error: null }) } as unknown as ReturnType<typeof supabaseClient.from>;
     });
     // The global toast mock is already set up in setupTests.ts
 
@@ -81,22 +81,22 @@ describe('TripConfirm Page', () => {
   });
 
   it('should display "Book Now" button if tripRequest.auto_book_enabled is false', async () => {
-    vi.mocked(supabaseClient.from).mockImplementation((tableName: string) => {
+    (vi.mocked(supabaseClient.from) as any).mockImplementation((tableName: string) => {
       if (tableName === 'flight_offers') {
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
           single: vi.fn().mockResolvedValueOnce({ data: { trip_request_id: 'test-trip-req-id-for-manual-book' }, error: null }),
-        } as ReturnType<typeof supabaseClient.from>;
+        } as unknown as ReturnType<typeof supabaseClient.from>;
       }
       if (tableName === 'trip_requests') {
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
           single: vi.fn().mockResolvedValueOnce({ data: { id: 'test-trip-2', auto_book_enabled: false, name: 'Test Trip Manual' }, error: null }),
-        } as ReturnType<typeof supabaseClient.from>;
+        } as unknown as ReturnType<typeof supabaseClient.from>;
       }
-      return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: {}, error: null }) } as ReturnType<typeof supabaseClient.from>;
+      return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: {}, error: null }) } as unknown as ReturnType<typeof supabaseClient.from>;
     });
     // The global toast mock is already set up in setupTests.ts - no need to override
 
@@ -135,11 +135,11 @@ describe('TripConfirm Page', () => {
       return Promise.resolve('SUBSCRIBED');
     });
     
-    vi.mocked(supabaseClient.channel).mockReturnValue({
+    (vi.mocked(supabaseClient.channel) as any).mockReturnValue({
       on: channelOnMock,
       subscribe: channelSubscribeMock,
       unsubscribe: vi.fn()
-    } as ReturnType<typeof supabaseClient.channel>);
+    } as unknown as ReturnType<typeof supabaseClient.channel>);
 
     render(
       <MemoryRouter initialEntries={['/trip/confirm?session_id=session_id_for_trip_toast']}>
@@ -155,7 +155,7 @@ describe('TripConfirm Page', () => {
     });
 
     // Clear any previous calls to the mock
-    mockToastFn.mockClear();
+    vi.mocked(mockToastFn).mockClear();
 
     // Manually trigger the callback to simulate a booking status update
     act(() => {
