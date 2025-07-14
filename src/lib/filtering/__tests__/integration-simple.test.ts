@@ -59,7 +59,7 @@ function testNormalizeOffers(rawOffers: RawOffer[], provider: string): FlightOff
       stopsCount: 0,
       validatingAirlines: [offer.carrier_code || 'AA'],
       rawData: offer
-    };
+    } as FlightOffer;
   });
 }
 

@@ -146,7 +146,7 @@ export function getGreeting(
   personalizationData?: { firstName?: string; nextTripCity?: string } | null,
   variant?: string
 ): string {
-  const contextGreetings = GREETING_LIBRARY[context];
+  const contextGreetings = GREETING_LIBRARY[context as keyof typeof GREETING_LIBRARY];
   if (!contextGreetings) {
     return 'Welcome back!'; // Fallback for unknown contexts
   }
