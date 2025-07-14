@@ -24,7 +24,9 @@ interface TripConstraints {
  * - Otherwise, return null to skip this offer.
  */
 export function decideSeatPreference(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _offer: FlightOffer,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _trip: TripConstraints
 ): "AISLE" | "WINDOW" | "MIDDLE" | null {
   // TODO: Jules will fill in the actual parsing of offer.seat_map or offer.fare_details.
