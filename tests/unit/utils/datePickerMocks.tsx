@@ -1,9 +1,8 @@
 // Test utilities for mocking react-day-picker components
 import React from 'react';
-import { vi } from 'vitest';
 
 // Mock Calendar component that allows easy date setting
-export const MockCalendar = ({ selected, onSelect, ...props }: {
+export const MockCalendar = ({ onSelect }: {
   selected?: Date | Date[];
   onSelect?: (date: Date) => void;
   [key: string]: unknown;

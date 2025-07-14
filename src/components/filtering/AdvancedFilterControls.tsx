@@ -6,8 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
-import { DollarSign, Plane, Clock, X, RefreshCw, Filter } from 'lucide-react';
+import { DollarSign, Plane, X, RefreshCw, Filter } from 'lucide-react';
 import AirlineSelector from './AirlineSelector';
 
 /**
