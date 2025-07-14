@@ -29,13 +29,12 @@ function decideSeatPreference(
   _offer: unknown,
   _trip: { max_price: number }
 ): "AISLE" | "WINDOW" | "MIDDLE" | null {
+  // Mark unused parameters as intentionally unused
+  void _offer;
+  void _trip;
+  
   // TODO: Jules will fill in the actual parsing of offer.seat_map or offer.fare_details.
   return "MIDDLE"; // placeholder so our smoke test always picks "MIDDLE"
-}
-
-function offerIncludesCarryOnAndPersonal(_offer: unknown): boolean {
-  // TODO: Implement actual baggage checking logic
-  return false; // placeholder
 }
 
 // Set up CORS headers

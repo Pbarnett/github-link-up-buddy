@@ -19,11 +19,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { 
-  DuffelProductionClient, 
   createDuffelProductionClient,
   mapTripRequestToDuffelSearch,
   mapTravelerDataToPassenger,
-  type DuffelOffer,
   type DuffelOrder
 } from '../lib/duffel-production.ts'
 
@@ -31,31 +29,6 @@ interface AutoBookRequest {
   tripRequestId: string;
   maxPrice?: number;
   userId?: string; // Optional override for admin testing
-}
-
-interface TripRequest {
-  id: string;
-  user_id: string;
-  departure_airports: string[];
-  destination_location_code: string;
-  departure_date: string;
-  return_date?: string;
-  adults: number;
-  travel_class?: string;
-  max_price: number;
-  budget: number;
-  currency: string;
-  traveler_data?: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone?: string;
-    dateOfBirth: string;
-    gender?: string;
-    title?: string;
-    passportNumber?: string;
-    nationality?: string;
-  };
 }
 
 interface BookingAttempt {
@@ -85,7 +58,7 @@ Deno.serve(async (req: Request) => {
   try {
     // Parse and validate request
     const body = await req.json();
-    const { tripRequestId, maxPrice, userId }: AutoBookRequest = body;
+    const { tripRequestId, maxPrice }: AutoBookRequest = body;
 
     if (!tripRequestId) {
       throw new Error('tripRequestId is required');

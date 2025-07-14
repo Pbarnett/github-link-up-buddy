@@ -16,18 +16,12 @@ import {
   parseJsonColumn,
   validateJsonColumn,
   type TravelerData,
-  type MultiTravelerData,
   type OfferData,
   type CampaignCriteria,
   type PriceHistory,
   type FlightDetails,
 } from '@/types/supabase-json-schemas';
 
-// Type aliases for cleaner code
-type Tables = Database['public']['Tables'];
-type BookingRequest = Tables['booking_requests']['Row'];
-type Booking = Tables['bookings']['Row'];
-type AutoBookingRequest = Tables['auto_booking_requests']['Row'];
 
 /**
  * Service for type-safe booking request operations
