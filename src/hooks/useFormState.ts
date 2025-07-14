@@ -31,7 +31,7 @@ export const useFormState = (
     if (!form) return;
 
     const subscription = form.watch((values) => {
-      setFormState((prevState: FormState) => ({
+      setFormState((prevState: FormState): FormState => ({
         ...prevState,
         values: values || {},
         errors: form.formState.errors || {},

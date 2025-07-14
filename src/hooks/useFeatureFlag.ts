@@ -79,5 +79,5 @@ export const useClientFeatureFlag = (flagName: string, rolloutPercentage: number
     rollout_percentage: rolloutPercentage
   };
   
-  return isEnabled(flag, user.id);
+  return isEnabled(flag.name, user.id);
 };

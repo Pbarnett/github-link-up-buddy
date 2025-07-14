@@ -391,7 +391,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
 
     // Validation
     validateField,
-    validateForm,
+    validateForm: (formData: Record<string, unknown> = {}) => validateForm(formData),
     validationErrors,
     clearFieldError,
 
