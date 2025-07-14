@@ -292,7 +292,7 @@ const TripOffersV2Enhanced: React.FC = () => {
                         </div>
                       </div>
                       <Button 
-                        onClick={() => handleBookOffer(offer)}
+                        onClick={() => handleBookOffer(offer as Record<string, unknown>)}
                         size="sm"
                         className="bg-blue-600 hover:bg-blue-700 text-white"
                       >

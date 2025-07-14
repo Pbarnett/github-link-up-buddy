@@ -31,7 +31,7 @@ export default function TripOffersWithPools() {
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
       <TripOfferDetailsCard
-        tripDetails={initialTripDetails}
+        tripDetails={initialTripDetails ?? null}
         ignoreFilter={false}
         usedRelaxedCriteria={false}
       />
