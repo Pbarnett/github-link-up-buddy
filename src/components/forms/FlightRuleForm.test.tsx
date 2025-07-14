@@ -106,7 +106,7 @@ describe('FlightRuleForm', () => {
       destination: 'LAX',
       earliestOutbound: tomorrow,  // outbound after return
       latestReturn: today,         // return before outbound (invalid)
-      cabinClass: 'economy',
+      cabinClass: 'economy' as const,
       budget: 800,
     };
     
@@ -132,7 +132,7 @@ describe('FlightRuleForm', () => {
       destination: 'LAX',
       earliestOutbound: tomorrow,
       latestReturn: nextWeek,
-      cabinClass: 'economy',
+      cabinClass: 'economy' as const,
       budget: 800,
     };
     

@@ -19,10 +19,10 @@ export default function DebugInfo({ tripId }: DebugInfoProps) {
     // Fetch feature flags from database
     const fetchFeatureFlags = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase
           .from('feature_flags')
           .select('*')
-          .order('name');
+          .order('name') as any);
         
         if (!error && data) {
           setFeatureFlags(data);
@@ -38,11 +38,11 @@ export default function DebugInfo({ tripId }: DebugInfoProps) {
       if (!tripId) return;
       
       try {
-        const { data: trip, error: tripError } = await supabase
+        const { data: trip, error: tripError } = await (supabase
           .from('trip_requests')
           .select('*')
           .eq('id', tripId)
-          .single();
+          .single() as any);
         
         if (!tripError && trip) {
           setTripData(trip);
@@ -50,10 +50,10 @@ export default function DebugInfo({ tripId }: DebugInfoProps) {
         }
 
         // Check how many offers exist for this trip
-        const { data: offers, error: offersError } = await supabase
+        const { data: offers, error: offersError } = await (supabase
           .from('flight_offers')
           .select('*', { count: 'exact' })
-          .eq('trip_request_id', tripId);
+          .eq('trip_request_id', tripId) as any);
         
         if (!offersError) {
           setOffersCount(offers?.length || 0);
