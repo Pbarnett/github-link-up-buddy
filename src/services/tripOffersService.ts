@@ -139,11 +139,13 @@ export async function fetchTripOffers(
     // Fall back to legacy flight_offers table
     console.log('[🔍 SERVICE] No V2 offers found, checking legacy flight_offers table...');
     
-    const { data: legacyData, error: legacyError } = await supabase
+    const legacyQuery = supabase
       .from('flight_offers')
       .select('*')
       .eq('trip_request_id', tripRequestId)
       .order('price', { ascending: true });
+    
+    const { data: legacyData, error: legacyError } = await legacyQuery;
 
     if (legacyError) {
       console.error('[🔍 SERVICE] Error fetching from both tables:', { v2Error, legacyError });

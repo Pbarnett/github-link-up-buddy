@@ -32,7 +32,7 @@ const createTrip = async (
     // Include new fields if provided
     departure_airports: formData.departure_airports || [],
     destination_airport: formData.destination_airport || null,
-    destination_location_code: formData.destination_airport || null,
+    destination_location_code: formData.destination_airport || formData.destination_location_code || '',
     min_duration: formData.min_duration || 3,
     max_duration: formData.max_duration || 6,
     // Filter preferences
@@ -51,7 +51,7 @@ const createTrip = async (
   });
   
   // Insert trip request into Supabase with proper types
-  const tripRequestResult = await safeQuery<Tables<"trip_requests">>(() =>
+  const tripRequestResult = await safeQuery<Tables<"trip_requests">>(
     supabase
       .from("trip_requests")
       .insert(tripRequestData)

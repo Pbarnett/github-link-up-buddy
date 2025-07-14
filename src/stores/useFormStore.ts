@@ -428,8 +428,8 @@ export const useFormStore = create<FormStore>()(
           onRehydrateStorage: () => (state) => {
             if (state) {
               // Convert persisted arrays back to Maps
-              state.configurations = new Map(state.configurations as [string, FormConfiguration][]);
-              state.formInstances = new Map(state.formInstances as [string, {
+              state.configurations = new Map((state.configurations as unknown) as [string, FormConfiguration][]);
+              state.formInstances = new Map((state.formInstances as unknown) as [string, {
                 configId: string;
                 values: Record<string, unknown>;
                 errors: Record<string, string>;
