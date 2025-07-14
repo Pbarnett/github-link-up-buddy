@@ -75,7 +75,7 @@ function parseDuration(dur: string): number {
 
 // const checkCarryOnIncluded = (offer: unknown): boolean => offerIncludesCarryOnAndPersonal(offer);
 
-function decideSeatPreference(offer: Record<string, unknown>, _: { max_price: number }): string | undefined {
+function decideSeatPreference(offer: Record<string, unknown>): string | undefined {
   if (offer.seat) {
       const seatUpper = String(offer.seat).toUpperCase();
       if (['AISLE', 'WINDOW', 'MIDDLE'].includes(seatUpper)) {

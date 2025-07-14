@@ -260,7 +260,7 @@ async function handleGetVerificationStatus(userId: string) {
     }
 
     // Get traveler profile verification status
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('traveler_profiles')
       .select('is_verified')
       .eq('user_id', userId)
