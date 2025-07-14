@@ -60,6 +60,7 @@ const TripNumberField = ({
                   placeholder={placeholder}
                   className="pl-7"
                   {...field}
+                  value={(field.value as number) || ""}
                 />
               </div>
             ) : (
@@ -67,6 +68,7 @@ const TripNumberField = ({
                 type="number"
                 placeholder={placeholder}
                 {...field}
+                value={(field.value as number) || ""}
               />
             )}
           </FormControl>
