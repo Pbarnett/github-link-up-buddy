@@ -9,7 +9,7 @@ export class Resend {
     }),
   }
 
-  constructor(apiKey?: string) {
+  constructor() {
     // Mock constructor
   }
 }

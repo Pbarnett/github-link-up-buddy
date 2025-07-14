@@ -48,12 +48,6 @@ export function createSupabaseStub(defaultData: unknown = null, defaultError: un
     ),
   };
 
-  // Terminal methods that return promises
-  const terminalMethods = {
-    single: chainableMethods.single,
-    maybeSingle: chainableMethods.maybeSingle,
-    then: chainableMethods.then,
-  };
 
   // Create the base mock object
   const baseMock = {
