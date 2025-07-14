@@ -80,7 +80,7 @@ describe('SimpleProfileStatus', () => {
     mockOnActionClick.mockClear();
   });
 
-  const createMockCompleteness = (overall: number, recommendations: unknown[] = []): ProfileCompletenessScore => ({
+  const createMockCompleteness = (overall: number, recommendations: any[] = []): ProfileCompletenessScore => ({
     overall,
     categories: {
       basic_info: 80,

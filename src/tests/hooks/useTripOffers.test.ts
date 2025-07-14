@@ -538,7 +538,7 @@ describe('useTripOffers', () => {
       const uniqueRapidRefreshId = 'test-trip-id-rapid-refresh';
       const mockSingleRapid = vi.fn().mockResolvedValue({ data: { ...mockTripDetails, id: uniqueRapidRefreshId }, error: null });
       const mockEqRapid = vi.fn().mockReturnValue({ single: mockSingleRapid });
-      // @ts-expect-error TS2589: Type instantiation is excessively deep and possibly infinite.
+      // Type instantiation is excessively deep and possibly infinite.
       ((supabase.from('trip_requests').select('*').eq as Mock) as ReturnType<typeof vi.fn>).mockImplementation(
         (columnName: string, value: unknown) =>
           (columnName === 'id' && value === uniqueRapidRefreshId)

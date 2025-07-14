@@ -46,7 +46,7 @@ describe('TripHistory Component', () => {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
           order: mockOrder,
-        } as { select: ReturnType<typeof vi.fn>; eq: ReturnType<typeof vi.fn>; order: typeof mockOrder };
+        } as any;
       }
       // Fallback for other tables
       return {
@@ -136,7 +136,7 @@ describe('TripHistory Component', () => {
     });
     // Check that the mocked Link component was called with the correct `to` prop
     const { Link } = await import('react-router-dom');
-    const LinkMock = Link as unknown as MockedFunction<React.ComponentType<{ to: string; children: React.ReactNode }>>;
+    const LinkMock = Link as any;
     expect(LinkMock).toHaveBeenCalledWith(
         expect.objectContaining({ to: `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}` }),
         expect.anything()
