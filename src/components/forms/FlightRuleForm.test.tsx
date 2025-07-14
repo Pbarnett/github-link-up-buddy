@@ -1,17 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FlightRuleForm } from './FlightRuleForm';
 import { UnifiedFlightRuleForm } from './FlightRuleForm';
 
-// Helper to get future dates
-const getFutureDate = (daysFromNow) => {
-  const date = new Date('2025-01-01');
-  date.setDate(date.getDate() + daysFromNow);
-  return date;
-};
-
-const formatDateForInput = (date) => date.toISOString().split('T')[0];
 
 describe('FlightRuleForm', () => {
   const mockOnSubmit = vi.fn();
@@ -66,8 +58,6 @@ describe('FlightRuleForm', () => {
   });
 
   it('submits form with valid data', async () => {
-    const user = userEvent.setup();           // real timers
-    
     const defaultValues: Partial<UnifiedFlightRuleForm> = {
       origin: ['JFK'],
       destination: 'LAX',

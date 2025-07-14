@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Offer, fetchTripOffers } from "@/services/tripOffersService";
+import { Offer } from "@/services/tripOffersService";
 import { ScoredOffer } from "@/types/offer";
 import { toast } from "@/components/ui/use-toast";
-import { invokeFlightSearch, FlightSearchRequestBody, FlightSearchResponse, fetchFlightSearch } from "@/services/api/flightSearchApi";
+import { fetchFlightSearch } from "@/services/api/flightSearchApi";
 import { Tables } from "@/integrations/supabase/types";
 import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
