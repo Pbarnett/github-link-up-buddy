@@ -130,7 +130,7 @@ export function createDenoEnvironmentStub(envVars: Record<string, string> = {}) 
 
   vi.stubGlobal('Deno', {
     env: {
-      get: vi.fn((key: string) => defaultEnvVars[key] || process.env[key]),
+      get: vi.fn((key: string) => (defaultEnvVars as any)[key] || process.env[key]),
       set: vi.fn(),
       delete: vi.fn(),
       has: vi.fn((key: string) => key in defaultEnvVars || key in process.env),
