@@ -12,7 +12,6 @@ import { useTravelerInfoCheck } from '@/hooks/useTravelerInfoCheck';
 
 // Import our new best-practice testing utilities
 import {
-  getTestDates,
   // setFormDatesDirectly,
   fillFormWithDates,
   waitForFormValid,
