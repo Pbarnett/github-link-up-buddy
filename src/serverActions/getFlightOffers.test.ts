@@ -1,8 +1,7 @@
-import { vi, describe, it, expect, beforeEach, afterEach, type MockedFunction, type Mock } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { getFlightOffers, clearGetFlightOffersCache, GetFlightOffersDeps } from './getFlightOffers';
 import { FlightOfferV2DbRow } from '@/flightSearchV2/types';
 import { supabase } from '@/integrations/supabase/client';
-import { invokeEdgeFn } from '@/lib/invokeEdgeFn';
 
 // Mock the supabase client
 vi.mock('@/integrations/supabase/client');
