@@ -81,6 +81,7 @@ function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const watchSaveCard = watch('saveCard');
 
   return (
