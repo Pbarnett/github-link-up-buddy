@@ -296,9 +296,9 @@ export function getABTestDashboardMetrics(experimentId: string): {
   const events = JSON.parse(localStorage.getItem('ab_test_events') || '[]')
     .filter((event: ABTestEvent) => event.experimentId === experimentId);
 
-  const uniqueUsers = new Set(events.map(e => e.userId));
-  const conversionEvents = events.filter(e => e.eventType === 'conversion');
-  const exposureEvents = events.filter(e => e.eventType === 'exposure');
+  const uniqueUsers = new Set(events.map((e: ABTestEvent) => e.userId));
+  const conversionEvents = events.filter((e: ABTestEvent) => e.eventType === 'conversion');
+  const exposureEvents = events.filter((e: ABTestEvent) => e.eventType === 'exposure');
 
   return {
     totalUsers: uniqueUsers.size,
