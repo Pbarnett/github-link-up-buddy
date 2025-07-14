@@ -219,9 +219,9 @@ describe('Database Profile Completeness Trigger Tests', () => {
       expect(recommendations[0].priority).toBe('high');
       
       // Check that high priority items come first
-      const highPriorityIndex = recommendations.findIndex(r => r.priority === 'high');
-      const mediumPriorityIndex = recommendations.findIndex(r => r.priority === 'medium');
-      const lowPriorityIndex = recommendations.findIndex(r => r.priority === 'low');
+      const highPriorityIndex = recommendations.findIndex((r: any) => r.priority === 'high');
+      const mediumPriorityIndex = recommendations.findIndex((r: any) => r.priority === 'medium');
+      const lowPriorityIndex = recommendations.findIndex((r: any) => r.priority === 'low');
       
       expect(highPriorityIndex).toBeLessThan(mediumPriorityIndex);
       expect(mediumPriorityIndex).toBeLessThan(lowPriorityIndex);

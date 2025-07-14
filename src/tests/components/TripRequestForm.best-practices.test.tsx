@@ -265,7 +265,7 @@ describe('TripRequestForm - Best Practices Implementation', () => {
       });
 
       // Assert form data using helper
-      assertFormSubmissionData(mockInsert, {
+      assertFormSubmissionData(mockInsert as any, {
         destination_airport: 'MVY',
         destination_location_code: 'MVY',
         departure_airports: ['SFO'],
@@ -353,12 +353,12 @@ describe('TripRequestForm - Best Practices Implementation', () => {
       });
 
       // Setup auto-booking (helper handles the complex UI interactions)
-      await setupAutoBookingTest('pm_123');
+      await setupAutoBookingTest();
 
       // Check if consent checkbox is needed and check it
       try {
         const consentCheckbox = screen.getByLabelText(/i authorize parker flight/i);
-        if (consentCheckbox && !consentCheckbox.checked) {
+        if (consentCheckbox && !(consentCheckbox as HTMLInputElement).checked) {
           await userEvent.click(consentCheckbox);
         }
       } catch {
