@@ -304,12 +304,12 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         return (
           <DateField
             value={value as string}
-            onChange={handleChange}
+            onChange={handleChange as (newValue: string) => void}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
             error={error}
-            minDate={field.validation?.min}
-            maxDate={field.validation?.max}
+            minDate={field.validation?.min as number | undefined}
+            maxDate={field.validation?.max as number | undefined}
           />
         );
 
@@ -330,7 +330,7 @@ value={value as Record<string, unknown>}
         return (
           <PhoneInputField
             value={value as string}
-            onChange={handleChange}
+            onChange={handleChange as (newValue: string) => void}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
             error={error}
@@ -341,7 +341,7 @@ value={value as Record<string, unknown>}
       case 'airport-autocomplete':
         return (
           <AirportAutocompleteField
-value={value as Record<string, unknown>}
+            value={value as { code: string; name: string; city?: string; country?: string }}
             onChange={handleChange}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
@@ -364,7 +364,7 @@ value={value as Record<string, unknown>}
       case 'address-group':
         return (
           <AddressGroupField
-value={value as Record<string, unknown>}
+            value={value as { street: string; city: string; state: string; zipCode: string; country: string }}
             onChange={handleChange}
             disabled={fieldState.isDisabled}
             error={error}
@@ -531,11 +531,11 @@ const MultiSelectField: React.FC<{
               const option = options.find(opt => opt.value === selectedValue);
               return (
                 <Badge 
-                  key={selectedValue} 
+                  key={String(selectedValue)} 
                   variant="secondary"
                   className="text-xs"
                 >
-                  {option?.label || selectedValue}
+                  {option?.label || String(selectedValue)}
                   <button
                     type="button"
                     onClick={() => handleToggle(selectedValue)}
@@ -552,7 +552,7 @@ const MultiSelectField: React.FC<{
       </div>
       <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
         {options.map((option) => (
-          <div key={option.value} className="flex items-center space-x-2">
+          <div key={String(option.value)} className="flex items-center space-x-2">
             <Checkbox
               checked={value.includes(option.value)}
               onCheckedChange={() => handleToggle(option.value)}
