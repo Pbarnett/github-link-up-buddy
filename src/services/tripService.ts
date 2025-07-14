@@ -51,13 +51,14 @@ const createTrip = async (
   });
   
   // Insert trip request into Supabase with proper types
-  const tripRequestResult = await safeQuery(() => 
-    supabase
+  const tripRequestResult = await safeQuery(async () => {
+    const result = await supabase
       .from("trip_requests")
       .insert(tripRequestData)
       .select()
-      .single()
-  );
+      .single();
+    return result;
+  });
   
   if (tripRequestResult.error) {
     throw new Error(`Failed to submit trip request: ${tripRequestResult.error.message}`);

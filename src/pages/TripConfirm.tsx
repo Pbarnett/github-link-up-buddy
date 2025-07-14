@@ -254,14 +254,14 @@ const TripConfirm = () => {
     const channel = supabase
       .channel(`checkout:${sessionId}`)
       .on(
-        'postgres_changes' as const,
+        'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
           table: 'booking_requests',
           filter: `checkout_session_id=eq.${sessionId}`,
         },
-        (payload: { new: { status: string } }) => {
+        (payload: any) => {
           console.log("[TripConfirm] Received booking status update:", payload);
           updateBookingStatusMessage(payload.new.status);
         }
