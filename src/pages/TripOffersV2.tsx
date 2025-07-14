@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFlightOffers } from '@/flightSearchV2/useFlightOffers';
+import { FlightOfferV2 } from '@/flightSearchV2/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -155,7 +156,7 @@ const TripOffersV2: React.FC = () => {
     }
   };
 
-  const handleBookOffer = (offer: Record<string, unknown>) => {
+  const handleBookOffer = (offer: FlightOfferV2) => {
     console.log('Booking offer:', offer.id, 'Booking URL:', offer.bookingUrl);
     
     // If offer has external booking URL (like Google Flights), redirect to airline website
@@ -176,7 +177,7 @@ const TripOffersV2: React.FC = () => {
 
       // Redirect to the airline website for external bookings (like Google Flights)
       setTimeout(() => {
-        window.open(offer.bookingUrl, '_blank');
+        window.open(offer.bookingUrl as string, '_blank');
       }, 500);
 
       return;
@@ -187,7 +188,7 @@ const TripOffersV2: React.FC = () => {
     
     // Convert V2 offer format to legacy format for internal booking
     const params = new URLSearchParams();
-    params.set('id', offer.id);
+    params.set('id', offer.id as string);
     params.set('airline', offer.originIata + '-' + offer.destinationIata); // Placeholder airline
     params.set('flight_number', 'V2-' + offer.id.slice(0, 6));
     params.set('price', offer.priceTotal.toString());
