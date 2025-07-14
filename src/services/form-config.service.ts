@@ -166,7 +166,7 @@ class FormConfigService implements FormConfigurationService {
   async deployConfiguration(id: string, options?: any): Promise<{ success: boolean; error?: { message: string } }> {
     try {
       // For now, just mark as deployed
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('form_configurations')
         .update({ is_active: true, deployed_at: new Date().toISOString() })
         .eq('id', id);
@@ -185,7 +185,7 @@ class FormConfigService implements FormConfigurationService {
 
   async listConfigurations(): Promise<FormConfiguration[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('form_configurations')
         .select('*')
         .order('created_at', { ascending: false });
@@ -284,7 +284,7 @@ class FormConfigService implements FormConfigurationService {
 
   async logUsageAnalytics(configId: string, eventType: string, eventData?: unknown): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('form_analytics')
         .insert({
           config_id: configId,
@@ -303,7 +303,7 @@ class FormConfigService implements FormConfigurationService {
 
   async getFormAnalytics(configId: string, timeRange: string): Promise<any> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('form_analytics')
         .select('*')
         .eq('config_id', configId)
