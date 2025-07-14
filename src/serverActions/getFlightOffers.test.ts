@@ -3,9 +3,6 @@ import { getFlightOffers, clearGetFlightOffersCache, GetFlightOffersDeps } from 
 import { FlightOfferV2DbRow } from '@/flightSearchV2/types';
 import { supabase } from '@/integrations/supabase/client';
 
-// Mock the supabase client
-vi.mock('@/integrations/supabase/client');
-
 // Mock the invokeEdgeFn function
 vi.mock('@/lib/invokeEdgeFn', () => ({
   invokeEdgeFn: vi.fn(),

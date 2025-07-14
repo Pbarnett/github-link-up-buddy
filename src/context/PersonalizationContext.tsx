@@ -34,15 +34,17 @@ export function PersonalizationProvider({
     refetch 
   } = usePersonalization(userId);
   
+  const trackEventWrapper = useCallback((eventType: string, context?: unknown) => {
+    trackEvent({ eventType, context });
+  }, [trackEvent]);
+  
   const contextValue = useMemo(() => ({
     personalizationData,
     isLoading,
     error,
-    trackEvent: useCallback((eventType: string, context?: unknown) => {
-      trackEvent({ eventType, context });
-    }, [trackEvent]),
+    trackEvent: trackEventWrapper,
     refetch
-  }), [personalizationData, isLoading, error, trackEvent, refetch]);
+  }), [personalizationData, isLoading, error, trackEventWrapper, refetch]);
   
   return (
     <PersonalizationContext.Provider value={contextValue}>

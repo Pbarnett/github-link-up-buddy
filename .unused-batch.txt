@@ -1,3 +1,1 @@
-"/Users/parkerbarnett/github-link-up-buddy/supabase/functions/resend-webhook/index.ts"
-"/Users/parkerbarnett/github-link-up-buddy/supabase/functions/scheduler-flight-search/index.ts"
-"/Users/parkerbarnett/github-link-up-buddy/supabase/functions/scheduler-reminders/index.ts"
+"/Users/parkerbarnett/github-link-up-buddy/lib/utils.ts"

@@ -30,6 +30,21 @@ Object.defineProperty(globalThis, 'ResizeObserver', {
   writable: true,
 })
 
+// Window.matchMedia polyfill for responsive components
+Object.defineProperty(globalThis, 'matchMedia', {
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+  writable: true,
+})
+
 // Pointer capture methods for Radix UI components
 Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
   value: () => false,
@@ -65,33 +80,9 @@ if (!globalThis.PointerEvent) {
 // ==============================================================================
 // SUPABASE MOCK SETUP
 // ==============================================================================
-// Create chainable mock that supports method chaining
-const createSupabaseQueryMock = () => ({
-  select: vi.fn().mockReturnThis(),
-  eq: vi.fn().mockReturnThis(),
-  gte: vi.fn().mockReturnThis(),
-  lt: vi.fn().mockReturnThis(),
-  order: vi.fn().mockReturnThis(),
-  limit: vi.fn().mockReturnThis(),
-  single: vi.fn().mockReturnThis(),
-  // Promise interface for async/await
-  then: vi.fn().mockResolvedValue({ data: [], error: null }),
-})
 
-const mockSupabaseClient = {
-  from: vi.fn(() => createSupabaseQueryMock()),
-  auth: {
-    getUser: vi.fn().mockResolvedValue({
-      data: { user: { id: 'test-user-id', email: 'test@example.com' } },
-      error: null
-    }),
-    getSession: vi.fn().mockResolvedValue({
-      data: { session: { user: { id: 'test-user-id' } } },
-      error: null
-    })
-  },
-  rpc: vi.fn().mockResolvedValue({ data: null, error: null })
-}
+// Import the comprehensive mock
+import { mockSupabaseClient, createMockSupabaseClient } from './mocks/supabase'
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: mockSupabaseClient,
@@ -239,4 +230,4 @@ vi.mock('@sentry/react', () => ({
 }))
 
 // Export commonly used mocks for test files
-export { mockSupabaseClient, createSupabaseQueryMock as createQueryMock }
+export { mockSupabaseClient, createMockSupabaseClient as createQueryMock }

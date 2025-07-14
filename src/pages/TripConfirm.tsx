@@ -192,6 +192,38 @@ const TripConfirm = () => {
       });
     }
   }, [location.search, sessionId, navigate, checkOfferForExternalBooking]);
+  
+  const updateBookingStatusMessage = (status: string) => {
+    console.log("[TripConfirm] Updating booking status message for status:", status);
+    
+    switch (status) {
+      case 'pending_payment':
+        setBookingStatus("Waiting for payment confirmation...");
+        break;
+      case 'pending_booking':
+        setBookingStatus("Payment received! Booking your flight...");
+        break;
+      case 'processing':
+        setBookingStatus("Finalizing your booking...");
+        break;
+      case 'done':
+        setBookingStatus("✅ Your flight is booked!");
+        toast({
+          title: "Booking Confirmed!",
+          description: "Your flight has been successfully booked. Redirecting to dashboard...",
+        });
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 3000);
+        break;
+      case 'failed':
+        setBookingStatus("❌ Booking failed");
+        setError("There was a problem with your booking. Please try again.");
+        break;
+      default:
+        setBookingStatus(`Status: ${status}`);
+    }
+  };
 
   useEffect(() => {
     if (!sessionId) return;
@@ -241,38 +273,6 @@ const TripConfirm = () => {
       channel.unsubscribe();
     };
   }, [sessionId, updateBookingStatusMessage]);
-  
-  const updateBookingStatusMessage = (status: string) => {
-    console.log("[TripConfirm] Updating booking status message for status:", status);
-    
-    switch (status) {
-      case 'pending_payment':
-        setBookingStatus("Waiting for payment confirmation...");
-        break;
-      case 'pending_booking':
-        setBookingStatus("Payment received! Booking your flight...");
-        break;
-      case 'processing':
-        setBookingStatus("Finalizing your booking...");
-        break;
-      case 'done':
-        setBookingStatus("✅ Your flight is booked!");
-        toast({
-          title: "Booking Confirmed!",
-          description: "Your flight has been successfully booked. Redirecting to dashboard...",
-        });
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 3000);
-        break;
-      case 'failed':
-        setBookingStatus("❌ Booking failed");
-        setError("There was a problem with your booking. Please try again.");
-        break;
-      default:
-        setBookingStatus(`Status: ${status}`);
-    }
-  };
 
   const handleCancel = () => {
     navigate('/trip/offers');

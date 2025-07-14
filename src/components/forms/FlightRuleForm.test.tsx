@@ -58,11 +58,16 @@ describe('FlightRuleForm', () => {
   });
 
   it('submits form with valid data', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    
     const defaultValues: Partial<UnifiedFlightRuleForm> = {
       origin: ['JFK'],
       destination: 'LAX',
-      earliestOutbound: new Date('2025-07-15'),
-      latestReturn: new Date('2025-07-22'),
+      earliestOutbound: tomorrow,
+      latestReturn: nextWeek,
       cabinClass: 'economy',
       budget: 800,
     };
@@ -92,11 +97,15 @@ describe('FlightRuleForm', () => {
   it('validates return date is after outbound date', async () => {
     const user = userEvent.setup();           // real timers
     
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const today = new Date();
+    
     const defaultValues = {
       origin: ['JFK'],
       destination: 'LAX',
-      earliestOutbound: new Date('2025-07-15'),  // outbound after return
-      latestReturn: new Date('2025-07-10'),     // return before outbound (invalid)
+      earliestOutbound: tomorrow,  // outbound after return
+      latestReturn: today,         // return before outbound (invalid)
       cabinClass: 'economy',
       budget: 800,
     };
@@ -113,11 +122,16 @@ describe('FlightRuleForm', () => {
   });
 
   it('allows selection of different cabin classes', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    
     const defaultValues = {
       origin: ['JFK'],
       destination: 'LAX',
-      earliestOutbound: new Date('2025-07-15'),
-      latestReturn: new Date('2025-07-22'),
+      earliestOutbound: tomorrow,
+      latestReturn: nextWeek,
       cabinClass: 'economy',
       budget: 800,
     };

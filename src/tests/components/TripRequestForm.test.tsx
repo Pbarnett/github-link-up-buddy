@@ -82,15 +82,37 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
   });
   // --- Tests for FilterTogglesSection functionality within TripRequestForm ---
 
-  it('should render "Nonstop flights only" switch checked by default', () => {
+  it('should render "Nonstop flights only" switch checked by default', async () => {
     render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
+    
+    // First expand the collapsible filters section
+    const expandButton = screen.getByText("What's Included");
+    await userEvent.click(expandButton);
+    
+    // Wait for the switch to appear
+    await waitFor(() => {
+      const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
+      expect(nonstopSwitch).toBeInTheDocument();
+    });
+    
     const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
     expect(nonstopSwitch).toBeInTheDocument();
     expect(nonstopSwitch).toBeChecked();
   });
 
-  it('should render "Include carry-on + personal item" switch unchecked by default', () => {
+  it('should render "Include carry-on + personal item" switch unchecked by default', async () => {
     render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
+    
+    // First expand the collapsible filters section
+    const expandButton = screen.getByText("What's Included");
+    await userEvent.click(expandButton);
+    
+    // Wait for the switch to appear
+    await waitFor(() => {
+      const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
+      expect(baggageSwitch).toBeInTheDocument();
+    });
+    
     const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
     expect(baggageSwitch).toBeInTheDocument();
     expect(baggageSwitch).not.toBeChecked();
@@ -98,6 +120,17 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
 
   it('should update switch state when "Include carry-on + personal item" switch is toggled', async () => {
     render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
+    
+    // First expand the collapsible filters section
+    const expandButton = screen.getByText("What's Included");
+    await userEvent.click(expandButton);
+    
+    // Wait for the switch to appear
+    await waitFor(() => {
+      const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
+      expect(baggageSwitch).toBeInTheDocument();
+    });
+    
     const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
     expect(baggageSwitch).not.toBeChecked(); // Initial state
 
@@ -109,11 +142,23 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
   });
 
   // Simplified test for default Zod schema values affecting switches
-  it('should reflect Zod schema default values for switches on initial render', () => {
+  it('should reflect Zod schema default values for switches on initial render', async () => {
     // TripRequestForm uses useForm with Zod schema defaults:
     // nonstop_required: default(true)
     // baggage_included_required: default(false)
     render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
+
+    // First expand the collapsible filters section
+    const expandButton = screen.getByText("What's Included");
+    await userEvent.click(expandButton);
+    
+    // Wait for the switches to appear
+    await waitFor(() => {
+      const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
+      const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
+      expect(nonstopSwitch).toBeInTheDocument();
+      expect(baggageSwitch).toBeInTheDocument();
+    });
 
     const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
     const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
@@ -225,7 +270,16 @@ describe('TripRequestForm - Submission Logic', () => {
     await userEvent.click(submitButton);
 
     // Wait for submission to complete
-    await waitFor(() => expect(mockInsert).toHaveBeenCalledTimes(1));
+    await waitFor(() => {
+      try {
+        expect(mockInsert).toHaveBeenCalledTimes(1);
+      } catch (e) {
+        const errors = getFormErrors();
+        console.warn('Form validation errors during submission:', errors);
+        console.warn('Submit button state:', submitButton.disabled);
+        throw e;
+      }
+    }, { timeout: 10000 });
     
     const submittedPayload = mockInsert.mock.calls[0][0][0];
     expect(submittedPayload).toHaveProperty('destination_airport', 'MVY');
@@ -634,7 +688,16 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     const submitButton = submitButtons.find(btn => !btn.disabled) || submitButtons[0];
     await userEvent.click(submitButton);
 
-    await waitFor(() => expect(mockInsertOff).toHaveBeenCalledTimes(1));
+    await waitFor(() => {
+      try {
+        expect(mockInsertOff).toHaveBeenCalledTimes(1);
+      } catch (e) {
+        const errors = getFormErrors();
+        console.warn('Form validation errors during submission (auto-booking OFF):', errors);
+        console.warn('Submit button state:', submitButton.disabled);
+        throw e;
+      }
+    }, { timeout: 10000 });
 
     const submittedPayload = mockInsertOff.mock.calls[0][0][0];
     expect(submittedPayload).toHaveProperty('auto_book_enabled', false);

@@ -65,13 +65,14 @@ serve(async (req) => {
     const method = req.method;
 
     switch (method) {
-      case 'GET':
+      case 'GET': {
         const campaignId = url.searchParams.get('id');
         if (campaignId) {
           return await handleGetCampaign(user.id, campaignId);
         } else {
           return await handleGetCampaigns(user.id);
         }
+      }
       
       case 'POST':
         return await handleCreateCampaign(user.id, await req.json());
@@ -79,7 +80,7 @@ serve(async (req) => {
       case 'PUT':
         return await handleUpdateCampaign(user.id, await req.json());
       
-      case 'DELETE':
+      case 'DELETE': {
         const deleteId = url.searchParams.get('id');
         if (!deleteId) {
           return new Response(JSON.stringify({ error: 'Campaign ID required' }), {
@@ -88,6 +89,7 @@ serve(async (req) => {
           });
         }
         return await handleDeleteCampaign(user.id, deleteId);
+      }
       
       default:
         return new Response(JSON.stringify({ error: 'Method not allowed' }), {

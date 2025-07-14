@@ -47,7 +47,7 @@ const CollapsibleFiltersSection = ({ control }: CollapsibleFiltersSectionProps) 
           {/* Flight Features Information */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <h4 className="text-sm font-semibold text-gray-900 mb-3">Flight Features</h4>
-            <FilterTogglesSection />
+            <FilterTogglesSection control={control} />
           </div>
         </div>
       )}

@@ -218,8 +218,8 @@ export const setDatesWithMockedCalendar = async () => {
   // const { tomorrow, nextWeek } = getTestDates();
   
   try {
-    // Open earliest date picker
-    const earliestButton = screen.getByText('Earliest');
+    // Open earliest date picker - looking for the actual button text
+    const earliestButton = screen.getByText('Pick departure date');
     await userEvent.click(earliestButton);
     
     // Wait for mocked calendar to appear
@@ -231,8 +231,8 @@ export const setDatesWithMockedCalendar = async () => {
     const tomorrowButton = screen.getByTestId('calendar-day-tomorrow');
     await userEvent.click(tomorrowButton);
     
-    // Open latest date picker
-    const latestButton = screen.getByText('Latest');
+    // Open latest date picker - looking for the actual button text
+    const latestButton = screen.getByText('Latest acceptable date');
     await userEvent.click(latestButton);
     
     // Wait for calendar again
@@ -298,16 +298,16 @@ export const setDatesRobust = async () => {
   
   // Strategy 2: Find and set hidden inputs (most reliable)
   try {
-    // Look for date inputs by various selectors
+    // Look for date inputs by various selectors that match the actual form
     const earliestInputs = [
       screen.queryByTestId('earliest-departure-input'),
-      screen.queryByLabelText(/earliest/i),
-      screen.queryByPlaceholderText(/earliest/i)
+      screen.queryByLabelText(/departure date/i),
+      screen.queryByPlaceholderText(/departure/i)
     ].filter(Boolean);
     
     const latestInputs = [
       screen.queryByTestId('latest-departure-input'),
-      screen.queryByLabelText(/latest/i),
+      screen.queryByLabelText(/latest departure/i),
       screen.queryByPlaceholderText(/latest/i)
     ].filter(Boolean);
     

@@ -451,8 +451,8 @@ describe('Legacy Adapter', () => {
     // because it only runs RoundTripFilter and BudgetFilter, and the budget filter
     // doesn't filter since budget is 0
     expect(filtered).toHaveLength(2);
-    expect(filtered.map((o: any) => o.id)).toContain('legacy1');
-    expect(filtered.map((o: any) => o.id)).toContain('legacy2');
+    expect(filtered.map((o: unknown) => (o as { id: string }).id)).toContain('legacy1');
+    expect(filtered.map((o: unknown) => (o as { id: string }).id)).toContain('legacy2');
   });
 
   it('should warn about deprecated function usage', () => {

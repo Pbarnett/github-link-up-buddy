@@ -64,7 +64,7 @@ export async function handleManagePaymentMethods(req: Request): Promise<Response
       case 'PUT':
         return await handleUpdatePaymentMethod(user.id, await req.json());
       
-      case 'DELETE':
+      case 'DELETE': {
         const paymentMethodId = url.searchParams.get('id');
         if (!paymentMethodId) {
           return new Response(JSON.stringify({ error: 'Payment method ID required' }), {
@@ -73,6 +73,7 @@ export async function handleManagePaymentMethods(req: Request): Promise<Response
           });
         }
         return await handleDeletePaymentMethod(user.id, paymentMethodId);
+      }
       
       default:
         return new Response(JSON.stringify({ error: 'Method not allowed' }), {

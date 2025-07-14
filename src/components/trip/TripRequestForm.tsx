@@ -555,6 +555,11 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
                   <div className="mb-6">
                     <CollapsibleFiltersSection control={form.control} />
                   </div>
+                  
+                  {/* Auto-booking Section */}
+                  <div className="mb-6">
+                    <AutoBookingSection control={form.control} mode={mode} />
+                  </div>
                 </>
               )}
 
