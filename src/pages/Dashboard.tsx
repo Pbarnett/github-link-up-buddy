@@ -116,13 +116,13 @@ const Dashboard = () => {
       channel = supabase
         .channel('booking-requests-changes')
         .on(
-          'postgres_changes',
+          'postgres_changes' as any,
           {
             event: '*',
             schema: 'public',
             table: 'booking_requests',
             filter: `user_id=eq.${user.id}`
-          },
+          } as any,
           (payload: RealtimePostgresChangesPayload<BookingRequest>) => {
             console.log('Booking request change:', payload);
 
@@ -212,8 +212,8 @@ const Dashboard = () => {
       
       // Type guard for real Supabase client with order method
       const { data, error } = 'order' in query ? 
-        await query.order('created_at', { ascending: false }) :
-        await query;
+        await (query as any).order('created_at', { ascending: false }) :
+        await (query as any);
 
       if (error) {
         console.error('Error loading booking requests:', error);
@@ -234,9 +234,9 @@ const Dashboard = () => {
         .eq('user_id', userId);
       
       // Type guard for real Supabase client with order and limit methods
-      let finalQuery = query;
+      let finalQuery = query as any;
       if ('order' in query) {
-        finalQuery = query.order('created_at', { ascending: false });
+        finalQuery = (query as any).order('created_at', { ascending: false });
       }
       if ('limit' in finalQuery) {
         finalQuery = finalQuery.limit(5);
