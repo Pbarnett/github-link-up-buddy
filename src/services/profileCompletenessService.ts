@@ -125,7 +125,7 @@ class ProfileCompletenessService {
     );
 
     const missing_fields = this.identifyMissingFields(profile);
-    const recommendations = this.generateRecommendations(profile, scores);
+    const recommendations = this.generateRecommendations(profile);
 
     return {
       overall,
@@ -263,8 +263,7 @@ class ProfileCompletenessService {
   }
 
   private generateRecommendations(
-    profile: TravelerProfile, 
-    _scores: Record<string, number>
+    profile: TravelerProfile
   ): ProfileRecommendation[] {
     const recommendations: ProfileRecommendation[] = [];
 
@@ -356,7 +355,7 @@ class ProfileCompletenessService {
    * Get next recommended action for profile improvement
    */
   getNextAction(profile: TravelerProfile): ProfileRecommendation | null {
-    const recommendations = this.generateRecommendations(profile, {});
+    const recommendations = this.generateRecommendations(profile);
     return recommendations.length > 0 ? recommendations[0] : null;
   }
 
