@@ -293,7 +293,7 @@ class CurrencyService {
         minimumFractionDigits: config.decimal_places,
         maximumFractionDigits: config.decimal_places,
       }).format(amount);
-    } catch (error) {
+    } catch {
       // Fallback formatting
       return `${config.symbol}${amount.toFixed(config.decimal_places)}`;
     }

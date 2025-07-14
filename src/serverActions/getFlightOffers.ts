@@ -78,9 +78,6 @@ interface CacheEntry {
 
 const cache = new Map<string, CacheEntry>();
 
-interface EdgeFunctionError {
-  error: string;
-}
 
 // Options interface for getFlightOffers
 export interface GetFlightOffersOptions {
