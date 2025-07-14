@@ -262,13 +262,13 @@ const Dashboard = () => {
       
       // Type guard for real Supabase client with update method
       if ('update' in query) {
-        const { error } = await query
+        const { error } = await (query
           .update({
             status: 'pending_booking',
             attempts: 0,
             error_message: null
           } as any)
-          .eq('id', requestId);
+          .eq('id', requestId) as any);
 
         if (error) throw error;
       }

@@ -101,7 +101,7 @@ function EnhancedProfilePage() {
     }
     
     if (profile) {
-      return calculateCompleteness(profile);
+      return calculateCompleteness(profile) as ProfileCompletenessScore;
     }
     
     return {
@@ -262,7 +262,7 @@ function LegacyProfilePage() {
     }
     
     if (profile) {
-      return calculateCompleteness(profile);
+      return calculateCompleteness(profile) as ProfileCompletenessScore;
     }
     
     return {
