@@ -88,7 +88,7 @@ describe("OAuth Token Management", () => {
   let mockToken: string | undefined = undefined;
   let mockTokenExpires = 0;
   let mockFetchCounter = 0;
-  const baseUrl = "https://test.api.amadeus.com";
+  const _baseUrl = "https://test.api.amadeus.com"; // eslint-disable-line @typescript-eslint/no-unused-vars
 
   const fetchTokenForTest = async () => {
     const now = Date.now();
@@ -161,7 +161,7 @@ describe("Retry Logic", () => {
   async function withRetryForTest<T>(
     fn: () => Promise<T>,
     maxAttempts: number = 3,
-    baseDelayMs: number = 100
+    _baseDelayMs: number = 100 // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Promise<T> {
     let attempts = 0;
     
@@ -169,14 +169,14 @@ describe("Retry Logic", () => {
       attempts++;
       try {
         return await fn();
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (attempts >= maxAttempts) {
           throw error;
         }
         
-        if (error.message?.includes('429') || 
-            error.message?.includes('5') ||
-            error.name === 'NetworkError') {
+        if ((error instanceof Error && error.message?.includes('429')) || 
+            (error instanceof Error && error.message?.includes('5')) ||
+            (error instanceof Error && error.name === 'NetworkError')) {
           // For tests, we use a fixed delay to make tests faster
           await new Promise(r => setTimeout(r, 10));
           continue;
