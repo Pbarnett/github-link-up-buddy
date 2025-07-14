@@ -3,7 +3,8 @@
 // Conditional imports for Deno vs Node.js environments
 let serve: ((handler: (req: Request) => Promise<Response>) => void) | undefined;
 let createClient: ((url: string, key: string, options?: { auth?: { persistSession?: boolean } }) => unknown) | undefined;
-let SupabaseClient: unknown;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let _SupabaseClient: unknown;
 
 async function initializeEnvironment() {
   // Check if we're in test environment (vi/vitest globals present)
@@ -19,14 +20,14 @@ async function initializeEnvironment() {
     const { createClient: denoCreateClient, SupabaseClient: denoSupabaseClient } = await import('https://esm.sh/@supabase/supabase-js@2');
     serve = denoServe;
     createClient = denoCreateClient;
-    SupabaseClient = denoSupabaseClient;
+    _SupabaseClient = denoSupabaseClient;
   } else {
     // Node.js/test environment - use npm packages
     try {
       const { createClient: nodeCreateClient } = await import('@supabase/supabase-js');
       createClient = nodeCreateClient;
       // Mock serve function for Node.js
-      serve = (handler: (req: Request) => Promise<Response>) => console.log('Mock serve called with handler');
+      serve = () => console.log('Mock serve called with handler');
     } catch (error) {
       console.error('Failed to import Supabase in Node.js environment:', error);
     }

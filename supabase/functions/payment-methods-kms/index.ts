@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { encryptData, decryptData } from "../_shared/kms.ts";
+import { encryptData } from "../_shared/kms.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -125,9 +125,6 @@ async function getOrCreateStripeCustomer(user: {
   return stripeCustomer.id;
 }
 
-async function maskCardNumber(cardNumber: string): Promise<string> {
-  return `****${cardNumber.slice(-4)}`;
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
