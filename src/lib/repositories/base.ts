@@ -207,11 +207,11 @@ export abstract class BaseRepository<
     options: QueryOptions = {}
   ): Promise<TRow | null> {
     try {
-    const query = this.client
+    const query = (this.client as any)
       .from(this.tableName as string)
       .select(options.select || '*')
       .eq('id', id)
-      .maybeSingle() as any;
+      .maybeSingle();
 
       const result = await this.executeQuery(
         () => query as unknown as Promise<DatabaseResult>,
@@ -234,13 +234,13 @@ export abstract class BaseRepository<
     filters: FilterCondition[] = [],
     options: QueryOptions = {}
   ): Promise<TRow[]> {
-    let query = this.client.from(this.tableName as string) as any;
+    let query = (this.client as any).from(this.tableName as string);
     
     // Apply filters
-    query = this.applyFilters(query, filters) as any;
+    query = this.applyFilters(query, filters);
     
     // Apply query options
-    query = this.applyQueryOptions(query, options) as any;
+    query = this.applyQueryOptions(query, options);
 
     const result = await this.executeQuery<TRow[]>(
       () => query as unknown as Promise<DatabaseResult>,
@@ -268,11 +268,11 @@ export abstract class BaseRepository<
     data: TInsert,
     options: QueryOptions = {}
   ): Promise<TRow> {
-    const query = this.client
+    const query = (this.client as any)
       .from(this.tableName as string)
       .insert(data as any)
       .select(options.select || '*')
-      .single() as any;
+      .single();
 
     const result = await this.executeQuery(
       () => query as unknown as Promise<DatabaseResult>,
@@ -296,10 +296,10 @@ export abstract class BaseRepository<
     data: TInsert[],
     options: QueryOptions = {}
   ): Promise<TRow[]> {
-    const query = this.client
+    const query = (this.client as any)
       .from(this.tableName as string)
       .insert(data as any)
-      .select(options.select || '*') as any;
+      .select(options.select || '*');
 
     const result = await this.executeQuery(
       () => query as unknown as Promise<DatabaseResult>,
@@ -317,12 +317,12 @@ public async updateById(
     data: TUpdate,
     options: QueryOptions = {}
   ): Promise<TRow> {
-    const query = this.client
+    const query = (this.client as any)
       .from(this.tableName as string)
       .update(data as any)
       .eq('id', id)
       .select(options.select || '*')
-      .single() as any;
+      .single();
 
     const result = await this.executeQuery<TRow>(
       () => query as unknown as Promise<DatabaseResult>,
@@ -347,10 +347,10 @@ public async updateMany(
     data: TUpdate,
     options: QueryOptions = {}
   ): Promise<TRow[]> {
-    let query = this.client
+    let query = (this.client as any)
       .from(this.tableName as string)
       .update(data as any)
-      .select(options.select || '*') as any;
+      .select(options.select || '*');
 
     // Apply filters
     query = this.applyFilters(query, filters) as any;
@@ -370,10 +370,10 @@ public async deleteById(
     id: string,
     options: QueryOptions = {}
   ): Promise<void> {
-    const query = this.client
+    const query = (this.client as any)
       .from(this.tableName as string)
       .delete()
-      .eq('id', id) as any;
+      .eq('id', id);
 
     await this.executeQuery<void>(
       () => query as unknown as Promise<DatabaseResult>,
@@ -388,10 +388,10 @@ public async deleteById(
     filters: FilterCondition[],
     options: QueryOptions = {}
   ): Promise<void> {
-    let query = this.client.from(this.tableName as string).delete() as any;
+    let query = (this.client as any).from(this.tableName as string).delete();
 
     // Apply filters
-    query = this.applyFilters(query, filters) as any;
+    query = this.applyFilters(query, filters);
 
     await this.executeQuery<void>(
       () => query as unknown as Promise<DatabaseResult>,
@@ -406,9 +406,9 @@ public async deleteById(
     filters: FilterCondition[] = [],
     options: QueryOptions = {}
   ): Promise<number> {
-    let query = this.client
+    let query = (this.client as any)
       .from(this.tableName as string)
-      .select('*', { count: 'exact', head: true }) as any;
+      .select('*', { count: 'exact', head: true });
 
     // Apply filters
     query = this.applyFilters(query, filters) as any;
