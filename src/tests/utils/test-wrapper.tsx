@@ -40,7 +40,7 @@ export function TestWrapper({ children, initialEntries = ['/'], queryClient }: T
   return (
     <QueryClientProvider client={testQueryClient}>
       <MemoryRouter initialEntries={initialEntries}>
-        <BusinessRulesProvider config={mockBusinessRulesConfig as any}>
+        <BusinessRulesProvider>
           {children}
         </BusinessRulesProvider>
       </MemoryRouter>

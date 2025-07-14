@@ -312,10 +312,10 @@ export const setDatesRobust = async () => {
     ].filter(Boolean);
     
     if (earliestInputs.length > 0 && latestInputs.length > 0) {
-      fireEvent.change(earliestInputs[0], { 
+      fireEvent.change(earliestInputs[0]!, { 
         target: { value: tomorrow.toISOString().split('T')[0] } 
       });
-      fireEvent.change(latestInputs[0], { 
+      fireEvent.change(latestInputs[0]!, { 
         target: { value: nextWeek.toISOString().split('T')[0] } 
       });
       

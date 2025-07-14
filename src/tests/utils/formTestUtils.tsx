@@ -231,7 +231,7 @@ export const renderWithFormProvider = (
     const formMethods = useForm({
       mode,
       defaultValues,
-      resolver: schema ? zodResolver(schema) : undefined,
+    resolver: schema ? zodResolver(schema as any) : undefined,
     });
     
     // Store form reference for external access
