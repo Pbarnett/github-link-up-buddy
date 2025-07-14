@@ -5,7 +5,7 @@
  * and other dynamic behaviors in forms
  */
 
-import type { ConditionalRule, ConditionalLogic } from '@/types/dynamic-forms';
+import type { ConditionalRule, ConditionalLogic } from '../types/dynamic-forms';
 
 /**
  * Evaluate a single conditional rule against form data
@@ -222,30 +222,21 @@ export const validateConditionalLogic = (
  * Create a dependency graph for conditional logic
  */
 export const createConditionalDependencyGraph = (
-  formConfig: Record<string, unknown>
+  formConfig: { sections: Array<{ fields: Array<{ id: string; conditional?: ConditionalLogic }> }> }
 ): Map<string, string[]> => {
   const dependencyGraph = new Map<string, string[]>();
 
-  // Helper to process fields recursively
-  const processFields = (fields: Array<Record<string, unknown>>) => {
-    fields.forEach(field => {
-      if (field.conditional && typeof field.id === 'string') {
-        const dependencies = getConditionalDependencies(field.conditional as ConditionalLogic);
+  // Process sections and their fields
+  formConfig.sections.forEach(section => {
+    section.fields.forEach(field => {
+      if (field.conditional) {
+        const dependencies = getConditionalDependencies(field.conditional);
         dependencyGraph.set(field.id, dependencies);
-      } else if (typeof field.id === 'string') {
+      } else {
         dependencyGraph.set(field.id, []);
       }
     });
-  };
-
-  // Process sections and their fields
-  if (formConfig.sections && Array.isArray(formConfig.sections)) {
-    formConfig.sections.forEach((section: Record<string, unknown>) => {
-      if (section.fields && Array.isArray(section.fields)) {
-        processFields(section.fields as Array<Record<string, unknown>>);
-      }
-    });
-  }
+  });
 
   return dependencyGraph;
 };
@@ -283,7 +274,8 @@ export const hasCircularDependencies = (
   };
 
   // Check all fields
-  for (const fieldId of dependencyGraph.keys()) {
+  const fieldIds = Array.from(dependencyGraph.keys());
+  for (const fieldId of fieldIds) {
     if (hasCycle(fieldId)) {
       return true;
     }
