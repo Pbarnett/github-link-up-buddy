@@ -102,14 +102,27 @@ export const DEFAULT_CONFIGS: Record<string, Partial<BusinessRulesConfig>> = {
     environment: 'test',
     flightSearch: {
       forceRoundTrip: false,
+      defaultNonstopRequired: false,
       maxAdvanceBookingDays: 30,
+      minAdvanceBookingDays: 1,
       allowedCabinClasses: ['economy', 'business', 'first'],
+      maxPriceUSD: 3000,
+      minPriceUSD: 50,
     },
     ui: {
+      destination: true,
+      departure: true,
+      dates: true,
+      budget: true,
       advancedFilters: true,
+      paymentMethod: true,
+      travelerInfo: true,
     },
     autoBooking: {
       enabled: true,
+      maxConcurrentCampaigns: 3,
+      cooldownPeriodHours: 24,
+      requiresPaymentMethodVerification: true,
       maxMonthlySpend: 1000,
     },
   },
@@ -118,10 +131,21 @@ export const DEFAULT_CONFIGS: Record<string, Partial<BusinessRulesConfig>> = {
     environment: 'development',
     flightSearch: {
       forceRoundTrip: false, // More flexibility in dev
+      defaultNonstopRequired: false,
       maxAdvanceBookingDays: 30,
+      minAdvanceBookingDays: 1,
+      allowedCabinClasses: ['economy', 'premium_economy', 'business', 'first'],
+      maxPriceUSD: 10000,
+      minPriceUSD: 50,
     },
     ui: {
+      destination: true,
+      departure: true,
+      dates: true,
+      budget: true,
       advancedFilters: true, // Show all options in dev
+      paymentMethod: true,
+      travelerInfo: true,
     },
   },
   
@@ -129,7 +153,12 @@ export const DEFAULT_CONFIGS: Record<string, Partial<BusinessRulesConfig>> = {
     environment: 'staging',
     flightSearch: {
       forceRoundTrip: true,
+      defaultNonstopRequired: true,
       maxAdvanceBookingDays: 180,
+      minAdvanceBookingDays: 1,
+      allowedCabinClasses: ['economy', 'premium_economy', 'business', 'first'],
+      maxPriceUSD: 8000,
+      minPriceUSD: 50,
     },
   },
   
@@ -139,11 +168,24 @@ export const DEFAULT_CONFIGS: Record<string, Partial<BusinessRulesConfig>> = {
       forceRoundTrip: true,
       defaultNonstopRequired: true,
       maxAdvanceBookingDays: 365,
+      minAdvanceBookingDays: 1,
+      allowedCabinClasses: ['economy', 'premium_economy', 'business', 'first'],
+      maxPriceUSD: 5000,
+      minPriceUSD: 50,
     },
     ui: {
+      destination: true,
+      departure: true,
+      dates: true,
+      budget: true,
       advancedFilters: false, // Simplified for users
+      paymentMethod: true,
+      travelerInfo: true,
     },
     autoBooking: {
+      enabled: true,
+      maxConcurrentCampaigns: 3,
+      cooldownPeriodHours: 24,
       requiresPaymentMethodVerification: true,
       maxMonthlySpend: 2000,
     },
