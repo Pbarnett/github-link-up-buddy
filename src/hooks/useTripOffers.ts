@@ -184,7 +184,7 @@ export const useTripOffersPools = ({ tripId }: { tripId: string | null }): Pools
       const existingEntry = unifiedCache.get(cacheKey) || { timestamp: Date.now() };
       unifiedCache.set(cacheKey, {
         ...existingEntry,
-        pools: { ...newPools, budget }, // Store current budget with the pools
+        pools: { budget, ...newPools }, // Store current budget with the pools
         timestamp: Date.now()
       });
       logger.info("[useTripOffersPools] Pool results cached in unifiedCache for key:", cacheKey);
