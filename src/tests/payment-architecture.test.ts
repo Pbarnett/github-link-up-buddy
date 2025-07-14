@@ -190,7 +190,7 @@ class PaymentArchitecture {
         case 'authentication_required':
           return { userMessage: 'Payment requires additional authentication', errorCode: error.code };
         default:
-          return { userMessage: error.message || 'Payment processing failed', errorCode: error.code };
+          return { userMessage: error.message || 'Payment processing failed', errorCode: error.code || 'unknown' };
       }
     }
     return { userMessage: 'Payment processing failed', errorCode: 'unknown' };
