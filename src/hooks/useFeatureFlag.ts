@@ -7,7 +7,6 @@ import { type FeatureFlag, evaluateFeatureFlag } from '@shared/featureFlag';
 // New LaunchDarkly-powered hook with tracking
 export const useFeatureFlag = (flagName: string, defaultValue: boolean = false) => {
   const flags = useFlags<Record<string, boolean>>();
-  const { user } = useCurrentUser();
   
   // Check for test environment or preset flags from tests first
   let flagValue = defaultValue;
@@ -34,7 +33,7 @@ export const useFeatureFlag = (flagName: string, defaultValue: boolean = false) 
           if (parsedFlags[flagName] !== undefined) {
             flagValue = parsedFlags[flagName];
           }
-        } catch (e) {
+        } catch {
           // Ignore parsing errors
         }
       }
