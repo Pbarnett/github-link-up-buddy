@@ -5,7 +5,7 @@ import {
   SetupIntentResponse, 
   PaymentMethodsResponse, 
   WalletContextType,
-  PaymentMethodError
+  PaymentMethodError as ImportedPaymentMethodError
 } from '@/types/wallet';
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -81,7 +81,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create setup intent';
       setError(errorMessage);
-      throw new PaymentMethodError(errorMessage, 'api');
+      throw new ImportedPaymentMethodError(errorMessage, 'api');
     }
   };
 
@@ -110,7 +110,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete payment method';
       setError(errorMessage);
-      throw new PaymentMethodError(errorMessage, 'api');
+      throw new ImportedPaymentMethodError(errorMessage, 'api');
     }
   };
 
@@ -142,7 +142,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to set default payment method';
       setError(errorMessage);
-      throw new PaymentMethodError(errorMessage, 'api');
+      throw new ImportedPaymentMethodError(errorMessage, 'api');
     }
   };
 
@@ -174,7 +174,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update payment method nickname';
       setError(errorMessage);
-      throw new PaymentMethodError(errorMessage, 'api');
+      throw new ImportedPaymentMethodError(errorMessage, 'api');
     }
   };
 
@@ -187,13 +187,13 @@ export function WalletProvider({ children }: WalletProviderProps) {
   useEffect(() => {
     const channel = supabase
       .channel('payment-methods-changes')
-      .on('postgres_changes', 
+      .on('postgres_changes' as any, 
         { 
           event: '*', 
           schema: 'public', 
           table: 'payment_methods' 
         }, 
-        (payload) => {
+        (payload: any) => {
           console.log('Payment method changed:', payload);
           // Refresh payment methods when changes occur
           refreshPaymentMethods();

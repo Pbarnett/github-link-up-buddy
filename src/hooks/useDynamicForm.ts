@@ -102,7 +102,7 @@ export interface UseDynamicFormReturn {
 
   // Validation
   validateField: (fieldId: string, value: unknown) => Promise<ValidationResult>;
-  validateForm: (formData?: FormData | Record<string, unknown> | undefined) => Promise<ValidationResult>;
+  validateForm: (formData?: Record<string, unknown>) => Promise<ValidationResult>;
   validationErrors: Record<string, string>;
   clearFieldError: (fieldId: string) => void;
 
@@ -256,7 +256,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
       // Create submission object
       const submission: FormSubmission = {
         formId: formConfig.id,
-        formVersion: formConfig.version,
+        formName: formConfig.name,
         data: formData,
         metadata: {
           submittedAt: new Date().toISOString(),

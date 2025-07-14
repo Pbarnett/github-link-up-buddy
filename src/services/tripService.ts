@@ -63,7 +63,7 @@ const createTrip = async (
     throw new Error(`Failed to submit trip request: ${tripRequestResult.error.message}`);
   }
   
-  return tripRequestResult.data as Tables<"trip_requests">;
+  return tripRequestResult.data as unknown as Tables<"trip_requests">;
 };
 
 // Function to create trip request
