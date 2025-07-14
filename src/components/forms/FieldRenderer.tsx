@@ -301,7 +301,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
     case 'date-range-flexible':
       return (
         <DateRangeField
-          value={value}
+          value={value as { from?: string; to?: string; flexible?: boolean }}
           onChange={handleChange}
           placeholder={field.placeholder}
           disabled={disabled}
@@ -313,7 +313,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
     case 'airport-autocomplete':
       return (
         <AirportAutocompleteField
-          value={value}
+          value={value as { code: string; name: string; city?: string; country?: string }}
           onChange={handleChange}
           placeholder={field.placeholder}
           disabled={disabled}
@@ -336,7 +336,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
     case 'address-group':
       return (
         <AddressGroupField
-          value={value}
+          value={value as { street: string; city: string; state: string; zipCode: string; country: string }}
           onChange={handleChange}
           disabled={disabled}
           error={error}

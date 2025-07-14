@@ -416,8 +416,14 @@ export const useFormStore = create<FormStore>()(
           name: 'parker-flight-form-store',
           partialize: (state) => ({
             // Only persist configurations and form instances
-            configurations: Array.from(state.configurations.entries()),
-            formInstances: Array.from(state.formInstances.entries()),
+            configurations: Array.from(state.configurations.entries()) as [string, FormConfiguration][],
+            formInstances: Array.from(state.formInstances.entries()) as [string, {
+              configId: string;
+              values: Record<string, unknown>;
+              errors: Record<string, string>;
+              touched: Record<string, boolean>;
+              isSubmitting: boolean;
+            }][],
           }),
           onRehydrateStorage: () => (state) => {
             if (state) {

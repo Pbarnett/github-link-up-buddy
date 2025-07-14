@@ -308,8 +308,6 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
             error={error}
-            minDate={field.validation?.min as number | undefined}
-            maxDate={field.validation?.max as number | undefined}
           />
         );
 
@@ -317,7 +315,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'date-range-flexible':
         return (
           <DateRangeField
-value={value as Record<string, unknown>}
+            value={value as Record<string, unknown>}
             onChange={handleChange}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
@@ -334,7 +332,6 @@ value={value as Record<string, unknown>}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
             error={error}
-            defaultCountry={field.defaultCountry}
           />
         );
 
@@ -368,7 +365,6 @@ value={value as Record<string, unknown>}
             onChange={handleChange}
             disabled={fieldState.isDisabled}
             error={error}
-            config={field.addressConfig}
           />
         );
 
