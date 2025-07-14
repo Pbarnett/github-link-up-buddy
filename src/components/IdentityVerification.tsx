@@ -48,7 +48,8 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
   const [verificationSession, setVerificationSession] = useState<VerificationSession | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const [verificationStatus, setVerificationStatus] = useState<string>('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_verificationStatus, setVerificationStatus] = useState<string>('');
   const [isVerificationRequired, setIsVerificationRequired] = useState<boolean | null>(null);
 
   const returnUrl = `${window.location.origin}/verification-complete`;

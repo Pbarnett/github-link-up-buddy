@@ -7,7 +7,8 @@ interface PhoneNumberSetupProps {
   className?: string;
 }
 
-export function PhoneNumberSetup({ userId, onPhoneVerified, className = '' }: PhoneNumberSetupProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function PhoneNumberSetup({ userId: _userId, onPhoneVerified, className = '' }: PhoneNumberSetupProps) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
