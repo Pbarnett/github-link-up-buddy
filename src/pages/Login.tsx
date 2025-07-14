@@ -145,8 +145,8 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessi
         title: "Check your email",
         description: "We've sent you a login link",
       });
-    } catch (error: any) {
-      toast({ title: "Login Failed", description: error.message || "An unexpected error occurred. Please try again.", variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Login Failed", description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.", variant: "destructive" });
     } finally {
       setLoading(false);
     }

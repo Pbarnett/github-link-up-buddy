@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import FilterFactory, { LegacyFilterAdapter } from '../FilterFactory';
-import { DefaultFilterPipeline, ConsolePerformanceLogger } from '../core/FilterPipeline';
+import { DefaultFilterPipeline } from '../core/FilterPipeline';
 import { BudgetFilter, SimpleCurrencyConverter } from '../filters/BudgetFilter';
 import { RoundTripFilter } from '../filters/RoundTripFilter';
 import { NonstopFilter } from '../filters/NonstopFilter';
@@ -68,59 +68,6 @@ const createMockAmadeusOffer = (
   rawData: { oneWay: !isRoundTrip }
 });
 
-const createMockDuffelOffer = (
-  id: string,
-  price: number,
-  currency: string = 'USD',
-  isRoundTrip: boolean = true,
-  nonstop: boolean = true
-): FlightOffer => ({
-  provider: 'Duffel',
-  id,
-  itineraries: isRoundTrip ? [
-    {
-      duration: 'PT6H30M',
-      segments: [{
-        departure: { iataCode: 'JFK', at: '2024-12-15T08:00:00Z' },
-        arrival: { iataCode: 'LAX', at: '2024-12-15T14:30:00Z' },
-        carrierCode: 'AA',
-        flightNumber: '123',
-        duration: 'PT6H30M',
-        numberOfStops: nonstop ? 0 : 1
-      }]
-    },
-    {
-      duration: 'PT6H30M',
-      segments: [{
-        departure: { iataCode: 'LAX', at: '2024-12-22T10:00:00Z' },
-        arrival: { iataCode: 'JFK', at: '2024-12-22T16:30:00Z' },
-        carrierCode: 'AA',
-        flightNumber: '456',
-        duration: 'PT6H30M',
-        numberOfStops: nonstop ? 0 : 1
-      }]
-    }
-  ] : [
-    {
-      duration: 'PT6H30M',
-      segments: [{
-        departure: { iataCode: 'JFK', at: '2024-12-15T08:00:00Z' },
-        arrival: { iataCode: 'LAX', at: '2024-12-15T14:30:00Z' },
-        carrierCode: 'AA',
-        flightNumber: '123',
-        duration: 'PT6H30M',
-        numberOfStops: nonstop ? 0 : 1
-      }]
-    }
-  ],
-  totalBasePrice: price,
-  currency,
-  carryOnIncluded: true,
-  totalPriceWithCarryOn: price,
-  stopsCount: nonstop ? 0 : 1,
-  validatingAirlines: ['AA'],
-  rawData: { slices: isRoundTrip ? [{}, {}] : [{}] }
-});
 
 describe('FilterFactory', () => {
   describe('Pipeline Creation', () => {
@@ -504,8 +451,8 @@ describe('Legacy Adapter', () => {
     // because it only runs RoundTripFilter and BudgetFilter, and the budget filter
     // doesn't filter since budget is 0
     expect(filtered).toHaveLength(2);
-    expect(filtered.map(o => o.id)).toContain('legacy1');
-    expect(filtered.map(o => o.id)).toContain('legacy2');
+    expect(filtered.map((o: any) => o.id)).toContain('legacy1');
+    expect(filtered.map((o: any) => o.id)).toContain('legacy2');
   });
 
   it('should warn about deprecated function usage', () => {

@@ -2,8 +2,14 @@
 import { Control } from "react-hook-form";
 import AutoBookingSection from "./AutoBookingSection";
 
+// Booking method form data interface
+interface BookingMethodFormData {
+  auto_book_enabled?: boolean;
+  [key: string]: unknown;
+}
+
 interface BookingMethodSectionProps {
-  control: Control<any>;
+  control: Control<BookingMethodFormData>;
 }
 
 const BookingMethodSection = ({ control }: BookingMethodSectionProps) => {

@@ -1,12 +1,11 @@
 // Required imports for Supabase, Amadeus, Stripe, and local helpers
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // Import HTTP-based Amadeus helper functions
 import {
     getAmadeusAccessToken,
     priceWithAmadeus,
-    bookWithAmadeus,
     cancelAmadeusOrder,
-    TravelerData, // For constructing traveler payload
+    // TravelerData, // For constructing traveler payload (unused)
     // BookingResponse, // If needed for type checking results
 } from '../lib/amadeus.ts';
 import { stripe } from '../lib/stripe.ts';   // Assuming stripe.ts exports the initialized SDK instance
@@ -368,11 +367,7 @@ Deno.serve(async (req: Request) => {
     }
     console.log("[AutoBook] Amadeus Access Token acquired.");
 
-    // User object placeholder (remains the same)
-    const user = {
-        email: trip.traveler_data?.email || 'placeholder@example.com',
-        phone: trip.traveler_data?.phone || '0000000000'
-    };
+    // Note: user object removed as it's not used in the Duffel booking flow
     if (!trip.traveler_data?.email) console.warn(`[AutoBook] Using placeholder email for booking for trip ID: ${trip.id}`);
 
     // 1. Search and Price Flight Offers (using HTTP helper)
@@ -396,7 +391,7 @@ Deno.serve(async (req: Request) => {
     console.log(`[AutoBook] Successfully priced an offer for trip ID: ${trip.id} via HTTP. Offer ID (if available): ${pricedOffer.id}, Price: ${pricedOffer.price?.total}`);
 
     // 2. Conditional Seat Selection Logic
-    let seatSelections: Array<{ segmentId: string; seatNumber: string }> = [];
+    // Note: seatSelections array removed as it's not used in the current booking flow
     const enableSeatSelectionEnv = Deno.env.get('ENABLE_SEAT_SELECTION');
     const enableSeatSelection = enableSeatSelectionEnv === 'true';
 
@@ -459,7 +454,7 @@ Deno.serve(async (req: Request) => {
                                 const firstSegmentId = pricedOffer.itineraries?.[0]?.segments?.[0]?.id;
                                 if (firstSegmentId) {
                                     console.log(`[AutoBook] Seat selected: ${chosen.seatNumber}. Assigning to segment ID: ${firstSegmentId} for trip ID: ${trip.id}.`);
-                                    seatSelections = [{ segmentId: firstSegmentId, seatNumber: chosen.seatNumber }];
+                                    // Note: seatSelections array removed as it's not used in the current booking flow
                                 } else {
                                     console.warn(`[AutoBook] Could not determine segment ID for chosen seat from pricedOffer (trip ID: ${trip.id}). Proceeding without seat selection.`);
                                 }
@@ -500,11 +495,10 @@ Deno.serve(async (req: Request) => {
     console.log(`[AutoBook] Duffel mode: ${useLiveDuffel ? 'LIVE' : 'TEST'} for trip ID: ${trip.id}`);
     
     // Import enhanced Duffel service
-    const { DuffelService, createDuffelService, DuffelServiceError } = await import('../lib/duffelService.ts');
+    const { DuffelService, createDuffelService } = await import('../lib/duffelService.ts');
     
     let duffelService: Record<string, unknown>;
     let selectedOffer: Record<string, unknown> | null = null;
-    const duffelOrder: Record<string, unknown> | null = null;
     
     try {
         // Initialize Duffel service with appropriate environment
@@ -691,6 +685,11 @@ Deno.serve(async (req: Request) => {
 
     // 6. Database Updates
     console.log(`[AutoBook] Updating database records for successful booking. Trip ID: ${trip.id}, Flight Order ID: ${flightOrderIdForRollback}`);
+    
+    // Extract price and PNR from Duffel offer
+    const finalPrice = selectedOffer?.total_amount ? parseFloat(selectedOffer.total_amount) : 0;
+    const airlinePnr = selectedOffer?.booking_reference || 'PENDING';
+    
     try {
         const { error: bookingUpdateError } = await supabaseClient.from('bookings').update({
             status: 'booked', pnr: airlinePnr, price: finalPrice,

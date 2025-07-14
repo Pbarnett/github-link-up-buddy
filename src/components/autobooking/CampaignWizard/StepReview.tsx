@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, User, CreditCard, MapPin, Calendar, DollarSign, Plane } from 'lucide-react';
+import { CheckCircle, User, CreditCard, MapPin, Calendar, Plane } from 'lucide-react';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { trackCampaignEvent } from '@/utils/monitoring';
 import type { CriteriaFormData } from './StepCriteria';

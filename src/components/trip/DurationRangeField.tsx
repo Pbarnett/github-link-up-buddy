@@ -8,8 +8,15 @@ import { HelpCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "@/components/ui/input";
 
+// Duration range form data interface
+interface DurationRangeFormData {
+  min_duration?: number;
+  max_duration?: number;
+  [key: string]: unknown;
+}
+
 interface DurationRangeFieldProps {
-  control: Control<any>;
+  control: Control<DurationRangeFormData>;
 }
 
 const DurationRangeField = ({ control }: DurationRangeFieldProps) => {

@@ -12,7 +12,7 @@ interface HealthCheck {
   status: 'healthy' | 'unhealthy' | 'degraded';
   duration: number;
   error?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface HealthResponse {

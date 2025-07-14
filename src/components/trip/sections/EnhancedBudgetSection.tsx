@@ -11,8 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
 
+// Budget form data interface
+interface BudgetFormData {
+  max_price?: number;
+  [key: string]: unknown;
+}
+
 interface EnhancedBudgetSectionProps {
-  control: Control<any>;
+  control: Control<BudgetFormData>;
 }
 
 const EnhancedBudgetSection = ({ control }: EnhancedBudgetSectionProps) => {

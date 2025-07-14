@@ -1,16 +1,16 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { getAmadeusAccessToken, priceWithAmadeus } from '../lib/amadeus.ts';
+// Note: getAmadeusAccessToken and priceWithAmadeus are not used in the current implementation
+// They are potentially needed for future enhancements
 
 // Import the Deno-compatible filtering system
 import {
   createFilterContext,
   normalizeOffers,
   FilterFactory,
-  type FlightOffer,
-  type FilterContext,
-  type FilterResult
+  // Note: FlightOffer, FilterContext, and FilterResult types are not used directly
+  // but are potentially needed for future type annotations
 } from '../_shared/filtering.ts';
 
 // Define a type for the expected request payload

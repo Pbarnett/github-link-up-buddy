@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-import type { FieldTemplate, FieldType } from '@/types/dynamic-forms';
+import type { FieldTemplate } from '@/types/dynamic-forms';
 
 interface FieldTemplateLibraryProps {
   onFieldSelect: (template: FieldTemplate) => void;

@@ -196,7 +196,7 @@ serve(async (req) => {
         return_dt: returnDt,
         booking_url: null, // Would need to create booking URL
         external_offer_id: offer.id,
-        raw_offer_payload: offer as Record<string, any>
+        raw_offer_payload: offer as Record<string, unknown>
       }
     })
 

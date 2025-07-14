@@ -289,7 +289,7 @@ async function handleUpdateCampaign(userId: string, campaignData: CampaignData) 
   try {
     // Remove undefined values
     const cleanUpdateData = Object.fromEntries(
-      Object.entries(updateData).filter(([_, value]) => value !== undefined)
+      Object.entries(updateData).filter(([, value]) => value !== undefined)
     );
 
     const { data: updatedCampaign, error } = await supabase
