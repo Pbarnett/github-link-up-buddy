@@ -1,4 +1,3 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { NotificationQueue } from '../_shared/queue.ts';
 
 const corsHeaders = {
