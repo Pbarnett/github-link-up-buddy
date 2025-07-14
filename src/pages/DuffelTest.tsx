@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, TestTube, CheckCircle2, XCircle, User } from 'lucide-react';
+import { Loader2, TestTube, CheckCircle2, XCircle } from 'lucide-react';
 
 import useDuffelFlights from '@/hooks/useDuffelFlights';
 import DuffelBookingCard from '@/components/trip/DuffelBookingCard';
@@ -28,7 +28,7 @@ const DuffelTest: React.FC = () => {
   // Test state
   const [tripRequestId, setTripRequestId] = useState('');
   const [testTraveler] = useState<DuffelTraveler>({
-    title: 'Mr',
+    title: 'mr',
     given_name: 'Test',
     family_name: 'User',
     born_on: '1990-01-01',
@@ -86,7 +86,6 @@ const DuffelTest: React.FC = () => {
   const {
     offers,
     isLoading,
-    _isSearching, // eslint-disable-line @typescript-eslint/no-unused-vars
     error,
     searchFlights,
     clearResults,

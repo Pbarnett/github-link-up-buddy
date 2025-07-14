@@ -320,8 +320,8 @@ export const setDatesRobust = async () => {
       });
       
       // Trigger form validation
-      fireEvent.blur(earliestInputs[0]);
-      fireEvent.blur(latestInputs[0]);
+      if (earliestInputs[0]) fireEvent.blur(earliestInputs[0]);
+      if (latestInputs[0]) fireEvent.blur(latestInputs[0]);
       return;
     }
   } catch (error) {

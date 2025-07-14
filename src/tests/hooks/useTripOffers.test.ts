@@ -43,9 +43,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-const mockTripOffersService = tripOffersService as {
-  fetchTripOffers: ReturnType<typeof vi.fn>;
-};
+const mockTripOffersService = tripOffersService as any;
 const mockToast = toast as ReturnType<typeof vi.fn>;
 
 const mockTripDetails: TripDetails = {
@@ -117,7 +115,7 @@ const mockFlightSearchResponse = {
 
 const mockFlightSearchResponseA: flightSearchApi.FlightSearchResponse = {
   requestsProcessed: 1, matchesInserted: 1, totalDurationMs: 100, relaxedCriteriaUsed: false, exactDestinationOnly: true, details: [],
-  pool1: [{ id: 'offerA1', score: 10 } as { id: string; score: number }],
+  pool1: [{ id: 'offerA1', score: 10, price: 500 } as any],
   pool2: [],
   pool3: [],
   success: true, message: 'Set A', inserted: 1
@@ -125,7 +123,7 @@ const mockFlightSearchResponseA: flightSearchApi.FlightSearchResponse = {
 
 const mockFlightSearchResponseB: flightSearchApi.FlightSearchResponse = {
   requestsProcessed: 1, matchesInserted: 1, totalDurationMs: 100, relaxedCriteriaUsed: false, exactDestinationOnly: true, details: [],
-  pool1: [{ id: 'offerB1', score: 20 } as { id: string; score: number }],
+  pool1: [{ id: 'offerB1', score: 20, price: 750 } as any],
   pool2: [],
   pool3: [],
   success: true, message: 'Set B', inserted: 1
