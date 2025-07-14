@@ -54,7 +54,7 @@ describe('useFormAnalytics', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.clear();
-    (supabase.rpc as unknown as { mockResolvedValue: (value: { error: null }) => void }).mockResolvedValue({ error: null });
+(supabase.rpc as any).mockResolvedValue({ error: null });
     vi.useFakeTimers();
   });
 
@@ -156,8 +156,7 @@ describe('useFormAnalytics', () => {
   it('should retry on 500 error and eventually succeed', async () => {
     vi.clearAllMocks();
     
-    (supabase.rpc as unknown as { mockResolvedValueOnce: (value: { data?: unknown; error?: { status: number } | null }) => unknown })
-      .mockResolvedValueOnce({ data: {}, error: null })                 // form_view
+(supabase.rpc as any).mockResolvedValueOnce({ data: {}, error: null })                 // form_view
       .mockResolvedValueOnce({ data: null, error: { status: 500 } })    // submit #1
       .mockResolvedValueOnce({ data: null, error: { status: 500 } })    // retry #1
       .mockResolvedValueOnce({ data: {}, error: null });                // retry #2 success
