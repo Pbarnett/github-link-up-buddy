@@ -115,14 +115,18 @@ export abstract class BaseRepository<
       const { data, error } = await operation();
 
       if (error) {
+        const errorMessage = error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Unknown error';
+        const errorCode = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+        const errorDetails = error && typeof error === 'object' && 'details' in error ? error.details : undefined;
+        
         throw new DatabaseError(
-          `${this.tableName} operation failed: ${error.message}`,
+          `${String(this.tableName)} operation failed: ${errorMessage}`,
           { 
             ...context, 
-            table: this.tableName,
+            table: String(this.tableName),
             supabaseError: error,
-            errorCode: error.code,
-            errorDetails: error.details 
+            errorCode,
+            errorDetails
           }
         );
       }
@@ -134,13 +138,13 @@ export abstract class BaseRepository<
       return retry(executeOperation, RetryDecorators.database({
         onRetry: (error, attempt, delay) => {
           console.warn(
-            `[${this.tableName}] Database operation failed (attempt ${attempt}), retrying in ${delay}ms`,
+            `[${String(this.tableName)}] Database operation failed (attempt ${attempt}), retrying in ${delay}ms`,
             { error: error instanceof Error ? error.message : error, context }
           );
         }
-      }));
+      })) as Promise<T>;
     } else {
-      return executeOperation();
+      return executeOperation() as Promise<T>;
     }
   }
 
