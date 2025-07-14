@@ -8,13 +8,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, PlaneTakeoff, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, PlaneTakeoff, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { createDuffelBooking, DuffelTraveler, DuffelBookingResponse } from "@/services/api/duffelBookingApi";
 import { airportNames } from "@/data/airportLookup";
 import { airlineNames } from "@/data/airlineLookup";
 import OfferExpirationTimer from "./OfferExpirationTimer";
-import DuffelErrorHandler, { DuffelError } from "./DuffelErrorHandler";
 
 export interface DuffelFlightOffer {
   id: string;
@@ -48,8 +47,7 @@ export const DuffelBookingCard: React.FC<DuffelBookingCardProps> = ({
 }) => {
   const [isBooking, setIsBooking] = useState(false);
   const [bookingResult, setBookingResult] = useState<DuffelBookingResponse | null>(null);
-  const [isExpiredState, setIsExpiredState] = useState(false);
-  const [duffelError, setDuffelError] = useState<DuffelError | null>(null);
+  const [, setIsExpiredState] = useState(false);
 
   // Format currency
   const formatPrice = (price: number, currency: string = 'USD') => {
@@ -138,10 +136,10 @@ export const DuffelBookingCard: React.FC<DuffelBookingCardProps> = ({
 
         onBookingError?.(errorMessage);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[DUFFEL-BOOKING-CARD] Exception during booking:', error);
       
-      const errorMessage = error.message || 'An unexpected error occurred during booking.';
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred during booking.';
       
       toast({
         title: "Booking Error",

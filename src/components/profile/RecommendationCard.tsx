@@ -10,7 +10,6 @@ import {
   FileText,
   Shield,
   User,
-  Clock,
   X
 } from 'lucide-react';
 import { ProfileRecommendation } from '@/services/profileCompletenessService';
