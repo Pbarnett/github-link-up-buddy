@@ -251,26 +251,33 @@ const TripConfirm = () => {
     
     fetchBookingRequest();
     
-    const channel = supabase
-      .channel(`checkout:${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'booking_requests',
-          filter: `checkout_session_id=eq.${sessionId}`,
-        },
-        (payload: any) => {
-          console.log("[TripConfirm] Received booking status update:", payload);
-          updateBookingStatusMessage(payload.new.status);
-        }
-      )
-      .subscribe();
+    // TODO: Implement proper realtime subscription for booking status updates
+    // const channel = supabase
+    //   .channel(`checkout:${sessionId}`)
+    //   .on(
+    //     'postgres_changes',
+    //     {
+    //       event: 'UPDATE',
+    //       schema: 'public',
+    //       table: 'booking_requests',
+    //       filter: `checkout_session_id=eq.${sessionId}`,
+    //     },
+    //     (payload: any) => {
+    //       console.log("[TripConfirm] Received booking status update:", payload);
+    //       updateBookingStatusMessage(payload.new.status);
+    //     }
+    //   )
+    //   .subscribe();
+    
+    // For now, just poll for status updates
+    const pollInterval = setInterval(() => {
+      console.log('[TripConfirm] Polling for booking status updates...');
+      // TODO: Implement status polling
+    }, 5000);
       
     return () => {
-      console.log("[TripConfirm] Unsubscribing from realtime channel");
-      channel.unsubscribe();
+      console.log("[TripConfirm] Cleaning up polling interval");
+      clearInterval(pollInterval);
     };
   }, [sessionId, updateBookingStatusMessage]);
 
