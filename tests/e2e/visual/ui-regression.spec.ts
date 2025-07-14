@@ -87,7 +87,7 @@ test.describe('Visual Regression Tests', () => {
         threshold: 0.2,
         animations: 'disabled'
       });
-    } catch (error) {
+    } catch {
       console.log('Mobile trip request form not accessible, skipping screenshot');
     }
   });

@@ -17,7 +17,7 @@ export const createEdgeFetchMock = (responseData: EdgeFunctionResponse = { succe
   );
 };
 
-export const createEdgeFetchErrorMock = (errorMessage: string, _status: number = 500) => {
+export const createEdgeFetchErrorMock = (errorMessage: string) => {
   return vi.fn().mockRejectedValue(
     new Error(errorMessage)
   );
