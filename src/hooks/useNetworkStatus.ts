@@ -57,7 +57,7 @@ export const useNetworkStatus = (): NetworkStatus => {
 
     // Listen for connection changes (if supported)
     const connection = getConnectionInfo();
-    if (connection) {
+    if (connection && connection.addEventListener) {
       connection.addEventListener('change', updateConnectionType);
     }
 
@@ -68,7 +68,7 @@ export const useNetworkStatus = (): NetworkStatus => {
       window.removeEventListener('online', updateOnlineStatus);
       window.removeEventListener('offline', updateOnlineStatus);
       
-      if (connection) {
+      if (connection && connection.removeEventListener) {
         connection.removeEventListener('change', updateConnectionType);
       }
     };

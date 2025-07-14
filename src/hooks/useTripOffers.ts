@@ -179,12 +179,12 @@ export const useTripOffersPools = ({ tripId }: { tripId: string | null }): Pools
         pool3Count: newPools.pool3?.length || 0
       });
 
-      setPools(newPools);
+      setPools(newPools as any);
       // Cache Write:
       const existingEntry = unifiedCache.get(cacheKey) || { timestamp: Date.now() };
       unifiedCache.set(cacheKey, {
         ...existingEntry,
-        pools: { budget, ...newPools }, // Store current budget with the pools
+        pools: { budget, ...newPools } as any, // Store current budget with the pools
         timestamp: Date.now()
       });
       logger.info("[useTripOffersPools] Pool results cached in unifiedCache for key:", cacheKey);
