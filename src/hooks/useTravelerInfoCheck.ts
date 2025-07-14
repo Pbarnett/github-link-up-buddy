@@ -10,7 +10,7 @@ export interface UseTravelerInfoCheckReturn {
 export const useTravelerInfoCheck = (): UseTravelerInfoCheckReturn => {
   const [hasTravelerInfo, setHasTravelerInfo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | undefined>();
+  const [error] = useState<Error | undefined>();
 
   useEffect(() => {
     // Simulate checking traveler info

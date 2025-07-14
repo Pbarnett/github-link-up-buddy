@@ -1,4 +1,4 @@
-import { BusinessRulesConfigSchema, type BusinessRulesConfig, DEFAULT_CONFIGS } from './schema';
+import { BusinessRulesConfigSchema, type BusinessRulesConfig } from './schema';
 
 class ConfigLoader {
   private cache: Map<string, BusinessRulesConfig> = new Map();
