@@ -24,8 +24,8 @@ interface TripConstraints {
  * - Otherwise, return null to skip this offer.
  */
 export function decideSeatPreference(
-  offer: FlightOffer,
-  trip: TripConstraints
+  _offer: FlightOffer,
+  _trip: TripConstraints
 ): "AISLE" | "WINDOW" | "MIDDLE" | null {
   // TODO: Jules will fill in the actual parsing of offer.seat_map or offer.fare_details.
   return "MIDDLE"; // placeholder so our smoke test always picks "MIDDLE"

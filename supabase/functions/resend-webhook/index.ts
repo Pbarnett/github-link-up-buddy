@@ -31,7 +31,7 @@ Deno.serve(async (req: Request) => {
     );
 
     // Get the webhook signature (for verification if needed)
-    const signature = req.headers.get('x-resend-signature');
+    const _signature = req.headers.get('x-resend-signature');
     const webhookEvent: ResendWebhookEvent = await req.json();
 
     console.log('[ResendWebhook] Received event:', {
