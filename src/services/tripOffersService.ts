@@ -121,12 +121,11 @@ export async function fetchTripOffers(
   console.log(`[🔍 SERVICE] Trip request is ${isRoundTripRequest ? 'round-trip' : 'one-way'}`);
   
   // Fetch raw offers from V2 table first (without database-level filtering)
-  const v2Query = supabase
+  const { data: v2Data, error: v2Error } = await supabase
     .from('flight_offers_v2')
     .select('*')
-    .eq('trip_request_id', tripRequestId);
-
-  const { data: v2Data, error: v2Error } = await v2Query.order('price_total', { ascending: true });
+    .eq('trip_request_id', tripRequestId)
+    .order('price_total', { ascending: true });
 
   let rawOffers: Record<string, unknown>[] = [];
   let usingV2Table = false;
@@ -139,13 +138,11 @@ export async function fetchTripOffers(
     // Fall back to legacy flight_offers table
     console.log('[🔍 SERVICE] No V2 offers found, checking legacy flight_offers table...');
     
-    const legacyQuery = supabase
+    const { data: legacyData, error: legacyError } = await supabase
       .from('flight_offers')
       .select('*')
       .eq('trip_request_id', tripRequestId)
       .order('price', { ascending: true });
-    
-    const { data: legacyData, error: legacyError } = await legacyQuery;
 
     if (legacyError) {
       console.error('[🔍 SERVICE] Error fetching from both tables:', { v2Error, legacyError });

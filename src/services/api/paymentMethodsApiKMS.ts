@@ -30,10 +30,10 @@ class PaymentMethodsServiceKMS {
     try {
       logger.info('[PaymentMethodsKMS] Fetching payment methods');
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('payment_methods')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any);
 
       if (error) {
         logger.error('[PaymentMethodsKMS] Error fetching payment methods:', error);
@@ -109,10 +109,10 @@ class PaymentMethodsServiceKMS {
     try {
       logger.info('[PaymentMethodsKMS] Deleting payment method:', id);
       
-      const { error } = await supabase
+      const { error } = await (supabase
         .from('payment_methods')
         .delete()
-        .eq('id', id);
+        .eq('id', id) as any);
 
       if (error) {
         logger.error('[PaymentMethodsKMS] Error deleting payment method:', error);

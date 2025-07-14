@@ -6,11 +6,11 @@ type AutoBookingRequestRow = Tables<'auto_booking_requests'>;
 
 class CampaignService {
   async getCampaigns(userId: string): Promise<Campaign[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase
       .from('auto_booking_requests')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false }) as any);
 
     if (error) {
       throw new Error(`Failed to fetch campaigns: ${error.message}`);
@@ -79,10 +79,10 @@ class CampaignService {
   }
 
   async deleteCampaign(id: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase
       .from('auto_booking_requests')
       .delete()
-      .eq('id', id);
+      .eq('id', id) as any);
 
     if (error) {
       throw new Error(`Failed to delete campaign: ${error.message}`);
