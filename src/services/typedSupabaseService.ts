@@ -303,10 +303,10 @@ export class MigrationService {
    * Validate all booking requests and identify invalid data
    */
   static async auditBookingRequests(limit = 100) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase
       .from('booking_requests')
       .select('id, offer_data, traveler_data')
-      .limit(limit);
+      .limit(limit) as any);
 
     if (error) throw error;
 

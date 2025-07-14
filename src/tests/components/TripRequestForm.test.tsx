@@ -407,6 +407,10 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
       data: [{ id: 'pm_123', brand: 'Visa', last4: '4242', is_default: true, nickname: 'Work Card', exp_month: 12, exp_year: 2025, created_at: '2024-01-01T00:00:00.000Z' }],
       isLoading: false,
       refetch: vi.fn(),
+      addPaymentMethod: vi.fn(),
+      updatePaymentMethod: vi.fn(),
+      deletePaymentMethod: vi.fn(),
+      setDefaultPaymentMethod: vi.fn(),
     });
     mockUseTravelerInfoCheck.mockReturnValue({
       hasTravelerInfo: true,

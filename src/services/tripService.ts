@@ -51,7 +51,7 @@ const createTrip = async (
   });
   
   // Insert trip request into Supabase with proper types
-  const tripRequestResult = await safeQuery<Tables<"trip_requests">>(
+  const tripRequestResult = await safeQuery(
     supabase
       .from("trip_requests")
       .insert(tripRequestData)
