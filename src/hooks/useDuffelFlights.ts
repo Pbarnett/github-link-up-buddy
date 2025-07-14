@@ -98,7 +98,10 @@ export const useDuffelFlights = (
     });
 
     try {
-      const response = await fetchDuffelFlights(tripRequestId, searchOptions);
+      const response = await fetchDuffelFlights(tripRequestId, {
+        tripRequestId,
+        ...searchOptions
+      });
       
       setSearchResponse(response);
       setLastSearchTime(new Date());
@@ -141,7 +144,8 @@ export const useDuffelFlights = (
       const { supabase } = await import('@/integrations/supabase/client');
       
       // Debug: Check current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const userResult = await supabase.auth.getUser();
+      const { data: { user } } = userResult;
       logger.info('[useDuffelFlights] Current user for database query:', {
         userId: user?.id,
         email: user?.email,
