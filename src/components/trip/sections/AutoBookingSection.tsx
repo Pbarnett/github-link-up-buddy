@@ -1,7 +1,6 @@
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Control, useWatch, useFormContext } from "react-hook-form";
 import { FormValues } from "@/types/form";
