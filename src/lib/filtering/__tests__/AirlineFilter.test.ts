@@ -196,7 +196,7 @@ vi.clearAllMocks();
       const result = await filter.apply(offers, context);
       
       expect(result).toHaveLength(1);
-      expect(result[0].rawData.owner.iata_code).toBe('BA');
+      expect((result[0].rawData as any)?.owner?.iata_code).toBe('BA');
     });
 
     it('should handle mixed provider offers', async () => {

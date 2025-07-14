@@ -48,7 +48,7 @@ export const getCurrentUser = async () => {
 
 // Auto-sign in for development (call this from console)
 if (typeof window !== 'undefined') {
-  (window as Record<string, unknown>).devAuth = {
+  (window as any).devAuth = {
     signIn: signInTestUser,
     signOut,
     getCurrentUser,
