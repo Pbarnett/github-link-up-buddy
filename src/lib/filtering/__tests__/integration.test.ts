@@ -5,7 +5,6 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { fetchTripOffers } from '@/services/tripOffersService';
-import { fetchFlightSearch } from '@/services/api/flightSearchApi';
 import { FilterFactory, createFilterContext, normalizeOffers } from '@/lib/filtering';
 
 // Mock Supabase client

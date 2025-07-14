@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configLoader } from '../ConfigLoader';
 import { BusinessRulesConfigSchema } from '../schema';
-import { mockFetchSuccess } from '@/tests/utils/mockFetch';
 
 const mockFetch = vi.fn();
 

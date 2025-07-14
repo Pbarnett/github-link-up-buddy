@@ -172,7 +172,6 @@ export class FilterFactory {
     const returnDate = searchParams.returnDate || searchParams.return_date;
     const nonstopRequired = searchParams.nonstopRequired || searchParams.nonstop_required || false;
     
-    const carryOnRequired = searchParams.carryOnRequired || searchParams.baggage_included_required || false;
     
     const userPrefs: UserPreferences = {
       nonstopRequired,
