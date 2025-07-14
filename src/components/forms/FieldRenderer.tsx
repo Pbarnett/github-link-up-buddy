@@ -54,16 +54,22 @@ interface FieldRendererInternalProps extends Omit<FieldRendererProps, 'onChange'
 
 export const FieldRenderer: React.FC<FieldRendererInternalProps> = ({
   field,
-  fieldIndex,
-  sectionIndex,
+  fieldIndex: _fieldIndex,
+  sectionIndex: _sectionIndex,
   value,
   error,
-  touched,
+  touched: _touched,
   onChange,
   disabled = false,
-  isValid = true,
+  isValid: _isValid = true,
   className
 }) => {
+  // Mark unused parameters as intentionally unused
+  void _fieldIndex;
+  void _sectionIndex;
+  void _touched;
+  void _isValid;
+  
   const form = useFormContext();
 
   // Handle special field types that don't need FormField wrapper

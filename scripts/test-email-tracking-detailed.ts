@@ -35,7 +35,7 @@ async function getDetailedErrorInfo(error: unknown): Promise<string> {
         return errorText
       }
     }
-  } catch (e) {
+  } catch {
     // Ignore parsing errors
   }
   if (error && typeof error === 'object' && 'message' in error) {
@@ -179,7 +179,7 @@ const testUserId = uuidv4()
     } else {
       console.log('❌ No templates found or error occurred')
     }
-  } catch (error) {
+  } catch {
     console.log('❌ Template check failed')
   }
 
@@ -196,7 +196,7 @@ const testUserId = uuidv4()
 
   for (const table of tables) {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from(table)
         .select('*')
         .limit(1)
@@ -212,7 +212,7 @@ const testUserId = uuidv4()
       })
 
       console.log(`   ${table}: ${tableExists ? '✅ Exists' : '❌ Missing'}`)
-    } catch (error) {
+    } catch {
       console.log(`   ${table}: ❌ Error checking`)
     }
   }
