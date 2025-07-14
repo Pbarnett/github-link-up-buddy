@@ -148,13 +148,15 @@ export const useDuffelFlights = (
         tripRequestId
       });
       
-      const { data: offersData, error: fetchError } = await supabase
+      const result = await supabase
         .from('flight_offers_v2')
         .select('*')
         .eq('trip_request_id', tripRequestId)
         .eq('mode', 'AUTO') // Duffel offers use AUTO mode
         .order('price_total', { ascending: true })
         .limit(50);
+      
+      const { data: offersData, error: fetchError } = result;
 
       if (fetchError) {
         logger.error('[useDuffelFlights] Error fetching offers from database:', fetchError);

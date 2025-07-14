@@ -62,18 +62,20 @@ export const useDuffelPayment = (): UseDuffelPaymentReturn => {
       });
 
       // Create payment intent using existing Stripe infrastructure
-      const paymentData = await createStripePaymentIntent({
-        amount: Math.round(options.amount * 100), // Convert to cents
-        currency: options.currency.toLowerCase(),
-        metadata: {
-          ...options.metadata,
+      const paymentData = await createStripePaymentIntent(
+        options.amount,
+        options.currency,
+        {
           payment_type: 'duffel_flight_booking',
-          integration_version: '1.0'
+          integration_version: '1.0',
+          duffel_offer_id: options.metadata?.duffel_offer_id || '',
+          flight_route: options.metadata?.flight_route || '',
+          passenger_name: options.metadata?.passenger_name || ''
         }
-      });
+      );
 
       const intent: DuffelPaymentIntent = {
-        id: paymentData.payment_intent_id,
+        id: paymentData.id,
         client_secret: paymentData.client_secret,
         amount: options.amount,
         currency: options.currency,
