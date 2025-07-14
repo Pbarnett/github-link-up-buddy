@@ -299,8 +299,8 @@ export async function cancelOrder(orderId: string): Promise<DuffelOrder> {
  */
 export function mapPassengerToDuffel(passenger: Record<string, unknown>): DuffelPassenger {
   return {
-    title: (passenger.title as string) || 'mr',
-    gender: (passenger.gender as string) || 'male',
+    title: (passenger.title as 'ms' | 'mr' | 'mrs' | 'miss' | 'dr') || 'mr',
+    gender: (passenger.gender as 'male' | 'female') || 'male',
     given_name: String(passenger.first_name || ''),
     family_name: String(passenger.last_name || ''),
     born_on: String(passenger.date_of_birth || ''), // Should be YYYY-MM-DD
