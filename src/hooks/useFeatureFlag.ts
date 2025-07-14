@@ -2,7 +2,7 @@ import { useFlags } from 'launchdarkly-react-client-sdk';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useEffect } from 'react';
 import { trackPersonalizationSeen } from '../services/launchDarklyService';
-import { type FeatureFlag, isEnabled } from '@shared/featureFlag';
+import { type FeatureFlag, isFeatureEnabled as isEnabled } from '@/shared/featureFlag';
 
 // New LaunchDarkly-powered hook with tracking
 export const useFeatureFlag = (flagName: string, defaultValue: boolean = false) => {

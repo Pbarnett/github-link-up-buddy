@@ -7,6 +7,7 @@
 export interface FormConfiguration {
   id: string;
   name: string;
+  description?: string;
   version: number;
   sections: FormSection[];
   integrations?: FormIntegrations;
@@ -14,6 +15,13 @@ export interface FormConfiguration {
   apiKeys?: Record<string, string>;
   piiFields?: string[];
   metadata?: Record<string, unknown>;
+  settings?: {
+    theme?: string;
+    showProgressBar?: boolean;
+    allowSave?: boolean;
+  };
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface FormSection {

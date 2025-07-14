@@ -11,6 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye, PlusCircle, Plane, DollarSign, Activity } from 'lucide-react';
 import TripHistory from '@/components/dashboard/TripHistory'; // Added import
 import { DashboardGreeting } from '@/components/personalization/GreetingBanner';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 interface BookingRequest {
   id: string;
@@ -52,7 +54,10 @@ const Dashboard = () => {
         // Check if this is a JWT user not found error
         if (error.message && error.message.includes('User from sub claim in JWT does not exist')) {
           console.log('Stale JWT detected, clearing auth state...');
-          await supabase.auth.signOut();
+          // Type guard for real Supabase client
+          if ('signOut' in supabase.auth) {
+            await supabase.auth.signOut();
+          }
           toast({
             title: "Session expired",
             description: "Please sign in again.",
@@ -73,17 +78,24 @@ const Dashboard = () => {
 
     getUser();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setUser(null);
-      } else if (session?.user) {
-        setUser(session.user);
-        loadDashboardData(session.user.id);
-      }
-    });
+    // Type guard for real Supabase client auth state changes
+    let authListener: { subscription: { unsubscribe: () => void } } | null = null;
+    if ('onAuthStateChange' in supabase.auth) {
+      const { data } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+        } else if (session?.user) {
+          setUser(session.user);
+          loadDashboardData(session.user.id);
+        }
+      });
+      authListener = data;
+    }
 
     return () => {
-      authListener.subscription.unsubscribe();
+      if (authListener) {
+        authListener.subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -97,73 +109,79 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Set up real-time subscription for booking requests
-    const channel = supabase
-      .channel('booking-requests-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'booking_requests',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('Booking request change:', payload);
+    // Set up real-time subscription for booking requests only for real Supabase client
+    let channel: RealtimeChannel | null = null;
+    
+    if ('channel' in supabase) {
+      channel = supabase
+        .channel('booking-requests-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'booking_requests',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload: RealtimePostgresChangesPayload<BookingRequest>) => {
+            console.log('Booking request change:', payload);
 
-          setBookingRequests(prev => {
-            const bookingUpdate = payload.new as BookingRequest;
-            const requestId = bookingUpdate.id;
-            const oldStatus = prevStatuses.current[requestId];
-            const newStatus = bookingUpdate.status;
+            setBookingRequests(prev => {
+              const bookingUpdate = payload.new as BookingRequest;
+              const requestId = bookingUpdate.id;
+              const oldStatus = prevStatuses.current[requestId];
+              const newStatus = bookingUpdate.status;
 
-            // Enhanced toast notifications for meaningful transitions
-            if (oldStatus && oldStatus !== newStatus) {
-              const requestShortId = requestId.slice(0, 8);
+              // Enhanced toast notifications for meaningful transitions
+              if (oldStatus && oldStatus !== newStatus) {
+                const requestShortId = requestId.slice(0, 8);
 
-              if (oldStatus === 'processing' && newStatus === 'done') {
-                toast({
-                  title: "🎉 Booking Confirmed!",
-                  description: `Your booking ${requestShortId} has been successfully completed.`,
-                });
-              } else if (oldStatus === 'processing' && newStatus === 'failed') {
-                toast({
-                  title: "❌ Booking Failed",
-                  description: `Booking ${requestShortId} encountered an error. You can retry if needed.`,
-                  variant: 'destructive'
-                });
-              } else if (newStatus === 'processing') {
-                toast({
-                  title: "⏳ Processing Booking",
-                  description: `Booking ${requestShortId} is now being processed.`,
-                });
-              } else if (newStatus === 'pending_payment') {
-                toast({
-                  title: "💳 Payment Required",
-                  description: `Booking ${requestShortId} is waiting for payment confirmation.`,
-                });
+                if (oldStatus === 'processing' && newStatus === 'done') {
+                  toast({
+                    title: "🎉 Booking Confirmed!",
+                    description: `Your booking ${requestShortId} has been successfully completed.`,
+                  });
+                } else if (oldStatus === 'processing' && newStatus === 'failed') {
+                  toast({
+                    title: "❌ Booking Failed",
+                    description: `Booking ${requestShortId} encountered an error. You can retry if needed.`,
+                    variant: 'destructive'
+                  });
+                } else if (newStatus === 'processing') {
+                  toast({
+                    title: "⏳ Processing Booking",
+                    description: `Booking ${requestShortId} is now being processed.`,
+                  });
+                } else if (newStatus === 'pending_payment') {
+                  toast({
+                    title: "💳 Payment Required",
+                    description: `Booking ${requestShortId} is waiting for payment confirmation.`,
+                  });
+                }
               }
-            }
 
-            // Update the previous status tracker
-            prevStatuses.current[requestId] = newStatus;
+              // Update the previous status tracker
+              prevStatuses.current[requestId] = newStatus;
 
-            // Update the list
-            const existingIndex = prev.findIndex(r => r.id === requestId);
-            if (existingIndex >= 0) {
-              const updated = [...prev];
-              updated[existingIndex] = bookingUpdate;
-              return updated;
-            } else {
-              return [bookingUpdate, ...prev];
-            }
-          });
-        }
-      )
-      .subscribe();
+              // Update the list
+              const existingIndex = prev.findIndex(r => r.id === requestId);
+              if (existingIndex >= 0) {
+                const updated = [...prev];
+                updated[existingIndex] = bookingUpdate;
+                return updated;
+              } else {
+                return [bookingUpdate, ...prev];
+              }
+            });
+          }
+        )
+        .subscribe();
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel && 'removeChannel' in supabase) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [user]);
 
@@ -186,46 +204,74 @@ const Dashboard = () => {
   };
 
   const loadBookingRequests = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('booking_requests')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+    try {
+      const query = supabase
+        .from('booking_requests')
+        .select('*')
+        .eq('user_id', userId);
+      
+      // Type guard for real Supabase client with order method
+      const { data, error } = 'order' in query ? 
+        await query.order('created_at', { ascending: false }) :
+        await query;
 
-    if (error) {
+      if (error) {
+        console.error('Error loading booking requests:', error);
+      } else {
+        setBookingRequests((data as BookingRequest[]) || []);
+      }
+    } catch (error) {
       console.error('Error loading booking requests:', error);
-    } else {
-      setBookingRequests(data || []);
+      setBookingRequests([]);
     }
   };
 
   const loadTripRequests = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('trip_requests')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    try {
+      const query = supabase
+        .from('trip_requests')
+        .select('*')
+        .eq('user_id', userId);
+      
+      // Type guard for real Supabase client with order and limit methods
+      let finalQuery = query;
+      if ('order' in query) {
+        finalQuery = query.order('created_at', { ascending: false });
+      }
+      if ('limit' in finalQuery) {
+        finalQuery = finalQuery.limit(5);
+      }
+      
+      const { data, error } = await finalQuery;
 
-    if (error) {
+      if (error) {
+        console.error('Error loading trip requests:', error);
+      } else {
+        setTripRequests((data as TripRequest[]) || []);
+      }
+    } catch (error) {
       console.error('Error loading trip requests:', error);
-    } else {
-      setTripRequests(data || []);
+      setTripRequests([]);
     }
   };
 
   const retryBookingRequest = async (requestId: string) => {
     try {
-      const { error } = await supabase
-        .from('booking_requests')
-        .update({
-          status: 'pending_booking',
-          attempts: 0,
-          error_message: null
-        })
-        .eq('id', requestId);
+      const query = supabase
+        .from('booking_requests');
+      
+      // Type guard for real Supabase client with update method
+      if ('update' in query) {
+        const { error } = await query
+          .update({
+            status: 'pending_booking',
+            attempts: 0,
+            error_message: null
+          })
+          .eq('id', requestId);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
 
       toast({
         title: "🔄 Retry Initiated",
@@ -252,7 +298,10 @@ const Dashboard = () => {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      // Type guard for real Supabase client
+      if ('signOut' in supabase.auth) {
+        await supabase.auth.signOut();
+      }
       toast({
         title: "Signed out successfully",
       });
@@ -307,6 +356,24 @@ const Dashboard = () => {
       done: bookingRequests.filter(r => r.status === 'done').length,
       failed: bookingRequests.filter(r => r.status === 'failed').length,
     };
+  };
+
+  const renderPrice = (offerData: Record<string, unknown> | null) => {
+    if (!offerData || typeof offerData !== 'object' || !('price' in offerData) || !offerData.price) {
+      return null;
+    }
+    
+    const price = offerData.price;
+    if (typeof price !== 'string' && typeof price !== 'number') {
+      return null;
+    }
+    
+    return (
+      <span className="flex items-center">
+        <DollarSign className="h-3 w-3 mr-1" />
+        ${String(price)}
+      </span>
+    );
   };
 
   if (loading) {
@@ -599,12 +666,7 @@ const Dashboard = () => {
                                     </div>
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-1 text-sm text-gray-500">
                                       <span>Created {new Date(request.created_at).toLocaleDateString()}</span>
-                                      {request.offer_data && typeof request.offer_data === 'object' && 'price' in request.offer_data && request.offer_data.price && (
-                                        <span className="flex items-center">
-                                          <DollarSign className="h-3 w-3 mr-1" />
-                                          ${String(request.offer_data.price)}
-                                        </span>
-                                      )}
+                                      {renderPrice(request.offer_data)}
                                       {request.attempts > 0 && (
                                         <span className="text-orange-600">
                                           Attempt {request.attempts}

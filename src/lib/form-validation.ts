@@ -355,3 +355,13 @@ export const getDefaultValues = (configuration: FormConfiguration): Record<strin
 
   return defaults;
 };
+
+/**
+ * Alias for generateZodSchema for backward compatibility
+ */
+export const generateValidationSchema = generateZodSchema;
+
+/**
+ * Alias for validateFormValues for backward compatibility
+ */
+export const validateFormData = validateFormValues;

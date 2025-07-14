@@ -1,4 +1,4 @@
-import { userInBucket, getUserBucket } from '@shared/featureFlag';
+import { userInBucket, getUserBucket } from '@/shared/featureFlag';
 import { describe, it, expect } from 'vitest';
 
 describe('userInBucket', () => {

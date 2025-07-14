@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../../types/database';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -20,23 +19,62 @@ console.log('🔍 Supabase client initialization:', {
 let supabaseClient: SupabaseClient<Database> | MockSupabaseClient;
 
 // Mock client interface for testing
+interface MockQueryChain {
+  select: () => MockQueryChain;
+  eq: () => MockQueryChain;
+  neq: () => MockQueryChain;
+  gt: () => MockQueryChain;
+  gte: () => MockQueryChain;
+  lt: () => MockQueryChain;
+  lte: () => MockQueryChain;
+  like: () => MockQueryChain;
+  ilike: () => MockQueryChain;
+  is: () => MockQueryChain;
+  in: () => MockQueryChain;
+  contains: () => MockQueryChain;
+  containedBy: () => MockQueryChain;
+  rangeGt: () => MockQueryChain;
+  rangeGte: () => MockQueryChain;
+  rangeLt: () => MockQueryChain;
+  rangeLte: () => MockQueryChain;
+  rangeAdjacent: () => MockQueryChain;
+  overlaps: () => MockQueryChain;
+  textSearch: () => MockQueryChain;
+  match: () => MockQueryChain;
+  not: () => MockQueryChain;
+  or: () => MockQueryChain;
+  filter: () => MockQueryChain;
+  order: () => MockQueryChain;
+  limit: () => MockQueryChain;
+  range: () => MockQueryChain;
+  insert: () => MockQueryChain;
+  upsert: () => MockQueryChain;
+  update: () => MockQueryChain;
+  delete: () => MockQueryChain;
+  single: () => Promise<{ data: null; error: null }>;
+  maybeSingle: () => Promise<{ data: null; error: null }>;
+  then: (callback: any) => Promise<any>;
+  catch: () => Promise<{ data: []; error: null }>;
+  finally: (onFinally?: any) => Promise<{ data: []; error: null }>;
+}
+
 interface MockSupabaseClient {
-  from: (table: string) => {
-    select: (columns?: string) => {
-      eq: (column: string, value: unknown) => {
-        then: (callback: (result: { data: unknown[]; error: null }) => void) => Promise<{ data: unknown[]; error: null }>;
-        not: (column: string, value: unknown) => { then: (callback: (result: { data: unknown[]; error: null }) => void) => Promise<{ data: unknown[]; error: null }> };
-        single: () => Promise<{ data: unknown; error: null }>;
-      };
-    };
-  };
+  from: (table: string) => MockQueryChain;
   auth: {
     getUser: () => Promise<{ data: { user: null }; error: null }>;
     getSession: () => Promise<{ data: { session: null }; error: null }>;
+    onAuthStateChange: (callback: any) => { data: { subscription: { unsubscribe: () => void } }; error: null };
+    signOut: () => Promise<{ error: null }>;
+    signInWithPassword: (credentials: any) => Promise<{ data: { user: any; session: any }; error: null }>;
+    signInWithOAuth: (options: any) => Promise<{ data: { user: any; session: any }; error: null }>;
+    getSettings: () => Promise<{ data: { settings: any }; error: null }>;
   };
   functions: {
-    invoke: (functionName: string, options?: unknown) => Promise<{ data: null; error: null }>;
+    invoke: () => Promise<{ data: null; error: null }>;
   };
+  rpc: () => Promise<{ data: null; error: null }>;
+  channel: () => { on: () => any; subscribe: () => any; unsubscribe: () => any };
+  removeChannel: () => void;
 }
 
 // Check if environment variables are available
@@ -50,23 +88,74 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   if (import.meta.env.MODE === 'test') {
     console.log('🧪 Using mock Supabase client for testing');
     
+    // Create a comprehensive query chain that supports all Supabase operations
+    const createQueryChain = () => {
+      const queryChain = {
+        select: () => queryChain,
+        eq: () => queryChain,
+        neq: () => queryChain,
+        gt: () => queryChain,
+        gte: () => queryChain,
+        lt: () => queryChain,
+        lte: () => queryChain,
+        like: () => queryChain,
+        ilike: () => queryChain,
+        is: () => queryChain,
+        in: () => queryChain,
+        contains: () => queryChain,
+        containedBy: () => queryChain,
+        rangeGt: () => queryChain,
+        rangeGte: () => queryChain,
+        rangeLt: () => queryChain,
+        rangeLte: () => queryChain,
+        rangeAdjacent: () => queryChain,
+        overlaps: () => queryChain,
+        textSearch: () => queryChain,
+        match: () => queryChain,
+        not: () => queryChain,
+        or: () => queryChain,
+        filter: () => queryChain,
+        order: () => queryChain,
+        limit: () => queryChain,
+        range: () => queryChain,
+        insert: () => queryChain,
+        upsert: () => queryChain,
+        update: () => queryChain,
+        delete: () => queryChain,
+        single: () => Promise.resolve({ data: null, error: null }),
+        maybeSingle: () => Promise.resolve({ data: null, error: null }),
+        then: (callback: any) => {
+          const result = { data: [], error: null };
+          return callback ? Promise.resolve(callback(result)) : Promise.resolve(result);
+        },
+        catch: () => Promise.resolve({ data: [], error: null }),
+        finally: (onFinally?: any) => {
+          if (onFinally) onFinally();
+          return Promise.resolve({ data: [], error: null });
+        }
+      };
+      return queryChain;
+    };
+    
     supabaseClient = {
-      from: () => ({
-        select: () => ({
-          eq: () => ({
-            then: () => Promise.resolve({ data: [], error: null }),
-            not: () => ({ then: () => Promise.resolve({ data: [], error: null }) }),
-            single: () => Promise.resolve({ data: null, error: null })
-          })
-        })
-      }),
+      from: () => createQueryChain(),
       auth: {
         getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-        getSession: () => Promise.resolve({ data: { session: null }, error: null })
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        onAuthStateChange: (callback: any) => {
+          return { data: { subscription: { unsubscribe: () => {} } }, error: null };
+        },
+        signOut: () => Promise.resolve({ error: null }),
+        signInWithPassword: (credentials: any) => Promise.resolve({ data: { user: null, session: null }, error: null }),
+        signInWithOAuth: (options: any) => Promise.resolve({ data: { user: null, session: null }, error: null }),
+        getSettings: () => Promise.resolve({ data: { settings: {} }, error: null })
       },
       functions: {
         invoke: () => Promise.resolve({ data: null, error: null })
-      }
+      },
+      rpc: () => Promise.resolve({ data: null, error: null }),
+      channel: () => ({ on: () => {}, subscribe: () => {}, unsubscribe: () => {} }),
+      removeChannel: () => {}
     };
   } else {
     throw new Error('Missing Supabase environment variables. Please check your .env file.');

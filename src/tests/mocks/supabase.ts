@@ -1,6 +1,8 @@
 import { vi } from 'vitest'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '../../types/database'
 
-// Mock Supabase client type
+// Mock Supabase client type that includes all methods
 export type MockSupabaseClient = {
   from: ReturnType<typeof vi.fn>
   auth: {
@@ -8,6 +10,10 @@ export type MockSupabaseClient = {
     getSession: ReturnType<typeof vi.fn>
     onAuthStateChange: ReturnType<typeof vi.fn>
     signOut: ReturnType<typeof vi.fn>
+    signInWithPassword: ReturnType<typeof vi.fn>
+    signInWithOAuth: ReturnType<typeof vi.fn>
+    signUp: ReturnType<typeof vi.fn>
+    getSettings: ReturnType<typeof vi.fn>
   }
   rpc: ReturnType<typeof vi.fn>
   functions: {
@@ -15,6 +21,12 @@ export type MockSupabaseClient = {
   }
   channel: ReturnType<typeof vi.fn>
   removeChannel: ReturnType<typeof vi.fn>
+  storage: {
+    from: ReturnType<typeof vi.fn>
+  }
+  realtime: {
+    channel: ReturnType<typeof vi.fn>
+  }
 }
 
 // Create a chainable query mock that supports all Supabase operations
@@ -102,7 +114,23 @@ export const createMockSupabaseClient = (): MockSupabaseClient => ({
         error: null
       }
     }),
-    signOut: vi.fn().mockResolvedValue({ error: null })
+    signOut: vi.fn().mockResolvedValue({ error: null }),
+    signInWithPassword: vi.fn().mockResolvedValue({
+      data: { user: { id: 'test-user-id', email: 'test@example.com' }, session: { access_token: 'test-token' } },
+      error: null
+    }),
+    signInWithOAuth: vi.fn().mockResolvedValue({
+      data: { user: { id: 'test-user-id' }, session: { access_token: 'test-token' } },
+      error: null
+    }),
+    signUp: vi.fn().mockResolvedValue({
+      data: { user: { id: 'test-user-id' }, session: { access_token: 'test-token' } },
+      error: null
+    }),
+    getSettings: vi.fn().mockResolvedValue({
+      data: { settings: {} },
+      error: null
+    })
   },
   rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
   functions: {
@@ -113,7 +141,23 @@ export const createMockSupabaseClient = (): MockSupabaseClient => ({
     subscribe: vi.fn().mockReturnThis(),
     unsubscribe: vi.fn().mockReturnThis()
   })),
-  removeChannel: vi.fn()
+  removeChannel: vi.fn(),
+  storage: {
+    from: vi.fn(() => ({
+      upload: vi.fn().mockResolvedValue({ data: { path: 'test-path' }, error: null }),
+      download: vi.fn().mockResolvedValue({ data: new Blob(), error: null }),
+      remove: vi.fn().mockResolvedValue({ data: [], error: null }),
+      list: vi.fn().mockResolvedValue({ data: [], error: null }),
+      getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'test-url' } })
+    }))
+  },
+  realtime: {
+    channel: vi.fn(() => ({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockReturnThis(),
+      unsubscribe: vi.fn().mockReturnThis()
+    }))
+  }
 })
 
 // Export default mock client
