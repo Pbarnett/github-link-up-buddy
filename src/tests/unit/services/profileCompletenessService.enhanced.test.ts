@@ -169,10 +169,10 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         date_of_birth: '1990-01-01',
         gender: 'OTHER',
         email: 'test@example.com',
-        phone: null as string | null,
+        phone: null as string | null | undefined,
         passport_number: undefined as string | undefined,
-        passport_country: null as string | null,
-        travel_preferences: null as Record<string, unknown> | null,
+        passport_country: null as string | null | undefined,
+        travel_preferences: null as Record<string, unknown> | null | undefined,
         notification_preferences: undefined as Record<string, unknown> | undefined
       };
 
