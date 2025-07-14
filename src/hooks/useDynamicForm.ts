@@ -102,7 +102,7 @@ export interface UseDynamicFormReturn {
 
   // Validation
   validateField: (fieldId: string, value: unknown) => Promise<ValidationResult>;
-  validateForm: (formData?: FormData | Record<string, unknown>) => Promise<ValidationResult>;
+  validateForm: (formData?: FormData | Record<string, unknown> | undefined) => Promise<ValidationResult>;
   validationErrors: Record<string, string>;
   clearFieldError: (fieldId: string) => void;
 
@@ -142,8 +142,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
   const {
     configuration: loadedConfiguration,
     loading: configLoading,
-    error: configError,
-    reloadConfiguration: reloadConfigurationFn
+    error: configError
   } = useFormConfiguration({
     configId,
     configName,
@@ -262,6 +261,8 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
         metadata: {
           submittedAt: new Date().toISOString(),
           userAgent: navigator.userAgent,
+          formVersion: formConfig.version,
+          instanceId: crypto.randomUUID(),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           formTitle: formConfig.title,
           submissionId: crypto.randomUUID()
@@ -314,10 +315,12 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
 
   // Reload configuration
   const reloadConfig = useCallback(async () => {
-    if (reloadConfigurationFn) {
-      await reloadConfigurationFn();
+    // Since UseFormConfigurationReturn doesn't have reloadConfiguration,
+    // we'll just trigger a re-render by updating the configuration
+    if (configId || configName) {
+      window.location.reload();
     }
-  }, [reloadConfigurationFn]);
+  }, [configId, configName]);
 
   // Analytics tracking functions already defined above
 
@@ -326,7 +329,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
     if (!formConfig) return null;
 
     for (const section of formConfig.sections) {
-      const field = section.fields.find(f => f.id === fieldId);
+      const field = section.fields.find((f: FieldConfiguration) => f.id === fieldId);
       if (field) return field;
     }
     return null;

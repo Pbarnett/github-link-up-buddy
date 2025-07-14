@@ -8,7 +8,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { z } from 'zod';
 import type { 
-  FieldConfiguration
+  FieldConfiguration,
+  FormConfiguration
 } from '@/types/dynamic-forms';
 import { generateValidationSchema, validateFormData } from '@/lib/form-validation';
 
@@ -49,7 +50,7 @@ export interface UseFormValidationReturn {
 }
 
 export const useFormValidation = (
-  config: DynamicFormConfig | null,
+  config: DynamicFormConfig | FormConfiguration | null,
   enableRealTime: boolean = false
 ): UseFormValidationReturn => {
   
@@ -60,7 +61,7 @@ export const useFormValidation = (
   // Generate validation schema from config
   const validationSchema = useMemo(() => {
     if (!config) return z.object({});
-    return generateValidationSchema(config);
+    return generateValidationSchema(config as FormConfiguration);
   }, [config]);
 
   // Check if form is valid (no errors)
@@ -150,7 +151,7 @@ export const useFormValidation = (
 
     try {
       // Use the comprehensive validation from form-validation lib
-      const validationResult = await validateFormData(config, formData);
+      const validationResult = await validateFormData(config as FormConfiguration, formData);
       
       if (!validationResult.isValid) {
         Object.assign(errors, validationResult.errors);
@@ -290,7 +291,7 @@ const generateFieldValidationSchema = (field: FieldConfiguration): z.ZodSchema<u
   }
 
   // Apply required validation
-  if (field.required !== undefined && field.required) {
+  if (field.validation?.required !== undefined && field.validation?.required) {
     if (schema instanceof z.ZodString) {
       schema = schema.min(1, 'This field is required');
     } else if (schema instanceof z.ZodArray) {
@@ -342,7 +343,7 @@ const executeCustomValidation = async (
 
 // Validate cross-field rules (like "confirm password" or date ranges)
 const validateCrossFieldRules = async (
-  config: DynamicFormConfig,
+  config: DynamicFormConfig | FormConfiguration,
   formData: Record<string, unknown>
 ): Promise<Record<string, string>> => {
   const errors: Record<string, string> = {};
