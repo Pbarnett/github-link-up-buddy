@@ -277,7 +277,7 @@ export async function handlePaymentMethodAttached(
       // Get customer info if we only have ID
       const customerId = typeof paymentMethod.customer === 'string' 
         ? paymentMethod.customer 
-        : (paymentMethod.customer as Stripe.Customer)?.id;
+        : (paymentMethod.customer as unknown as Stripe.Customer)?.id;
 
       if (!customerId) {
         throw new Error('Payment method has no customer');

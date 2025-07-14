@@ -310,7 +310,7 @@ export class MigrationService {
 
     if (error) throw error;
 
-    const results = data.map(row => {
+    const results = data.map((row: any) => {
       const offerValidation = this.validateOfferData(row.offer_data);
       const travelerValidation = row.traveler_data 
         ? this.validateTravelerData(row.traveler_data)
