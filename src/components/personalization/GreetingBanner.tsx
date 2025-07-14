@@ -21,7 +21,6 @@ export const GreetingBanner: React.FC<GreetingBannerComponentProps> = ({
   const { 
     personalizationData, 
     abTestVariant, 
-    experimentConfig, 
     trackPersonalizationEvent,
     isPersonalizationEnabled 
   } = usePersonalization();

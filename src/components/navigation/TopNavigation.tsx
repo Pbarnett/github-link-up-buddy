@@ -19,7 +19,6 @@ import {
   PlaneTakeoff,
   Home,
   Calendar,
-  Settings,
   User,
   CreditCard,
   LogOut,
