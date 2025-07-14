@@ -4,8 +4,7 @@
  * Unit tests for the form validation utilities and Zod schema generation
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { z } from 'zod';
+import { describe, it, expect } from 'vitest';
 import {
   generateZodSchema,
   generateFieldSchema,

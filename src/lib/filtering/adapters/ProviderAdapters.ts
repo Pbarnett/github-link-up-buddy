@@ -127,7 +127,7 @@ interface DuffelRawOffer {
 export class AmadeusAdapter implements ProviderAdapter {
   readonly providerName = 'Amadeus' as const;
 
-  normalize(rawOffer: AmadeusRawOffer, context: FilterContext): FlightOffer {
+  normalize(rawOffer: AmadeusRawOffer, _context: FilterContext): FlightOffer { // eslint-disable-line @typescript-eslint/no-unused-vars
     // Extract basic offer information
     const id = rawOffer.id || `amadeus-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const price = this.extractPrice(rawOffer);
@@ -289,7 +289,7 @@ export class AmadeusAdapter implements ProviderAdapter {
 export class DuffelAdapter implements ProviderAdapter {
   readonly providerName = 'Duffel' as const;
 
-  normalize(rawOffer: DuffelRawOffer, context: FilterContext): FlightOffer {
+  normalize(rawOffer: DuffelRawOffer, _context: FilterContext): FlightOffer { // eslint-disable-line @typescript-eslint/no-unused-vars
     const id = rawOffer.id || `duffel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const price = this.extractPrice(rawOffer);
     const carryOnInfo = this.extractCarryOnInfo(rawOffer);
