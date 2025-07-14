@@ -14,7 +14,7 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
-const handler = async (req: Request): Promise<Response> => {
+const handler = async (_req: Request): Promise<Response> => {
   try {
     console.log("Running scheduled reminder check...");
 

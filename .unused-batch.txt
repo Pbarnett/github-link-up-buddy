@@ -1,3 +1,3 @@
-"/Users/parkerbarnett/github-link-up-buddy/supabase/functions/manage-campaigns/index.ts"
-"/Users/parkerbarnett/github-link-up-buddy/supabase/functions/manage-payment-methods/index.ts"
-"/Users/parkerbarnett/github-link-up-buddy/supabase/functions/manage-traveler-profiles/index.ts"
+"/Users/parkerbarnett/github-link-up-buddy/supabase/functions/resend-webhook/index.ts"
+"/Users/parkerbarnett/github-link-up-buddy/supabase/functions/scheduler-flight-search/index.ts"
+"/Users/parkerbarnett/github-link-up-buddy/supabase/functions/scheduler-reminders/index.ts"
