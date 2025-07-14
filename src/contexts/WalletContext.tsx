@@ -81,7 +81,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create setup intent';
       setError(errorMessage);
-      throw new ImportedPaymentMethodError(errorMessage, 'api');
+      throw new PaymentMethodError(errorMessage, 'api');
     }
   };
 
@@ -110,7 +110,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete payment method';
       setError(errorMessage);
-      throw new ImportedPaymentMethodError(errorMessage, 'api');
+      throw new PaymentMethodError(errorMessage, 'api');
     }
   };
 
@@ -142,7 +142,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to set default payment method';
       setError(errorMessage);
-      throw new ImportedPaymentMethodError(errorMessage, 'api');
+      throw new PaymentMethodError(errorMessage, 'api');
     }
   };
 
@@ -174,7 +174,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update payment method nickname';
       setError(errorMessage);
-      throw new ImportedPaymentMethodError(errorMessage, 'api');
+      throw new PaymentMethodError(errorMessage, 'api');
     }
   };
 
@@ -187,7 +187,8 @@ export function WalletProvider({ children }: WalletProviderProps) {
   useEffect(() => {
     const channel = supabase
       .channel('payment-methods-changes')
-      .on('postgres_changes' as any, 
+      .on(
+        'postgres_changes' as any,
         { 
           event: '*', 
           schema: 'public', 

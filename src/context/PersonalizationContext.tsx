@@ -11,7 +11,7 @@ interface PersonalizationContextType {
   personalizationData: PersonalizationData | null;
   isLoading: boolean;
   error: Error | null;
-  trackEvent: (eventType: string, context?: unknown) => void;
+  trackEvent: (eventType: string, context?: Record<string, unknown>) => void;
   refetch: () => void;
 }
 
@@ -34,7 +34,7 @@ export function PersonalizationProvider({
     refetch 
   } = usePersonalization(userId);
   
-  const trackEventWrapper = useCallback((eventType: string, context?: unknown) => {
+  const trackEventWrapper = useCallback((eventType: string, context?: Record<string, unknown>) => {
     trackEvent({ eventType, context });
   }, [trackEvent]);
   
