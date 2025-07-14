@@ -96,7 +96,7 @@ export class ProfileApiKMS {
     
     for (const [key, value] of Object.entries(profile)) {
       if (this.encryptedFields.has(key) && typeof value === 'string') {
-        encrypted[key as keyof UserProfile] = await this.encryptField(value);
+        (encrypted as any)[key] = await this.encryptField(value);
       }
     }
     
@@ -111,7 +111,7 @@ export class ProfileApiKMS {
       for (const field of profile.encryptedFields) {
         const value = profile[field as keyof UserProfile];
         if (typeof value === 'string') {
-          decrypted[field as keyof UserProfile] = await this.decryptField(value);
+          (decrypted as any)[field] = await this.decryptField(value);
         }
       }
     }
