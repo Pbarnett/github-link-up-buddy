@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm';
 
-import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { toast } from '@/components/ui/use-toast';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
@@ -79,7 +78,7 @@ describe('TripRequestForm - Isolated Core Tests', () => {
     });
 
     // Mock toast
-    (toast as Mock).mockImplementation((options) => {
+    (toast as Mock).mockImplementation(() => {
       return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() };
     });
   });
@@ -137,7 +136,7 @@ describe('TripRequestForm - Isolated Core Tests', () => {
       await waitFor(() => {
         expect(screen.getByText(/MVY/i)).toBeInTheDocument();
       });
-    } catch (error) {
+} catch {
       console.log('Destination selection failed, which is expected in this test context');
       // This is expected in the test environment
     }

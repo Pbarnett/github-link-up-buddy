@@ -11,31 +11,10 @@ import { DatabaseError, type ErrorContext } from '../errors';
 import { retry, RetryDecorators } from '../resilience/retry';
 
 // Type for Supabase query builders
-type SupabaseQuery = {
-  select: (query?: string, options?: { count?: string; head?: boolean }) => SupabaseQuery;
-  eq: (column: string, value: unknown) => SupabaseQuery;
-  neq: (column: string, value: unknown) => SupabaseQuery;
-  gt: (column: string, value: unknown) => SupabaseQuery;
-  gte: (column: string, value: unknown) => SupabaseQuery;
-  lt: (column: string, value: unknown) => SupabaseQuery;
-  lte: (column: string, value: unknown) => SupabaseQuery;
-  like: (column: string, value: unknown) => SupabaseQuery;
-  ilike: (column: string, value: unknown) => SupabaseQuery;
-  in: (column: string, value: unknown) => SupabaseQuery;
-  is: (column: string, value: unknown) => SupabaseQuery;
-  not: (column: string, operator: string, value: unknown) => SupabaseQuery;
-  order: (column: string, options?: { ascending?: boolean }) => SupabaseQuery;
-  limit: (count: number) => SupabaseQuery;
-  range: (from: number, to: number) => SupabaseQuery;
-  maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
-  single: () => Promise<{ data: unknown; error: unknown }>;
-  insert: (values: unknown) => SupabaseQuery;
-  update: (values: unknown) => SupabaseQuery;
-  delete: () => SupabaseQuery;
-};
+type SupabaseQuery = any;
 
 // Type for database operation results
-type DatabaseResult = { data: unknown; error: unknown };
+type DatabaseResult = { data: any; error: any } | any;
 
 /**
  * Base repository configuration
@@ -158,27 +137,27 @@ export abstract class BaseRepository<
     return filters.reduce((q, filter) => {
       switch (filter.operator) {
         case 'eq':
-          return q.eq(filter.column, filter.value);
+          return q.eq(filter.column, filter.value) as SupabaseQuery;
         case 'neq':
-          return q.neq(filter.column, filter.value);
+          return q.neq(filter.column, filter.value) as SupabaseQuery;
         case 'gt':
-          return q.gt(filter.column, filter.value);
+          return q.gt(filter.column, filter.value) as SupabaseQuery;
         case 'gte':
-          return q.gte(filter.column, filter.value);
+          return q.gte(filter.column, filter.value) as SupabaseQuery;
         case 'lt':
-          return q.lt(filter.column, filter.value);
+          return q.lt(filter.column, filter.value) as SupabaseQuery;
         case 'lte':
-          return q.lte(filter.column, filter.value);
+          return q.lte(filter.column, filter.value) as SupabaseQuery;
         case 'like':
-          return q.like(filter.column, filter.value);
+          return q.like(filter.column, filter.value) as SupabaseQuery;
         case 'ilike':
-          return q.ilike(filter.column, filter.value);
+          return q.ilike(filter.column, filter.value) as SupabaseQuery;
         case 'in':
-          return q.in(filter.column, filter.value);
+          return q.in(filter.column, filter.value) as SupabaseQuery;
         case 'is':
-          return q.is(filter.column, filter.value);
+          return q.is(filter.column, filter.value) as SupabaseQuery;
         case 'not':
-          return q.not(filter.column, filter.operator, filter.value);
+          return q.not(filter.column, filter.operator, filter.value) as SupabaseQuery;
         default:
           return q;
       }
@@ -196,25 +175,25 @@ export abstract class BaseRepository<
 
     // Apply select
     if (options.select) {
-      q = q.select(options.select);
+      q = q.select(options.select) as SupabaseQuery;
     }
 
     // Apply ordering
     if (options.orderBy) {
       options.orderBy.forEach(order => {
-        q = q.order(order.column, { ascending: order.ascending ?? true });
+        q = q.order(order.column, { ascending: order.ascending ?? true }) as SupabaseQuery;
       });
     }
 
     // Apply pagination
     if (options.limit) {
-      q = q.limit(options.limit);
+      q = q.limit(options.limit) as SupabaseQuery;
     }
 
     if (options.offset) {
-      q = q.range(options.offset, options.offset + (options.limit || 1000) - 1);
+      q = q.range(options.offset, options.offset + (options.limit || 1000) - 1) as SupabaseQuery;
     } else if (options.range) {
-      q = q.range(options.range.from, options.range.to);
+      q = q.range(options.range.from, options.range.to) as SupabaseQuery;
     }
 
     return q;
@@ -232,10 +211,10 @@ export abstract class BaseRepository<
       .from(this.tableName as string)
       .select(options.select || '*')
       .eq('id', id)
-      .maybeSingle();
+      .maybeSingle() as any;
 
       const result = await this.executeQuery(
-        () => query,
+        () => query as unknown as Promise<DatabaseResult>,
         { operation: 'findById', id, ...options.context }
       );
 
@@ -255,20 +234,20 @@ export abstract class BaseRepository<
     filters: FilterCondition[] = [],
     options: QueryOptions = {}
   ): Promise<TRow[]> {
-    let query = this.client.from(this.tableName as string);
+    let query = this.client.from(this.tableName as string) as any;
     
     // Apply filters
-    query = this.applyFilters(query, filters);
+    query = this.applyFilters(query, filters) as any;
     
     // Apply query options
-    query = this.applyQueryOptions(query, options);
+    query = this.applyQueryOptions(query, options) as any;
 
-    const result = await this.executeQuery(
-      () => query,
+    const result = await this.executeQuery<TRow[]>(
+      () => query as unknown as Promise<DatabaseResult>,
       { operation: 'findMany', filters, ...options.context }
     );
 
-    return (result || []) as TRow[];
+    return result || [];
   }
 
   /**
@@ -291,12 +270,12 @@ export abstract class BaseRepository<
   ): Promise<TRow> {
     const query = this.client
       .from(this.tableName as string)
-      .insert(data as unknown)
+      .insert(data as any)
       .select(options.select || '*')
-      .single();
+      .single() as any;
 
     const result = await this.executeQuery(
-      () => query,
+      () => query as unknown as Promise<DatabaseResult>,
       { operation: 'create', data, ...options.context }
     );
 
@@ -319,11 +298,11 @@ export abstract class BaseRepository<
   ): Promise<TRow[]> {
     const query = this.client
       .from(this.tableName as string)
-      .insert(data as unknown)
-      .select(options.select || '*');
+      .insert(data as any)
+      .select(options.select || '*') as any;
 
     const result = await this.executeQuery(
-      () => query,
+      () => query as unknown as Promise<DatabaseResult>,
       { operation: 'createMany', count: data.length, ...options.context }
     );
 
@@ -333,20 +312,20 @@ export abstract class BaseRepository<
   /**
    * Update a record by ID
    */
-  public async updateById(
+public async updateById(
     id: string,
     data: TUpdate,
     options: QueryOptions = {}
   ): Promise<TRow> {
     const query = this.client
       .from(this.tableName as string)
-      .update(data as unknown)
+      .update(data as any)
       .eq('id', id)
       .select(options.select || '*')
-      .single();
+      .single() as any;
 
-    const result = await this.executeQuery(
-      () => query,
+    const result = await this.executeQuery<TRow>(
+      () => query as unknown as Promise<DatabaseResult>,
       { operation: 'updateById', id, data, ...options.context }
     );
 
@@ -357,47 +336,47 @@ export abstract class BaseRepository<
       );
     }
 
-    return result as TRow;
+    return result;
   }
 
   /**
    * Update multiple records with filters
    */
-  public async updateMany(
+public async updateMany(
     filters: FilterCondition[],
     data: TUpdate,
     options: QueryOptions = {}
   ): Promise<TRow[]> {
     let query = this.client
       .from(this.tableName as string)
-      .update(data as unknown)
-      .select(options.select || '*');
+      .update(data as any)
+      .select(options.select || '*') as any;
 
     // Apply filters
-    query = this.applyFilters(query, filters);
+    query = this.applyFilters(query, filters) as any;
 
-    const result = await this.executeQuery(
-      () => query,
+    const result = await this.executeQuery<TRow[]>(
+      () => query as unknown as Promise<DatabaseResult>,
       { operation: 'updateMany', filters, data, ...options.context }
     );
 
-    return (result || []) as TRow[];
+    return result || [];
   }
 
   /**
    * Delete a record by ID
    */
-  public async deleteById(
+public async deleteById(
     id: string,
     options: QueryOptions = {}
   ): Promise<void> {
     const query = this.client
       .from(this.tableName as string)
       .delete()
-      .eq('id', id);
+      .eq('id', id) as any;
 
-    await this.executeQuery(
-      () => query,
+    await this.executeQuery<void>(
+      () => query as unknown as Promise<DatabaseResult>,
       { operation: 'deleteById', id, ...options.context }
     );
   }
@@ -409,13 +388,13 @@ export abstract class BaseRepository<
     filters: FilterCondition[],
     options: QueryOptions = {}
   ): Promise<void> {
-    let query = this.client.from(this.tableName as string).delete();
+    let query = this.client.from(this.tableName as string).delete() as any;
 
     // Apply filters
-    query = this.applyFilters(query, filters);
+    query = this.applyFilters(query, filters) as any;
 
-    await this.executeQuery(
-      () => query,
+    await this.executeQuery<void>(
+      () => query as unknown as Promise<DatabaseResult>,
       { operation: 'deleteMany', filters, ...options.context }
     );
   }
@@ -429,17 +408,17 @@ export abstract class BaseRepository<
   ): Promise<number> {
     let query = this.client
       .from(this.tableName as string)
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true }) as any;
 
     // Apply filters
-    query = this.applyFilters(query, filters);
+    query = this.applyFilters(query, filters) as any;
 
-    const result = await this.executeQuery(
-      () => query,
+    const result = await this.executeQuery<number>(
+      () => query as unknown as Promise<DatabaseResult>,
       { operation: 'count', filters, ...options.context }
     );
 
-    return (result as unknown as number) || 0;
+    return result || 0;
   }
 
   /**
@@ -456,16 +435,16 @@ export abstract class BaseRepository<
   /**
    * Execute a raw RPC function
    */
-  public async rpc<T = unknown>(
+public async rpc<T = unknown>(
     functionName: string,
     parameters: Record<string, unknown> = {},
     options: QueryOptions = {}
   ): Promise<T> {
-    const result = await this.executeQuery(
-      () => this.client.rpc(functionName as string, parameters),
+    const result = await this.executeQuery<T>(
+      () => this.client.rpc(functionName as any, parameters) as unknown as Promise<DatabaseResult>,
       { operation: 'rpc', functionName, parameters, ...options.context }
     );
 
-    return result as T;
+    return result;
   }
 }

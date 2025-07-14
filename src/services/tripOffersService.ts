@@ -194,11 +194,11 @@ export async function fetchTripOffers(
         let basePrice = 0;
         if (v2Offer.price_total) {
           basePrice = parseFloat(v2Offer.price_total.toString());
-        } else if (v2Offer.price?.total) {
-          basePrice = parseFloat(v2Offer.price.total.toString());
+        } else if (v2Offer.price && typeof v2Offer.price === 'object' && 'total' in v2Offer.price) {
+          basePrice = parseFloat(String((v2Offer.price as any).total));
         }
         
-        const carryOnFee = parseFloat(v2Offer.price_carry_on || '0');
+        const carryOnFee = parseFloat(String(v2Offer.price_carry_on || '0'));
         
         // For round-trip offers, create 2 itineraries; for one-way, create 1
         const itineraries: any[] = [];  // Define the array type as 'any' for now
@@ -274,7 +274,7 @@ export async function fetchTripOffers(
     
     console.log(`[🔍 SERVICE] Executing ${pipelineType} filtering pipeline with ${filterPipeline.getFilters().length} filters`);
     
-    const pipelineResult = await filterPipeline.execute(normalizedOffers, filterContext);
+    const pipelineResult = await filterPipeline.execute(normalizedOffers as any, filterContext);
     
     console.log(`[🔍 SERVICE] Filtering completed: ${rawOffers.length} → ${pipelineResult.filteredOffers.length} offers`);
     
@@ -283,11 +283,11 @@ export async function fetchTripOffers(
       if (usingV2Table) {
         // Find original V2 offer to get complete data
         const originalOffer = rawOffers.find(raw => raw.id === offer.id);
-        return originalOffer ? transformV2ToLegacy(originalOffer) : transformUnifiedToLegacy(offer);
+        return originalOffer ? transformV2ToLegacy(originalOffer) : transformUnifiedToLegacy(offer as any);
       } else {
         // For legacy offers, find original and return as-is
         const originalOffer = rawOffers.find(raw => raw.id === offer.id);
-        return originalOffer as Offer || transformUnifiedToLegacy(offer);
+        return originalOffer as Offer || transformUnifiedToLegacy(offer as any);
       }
     });
 
@@ -349,24 +349,24 @@ function transformUnifiedToLegacy(unifiedOffer: Record<string, unknown>): Offer 
   const firstSegment = segments[0] as Record<string, unknown> || {};
   const secondSegment = segments[1] as Record<string, unknown> || {};
   
-  const departure = parseDateTime(String(firstSegment.departure?.at || ''));
-  const returnInfo = parseDateTime(String(secondSegment.departure?.at || ''));
+  const departure = parseDateTime(String((firstSegment.departure as any)?.at || ''));
+  const returnInfo = parseDateTime(String((secondSegment.departure as any)?.at || ''));
 
   return {
     id: String(unifiedOffer.id || ''),
     trip_request_id: String(unifiedOffer.tripRequestId || ''),
     price: Number(unifiedOffer.totalAmount) || 0,
-    airline: String(firstSegment.marketingCarrier?.name || 'Unknown'),
-    flight_number: String(firstSegment.marketingCarrier?.flightNumber || 'N/A'),
+    airline: String((firstSegment.marketingCarrier as any)?.name || 'Unknown'),
+    flight_number: String((firstSegment.marketingCarrier as any)?.flightNumber || 'N/A'),
     departure_date: departure.date,
     departure_time: departure.time,
     return_date: returnInfo.date,
     return_time: returnInfo.time,
     duration: String(unifiedOffer.duration || 'N/A'),
     booking_url: String(unifiedOffer.bookingUrl || ''),
-    carrier_code: String(firstSegment.marketingCarrier?.iataCode || ''),
-    origin_airport: String(firstSegment.origin?.iataCode || ''),
-    destination_airport: String(firstSegment.destination?.iataCode || ''),
+    carrier_code: String((firstSegment.marketingCarrier as any)?.iataCode || ''),
+    origin_airport: String((firstSegment.origin as any)?.iataCode || ''),
+    destination_airport: String((firstSegment.destination as any)?.iataCode || ''),
     price_total: Number(unifiedOffer.totalAmount) || undefined,
     price_currency: String(unifiedOffer.currency || ''),
     cabin_class: String(unifiedOffer.cabinClass || ''),

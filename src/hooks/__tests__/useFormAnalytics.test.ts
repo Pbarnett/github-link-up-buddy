@@ -1,6 +1,13 @@
 import { renderHook, act } from '@testing-library/react';
 import { supabase } from '@/integrations/supabase/client';
-import { vi, beforeEach, describe, it, expect } from 'vitest';
+import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest';
+
+// Mock Supabase client with proper typing
+type MockSupabaseClient = {
+  rpc: ReturnType<typeof vi.fn>;
+};
+
+const mockSupabaseClient = supabase as unknown as MockSupabaseClient;
 
 // Import real implementation - we want to test the actual logic
 vi.doUnmock('../useFormAnalytics');
@@ -54,7 +61,7 @@ describe('useFormAnalytics', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.clear();
-(supabase.rpc as any).mockResolvedValue({ error: null });
+    mockSupabaseClient.rpc.mockResolvedValue({ error: null });
     vi.useFakeTimers();
   });
 
@@ -87,10 +94,10 @@ describe('useFormAnalytics', () => {
     });
 
     // Hook automatically tracks form_view on init + our form_submit call = 2 calls
-    expect(supabase.rpc).toHaveBeenCalledTimes(2);
+    expect(mockSupabaseClient.rpc).toHaveBeenCalledTimes(2);
     
     // Check the second call (form_submit) has the correct payload
-    expect(supabase.rpc).toHaveBeenNthCalledWith(2, 'track_form_event', {
+    expect(mockSupabaseClient.rpc).toHaveBeenNthCalledWith(2, 'track_form_event', {
       p_form_config_id: 'test-form',
       p_form_name: 'TestForm',
       p_form_version: 1,
@@ -125,7 +132,7 @@ describe('useFormAnalytics', () => {
       result.current.trackFieldInteraction('destination', 'select');
     });
 
-    expect(supabase.rpc).toHaveBeenCalledWith('track_form_event', expect.objectContaining({
+    expect(mockSupabaseClient.rpc).toHaveBeenCalledWith('track_form_event', expect.objectContaining({
       p_event_type: 'field_interaction',
       p_field_id: 'destination',
       p_field_type: 'select'
@@ -145,7 +152,7 @@ describe('useFormAnalytics', () => {
       result.current.trackFieldError('price', 'number', 'Price must be positive');
     });
 
-    expect(supabase.rpc).toHaveBeenCalledWith('track_form_event', expect.objectContaining({
+    expect(mockSupabaseClient.rpc).toHaveBeenCalledWith('track_form_event', expect.objectContaining({
       p_event_type: 'field_error',
       p_field_id: 'price',
       p_field_type: 'number',
@@ -156,7 +163,7 @@ describe('useFormAnalytics', () => {
   it('should retry on 500 error and eventually succeed', async () => {
     vi.clearAllMocks();
     
-(supabase.rpc as any).mockResolvedValueOnce({ data: {}, error: null })                 // form_view
+mockSupabaseClient.rpc.mockResolvedValueOnce({ data: {}, error: null })                 // form_view
       .mockResolvedValueOnce({ data: null, error: { status: 500 } })    // submit #1
       .mockResolvedValueOnce({ data: null, error: { status: 500 } })    // retry #1
       .mockResolvedValueOnce({ data: {}, error: null });                // retry #2 success
@@ -173,13 +180,13 @@ describe('useFormAnalytics', () => {
       await flushPromises();
     });
 
-    expect(supabase.rpc).toHaveBeenCalledTimes(3);
+    expect(mockSupabaseClient.rpc).toHaveBeenCalledTimes(3);
   });
 
   it('should queue events locally after max retries exceeded', async () => {
     vi.clearAllMocks();
 
-    (supabase.rpc as unknown as { mockResolvedValueOnce: (value: { data?: unknown; error?: { status: number } | null }) => unknown; mockResolvedValue: (value: { data?: unknown; error?: { status: number } | null }) => unknown })
+    mockSupabaseClient.rpc
       .mockResolvedValueOnce({ data: {}, error: null })                 // form_view
       .mockResolvedValue({ data: null, error: { status: 500 } });       // 4× submit attempts fail
 
@@ -195,7 +202,7 @@ describe('useFormAnalytics', () => {
       await flushPromises();
     });
 
-    expect(supabase.rpc).toHaveBeenCalledTimes(3);   // 1 view + 2 submit attempts
+    expect(mockSupabaseClient.rpc).toHaveBeenCalledTimes(3);   // 1 view + 2 submit attempts
     
     // The hook should attempt to queue failed events
     // We verify the hook handled the failure gracefully by checking it completed without throwing

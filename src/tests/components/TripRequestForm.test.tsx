@@ -251,16 +251,16 @@ describe('TripRequestForm - Submission Logic', () => {
     // Verify the form is in a valid state before attempting submission
     await waitFor(() => {
       const submitButtons = screen.getAllByRole('button', { name: /search now/i });
-      const enabledButton = submitButtons.find(btn => !btn.disabled);
+    const enabledButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled);
       expect(enabledButton).toBeTruthy();
     }, { timeout: 5000 });
 
     // Find the submit button
     const submitButtons = screen.getAllByRole('button', { name: /search now/i });
-    const submitButton = submitButtons.find(btn => !btn.disabled) || submitButtons[0];
+    const submitButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) || submitButtons[0];
     
     // Debug: Check form state if button is still disabled
-    if (submitButton.disabled) {
+    if ((submitButton as HTMLButtonElement).disabled) {
       const errors = getFormErrors();
       console.warn('Form validation errors:', errors);
       console.warn('Form values might not be set correctly');
@@ -276,7 +276,7 @@ describe('TripRequestForm - Submission Logic', () => {
       } catch (e) {
         const errors = getFormErrors();
         console.warn('Form validation errors during submission:', errors);
-        console.warn('Submit button state:', submitButton.disabled);
+        console.warn('Submit button state:', (submitButton as HTMLButtonElement).disabled);
         throw e;
       }
     }, { timeout: 10000 });
@@ -404,7 +404,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
 
     // Default mocks for auto-booking prerequisites
     mockUsePaymentMethods.mockReturnValue({
-      data: [{ id: 'pm_123', brand: 'Visa', last4: '4242', is_default: true, nickname: 'Work Card', exp_month: 12, exp_year: 2025 }],
+      data: [{ id: 'pm_123', brand: 'Visa', last4: '4242', is_default: true, nickname: 'Work Card', exp_month: 12, exp_year: 2025, created_at: '2024-01-01T00:00:00.000Z' }],
       isLoading: false,
       refetch: vi.fn(),
     });
@@ -471,7 +471,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
 
     // When auto-booking is enabled, the button text changes to "Start Auto-Booking"
     const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-    const submitButton = submitButtons.find(btn => !btn.disabled) || submitButtons[0];
+    const submitButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) || submitButtons[0];
     await userEvent.click(submitButton);
 
     await waitFor(() => {
@@ -535,7 +535,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
 
     // When auto-booking is enabled, the button text changes to "Start Auto-Booking"
     const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-    const submitButton = submitButtons.find(btn => !btn.disabled) || submitButtons[0];
+    const submitButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) || submitButtons[0];
     await userEvent.click(submitButton);
 
     await waitFor(() => {
@@ -615,7 +615,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     // This simulates the UI behavior where enabling auto-booking implies consent in manual mode
     try {
       const consentCheckbox = screen.getByLabelText(/I authorize Parker Flight/i);
-      if (!consentCheckbox.checked) {
+      if (!(consentCheckbox as HTMLInputElement).checked) {
         await userEvent.click(consentCheckbox);
       }
     } catch {
@@ -634,16 +634,16 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     // Wait for form to be valid before attempting submission
     await waitFor(() => {
       const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-      const enabledButton = submitButtons.find(btn => !btn.disabled);
+      const enabledButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled);
       expect(enabledButton).toBeTruthy();
     }, { timeout: 5000 });
 
     // When auto-booking is enabled, the button text changes to "Start Auto-Booking"
     const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-    const submitButton = submitButtons.find(btn => !btn.disabled) || submitButtons[0];
+    const submitButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) || submitButtons[0];
     
     // Debug form state if submission fails
-    if (submitButton.disabled) {
+    if ((submitButton as HTMLButtonElement).disabled) {
       const errors = getFormErrors();
       console.warn('Auto-booking form validation errors:', errors);
     }
@@ -685,7 +685,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
 
     // For auto-booking OFF mode, the button text should be "Search Now"
     const submitButtons = screen.getAllByRole('button', { name: /search now/i });
-    const submitButton = submitButtons.find(btn => !btn.disabled) || submitButtons[0];
+    const submitButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) || submitButtons[0];
     await userEvent.click(submitButton);
 
     await waitFor(() => {
@@ -694,7 +694,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
       } catch (e) {
         const errors = getFormErrors();
         console.warn('Form validation errors during submission (auto-booking OFF):', errors);
-        console.warn('Submit button state:', submitButton.disabled);
+        console.warn('Submit button state:', (submitButton as HTMLButtonElement).disabled);
         throw e;
       }
     }, { timeout: 10000 });

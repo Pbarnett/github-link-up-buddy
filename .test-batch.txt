@@ -1,3 +1,0 @@
-src/tests/components/TripRequestForm.working-demo.test.tsx
-src/tests/components/TripRequestForm.best-practices.test.tsx
-src/tests/components/TripRequestForm.test.tsx

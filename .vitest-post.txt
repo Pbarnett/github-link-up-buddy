@@ -1,0 +1,244 @@
+
+ RUN  v3.2.4 /Users/parkerbarnett/github-link-up-buddy
+
+ ✓ tests/unit/components/CampaignForm.test.tsx (12 tests) 9384ms
+   ✓ CampaignForm Analytics Integration > should initialize analytics with correct form configuration  2106ms
+   ✓ CampaignForm Analytics Integration > should track field interactions on input changes  645ms
+   ✓ CampaignForm Analytics Integration > should track field errors for invalid business rule values  1211ms
+   ✓ CampaignForm Analytics Integration > should track form submission with correct data  832ms
+   ✓ CampaignForm Analytics Integration > should display config-driven price range in UI  345ms
+   ✓ CampaignForm Analytics Integration > should only show cabin classes allowed by configuration  1227ms
+   ✓ CampaignForm Business Rules Validation > should enforce config-driven minimum price  476ms
+   ✓ CampaignForm Business Rules Validation > should enforce config-driven maximum price  726ms
+   ✓ CampaignForm Business Rules Validation > should disable form when auto-booking is disabled in config  492ms
+   ✓ CampaignForm Business Rules Validation > should show configuration version and auto-booking status  435ms
+   ✓ CampaignForm Loading and Error States > should show loading state when config is loading  351ms
+   ✓ CampaignForm Loading and Error States > should show error state when config fails to load  459ms
+ ✓ src/components/forms/FlightRuleForm.test.tsx (9 tests) 9866ms
+   ✓ FlightRuleForm > renders all form fields  3033ms
+   ✓ FlightRuleForm > displays validation errors for empty required fields  1623ms
+   ✓ FlightRuleForm > submits form with valid data  647ms
+   ✓ FlightRuleForm > validates return date is after outbound date  469ms
+   ✓ FlightRuleForm > allows selection of different cabin classes  556ms
+   ✓ FlightRuleForm > validates budget is within acceptable range  1464ms
+   ✓ FlightRuleForm > handles auto-booking enabled state  338ms
+   ✓ FlightRuleForm > prevents submission with dates in the past  1484ms
+ ✓ src/tests/components/TripRequestForm.simple.test.tsx (7 tests) 14876ms
+   ✓ TripRequestForm - Basic Functionality > should render the form with basic elements  2986ms
+   ✓ TripRequestForm - Basic Functionality > should render form input fields  2485ms
+   ✓ TripRequestForm - Basic Functionality > should allow selecting cabin class  1490ms
+   ✓ TripRequestForm - Basic Functionality > should have submit button disabled initially  2275ms
+   ✓ TripRequestForm - Basic Functionality > should render date input fields  1340ms
+   ✓ TripRequestForm - Basic Functionality > should allow filling out basic form fields  2551ms
+   ✓ TripRequestForm - Basic Functionality > should render form sections  1677ms
+ ✓ src/tests/pages/Dashboard.test.tsx (5 tests) 6250ms
+   ✓ Dashboard Page > 1. Renders loading state initially  822ms
+   ✓ Dashboard Page > 2. Renders "Active Watches" tab by default when authenticated  3086ms
+   ✓ Dashboard Page > 3. Switches to "My Trips" tab, renders TripHistory component with userId  936ms
+   ✓ Dashboard Page > 4. Switches back to "Active Watches" tab  1280ms
+ ✓ src/components/filtering/__tests__/frontend-integration.test.tsx (22 tests) 3995ms
+   ✓ Phase 3: Frontend Integration Tests > AdvancedFilterControls Component > should render filter controls correctly  938ms
+   ✓ Phase 3: Frontend Integration Tests > AdvancedFilterControls Component > should call onFiltersChange when budget slider changes  546ms
+   ✓ Phase 3: Frontend Integration Tests > AdvancedFilterControls Component > should call onFiltersChange when nonstop switch is toggled  336ms
+   ✓ Phase 3: Frontend Integration Tests > AdvancedFilterControls Component > should call onFiltersChange when pipeline type changes  336ms
+   ✓ Phase 3: Frontend Integration Tests > Performance and UX > should debounce filter updates to prevent excessive API calls  476ms
+ ✓ tests/unit/pages/Dashboard.test.tsx (5 tests) 4779ms
+   ✓ Dashboard Page > 1. Renders loading state initially  537ms
+   ✓ Dashboard Page > 2. Renders "Active Watches" tab by default when authenticated  2211ms
+   ✓ Dashboard Page > 3. Switches to "My Trips" tab, renders TripHistory component with userId  956ms
+   ✓ Dashboard Page > 4. Switches back to "Active Watches" tab  1024ms
+ ✓ src/tests/components/ConstraintChips.refactored.test.tsx (12 tests) 3253ms
+   ✓ ConstraintChips (Refactored) > Component rendering with semantic elements > should render all chips with proper accessibility roles  723ms
+   ✓ ConstraintChips (Refactored) > User interactions > should call onToggleNonStop when non-stop button is clicked  1237ms
+ ✓ src/pages/TripOffersV2.test.tsx (11 tests) 3322ms
+   ✓ TripOffersV2 Component > should display FlagDisabledPlaceholder when feature is not enabled  500ms
+   ✓ TripOffersV2 Component > should display error message and retry button when error occurs and feature is enabled  1504ms
+   ✓ TripOffersV2 Component > should display flight offers cards when offers are available and feature is enabled  498ms
+ ✓ src/tests/components/TripRequestForm.mode.fixed.test.tsx (5 tests) 6717ms
+   ✓ TripRequestForm Mode Handling > should show manual mode UI by default  3249ms
+   ✓ TripRequestForm Mode Handling > should show manual mode UI when mode=manual  1210ms
+   ✓ TripRequestForm Mode Handling > should show auto mode UI when mode=auto  913ms
+   ✓ TripRequestForm Mode Handling > should show step indicator in auto mode  720ms
+   ✓ TripRequestForm Mode Handling > should show different sections in auto mode step 1  620ms
+ ✓ src/tests/components/TripRequestForm.mode.final.test.tsx (5 tests) 6736ms
+   ✓ TripRequestForm Mode Handling > should show manual mode UI by default  3460ms
+   ✓ TripRequestForm Mode Handling > should show manual mode UI when mode=manual  1055ms
+   ✓ TripRequestForm Mode Handling > should show auto mode UI when mode=auto  988ms
+   ✓ TripRequestForm Mode Handling > should show step indicator in auto mode  622ms
+   ✓ TripRequestForm Mode Handling > should show different sections in auto mode step 1  606ms
+ ✓ src/tests/components/TripRequestForm.isolated.test.tsx (6 tests) 15656ms
+   ✓ TripRequestForm - Isolated Core Tests > should render the form with basic elements  3029ms
+   ✓ TripRequestForm - Isolated Core Tests > should enable auto-booking toggle and show payment method selection  3331ms
+   ✓ TripRequestForm - Isolated Core Tests > should fill destination using direct input approach  4733ms
+   ✓ TripRequestForm - Isolated Core Tests > should show filter toggles section when expanded  1528ms
+   ✓ TripRequestForm - Isolated Core Tests > should find form input fields  1230ms
+   ✓ TripRequestForm - Isolated Core Tests > should handle form field changes  1799ms
+ ✓ tests/unit/components/TripRequestForm.test.tsx (5 tests) 7679ms
+   ✓ TripRequestForm Mode Handling > should show manual mode UI by default  3235ms
+   ✓ TripRequestForm Mode Handling > should show manual mode UI when mode=manual  1384ms
+   ✓ TripRequestForm Mode Handling > should show auto mode UI when mode=auto  925ms
+   ✓ TripRequestForm Mode Handling > should show step indicator in auto mode  550ms
+   ✓ TripRequestForm Mode Handling > should show different sections in auto mode step 1  1581ms
+ ✓ src/tests/components/TripRequestForm.mode.test.tsx (5 tests) 8721ms
+   ✓ TripRequestForm Mode Handling > should show manual mode UI by default  4753ms
+   ✓ TripRequestForm Mode Handling > should show manual mode UI when mode=manual  1629ms
+   ✓ TripRequestForm Mode Handling > should show auto mode UI when mode=auto  942ms
+   ✓ TripRequestForm Mode Handling > should show step indicator in auto mode  723ms
+   ✓ TripRequestForm Mode Handling > should show different sections in auto mode step 1  671ms
+ ✓ tests/unit/components/dashboard/TripHistory.test.tsx (5 tests) 3845ms
+   ✓ TripHistory Component > 1. Shows loading state initially  539ms
+   ✓ TripHistory Component > 4. Renders booking history in a table with correct data and links  2925ms
+ ❯ src/tests/components/TripRequestForm.best-practices.test.tsx (9 tests | 5 failed) 44058ms
+   ✓ TripRequestForm - Best Practices Implementation > Form Validation Logic (Recommended Focus) > should validate that required date fields enable form submission  4460ms
+   × TripRequestForm - Best Practices Implementation > Form Validation Logic (Recommended Focus) > should prevent submission when dates are missing 5425ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × TripRequestForm - Best Practices Implementation > Form Submission with Mocked Dates (Best Practice) > should submit successfully with programmatically set dates 11726ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × TripRequestForm - Best Practices Implementation > Auto-booking Validation (Business Logic Focus) > should validate auto-booking requires payment method 5207ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × TripRequestForm - Best Practices Implementation > Auto-booking Validation (Business Logic Focus) > should submit successfully with auto-booking when all requirements are met 5135ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × TripRequestForm - Best Practices Implementation > Date Range Validation (Programmatic Testing) > should accept valid future date ranges 5159ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   ✓ TripRequestForm - Best Practices Implementation > Filter Toggle Logic (UI State Testing) > should toggle nonstop flights filter  4306ms
+   ✓ TripRequestForm - Best Practices Implementation > Filter Toggle Logic (UI State Testing) > should toggle baggage filter  2633ms
+   ✓ Migration Notes for Existing Tests > should serve as a migration example 1ms
+ ✓ src/tests/components/dashboard/TripHistory.test.tsx (5 tests) 3515ms
+   ✓ TripHistory Component > 1. Shows loading state initially  568ms
+   ✓ TripHistory Component > 4. Renders booking history in a table with correct data and links  2556ms
+ ✓ src/tests/pages/TripConfirm.test.tsx (3 tests | 1 skipped) 2592ms
+   ✓ TripConfirm Page > should display auto-booking banner if tripRequest.auto_book_enabled is true  1781ms
+   ✓ TripConfirm Page > should display "Book Now" button if tripRequest.auto_book_enabled is false  808ms
+ ✓ tests/unit/components/ConstraintChips.test.tsx (5 tests) 1409ms
+   ✓ ConstraintChips > renders carry-on included chip  716ms
+   ✓ ConstraintChips > shows different styling when nonStopOnly is true  517ms
+ ✓ tests/unit/featureFlag.test.ts (24 tests) 1692ms
+   ✓ Feature Flag System > 5% Canary Rollout Simulation > maintains consistency across multiple checks  1419ms
+ ✓ src/components/trip/Pools/__tests__/PoolSection.test.tsx (3 tests) 2759ms
+   ✓ PoolSection > renders children when count > 0 and section is expanded  2269ms
+ ✓ tests/unit/components/ConstraintChips.refactored.test.tsx (12 tests) 3864ms
+   ✓ ConstraintChips (Refactored) > Pure helper function > formatDateRange should format dates correctly  373ms
+   ✓ ConstraintChips (Refactored) > Component rendering with semantic elements > should render all chips with proper accessibility roles  894ms
+   ✓ ConstraintChips (Refactored) > User interactions > should call onToggleNonStop when non-stop button is clicked  1528ms
+   ✓ ConstraintChips (Refactored) > User interactions > should toggle non-stop using getByRole for accessibility testing  368ms
+ ✓ src/tests/components/profile/SimpleProfileStatus.test.tsx (12 tests) 1159ms
+   ✓ SimpleProfileStatus > Profile completion status display > renders completion percentage correctly  408ms
+ ✓ src/tests/components/PoolOfferControls.test.tsx (7 tests) 1374ms
+   ✓ PoolOfferControls > renders ConstraintChips with correct dateRange  907ms
+ ✓ src/tests/components/ConstraintChips.test.tsx (5 tests) 1957ms
+   ✓ ConstraintChips > renders carry-on included chip  784ms
+   ✓ ConstraintChips > shows different styling when nonStopOnly is true  813ms
+ ✓ supabase/functions/tests/amadeusToken.test.ts (4 tests) 1272ms
+   ✓ Amadeus Token Caching > should refresh expired tokens  1156ms
+ ✓ src/tests/components/personalization/PersonalizedGreeting.test.tsx (8 tests) 1382ms
+   ✓ PersonalizedGreeting > renders loading state initially  326ms
+   ✓ PersonalizedGreeting > renders personalized greeting with name  463ms
+   ✓ PersonalizedGreeting > handles API error gracefully  319ms
+ ✓ tests/unit/components/PoolOfferControls.test.tsx (7 tests) 2447ms
+   ✓ PoolOfferControls > renders ConstraintChips with correct dateRange  1725ms
+ ✓ src/tests/components/personalization/GreetingBanner.test.tsx (3 tests) 1264ms
+   ✓ GreetingBanner > should render without crashing  977ms
+ ✓ tests/unit/components/profile/SimpleProfileStatus.test.tsx (12 tests) 1312ms
+   ✓ SimpleProfileStatus > Profile completion status display > renders completion percentage correctly  501ms
+ ✓ src/tests/components/TripRequestForm.debug.test.tsx (2 tests) 3960ms
+   ✓ TripRequestForm Debug > debug: check what renders in auto mode  2511ms
+   ✓ TripRequestForm Debug > debug: check manual mode  1445ms
+ ✓ tests/unit/hooks/useTripOffers.test.ts (17 tests) 1302ms
+   ✓ useTripOffers > Initial loading > should initialize with loading state when tripId is provided  319ms
+ ✓ src/components/trip/Pools/__tests__/PoolLayout.test.tsx (3 tests) 1665ms
+   ✓ PoolLayout > renders three pool sections  1577ms
+ ✓ src/tests/hooks/useTripOffers.test.ts (17 tests) 1524ms
+   ✓ useTripOffers > Initial loading > should initialize with loading state when tripId is provided  461ms
+ ❯ src/tests/components/TripRequestForm.test.tsx (10 tests | 6 failed) 46526ms
+   ✓ TripRequestForm - Filter Toggles Logic > should render "Nonstop flights only" switch checked by default  4613ms
+   ✓ TripRequestForm - Filter Toggles Logic > should render "Include carry-on + personal item" switch unchecked by default  1653ms
+   ✓ TripRequestForm - Filter Toggles Logic > should update switch state when "Include carry-on + personal item" switch is toggled  2093ms
+   ✓ TripRequestForm - Filter Toggles Logic > should reflect Zod schema default values for switches on initial render  1444ms
+   × TripRequestForm - Submission Logic > should populate destination_location_code from destination_airport if omitted 5408ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × TripRequestForm - Auto-Booking Logic > should show payment method selection when auto-booking is enabled and prerequisites are met 5321ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × TripRequestForm - Auto-Booking Logic > should fail submission if auto-booking is enabled, max_price is set, but no payment method is selected 8519ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × TripRequestForm - Auto-Booking Logic > should fail submission if auto-booking is enabled, payment method is set, but max_price is missing 7020ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × TripRequestForm - Auto-Booking Logic > should submit successfully with auto-booking ON, payment method, and max_price 5182ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   × TripRequestForm - Auto-Booking Logic > should submit successfully with auto-booking OFF, not sending auto-booking fields 5268ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ✓ src/tests/contexts/PersonalizationContext.test.tsx (3 tests) 792ms
+   ✓ PersonalizationContext > should provide personalization data when enabled  606ms
+ ✓ src/flightSearchV2/useFlightOffers.test.ts (8 tests) 948ms
+ ✓ src/components/trip/Pools/__tests__/PoolHeader.test.tsx (2 tests) 588ms
+   ✓ PoolHeader > renders pool name and count  543ms
+ ✓ src/serverActions/getFlightOffers.test.ts (10 tests) 472ms
+ ✓ src/tests/hooks/useTripOffersPools.test.ts (3 tests) 579ms
+ ✓ supabase/functions/tests/prepare-auto-booking-charge.test.ts (10 tests) 295ms
+ ✓ tests/unit/hooks/useTripOffersPools.test.ts (3 tests) 430ms
+   ✓ useTripOffersPools > should initialize with default values  333ms
+ ✓ src/lib/filtering/__tests__/FilteringSystem.test.ts (23 tests) 678ms
+ ✓ tests/unit/hooks/usePoolsSafe.test.ts (7 tests) 396ms
+ ✓ src/tests/hooks/usePoolsSafe.test.ts (7 tests) 501ms
+ ✓ supabase/functions/tests/cancel-booking.test.ts (13 tests) 296ms
+ ✓ src/lib/filtering/__tests__/integration-simple.test.ts (8 tests) 373ms
+ ✓ src/lib/filtering/__tests__/end-to-end-integration.test.ts (13 tests) 337ms
+ ✓ src/hooks/__tests__/useFormAnalytics.test.ts (8 tests) 397ms
+ ✓ src/services/flightApi.test.ts (11 tests) 305ms
+ ✓ supabase/functions/tests/send-reminder.test.ts (6 tests) 301ms
+ ✓ src/lib/form-validation.test.ts (17 tests) 389ms
+ ❯ src/tests/components/TripRequestForm.working-demo.test.tsx (4 tests | 1 failed) 9589ms
+   × Calendar Testing Solution - Working Demo > should successfully test form logic without complex UI interactions 5282ms
+     → Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+   ✓ Calendar Testing Solution - Working Demo > should demonstrate filter toggle testing (simple UI testing)  2629ms
+   ✓ Calendar Testing Solution - Working Demo > should focus on business logic validation rather than UI implementation  1671ms
+   ✓ Migration Strategy Summary > should document the complete solution approach 4ms
+ ✓ src/lib/filtering/__tests__/integration.test.ts (10 tests | 2 skipped) 296ms
+ ✓ src/tests/components/TripRequestForm.minimal.test.tsx (1 test) 335ms
+   ✓ TripRequestForm - Minimal Test > should render without crashing  332ms
+ ✓ supabase/functions/tests/send-notification.test.ts (11 tests) 268ms
+ ✓ supabase/functions/flight-offers-v2/index.test.ts (4 tests) 107ms
+ ✓ src/tests/unit/database/profileCompleteness.trigger.test.ts (16 tests) 167ms
+ ✓ src/lib/filtering/__tests__/AirlineFilter.test.ts (20 tests) 208ms
+ ✓ src/tests/payment-architecture.test.ts (14 tests) 163ms
+ ✓ src/tests/unit/services/profileCompletenessService.enhanced.test.ts (18 tests) 135ms
+ ✓ src/lib/business-rules/__tests__/ConfigLoader.test.ts (3 tests) 188ms
+ ✓ src/lib/errors/__tests__/handler.test.ts (16 tests) 161ms
+ ✓ supabase/functions/tests/carry-on-fee.vitest.test.ts (19 tests) 62ms
+ ✓ supabase/functions/lib/seatSelector.test.ts (13 tests) 195ms
+ ✓ tests/unit/payment-architecture.test.ts (14 tests) 65ms
+ ✓ src/tests/serverActions/getFlightOffers.refactored.test.ts (5 tests) 141ms
+ ✓ supabase/functions/tests/carry-on-fee-standalone.test.ts (17 tests) 98ms
+ ✓ supabase/functions/tests/carry-on-fee.test.ts (19 tests) 227ms
+ ✓ src/tests/services/profileCompletenessService.test.ts (17 tests) 91ms
+ ✓ src/tests/hooks/useTripOffersLegacy.helpers.test.ts (13 tests) 72ms
+ ✓ src/tests/feature-flags/userInBucket.test.ts (5 tests) 15ms
+ ✓ tests/unit/serverActions/getFlightOffers.refactored.test.ts (5 tests) 127ms
+ ✓ tests/unit/hooks/useTripOffersLegacy.helpers.test.ts (13 tests) 25ms
+ ✓ supabase/functions/flight-search-v2/index.test.ts (6 tests) 182ms
+ ✓ supabase/functions/tests/payment-methods-kms.test.ts (5 tests) 14ms
+ ✓ tests/unit/services/profileCompletenessService.test.ts (17 tests) 45ms
+ ✓ src/tests/services/carry-on-fee.client.test.ts (3 tests) 9ms
+ ✓ tests/unit/services/carry-on-fee.client.test.ts (3 tests) 9ms
+ ✓ tests/unit/utils/getPoolDisplayName.test.ts (2 tests) 9ms
+ ✓ src/tests/utils/getPoolDisplayName.test.ts (2 tests) 8ms
+ ↓ supabase/functions/tests/auto-book.test.ts (5 tests | 5 skipped)
+ ↓ supabase/functions/tests/payment-architecture-e2e.test.ts (3 tests | 3 skipped)
+ ↓ supabase/functions/tests/payment-flow.test.ts (6 tests | 6 skipped)
+
+ Test Files  4 failed | 77 passed | 3 skipped (84)
+      Tests  12 failed | 714 passed | 17 skipped (743)
+   Start at  01:11:02
+   Duration  139.35s (transform 10.97s, setup 200.50s, collect 379.00s, tests 253.20s, environment 441.04s, prepare 73.94s)
+

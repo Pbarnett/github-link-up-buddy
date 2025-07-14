@@ -8,10 +8,16 @@
 import { useState, useCallback, useMemo } from 'react';
 import { z } from 'zod';
 import type { 
-  DynamicFormConfig,
   FieldConfiguration
 } from '@/types/dynamic-forms';
 import { generateValidationSchema, validateFormData } from '@/lib/form-validation';
+
+// Define DynamicFormConfig interface locally
+interface DynamicFormConfig {
+  sections: {
+    fields: FieldConfiguration[];
+  }[];
+}
 
 export interface ValidationResult {
   isValid: boolean;
@@ -67,7 +73,7 @@ export const useFormValidation = (
     if (!config) return null;
     
     for (const section of config.sections) {
-      const field = section.fields.find(f => f.id === fieldId);
+      const field = section.fields.find((f: any) => f.id === fieldId);
       if (field) return field;
     }
     return null;
@@ -232,26 +238,26 @@ const generateFieldValidationSchema = (field: FieldConfiguration): z.ZodSchema<u
     case 'textarea':
       schema = z.string();
       if (field.validation?.email) {
-        schema = schema.email('Invalid email address');
+        schema = (schema as z.ZodString).email('Invalid email address');
       }
       if (field.validation?.minLength) {
-        schema = schema.min(field.validation.minLength, `Minimum ${field.validation.minLength} characters`);
+        schema = (schema as z.ZodString).min(field.validation.minLength, `Minimum ${field.validation.minLength} characters`);
       }
       if (field.validation?.maxLength) {
-        schema = schema.max(field.validation.maxLength, `Maximum ${field.validation.maxLength} characters`);
+        schema = (schema as z.ZodString).max(field.validation.maxLength, `Maximum ${field.validation.maxLength} characters`);
       }
       if (field.validation?.pattern) {
-        schema = schema.regex(new RegExp(field.validation.pattern), 'Invalid format');
+        schema = (schema as z.ZodString).regex(new RegExp(field.validation.pattern), 'Invalid format');
       }
       break;
 
     case 'number':
       schema = z.number();
       if (field.validation?.min !== undefined) {
-        schema = schema.min(field.validation.min, `Minimum value is ${field.validation.min}`);
+        schema = (schema as z.ZodNumber).min(field.validation.min, `Minimum value is ${field.validation.min}`);
       }
       if (field.validation?.max !== undefined) {
-        schema = schema.max(field.validation.max, `Maximum value is ${field.validation.max}`);
+        schema = (schema as z.ZodNumber).max(field.validation.max, `Maximum value is ${field.validation.max}`);
       }
       break;
 
@@ -284,7 +290,7 @@ const generateFieldValidationSchema = (field: FieldConfiguration): z.ZodSchema<u
   }
 
   // Apply required validation
-  if (field.required) {
+  if (field.required !== undefined && field.required) {
     if (schema instanceof z.ZodString) {
       schema = schema.min(1, 'This field is required');
     } else if (schema instanceof z.ZodArray) {
@@ -345,7 +351,7 @@ const validateCrossFieldRules = async (
   const startDate = formData['start_date'];
   const endDate = formData['end_date'];
   
-  if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+  if (startDate && endDate && new Date(startDate as string) >= new Date(endDate as string)) {
     errors['end_date'] = 'End date must be after start date';
   }
 

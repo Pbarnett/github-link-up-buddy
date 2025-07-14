@@ -125,16 +125,36 @@ src/contexts/WalletContext.tsx(196,10): error TS7006: Parameter 'payload' implic
 src/contexts/WalletContext.tsx(205,16): error TS2339: Property 'removeChannel' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
   Property 'removeChannel' does not exist on type 'MockSupabaseClient'.
 src/flightSearchV2/useFlightOffers.test.ts(29,86): error TS2345: Argument of type 'boolean' is not assignable to parameter of type '{ data: boolean; isLoading: boolean; isError: boolean; error: null; }'.
-src/hooks/__tests__/useFormAnalytics.test.ts(45,67): error TS2769: No overload matches this call.
+src/hooks/__tests__/useFormAnalytics.test.ts(38,67): error TS2769: No overload matches this call.
   Overload 1 of 2, '(callback: () => void): void', gave the following error.
     Argument of type '(value: unknown) => void' is not assignable to parameter of type '() => void'.
       Target signature provides too few arguments. Expected 1 or more, but got 0.
   Overload 2 of 2, '(callback: VoidFunction): void', gave the following error.
     Argument of type '(value: unknown) => void' is not assignable to parameter of type 'VoidFunction'.
       Target signature provides too few arguments. Expected 1 or more, but got 0.
-src/hooks/__tests__/useFormAnalytics.test.ts(221,15): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
+src/hooks/__tests__/useFormAnalytics.test.ts(57,11): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
   Property 'rpc' does not exist on type 'MockSupabaseClient'.
-src/hooks/__tests__/useFormAnalytics.test.ts(258,21): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
+src/hooks/__tests__/useFormAnalytics.test.ts(61,3): error TS2304: Cannot find name 'afterEach'.
+src/hooks/__tests__/useFormAnalytics.test.ts(90,21): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
+  Property 'rpc' does not exist on type 'MockSupabaseClient'.
+src/hooks/__tests__/useFormAnalytics.test.ts(93,21): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
+  Property 'rpc' does not exist on type 'MockSupabaseClient'.
+src/hooks/__tests__/useFormAnalytics.test.ts(128,21): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
+  Property 'rpc' does not exist on type 'MockSupabaseClient'.
+src/hooks/__tests__/useFormAnalytics.test.ts(148,21): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
+  Property 'rpc' does not exist on type 'MockSupabaseClient'.
+src/hooks/__tests__/useFormAnalytics.test.ts(159,11): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
+  Property 'rpc' does not exist on type 'MockSupabaseClient'.
+src/hooks/__tests__/useFormAnalytics.test.ts(176,21): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
+  Property 'rpc' does not exist on type 'MockSupabaseClient'.
+src/hooks/__tests__/useFormAnalytics.test.ts(182,5): error TS2571: Object is of type 'unknown'.
+src/hooks/__tests__/useFormAnalytics.test.ts(182,15): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
+  Property 'rpc' does not exist on type 'MockSupabaseClient'.
+src/hooks/__tests__/useFormAnalytics.test.ts(198,21): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
+  Property 'rpc' does not exist on type 'MockSupabaseClient'.
+src/hooks/__tests__/useFormAnalytics.test.ts(214,15): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
+  Property 'rpc' does not exist on type 'MockSupabaseClient'.
+src/hooks/__tests__/useFormAnalytics.test.ts(251,21): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
   Property 'rpc' does not exist on type 'MockSupabaseClient'.
 src/hooks/useConditionalLogic.ts(10,3): error TS2305: Module '"@/types/dynamic-forms"' has no exported member 'DynamicFormConfig'.
 src/hooks/useConditionalLogic.ts(69,29): error TS7006: Parameter 'section' implicitly has an 'any' type.
@@ -157,12 +177,22 @@ src/hooks/useDuffelFlights.ts(155,10): error TS2339: Property 'eq' does not exis
   Property 'eq' does not exist on type '{ then: (callback: (result: { data: unknown[]; error: null; }) => void) => Promise<{ data: unknown[]; error: null; }>; not: (column: string, value: unknown) => { then: (callback: (result: { data: unknown[]; error: null; }) => void) => Promise<...>; }; single: () => Promise<...>; }'.
 src/hooks/useDuffelFlights.ts(166,71): error TS7006: Parameter 'offer' implicitly has an 'any' type.
 src/hooks/useDuffelPayment.ts(7,10): error TS2614: Module '"@/services/api/paymentApi"' has no exported member 'createStripePaymentIntent'. Did you mean to use 'import createStripePaymentIntent from "@/services/api/paymentApi"' instead?
-src/hooks/useDynamicForm.ts(146,5): error TS2339: Property 'reloadConfiguration' does not exist on type 'UseFormConfigurationReturn'.
-src/hooks/useDynamicForm.ts(262,9): error TS2739: Type '{ submittedAt: string; userAgent: string; timezone: string; formTitle: any; submissionId: `${string}-${string}-${string}-${string}-${string}`; }' is missing the following properties from type '{ [key: string]: unknown; submittedAt: string; userAgent: string; formVersion: number; instanceId: string; }': formVersion, instanceId
-src/hooks/useDynamicForm.ts(329,41): error TS7006: Parameter 'f' implicitly has an 'any' type.
-src/hooks/useDynamicForm.ts(391,5): error TS2322: Type '(formData: Record<string, unknown>) => Promise<ValidationResult>' is not assignable to type '(formData?: Record<string, unknown> | FormData | undefined) => Promise<ValidationResult>'.
+src/hooks/useDynamicForm.ts(16,3): error TS2305: Module '"@/types/dynamic-forms"' has no exported member 'DynamicFormConfig'.
+src/hooks/useDynamicForm.ts(17,3): error TS2724: '"@/types/dynamic-forms"' has no exported member named 'FormSubmission'. Did you mean 'FormSubmissionData'?
+src/hooks/useDynamicForm.ts(25,10): error TS2305: Module '"@/lib/form-validation"' has no exported member 'generateValidationSchema'.
+src/hooks/useDynamicForm.ts(26,10): error TS2614: Module '"@/services/form-config.service"' has no exported member 'formConfigService'. Did you mean to use 'import formConfigService from "@/services/form-config.service"' instead?
+src/hooks/useDynamicForm.ts(134,5): error TS2339: Property 'reloadConfiguration' does not exist on type 'UseFormConfigurationReturn'.
+src/hooks/useDynamicForm.ts(157,28): error TS2339: Property 'getValue' does not exist on type 'UseFormReturn<Record<string, unknown>, any, Record<string, unknown>>'.
+src/hooks/useDynamicForm.ts(203,108): error TS2448: Block-scoped variable 'trackFieldInteraction' used before its declaration.
+src/hooks/useDynamicForm.ts(203,108): error TS2454: Variable 'trackFieldInteraction' is used before being assigned.
+src/hooks/useDynamicForm.ts(268,119): error TS2448: Block-scoped variable 'trackFormEvent' used before its declaration.
+src/hooks/useDynamicForm.ts(268,119): error TS2454: Variable 'trackFormEvent' is used before being assigned.
+src/hooks/useDynamicForm.ts(278,71): error TS2448: Block-scoped variable 'trackFormEvent' used before its declaration.
+src/hooks/useDynamicForm.ts(278,71): error TS2454: Variable 'trackFormEvent' is used before being assigned.
+src/hooks/useDynamicForm.ts(314,41): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/hooks/useDynamicForm.ts(376,5): error TS2322: Type '(formData: Record<string, unknown>) => Promise<ValidationResult>' is not assignable to type '(formData?: FormData | undefined) => Promise<ValidationResult>'.
   Types of parameters 'formData' and 'formData' are incompatible.
-    Type 'Record<string, unknown> | FormData | undefined' is not assignable to type 'Record<string, unknown>'.
+    Type 'FormData | undefined' is not assignable to type 'Record<string, unknown>'.
       Type 'undefined' is not assignable to type 'Record<string, unknown>'.
 src/hooks/useFeatureFlag.ts(5,45): error TS2307: Cannot find module '@shared/featureFlag' or its corresponding type declarations.
 src/hooks/useFormAnalytics.ts(81,42): error TS2339: Property 'rpc' does not exist on type 'SupabaseClient<Database, "public", any> | MockSupabaseClient'.
@@ -176,10 +206,27 @@ src/hooks/useFormState.ts(34,20): error TS2345: Argument of type '(prevState: Fo
           'string' index signatures are incompatible.
             Type 'Merge<FieldError, FieldErrorsImpl<{}>> | undefined' is not assignable to type 'string'.
               Type 'undefined' is not assignable to type 'string'.
-src/hooks/useFormValidation.ts(13,10): error TS2305: Module '"@/lib/form-validation"' has no exported member 'generateValidationSchema'.
-src/hooks/useFormValidation.ts(13,36): error TS2305: Module '"@/lib/form-validation"' has no exported member 'validateFormData'.
-src/hooks/useFormValidation.ts(293,13): error TS2339: Property 'required' does not exist on type 'FieldConfiguration'.
-src/hooks/useFormValidation.ts(293,45): error TS2339: Property 'required' does not exist on type 'FieldConfiguration'.
+src/hooks/useFormValidation.ts(11,3): error TS2305: Module '"@/types/dynamic-forms"' has no exported member 'DynamicFormConfig'.
+src/hooks/useFormValidation.ts(14,10): error TS2305: Module '"@/lib/form-validation"' has no exported member 'generateValidationSchema'.
+src/hooks/useFormValidation.ts(14,36): error TS2305: Module '"@/lib/form-validation"' has no exported member 'validateFormData'.
+src/hooks/useFormValidation.ts(70,41): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/hooks/useFormValidation.ts(235,25): error TS2339: Property 'email' does not exist on type 'ZodType<unknown, ZodTypeDef, unknown>'.
+src/hooks/useFormValidation.ts(238,25): error TS2339: Property 'min' does not exist on type 'ZodType<unknown, ZodTypeDef, unknown>'.
+src/hooks/useFormValidation.ts(241,25): error TS2339: Property 'max' does not exist on type 'ZodType<unknown, ZodTypeDef, unknown>'.
+src/hooks/useFormValidation.ts(244,25): error TS2339: Property 'regex' does not exist on type 'ZodType<unknown, ZodTypeDef, unknown>'.
+src/hooks/useFormValidation.ts(251,25): error TS2339: Property 'min' does not exist on type 'ZodType<unknown, ZodTypeDef, unknown>'.
+src/hooks/useFormValidation.ts(254,25): error TS2339: Property 'max' does not exist on type 'ZodType<unknown, ZodTypeDef, unknown>'.
+src/hooks/useFormValidation.ts(287,13): error TS2339: Property 'required' does not exist on type 'FieldConfiguration'.
+src/hooks/useFormValidation.ts(348,40): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number'.
+src/hooks/useFormValidation.ts(348,63): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type 'string | number'.
 src/hooks/useNetworkStatus.ts(61,7): error TS2722: Cannot invoke an object which is possibly 'undefined'.
 src/hooks/useNetworkStatus.ts(72,9): error TS2722: Cannot invoke an object which is possibly 'undefined'.
 src/hooks/usePersonalization.ts(77,73): error TS2339: Property 'insert' does not exist on type '{ select: (columns?: string | undefined) => { eq: (column: string, value: unknown) => { then: (callback: (result: { data: unknown[]; error: null; }) => void) => Promise<{ data: unknown[]; error: null; }>; not: (column: string, value: unknown) => { ...; }; single: () => Promise<...>; }; }; } | PostgrestQueryBuilder<....'.
@@ -297,11 +344,13 @@ src/lib/repositories/base.ts(211,13): error TS2769: No overload matches this cal
     Argument of type 'string' is not assignable to parameter of type '"profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | "flight_offers_v2" | "notifications" | "orders" | "payment_methods" | "payments"'.
   Overload 2 of 2, '(relation: never): PostgrestQueryBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 12 more ...; trip_requests: { ...; }; }; Views: {}; Functions: { ...; }; Enums: { ...; }; CompositeTypes: {}; }, never, never, never>', gave the following error.
     Argument of type 'string' is not assignable to parameter of type 'never'.
+src/lib/repositories/base.ts(217,15): error TS2739: Type 'PostgrestBuilder<GenericStringError | null, false>' is missing the following properties from type 'Promise<DatabaseResult>': catch, finally, [Symbol.toStringTag]
 src/lib/repositories/base.ts(237,34): error TS2769: No overload matches this call.
   Overload 1 of 2, '(relation: "profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | ... 4 more ... | "payments"): PostgrestQueryBuilder<...>', gave the following error.
     Argument of type 'string' is not assignable to parameter of type '"profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | "flight_offers_v2" | "notifications" | "orders" | "payment_methods" | "payments"'.
   Overload 2 of 2, '(relation: never): PostgrestQueryBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 12 more ...; trip_requests: { ...; }; }; Views: {}; Functions: { ...; }; Enums: { ...; }; CompositeTypes: {}; }, never, never, never>', gave the following error.
     Argument of type 'string' is not assignable to parameter of type 'never'.
+src/lib/repositories/base.ts(246,13): error TS2739: Type 'PostgrestQueryBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relations...' is missing the following properties from type 'Promise<DatabaseResult>': then, catch, finally, [Symbol.toStringTag]
 src/lib/repositories/base.ts(272,13): error TS2769: No overload matches this call.
   Overload 1 of 2, '(relation: "profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | ... 4 more ... | "payments"): PostgrestQueryBuilder<...>', gave the following error.
     Argument of type 'string' is not assignable to parameter of type '"profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | "flight_offers_v2" | "notifications" | "orders" | "payment_methods" | "payments"'.
@@ -312,6 +361,7 @@ src/lib/repositories/base.ts(273,15): error TS2769: No overload matches this cal
     Argument of type 'unknown' is not assignable to parameter of type '{ created_at?: string | null | undefined; criteria: Json; id?: string | undefined; latest_booking_request_id?: string | null | undefined; price_history?: Json | undefined; status?: string | undefined; trip_request_id: string; updated_at?: string | ... 1 more ... | undefined; user_id: string; } | ... 12 more ... | { ...'.
   Overload 2 of 2, '(values: ({ created_at?: string | null | undefined; criteria: Json; id?: string | undefined; latest_booking_request_id?: string | null | undefined; price_history?: Json | undefined; status?: string | undefined; trip_request_id: string; updated_at?: string | ... 1 more ... | undefined; user_id: string; } | ... 12 more ... | { ...; })[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
     Argument of type 'unknown' is not assignable to parameter of type '({ created_at?: string | null | undefined; criteria: Json; id?: string | undefined; latest_booking_request_id?: string | null | undefined; price_history?: Json | undefined; status?: string | undefined; trip_request_id: string; updated_at?: string | ... 1 more ... | undefined; user_id: string; } | ... 12 more ... | {...'.
+src/lib/repositories/base.ts(278,13): error TS2739: Type 'PostgrestBuilder<GenericStringError, false>' is missing the following properties from type 'Promise<DatabaseResult>': catch, finally, [Symbol.toStringTag]
 src/lib/repositories/base.ts(300,13): error TS2769: No overload matches this call.
   Overload 1 of 2, '(relation: "profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | ... 4 more ... | "payments"): PostgrestQueryBuilder<...>', gave the following error.
     Argument of type 'string' is not assignable to parameter of type '"profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | "flight_offers_v2" | "notifications" | "orders" | "payment_methods" | "payments"'.
@@ -322,33 +372,32 @@ src/lib/repositories/base.ts(301,15): error TS2769: No overload matches this cal
     Argument of type 'unknown' is not assignable to parameter of type '{ created_at?: string | null | undefined; criteria: Json; id?: string | undefined; latest_booking_request_id?: string | null | undefined; price_history?: Json | undefined; status?: string | undefined; trip_request_id: string; updated_at?: string | ... 1 more ... | undefined; user_id: string; } | ... 12 more ... | { ...'.
   Overload 2 of 2, '(values: ({ created_at?: string | null | undefined; criteria: Json; id?: string | undefined; latest_booking_request_id?: string | null | undefined; price_history?: Json | undefined; status?: string | undefined; trip_request_id: string; updated_at?: string | ... 1 more ... | undefined; user_id: string; } | ... 12 more ... | { ...; })[], options?: { ...; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
     Argument of type 'unknown' is not assignable to parameter of type '({ created_at?: string | null | undefined; criteria: Json; id?: string | undefined; latest_booking_request_id?: string | null | undefined; price_history?: Json | undefined; status?: string | undefined; trip_request_id: string; updated_at?: string | ... 1 more ... | undefined; user_id: string; } | ... 12 more ... | {...'.
-src/lib/repositories/base.ts(321,13): error TS2769: No overload matches this call.
-  Overload 1 of 2, '(relation: "profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | ... 4 more ... | "payments"): PostgrestQueryBuilder<...>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type '"profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | "flight_offers_v2" | "notifications" | "orders" | "payment_methods" | "payments"'.
-  Overload 2 of 2, '(relation: never): PostgrestQueryBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 12 more ...; trip_requests: { ...; }; }; Views: {}; Functions: { ...; }; Enums: { ...; }; CompositeTypes: {}; }, never, never, never>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type 'never'.
-src/lib/repositories/base.ts(322,15): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ created_at?: string | null | undefined; criteria?: Json | undefined; id?: string | undefined; latest_booking_request_id?: string | null | undefined; price_history?: Json | undefined; status?: string | undefined; trip_request_id?: string | undefined; updated_at?: string | ... 1 more ... | undefined; user_id?: strin...'.
-src/lib/repositories/base.ts(351,13): error TS2769: No overload matches this call.
-  Overload 1 of 2, '(relation: "profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | ... 4 more ... | "payments"): PostgrestQueryBuilder<...>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type '"profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | "flight_offers_v2" | "notifications" | "orders" | "payment_methods" | "payments"'.
-  Overload 2 of 2, '(relation: never): PostgrestQueryBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 12 more ...; trip_requests: { ...; }; }; Views: {}; Functions: { ...; }; Enums: { ...; }; CompositeTypes: {}; }, never, never, never>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type 'never'.
-src/lib/repositories/base.ts(352,15): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ created_at?: string | null | undefined; criteria?: Json | undefined; id?: string | undefined; latest_booking_request_id?: string | null | undefined; price_history?: Json | undefined; status?: string | undefined; trip_request_id?: string | undefined; updated_at?: string | ... 1 more ... | undefined; user_id?: strin...'.
-src/lib/repositories/base.ts(374,13): error TS2769: No overload matches this call.
-  Overload 1 of 2, '(relation: "profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | ... 4 more ... | "payments"): PostgrestQueryBuilder<...>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type '"profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | "flight_offers_v2" | "notifications" | "orders" | "payment_methods" | "payments"'.
-  Overload 2 of 2, '(relation: never): PostgrestQueryBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 12 more ...; trip_requests: { ...; }; }; Views: {}; Functions: { ...; }; Enums: { ...; }; CompositeTypes: {}; }, never, never, never>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type 'never'.
+src/lib/repositories/base.ts(305,13): error TS2739: Type 'PostgrestTransformBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relat...' is missing the following properties from type 'Promise<DatabaseResult>': catch, finally, [Symbol.toStringTag]
+src/lib/repositories/base.ts(321,13): error TS2558: Expected 2 type arguments, but got 1.
+src/lib/repositories/base.ts(322,15): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 12 more ...;...'.
+src/lib/repositories/base.ts(323,17): error TS2345: Argument of type 'string' is not assignable to parameter of type '("id" extends keyof { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...];...'.
+src/lib/repositories/base.ts(328,13): error TS2739: Type 'PostgrestBuilder<({ auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }...' is missing the following properties from type 'Promise<DatabaseResult>': catch, finally, [Symbol.toStringTag]
+src/lib/repositories/base.ts(351,13): error TS2558: Expected 2 type arguments, but got 1.
+src/lib/repositories/base.ts(352,15): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 12 more ...;...'.
+src/lib/repositories/base.ts(359,13): error TS2739: Type 'PostgrestTransformBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relat...' is missing the following properties from type 'Promise<DatabaseResult>': catch, finally, [Symbol.toStringTag]
+src/lib/repositories/base.ts(374,13): error TS2558: Expected 2 type arguments, but got 1.
+src/lib/repositories/base.ts(376,17): error TS2345: Argument of type 'string' is not assignable to parameter of type '("id" extends keyof { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...];...'.
+src/lib/repositories/base.ts(379,13): error TS2739: Type 'PostgrestFilterBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relation...' is missing the following properties from type 'Promise<DatabaseResult>': catch, finally, [Symbol.toStringTag]
 src/lib/repositories/base.ts(391,34): error TS2769: No overload matches this call.
   Overload 1 of 2, '(relation: "profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | ... 4 more ... | "payments"): PostgrestQueryBuilder<...>', gave the following error.
     Argument of type 'string' is not assignable to parameter of type '"profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | "flight_offers_v2" | "notifications" | "orders" | "payment_methods" | "payments"'.
   Overload 2 of 2, '(relation: never): PostgrestQueryBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 12 more ...; trip_requests: { ...; }; }; Views: {}; Functions: { ...; }; Enums: { ...; }; CompositeTypes: {}; }, never, never, never>', gave the following error.
     Argument of type 'string' is not assignable to parameter of type 'never'.
+src/lib/repositories/base.ts(397,13): error TS2739: Type 'PostgrestFilterBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relation...' is missing the following properties from type 'Promise<DatabaseResult>': catch, finally, [Symbol.toStringTag]
 src/lib/repositories/base.ts(410,13): error TS2769: No overload matches this call.
   Overload 1 of 2, '(relation: "profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | ... 4 more ... | "payments"): PostgrestQueryBuilder<...>', gave the following error.
     Argument of type 'string' is not assignable to parameter of type '"profiles" | "trip_requests" | "flight_offers" | "booking_requests" | "bookings" | "flight_matches" | "auto_booking_requests" | "booking_attempts" | "feature_flags" | "flight_offers_v2" | "notifications" | "orders" | "payment_methods" | "payments"'.
   Overload 2 of 2, '(relation: never): PostgrestQueryBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 12 more ...; trip_requests: { ...; }; }; Views: {}; Functions: { ...; }; Enums: { ...; }; CompositeTypes: {}; }, never, never, never>', gave the following error.
     Argument of type 'string' is not assignable to parameter of type 'never'.
+src/lib/repositories/base.ts(417,13): error TS2739: Type 'PostgrestFilterBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relation...' is missing the following properties from type 'Promise<DatabaseResult>': catch, finally, [Symbol.toStringTag]
+src/lib/repositories/base.ts(444,13): error TS2352: Conversion of type 'PostgrestFilterBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relation...' to type 'Promise<DatabaseResult>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'PostgrestFilterBuilder<{ Tables: { auto_booking_requests: { Row: { created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }; Insert: { ...; }; Update: { ...; }; Relation...' is missing the following properties from type 'Promise<DatabaseResult>': catch, finally, [Symbol.toStringTag]
+src/lib/repositories/base.ts(444,29): error TS2345: Argument of type 'string' is not assignable to parameter of type '"get_reminder_candidates" | "rpc_auto_book_match"'.
 src/lib/repositories/tripRequestRepository.ts(146,90): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
   Type 'undefined' is not assignable to type 'number'.
 src/main.tsx(45,33): error TS2345: Argument of type '() => JSX.Element' is not assignable to parameter of type '{ children: ReactNode; }'.
@@ -593,8 +642,19 @@ src/tests/components/TripRequestForm.best-practices.test.tsx(268,32): error TS23
         Target requires 1 element(s) but source may have fewer.
 src/tests/components/TripRequestForm.best-practices.test.tsx(356,34): error TS2554: Expected 0 arguments, but got 1.
 src/tests/components/TripRequestForm.best-practices.test.tsx(361,49): error TS2339: Property 'checked' does not exist on type 'HTMLElement'.
-src/tests/components/TripRequestForm.test.tsx(406,43): error TS2345: Argument of type '{ data: { id: string; brand: string; last4: string; is_default: true; nickname: string; exp_month: number; exp_year: number; created_at: string; }[]; isLoading: false; refetch: Mock<Procedure>; }' is not assignable to parameter of type 'UsePaymentMethodsReturn'.
-  Type '{ data: { id: string; brand: string; last4: string; is_default: true; nickname: string; exp_month: number; exp_year: number; created_at: string; }[]; isLoading: false; refetch: Mock<Procedure>; }' is missing the following properties from type 'UsePaymentMethodsReturn': addPaymentMethod, updatePaymentMethod, deletePaymentMethod, setDefaultPaymentMethod
+src/tests/components/TripRequestForm.test.tsx(254,60): error TS2339: Property 'disabled' does not exist on type 'HTMLElement'.
+src/tests/components/TripRequestForm.test.tsx(260,57): error TS2339: Property 'disabled' does not exist on type 'HTMLElement'.
+src/tests/components/TripRequestForm.test.tsx(263,22): error TS2339: Property 'disabled' does not exist on type 'HTMLElement'.
+src/tests/components/TripRequestForm.test.tsx(279,59): error TS2339: Property 'disabled' does not exist on type 'HTMLElement'.
+src/tests/components/TripRequestForm.test.tsx(407,14): error TS2741: Property 'created_at' is missing in type '{ id: string; brand: string; last4: string; is_default: true; nickname: string; exp_month: number; exp_year: number; }' but required in type 'PaymentMethod'.
+src/tests/components/TripRequestForm.test.tsx(474,57): error TS2339: Property 'disabled' does not exist on type 'HTMLElement'.
+src/tests/components/TripRequestForm.test.tsx(538,57): error TS2339: Property 'disabled' does not exist on type 'HTMLElement'.
+src/tests/components/TripRequestForm.test.tsx(618,28): error TS2339: Property 'checked' does not exist on type 'HTMLElement'.
+src/tests/components/TripRequestForm.test.tsx(637,60): error TS2339: Property 'disabled' does not exist on type 'HTMLElement'.
+src/tests/components/TripRequestForm.test.tsx(643,57): error TS2339: Property 'disabled' does not exist on type 'HTMLElement'.
+src/tests/components/TripRequestForm.test.tsx(646,22): error TS2339: Property 'disabled' does not exist on type 'HTMLElement'.
+src/tests/components/TripRequestForm.test.tsx(688,57): error TS2339: Property 'disabled' does not exist on type 'HTMLElement'.
+src/tests/components/TripRequestForm.test.tsx(697,59): error TS2339: Property 'disabled' does not exist on type 'HTMLElement'.
 src/tests/contexts/PersonalizationContext.test.tsx(95,1): error TS2593: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha` and then add 'jest' or 'mocha' to the types field in your tsconfig.
 src/tests/contexts/PersonalizationContext.test.tsx(96,3): error TS2304: Cannot find name 'beforeEach'.
 src/tests/contexts/PersonalizationContext.test.tsx(100,3): error TS2593: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha` and then add 'jest' or 'mocha' to the types field in your tsconfig.

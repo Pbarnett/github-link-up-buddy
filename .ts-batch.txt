@@ -1,1 +1,3 @@
-error
+src/lib/repositories/base.ts
+src/pages/Dashboard.tsx
+src/tests/components/personalization/PersonalizedGreeting.test.tsx
