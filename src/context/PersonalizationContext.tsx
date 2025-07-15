@@ -43,7 +43,7 @@ export function PersonalizationProvider({
   }, [refetch]);
   
   const contextValue = useMemo(() => ({
-    personalizationData,
+    personalizationData: personalizationData as PersonalizationData | null,
     isLoading,
     error,
     trackEvent: trackEventWrapper,

@@ -43,9 +43,9 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
   // Feature flag check for controlled rollout (Alpha/Beta phases)
   // Now enhanced with A/B testing
   const featureFlagResult = useFeatureFlag('personalizedGreetings');
-  const featureFlagEnabled = featureFlagResult?.data ?? false;
+  const featureFlagEnabled = (featureFlagResult?.data ?? false) as boolean;
   const temporaryFlagEnabled = enablePersonalizationForTesting();
-  const abTestPersonalizationEnabled = experimentConfig?.enablePersonalization ?? false;
+  const abTestPersonalizationEnabled = (experimentConfig?.enablePersonalization ?? false) as boolean;
   const isPersonalizationEnabled: boolean = featureFlagEnabled || temporaryFlagEnabled || abTestPersonalizationEnabled;
 
   // A/B testing event tracking function

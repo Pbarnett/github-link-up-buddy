@@ -9,7 +9,7 @@ interface BookingMethodFormData {
 }
 
 interface BookingMethodSectionProps {
-  control: Control<BookingMethodFormData>;
+  control: Control<any>;
 }
 
 const BookingMethodSection = ({ control }: BookingMethodSectionProps) => {
