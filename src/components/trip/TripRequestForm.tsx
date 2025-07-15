@@ -173,7 +173,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
     const tripRequestData: TripRequestInsert = {
       user_id: userId,
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport,
+      destination_location_code: formData.destination_airport || '',
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture?.toISOString() || '',
       latest_departure: formData.latestDeparture?.toISOString() || '',

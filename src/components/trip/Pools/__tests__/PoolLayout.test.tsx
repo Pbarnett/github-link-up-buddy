@@ -30,8 +30,8 @@ const mockedUsePoolsSafe = usePoolsSafe as MockedFunction<typeof usePoolsSafe>;
 // Mock the utility
 vi.mock('@/utils/getPoolDisplayName', () => ({
   getPoolDisplayName: vi.fn((mode: string, index: number) => {
-    const names = { manual: ['Best Value', 'Low Cost', 'Premium'] };
-    return names[mode][index - 1];
+    const names: Record<string, string[]> = { manual: ['Best Value', 'Low Cost', 'Premium'] };
+    return names[mode]?.[index - 1] || `Pool ${index}`;
   }),
 }));
 
