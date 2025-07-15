@@ -4,6 +4,10 @@
  * Shared types and utilities for feature flags across the application
  */
 
+// Import MurmurHash3 for consistent user bucketing
+// @ts-ignore - murmurhash-js doesn't have types but we know the API
+import murmur from 'murmurhash-js';
+
 export interface FeatureFlag {
   name: string;
   enabled: boolean;
@@ -69,7 +73,7 @@ export const isEnabled = (flag: FeatureFlag, userId: string): boolean => {
   return flag.enabled;
 };
 
-// Simple hash function for consistent user bucketing
+// Simple hash function for consistent user bucketing (legacy)
 function hashString(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -80,10 +84,10 @@ function hashString(str: string): number {
   return Math.abs(hash) / 0x7fffffff; // Normalize to 0-1
 }
 
-// Additional utility functions for advanced user bucketing
+// Additional utility functions for advanced user bucketing using MurmurHash3
 export const getUserBucket = (userId: string): number => {
-  const hash = hashString(userId);
-  return Math.floor(hash * 100);
+  if (!userId) return 0;
+  return murmur.murmur3(userId) % 100;
 };
 
 export const userInBucket = (userId: string, rolloutPercentage: number): boolean => {
