@@ -35,11 +35,11 @@ const TripHistory: React.FC<TripHistoryProps> = ({ userId }) => {
     }
     try {
       setHistoryLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('bookings')
         .select('id, trip_request_id, pnr, price, selected_seat_number, created_at, status') // Added status
         .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any);
 
       if (error) {
         console.error("Error fetching trip history from bookings:", error);

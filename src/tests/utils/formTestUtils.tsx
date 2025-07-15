@@ -288,13 +288,13 @@ export const getFormErrors = () => {
 // Assertion helpers for common form states
 export const assertFormSubmissionData = (mockInsert: { mock: { calls: [unknown[]][] } }, expectedData: Record<string, unknown>) => {
   expect(mockInsert).toHaveBeenCalledTimes(1);
-  const submittedPayload = mockInsert.mock.calls[0][0][0];
+  const submittedPayload = mockInsert.mock.calls[0][0][0] as Record<string, unknown>;
   
   Object.entries(expectedData).forEach(([key, value]) => {
     if (value === null || value === undefined) {
-      expect(submittedPayload[key]).toBeNull();
+      expect((submittedPayload as any)[key]).toBeNull();
     } else if (typeof value === 'object' && value instanceof Date) {
-      expect(submittedPayload[key]).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+      expect((submittedPayload as any)[key]).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
     } else {
       expect(submittedPayload).toHaveProperty(key, value);
     }

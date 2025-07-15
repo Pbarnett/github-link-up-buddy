@@ -146,7 +146,7 @@ export class AmadeusAdapter implements ProviderAdapter {
       stopsCount: this.calculateStopsCount(itineraries),
       validatingAirlines: this.extractValidatingAirlines(rawOffer),
       bookingUrl: rawOffer.booking_url,
-      rawData: rawOffer
+      rawData: rawOffer as Record<string, unknown>
     };
   }
 
@@ -262,7 +262,7 @@ export class AmadeusAdapter implements ProviderAdapter {
       arrival: this.normalizeAirport(segment.arrival),
       carrierCode: segment.carrierCode || '',
       flightNumber: segment.number || '',
-      aircraft: segment.aircraft ? { code: segment.aircraft.code } : undefined,
+      aircraft: segment.aircraft ? { code: segment.aircraft.code || '' } : undefined,
       duration: segment.duration || '',
       numberOfStops: segment.numberOfStops || 0
     }));
@@ -307,7 +307,7 @@ export class DuffelAdapter implements ProviderAdapter {
       stopsCount: this.calculateStopsCount(itineraries),
       validatingAirlines: this.extractValidatingAirlines(rawOffer),
       bookingUrl: rawOffer.booking_url,
-      rawData: rawOffer
+      rawData: rawOffer as Record<string, unknown>
     };
   }
 
@@ -428,7 +428,7 @@ export class DuffelAdapter implements ProviderAdapter {
       arrival: this.normalizeAirport(segment.destination, segment.arriving_at),
       carrierCode: segment.marketing_carrier?.iata_code || '',
       flightNumber: segment.flight_number || '',
-      aircraft: segment.aircraft ? { code: segment.aircraft.iata_code } : undefined,
+      aircraft: segment.aircraft ? { code: segment.aircraft.iata_code || '' } : undefined,
       duration: segment.duration || '',
       numberOfStops: 0 // Duffel segments are direct by definition
     }));

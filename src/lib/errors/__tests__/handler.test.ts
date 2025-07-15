@@ -131,7 +131,7 @@ describe('ErrorHandler', () => {
       try {
         errorHandler.handleAndThrow(originalError);
       } catch (error) {
-        expect(error.code).toBe(ErrorCode.INTERNAL_ERROR);
+        expect((error as any).code).toBe(ErrorCode.INTERNAL_ERROR);
       }
     });
   });

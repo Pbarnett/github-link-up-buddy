@@ -42,7 +42,7 @@ const localStorageMock = (() => {
 })();
 
 // Helper to flush promises
-const flushPromises = () => new Promise(resolve => queueMicrotask(resolve));
+const flushPromises = () => new Promise(resolve => queueMicrotask(() => resolve(undefined)));
 
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock

@@ -109,80 +109,12 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Set up real-time subscription for booking requests only for real Supabase client
-    let channel: RealtimeChannel | null = null;
+    // TODO: Set up real-time subscription for booking requests
+    // Currently disabled due to API compatibility issues
+    console.log('Real-time subscription for booking requests disabled');
     
-    if ('channel' in supabase) {
-      channel = supabase
-        .channel('booking-requests-changes')
-        .on(
-          'postgres_changes' as any,
-          {
-            event: '*',
-            schema: 'public',
-            table: 'booking_requests',
-            filter: `user_id=eq.${user.id}`
-          } as any,
-          (payload: RealtimePostgresChangesPayload<BookingRequest>) => {
-            console.log('Booking request change:', payload);
-
-            setBookingRequests(prev => {
-              const bookingUpdate = payload.new as BookingRequest;
-              const requestId = bookingUpdate.id;
-              const oldStatus = prevStatuses.current[requestId];
-              const newStatus = bookingUpdate.status;
-
-              // Enhanced toast notifications for meaningful transitions
-              if (oldStatus && oldStatus !== newStatus) {
-                const requestShortId = requestId.slice(0, 8);
-
-                if (oldStatus === 'processing' && newStatus === 'done') {
-                  toast({
-                    title: "🎉 Booking Confirmed!",
-                    description: `Your booking ${requestShortId} has been successfully completed.`,
-                  });
-                } else if (oldStatus === 'processing' && newStatus === 'failed') {
-                  toast({
-                    title: "❌ Booking Failed",
-                    description: `Booking ${requestShortId} encountered an error. You can retry if needed.`,
-                    variant: 'destructive'
-                  });
-                } else if (newStatus === 'processing') {
-                  toast({
-                    title: "⏳ Processing Booking",
-                    description: `Booking ${requestShortId} is now being processed.`,
-                  });
-                } else if (newStatus === 'pending_payment') {
-                  toast({
-                    title: "💳 Payment Required",
-                    description: `Booking ${requestShortId} is waiting for payment confirmation.`,
-                  });
-                }
-              }
-
-              // Update the previous status tracker
-              prevStatuses.current[requestId] = newStatus;
-
-              // Update the list
-              const existingIndex = prev.findIndex(r => r.id === requestId);
-              if (existingIndex >= 0) {
-                const updated = [...prev];
-                updated[existingIndex] = bookingUpdate;
-                return updated;
-              } else {
-                return [bookingUpdate, ...prev];
-              }
-            });
-          }
-        )
-        .subscribe();
-    }
-
-    return () => {
-      if (channel && 'removeChannel' in supabase) {
-        supabase.removeChannel(channel);
-      }
-    };
+    // No cleanup needed for now
+    return () => {};
   }, [user]);
 
   // Automatic polling fallback every 30 seconds

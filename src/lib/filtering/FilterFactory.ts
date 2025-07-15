@@ -10,7 +10,8 @@ import {
   FilterContext,
   FilterConfig,
   UserPreferences,
-  PerformanceLogger
+  PerformanceLogger,
+  FlightOffer
 } from './core/types';
 
 import { DefaultFilterPipeline, ConsolePerformanceLogger } from './core/FilterPipeline';
@@ -256,8 +257,8 @@ export class FilterFactory {
 
     // Date validation
     if (searchParams.departureDate && searchParams.returnDate) {
-      const depDate = new Date(searchParams.departureDate);
-      const retDate = new Date(searchParams.returnDate);
+      const depDate = new Date(searchParams.departureDate as string);
+      const retDate = new Date(searchParams.returnDate as string);
       
       if (retDate <= depDate) {
         errors.push('Return date must be after departure date');
@@ -283,7 +284,7 @@ export class FilterFactory {
    */
   static recommendPipelineType(searchParams: Record<string, unknown>): 'standard' | 'budget' | 'fast' {
     // Budget-focused if budget is specified and relatively low
-    if (searchParams.budget && searchParams.budget < 500) {
+    if (searchParams.budget && typeof searchParams.budget === 'number' && searchParams.budget < 500) {
       return 'budget';
     }
 
@@ -339,7 +340,7 @@ export class LegacyFilterAdapter {
     const normalizedOffers = this.adaptLegacyOffers(offers, provider);
     
     // Execute new filtering
-    const result = await pipeline.execute(normalizedOffers, context);
+    const result = await pipeline.execute(normalizedOffers as FlightOffer[], context);
     
     console.log('[LegacyFilterAdapter] Legacy filtering migration complete:', 
       `${offers.length} → ${result.filteredOffers.length} offers`);

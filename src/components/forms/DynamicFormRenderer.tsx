@@ -105,7 +105,12 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
         const errors = form.formState.errors;
         onValidationError?.(
           Object.fromEntries(
-            Object.entries(errors).map(([key, error]) => [key, (error as { message?: string })?.message || 'Invalid value'])
+            Object.entries(errors).map(([key, error]) => {
+              const errorMessage = error && typeof error === 'object' && 'message' in error 
+                ? (error as { message?: string }).message 
+                : 'Invalid value';
+              return [key, errorMessage || 'Invalid value'];
+            })
           )
         );
         return;
@@ -114,7 +119,7 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
       // Create FormSubmissionData if onSubmit expects it
       if (onSubmit) {
         if (configuration) {
-          const submissionData = {
+          const submissionData: FormSubmissionData = {
             formId: configuration.id,
             formName: configuration.name,
             data,
@@ -127,7 +132,7 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
           };
           await onSubmit(submissionData);
         } else {
-          await onSubmit(data as FormSubmissionData);
+          await onSubmit(data as unknown as FormSubmissionData);
         }
       }
     } catch (error) {
@@ -192,11 +197,16 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
                 <AlertDescription>
                   <div className="font-medium mb-2">Please fix the following errors:</div>
                   <ul className="list-disc list-inside space-y-1">
-                    {Object.entries(form.formState.errors).map(([field, error]) => (
-                      <li key={field} className="text-sm">
-                        {(error as { message?: string })?.message || `Invalid value for ${field}`}
-                      </li>
-                    ))}
+                    {Object.entries(form.formState.errors).map(([field, error]) => {
+                      const errorMessage = error && typeof error === 'object' && 'message' in error 
+                        ? (error as { message?: string }).message 
+                        : `Invalid value for ${field}`;
+                      return (
+                        <li key={field} className="text-sm">
+                          {errorMessage || `Invalid value for ${field}`}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </AlertDescription>
               </Alert>

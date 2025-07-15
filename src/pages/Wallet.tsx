@@ -163,7 +163,7 @@ function WalletPage() {
                   <li key={pm.id} className="py-4 flex justify-between items-center">
                     <div className="flex items-center space-x-3">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {pm.brand.toUpperCase()}
+                        {pm.brand?.toUpperCase() || 'UNKNOWN'}
                       </span>
                       <span className="text-gray-900">•••• {pm.last4}</span>
                       <span className="text-gray-500 text-sm">

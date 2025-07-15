@@ -7,7 +7,7 @@ import { useTravelerProfile } from "@/hooks/useTravelerProfile";
 import { SimpleProfileStatus } from "@/components/profile/SimpleProfileStatus";
 import { toast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
-import { ProfileCompletenessScore } from "@/services/profileCompletenessService";
+import { ProfileCompletenessScore, ProfileRecommendation } from "@/services/profileCompletenessService";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { ProfileV2 } from "@/components/profile/ProfileV2";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,7 +96,14 @@ function EnhancedProfilePage() {
           verification: 0
         },
         missing_fields: completion.missing_fields || [],
-        recommendations: completion.recommendations || []
+        recommendations: (completion.recommendations || []).map(rec => ({
+          category: rec.category || 'general',
+          priority: rec.priority || 'medium',
+          title: rec.title || '',
+          description: rec.description || '',
+          action: rec.action || 'complete_profile',
+          points_value: rec.points_value || 0
+        })) as ProfileRecommendation[]
       };
     }
     
@@ -257,7 +264,14 @@ function LegacyProfilePage() {
           verification: 0
         },
         missing_fields: completion.missing_fields || [],
-        recommendations: completion.recommendations || []
+        recommendations: (completion.recommendations || []).map(rec => ({
+          category: rec.category || 'general',
+          priority: rec.priority || 'medium',
+          title: rec.title || '',
+          description: rec.description || '',
+          action: rec.action || 'complete_profile',
+          points_value: rec.points_value || 0
+        })) as ProfileRecommendation[]
       };
     }
     

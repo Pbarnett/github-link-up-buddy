@@ -228,7 +228,7 @@ describe('End-to-End Filtering Integration', () => {
       const oneWayOffer = {
         ...mockAmadeusOffer,
         oneWay: true,
-        itineraries: [mockAmadeusOffer.itineraries[0]], // Only outbound
+        itineraries: [(mockAmadeusOffer.itineraries as any)[0]], // Only outbound
         price: {
           total: '450.00', // Lower price to pass budget filter
           currency: 'USD'
@@ -337,7 +337,7 @@ describe('End-to-End Filtering Integration', () => {
       // Step 5: Verify offers can be converted back for database insertion
       const dbOffer = filterResult.filteredOffers[0];
       expect(dbOffer.rawData).toBeDefined();
-      expect(dbOffer.rawData.id).toBe('AMADEUS_001');
+      expect(dbOffer.rawData?.id).toBe('AMADEUS_001');
     });
   });
 

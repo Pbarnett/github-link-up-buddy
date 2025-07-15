@@ -242,7 +242,7 @@ export class StripeService {
       return { event, valid: true };
     } catch (error) {
       console.error('Webhook signature verification failed:', error);
-      return { event: null, valid: false, error: error.message };
+      return { event: null, valid: false, error: error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' ? error.message : 'Unknown error' };
     }
   }
 

@@ -191,7 +191,7 @@ async function duffelRequest<T>(
         }
       } catch (error) {
         // Handle timeout and network errors
-        if (error.name === 'AbortError') {
+        if (error && typeof error === 'object' && 'name' in error && error.name === 'AbortError') {
           throw new DuffelAPIError({
             errors: [{
               type: 'timeout_error',
@@ -210,7 +210,7 @@ async function duffelRequest<T>(
           errors: [{
             type: 'network_error',
             title: 'Network Error',
-            detail: error.message || 'Failed to connect to Duffel API'
+            detail: (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') ? error.message : 'Failed to connect to Duffel API'
           }]
         });
       }

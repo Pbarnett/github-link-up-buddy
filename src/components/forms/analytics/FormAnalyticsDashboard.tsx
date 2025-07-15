@@ -73,13 +73,14 @@ export const FormAnalyticsDashboard: React.FC = () => {
       }
 
       // Fetch analytics data
-      const query = supabase
+      const queryResult = supabase
         .from('form_completion_analytics')
         .select('*')
         .gte('date', startDate.toISOString().split('T')[0])
         .lte('date', endDate.toISOString().split('T')[0])
         .order('date', { ascending: false });
-      const { data: analyticsData, error: analyticsError } = await query;
+      
+      const { data: analyticsData, error: analyticsError } = await (queryResult as any);
 
       if (analyticsError) throw analyticsError;
 

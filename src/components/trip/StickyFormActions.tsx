@@ -61,7 +61,7 @@ const StickyFormActions = ({
     const chips = [];
     
     // Origin → Destination chip
-    const origin = watchedFields?.nyc_airports?.length > 0 
+    const origin = (watchedFields?.nyc_airports && watchedFields.nyc_airports.length > 0) 
       ? watchedFields.nyc_airports.join(', ') 
       : watchedFields?.other_departure_airport || '';
     const destination = watchedFields?.destination_airport || watchedFields?.destination_other || '';

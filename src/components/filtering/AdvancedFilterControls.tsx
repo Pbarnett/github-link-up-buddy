@@ -390,15 +390,15 @@ const AdvancedFilterControls: React.FC<AdvancedFilterControlsProps> = ({
 };
 
 // Utility function for debouncing
-function debounce<T extends (...args: unknown[]) => unknown>(
+function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
-): T {
+): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout | null = null;
-  return ((...args: Parameters<T>) => {
+  return (...args: Parameters<T>) => {
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
-  }) as T;
+  };
 }
 
 export default AdvancedFilterControls;

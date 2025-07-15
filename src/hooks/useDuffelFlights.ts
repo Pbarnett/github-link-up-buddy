@@ -152,7 +152,7 @@ export const useDuffelFlights = (
         tripRequestId
       });
       
-      const result = await supabase
+      const query = supabase
         .from('flight_offers_v2')
         .select('*')
         .eq('trip_request_id', tripRequestId)
@@ -160,6 +160,7 @@ export const useDuffelFlights = (
         .order('price_total', { ascending: true })
         .limit(50);
       
+      const result = await (query as unknown as Promise<{ data: any; error: any }>);
       const { data: offersData, error: fetchError } = result;
 
       if (fetchError) {
@@ -169,7 +170,7 @@ export const useDuffelFlights = (
 
       if (offersData && offersData.length > 0) {
         // Transform database offers to our hook format
-        const transformedOffers: DuffelFlightOffer[] = offersData.map(offer => ({
+        const transformedOffers: DuffelFlightOffer[] = offersData.map((offer: any) => ({
           id: offer.id,
           price: offer.price_total,
           currency: offer.price_currency || 'USD',
