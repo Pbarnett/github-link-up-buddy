@@ -188,7 +188,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     const channel = supabase
       .channel('payment-methods-changes')
       .on(
-        'postgres_changes' as any,
+        'postgres_changes',
         { 
           event: '*', 
           schema: 'public', 

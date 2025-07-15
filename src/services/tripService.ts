@@ -51,19 +51,17 @@ const createTrip = async (
   });
   
   // Insert trip request into Supabase with proper types
-  const tripRequestResult = await safeQuery(() => 
-    supabase
-      .from("trip_requests")
-      .insert(tripRequestData)
-      .select()
-      .single()
-  );
+  const { data: tripRequestResult, error: tripRequestError } = await supabase
+    .from("trip_requests")
+    .insert(tripRequestData)
+    .select()
+    .single();
   
-  if (tripRequestResult.error) {
-    throw new Error(`Failed to submit trip request: ${tripRequestResult.error.message}`);
+  if (tripRequestError) {
+    throw new Error(`Failed to submit trip request: ${tripRequestError.message}`);
   }
   
-  return tripRequestResult.data as unknown as Tables<"trip_requests">;
+  return tripRequestResult as unknown as Tables<"trip_requests">;
 };
 
 // Function to create trip request
@@ -122,8 +120,8 @@ export const createTripRequest = async (
     offersQuery = offersQuery.not('return_dt', 'is', null);
   }
 
-  const { data: offers, error: offersError } = await offersQuery
-    .order("price_total", { ascending: true });
+  const offersQueryWithOrder = offersQuery.order("price_total", { ascending: true });
+  const { data: offers, error: offersError } = await offersQueryWithOrder;
   
   if (offersError) {
     console.error("Error fetching offers:", offersError);

@@ -26,12 +26,12 @@ describe('useFlightOffers Hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Setup default mocks
-    mockUseFeatureFlag = vi.spyOn(featureFlagHook, 'useFeatureFlag').mockReturnValue(true);
+    mockUseFeatureFlag = vi.spyOn(featureFlagHook, 'useFeatureFlag').mockReturnValue({ data: true, isLoading: false, isError: false, error: null });
     mockGetFlightOffers = vi.spyOn(serverActions, 'getFlightOffers').mockResolvedValue([]);
   });
 
   it('should return initial state and featureEnabled: false if feature flag is off', () => {
-    mockUseFeatureFlag.mockReturnValue(false);
+    mockUseFeatureFlag.mockReturnValue({ data: false, isLoading: false, isError: false, error: null });
     const { result } = renderHook(() => useFlightOffers(mockTripRequestId));
 
     expect(result.current.offers).toEqual([]);
