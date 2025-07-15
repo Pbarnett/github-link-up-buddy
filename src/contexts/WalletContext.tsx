@@ -188,12 +188,12 @@ export function WalletProvider({ children }: WalletProviderProps) {
     const channel = supabase
       .channel('payment-methods-changes')
       .on(
-        'postgres_changes',
+        'postgres_changes' as any,
         { 
           event: '*', 
           schema: 'public', 
           table: 'payment_methods' 
-        }, 
+        } as any, 
         (payload: any) => {
           console.log('Payment method changed:', payload);
           // Refresh payment methods when changes occur

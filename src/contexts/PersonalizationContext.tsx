@@ -78,7 +78,7 @@ metadata?: Record<string, unknown>
     abTestVariant,
     experimentConfig,
     trackPersonalizationEvent,
-  }), [personalizationData, loading, error, isPersonalizationEnabled, abTestVariant, experimentConfig]);
+  }), [personalizationData, loading, error, isPersonalizationEnabled, abTestVariant, experimentConfig, trackPersonalizationEvent]);
 
   async function fetchPersonalizationData(): Promise<void> {
     if (!userId || !isPersonalizationEnabled) {

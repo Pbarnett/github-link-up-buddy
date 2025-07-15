@@ -121,7 +121,7 @@ export const createTripRequest = async (
   }
 
   const offersQueryWithOrder = offersQuery.order("price_total", { ascending: true });
-  const { data: offers, error: offersError } = await offersQueryWithOrder;
+  const { data: offers, error: offersError } = await (offersQueryWithOrder as any);
   
   if (offersError) {
     console.error("Error fetching offers:", offersError);
