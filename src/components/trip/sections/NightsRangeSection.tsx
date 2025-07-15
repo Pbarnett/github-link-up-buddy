@@ -2,6 +2,13 @@ import React from 'react';
 import { Control, useWatch } from 'react-hook-form';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+// Nights range form data interface
+interface NightsRangeFormData {
+  min_duration?: number;
+  max_duration?: number;
+  [key: string]: unknown;
+}
 import {
   FormControl,
   FormField,
@@ -11,7 +18,7 @@ import {
 } from "@/components/ui/form";
 
 interface NightsRangeSectionProps {
-  control: Control<any>;
+  control: Control<NightsRangeFormData>;
 }
 
 const NightsRangeSection = ({ control }: NightsRangeSectionProps) => {

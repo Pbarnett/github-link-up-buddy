@@ -1,9 +1,9 @@
 export interface EdgeFunctionError {
   message: string;
-  details?: any;
+  details?: unknown;
 }
 
-export interface EdgeFunctionResult<T = any> {
+export interface EdgeFunctionResult<T = unknown> {
   data: T | null;
   error: EdgeFunctionError | null;
 }
@@ -14,9 +14,9 @@ export interface EdgeFunctionResult<T = any> {
  * @param body - Request body to send to the function
  * @param fetchImpl - Fetch implementation (default: global fetch, can be mocked in tests)
  */
-export const invokeEdgeFn = async <T = any>(
+export const invokeEdgeFn = async <T = unknown>(
   functionName: string,
-  body: any,
+  body: unknown,
   fetchImpl: typeof fetch = fetch
 ): Promise<EdgeFunctionResult<T>> => {
   try {

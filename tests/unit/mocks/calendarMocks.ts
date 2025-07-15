@@ -27,7 +27,13 @@ export const getTestDates = () => {
 };
 
 // Simple mock DayPicker component
-const MockDayPicker = ({ selected, onSelect, disabled, ...props }: any) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const MockDayPicker = ({ selected: _selected, onSelect, disabled, ...props }: {
+  selected?: Date | Date[];
+  onSelect?: (date: Date) => void;
+  disabled?: (date: Date) => boolean;
+  [key: string]: unknown;
+}) => {
   const { tomorrow, nextWeek } = getTestDates();
   
   const handleDateClick = (date: Date) => {

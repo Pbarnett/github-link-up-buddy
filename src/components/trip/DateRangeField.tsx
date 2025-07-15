@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -22,7 +21,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { HelpCircle } from "lucide-react";
 
 interface DateRangeFieldProps {
-  control: Control<any>;
+  control: Control<{
+    earliestDeparture: Date;
+    latestDeparture: Date;
+    [key: string]: unknown;
+  }>;
 }
 
 const DateRangeField = ({ control }: DateRangeFieldProps) => {

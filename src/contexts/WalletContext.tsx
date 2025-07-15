@@ -5,7 +5,7 @@ import {
   SetupIntentResponse, 
   PaymentMethodsResponse, 
   WalletContextType,
-  PaymentMethodError
+  PaymentMethodError as ImportedPaymentMethodError
 } from '@/types/wallet';
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -187,13 +187,14 @@ export function WalletProvider({ children }: WalletProviderProps) {
   useEffect(() => {
     const channel = supabase
       .channel('payment-methods-changes')
-      .on('postgres_changes', 
+      .on(
+        'postgres_changes' as any,
         { 
           event: '*', 
           schema: 'public', 
           table: 'payment_methods' 
-        }, 
-        (payload) => {
+        } as any, 
+        (payload: any) => {
           console.log('Payment method changed:', payload);
           // Refresh payment methods when changes occur
           refreshPaymentMethods();

@@ -6,11 +6,11 @@ type AutoBookingRequestRow = Tables<'auto_booking_requests'>;
 
 class CampaignService {
   async getCampaigns(userId: string): Promise<Campaign[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase
       .from('auto_booking_requests')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false }) as any);
 
     if (error) {
       throw new Error(`Failed to fetch campaigns: ${error.message}`);
@@ -44,7 +44,7 @@ class CampaignService {
 
     const { data, error } = await supabase
       .from('auto_booking_requests')
-      .insert([campaignData])
+      .insert([campaignData as any])
       .select()
       .single();
 
@@ -58,7 +58,7 @@ class CampaignService {
   async updateCampaign(id: string, updates: UpdateCampaignRequest): Promise<Campaign> {
     const { data, error } = await supabase
       .from('auto_booking_requests')
-      .update(updates)
+      .update(updates as any)
       .eq('id', id)
       .select()
       .single();
@@ -79,10 +79,10 @@ class CampaignService {
   }
 
   async deleteCampaign(id: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase
       .from('auto_booking_requests')
       .delete()
-      .eq('id', id);
+      .eq('id', id) as any);
 
     if (error) {
       throw new Error(`Failed to delete campaign: ${error.message}`);
@@ -111,7 +111,7 @@ class CampaignService {
 
     const { data, error } = await supabase
       .from('trip_requests')
-      .insert([tripRequestData])
+      .insert([tripRequestData as any])
       .select()
       .single();
 
@@ -132,8 +132,8 @@ class CampaignService {
       user_id: row.user_id,
       trip_request_id: row.trip_request_id,
       status: row.status as Campaign['status'],
-      criteria: row.criteria as any, // Type assertion since it's stored as JSONB
-      price_history: (row.price_history as any) || [],
+      criteria: row.criteria as any as Campaign['criteria'], // Type assertion since it's stored as JSONB
+      price_history: (row.price_history as any as Campaign['price_history']) || [],
       latest_booking_request_id: row.latest_booking_request_id || undefined,
       created_at: row.created_at || '',
       updated_at: row.updated_at || '',

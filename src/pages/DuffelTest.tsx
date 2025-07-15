@@ -9,24 +9,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, TestTube, CheckCircle2, XCircle, User } from 'lucide-react';
+import { Loader2, TestTube, CheckCircle2, XCircle } from 'lucide-react';
 
 import useDuffelFlights from '@/hooks/useDuffelFlights';
 import DuffelBookingCard from '@/components/trip/DuffelBookingCard';
 import OfferExpirationTimer from '@/components/trip/OfferExpirationTimer';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import DuffelErrorHandler, { DuffelError } from '@/components/trip/DuffelErrorHandler';
 import { DuffelTraveler } from '@/services/api/duffelBookingApi';
 import { supabase } from '@/integrations/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 const DuffelTest: React.FC = () => {
   // Authentication state
-  const [user, setUser] = useState<any>(null);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [, setUser] = useState<User | null>(null);
+  const [, setIsAuthenticating] = useState(false);
   
   // Test state
   const [tripRequestId, setTripRequestId] = useState('');
   const [testTraveler] = useState<DuffelTraveler>({
-    title: 'Mr',
+    type: 'adult',
+    title: 'mr',
     given_name: 'Test',
     family_name: 'User',
     born_on: '1990-01-01',
@@ -52,8 +55,9 @@ const DuffelTest: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Sign in with test credentials
-  const signIn = async () => {
+  // Sign in with test credentials (currently unused but kept for future functionality)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _signIn = async () => {
     setIsAuthenticating(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -73,8 +77,9 @@ const DuffelTest: React.FC = () => {
     }
   };
 
-  // Sign out
-  const signOut = async () => {
+  // Sign out (currently unused but kept for future functionality)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _signOut = async () => {
     await supabase.auth.signOut();
   };
 
@@ -82,7 +87,6 @@ const DuffelTest: React.FC = () => {
   const {
     offers,
     isLoading,
-    isSearching,
     error,
     searchFlights,
     clearResults,

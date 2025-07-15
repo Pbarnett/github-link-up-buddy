@@ -5,7 +5,7 @@ import { GreetingBanner } from '@/components/personalization/GreetingBanner';
 
 // Mock dependencies
 vi.mock('@/contexts/PersonalizationContext', async (importOriginal) => {
-  const actual = await importOriginal<any>();
+  const actual = await importOriginal<typeof import('@/contexts/PersonalizationContext')>();
   const mockTrackPersonalizationEvent = vi.fn();
   
   return {
@@ -75,9 +75,6 @@ vi.mock('@/hooks/useAnalytics', () => {
 });
 
 describe('GreetingBanner', () => {
-  const mockTrackEvent = vi.fn();
-  const mockExperimentConfig = { enablePersonalization: true };
-
   const renderComponent = (props = {}) => {
     return render(
       <GreetingBanner

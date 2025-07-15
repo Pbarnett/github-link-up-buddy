@@ -5,7 +5,7 @@ import {
   transformLegacyOffers,
   type GetFlightOffersDeps 
 } from '@/serverActions/getFlightOffers';
-import { createMockSupabaseClient, createEdgeFetchMock } from '@/tests/__helpers';
+import { createMockSupabaseClient } from '@/tests/__helpers';
 
 describe('getFlightOffers (Refactored)', () => {
   let mockSupabaseClient: ReturnType<typeof createMockSupabaseClient>;
@@ -16,14 +16,14 @@ describe('getFlightOffers (Refactored)', () => {
     mockSupabaseClient = createMockSupabaseClient();
     mockInvokeEdgeFn = vi.fn();
     deps = {
-      supabaseClient: mockSupabaseClient as any,
+      supabaseClient: mockSupabaseClient as ReturnType<typeof createMockSupabaseClient>,
       invokeEdgeFn: mockInvokeEdgeFn,
     };
   });
 
   describe('Pure helpers', () => {
     it('transformLegacyToV2 should transform a single legacy offer', () => {
-      const legacyOffer = {
+      const legacyOffer: { [key: string]: unknown } = {
         id: 'legacy-1',
         trip_request_id: 'trip-123',
         price: 500,
@@ -40,7 +40,7 @@ describe('getFlightOffers (Refactored)', () => {
         booking_url: 'https://example.com/book',
       };
 
-      const result = transformLegacyToV2(legacyOffer as any);
+      const result = transformLegacyToV2(legacyOffer as Record<string, unknown>);
 
       // Check basic transformation structure (dates may vary by timezone)
       expect(result.id).toBe('legacy-1');
@@ -64,12 +64,12 @@ describe('getFlightOffers (Refactored)', () => {
     });
 
     it('transformLegacyOffers should transform an array of legacy offers', () => {
-      const legacyOffers = [
+      const legacyOffers: Array<{ id: string; trip_request_id: string; price: number }> = [
         { id: 'legacy-1', trip_request_id: 'trip-123', price: 500 },
         { id: 'legacy-2', trip_request_id: 'trip-123', price: 600 },
       ];
 
-      const result = transformLegacyOffers(legacyOffers as any);
+      const result = transformLegacyOffers(legacyOffers as Array<Record<string, unknown>>);
 
       expect(result).toHaveLength(2);
       expect(result[0].id).toBe('legacy-1');

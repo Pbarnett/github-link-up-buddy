@@ -12,10 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   BarChart3, 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
-  MousePointer, 
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -77,17 +73,19 @@ export const FormAnalyticsDashboard: React.FC = () => {
       }
 
       // Fetch analytics data
-      const { data: analyticsData, error: analyticsError } = await supabase
+      const queryResult = supabase
         .from('form_completion_analytics')
         .select('*')
         .gte('date', startDate.toISOString().split('T')[0])
         .lte('date', endDate.toISOString().split('T')[0])
         .order('date', { ascending: false });
+      
+      const { data: analyticsData, error: analyticsError } = await (queryResult as any);
 
       if (analyticsError) throw analyticsError;
 
       // Aggregate data by form
-      const formAnalytics = (analyticsData || []).reduce((acc: Record<string, FormAnalytics>, curr) => {
+      const formAnalytics = (analyticsData || []).reduce((acc: Record<string, FormAnalytics>, curr: FormAnalytics) => {
         const key = curr.form_name;
         if (!acc[key]) {
           acc[key] = {
@@ -108,18 +106,19 @@ export const FormAnalyticsDashboard: React.FC = () => {
       }, {});
 
       // Calculate completion rates
-      Object.values(formAnalytics).forEach(form => {
+      const forms = Object.values(formAnalytics) as FormAnalytics[];
+      forms.forEach((form: FormAnalytics) => {
         if (form.total_views > 0) {
           form.completion_rate = (form.total_submissions / form.total_views) * 100;
         }
       });
 
-      const analyticsArray = Object.values(formAnalytics);
+      const analyticsArray = Object.values(formAnalytics) as FormAnalytics[];
       setAnalytics(analyticsArray);
 
       // Calculate overview metrics
-      const totalViews = analyticsArray.reduce((sum, form) => sum + form.total_views, 0);
-      const totalSubmissions = analyticsArray.reduce((sum, form) => sum + form.total_submissions, 0);
+      const totalViews = analyticsArray.reduce((sum, form) => sum + (form.total_views || 0), 0);
+      const totalSubmissions = analyticsArray.reduce((sum, form) => sum + (form.total_submissions || 0), 0);
       const avgCompletionRate = totalViews > 0 ? (totalSubmissions / totalViews) * 100 : 0;
 
       setOverview({

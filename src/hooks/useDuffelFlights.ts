@@ -98,7 +98,10 @@ export const useDuffelFlights = (
     });
 
     try {
-      const response = await fetchDuffelFlights(tripRequestId, searchOptions);
+      const response = await fetchDuffelFlights(tripRequestId, {
+        tripRequestId,
+        ...searchOptions
+      });
       
       setSearchResponse(response);
       setLastSearchTime(new Date());
@@ -120,8 +123,8 @@ export const useDuffelFlights = (
         setError(errorMessage);
         setOffers([]);
       }
-    } catch (err: any) {
-      const errorMessage = err.message || 'Network error during search';
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Network error during search';
       logger.error('[useDuffelFlights] Search exception:', err);
       setError(errorMessage);
       setOffers([]);
@@ -141,20 +144,24 @@ export const useDuffelFlights = (
       const { supabase } = await import('@/integrations/supabase/client');
       
       // Debug: Check current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const userResult = await supabase.auth.getUser();
+      const { data: { user } } = userResult;
       logger.info('[useDuffelFlights] Current user for database query:', {
         userId: user?.id,
         email: user?.email,
         tripRequestId
       });
       
-      const { data: offersData, error: fetchError } = await supabase
+      const query = supabase
         .from('flight_offers_v2')
         .select('*')
         .eq('trip_request_id', tripRequestId)
         .eq('mode', 'AUTO') // Duffel offers use AUTO mode
         .order('price_total', { ascending: true })
         .limit(50);
+      
+      const result = await (query as unknown as Promise<{ data: any; error: any }>);
+      const { data: offersData, error: fetchError } = result;
 
       if (fetchError) {
         logger.error('[useDuffelFlights] Error fetching offers from database:', fetchError);
@@ -163,7 +170,7 @@ export const useDuffelFlights = (
 
       if (offersData && offersData.length > 0) {
         // Transform database offers to our hook format
-        const transformedOffers: DuffelFlightOffer[] = offersData.map(offer => ({
+        const transformedOffers: DuffelFlightOffer[] = offersData.map((offer: any) => ({
           id: offer.id,
           price: offer.price_total,
           currency: offer.price_currency || 'USD',
@@ -187,7 +194,7 @@ export const useDuffelFlights = (
         setOffers([]);
         logger.info('[useDuffelFlights] No offers found in database');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('[useDuffelFlights] Exception fetching offers from database:', err);
       // Don't set error state here since the search itself might have been successful
       // Just log the issue and leave offers empty

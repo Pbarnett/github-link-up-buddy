@@ -7,15 +7,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   CreditCard, 
   Plus, 
-  Settings, 
-  Shield, 
-  Star,
-  Trash2,
-  Edit2,
-  Check,
-  X
+  Trash2
 } from 'lucide-react';
-import { PaymentMethod, PaymentMethodListProps, CARD_BRANDS } from '@/types/wallet';
+import { PaymentMethodListProps, CARD_BRANDS } from '@/types/wallet';
 import { useToast } from '@/hooks/use-toast';
 import { WalletNickname } from './WalletNickname';
 
@@ -53,22 +47,6 @@ export function PaymentMethodList({
     }
   };
 
-  const handleSetDefault = async (id: string) => {
-    try {
-      await onSetDefault(id);
-      toast({
-        title: 'Default payment method updated',
-        description: 'Your default payment method has been updated successfully.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to set default payment method',
-        variant: 'destructive',
-      });
-    }
-  };
-
 
   const formatExpiry = (month: number, year: number) => {
     return `${month.toString().padStart(2, '0')}/${year.toString().slice(-2)}`;
@@ -76,8 +54,6 @@ export function PaymentMethodList({
 
   const isExpiringSoon = (month: number, year: number) => {
     const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentYear = now.getFullYear();
     const expiryDate = new Date(year, month - 1);
     const threeMonthsFromNow = new Date(now.getFullYear(), now.getMonth() + 3);
     

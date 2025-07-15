@@ -19,11 +19,18 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+// Form data interface for trip date fields
+interface TripDateFormData {
+  earliestDeparture?: Date;
+  latestDeparture?: Date;
+  [key: string]: unknown; // Allow additional fields for flexibility
+}
+
 interface TripDateFieldProps {
   name: "earliestDeparture" | "latestDeparture";
   label: string;
   description: string;
-  control: Control<any>;
+  control: Control<TripDateFormData>;
 }
 
 const TripDateField = ({ name, label, description, control }: TripDateFieldProps) => {

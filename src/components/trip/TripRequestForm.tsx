@@ -5,19 +5,19 @@ import { useForm, FormProvider } from "react-hook-form";
 import { parseISO } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { FormValues, tripFormSchema, ExtendedTripFormValues } from "@/types/form";
-import { Loader2, ArrowLeft, Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { TripRequestFromDB } from "@/hooks/useTripOffers";
-import { PostgrestError } from "@supabase/supabase-js";
+// import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
 import { invokeFlightSearch } from "@/services/api/flightSearchApi";
 import { TripRequestRepository, type TripRequestInsert, type TripRequestUpdate } from "@/lib/repositories";
-import { handleError, mapAmadeusError, ValidationError, BusinessLogicError, ErrorCode } from "@/lib/errors";
-import { retryHttpRequest, RetryDecorators } from "@/lib/resilience/retry";
+import { handleError, ValidationError } from "@/lib/errors";
+// import { retryHttpRequest, RetryDecorators } from "@/lib/resilience/retry";
 import { useIsMobile } from "@/hooks/use-mobile";
 import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
@@ -25,12 +25,12 @@ import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import ImprovedDatePickerSection from "./sections/ImprovedDatePickerSection";
 import TravelersAndCabinSection from "./sections/TravelersAndCabinSection";
 import StickyFormActions from "./StickyFormActions";
-import FilterTogglesSection from "./sections/FilterTogglesSection";
+// import FilterTogglesSection from "./sections/FilterTogglesSection";
 import CollapsibleFiltersSection from "./sections/CollapsibleFiltersSection";
 import LiveBookingSummary from "./LiveBookingSummary";
 import TripSummaryChips from "./sections/TripSummaryChips";
 import AutoBookingSection from "./sections/AutoBookingSection";
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+// import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -83,7 +83,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       const fetchTripDetails = async () => {
         setIsLoadingDetails(true);
         try {
-          const repository = new TripRequestRepository(supabase);
+          const repository = new TripRequestRepository(supabase as any);
           const tripData = await repository.findById(tripRequestId, { throwOnEmpty: true });
 
           if (tripData) {
@@ -97,7 +97,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
               nyc_airports: nycAirports,
               other_departure_airport: otherAirport,
               destination_airport: tripData.destination_airport?.length === 3 && tripData.destination_airport === tripData.destination_airport?.toUpperCase() ? tripData.destination_airport : "",
-              destination_other: tripData.destination_airport?.length !== 3 || tripData.destination_airport !== tripData.destination_airport?.toUpperCase() ? tripData.destination_airport : "",
+              destination_other: tripData.destination_airport?.length !== 3 || tripData.destination_airport !== tripData.destination_airport?.toUpperCase() ? tripData.destination_airport || "" : "",
               nonstop_required: tripData.nonstop_required ?? true,
               baggage_included_required: tripData.baggage_included_required ?? false,
               auto_book_enabled: tripData.auto_book_enabled ?? false, // Use nullish coalescing
@@ -168,15 +168,15 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
   const createTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
     if (!userId) throw new ValidationError("You must be logged in to create a trip request.");
     
-    const repository = new TripRequestRepository(supabase);
+    const repository = new TripRequestRepository(supabase as any);
     
     const tripRequestData: TripRequestInsert = {
       user_id: userId,
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport,
+      destination_location_code: formData.destination_airport || '',
       departure_airports: formData.departure_airports || [],
-      earliest_departure: formData.earliestDeparture.toISOString(),
-      latest_departure: formData.latestDeparture.toISOString(),
+      earliest_departure: formData.earliestDeparture?.toISOString() || '',
+      latest_departure: formData.latestDeparture?.toISOString() || '',
       min_duration: formData.min_duration,
       max_duration: formData.max_duration,
       budget: formData.budget,
@@ -205,14 +205,14 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       throw new ValidationError("User ID or Trip Request ID is missing for update.");
     }
     
-    const repository = new TripRequestRepository(supabase);
+    const repository = new TripRequestRepository(supabase as any);
     
     const tripRequestData: TripRequestUpdate = {
       destination_airport: formData.destination_airport,
       destination_location_code: formData.destination_airport,
       departure_airports: formData.departure_airports || [],
-      earliest_departure: formData.earliestDeparture.toISOString(),
-      latest_departure: formData.latestDeparture.toISOString(),
+      earliest_departure: formData.earliestDeparture?.toISOString() || '',
+      latest_departure: formData.latestDeparture?.toISOString() || '',
       min_duration: formData.min_duration,
       max_duration: formData.max_duration,
       budget: formData.budget,
@@ -258,7 +258,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       'max_duration'
     ];
     
-    const isStep1Valid = await form.trigger(step1Fields as any);
+    const isStep1Valid = await form.trigger(step1Fields as (keyof FormValues)[]);
     
     if (!isStep1Valid) {
       // Validation failed - errors will be displayed automatically
@@ -503,14 +503,14 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
                   {/* Trip Basics - Destination & Origin */}
                   <div className="space-y-6 mb-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <EnhancedDestinationSection control={form.control} watch={form.watch} />
-                      <DepartureAirportsSection control={form.control} />
+                      <EnhancedDestinationSection control={form.control as any} watch={form.watch as any} />
+                      <DepartureAirportsSection control={form.control as any} />
                     </div>
                   </div>
 
                   {/* Dates & Trip Length */}
                   <div className="space-y-6 mb-8">
-                    <ImprovedDatePickerSection control={form.control} />
+                    <ImprovedDatePickerSection control={form.control as any} />
                   </div>
                 </>
               )}
@@ -522,14 +522,14 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">
                       Maximum Price
                     </h2>
-                    <EnhancedBudgetSection control={form.control} />
+                    <EnhancedBudgetSection control={form.control as any} />
                   </div>
                   
                   <div className="bg-slate-50 rounded-lg border border-gray-200 p-6 mb-8">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">
                       Payment & Authorization
                     </h2>
-                    <AutoBookingSection control={form.control} mode={mode} />
+                    <AutoBookingSection control={form.control as any} mode={mode} />
                   </div>
                 </>
               )}
@@ -540,29 +540,34 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
                   {/* Travelers & Cabin Class */}
                   <div className="space-y-4 mb-6">
                     <h3 className="text-base font-semibold text-gray-900">Travelers & Cabin</h3>
-                    <TravelersAndCabinSection control={form.control} />
+                    <TravelersAndCabinSection control={form.control as any} />
                   </div>
 
                   {/* Budget Section */}
                   <div className="space-y-4 mb-6">
                     <div>
                       <h3 className="text-base font-semibold text-gray-900 mb-3">Top price you'll pay</h3>
-                      <EnhancedBudgetSection control={form.control} />
+                      <EnhancedBudgetSection control={form.control as any} />
                     </div>
                   </div>
                   
                   {/* Collapsible Filters */}
                   <div className="mb-6">
-                    <CollapsibleFiltersSection control={form.control} />
+                    <CollapsibleFiltersSection control={form.control as any} />
+                  </div>
+                  
+                  {/* Auto-booking Section */}
+                  <div className="mb-6">
+                    <AutoBookingSection control={form.control as any} mode={mode} />
                   </div>
                 </>
               )}
 
                       {/* Trip Summary Chips */}
                       <TripSummaryChips 
-                        control={form.control} 
+        control={form.control as any}
                         onClearField={(fieldName) => {
-                          form.setValue(fieldName as any, fieldName === 'nyc_airports' ? [] : undefined);
+                          form.setValue(fieldName as keyof FormValues, fieldName === 'nyc_airports' ? [] : undefined);
                         }}
                       />
 
@@ -610,7 +615,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
                   isFormValid={isFormValid}
                   buttonText={buttonText()}
                   onSubmit={form.handleSubmit(handleStepSubmit)}
-                  control={form.control}
+                  control={form.control as any}
                 />
               </div>
             </div>

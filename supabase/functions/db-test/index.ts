@@ -26,17 +26,17 @@ serve(async (req) => {
     console.log("🔍 Testing database tables...");
     
     // Test if KMS tables exist
-    const { data: auditTable, error: auditError } = await supabase
+    const { error: auditError } = await supabase
       .from('kms_audit_log')
       .select('count')
       .limit(1);
     
-    const { data: keyRotationTable, error: keyRotationError } = await supabase
+    const { error: keyRotationError } = await supabase
       .from('kms_key_rotation_history')
       .select('count')
       .limit(1);
     
-    const { data: encryptionMetaTable, error: encryptionMetaError } = await supabase
+    const { error: encryptionMetaError } = await supabase
       .from('kms_encryption_metadata')
       .select('count')
       .limit(1);

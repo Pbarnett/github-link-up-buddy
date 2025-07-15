@@ -4,7 +4,7 @@ import { PersonalizationData } from '@/context/PersonalizationContext';
 
 interface TrackEventParams {
   eventType: string;
-  context?: any;
+  context?: Record<string, unknown>;
 }
 
 /**
@@ -74,12 +74,12 @@ export function usePersonalization(userId?: string) {
       if (!userId) return;
       
       try {
-        const { error } = await supabase.from('personalization_events').insert({
+        const { error } = await (supabase.from('personalization_events').insert({
           user_id: userId,
           event_type: params.eventType,
           context: params.context || {},
           created_at: new Date().toISOString(),
-        });
+        }) as any);
         
         if (error) {
           console.error('Error tracking personalization event:', error);
@@ -101,10 +101,10 @@ export function usePersonalization(userId?: string) {
     mutationFn: async () => {
       if (!userId) return;
       
-      const { error } = await supabase
+      const { error } = await (supabase
         .from('profiles')
         .update({ personalization_enabled: false })
-        .eq('id', userId);
+        .eq('id', userId) as any);
         
       if (error) {
         throw error;

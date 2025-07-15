@@ -35,7 +35,12 @@ export interface PaymentMethodAttachResult {
  * This maintains PCI SAQ A compliance by avoiding unnecessary customer records
  */
 export const createLazyCustomer = async (
-  stripe: any,
+  stripe: {
+    customers: {
+      list: (params: { email: string; limit: number }) => Promise<{ data: StripeCustomer[] }>;
+      create: (params: { email: string; metadata: Record<string, string> }) => Promise<StripeCustomer>;
+    };
+  },
   userId: string,
   email: string,
   metadata: Record<string, string> = {}
@@ -78,7 +83,11 @@ export const createLazyCustomer = async (
  * Attach payment method to customer with proper error handling
  */
 export const attachPaymentMethod = async (
-  stripe: any,
+  stripe: {
+    paymentMethods: {
+      attach: (paymentMethodId: string, params: { customer: string }) => Promise<StripePaymentMethod>;
+    };
+  },
   paymentMethodId: string,
   customerId: string
 ): Promise<StripePaymentMethod> => {
@@ -98,7 +107,11 @@ export const attachPaymentMethod = async (
  * Detach payment method from customer
  */
 export const detachPaymentMethod = async (
-  stripe: any,
+  stripe: {
+    paymentMethods: {
+      detach: (paymentMethodId: string) => Promise<StripePaymentMethod>;
+    };
+  },
   paymentMethodId: string
 ): Promise<StripePaymentMethod> => {
   try {
@@ -172,7 +185,7 @@ export class PaymentError extends Error {
   constructor(
     public code: PaymentErrorCode,
     public message: string,
-    public details?: any
+    public details?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'PaymentError';

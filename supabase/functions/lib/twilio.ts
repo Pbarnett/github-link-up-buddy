@@ -134,7 +134,14 @@ export class TwilioService {
   /**
    * Get account information
    */
-  async getAccountInfo(): Promise<any> {
+  async getAccountInfo(): Promise<{
+    sid: string;
+    friendly_name: string;
+    status: string;
+    type: string;
+    date_created: string;
+    date_updated: string;
+  }> {
     try {
       const response = await fetch(`${this.baseUrl}.json`, {
         headers: {
@@ -155,7 +162,14 @@ export class TwilioService {
   /**
    * Get message delivery status
    */
-  async getMessageStatus(messageId: string): Promise<any> {
+  async getMessageStatus(messageId: string): Promise<{
+    sid: string;
+    status: string;
+    date_sent: string;
+    date_updated: string;
+    error_code?: string;
+    error_message?: string;
+  }> {
     try {
       const response = await fetch(`${this.baseUrl}/Messages/${messageId}.json`, {
         headers: {
@@ -202,34 +216,59 @@ export function createTwilioService(): TwilioService {
  * SMS Template renderer for notifications
  */
 export class SMSTemplateRenderer {
-  static renderBookingConfirmation(data: any): string {
+  static renderBookingConfirmation(data: {
+    passenger_name: string;
+    origin: string;
+    destination: string;
+    departure_date: string;
+    booking_reference: string;
+    tracking_url: string;
+  }): string {
     return `✈️ Flight Booked! 
 ${data.passenger_name}, your flight from ${data.origin} to ${data.destination} on ${data.departure_date} is confirmed. 
 Confirmation: ${data.booking_reference}
 Track: ${data.tracking_url}`;
   }
 
-  static renderPriceAlert(data: any): string {
+  static renderPriceAlert(data: {
+    origin: string;
+    destination: string;
+    new_price: number;
+    old_price: number;
+    savings: number;
+    booking_url: string;
+  }): string {
     return `💸 Price Drop Alert! 
 Flight ${data.origin} → ${data.destination} now $${data.new_price} (was $${data.old_price}). 
 Save $${data.savings}! Book now: ${data.booking_url}`;
   }
 
-  static renderBookingReminder(data: any): string {
+  static renderBookingReminder(data: {
+    flight_number: string;
+    time_until_departure: string;
+    origin: string;
+    destination: string;
+    checkin_url: string;
+  }): string {
     return `⏰ Flight Reminder
 Your flight ${data.flight_number} departs in ${data.time_until_departure}. 
 ${data.origin} → ${data.destination}
 Check-in: ${data.checkin_url}`;
   }
 
-  static renderBookingFailure(data: any): string {
+  static renderBookingFailure(data: {
+    origin: string;
+    destination: string;
+    error_reason: string;
+    support_url: string;
+  }): string {
     return `❌ Booking Failed
 We couldn't complete your booking for ${data.origin} → ${data.destination}. 
 Reason: ${data.error_reason}
 Support: ${data.support_url}`;
   }
 
-  static renderGeneric(template: string, data: any): string {
+  static renderGeneric(template: string, data: Record<string, string | number>): string {
     return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
       return data[key] || match;
     });

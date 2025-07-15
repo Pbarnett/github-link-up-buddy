@@ -8,6 +8,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const migrationSQL = `
 -- Dynamic Forms System Migration
 -- Phase 1: Core Infrastructure
@@ -217,7 +218,7 @@ serve(async (req) => {
       console.log('Migration would be executed here in production');
       console.log('For now, please run the migration manually in the Supabase dashboard');
       
-    } catch (error) {
+    } catch {
       console.log('Migration execution via REST API - implementing basic table creation');
     }
 

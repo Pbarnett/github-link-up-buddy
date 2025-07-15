@@ -1,5 +1,22 @@
 // supabase/functions/lib/seatSelector.ts
 
+export type SeatMap = {
+  flightSegments: Array<{
+    decks: Array<{
+      rows: Array<{
+        seats: Array<{
+          seatNumber: string;
+          available: boolean;
+          features?: string[];
+          pricing?: {
+            total: string | number;
+          };
+        }>;
+      }>;
+    }>;
+  }>;
+};
+
 export type SeatInfo = {
   seatNumber: string;
   seatType: 'WINDOW' | 'AISLE' | 'MIDDLE';
@@ -23,7 +40,7 @@ export type SeatInfo = {
  * @returns                A SeatInfo object (seatNumber, seatType, price) or null if none qualify
  */
 export function selectSeat(
-  seatMap: any,
+  seatMap: SeatMap,
   baseFare: number,
   totalBudget: number,
   allowMiddle: boolean

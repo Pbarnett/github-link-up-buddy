@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast'; // Added useToast
@@ -12,10 +12,17 @@ interface TripHistoryProps {
 }
 
 const TripHistory: React.FC<TripHistoryProps> = ({ userId }) => {
-  const [tripHistory, setTripHistory] = useState<any[]>([]);
+  const [tripHistory, setTripHistory] = useState<Array<{
+    id: string;
+    trip_request_id: string;
+    pnr: string;
+    price: number;
+    selected_seat_number: string;
+    created_at: string;
+    status: string;
+  }>>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [isCancelling, setIsCancelling] = useState<string | null>(null);
 
@@ -28,11 +35,11 @@ const TripHistory: React.FC<TripHistoryProps> = ({ userId }) => {
     }
     try {
       setHistoryLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('bookings')
         .select('id, trip_request_id, pnr, price, selected_seat_number, created_at, status') // Added status
         .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any);
 
       if (error) {
         console.error("Error fetching trip history from bookings:", error);
@@ -40,9 +47,9 @@ const TripHistory: React.FC<TripHistoryProps> = ({ userId }) => {
       } else {
         setTripHistory(data || []);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Unexpected error fetching trip history from bookings:", err);
-      setHistoryError(err.message || "An unexpected error occurred.");
+      setHistoryError(err instanceof Error ? err.message : "An unexpected error occurred.");
     } finally {
       setHistoryLoading(false);
     }
@@ -68,16 +75,16 @@ const TripHistory: React.FC<TripHistoryProps> = ({ userId }) => {
 
       toast({
         title: 'Booking Cancellation Initiated',
-        description: (invokeData as any)?.message || 'Your booking cancellation is being processed.'
+        description: (invokeData && typeof invokeData === 'object' && 'message' in invokeData ? (invokeData as { message: string }).message : null) || 'Your booking cancellation is being processed.'
       });
 
       setTimeout(() => fetchTripHistory(), 1000); // Refresh after a delay
 
-    } catch (err: any) {
-      console.error('[TripHistory] Cancel booking failed for ID', bookingId, ':', err.message);
+    } catch (err: unknown) {
+      console.error('[TripHistory] Cancel booking failed for ID', bookingId, ':', err instanceof Error ? err.message : err);
       toast({
         title: 'Cancellation Failed',
-        description: err.message || 'Could not cancel the booking at this time.',
+        description: err instanceof Error ? err.message : 'Could not cancel the booking at this time.',
         variant: 'destructive'
       });
     } finally {

@@ -105,7 +105,7 @@ export function NotificationPreferences() {
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to save preferences:', error);
       alert('Failed to save preferences. Please try again.');
     } finally {

@@ -22,11 +22,12 @@ const checkAuth = async () => {
         UserInitializationService.ensureUserPreferences(data.session.user.id);
       }
       
-      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      const { data: authListener } = supabase.auth.onAuthStateChange((event: string, session: unknown) => {
         setIsAuthenticated(!!session);
         
-        if (event === 'SIGNED_IN' && session) {
-          UserInitializationService.handlePostSignin(session.user.id);
+        if (event === 'SIGNED_IN' && session && typeof session === 'object' && session !== null && 'user' in session) {
+          const sessionObj = session as { user: { id: string } };
+          UserInitializationService.handlePostSignin(sessionObj.user.id);
         }
       });
       

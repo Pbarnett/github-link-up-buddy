@@ -143,7 +143,7 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
       destination_location_code: data.destination_location_code || data.destination_airport || '',
       // Calculate departure and return dates if not provided
       departure_date: data.departure_date || new Date(data.earliest_departure).toISOString().split('T')[0],
-      return_date: data.return_date || this.calculateReturnDate(data.earliest_departure, data.min_duration),
+      return_date: data.return_date || this.calculateReturnDate(data.earliest_departure, data.min_duration || 3),
     };
 
     return this.create(tripRequestData, {

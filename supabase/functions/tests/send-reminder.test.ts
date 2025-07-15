@@ -1,5 +1,5 @@
 // supabase/functions/tests/send-reminder.test.ts
-import { describe, it, expect, vi, beforeEach, afterEach, Mocked, SpyInstance } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, SpyInstance } from 'vitest';
 
 // Set environment variables at the top
 process.env.SUPABASE_URL = 'http://mock-supabase.url';
@@ -186,7 +186,7 @@ describe('send-reminder Edge Function', () => {
       .mockResolvedValueOnce({ data: null, error: null }); // Second booking - no existing notification
 
     // Override the fetch mock to ensure consistent responses for both calls
-    mockFetch.mockImplementation(async (url, options) => {
+    mockFetch.mockImplementation(async () => {
       return new Response(JSON.stringify({ success: true, notification_id: 'notif_123' }), { status: 200 });
     });
 

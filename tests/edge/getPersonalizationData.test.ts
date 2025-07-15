@@ -12,7 +12,6 @@ describe('get-personalization-data Edge Function', () => {
   let testUserToken: string;
   let testUserId: string;
   let secondUserToken: string;
-  let secondUserId: string;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -21,7 +20,6 @@ describe('get-personalization-data Edge Function', () => {
     testUserToken = 'test-token-1';
     testUserId = 'user-1';
     secondUserToken = 'test-token-2';
-    secondUserId = 'user-2';
     
     // Setup mock responses
     supabase.functions.invoke.mockImplementation((functionName, options) => {
@@ -82,14 +80,14 @@ describe('get-personalization-data Edge Function', () => {
   });
 
   it('rejects missing JWT token', async () => {
-    const { data, error } = await supabase.functions.invoke('get-personalization-data');
+    const { error } = await supabase.functions.invoke('get-personalization-data');
 
     expect(error).toBeDefined();
     expect(error?.message).toContain('Missing or invalid authorization header');
   });
 
   it('rejects invalid JWT token', async () => {
-    const { data, error } = await supabase.functions.invoke('get-personalization-data', {
+    const { error } = await supabase.functions.invoke('get-personalization-data', {
       headers: {
         Authorization: 'Bearer invalid.jwt.token',
       },
@@ -162,7 +160,7 @@ describe('get-personalization-data Edge Function', () => {
       });
     });
 
-    const { data, error } = await supabase.functions.invoke('get-personalization-data', {
+    const { error } = await supabase.functions.invoke('get-personalization-data', {
       headers: {
         Authorization: `Bearer ${noProfileToken}`,
       },

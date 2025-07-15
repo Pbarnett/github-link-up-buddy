@@ -114,17 +114,17 @@ serve(async (req) => {
     }
     
     // Test that tables were created
-    const { data: auditTable, error: auditError } = await supabase
+    const { error: auditError } = await supabase
       .from('kms_audit_log')
       .select('count')
       .limit(1);
     
-    const { data: rotationTable, error: rotationError } = await supabase
+    const { error: rotationError } = await supabase
       .from('kms_key_rotation_history')
       .select('count')
       .limit(1);
     
-    const { data: metadataTable, error: metadataError } = await supabase
+    const { error: metadataError } = await supabase
       .from('kms_encryption_metadata')
       .select('count')
       .limit(1);

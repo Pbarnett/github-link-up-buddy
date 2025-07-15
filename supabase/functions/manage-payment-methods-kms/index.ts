@@ -18,7 +18,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
 };
 
-async function logKMSAudit(operation: string, keyType: string, success: boolean, userId?: string, error?: string, metadata?: any) {
+async function logKMSAudit(operation: string, keyType: string, success: boolean, userId?: string, error?: string, metadata?: Record<string, unknown>) {
   try {
     await supabase.from('kms_audit_log').insert({
       operation,
@@ -287,7 +287,7 @@ serve(async (req) => {
             );
           }
 
-          const updateData: any = {};
+          const updateData: Record<string, unknown> = {};
 
           // If setting as default, unset other defaults first
           if (is_default === true) {

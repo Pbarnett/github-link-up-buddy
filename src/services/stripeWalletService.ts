@@ -7,7 +7,7 @@ import { logAuditEvent } from './auditService';
 
 // Initialize Stripe with proper error handling
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2025-06-30.basil',
   typescript: true,
 });
 
@@ -277,7 +277,7 @@ export async function handlePaymentMethodAttached(
       // Get customer info if we only have ID
       const customerId = typeof paymentMethod.customer === 'string' 
         ? paymentMethod.customer 
-        : paymentMethod.customer?.id;
+        : (paymentMethod.customer as unknown as Stripe.Customer)?.id;
 
       if (!customerId) {
         throw new Error('Payment method has no customer');

@@ -13,7 +13,7 @@ Object.defineProperty(import.meta, 'env', {
 })
 
 // Make React available globally for component tests
-;(globalThis as any).React = React
+;(globalThis as Record<string, unknown>).React = React
 
 // ==============================================================================
 // JSDOM POLYFILLS FOR RADIX UI
@@ -27,6 +27,21 @@ class ResizeObserverMock {
 }
 Object.defineProperty(globalThis, 'ResizeObserver', {
   value: ResizeObserverMock,
+  writable: true,
+})
+
+// Window.matchMedia polyfill for responsive components
+Object.defineProperty(globalThis, 'matchMedia', {
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
   writable: true,
 })
 
@@ -55,43 +70,19 @@ Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
 // PointerEvent constructor for JSDOM
 if (!globalThis.PointerEvent) {
   class PointerEvent extends Event {
-    constructor(type: string, props: any = {}) {
+    constructor(type: string, props: Record<string, unknown> = {}) {
       super(type, props)
     }
   }
-  (globalThis as any).PointerEvent = PointerEvent
+  (globalThis as Record<string, unknown>).PointerEvent = PointerEvent
 }
 
 // ==============================================================================
 // SUPABASE MOCK SETUP
 // ==============================================================================
-// Create chainable mock that supports method chaining
-const createSupabaseQueryMock = () => ({
-  select: vi.fn().mockReturnThis(),
-  eq: vi.fn().mockReturnThis(),
-  gte: vi.fn().mockReturnThis(),
-  lt: vi.fn().mockReturnThis(),
-  order: vi.fn().mockReturnThis(),
-  limit: vi.fn().mockReturnThis(),
-  single: vi.fn().mockReturnThis(),
-  // Promise interface for async/await
-  then: vi.fn().mockResolvedValue({ data: [], error: null }),
-})
 
-const mockSupabaseClient = {
-  from: vi.fn(() => createSupabaseQueryMock()),
-  auth: {
-    getUser: vi.fn().mockResolvedValue({
-      data: { user: { id: 'test-user-id', email: 'test@example.com' } },
-      error: null
-    }),
-    getSession: vi.fn().mockResolvedValue({
-      data: { session: { user: { id: 'test-user-id' } } },
-      error: null
-    })
-  },
-  rpc: vi.fn().mockResolvedValue({ data: null, error: null })
-}
+// Import the comprehensive mock
+import { mockSupabaseClient, createMockSupabaseClient } from './mocks/supabase'
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: mockSupabaseClient,
@@ -171,13 +162,16 @@ afterEach(() => {
 // Run all pending timers first, in case they're pending
   try {
     vi.runAllTimers()
-  } catch {}
+  } catch {
+    // Timers aren't mocked, ignore
+  }
   // Clear all timers and restore real timers (only if fake timers are active)
   try {
     vi.runOnlyPendingTimers()
     vi.useRealTimers()
-  } catch {}
-  // Timers aren't mocked, ignore
+  } catch {
+    // Timers aren't mocked, ignore
+  }
   
   // Clear all mocks and restore functions
   vi.clearAllMocks()
@@ -187,14 +181,15 @@ afterEach(() => {
   sessionStorage.clear()
   
   // Reset console spies if they exist
-  if ((globalThis as any).consoleLogSpy?.mockRestore) {
-    (globalThis as any).consoleLogSpy.mockRestore()
+  const globalThisWithSpies = globalThis as Record<string, unknown>
+  if (globalThisWithSpies.consoleLogSpy && typeof globalThisWithSpies.consoleLogSpy === 'object' && globalThisWithSpies.consoleLogSpy && 'mockRestore' in globalThisWithSpies.consoleLogSpy) {
+    (globalThisWithSpies.consoleLogSpy as { mockRestore: () => void }).mockRestore()
   }
-  if ((globalThis as any).consoleErrorSpy?.mockRestore) {
-    (globalThis as any).consoleErrorSpy.mockRestore()
+  if (globalThisWithSpies.consoleErrorSpy && typeof globalThisWithSpies.consoleErrorSpy === 'object' && globalThisWithSpies.consoleErrorSpy && 'mockRestore' in globalThisWithSpies.consoleErrorSpy) {
+    (globalThisWithSpies.consoleErrorSpy as { mockRestore: () => void }).mockRestore()
   }
-  if ((globalThis as any).consoleWarnSpy?.mockRestore) {
-    (globalThis as any).consoleWarnSpy.mockRestore()
+  if (globalThisWithSpies.consoleWarnSpy && typeof globalThisWithSpies.consoleWarnSpy === 'object' && globalThisWithSpies.consoleWarnSpy && 'mockRestore' in globalThisWithSpies.consoleWarnSpy) {
+    (globalThisWithSpies.consoleWarnSpy as { mockRestore: () => void }).mockRestore()
   }
 })
 
@@ -235,4 +230,4 @@ vi.mock('@sentry/react', () => ({
 }))
 
 // Export commonly used mocks for test files
-export { mockSupabaseClient, createSupabaseQueryMock as createQueryMock }
+export { mockSupabaseClient, createMockSupabaseClient as createQueryMock }

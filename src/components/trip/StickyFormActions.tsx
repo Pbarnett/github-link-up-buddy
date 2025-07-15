@@ -3,16 +3,28 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Control, useWatch } from "react-hook-form";
+
+interface StickyFormActionsFormData {
+  nyc_airports?: string[];
+  other_departure_airport?: string;
+  destination_airport?: string;
+  destination_other?: string;
+  max_price?: number;
+  min_duration?: number;
+  max_duration?: number;
+  nonstop_required?: boolean;
+  [key: string]: unknown; // Allow additional fields for flexibility
+}
 
 interface StickyFormActionsProps {
   isSubmitting: boolean;
   isFormValid: boolean;
   buttonText: string;
   onSubmit: () => void;
-  control: Control<any>;
+  control: Control<StickyFormActionsFormData>;
 }
 
 const StickyFormActions = ({ 
@@ -49,7 +61,7 @@ const StickyFormActions = ({
     const chips = [];
     
     // Origin → Destination chip
-    const origin = watchedFields?.nyc_airports?.length > 0 
+    const origin = (watchedFields?.nyc_airports && watchedFields.nyc_airports.length > 0) 
       ? watchedFields.nyc_airports.join(', ') 
       : watchedFields?.other_departure_airport || '';
     const destination = watchedFields?.destination_airport || watchedFields?.destination_other || '';

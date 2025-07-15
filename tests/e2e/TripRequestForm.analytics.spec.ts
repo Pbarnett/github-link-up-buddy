@@ -9,7 +9,7 @@ test.describe('TripRequestForm Analytics', () => {
 
   test('should emit form_submit analytics event on successful submission', async ({ page }) => {
     // Mock the analytics endpoint to capture events
-    const analyticsEvents: any[] = [];
+    const analyticsEvents: { p_event_type: string; p_form_name: string; [key: string]: unknown }[] = [];
     
     await page.route('**/rest/v1/rpc/track_form_event', async (route) => {
       const request = route.request();
@@ -52,7 +52,7 @@ test.describe('TripRequestForm Analytics', () => {
   });
 
   test('should emit field_interaction events during form usage', async ({ page }) => {
-    const fieldEvents: any[] = [];
+    const fieldEvents: { p_event_type: string; p_field_id?: string; p_field_type?: string; [key: string]: unknown }[] = [];
     
     await page.route('**/rest/v1/rpc/track_form_event', async (route) => {
       const request = route.request();
@@ -96,7 +96,7 @@ test.describe('TripRequestForm Analytics', () => {
   });
 
   test('should emit form_view event on form load', async ({ page }) => {
-    const viewEvents: any[] = [];
+    const viewEvents: { p_event_type: string; p_form_name: string; p_session_id: string; [key: string]: unknown }[] = [];
     
     await page.route('**/rest/v1/rpc/track_form_event', async (route) => {
       const request = route.request();
@@ -166,7 +166,7 @@ test.describe('TripRequestForm Analytics', () => {
       const events = JSON.parse(queuedEvents);
       expect(events.length).toBeGreaterThan(0);
       
-      const submitEvent = events.find((event: any) => 
+      const submitEvent = events.find((event: { p_event_type: string }) => 
         event.p_event_type === 'form_submit'
       );
       expect(submitEvent).toBeTruthy();
@@ -176,7 +176,7 @@ test.describe('TripRequestForm Analytics', () => {
 });
 
 // Helper function to fill trip request form
-async function fillTripRequestForm(page: any) {
+async function fillTripRequestForm(page: import('@playwright/test').Page) {
   // Fill destination
   const destInput = page.getByRole('combobox', { name: /destination/i }).or(
     page.getByRole('textbox', { name: /destination/i })

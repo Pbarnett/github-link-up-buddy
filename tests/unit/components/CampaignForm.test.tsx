@@ -5,10 +5,8 @@
  */
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { CampaignForm } from '@/components/autobooking/CampaignForm';
-import { CampaignFormData } from '@/types/campaign';
-import { mockAnalytics } from '../../../vitest.setup';
 
 // Mock the hooks - these are now handled by vitest.setup.ts
 // Additional mocks for this test file
@@ -20,29 +18,6 @@ vi.mock('@/components/ui/use-toast', () => ({
   toast: vi.fn(),
   useToast: vi.fn(() => ({ toast: vi.fn() })),
 }));
-
-const mockBusinessRules = {
-  config: {
-    version: '1.0.0',
-    ui: {
-      destination: true,
-      budget: true,
-      paymentMethod: true
-    },
-    flightSearch: {
-      minPriceUSD: 100,
-      maxPriceUSD: 5000,
-      defaultNonstopRequired: true,
-      allowedCabinClasses: ['economy', 'business', 'first']
-    },
-    autoBooking: {
-      enabled: true,
-      maxConcurrentCampaigns: 3
-    }
-  },
-  loading: false,
-  error: null
-};
 
 describe('CampaignForm Analytics Integration', () => {
   const mockProps = {

@@ -6,7 +6,7 @@
  */
 
 export interface DuffelOfferRequest {
-  id: string;
+  id?: string;
   cabin_class?: string;
   passengers: Array<{
     type: 'adult' | 'child' | 'infant_without_seat';
@@ -34,7 +34,7 @@ export interface DuffelOffer {
 
 export interface DuffelApiResponse<T> {
   data: T;
-  meta?: any;
+  meta?: Record<string, unknown>;
 }
 
 export class DuffelClient {
@@ -185,6 +185,6 @@ export function createDuffelClient(): DuffelClient {
 /**
  * Helper function for logging Duffel operations
  */
-export function logDuffelOperation(operation: string, details: any) {
+export function logDuffelOperation(operation: string, details: unknown) {
   console.log(`[DUFFEL] ${operation}:`, JSON.stringify(details, null, 2));
 }

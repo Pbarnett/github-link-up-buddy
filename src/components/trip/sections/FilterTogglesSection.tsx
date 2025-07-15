@@ -1,52 +1,91 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Plane, Package, Check } from 'lucide-react';
+import { Control, useController } from 'react-hook-form';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Plane, Package } from 'lucide-react';
 
-// This component shows informational badges about core business requirements
-// rather than user-toggleable filters, since nonstop and carry-on are always included
-interface FilterTogglesSectionProps {
-  // No longer needs control or isLoading since these are informational only
+// Form data interface for filter toggles
+interface FilterToggleFormData {
+  nonstop_required?: boolean;
+  baggage_included_required?: boolean;
+  [key: string]: unknown;
 }
 
-const FilterTogglesSection: React.FC<FilterTogglesSectionProps> = () => {
+interface FilterTogglesSectionProps {
+  control: Control<FilterToggleFormData>;
+}
+
+const FilterTogglesSection: React.FC<FilterTogglesSectionProps> = ({ control }) => {
+  // Controller for nonstop_required switch
+  const {
+    field: nonstopField,
+  } = useController({
+    name: 'nonstop_required',
+    control,
+    defaultValue: true,
+  });
+
+  // Controller for baggage_included_required switch
+  const {
+    field: baggageField,
+  } = useController({
+    name: 'baggage_included_required',
+    control,
+    defaultValue: false,
+  });
+
   return (
-    <div className="space-y-3">
-      {/* Nonstop Flights - Always Included */}
-      <div className="flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50 p-4">
+    <div className="space-y-4">
+      {/* Nonstop Flights Toggle */}
+      <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100">
             <Plane className="h-4 w-4 text-blue-600" />
           </div>
           <div className="space-y-0.5">
-            <div className="text-base font-medium text-blue-900">Nonstop flights only</div>
-            <div className="text-sm text-blue-700">
-              All flights shown are direct with no stops.
+            <Label 
+              htmlFor="nonstop-toggle" 
+              className="text-base font-medium text-gray-900 cursor-pointer"
+            >
+              Nonstop flights only
+            </Label>
+            <div className="text-sm text-gray-600">
+              Search for direct flights with no stops
             </div>
           </div>
         </div>
-        <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-          <Check className="h-3 w-3 mr-1" />
-          Included
-        </Badge>
+        <Switch
+          id="nonstop-toggle"
+          checked={nonstopField.value}
+          onCheckedChange={nonstopField.onChange}
+          aria-label="Nonstop flights only"
+        />
       </div>
 
-      {/* Carry-on Baggage - Always Included */}
-      <div className="flex items-center justify-between rounded-lg border border-green-100 bg-green-50 p-4">
+      {/* Carry-on Baggage Toggle */}
+      <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100">
             <Package className="h-4 w-4 text-green-600" />
           </div>
           <div className="space-y-0.5">
-            <div className="text-base font-medium text-green-900">Carry-on + personal item</div>
-            <div className="text-sm text-green-700">
-              All prices include carry-on baggage and personal item.
+            <Label 
+              htmlFor="baggage-toggle" 
+              className="text-base font-medium text-gray-900 cursor-pointer"
+            >
+              Include carry-on + personal item
+            </Label>
+            <div className="text-sm text-gray-600">
+              Include carry-on baggage and personal item in search
             </div>
           </div>
         </div>
-        <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
-          <Check className="h-3 w-3 mr-1" />
-          Included
-        </Badge>
+        <Switch
+          id="baggage-toggle"
+          checked={baggageField.value}
+          onCheckedChange={baggageField.onChange}
+          aria-label="Include carry-on + personal item"
+        />
       </div>
     </div>
   );

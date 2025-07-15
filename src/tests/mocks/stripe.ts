@@ -27,7 +27,7 @@ export default class Stripe {
     constructEvent: vi.fn(),
   };
   
-  constructor(secretKey: string, options?: any) {
+  constructor(_secretKey: string, _options?: Record<string, unknown>) { // eslint-disable-line @typescript-eslint/no-unused-vars
     // Mock constructor
   }
 }

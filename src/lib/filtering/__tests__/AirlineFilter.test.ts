@@ -196,7 +196,7 @@ vi.clearAllMocks();
       const result = await filter.apply(offers, context);
       
       expect(result).toHaveLength(1);
-      expect(result[0].rawData.owner.iata_code).toBe('BA');
+      expect((result[0].rawData as any)?.owner?.iata_code).toBe('BA');
     });
 
     it('should handle mixed provider offers', async () => {
@@ -291,8 +291,8 @@ vi.clearAllMocks();
       });
       
       // Mock the extractAirlineCodesFromOffer to throw an error
-      const originalMethod = (filter as any).extractAirlineCodesFromOffer;
-(filter as any).extractAirlineCodesFromOffer = vi.fn(() => {
+      const originalMethod = (filter as unknown as { extractAirlineCodesFromOffer: unknown }).extractAirlineCodesFromOffer;
+(filter as unknown as { extractAirlineCodesFromOffer: unknown }).extractAirlineCodesFromOffer = vi.fn(() => {
         throw new Error('Test error');
       });
       
@@ -309,7 +309,7 @@ vi.clearAllMocks();
       );
       
       // Restore original method
-      (filter as any).extractAirlineCodesFromOffer = originalMethod;
+      (filter as unknown as { extractAirlineCodesFromOffer: unknown }).extractAirlineCodesFromOffer = originalMethod;
     });
   });
 

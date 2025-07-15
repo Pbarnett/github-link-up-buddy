@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { KMSClient, EncryptCommand } from "https://esm.sh/@aws-sdk/client-kms@3.454.0";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -20,8 +19,8 @@ const corsHeaders = {
 interface MigrationStatus {
   phase: string;
   tablesChecked: string[];
-  dataFound: any;
-  migrationPlan: any;
+  dataFound: Record<string, unknown>;
+  migrationPlan: Record<string, unknown>;
   nextSteps: string[];
 }
 
@@ -55,7 +54,7 @@ serve(async (req) => {
     for (const table of tablesToCheck) {
       try {
         // Check if table exists
-        const { data: tableCheck, error: tableError } = await supabase
+        const { error: tableError } = await supabase
           .from(table)
           .select('*')
           .limit(1);
@@ -88,12 +87,12 @@ serve(async (req) => {
                 sampleData: encryptedFields.reduce((acc, field) => {
                   acc[field] = sampleRecord[field]?.substring(0, 50) + "...";
                   return acc;
-                }, {} as any)
+                }, {} as Record<string, unknown>)
               };
             }
           }
         }
-      } catch (error) {
+      } catch {
         // Table doesn't exist, skip
         console.log(`Table ${table} not found, skipping...`);
       }
@@ -112,7 +111,7 @@ serve(async (req) => {
           recentOperations: auditLogs
         };
       }
-    } catch (error) {
+    } catch {
       console.log("KMS audit table not accessible");
     }
     

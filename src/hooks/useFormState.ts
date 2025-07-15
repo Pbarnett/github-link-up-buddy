@@ -16,7 +16,7 @@ import type {
 
 export const useFormState = (
   configuration: FormConfiguration | null,
-  form: UseFormReturn<any>
+  form: UseFormReturn<Record<string, unknown>>
 ): UseFormStateReturn => {
   const [formState, setFormState] = useState<FormState>({
     values: {},
@@ -31,10 +31,15 @@ export const useFormState = (
     if (!form) return;
 
     const subscription = form.watch((values) => {
-      setFormState(prevState => ({
+      setFormState((prevState: FormState): FormState => ({
         ...prevState,
         values: values || {},
-        errors: form.formState.errors || {},
+        errors: Object.fromEntries(
+          Object.entries(form.formState.errors || {}).map(([key, error]) => [
+            key,
+            error?.message || 'Validation error'
+          ])
+        ),
         isSubmitting: form.formState.isSubmitting,
         isValid: form.formState.isValid
       }));
@@ -44,7 +49,7 @@ export const useFormState = (
   }, [form]);
 
   // Set field value
-  const setValue = useCallback((fieldId: string, value: any) => {
+  const setValue = useCallback((fieldId: string, value: unknown) => {
     form.setValue(fieldId, value, { shouldValidate: true, shouldTouch: true });
     
     setFormState(prevState => ({
@@ -98,7 +103,7 @@ export const useFormState = (
   // Evaluate conditional rule
   const evaluateConditionalRule = useCallback((
     rule: ConditionalRule,
-    values: Record<string, any>
+    values: Record<string, unknown>
   ): boolean => {
     const fieldValue = values[rule.field];
     

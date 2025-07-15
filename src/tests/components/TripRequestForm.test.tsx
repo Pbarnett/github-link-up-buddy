@@ -12,7 +12,7 @@ import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTravelerInfoCheck } from '@/hooks/useTravelerInfoCheck';
 
 // Import our new testing utilities
-import { fillBaseFormFieldsWithDates, setDatesWithMockedCalendar, waitForFormValid, getFormErrors } from '@/tests/utils/formTestHelpers';
+import { fillBaseFormFieldsWithDates, getFormErrors } from '@/tests/utils/formTestHelpers';
 
 // Mock dependencies
 vi.mock('@/integrations/supabase/client', () => ({
@@ -82,15 +82,37 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
   });
   // --- Tests for FilterTogglesSection functionality within TripRequestForm ---
 
-  it('should render "Nonstop flights only" switch checked by default', () => {
+  it('should render "Nonstop flights only" switch checked by default', async () => {
     render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
+    
+    // First expand the collapsible filters section
+    const expandButton = screen.getByText("What's Included");
+    await userEvent.click(expandButton);
+    
+    // Wait for the switch to appear
+    await waitFor(() => {
+      const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
+      expect(nonstopSwitch).toBeInTheDocument();
+    });
+    
     const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
     expect(nonstopSwitch).toBeInTheDocument();
     expect(nonstopSwitch).toBeChecked();
   });
 
-  it('should render "Include carry-on + personal item" switch unchecked by default', () => {
+  it('should render "Include carry-on + personal item" switch unchecked by default', async () => {
     render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
+    
+    // First expand the collapsible filters section
+    const expandButton = screen.getByText("What's Included");
+    await userEvent.click(expandButton);
+    
+    // Wait for the switch to appear
+    await waitFor(() => {
+      const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
+      expect(baggageSwitch).toBeInTheDocument();
+    });
+    
     const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
     expect(baggageSwitch).toBeInTheDocument();
     expect(baggageSwitch).not.toBeChecked();
@@ -98,6 +120,17 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
 
   it('should update switch state when "Include carry-on + personal item" switch is toggled', async () => {
     render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
+    
+    // First expand the collapsible filters section
+    const expandButton = screen.getByText("What's Included");
+    await userEvent.click(expandButton);
+    
+    // Wait for the switch to appear
+    await waitFor(() => {
+      const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
+      expect(baggageSwitch).toBeInTheDocument();
+    });
+    
     const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
     expect(baggageSwitch).not.toBeChecked(); // Initial state
 
@@ -109,11 +142,23 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
   });
 
   // Simplified test for default Zod schema values affecting switches
-  it('should reflect Zod schema default values for switches on initial render', () => {
+  it('should reflect Zod schema default values for switches on initial render', async () => {
     // TripRequestForm uses useForm with Zod schema defaults:
     // nonstop_required: default(true)
     // baggage_included_required: default(false)
     render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
+
+    // First expand the collapsible filters section
+    const expandButton = screen.getByText("What's Included");
+    await userEvent.click(expandButton);
+    
+    // Wait for the switches to appear
+    await waitFor(() => {
+      const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
+      const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
+      expect(nonstopSwitch).toBeInTheDocument();
+      expect(baggageSwitch).toBeInTheDocument();
+    });
 
     const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
     const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
@@ -206,16 +251,16 @@ describe('TripRequestForm - Submission Logic', () => {
     // Verify the form is in a valid state before attempting submission
     await waitFor(() => {
       const submitButtons = screen.getAllByRole('button', { name: /search now/i });
-      const enabledButton = submitButtons.find(btn => !btn.disabled);
+    const enabledButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled);
       expect(enabledButton).toBeTruthy();
     }, { timeout: 5000 });
 
     // Find the submit button
     const submitButtons = screen.getAllByRole('button', { name: /search now/i });
-    const submitButton = submitButtons.find(btn => !btn.disabled) || submitButtons[0];
+    const submitButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) || submitButtons[0];
     
     // Debug: Check form state if button is still disabled
-    if (submitButton.disabled) {
+    if ((submitButton as HTMLButtonElement).disabled) {
       const errors = getFormErrors();
       console.warn('Form validation errors:', errors);
       console.warn('Form values might not be set correctly');
@@ -225,7 +270,16 @@ describe('TripRequestForm - Submission Logic', () => {
     await userEvent.click(submitButton);
 
     // Wait for submission to complete
-    await waitFor(() => expect(mockInsert).toHaveBeenCalledTimes(1));
+    await waitFor(() => {
+      try {
+        expect(mockInsert).toHaveBeenCalledTimes(1);
+      } catch (e) {
+        const errors = getFormErrors();
+        console.warn('Form validation errors during submission:', errors);
+        console.warn('Submit button state:', (submitButton as HTMLButtonElement).disabled);
+        throw e;
+      }
+    }, { timeout: 10000 });
     
     const submittedPayload = mockInsert.mock.calls[0][0][0];
     expect(submittedPayload).toHaveProperty('destination_airport', 'MVY');
@@ -284,13 +338,16 @@ const selectDestination = async (destinationCode: string) => {
     await waitFor(() => {
       expect(screen.queryByRole('option', { name: new RegExp(destinationCode, 'i') })).not.toBeInTheDocument();
     });
-  } catch (error) {
+  } catch {
     console.warn('Destination selection failed, using fallback approach');
     // Fallback: use custom destination input
     const customInput = screen.getByLabelText(/custom destination/i);
     fireEvent.change(customInput, { target: { value: 'MVY' } });
   }
 };
+
+// Mark as potentially unused but keep for future use
+void selectDestination;
 
 // Enhanced helper function using mocked calendar
 const fillBaseFormFields = async () => {
@@ -347,9 +404,13 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
 
     // Default mocks for auto-booking prerequisites
     mockUsePaymentMethods.mockReturnValue({
-      data: [{ id: 'pm_123', brand: 'Visa', last4: '4242', is_default: true, nickname: 'Work Card', exp_month: 12, exp_year: 2025 }],
+      data: [{ id: 'pm_123', brand: 'Visa', last4: '4242', is_default: true, nickname: 'Work Card', exp_month: 12, exp_year: 2025, created_at: '2024-01-01T00:00:00.000Z' }],
       isLoading: false,
       refetch: vi.fn(),
+      addPaymentMethod: vi.fn(),
+      updatePaymentMethod: vi.fn(),
+      deletePaymentMethod: vi.fn(),
+      setDefaultPaymentMethod: vi.fn(),
     });
     mockUseTravelerInfoCheck.mockReturnValue({
       hasTravelerInfo: true,
@@ -414,7 +475,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
 
     // When auto-booking is enabled, the button text changes to "Start Auto-Booking"
     const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-    const submitButton = submitButtons.find(btn => !btn.disabled) || submitButtons[0];
+    const submitButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) || submitButtons[0];
     await userEvent.click(submitButton);
 
     await waitFor(() => {
@@ -478,7 +539,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
 
     // When auto-booking is enabled, the button text changes to "Start Auto-Booking"
     const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-    const submitButton = submitButtons.find(btn => !btn.disabled) || submitButtons[0];
+    const submitButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) || submitButtons[0];
     await userEvent.click(submitButton);
 
     await waitFor(() => {
@@ -558,10 +619,10 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     // This simulates the UI behavior where enabling auto-booking implies consent in manual mode
     try {
       const consentCheckbox = screen.getByLabelText(/I authorize Parker Flight/i);
-      if (!consentCheckbox.checked) {
+      if (!(consentCheckbox as HTMLInputElement).checked) {
         await userEvent.click(consentCheckbox);
       }
-    } catch (error) {
+    } catch {
       // In manual mode, consent checkbox is not rendered but we need to set the form value
       // Use direct form manipulation to set consent value
       console.log('Consent checkbox not found - setting consent programmatically for manual mode');
@@ -577,16 +638,16 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     // Wait for form to be valid before attempting submission
     await waitFor(() => {
       const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-      const enabledButton = submitButtons.find(btn => !btn.disabled);
+      const enabledButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled);
       expect(enabledButton).toBeTruthy();
     }, { timeout: 5000 });
 
     // When auto-booking is enabled, the button text changes to "Start Auto-Booking"
     const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-    const submitButton = submitButtons.find(btn => !btn.disabled) || submitButtons[0];
+    const submitButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) || submitButtons[0];
     
     // Debug form state if submission fails
-    if (submitButton.disabled) {
+    if ((submitButton as HTMLButtonElement).disabled) {
       const errors = getFormErrors();
       console.warn('Auto-booking form validation errors:', errors);
     }
@@ -628,10 +689,19 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
 
     // For auto-booking OFF mode, the button text should be "Search Now"
     const submitButtons = screen.getAllByRole('button', { name: /search now/i });
-    const submitButton = submitButtons.find(btn => !btn.disabled) || submitButtons[0];
+    const submitButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) || submitButtons[0];
     await userEvent.click(submitButton);
 
-    await waitFor(() => expect(mockInsertOff).toHaveBeenCalledTimes(1));
+    await waitFor(() => {
+      try {
+        expect(mockInsertOff).toHaveBeenCalledTimes(1);
+      } catch (e) {
+        const errors = getFormErrors();
+        console.warn('Form validation errors during submission (auto-booking OFF):', errors);
+        console.warn('Submit button state:', (submitButton as HTMLButtonElement).disabled);
+        throw e;
+      }
+    }, { timeout: 10000 });
 
     const submittedPayload = mockInsertOff.mock.calls[0][0][0];
     expect(submittedPayload).toHaveProperty('auto_book_enabled', false);

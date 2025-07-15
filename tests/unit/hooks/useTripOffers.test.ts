@@ -18,7 +18,7 @@ vi.mock('@/services/api/flightSearchApi', () => ({
 
 // Import the mocked functions here to get a reference to them
 // These are now vi.fn() instances created by the factory above.
-import { invokeFlightSearch, fetchFlightSearch } from '@/services/api/flightSearchApi';
+import { invokeFlightSearch } from '@/services/api/flightSearchApi';
 
 vi.mock('@/components/ui/use-toast');
 vi.mock('@/lib/logger', () => ({
@@ -43,8 +43,10 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-const mockTripOffersService = tripOffersService as any;
-const mockToast = toast as any;
+const mockTripOffersService = tripOffersService as {
+  fetchTripOffers: ReturnType<typeof vi.fn>;
+};
+const mockToast = toast as ReturnType<typeof vi.fn>;
 
 const mockTripDetails: TripDetails = {
   id: 'test-trip-id',
@@ -115,7 +117,7 @@ const mockFlightSearchResponse = {
 
 const mockFlightSearchResponseA: flightSearchApi.FlightSearchResponse = {
   requestsProcessed: 1, matchesInserted: 1, totalDurationMs: 100, relaxedCriteriaUsed: false, exactDestinationOnly: true, details: [],
-  pool1: [{ id: 'offerA1', score: 10 } as any], // Cast as any to simplify ScoredOffer structure for mock
+  pool1: [{ id: 'offerA1', score: 10 } as { id: string; score: number }], // Cast to simplify ScoredOffer structure for mock
   pool2: [],
   pool3: [],
   success: true, message: 'Set A', inserted: 1
@@ -123,7 +125,7 @@ const mockFlightSearchResponseA: flightSearchApi.FlightSearchResponse = {
 
 const mockFlightSearchResponseB: flightSearchApi.FlightSearchResponse = {
   requestsProcessed: 1, matchesInserted: 1, totalDurationMs: 100, relaxedCriteriaUsed: false, exactDestinationOnly: true, details: [],
-  pool1: [{ id: 'offerB1', score: 20 } as any],
+  pool1: [{ id: 'offerB1', score: 20 } as { id: string; score: number }],
   pool2: [],
   pool3: [],
   success: true, message: 'Set B', inserted: 1
@@ -165,7 +167,7 @@ describe('useTripOffers', () => {
     
     const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
-    (supabase.from as any).mockReturnValue({ select: mockSelect });
+    (supabase.from as ReturnType<typeof vi.fn>).mockReturnValue({ select: mockSelect });
   });
 
   afterEach(() => {
@@ -221,7 +223,7 @@ describe('useTripOffers', () => {
       });
       const mockEqUnique = vi.fn().mockReturnValue({ single: mockSingleUnique });
       const mockSelectUnique = vi.fn().mockReturnValue({ eq: mockEqUnique });
-      (supabase.from as Mock).mockImplementation((table: string) => {
+      (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
         if (table === 'trip_requests') {
           return { select: mockSelectUnique };
         }
@@ -270,7 +272,7 @@ describe('useTripOffers', () => {
       const mockSelectToast = vi.fn().mockReturnValue({ eq: mockEqToast });
 
       // Specifically mock supabase.from for 'trip_requests' table for this test
-      (supabase.from as Mock).mockImplementation((table: string) => {
+      (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
         if (table === 'trip_requests') {
           return { select: mockSelectToast };
         }
@@ -310,7 +312,7 @@ describe('useTripOffers', () => {
       });
       const mockEqOverride = vi.fn().mockReturnValue({ single: mockSingleOverride });
       const mockSelectOverride = vi.fn().mockReturnValue({ eq: mockEqOverride });
-      (supabase.from as Mock).mockImplementation((table: string) => {
+      (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
         if (table === 'trip_requests') {
           return { select: mockSelectOverride };
         }
@@ -368,7 +370,7 @@ describe('useTripOffers', () => {
       });
       const mockEqFlightApiError = vi.fn().mockReturnValue({ single: mockSingleFlightApiError });
       const mockSelectFlightApiError = vi.fn().mockReturnValue({ eq: mockEqFlightApiError });
-      (supabase.from as Mock).mockImplementation((table: string) => {
+      (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
         if (table === 'trip_requests') {
           return { select: mockSelectFlightApiError };
         }
@@ -421,7 +423,7 @@ describe('useTripOffers', () => {
       });
       const mockEqFallback = vi.fn().mockReturnValue({ single: mockSingleFallback });
       const mockSelectFallback = vi.fn().mockReturnValue({ eq: mockEqFallback });
-      (supabase.from as Mock).mockImplementation((table: string) => {
+      (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
         if (table === 'trip_requests') {
           return { select: mockSelectFallback };
         }
@@ -453,7 +455,7 @@ describe('useTripOffers', () => {
       });
       const mockEqSupabaseError = vi.fn().mockReturnValue({ single: mockSingleSupabaseError });
       const mockSelectSupabaseError = vi.fn().mockReturnValue({ eq: mockEqSupabaseError });
-      (supabase.from as Mock).mockImplementation((table: string) => {
+      (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
         if (table === 'trip_requests') {
           return { select: mockSelectSupabaseError };
         }
@@ -499,7 +501,7 @@ describe('useTripOffers', () => {
       const mockSingleRefresh = vi.fn().mockResolvedValue({ data: { ...mockTripDetails, id: uniqueRefreshTripId, min_duration: 3, max_duration: 7 }, error: null });
       const mockEqRefresh = vi.fn().mockReturnValue({ single: mockSingleRefresh });
       const mockSelectRefresh = vi.fn().mockReturnValue({ eq: mockEqRefresh });
-      (supabase.from as Mock).mockImplementation((table: string) => {
+      (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
         if (table === 'trip_requests') return { select: mockSelectRefresh };
         return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({data: null, error: new Error("unexpected table")})};
       });
@@ -538,9 +540,9 @@ describe('useTripOffers', () => {
       const uniqueRapidRefreshId = 'test-trip-id-rapid-refresh';
       const mockSingleRapid = vi.fn().mockResolvedValue({ data: { ...mockTripDetails, id: uniqueRapidRefreshId }, error: null });
       const mockEqRapid = vi.fn().mockReturnValue({ single: mockSingleRapid });
-      // @ts-ignore TS2589: Type instantiation is excessively deep and possibly infinite.
-      ((supabase.from('trip_requests').select('*').eq as Mock) as any).mockImplementation(
-        (columnName: string, value: any) =>
+      // @ts-expect-error TS2589: Type instantiation is excessively deep and possibly infinite.
+      ((supabase.from('trip_requests').select('*').eq as Mock) as ReturnType<typeof vi.fn>).mockImplementation(
+        (columnName: string, value: unknown) =>
           (columnName === 'id' && value === uniqueRapidRefreshId)
             ? mockEqRapid
             : { single: vi.fn().mockResolvedValue({data: null, error: new Error("unexpected id")})}
@@ -586,7 +588,7 @@ describe('useTripOffers', () => {
       const mockSingleRelaxed = vi.fn().mockResolvedValue({ data: { ...mockTripDetails, id: uniqueRelaxedId, min_duration: 3, max_duration: 7 }, error: null });
       const mockEqRelaxed = vi.fn().mockReturnValue({ single: mockSingleRelaxed });
       const mockSelectRelaxed = vi.fn().mockReturnValue({ eq: mockEqRelaxed });
-      (supabase.from as Mock).mockImplementation((table: string) => {
+      (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
         if (table === 'trip_requests') return { select: mockSelectRelaxed };
         return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({data: null, error: new Error("unexpected table")})};
       });
@@ -637,7 +639,7 @@ describe('useTripOffers', () => {
       const mockSingleCache = vi.fn().mockResolvedValue({ data: { ...mockTripDetails, id: cachedTripId, min_duration: 3, max_duration: 7 }, error: null });
       const mockEqCache = vi.fn().mockReturnValue({ single: mockSingleCache });
       const mockSelectCache = vi.fn().mockReturnValue({ eq: mockEqCache });
-      (supabase.from as Mock).mockImplementation((table: string) => {
+      (supabase.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
         if (table === 'trip_requests') return { select: mockSelectCache };
         return { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({data: null, error: new Error("unexpected table")})};
       });

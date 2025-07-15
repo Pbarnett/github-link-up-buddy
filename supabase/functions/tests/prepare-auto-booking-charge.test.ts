@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createSupabaseMock } from '../../../src/tests/mocks/supabase-mock';
 
 // Use the proven Supabase mock structure
@@ -81,7 +81,7 @@ describe('prepare-auto-booking-charge', () => {
     route: 'LAX → JFK',
   };
 
-  const mockRequest = (body: any) => ({
+  const mockRequest = (body: Record<string, unknown>) => ({
     method: 'POST',
     json: async () => body,
     headers: new Headers(),
@@ -242,7 +242,7 @@ describe('prepare-auto-booking-charge', () => {
   it('should handle Stripe card declined error gracefully', async () => {
     mocks.mockSingle.mockResolvedValueOnce({ data: mockCampaignData, error: null });
 
-    const stripeError = new Error('Your card was declined.');
+    const stripeError = new Error('Your card was declined.') as Error & { type: string; code: string; };
     stripeError.type = 'StripeCardError';
     stripeError.code = 'card_declined';
     
@@ -267,7 +267,7 @@ describe('prepare-auto-booking-charge', () => {
   it('should handle insufficient funds error', async () => {
     mocks.mockSingle.mockResolvedValueOnce({ data: mockCampaignData, error: null });
 
-    const stripeError = new Error('Your card has insufficient funds.');
+    const stripeError = new Error('Your card has insufficient funds.') as Error & { type: string; code: string; };
     stripeError.type = 'StripeCardError';
     stripeError.code = 'insufficient_funds';
     

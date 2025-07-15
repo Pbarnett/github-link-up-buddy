@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { isEnabled, type FeatureFlag } from '@shared/featureFlag';
+import { type FeatureFlag, isFeatureEnabled as isEnabled } from '@/shared/featureFlag';
 
 interface FeatureFlagState {
   enabled: boolean;
@@ -48,7 +48,7 @@ export function useFeatureFlag(flagName: string): FeatureFlagState {
         }
 
         // Check if user should see this feature based on rollout percentage
-        const shouldEnable = isEnabled(flag as FeatureFlag, user.id);
+        const shouldEnable = isEnabled(flag.name, user.id);
         
         setState({
           enabled: shouldEnable,

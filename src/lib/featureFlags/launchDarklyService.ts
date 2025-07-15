@@ -43,7 +43,7 @@ class LaunchDarklyService {
     return this.client.variation('show_opt_out_banner', defaultValue);
   }
 
-  getVariation(flagKey: string, defaultValue: any): any {
+  getVariation<T>(flagKey: string, defaultValue: T): T {
     if (!this.client || !this.isInitialized) {
       return defaultValue;
     }
@@ -64,7 +64,7 @@ class LaunchDarklyService {
     }
   }
 
-  onFlagChange(flagKey: string, callback: (value: any) => void): void {
+  onFlagChange<T>(flagKey: string, callback: (value: T) => void): void {
     if (!this.client || !this.isInitialized) {
       console.warn('LaunchDarkly client not initialized, cannot listen for flag changes');
       return;

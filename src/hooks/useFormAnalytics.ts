@@ -21,7 +21,7 @@ interface AnalyticsEvent {
   fieldValue?: string;
   validationError?: string;
   duration?: number;
-  eventData?: Record<string, any>;
+  eventData?: Record<string, unknown>;
 }
 
 export const useFormAnalytics = ({ formConfig, sessionId, userId }: FormAnalyticsConfig) => {
@@ -87,7 +87,7 @@ export const useFormAnalytics = ({ formConfig, sessionId, userId }: FormAnalytic
         // Success - break out of retry loop
         break;
         
-      } catch (error: any) {
+      } catch (error: unknown) {
         retryCount++;
         
         if (retryCount > maxRetries) {
@@ -105,7 +105,7 @@ export const useFormAnalytics = ({ formConfig, sessionId, userId }: FormAnalytic
   }, [formConfig, sessionId, userId]);
   
   // Queue events locally when network fails
-  const queueEventLocally = useCallback((eventPayload: any) => {
+  const queueEventLocally = useCallback((eventPayload: Record<string, unknown>) => {
     try {
       const queue = JSON.parse(localStorage.getItem('pf_analytics_queue') || '[]');
       queue.push({
@@ -150,7 +150,7 @@ export const useFormAnalytics = ({ formConfig, sessionId, userId }: FormAnalytic
     });
   }, [trackEvent]);
 
-  const trackFormSubmit = useCallback((formData: Record<string, any>) => {
+  const trackFormSubmit = useCallback((formData: Record<string, unknown>) => {
     const totalDuration = Date.now() - startTime.current;
     trackEvent({
       type: 'form_submit',

@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
@@ -31,12 +30,11 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 
 import type {
   FieldConfiguration,
-  DynamicFormConfig
+  FormConfiguration
 } from '@/types/dynamic-forms';
 
 // Import specialized field components
@@ -51,9 +49,9 @@ export interface DynamicFieldRendererProps {
   /** Field configuration */
   field: FieldConfiguration;
   /** Current field value */
-  value?: any;
+  value?: unknown;
   /** Field change handler */
-  onChange: (value: any) => void;
+  onChange: (value: unknown) => void;
   /** Field blur handler */
   onBlur?: () => void;
   /** Validation error message */
@@ -63,9 +61,9 @@ export interface DynamicFieldRendererProps {
   /** Whether field is required */
   required?: boolean;
   /** Form configuration for context */
-  config?: DynamicFormConfig;
+  config?: FormConfiguration;
   /** Full form data for conditional logic */
-  formData?: Record<string, any>;
+  formData?: Record<string, unknown>;
   /** Additional CSS classes */
   className?: string;
 }
@@ -78,38 +76,16 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
   error,
   disabled = false,
   required = false,
-  config,
-  formData,
+  config: _config, // eslint-disable-line @typescript-eslint/no-unused-vars
+  formData: _formData, // eslint-disable-line @typescript-eslint/no-unused-vars
   className
 }) => {
   const form = useFormContext();
 
-  // Handle special field types that don't need FormField wrapper
-  if (field.type === 'section-header') {
-    return (
-      <div className={cn("form-field-header py-4", className)}>
-        <h3 className="text-lg font-semibold text-foreground">
-          {field.label}
-        </h3>
-        {field.description && (
-          <p className="text-sm text-muted-foreground mt-1">
-            {field.description}
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  if (field.type === 'divider') {
-    return (
-      <div className={cn("form-field-divider border-t pt-4 mt-6 mb-2", className)} />
-    );
-  }
-
   // Compute field state
   const fieldState = useMemo(() => {
-    const isRequired = required || field.required || field.validation?.required || false;
-    const isDisabled = disabled || field.disabled || false;
+    const isRequired = required || field.validation?.required || false;
+    const isDisabled = disabled || false;
     const hasError = Boolean(error);
 
     return {
@@ -117,10 +93,10 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       isDisabled,
       hasError
     };
-  }, [required, field.required, field.validation?.required, disabled, field.disabled, error]);
+  }, [required, field.validation?.required, disabled, error]);
 
   // Handle field change with validation
-  const handleChange = useCallback((newValue: any) => {
+  const handleChange = useCallback((newValue: unknown) => {
     onChange(newValue);
     
     // Clear error state when user starts typing (for better UX)
@@ -131,16 +107,6 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
 
   // Render the actual field input
   const renderFieldInput = useCallback(() => {
-    const commonProps = {
-      value,
-      onChange: handleChange,
-      onBlur,
-      disabled: fieldState.isDisabled,
-      className: cn(
-        error && "border-destructive focus:border-destructive",
-        field.className
-      )
-    };
 
     switch (field.type) {
       case 'text':
@@ -149,7 +115,14 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'url':
         return (
           <Input
-            {...commonProps}
+            value={value as string || ''}
+            onChange={(e) => handleChange(e.target.value)}
+            onBlur={onBlur}
+            disabled={fieldState.isDisabled}
+            className={cn(
+              error && "border-destructive focus:border-destructive",
+              field.className
+            )}
             type={field.type}
             placeholder={field.placeholder}
             autoComplete={getAutoCompleteValue(field)}
@@ -159,7 +132,13 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'number':
         return (
           <Input
-            {...commonProps}
+            value={value as string || ''}
+            onBlur={onBlur}
+            disabled={fieldState.isDisabled}
+            className={cn(
+              error && "border-destructive focus:border-destructive",
+              field.className
+            )}
             type="number"
             placeholder={field.placeholder}
             min={field.validation?.min}
@@ -174,7 +153,14 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'textarea':
         return (
           <Textarea
-            {...commonProps}
+            value={value as string || ''}
+            onChange={(e) => handleChange(e.target.value)}
+            onBlur={onBlur}
+            disabled={fieldState.isDisabled}
+            className={cn(
+              error && "border-destructive focus:border-destructive",
+              field.className
+            )}
             placeholder={field.placeholder}
             rows={field.rows || 4}
             minLength={field.validation?.minLength}
@@ -215,7 +201,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         return (
           <MultiSelectField
             options={field.options || []}
-            value={value || []}
+            value={(value as unknown[]) || []}
             onChange={handleChange}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
@@ -296,7 +282,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         return (
           <div className="space-y-3">
             <Slider
-              value={[value || field.validation?.min || 0]}
+              value={[(value as number) || field.validation?.min || 0]}
               onValueChange={(values) => handleChange(values[0])}
               max={field.validation?.max || 100}
               min={field.validation?.min || 0}
@@ -307,7 +293,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>{field.validation?.min || 0}</span>
               <Badge variant="secondary">
-                {value || field.validation?.min || 0}
+                {(value as number) || field.validation?.min || 0}
               </Badge>
               <span>{field.validation?.max || 100}</span>
             </div>
@@ -317,13 +303,11 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'date':
         return (
           <DateField
-            value={value}
-            onChange={handleChange}
+            value={value as string}
+            onChange={handleChange as (newValue: string) => void}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
             error={error}
-            minDate={field.validation?.min}
-            maxDate={field.validation?.max}
           />
         );
 
@@ -331,7 +315,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'date-range-flexible':
         return (
           <DateRangeField
-            value={value}
+            value={value as Record<string, unknown>}
             onChange={handleChange}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
@@ -343,19 +327,18 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'phone':
         return (
           <PhoneInputField
-            value={value}
-            onChange={handleChange}
+            value={value as string}
+            onChange={handleChange as (newValue: string) => void}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
             error={error}
-            defaultCountry={field.defaultCountry}
           />
         );
 
       case 'airport-autocomplete':
         return (
           <AirportAutocompleteField
-            value={value}
+            value={value as { code: string; name: string; city?: string; country?: string }}
             onChange={handleChange}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
@@ -367,7 +350,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'country-select':
         return (
           <CountrySelectField
-            value={value}
+            value={value as string}
             onChange={handleChange}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
@@ -378,18 +361,17 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'address-group':
         return (
           <AddressGroupField
-            value={value}
+            value={value as { street: string; city: string; state: string; zipCode: string; country: string }}
             onChange={handleChange}
             disabled={fieldState.isDisabled}
             error={error}
-            config={field.addressConfig}
           />
         );
 
       case 'file-upload':
         return (
           <FileUploadField
-            value={value}
+            value={value as FileList | null}
             onChange={handleChange}
             disabled={fieldState.isDisabled}
             error={error}
@@ -402,7 +384,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'rating':
         return (
           <RatingField
-            value={value}
+            value={value as number}
             onChange={handleChange}
             disabled={fieldState.isDisabled}
             max={field.validation?.max || 5}
@@ -414,12 +396,41 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         console.warn(`Unknown field type: ${field.type}. Falling back to text input.`);
         return (
           <Input
-            {...commonProps}
+            value={value as string || ''}
+            onChange={(e) => handleChange(e.target.value)}
+            onBlur={onBlur}
+            disabled={fieldState.isDisabled}
+            className={cn(
+              error && "border-destructive focus:border-destructive",
+              field.className
+            )}
             placeholder={field.placeholder}
           />
         );
     }
   }, [field, value, handleChange, onBlur, fieldState, error]);
+
+  // Handle special field types that don't need FormField wrapper
+  if (field.type === 'section-header') {
+    return (
+      <div className={cn("form-field-header py-4", className)}>
+        <h3 className="text-lg font-semibold text-foreground">
+          {field.label}
+        </h3>
+        {field.description && (
+          <p className="text-sm text-muted-foreground mt-1">
+            {field.description}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (field.type === 'divider') {
+    return (
+      <div className={cn("form-field-divider border-t pt-4 mt-6 mb-2", className)} />
+    );
+  }
 
   // For checkbox and switch, don't show separate label
   const showLabel = field.label && !['checkbox', 'switch'].includes(field.type);
@@ -478,15 +489,21 @@ const getAutoCompleteValue = (field: FieldConfiguration): string => {
 };
 
 // Multi-select field component
+interface SelectOption {
+  label: string;
+  value: string | number | boolean;
+  disabled?: boolean;
+}
+
 const MultiSelectField: React.FC<{
-  options: any[];
-  value: any[];
-  onChange: (value: any[]) => void;
+  options: SelectOption[];
+  value: unknown[];
+  onChange: (value: unknown[]) => void;
   placeholder?: string;
   disabled?: boolean;
   error?: string;
 }> = ({ options, value, onChange, placeholder, disabled, error }) => {
-  const handleToggle = (optionValue: any) => {
+  const handleToggle = (optionValue: unknown) => {
     const newValue = value.includes(optionValue)
       ? value.filter(v => v !== optionValue)
       : [...value, optionValue];
@@ -510,11 +527,11 @@ const MultiSelectField: React.FC<{
               const option = options.find(opt => opt.value === selectedValue);
               return (
                 <Badge 
-                  key={selectedValue} 
+                  key={String(selectedValue)} 
                   variant="secondary"
                   className="text-xs"
                 >
-                  {option?.label || selectedValue}
+                  {option?.label || String(selectedValue)}
                   <button
                     type="button"
                     onClick={() => handleToggle(selectedValue)}
@@ -531,7 +548,7 @@ const MultiSelectField: React.FC<{
       </div>
       <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
         {options.map((option) => (
-          <div key={option.value} className="flex items-center space-x-2">
+          <div key={String(option.value)} className="flex items-center space-x-2">
             <Checkbox
               checked={value.includes(option.value)}
               onCheckedChange={() => handleToggle(option.value)}
@@ -547,14 +564,14 @@ const MultiSelectField: React.FC<{
 
 // File upload field component (placeholder)
 const FileUploadField: React.FC<{
-  value?: any;
-  onChange: (value: any) => void;
+  value?: FileList | null;
+  onChange: (value: FileList | null) => void;
   disabled?: boolean;
   error?: string;
   accept?: string;
   multiple?: boolean;
   maxSize?: number;
-}> = ({ value, onChange, disabled, error, accept, multiple, maxSize }) => {
+}> = ({ value: _value, onChange, disabled, error: _error, accept, multiple, maxSize }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
   return (
     <div className="border-2 border-dashed rounded-lg p-6 text-center">
       <Input
@@ -583,7 +600,7 @@ const RatingField: React.FC<{
   disabled?: boolean;
   max?: number;
   allowHalf?: boolean;
-}> = ({ value, onChange, disabled, max = 5, allowHalf }) => {
+}> = ({ value, onChange, disabled, max = 5, allowHalf: _allowHalf }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
   return (
     <div className="flex space-x-1">
       {Array.from({ length: max }, (_, i) => (

@@ -18,7 +18,7 @@ vi.mock('@/services/api/flightSearchApi', () => ({
 
 // Import the mocked functions here to get a reference to them
 // These are now vi.fn() instances created by the factory above.
-import { invokeFlightSearch, fetchFlightSearch } from '@/services/api/flightSearchApi';
+import { invokeFlightSearch } from '@/services/api/flightSearchApi';
 
 vi.mock('@/components/ui/use-toast');
 vi.mock('@/lib/logger', () => ({
@@ -44,7 +44,7 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 const mockTripOffersService = tripOffersService as any;
-const mockToast = toast as any;
+const mockToast = toast as ReturnType<typeof vi.fn>;
 
 const mockTripDetails: TripDetails = {
   id: 'test-trip-id',
@@ -115,7 +115,7 @@ const mockFlightSearchResponse = {
 
 const mockFlightSearchResponseA: flightSearchApi.FlightSearchResponse = {
   requestsProcessed: 1, matchesInserted: 1, totalDurationMs: 100, relaxedCriteriaUsed: false, exactDestinationOnly: true, details: [],
-  pool1: [{ id: 'offerA1', score: 10 } as any], // Cast as any to simplify ScoredOffer structure for mock
+  pool1: [{ id: 'offerA1', score: 10, price: 500 } as any],
   pool2: [],
   pool3: [],
   success: true, message: 'Set A', inserted: 1
@@ -123,7 +123,7 @@ const mockFlightSearchResponseA: flightSearchApi.FlightSearchResponse = {
 
 const mockFlightSearchResponseB: flightSearchApi.FlightSearchResponse = {
   requestsProcessed: 1, matchesInserted: 1, totalDurationMs: 100, relaxedCriteriaUsed: false, exactDestinationOnly: true, details: [],
-  pool1: [{ id: 'offerB1', score: 20 } as any],
+  pool1: [{ id: 'offerB1', score: 20, price: 750 } as any],
   pool2: [],
   pool3: [],
   success: true, message: 'Set B', inserted: 1
@@ -165,7 +165,7 @@ describe('useTripOffers', () => {
     
     const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
-    (supabase.from as any).mockReturnValue({ select: mockSelect });
+    (supabase.from as ReturnType<typeof vi.fn>).mockReturnValue({ select: mockSelect });
   });
 
   afterEach(() => {
@@ -538,9 +538,9 @@ describe('useTripOffers', () => {
       const uniqueRapidRefreshId = 'test-trip-id-rapid-refresh';
       const mockSingleRapid = vi.fn().mockResolvedValue({ data: { ...mockTripDetails, id: uniqueRapidRefreshId }, error: null });
       const mockEqRapid = vi.fn().mockReturnValue({ single: mockSingleRapid });
-      // @ts-ignore TS2589: Type instantiation is excessively deep and possibly infinite.
-      ((supabase.from('trip_requests').select('*').eq as Mock) as any).mockImplementation(
-        (columnName: string, value: any) =>
+      // Type instantiation is excessively deep and possibly infinite.
+      ((supabase.from('trip_requests').select('*').eq as Mock) as ReturnType<typeof vi.fn>).mockImplementation(
+        (columnName: string, value: unknown) =>
           (columnName === 'id' && value === uniqueRapidRefreshId)
             ? mockEqRapid
             : { single: vi.fn().mockResolvedValue({data: null, error: new Error("unexpected id")})}

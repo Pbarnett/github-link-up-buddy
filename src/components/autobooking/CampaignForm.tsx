@@ -6,11 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { CampaignFormData } from "@/types/campaign";
-import { Calendar, MapPin, DollarSign, Plane, User, CreditCard } from "lucide-react";
+import { Calendar, MapPin, DollarSign, Plane } from "lucide-react";
 // import { ConfigDrivenCampaignForm } from "./CampaignForm.config-driven";
 
 const campaignFormSchema = z.object({

@@ -41,8 +41,8 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   route?: string;
   
   // Auth options
-  user?: any;
-  session?: any;
+  user?: { id: string; email: string; [key: string]: unknown } | null;
+  session?: { access_token: string; [key: string]: unknown } | null;
   
   // Query client options
   queryClient?: QueryClient;
@@ -58,8 +58,6 @@ export function renderWithProviders(
   const {
     initialEntries = ['/'],
     route = '/*',
-    user = null,
-    session = null,
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -156,14 +154,14 @@ export function resetAllMocks() {
 
 // Test data factories
 export const TestData = {
-  user: (overrides: any = {}) => ({
+  user: (overrides: Record<string, unknown> = {}) => ({
     id: 'test-user-id',
     email: 'test@example.com',
     created_at: '2024-01-01T00:00:00Z',
     ...overrides,
   }),
   
-  flightOffer: (overrides: any = {}) => ({
+  flightOffer: (overrides: Record<string, unknown> = {}) => ({
     id: 'offer-1',
     airline: 'Test Airlines',
     departure_date: '2024-07-15',
@@ -178,7 +176,7 @@ export const TestData = {
     ...overrides,
   }),
   
-  tripRequest: (overrides: any = {}) => ({
+  tripRequest: (overrides: Record<string, unknown> = {}) => ({
     id: 'trip-1',
     user_id: 'test-user-id',
     origin: 'JFK',
@@ -191,7 +189,7 @@ export const TestData = {
     ...overrides,
   }),
   
-  booking: (overrides: any = {}) => ({
+  booking: (overrides: Record<string, unknown> = {}) => ({
     id: 'booking-1',
     user_id: 'test-user-id',
     trip_request_id: 'trip-1',

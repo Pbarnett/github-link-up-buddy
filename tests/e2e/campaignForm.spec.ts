@@ -17,7 +17,7 @@ test.describe('CampaignForm Analytics Integration E2E', () => {
 
   test('should emit form_view analytics event on component mount', async ({ page }) => {
     // Listen for analytics RPC calls
-    const analyticsEvents: any[] = [];
+    const analyticsEvents: string[] = [];
     
     page.on('request', request => {
       if (request.url().includes('track_form_event')) {
@@ -44,7 +44,7 @@ test.describe('CampaignForm Analytics Integration E2E', () => {
   });
 
   test('should emit field_interaction events on form inputs', async ({ page }) => {
-    const analyticsEvents: any[] = [];
+    const analyticsEvents: Array<{ url: string; data: string | null }> = [];
     
     // Capture analytics requests
     page.on('request', request => {
@@ -99,7 +99,7 @@ test.describe('CampaignForm Analytics Integration E2E', () => {
   });
 
   test('should emit form_submit event with correct metadata', async ({ page }) => {
-    let submitEvent: any = null;
+    let submitEvent: { p_event_type: string; p_form_name: string; p_event_data: { fieldCount: number; completedFields: number } } | null = null;
     
     // Capture form submission analytics
     page.on('request', request => {
@@ -125,7 +125,6 @@ test.describe('CampaignForm Analytics Integration E2E', () => {
       document.body.insertAdjacentHTML('beforeend', formHtml);
       
       // Add form submission handler
-      const form = document.querySelector('[data-testid="campaign-form"]') as HTMLElement;
       const submitBtn = document.querySelector('[data-testid="campaign-submit"]') as HTMLButtonElement;
       
       submitBtn.addEventListener('click', (e) => {
@@ -191,7 +190,7 @@ test.describe('CampaignForm Analytics Integration E2E', () => {
               p_form_name: 'CampaignForm'
             })
           });
-        } catch (error) {
+        } catch {
           // Queue in localStorage on failure
           const queue = JSON.parse(localStorage.getItem('pf_analytics_queue') || '[]');
           queue.push({
@@ -225,7 +224,7 @@ test.describe('CampaignForm Analytics Integration E2E', () => {
   test('should enforce config-driven business rules validation', async ({ page }) => {
     // Mock business rules configuration
     await page.addInitScript(() => {
-      (window as any).mockBusinessRules = {
+      (window as unknown as { mockBusinessRules: unknown }).mockBusinessRules = {
         flightSearch: {
           minPriceUSD: 100,
           maxPriceUSD: 5000,
@@ -265,7 +264,7 @@ test.describe('CampaignForm Analytics Integration E2E', () => {
       submitBtn.addEventListener('click', (e) => {
         e.preventDefault();
         const price = parseInt(priceInput.value);
-        const config = (window as any).mockBusinessRules;
+        const config = (window as unknown as { mockBusinessRules: { flightSearch: { minPriceUSD: number; maxPriceUSD: number } } }).mockBusinessRules;
         
         errorDiv.style.display = 'none';
         

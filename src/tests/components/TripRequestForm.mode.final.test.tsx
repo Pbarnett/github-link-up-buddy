@@ -57,7 +57,7 @@ describe('TripRequestForm Mode Handling', () => {
 
     expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
     expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
-    expect(screen.getByText('Enter the parameters for your trip below.')).toBeInTheDocument();
+    expect(screen.getByText('Search real-time flight availability (Amadeus-powered)')).toBeInTheDocument();
     // Component has multiple "Search Now" buttons (main form + sticky actions)
     const searchButtons = screen.getAllByText('Search Now');
     expect(searchButtons.length).toBeGreaterThan(0);
@@ -115,9 +115,8 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    // Should show "Where & When" instead of "Travel Details"
-    expect(screen.getByText('Where & When')).toBeInTheDocument();
-    expect(screen.getByText('Trip Length')).toBeInTheDocument();
+    // Should show destination section
+    expect(screen.getByText('Destination')).toBeInTheDocument();
     
     // Should NOT show auto-booking section in step 1
     expect(screen.queryByText('Maximum Price')).not.toBeInTheDocument();

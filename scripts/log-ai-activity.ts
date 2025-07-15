@@ -5,10 +5,30 @@
  * Day 2 Checkpoint: Log AI activity for profile completeness tests
  */
 
+interface AIActivityMetadata {
+  coverage: number;
+  tests_created: number;
+  files_added: string[];
+  performance_benchmarks: {
+    single_calculation: string;
+    large_profile_handling: string;
+    concurrent_calculations: string;
+  };
+  ci_integration: boolean;
+  coverage_thresholds: {
+    lines: number;
+    functions: number;
+    branches: number;
+    statements: number;
+  };
+  day_1_task_completed: boolean;
+  next_tasks: string[];
+}
+
 interface AIActivityLog {
   agent: string;
   action: string;
-  metadata: Record<string, any>;
+  metadata: AIActivityMetadata;
 }
 
 async function logAIActivity() {

@@ -126,7 +126,7 @@ export function isDuffelErrorUserActionRequired(errorType: string): boolean {
 /**
  * Parse Duffel API error response and extract user-friendly message
  */
-export function parseDuffelError(error: any): {
+export function parseDuffelError(error: unknown): {
   type: string;
   message: string;
   userMessage: string;
@@ -138,13 +138,14 @@ export function parseDuffelError(error: any): {
   let originalError: DuffelError | undefined;
   
   // Handle Duffel API error response format
-  if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {
-    originalError = error.errors[0];
-    errorType = originalError.type || originalError.code || 'unknown_error';
+  if (error && typeof error === 'object' && 'errors' in error && Array.isArray((error as DuffelApiErrorResponse).errors) && (error as DuffelApiErrorResponse).errors.length > 0) {
+    originalError = (error as DuffelApiErrorResponse).errors[0];
+    errorType = originalError?.type || originalError?.code || 'unknown_error';
   }
   // Handle HTTP response errors
-  else if (error?.status) {
-    switch (error.status) {
+  else if (error && typeof error === 'object' && 'status' in error) {
+    const statusError = error as { status: number };
+    switch (statusError.status) {
       case 400:
         errorType = DuffelErrorType.VALIDATION_ERROR;
         break;
@@ -171,15 +172,15 @@ export function parseDuffelError(error: any): {
     }
   }
   // Handle network/timeout errors
-  else if (error?.name === 'AbortError' || error?.message?.includes('timeout')) {
+  else if (error && typeof error === 'object' && ('name' in error && (error as { name: string }).name === 'AbortError' || 'message' in error && typeof (error as { message: string }).message === 'string' && (error as { message: string }).message.includes('timeout'))) {
     errorType = 'timeout_error';
   }
-  else if (error?.message?.includes('fetch')) {
+  else if (error && typeof error === 'object' && 'message' in error && typeof (error as { message: string }).message === 'string' && (error as { message: string }).message.includes('fetch')) {
     errorType = 'network_error';
   }
   
   const userMessage = DUFFEL_ERROR_MESSAGES[errorType] || DUFFEL_ERROR_MESSAGES['unknown_error'];
-  const message = originalError?.detail || originalError?.title || error?.message || 'Unknown error occurred';
+  const message = originalError?.detail || originalError?.title || (error && typeof error === 'object' && 'message' in error ? String((error as { message: unknown }).message) : 'Unknown error occurred');
   
   return {
     type: errorType,
@@ -202,7 +203,7 @@ export class DuffelAPIError extends Error {
   public readonly originalError?: DuffelError;
   public readonly statusCode?: number;
 
-  constructor(error: any, statusCode?: number) {
+  constructor(error: unknown, statusCode?: number) {
     const parsed = parseDuffelError(error);
     super(parsed.message);
     
@@ -219,6 +220,6 @@ export class DuffelAPIError extends Error {
 /**
  * Throw a DuffelAPIError with proper error parsing
  */
-export function throwDuffelError(error: any, statusCode?: number): never {
+export function throwDuffelError(error: unknown, statusCode?: number): never {
   throw new DuffelAPIError(error, statusCode);
 }

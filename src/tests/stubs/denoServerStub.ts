@@ -1,7 +1,7 @@
 import { vi } from 'vitest'
 
 // Stub for Deno's serve function to work in Node.js test environment
-export const serve = vi.fn((handler: Function) => {
+export const serve = vi.fn(() => {
   // Return a mock server object
   return {
     shutdown: vi.fn(),

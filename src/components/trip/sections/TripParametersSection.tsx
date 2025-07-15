@@ -7,8 +7,8 @@ import DepartureAirportsSection from "./DepartureAirportsSection";
 import DestinationSection from "./DestinationSection";
 
 interface TripParametersSectionProps {
-  control: Control<any>;
-  watch: UseFormWatch<any>;
+  control: Control<Record<string, unknown>>;
+  watch: UseFormWatch<Record<string, unknown>>;
 }
 
 const TripParametersSection = ({ control, watch }: TripParametersSectionProps) => {

@@ -18,7 +18,7 @@ export interface ABTestVariant {
   name: string;
   description: string;
   weight: number; // 0-1, percentage of experiment traffic
-  config: Record<string, any>;
+  config: Record<string, unknown>;
 }
 
 export interface ABTestAssignment {
@@ -37,7 +37,7 @@ export interface ABTestEvent {
   eventName: string;
   timestamp: Date;
   sessionId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Personalization-specific AB test configurations
@@ -195,7 +195,7 @@ export function isUserInVariant(userId: string, experimentId: string, variantId:
 }
 
 // Get experiment configuration for a user
-export function getExperimentConfig(userId: string, experimentId: string): Record<string, any> | null {
+export function getExperimentConfig(userId: string, experimentId: string): Record<string, unknown> | null {
   const experiment = PERSONALIZATION_AB_TESTS[experimentId];
   const userVariant = getUserVariant(userId, experimentId);
   
@@ -296,9 +296,9 @@ export function getABTestDashboardMetrics(experimentId: string): {
   const events = JSON.parse(localStorage.getItem('ab_test_events') || '[]')
     .filter((event: ABTestEvent) => event.experimentId === experimentId);
 
-  const uniqueUsers = new Set(events.map(e => e.userId));
-  const conversionEvents = events.filter(e => e.eventType === 'conversion');
-  const exposureEvents = events.filter(e => e.eventType === 'exposure');
+  const uniqueUsers = new Set(events.map((e: ABTestEvent) => e.userId));
+  const conversionEvents = events.filter((e: ABTestEvent) => e.eventType === 'conversion');
+  const exposureEvents = events.filter((e: ABTestEvent) => e.eventType === 'exposure');
 
   return {
     totalUsers: uniqueUsers.size,

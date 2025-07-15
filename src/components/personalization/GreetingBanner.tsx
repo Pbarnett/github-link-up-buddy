@@ -21,7 +21,6 @@ export const GreetingBanner: React.FC<GreetingBannerComponentProps> = ({
   const { 
     personalizationData, 
     abTestVariant, 
-    experimentConfig, 
     trackPersonalizationEvent,
     isPersonalizationEnabled 
   } = usePersonalization();
@@ -40,8 +39,6 @@ export const GreetingBanner: React.FC<GreetingBannerComponentProps> = ({
           variant,
           hasPersonalData: !!(personalizationData?.firstName || personalizationData?.nextTripCity),
           interactionType: onClick ? 'clickable' : 'static',
-          abTestVariant,
-          isPersonalized: isPersonalizationEnabled,
         },
         timestamp: new Date(),
         userId,
@@ -81,7 +78,6 @@ export const GreetingBanner: React.FC<GreetingBannerComponentProps> = ({
           data: {
             variant,
             hasPersonalData: !!(personalizationData?.firstName || personalizationData?.nextTripCity),
-            abTestVariant,
           },
           timestamp: new Date(),
           userId,

@@ -1,0 +1,3 @@
+src/tests/hooks/useTripOffers.test.ts
+src/lib/filtering/core/types.ts
+src/lib/form-validation.ts

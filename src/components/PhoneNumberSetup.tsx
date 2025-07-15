@@ -7,7 +7,8 @@ interface PhoneNumberSetupProps {
   className?: string;
 }
 
-export function PhoneNumberSetup({ userId, onPhoneVerified, className = '' }: PhoneNumberSetupProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function PhoneNumberSetup({ userId: _userId, onPhoneVerified, className = '' }: PhoneNumberSetupProps) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -91,8 +92,8 @@ export function PhoneNumberSetup({ userId, onPhoneVerified, className = '' }: Ph
       // Send verification SMS
       await sendVerificationSMS(normalizedPhone);
       
-    } catch (error: any) {
-      setError(error.message || 'Failed to update phone number');
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Failed to update phone number');
     } finally {
       setLoading(false);
     }
@@ -132,7 +133,7 @@ export function PhoneNumberSetup({ userId, onPhoneVerified, className = '' }: Ph
       setIsVerifying(true);
       setSuccess('Verification code sent! Check your phone.');
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('SMS send error:', error);
       setError('Failed to send verification code. Please try again.');
     }
@@ -167,8 +168,8 @@ export function PhoneNumberSetup({ userId, onPhoneVerified, className = '' }: Ph
       } else {
         setError('Invalid verification code. Please try again.');
       }
-    } catch (error: any) {
-      setError(error.message || 'Verification failed');
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Verification failed');
     } finally {
       setLoading(false);
     }

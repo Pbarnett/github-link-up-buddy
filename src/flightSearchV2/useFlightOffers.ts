@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getFlightOffers } from '@/serverActions/getFlightOffers';
 import { mapFlightOfferDbRowToV2 } from './utils/mapFlightOfferDbRowToV2';
@@ -29,10 +29,10 @@ export function useFlightOffers(
 ): UseFlightOffersResult {
   const { enabled: optionEnabled = true } = opts;
 
-  // The useFeatureFlag hook returns a boolean (isEnabled) and handles its own loading state internally.
-  // It returns `defaultValue` (false by default) while its internal loading state is true.
-  // So, `isFeatureFlagEnabled` will be true only if the flag is loaded and true.
-  const isFeatureFlagEnabled = useFeatureFlag('flight_search_v2_enabled', false);
+  // The useFeatureFlag hook returns an object with { data, isLoading, isError, error }
+  // We need to extract the data property to get the actual boolean value
+  const featureFlagResult = useFeatureFlag('flight_search_v2_enabled', false);
+  const isFeatureFlagEnabled = featureFlagResult.data;
 
   const [offers, setOffers] = useState<FlightOfferV2[]>(initialState.offers);
   const [isLoading, setLoading] = useState<boolean>(initialState.isLoading);

@@ -13,10 +13,10 @@ export interface EmailMessage {
   html?: string;
   text?: string;
   templateId?: string;
-  templateData?: Record<string, any>;
+  templateData?: Record<string, unknown>;
   priority: EmailPriority;
   scheduledAt?: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,8 +47,8 @@ export interface EmailAttempt {
   error?: EmailError;
   startedAt: Date;
   completedAt?: Date;
-  responseData?: any;
-  metadata?: Record<string, any>;
+  responseData?: unknown;
+  metadata?: Record<string, unknown>;
 }
 
 export interface EmailError {
@@ -58,7 +58,7 @@ export interface EmailError {
   retryable: boolean;
   provider?: string;
   httpStatus?: number;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export enum EmailErrorType {
@@ -152,7 +152,7 @@ export interface EmailProvider {
   name: string;
   priority: number;
   enabled: boolean;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   circuitBreaker: CircuitBreakerStatus;
   sendEmail(message: EmailMessage): Promise<EmailSendResult>;
   validateConfig(): boolean;
@@ -165,14 +165,14 @@ export interface EmailSendResult {
   error?: EmailError;
   responseTime: number;
   provider: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ProviderHealth {
   status: 'healthy' | 'degraded' | 'unhealthy';
   responseTime: number;
   lastChecked: Date;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export interface MonitoringConfig {
@@ -221,7 +221,7 @@ export interface EmailTemplate {
   html: string;
   text?: string;
   variables: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   version: number;
   isActive: boolean;
 }

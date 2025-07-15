@@ -93,3 +93,9 @@ export class UserInitializationService {
     }
   }
 }
+
+//
+// Auto-added placeholder exports so TypeScript can compile.
+// Replace with real implementation when ready.
+export const placeholder = () => undefined;
+export default placeholder;

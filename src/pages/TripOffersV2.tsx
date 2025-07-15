@@ -1,12 +1,11 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFlightOffers } from '@/flightSearchV2/useFlightOffers';
+import { FlightOfferV2 } from '@/flightSearchV2/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Terminal, PlaneTakeoff, PlaneLanding, ShoppingBag, CalendarDays, AlertCircle, ExternalLink } from "lucide-react";
+import { Terminal, AlertCircle } from "lucide-react";
 import TripOffersV2Skeleton from '@/components/TripOffersV2Skeleton';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/use-toast';
@@ -125,8 +124,8 @@ const TripOffersV2: React.FC = () => {
         return 'Invalid Date';
       }
       return format(date, 'MMM dd, yyyy HH:mm');
-    } catch (e) {
-      console.error("Error formatting date:", dateString, e);
+    } catch (_e) {
+      console.error("Error formatting date:", dateString, _e);
       return 'Invalid Date';
     }
   };
@@ -139,28 +138,25 @@ const TripOffersV2: React.FC = () => {
       const diffInMs = returnDate.getTime() - departDate.getTime();
       const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
       return `${diffInDays} day${diffInDays === 1 ? '' : 's'}`;
-    } catch (e) {
-      console.error("Error calculating duration:", e);
+    } catch (_e) {
+      console.error("Error calculating duration:", _e);
       return 'N/A';
     }
   };
 
-  const formatFlightTime = (departDt: string, returnDt: string | null) => {
+  const formatFlightTime = (_departDt: string, _returnDt: string | null) => { // eslint-disable-line @typescript-eslint/no-unused-vars
     // For V2, we don't have individual flight durations stored,
     // so we'll estimate based on route distance
     try {
-      const departDate = new Date(departDt);
-      const returnDate = returnDt ? new Date(returnDt) : null;
-      
       // This is a simplified estimation - in real implementation,
       // actual flight time would come from Amadeus API response
       return '~8h 30m'; // Placeholder for typical international flight
-    } catch (e) {
+    } catch (_e) { // eslint-disable-line @typescript-eslint/no-unused-vars
       return 'N/A';
     }
   };
 
-  const handleBookOffer = (offer: any) => {
+  const handleBookOffer = (offer: FlightOfferV2) => {
     console.log('Booking offer:', offer.id, 'Booking URL:', offer.bookingUrl);
     
     // If offer has external booking URL (like Google Flights), redirect to airline website
@@ -181,7 +177,7 @@ const TripOffersV2: React.FC = () => {
 
       // Redirect to the airline website for external bookings (like Google Flights)
       setTimeout(() => {
-        window.open(offer.bookingUrl, '_blank');
+        window.open(offer.bookingUrl as string, '_blank');
       }, 500);
 
       return;
@@ -192,7 +188,7 @@ const TripOffersV2: React.FC = () => {
     
     // Convert V2 offer format to legacy format for internal booking
     const params = new URLSearchParams();
-    params.set('id', offer.id);
+    params.set('id', offer.id as string);
     params.set('airline', offer.originIata + '-' + offer.destinationIata); // Placeholder airline
     params.set('flight_number', 'V2-' + offer.id.slice(0, 6));
     params.set('price', offer.priceTotal.toString());

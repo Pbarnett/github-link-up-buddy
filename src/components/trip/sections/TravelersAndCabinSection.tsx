@@ -1,6 +1,13 @@
 import React from 'react';
 import { Control } from 'react-hook-form';
-import { Users, ChevronDown } from 'lucide-react';
+import { Users } from 'lucide-react';
+
+// Travelers and cabin form data interface
+interface TravelersAndCabinFormData {
+  travelers_count?: string;
+  cabin_class?: 'economy' | 'premium_economy' | 'business' | 'first';
+  [key: string]: unknown;
+}
 import {
   FormControl,
   FormField,
@@ -15,15 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 
 interface TravelersAndCabinSectionProps {
-  control: Control<any>;
+  control: Control<TravelersAndCabinFormData>;
 }
 
 const TravelersAndCabinSection = ({ control }: TravelersAndCabinSectionProps) => {

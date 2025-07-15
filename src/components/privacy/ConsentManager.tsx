@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Info, Shield, Settings, Plane } from 'lucide-react';
+import { Shield, Settings, Plane } from 'lucide-react';
 
 export interface ConsentPreferences {
   personalization: boolean;

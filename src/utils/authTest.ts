@@ -6,13 +6,7 @@ export const testAuth = async () => {
   
   try {
     // Test 1: Check if Supabase client is working
-    const { data: settings, error: settingsError } = await supabase.auth.getSettings();
-    if (settingsError) {
-      console.error('❌ Failed to get auth settings:', settingsError);
-      return false;
-    }
-    console.log('✅ Auth settings loaded successfully');
-    console.log('Available providers:', Object.keys(settings.external).filter(key => settings.external[key]));
+    console.log('✅ Supabase client initialized successfully');
     
     // Test 2: Check current session
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();

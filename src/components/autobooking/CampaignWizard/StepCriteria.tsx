@@ -50,7 +50,7 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
     initialData?.tripType || 'round_trip'
   );
 
-  const { control, handleSubmit, formState: { errors }, watch, setValue } = useForm<CriteriaFormData>({
+  const { control, handleSubmit, formState: { errors }, setValue } = useForm<CriteriaFormData>({
     resolver: zodResolver(criteriaSchema),
     defaultValues: {
       campaignName: initialData?.campaignName || '',

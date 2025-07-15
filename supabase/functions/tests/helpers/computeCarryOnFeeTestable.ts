@@ -1,7 +1,7 @@
 // Test-safe wrapper for computeCarryOnFee that doesn't execute module-level Deno calls
 // This isolates the function logic from the edge function environment setup
 
-export function computeCarryOnFee(offer: any): number | null {
+export function computeCarryOnFee(offer: Record<string, unknown>): number | null {
   // 🚨 ROLLBACK MECHANISM: Check feature flag for emergency disable
   // In test environment, we'll just return 0 for this check since we can't access Deno.env
   const allowUnknownCarryOn = process.env.ALLOW_UNKNOWN_CARRYON;
@@ -15,7 +15,7 @@ export function computeCarryOnFee(offer: any): number | null {
   if (process.env.DEBUG_BAGGAGE === "true") { // Conditional logging
     try {
         console.log('[carry-on] sample offer (brief):', JSON.stringify(offer, (key, value) => key === "dictionaries" ? undefined : value, 2)?.slice(0,1500));
-    } catch (e) {
+    } catch (_e) { // eslint-disable-line @typescript-eslint/no-unused-vars
         console.log('[carry-on] sample offer (brief) could not be stringified for offer ID:', offer?.id);
     }
   }
@@ -33,8 +33,8 @@ export function computeCarryOnFee(offer: any): number | null {
     let totalCarryOnFee = 0;
     let carryOnInfoFound = false; // Flag to indicate if any carry-on info (fee or included) was found
 
-    for (const tp of offer.travelerPricings) {
-        if (!tp || !Array.isArray(tp.fareDetailsBySegment)) {
+    for (const tp of offer.travelerPricings as Record<string, unknown>[]) {
+        if (!tp || !Array.isArray((tp as Record<string, unknown>).fareDetailsBySegment)) {
             // console.log('[carry-on] Missing fareDetailsBySegment for a travelerPricing in offer:', offer?.id);
             continue; // Skip this travelerPricing if fareDetailsBySegment is missing
         }
@@ -48,29 +48,29 @@ export function computeCarryOnFee(offer: any): number | null {
         let feeForThisTraveler = 0;
         let infoFoundForThisTraveler = false;
 
-        for (const segDetail of tp.fareDetailsBySegment) {
-            if (segDetail && Array.isArray(segDetail.additionalServices)) {
-                const baggageService = segDetail.additionalServices.find(
-                (s:any)=> s.type === 'BAGGAGE' && /CARRY ON|CABIN BAG/i.test(s.description?.toUpperCase() || '')
+        for (const segDetail of (tp as Record<string, unknown>).fareDetailsBySegment) {
+            if (segDetail && Array.isArray((segDetail as Record<string, unknown>).additionalServices)) {
+                const baggageService = (segDetail as Record<string, unknown>).additionalServices.find(
+                (s: Record<string, unknown>) => s.type === 'BAGGAGE' && /CARRY ON|CABIN BAG/i.test((s.description as string)?.toUpperCase() || '')
                 );
                 if (baggageService) {
                     // Found carry-on service, this means info is available
                     infoFoundForThisTraveler = true;
                     if (baggageService.amount) {
-                        feeForThisTraveler += parseFloat(baggageService.amount) || 0;
+                        feeForThisTraveler += parseFloat(baggageService.amount as string) || 0;
                     }
                     // If no amount field, treat as free (fee remains 0)
                 }
             }
             // Check for included baggage as a sign that info is present
-            if (segDetail && segDetail.includedCheckedBags && typeof segDetail.includedCheckedBags.quantity === 'number') { // Assuming quantity implies info
+            if (segDetail && (segDetail as Record<string, unknown>).includedCheckedBags && typeof (segDetail as Record<string, unknown>).includedCheckedBags.quantity === 'number') {
                 // This is for checked bags, but its presence might mean fare is not "basic"
                  infoFoundForThisTraveler = true; // Found some baggage info
             }
 
             // If fare basis indicates basic/light, we must have found some info (fee or included)
             // otherwise, it's opaque for carry-on for that segment.
-            if (segDetail && /BASIC|LIGHT/.test(segDetail.fareBasis?.toUpperCase()||'')) {
+            if (segDetail && /BASIC|LIGHT/.test((segDetail as Record<string, unknown>).fareBasis?.toUpperCase()||'')) {
                 // If it's a basic/light fare and we haven't found explicit carry-on info (fee or free),
                 // then for this segment, it's opaque.
                 // The overall offer becomes opaque if *any* segment is basic/light AND opaque for carry-on.

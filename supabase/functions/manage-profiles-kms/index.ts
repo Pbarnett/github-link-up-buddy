@@ -154,7 +154,7 @@ serve(async (req) => {
           const { first_name, last_name, phone } = body;
 
           // Encrypt PII data using KMS
-          const encryptedData: any = {
+          const encryptedData: Record<string, unknown> = {
             updated_at: new Date().toISOString(),
             encryption_version: 2 // Mark as KMS encrypted
           };

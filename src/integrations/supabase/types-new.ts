@@ -14,6 +14,7 @@ export interface Database {
   public: {
     Tables: {
       // Tables will be defined here when needed
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never

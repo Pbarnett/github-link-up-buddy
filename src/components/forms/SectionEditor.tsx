@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { Settings, Trash2, Eye, EyeOff, ChevronDown, ChevronRight } from 'lucide-react';
+import { Settings, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
 
 import type {
   FormSection,
@@ -120,7 +119,7 @@ export const SectionEditor: React.FC<SectionEditorProps> = ({
             </div>
           ) : (
             <div className="space-y-2">
-              {section.fields.map((field, index) => (
+              {section.fields.map((field) => (
                 <Collapsible
                   key={field.id}
                   open={expandedFields.has(field.id)}

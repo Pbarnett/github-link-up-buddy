@@ -12,13 +12,13 @@ export function cn(...inputs: ClassValue[]) {
  * - Otherwise, return null to skip this offer.
  */
 export function decideSeatPreference(
-  offer: {
+  _offer: { // eslint-disable-line @typescript-eslint/no-unused-vars
     price: number;
     hasAisleSeat?: boolean;
     hasWindowSeat?: boolean;
     hasMiddleSeat?: boolean;
   },
-  trip: {
+  _trip: { // eslint-disable-line @typescript-eslint/no-unused-vars
     max_price: number;
     // We can add more fields later (e.g., nonstop_required, baggage_included_required),
     // but this stub is enough for Jules to call.

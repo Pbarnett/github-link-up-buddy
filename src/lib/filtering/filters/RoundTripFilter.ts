@@ -172,7 +172,7 @@ export class RoundTripFilter implements FlightFilter {
   /**
    * Amadeus-specific round-trip validation
    */
-  private validateAmadeusRoundTrip(offer: FlightOffer, context: FilterContext): boolean {
+  private validateAmadeusRoundTrip(offer: FlightOffer, _context: FilterContext): boolean { // eslint-disable-line @typescript-eslint/no-unused-vars
     // Check if the raw data indicates this is a one-way offer
     const rawData = offer.rawData;
     if (rawData?.oneWay === true) {
@@ -192,10 +192,10 @@ export class RoundTripFilter implements FlightFilter {
   /**
    * Duffel-specific round-trip validation  
    */
-  private validateDuffelRoundTrip(offer: FlightOffer, context: FilterContext): boolean {
+  private validateDuffelRoundTrip(offer: FlightOffer, _context: FilterContext): boolean { // eslint-disable-line @typescript-eslint/no-unused-vars
     // Duffel uses "slices" - should have exactly 2 for round-trip
     const rawData = offer.rawData;
-    if (rawData?.slices && rawData.slices.length !== 2) {
+    if (rawData?.slices && Array.isArray(rawData.slices) && rawData.slices.length !== 2) {
       console.log(`[${this.name}] Duffel offer ${offer.id}: Expected 2 slices, got ${rawData.slices.length}`);
       return false;
     }
@@ -255,7 +255,7 @@ export class RoundTripFilter implements FlightFilter {
     
     const hasReturnDate = !!(searchParams.returnDate || searchParams.return_date);
     const isRoundTrip = searchParams.isRoundTrip;
-    const isRoundTripSearch = hasReturnDate || isRoundTrip;
+    const isRoundTripSearch = hasReturnDate || !!isRoundTrip;
     
     // If explicitly marked as round-trip but no return date provided
     if (isRoundTrip && !hasReturnDate) {

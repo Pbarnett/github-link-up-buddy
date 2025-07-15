@@ -96,7 +96,7 @@ export class NonstopFilter implements FlightFilter {
   /**
    * Check if an individual itinerary is nonstop
    */
-  private isNonstopItinerary(itinerary: any): boolean {
+private isNonstopItinerary(itinerary: { segments: { numberOfStops: number }[] }): boolean {
     if (!itinerary.segments || itinerary.segments.length === 0) {
       return false;
     }
@@ -165,7 +165,7 @@ export class NonstopFilter implements FlightFilter {
   /**
    * Check if an itinerary meets layover time limits
    */
-  private itineraryMeetsLayoverLimit(itinerary: any, maxLayoverMinutes: number): boolean {
+private itineraryMeetsLayoverLimit(itinerary: { segments: { arrival: { at: string }, departure: { at: string } }[] }, maxLayoverMinutes: number): boolean {
     if (!itinerary.segments || itinerary.segments.length <= 1) {
       return true; // No connections, so no layover concerns
     }
@@ -247,67 +247,4 @@ export class NonstopFilter implements FlightFilter {
     };
   }
 
-  /**
-   * Calculate the total number of stops for an offer
-   */
-  private calculateTotalStops(offer: FlightOffer): number {
-    if (offer.stopsCount !== undefined) {
-      return offer.stopsCount;
-    }
-
-    if (!offer.itineraries) {
-      return 0;
-    }
-
-    return offer.itineraries.reduce((totalStops, itinerary) => {
-      if (!itinerary.segments) {
-        return totalStops;
-      }
-
-      // For each itinerary, stops = segments - 1
-      const itineraryStops = Math.max(0, itinerary.segments.length - 1);
-      
-      // Also add any stops within segments
-      const segmentStops = itinerary.segments.reduce((stops, segment) => {
-        return stops + (segment.numberOfStops || 0);
-      }, 0);
-
-      return totalStops + itineraryStops + segmentStops;
-    }, 0);
-  }
-
-  /**
-   * Helper method to identify the longest layover in an offer
-   */
-  private findLongestLayover(offer: FlightOffer): { minutes: number; airport: string } | null {
-    if (!offer.itineraries) {
-      return null;
-    }
-
-    let longestLayover = { minutes: 0, airport: '' };
-
-    for (const itinerary of offer.itineraries) {
-      if (!itinerary.segments || itinerary.segments.length <= 1) {
-        continue;
-      }
-
-      for (let i = 0; i < itinerary.segments.length - 1; i++) {
-        const currentSegment = itinerary.segments[i];
-        const nextSegment = itinerary.segments[i + 1];
-
-        const arrivalTime = new Date(currentSegment.arrival.at);
-        const departureTime = new Date(nextSegment.departure.at);
-        const layoverMinutes = (departureTime.getTime() - arrivalTime.getTime()) / (1000 * 60);
-
-        if (layoverMinutes > longestLayover.minutes) {
-          longestLayover = {
-            minutes: layoverMinutes,
-            airport: currentSegment.arrival.iataCode
-          };
-        }
-      }
-    }
-
-    return longestLayover.minutes > 0 ? longestLayover : null;
-  }
 }

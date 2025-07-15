@@ -42,6 +42,10 @@ if (import.meta.env.VITE_SUPABASE_URL?.includes('127.0.0.1')) {
     },
   });
 
-  const WrappedApp = LDProvider(App);
+  const WrappedApp = () => (
+    <LDProvider>
+      <App />
+    </LDProvider>
+  );
   createRoot(document.getElementById("root")!).render(<WrappedApp />);
 })();

@@ -38,8 +38,36 @@ const mockSupabase = {
 };
 
 // Payment architecture core logic functions
+interface StripeClient {
+  customers: {
+    create: (params: { email: string; metadata: Record<string, string> }) => Promise<{ id: string; email: string }>;
+  };
+  setupIntents: {
+    create: (params: { customer: string; usage: string; payment_method_types: string[] }) => Promise<{ id: string; client_secret: string; customer: string }>;
+    retrieve: (id: string) => Promise<unknown>;
+  };
+  paymentMethods: {
+    retrieve: (id: string) => Promise<unknown>;
+  };
+  paymentIntents: {
+    create: (params: Record<string, unknown>, options?: { idempotencyKey: string }) => Promise<{ id: string; status: string; amount: number; currency: string }>;
+  };
+}
+
+interface SupabaseClient {
+  from: (table: string) => SupabaseClient;
+  select: (columns: string) => SupabaseClient;
+  insert: (data: unknown) => SupabaseClient;
+  update: (data: unknown) => SupabaseClient;
+  eq: (column: string, value: unknown) => SupabaseClient;
+  single: () => Promise<unknown>;
+  auth: {
+    getUser: () => Promise<unknown>;
+  };
+}
+
 class PaymentArchitecture {
-  constructor(private stripe: any, private supabase: any) {}
+  constructor(private stripe: StripeClient, private supabase: SupabaseClient) {}
 
   async createSetupIntent(userId: string, email: string) {
     // Step 1: Create or get Stripe customer
@@ -94,7 +122,15 @@ class PaymentArchitecture {
 
   async createAutoBookingPaymentIntent(
     campaignId: string,
-    flightOffer: any,
+    flightOffer: {
+      id: string;
+      price: number;
+      currency: string;
+      airline: string;
+      flight_number: string;
+      route: string;
+      departure_date: string;
+    },
     stripeCustomerId: string,
     stripePaymentMethodId: string
   ) {
@@ -123,7 +159,7 @@ class PaymentArchitecture {
     return paymentIntent;
   }
 
-  private isCardNotExpired(paymentMethod: any): boolean {
+  private isCardNotExpired(paymentMethod: { exp_month?: number; exp_year?: number }): boolean {
     if (!paymentMethod?.exp_month || !paymentMethod?.exp_year) {
       return false;
     }
@@ -138,7 +174,11 @@ class PaymentArchitecture {
     );
   }
 
-  parseStripeError(error: any): { userMessage: string; errorCode: string } {
+  parseStripeError(error: {
+    type?: string;
+    code?: string;
+    message?: string;
+  }): { userMessage: string; errorCode: string } {
     if (error.type === 'StripeCardError') {
       switch (error.code) {
         case 'card_declined':
@@ -150,7 +190,7 @@ class PaymentArchitecture {
         case 'authentication_required':
           return { userMessage: 'Payment requires additional authentication', errorCode: error.code };
         default:
-          return { userMessage: error.message || 'Payment processing failed', errorCode: error.code };
+          return { userMessage: error.message || 'Payment processing failed', errorCode: error.code || 'unknown' };
       }
     }
     return { userMessage: 'Payment processing failed', errorCode: 'unknown' };
@@ -224,7 +264,7 @@ describe('Payment Architecture Core Logic', () => {
       const paymentArchitectureWithExpiredCard = new PaymentArchitecture(mockStripe, mockSupabase);
       
       // Override the method to return an expired card scenario
-      vi.spyOn(paymentArchitectureWithExpiredCard as any, 'isCardNotExpired').mockReturnValue(false);
+      vi.spyOn(paymentArchitectureWithExpiredCard as unknown as { isCardNotExpired: (paymentMethod: unknown) => boolean }, 'isCardNotExpired').mockReturnValue(false);
       
       const result = await paymentArchitectureWithExpiredCard.validateCampaignForAutoBooking('campaign_123', 450);
 
@@ -294,7 +334,7 @@ describe('Payment Architecture Core Logic', () => {
         exp_year: 2025, // Future year
       };
 
-      const isNotExpired = (paymentArchitecture as any).isCardNotExpired(paymentMethod);
+      const isNotExpired = (paymentArchitecture as unknown as { isCardNotExpired: (paymentMethod: unknown) => boolean }).isCardNotExpired(paymentMethod);
       expect(isNotExpired).toBe(true);
     });
 
@@ -304,14 +344,14 @@ describe('Payment Architecture Core Logic', () => {
         exp_year: 2023, // Past year
       };
 
-      const isNotExpired = (paymentArchitecture as any).isCardNotExpired(paymentMethod);
+      const isNotExpired = (paymentArchitecture as unknown as { isCardNotExpired: (paymentMethod: unknown) => boolean }).isCardNotExpired(paymentMethod);
       expect(isNotExpired).toBe(false);
     });
 
     it('should handle missing expiry information', () => {
       const paymentMethod = {};
 
-      const isNotExpired = (paymentArchitecture as any).isCardNotExpired(paymentMethod);
+      const isNotExpired = (paymentArchitecture as unknown as { isCardNotExpired: (paymentMethod: unknown) => boolean }).isCardNotExpired(paymentMethod);
       expect(isNotExpired).toBe(false);
     });
   });

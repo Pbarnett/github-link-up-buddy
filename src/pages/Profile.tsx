@@ -7,7 +7,7 @@ import { useTravelerProfile } from "@/hooks/useTravelerProfile";
 import { SimpleProfileStatus } from "@/components/profile/SimpleProfileStatus";
 import { toast } from "@/hooks/use-toast";
 import { useState, useMemo } from "react";
-import { ProfileCompletenessScore } from "@/services/profileCompletenessService";
+import { ProfileCompletenessScore, ProfileRecommendation } from "@/services/profileCompletenessService";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { ProfileV2 } from "@/components/profile/ProfileV2";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,7 +84,7 @@ function EnhancedProfilePage() {
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   
   // Calculate completeness from profile data if completion tracking is not available
-  const completenessData: ProfileCompletenessScore = useMemo(() => {
+  const _completenessData: ProfileCompletenessScore = useMemo(() => { // eslint-disable-line @typescript-eslint/no-unused-vars
     if (completion) {
       return {
         overall: completion.completion_percentage,
@@ -96,12 +96,19 @@ function EnhancedProfilePage() {
           verification: 0
         },
         missing_fields: completion.missing_fields || [],
-        recommendations: completion.recommendations || []
+        recommendations: (completion.recommendations || []).map(rec => ({
+          category: rec.category || 'general',
+          priority: rec.priority || 'medium',
+          title: rec.title || '',
+          description: rec.description || '',
+          action: rec.action || 'complete_profile',
+          points_value: rec.points_value || 0
+        })) as ProfileRecommendation[]
       };
     }
     
     if (profile) {
-      return calculateCompleteness(profile);
+      return calculateCompleteness(profile) as ProfileCompletenessScore;
     }
     
     return {
@@ -118,7 +125,7 @@ function EnhancedProfilePage() {
     };
   }, [completion, profile, calculateCompleteness]);
   
-  const handleActionClick = (action: string) => {
+  const _handleActionClick = (action: string) => { // eslint-disable-line @typescript-eslint/no-unused-vars
     switch (action) {
       case 'complete_profile':
         setActiveTab('profile');
@@ -257,12 +264,19 @@ function LegacyProfilePage() {
           verification: 0
         },
         missing_fields: completion.missing_fields || [],
-        recommendations: completion.recommendations || []
+        recommendations: (completion.recommendations || []).map(rec => ({
+          category: rec.category || 'general',
+          priority: rec.priority || 'medium',
+          title: rec.title || '',
+          description: rec.description || '',
+          action: rec.action || 'complete_profile',
+          points_value: rec.points_value || 0
+        })) as ProfileRecommendation[]
       };
     }
     
     if (profile) {
-      return calculateCompleteness(profile);
+      return calculateCompleteness(profile) as ProfileCompletenessScore;
     }
     
     return {

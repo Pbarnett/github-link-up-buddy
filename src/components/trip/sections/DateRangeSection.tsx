@@ -2,8 +2,15 @@
 import { Control } from "react-hook-form";
 import TripDateField from "../TripDateField";
 
+// Date range form data interface
+interface DateRangeFormData {
+  earliestDeparture?: Date;
+  latestDeparture?: Date;
+  [key: string]: unknown;
+}
+
 interface DateRangeSectionProps {
-  control: Control<any>;
+  control: Control<DateRangeFormData>;
 }
 
 const DateRangeSection = ({ control }: DateRangeSectionProps) => {
@@ -13,14 +20,14 @@ const DateRangeSection = ({ control }: DateRangeSectionProps) => {
         name="earliestDeparture"
         label="Earliest Departure Date"
         description="The earliest date you can depart for your trip."
-        control={control}
+        control={control as any}
       />
 
       <TripDateField 
         name="latestDeparture"
         label="Latest Departure Date"
         description="The latest date you can depart for your trip."
-        control={control}
+        control={control as any}
       />
     </div>
   );

@@ -153,7 +153,7 @@ describe('ConstraintChips (Refactored)', () => {
       const disabledButton = screen.getByRole('button', { name: /non-stop flights disabled/i });
       expect(disabledButton).toBeInTheDocument();
       
-      const { rerender } = renderWithProviders(
+      renderWithProviders(
         <ConstraintChips {...defaultProps} nonStopOnly={true} />
       );
       

@@ -46,19 +46,22 @@ serve(async (req) => {
 
         // Check database tables
         try {
-          const { data: auditCheck, error: auditError } = await supabase
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { data: _auditCheck, error: auditError } = await supabase
             .from('kms_audit_log')
             .select('count')
             .limit(1);
           status.database.kms_audit_log = auditError ? 'error' : 'operational';
 
-          const { data: rotationCheck, error: rotationError } = await supabase
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { data: _rotationCheck, error: rotationError } = await supabase
             .from('kms_key_rotation_history')
             .select('count')
             .limit(1);
           status.database.kms_key_rotation_history = rotationError ? 'error' : 'operational';
 
-          const { data: metadataCheck, error: metadataError } = await supabase
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { data: _metadataCheck, error: metadataError } = await supabase
             .from('kms_encryption_metadata')
             .select('count')
             .limit(1);
@@ -88,7 +91,7 @@ serve(async (req) => {
               operations_by_type: auditStats.reduce((acc, a) => {
                 acc[a.operation] = (acc[a.operation] || 0) + 1;
                 return acc;
-              }, {} as any)
+              }, {} as Record<string, number>)
             };
           }
         } catch (error) {
@@ -104,7 +107,8 @@ serve(async (req) => {
 
           for (const table of tables) {
             try {
-              const { data, error } = await supabase
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              const { data: _data, error } = await supabase
                 .from(table)
                 .select('*')
                 .limit(1);

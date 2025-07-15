@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 
 // Standalone version of computeCarryOnFee for testing without imports
-function computeCarryOnFee(offer:any): number|null {
+function computeCarryOnFee(offer: Record<string, unknown>): number|null {
   // 🚨 ROLLBACK MECHANISM: Check feature flag for emergency disable
   const allowUnknownCarryOn = process.env.ALLOW_UNKNOWN_CARRYON;
   if (allowUnknownCarryOn === "false" || allowUnknownCarryOn === "0") {
@@ -14,7 +14,7 @@ function computeCarryOnFee(offer:any): number|null {
   if (process.env.DEBUG_BAGGAGE === "true") {
     try {
         console.log('[carry-on] sample offer (brief):', JSON.stringify(offer, (key, value) => key === "dictionaries" ? undefined : value, 2)?.slice(0,1500));
-    } catch (e) {
+    } catch (_e) { // eslint-disable-line @typescript-eslint/no-unused-vars
         console.log('[carry-on] sample offer (brief) could not be stringified for offer ID:', offer?.id);
     }
   }
@@ -38,7 +38,7 @@ function computeCarryOnFee(offer:any): number|null {
         for (const segDetail of tp.fareDetailsBySegment) {
             if (segDetail && Array.isArray(segDetail.additionalServices)) {
                 const baggageService = segDetail.additionalServices.find(
-                (s:any)=> s.type === 'BAGGAGE' && /CARRY ON|CABIN BAG/i.test(s.description?.toUpperCase() || '')
+                (s: Record<string, unknown>)=> s.type === 'BAGGAGE' && /CARRY ON|CABIN BAG/i.test((s.description as string)?.toUpperCase() || '')
                 );
                 if (baggageService) {
                     // If we found a carry-on related service, we have info

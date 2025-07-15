@@ -48,7 +48,7 @@ describe('useTripOffersLegacy Helper Functions', () => {
 
     it('should return false for offers with missing departure_date', () => {
       const offer: Partial<Offer> = {
-        departure_date: null,
+        departure_date: undefined,
         return_date: '2024-01-20',
       };
 
@@ -59,7 +59,7 @@ describe('useTripOffersLegacy Helper Functions', () => {
     it('should return false for offers with missing return_date', () => {
       const offer: Partial<Offer> = {
         departure_date: '2024-01-15',
-        return_date: null,
+        return_date: undefined,
       };
 
       const result = validateDuration(offer as Offer, 3, 7);

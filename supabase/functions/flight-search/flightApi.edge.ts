@@ -69,13 +69,13 @@ function parseDuration(dur: string): number {
   return m ? (Number(m[1]) || 0) * 60 + (Number(m[2]) || 0) : 0;
 }
 
-function offerIncludesCarryOnAndPersonal(offer: any): boolean {
-  return true;
-}
+// function offerIncludesCarryOnAndPersonal(_offer: unknown): boolean {
+//   return true;
+// }
 
-const checkCarryOnIncluded = (offer: any): boolean => offerIncludesCarryOnAndPersonal(offer);
+// const checkCarryOnIncluded = (offer: unknown): boolean => offerIncludesCarryOnAndPersonal(offer);
 
-function decideSeatPreference(offer: any, criteria: { max_price: number }): string | undefined {
+function decideSeatPreference(offer: Record<string, unknown>): string | undefined {
   if (offer.seat) {
       const seatUpper = String(offer.seat).toUpperCase();
       if (['AISLE', 'WINDOW', 'MIDDLE'].includes(seatUpper)) {
@@ -93,7 +93,7 @@ function decideSeatPreference(offer: any, criteria: { max_price: number }): stri
  *  – returns null→ opaque → discard offer
  * PERF: called 100-300× / search – keep O(n).
  */
-export function computeCarryOnFee(offer:any): number|null {
+export function computeCarryOnFee(offer: Record<string, unknown>): number|null {
   // 🚨 ROLLBACK MECHANISM: Check feature flag for emergency disable
   const allowUnknownCarryOn = Deno.env.get("ALLOW_UNKNOWN_CARRYON");
   if (allowUnknownCarryOn === "false" || allowUnknownCarryOn === "0") {
@@ -106,7 +106,7 @@ export function computeCarryOnFee(offer:any): number|null {
   if (Deno.env.get("DEBUG_BAGGAGE") === "true") { // Conditional logging
     try {
         console.log('[carry-on] sample offer (brief):', JSON.stringify(offer, (key, value) => key === "dictionaries" ? undefined : value, 2)?.slice(0,1500));
-    } catch (e) {
+    } catch {
         console.log('[carry-on] sample offer (brief) could not be stringified for offer ID:', offer?.id);
     }
   }
@@ -142,7 +142,7 @@ export function computeCarryOnFee(offer:any): number|null {
         for (const segDetail of tp.fareDetailsBySegment) {
             if (segDetail && Array.isArray(segDetail.additionalServices)) {
                 const baggageService = segDetail.additionalServices.find(
-                (s:any)=> s.type === 'BAGGAGE' && /CARRY ON|CABIN BAG/i.test(s.description?.toUpperCase() || '')
+                (s: { type: string; description?: string; amount?: string }) => s.type === 'BAGGAGE' && /CARRY ON|CABIN BAG/i.test(s.description?.toUpperCase() || '')
                 );
                 if (baggageService) {
                     // Found carry-on service, this means info is available
@@ -249,18 +249,19 @@ export async function fetchToken(): Promise<string> {
 // Retry with exponential backoff (simplified)
 async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3, baseDelayMs = 500, simplifiedFallbackFn?: () => Promise<T>): Promise<T> {
   let attempt = 0;
-  let lastError: any;
+  let lastError: Error;
   while (true) {
     attempt++;
-    try { return await fn(); } catch (error: any) {
-      lastError = error;
+    try { return await fn(); } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      lastError = err;
       if (attempt >= maxAttempts) {
         if (simplifiedFallbackFn) {
-          try { return await simplifiedFallbackFn(); } catch (fallbackError) { throw lastError; }
+          try { return await simplifiedFallbackFn(); } catch { throw lastError; }
         }
-        throw error;
+        throw err;
       }
-      if (! (error.message.includes("429") || error.message.startsWith("5") || error.name === "TypeError" || error.name === "NetworkError")) throw error;
+      if (! (err.message.includes("429") || err.message.startsWith("5") || err.name === "TypeError" || err.name === "NetworkError")) throw err;
       const delay = baseDelayMs * 2 ** (attempt - 1);
       await new Promise((r) => setTimeout(r, delay));
     }
@@ -285,7 +286,7 @@ export async function searchOffers(
 ): Promise<SearchOffersResult> { // Correct return type
   console.log(`[flight-search] Starting searchOffers for trip ${tripRequestId}`);
   const token = await fetchToken();
-  const allRawAmadeusOffers: any[] = []; // Changed variable name for clarity
+  const allRawAmadeusOffers: Record<string, unknown>[] = []; // Changed variable name for clarity
 
   // ... (Main search logic with strategies, fallbacks - assumed to be the version from end of PR #8)
   // This part is complex and long, assuming it's the one that correctly populates `allRawAmadeusOffers`
@@ -414,7 +415,7 @@ export async function searchOffers(
   console.log(`[flight-search] ${uniqueOffers.length} unique Amadeus offers after deduplication`);
   
   const msPerDay = 24 * 60 * 60 * 1000;
-  const durationFilteredOffers = uniqueOffers.filter((offer: any) => {
+  const durationFilteredOffers = uniqueOffers.filter((offer: Record<string, unknown>) => {
     try {
       const dep = new Date(offer.itineraries[0].segments[0].departure.at);
       const backItin = offer.itineraries[1];
@@ -425,7 +426,7 @@ export async function searchOffers(
       const ret = new Date(backAt);
       const tripDays = Math.round((ret.getTime() - dep.getTime()) / msPerDay);
       return tripDays >= params.minDuration && tripDays <= params.maxDuration;
-    } catch (err) { return false; }
+    } catch { return false; }
   });
   console.log(`[flight-search] Kept ${durationFilteredOffers.length} offers after duration filter.`);
 
@@ -436,7 +437,7 @@ export async function searchOffers(
     return { dbOffers, pools: { poolA: [], poolB: [], poolC: [] } };
   }
 
-  const extractSeatPreference = (offer: any): string | undefined => decideSeatPreference(offer, { max_price: params.budget });
+  const extractSeatPreference = (offer: Record<string, unknown>): string | undefined => decideSeatPreference(offer, { max_price: params.budget });
 
   // --- Start of new RawOffer mapping (PR #9) ---
   console.log("[flight-search] Mapping Amadeus offers to RawOffer structure with carry-on fee processing...");
@@ -465,8 +466,8 @@ export async function searchOffers(
       price: total,                               // LEGACY (now total price with carry-on)
       priceStructure: { base, carryOnFee, total }, // NEW
       carryOnIncluded: carryOnFee === 0,
-      segments: offer.itineraries.flatMap((it:any)=> // This assumes itineraries exist and are arrays
-        it.segments.map((seg:any)=>({ // This assumes segments exist and are arrays
+      segments: (offer.itineraries as { segments: { numberOfStops?: number; duration: string }[] }[]).flatMap((it) => // This assumes itineraries exist and are arrays
+        it.segments.map((seg) => ({ // This assumes segments exist and are arrays
           stops: seg.numberOfStops ?? 0,
           durationMins: parseDuration(seg.duration), // Uses global parseDuration
         }))
@@ -519,27 +520,27 @@ export async function searchOffers(
 }
 
 // Helper to calculate a return date (simplified)
-function calculateReturnDate(departureDate: Date, durationDays: number, latestAllowed: Date): string {
-  const returnDate = new Date(departureDate.getTime() + (durationDays * 24 * 60 * 60 * 1000));
-  const finalReturnDate = returnDate > latestAllowed ? latestAllowed : returnDate;
-  return finalReturnDate.toISOString().slice(0, 10);
-}
+// function calculateReturnDate(departureDate: Date, durationDays: number, latestAllowed: Date): string {
+//   const returnDate = new Date(departureDate.getTime() + (durationDays * 24 * 60 * 60 * 1000));
+//   const finalReturnDate = returnDate > latestAllowed ? latestAllowed : returnDate;
+//   return finalReturnDate.toISOString().slice(0, 10);
+// }
 
 // Helper to deduplicate offers (simplified)
-export function dedupOffers(allOffers: any[]): any[] { // Exporting dedupOffers
-  return Array.from(new Map(allOffers.map((offer: any) => {
+export function dedupOffers(allOffers: Record<string, unknown>[]): Record<string, unknown>[] { // Exporting dedupOffers
+  return Array.from(new Map(allOffers.map((offer: Record<string, unknown>) => {
     try {
       const key = `${offer.itineraries[0]?.segments[0]?.carrierCode}-${offer.itineraries[0]?.segments[0]?.number}-${offer.itineraries[0]?.segments[0]?.departure?.at}-${offer.itineraries[1]?.segments?.slice(-1)[0]?.departure?.at}`;
       return [key, offer];
-    } catch (e) { return [null, offer]; } // Basic error handling
-  }).filter(Boolean) as [string, any][]).values());
+    } catch { return [null, offer]; } // Basic error handling
+    }).filter(Boolean) as [string, Record<string, unknown>][]).values());
 }
 
 // Transform Amadeus response (simplified)
-export function transformAmadeusToOffers(api: any, tripRequestId: string, primaryOrigin: string, destination: string): TablesInsert<"flight_offers">[] {
+export function transformAmadeusToOffers(api: { data: Record<string, unknown>[] }, tripRequestId: string, primaryOrigin: string, destination: string): TablesInsert<"flight_offers">[] {
   if (!api.data || !Array.isArray(api.data) || api.data.length === 0) return [];
   try {
-    return api.data.flatMap((offer: any) => {
+    return api.data.flatMap((offer: Record<string, unknown>) => {
       try {
         const out = offer.itineraries[0].segments[0];
         const backItin = offer.itineraries[1];
@@ -574,7 +575,7 @@ export function transformAmadeusToOffers(api: any, tripRequestId: string, primar
           // If so, add: carry_on_fee: carryOnFee,
           booking_url: offer.pricingOptions?.agents?.[0]?.deepLink || offer.deepLink || generatePlaceholderBookingUrl(carrierCode, out.departure?.iataCode || primaryOrigin, out.arrival?.iataCode || destination, out.departure.at.split("T")[0], back.departure.at.split("T")[0]),
         }];
-      } catch (err) { return []; }
+      } catch { return []; }
     });
-  } catch (err) { return []; }
+  } catch { return []; }
 }

@@ -1,16 +1,16 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { getAmadeusAccessToken, priceWithAmadeus } from '../lib/amadeus.ts';
+// Note: getAmadeusAccessToken and priceWithAmadeus are not used in the current implementation
+// They are potentially needed for future enhancements
 
 // Import the Deno-compatible filtering system
 import {
   createFilterContext,
   normalizeOffers,
   FilterFactory,
-  type FlightOffer,
-  type FilterContext,
-  type FilterResult
+  // Note: FlightOffer, FilterContext, and FilterResult types are not used directly
+  // but are potentially needed for future type annotations
 } from '../_shared/filtering.ts';
 
 // Define a type for the expected request payload
@@ -96,7 +96,7 @@ interface FlightOfferV2Insert {
   // seat_pref is not typically part of an offer search, but post-booking.
   // external_offer_id to store Amadeus offer ID or similar
   external_offer_id?: string;
-  raw_offer_payload?: Record<string, any>; // To store the full Amadeus payload
+  raw_offer_payload?: Record<string, unknown>; // To store the full Amadeus payload
 }
 
 
@@ -105,9 +105,24 @@ interface FlightOfferV2Insert {
 import { searchFlightOffers } from '../lib/amadeus-search.ts';
 
 // Function to get trip request details from database
-const getTripRequestDetails = async (tripRequestId: string, supabaseClient: any) => {
+const getTripRequestDetails = async (tripRequestId: string, supabaseClient: unknown) => {
   console.log('[DEBUG] Fetching trip request details for:', tripRequestId);
-  const { data, error } = await supabaseClient
+  
+  if (!supabaseClient || typeof supabaseClient !== 'object') {
+    throw new Error('Invalid supabase client');
+  }
+  
+  const client = supabaseClient as {
+    from: (table: string) => {
+      select: (fields: string) => {
+        eq: (field: string, value: string) => {
+          single: () => Promise<{ data: unknown; error: unknown }>
+        }
+      }
+    }
+  };
+  
+  const { data, error } = await client
     .from('trip_requests')
     .select('*')
     .eq('id', tripRequestId)
@@ -125,7 +140,7 @@ const getTripRequestDetails = async (tripRequestId: string, supabaseClient: any)
 const fetchAmadeusOffers = async (
   tripRequestId: string,
   maxPrice?: number,
-  supabaseClient?: any
+  supabaseClient?: unknown
 ): Promise<AmadeusFlightOffer[]> => {
   if (!supabaseClient) {
     throw new Error('Supabase client is required');
@@ -142,7 +157,8 @@ const fetchAmadeusOffers = async (
   try {
   // Try to fetch offers from Amadeus
   // Use origin_location_code if available, otherwise use first departure airport
-  const originCode = tripRequest.origin_location_code || (tripRequest.departure_airports && tripRequest.departure_airports[0]);
+  const request = tripRequest as Record<string, unknown>;
+  const originCode = request.origin_location_code || (request.departure_airports && Array.isArray(request.departure_airports) && request.departure_airports[0]);
   
   if (!originCode) {
     throw new Error('No origin airport code available in trip request');
@@ -150,12 +166,12 @@ const fetchAmadeusOffers = async (
   
   const offers = await searchFlightOffers({
     originLocationCode: originCode,
-    destinationLocationCode: tripRequest.destination_location_code,
-    departureDate: tripRequest.departure_date,
-    returnDate: tripRequest.return_date,
-    adults: tripRequest.adults || 1,
+    destinationLocationCode: request.destination_location_code,
+    departureDate: request.departure_date,
+    returnDate: request.return_date,
+    adults: request.adults || 1,
     travelClass: 'ECONOMY', // Default to economy for now
-    nonStop: tripRequest.nonstop_required, // Use required setting directly
+    nonStop: request.nonstop_required, // Use required setting directly
     max: 10,  // Limit number of results for performance
   });
 
@@ -170,10 +186,10 @@ const fetchAmadeusOffers = async (
         budget: maxPrice,
         currency: 'USD', // Fixed to USD to ensure consistency
         originLocationCode: originCode,
-        destinationLocationCode: tripRequest.destination_location_code,
-        departureDate: tripRequest.departure_date,
-        returnDate: tripRequest.return_date,
-        nonstopRequired: tripRequest.nonstop_required
+        destinationLocationCode: request.destination_location_code,
+        departureDate: request.departure_date,
+        returnDate: request.return_date,
+        nonstopRequired: request.nonstop_required
       });
       
       // Normalize Amadeus offers to our standard format
@@ -185,8 +201,8 @@ const fetchAmadeusOffers = async (
       // Create the appropriate filtering pipeline based on search parameters
       const pipelineType = FilterFactory.recommendPipelineType({
         budget: maxPrice,
-        nonstopRequired: tripRequest.nonstop_required,
-        returnDate: tripRequest.return_date
+        nonstopRequired: request.nonstop_required,
+        returnDate: request.return_date
       });
       
       console.log('[DEBUG] Using', pipelineType, 'filtering pipeline');
@@ -230,15 +246,17 @@ const fetchAmadeusOffers = async (
 };
 
 // Mock data generator for testing when Amadeus API is unavailable
-const generateMockOffers = (tripRequest: any, maxPrice?: number): AmadeusFlightOffer[] => {
+const generateMockOffers = (tripRequest: unknown, maxPrice?: number): AmadeusFlightOffer[] => {
   console.log('[DEBUG] Generating mock flight offers for testing');
-  console.log('[DEBUG] Trip request has return_date:', tripRequest.return_date);
   
-  const isRoundTrip = !!tripRequest.return_date;
-  const origin = tripRequest.origin_location_code || (tripRequest.departure_airports && tripRequest.departure_airports[0]) || 'JFK';
-  const destination = tripRequest.destination_location_code || 'LAX';
-  const departureDate = tripRequest.departure_date || '2024-12-15';
-  const returnDate = tripRequest.return_date || '2024-12-18';
+  const request = tripRequest as Record<string, unknown>;
+  console.log('[DEBUG] Trip request has return_date:', request.return_date);
+  
+  const isRoundTrip = !!request.return_date;
+  const origin = request.origin_location_code || (request.departure_airports && Array.isArray(request.departure_airports) && request.departure_airports[0]) || 'JFK';
+  const destination = request.destination_location_code || 'LAX';
+  const departureDate = request.departure_date || '2024-12-15';
+  const returnDate = request.return_date || '2024-12-18';
   
   // Helper function to create return itinerary
   const createReturnItinerary = (carrierCode: string, flightNumber: string, segmentId: string) => ({
@@ -599,7 +617,7 @@ const mapAmadeusToDbSchema = (offer: AmadeusFlightOffer, tripRequestId: string):
     return_dt: returnDt,
     booking_url: bookingUrl, // Include the booking URL
     external_offer_id: offer.id,
-    raw_offer_payload: offer as Record<string, any>, // Store the whole Amadeus offer
+    raw_offer_payload: offer as Record<string, unknown>, // Store the whole Amadeus offer
   };
 };
 

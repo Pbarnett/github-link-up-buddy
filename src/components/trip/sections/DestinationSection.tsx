@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { POPULAR_DESTINATIONS } from "@/data/airports";
 
 interface DestinationSectionProps {
-  control: Control<any>;
-  watch: UseFormWatch<any>;
+  control: Control<Record<string, unknown>>;
+  watch: UseFormWatch<Record<string, unknown>>;
 }
 
 const DestinationSection = ({ control, watch }: DestinationSectionProps) => {
@@ -33,7 +33,7 @@ const DestinationSection = ({ control, watch }: DestinationSectionProps) => {
             <FormDescription className="text-xs text-gray-500">Select a popular destination.</FormDescription>
             <Select 
               onValueChange={field.onChange} 
-              value={field.value || undefined}
+              value={(field.value as string) || undefined}
             >
               <FormControl>
                 <SelectTrigger>
@@ -66,7 +66,8 @@ const DestinationSection = ({ control, watch }: DestinationSectionProps) => {
             <FormControl>
               <Input 
                 placeholder="Enter destination airport code" 
-                {...field} 
+                {...field}
+                value={(field.value as string) || ""}
                 disabled={!!selectedDestination}
                 className={selectedDestination ? "bg-gray-50 text-gray-400" : ""}
               />

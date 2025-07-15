@@ -1,5 +1,6 @@
 import { profileCompletenessService } from '@/services/profileCompletenessService';
 import { TravelerProfile } from '@/hooks/useTravelerProfile';
+import { describe, it, expect } from 'vitest';
 
 describe('ProfileCompletenessService', () => {
   const createBasicProfile = (overrides: Partial<TravelerProfile> = {}): TravelerProfile => ({
@@ -20,7 +21,7 @@ describe('ProfileCompletenessService', () => {
       const emptyProfile = createBasicProfile({
         full_name: '',
         date_of_birth: '',
-        gender: undefined as any,
+        gender: undefined as unknown as TravelerProfile['gender'],
         email: '',
       });
 

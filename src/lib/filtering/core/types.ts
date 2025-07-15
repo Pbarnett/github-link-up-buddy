@@ -31,7 +31,7 @@ export interface FlightOffer {
   bookingUrl?: string;
   
   // Raw data preservation
-  rawData?: Record<string, any>;
+  rawData?: Record<string, unknown>;
 }
 
 // Flight itinerary structure
@@ -131,8 +131,8 @@ export interface FilterConfig {
 // Performance logging interface
 export interface PerformanceLogger {
   log(filterName: string, beforeCount: number, afterCount: number, durationMs: number): void;
-  logError(filterName: string, error: Error, context?: Record<string, any>): void;
-  logWarning(filterName: string, message: string, context?: Record<string, any>): void;
+  logError(filterName: string, error: Error, context?: Record<string, unknown>): void;
+  logWarning(filterName: string, message: string, context?: Record<string, unknown>): void;
 }
 
 // Base filter interface that all filters must implement
@@ -195,7 +195,7 @@ export interface FilterExecutionResult {
 export interface FilterError {
   filterName: string;
   error: Error;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   timestamp: Date;
 }
 
@@ -203,7 +203,7 @@ export interface FilterError {
 export interface FilterWarning {
   filterName: string;
   message: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   timestamp: Date;
 }
 
@@ -223,7 +223,7 @@ export interface SearchParams {
 }
 
 // Provider adapter interface for normalizing different API responses
-export interface ProviderAdapter<TRawOffer = any> {
+export interface ProviderAdapter<TRawOffer = unknown> {
   readonly providerName: 'Amadeus' | 'Duffel';
   
   // Convert raw provider data to normalized FlightOffer

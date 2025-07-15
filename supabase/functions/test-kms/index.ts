@@ -46,7 +46,7 @@ serve(async (req) => {
     const testResults = {
       configValid,
       basicTestPassed,
-      tests: {} as any
+      tests: {} as Record<string, { success: boolean; original?: unknown; encrypted?: string; decrypted?: unknown; error?: string }>
     };
     
     // Test general encryption
@@ -113,7 +113,7 @@ serve(async (req) => {
         encrypted: Object.keys(encryptedProfile).reduce((acc, key) => {
           acc[key] = encryptedProfile[key].substring(0, 30) + "...";
           return acc;
-        }, {} as any),
+        }, {} as Record<string, string>),
         decrypted: decryptedProfile
       };
     } catch (error) {
@@ -121,7 +121,7 @@ serve(async (req) => {
     }
     
     // Overall success check
-    const allTestsPassed = Object.values(testResults.tests).every((test: any) => test.success);
+    const allTestsPassed = Object.values(testResults.tests).every((test) => test.success);
     
     return new Response(
       JSON.stringify({

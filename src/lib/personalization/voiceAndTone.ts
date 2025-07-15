@@ -146,7 +146,7 @@ export function getGreeting(
   personalizationData?: { firstName?: string; nextTripCity?: string } | null,
   variant?: string
 ): string {
-  const contextGreetings = GREETING_LIBRARY[context];
+  const contextGreetings = GREETING_LIBRARY[context as keyof typeof GREETING_LIBRARY];
   if (!contextGreetings) {
     return 'Welcome back!'; // Fallback for unknown contexts
   }
@@ -155,10 +155,10 @@ export function getGreeting(
 
   // Determine which greeting array to use
   let greetingArray: string[];
-  if (firstName && nextTripCity && contextGreetings.withFirstNameAndTrip) {
-    greetingArray = contextGreetings.withFirstNameAndTrip;
-  } else if (firstName && contextGreetings.withFirstName) {
-    greetingArray = contextGreetings.withFirstName;
+  if (firstName && nextTripCity && 'withFirstNameAndTrip' in contextGreetings) {
+    greetingArray = (contextGreetings as any).withFirstNameAndTrip;
+  } else if (firstName && 'withFirstName' in contextGreetings) {
+    greetingArray = (contextGreetings as any).withFirstName;
   } else {
     greetingArray = contextGreetings.generic;
   }

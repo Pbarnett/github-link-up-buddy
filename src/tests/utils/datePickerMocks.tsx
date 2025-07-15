@@ -1,9 +1,8 @@
 // Test utilities for mocking react-day-picker components
 import React from 'react';
-import { vi } from 'vitest';
 
 // Mock Calendar component that allows easy date setting
-export const MockCalendar = ({ selected, onSelect, ...props }: any) => {
+export const MockCalendar = ({ onSelect }: { selected?: Date; onSelect?: (date: Date) => void; [key: string]: unknown }) => {
   const handleDateClick = (date: Date) => {
     if (onSelect) {
       onSelect(date);
@@ -40,7 +39,7 @@ export const MockCalendar = ({ selected, onSelect, ...props }: any) => {
 };
 
 // Mock DateRangeField that uses simple inputs instead of complex UI
-export const MockDateRangeField = ({ control }: { control: any }) => {
+export const MockDateRangeField = ({ control }: { control: { _formValues: Record<string, unknown> } }) => {
   return (
     <div data-testid="mock-date-range-field">
       <label htmlFor="earliestDeparture">Earliest Departure</label>
@@ -73,7 +72,7 @@ export const MockDateRangeField = ({ control }: { control: any }) => {
 };
 
 // Helper function to set form dates programmatically
-export const setFormDates = (form: any, earliestDate: Date, latestDate: Date) => {
+export const setFormDates = (form: { setValue: (key: string, value: Date) => void }, earliestDate: Date, latestDate: Date) => {
   form.setValue('earliestDeparture', earliestDate);
   form.setValue('latestDeparture', latestDate);
 };

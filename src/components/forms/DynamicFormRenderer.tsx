@@ -5,7 +5,7 @@
  * Integrates with React Hook Form and Zod for validation
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,10 +16,7 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import type {
-  FormConfiguration,
   DynamicFormRendererProps,
-  FormSection as FormSectionType,
-  FieldConfiguration,
   FormSubmissionData
 } from '@/types/dynamic-forms';
 
@@ -65,7 +62,7 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
     defaultValues: useMemo(() => {
       if (!configuration) return {};
       
-      const defaults: Record<string, any> = {};
+      const defaults: Record<string, unknown> = {};
       
       configuration.sections.forEach(section => {
         section.fields.forEach(field => {
@@ -84,16 +81,14 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
   const {
     formState,
     setValue,
-    setError,
     clearError,
     validateForm,
-    resetForm,
     isFieldVisible,
     isFieldEnabled
   } = useFormState(configuration, form);
 
   // Handle field changes
-  const handleFieldChange = (fieldId: string, value: any) => {
+  const handleFieldChange = (fieldId: string, value: unknown) => {
     setValue(fieldId, value);
     onFieldChange?.(fieldId, value);
     
@@ -110,7 +105,12 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
         const errors = form.formState.errors;
         onValidationError?.(
           Object.fromEntries(
-            Object.entries(errors).map(([key, error]) => [key, error?.message || 'Invalid value'])
+            Object.entries(errors).map(([key, error]) => {
+              const errorMessage = error && typeof error === 'object' && 'message' in error 
+                ? (error as { message?: string }).message 
+                : 'Invalid value';
+              return [key, errorMessage || 'Invalid value'];
+            })
           )
         );
         return;
@@ -119,7 +119,7 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
       // Create FormSubmissionData if onSubmit expects it
       if (onSubmit) {
         if (configuration) {
-          const submissionData = {
+          const submissionData: FormSubmissionData = {
             formId: configuration.id,
             formName: configuration.name,
             data,
@@ -132,7 +132,7 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
           };
           await onSubmit(submissionData);
         } else {
-          await onSubmit(data as any);
+          await onSubmit(data as unknown as FormSubmissionData);
         }
       }
     } catch (error) {
@@ -197,11 +197,16 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
                 <AlertDescription>
                   <div className="font-medium mb-2">Please fix the following errors:</div>
                   <ul className="list-disc list-inside space-y-1">
-                    {Object.entries(form.formState.errors).map(([field, error]) => (
-                      <li key={field} className="text-sm">
-                        {error?.message || `Invalid value for ${field}`}
-                      </li>
-                    ))}
+                    {Object.entries(form.formState.errors).map(([field, error]) => {
+                      const errorMessage = error && typeof error === 'object' && 'message' in error 
+                        ? (error as { message?: string }).message 
+                        : `Invalid value for ${field}`;
+                      return (
+                        <li key={field} className="text-sm">
+                          {errorMessage || `Invalid value for ${field}`}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </AlertDescription>
               </Alert>

@@ -29,7 +29,7 @@ export interface PaymentIntentParams {
 
 export interface PaymentMethodParams {
   type: 'card';
-  card: any; // Stripe card element
+  card: unknown; // Stripe card element
   billing_details?: {
     name?: string;
     email?: string;
@@ -111,7 +111,7 @@ export class StripeService {
     clientSecret: string;
     paymentMethod: PaymentMethodParams;
     offerId: string;
-    passengers: any[];
+    passengers: Record<string, unknown>[];
     returnUrl?: string;
   }) {
     if (!this.stripe) {
@@ -132,7 +132,7 @@ export class StripeService {
 
       // Step 2: Confirm payment with Stripe
       const confirmResult = await this.stripe.confirmCardPayment(clientSecret, {
-        payment_method: paymentMethod,
+        payment_method: paymentMethod as any,
         return_url: returnUrl
       });
 
@@ -164,7 +164,7 @@ export class StripeService {
   }: {
     offerId: string;
     paymentMethod: PaymentMethodParams;
-    passengers: any[];
+    passengers: Record<string, unknown>[];
   }): Promise<DuffelPaymentSession> {
     try {
       // Create temporary card with Duffel
@@ -242,7 +242,7 @@ export class StripeService {
       return { event, valid: true };
     } catch (error) {
       console.error('Webhook signature verification failed:', error);
-      return { event: null, valid: false, error: error.message };
+      return { event: null, valid: false, error: error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' ? error.message : 'Unknown error' };
     }
   }
 

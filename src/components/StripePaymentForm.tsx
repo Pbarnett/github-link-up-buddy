@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { loadStripe, Stripe, StripeElements } from '@stripe/stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
   CardElement,
@@ -21,18 +21,21 @@ interface PaymentFormProps {
   amount: number;
   currency: string;
   offerId: string;
-  passengers: any[];
-  onSuccess: (paymentResult: any) => void;
+  passengers: Array<{
+    given_name?: string;
+    family_name?: string;
+    email?: string;
+    [key: string]: unknown;
+  }>;
+  onSuccess: (paymentResult: {
+    booking: unknown;
+    payment: unknown;
+  }) => void;
   onError: (error: string) => void;
   onProcessing: (processing: boolean) => void;
 }
 
-interface DuffelPaymentDetails {
-  type: 'card';
-  three_d_secure_session_id?: string;
-  currency: string;
-  amount: string;
-}
+// Note: DuffelPaymentDetails interface removed as it's not used
 
 const PaymentForm: React.FC<PaymentFormProps> = ({
   amount,
@@ -69,7 +72,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         }
 
         setClientSecret(data.client_secret);
-      } catch (err) {
+      } catch {
         onError('Failed to initialize payment');
       }
     };
@@ -159,7 +162,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     }
   };
 
-  const create3DSecureSession = async (offerId: string, cardElement: any) => {
+  const create3DSecureSession = async (offerId: string, cardElement: unknown) => {
     try {
       // Create temporary card with Duffel
       const { data: cardData, error: cardError } = await supabase.functions.invoke('duffel-create-card', {
@@ -191,7 +194,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         sessionId: sessionData.session_id
       };
 
-    } catch (err) {
+    } catch {
       return {
         success: false,
         error: 'Payment verification failed'
@@ -199,7 +202,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     }
   };
 
-  const processDuffelBooking = async (bookingData: any) => {
+  const processDuffelBooking = async (bookingData: Record<string, unknown>) => {
     try {
       const { data, error } = await supabase.functions.invoke('duffel-book', {
         body: bookingData
@@ -210,7 +213,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       }
 
       return { success: true, booking: data };
-    } catch (err) {
+    } catch {
       return { success: false, error: 'Booking processing failed' };
     }
   };

@@ -13,8 +13,8 @@
 import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 
 interface SmokeTestResult {
-  configEndpoint: { status: number; jsonValid: boolean; data?: any };
-  flagEndpoint: { status: number; jsonValid: boolean; data?: any };
+  configEndpoint: { status: number; jsonValid: boolean; data?: unknown };
+  flagEndpoint: { status: number; jsonValid: boolean; data?: unknown };
   passed: boolean;
   timestamp: string;
 }
@@ -62,9 +62,9 @@ async function validateAWSCredentials(): Promise<void> {
     console.log(`   Region: ${process.env.AWS_REGION}`);
     console.log(`   Identity: ${identity.Arn?.split('/').pop() || 'Unknown'}`);
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ AWS credential validation failed:');
-    console.error(`   ${error.message || error}`);
+    console.error(`   ${error instanceof Error ? error.message : String(error)}`);
     console.error('');
     console.error('💡 Please configure AWS credentials:');
     console.error('   - Set environment variables: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY');
@@ -77,7 +77,7 @@ async function validateAWSCredentials(): Promise<void> {
 /**
  * Make HTTP request with timeout and proper error handling
  */
-async function makeRequest(url: string, options: RequestInit = {}): Promise<{ status: number; data: any; jsonValid: boolean }> {
+async function makeRequest(url: string, options: RequestInit = {}): Promise<{ status: number; data: unknown; jsonValid: boolean }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), config.timeout);
   
@@ -89,14 +89,14 @@ async function makeRequest(url: string, options: RequestInit = {}): Promise<{ st
     
     clearTimeout(timeoutId);
     
-    let data: any;
+    let data: unknown;
     let jsonValid = false;
     
     try {
       const text = await response.text();
       data = JSON.parse(text);
       jsonValid = true;
-    } catch (parseError) {
+    } catch {
       data = { error: 'Invalid JSON response', rawResponse: data };
       jsonValid = false;
     }
@@ -107,10 +107,10 @@ async function makeRequest(url: string, options: RequestInit = {}): Promise<{ st
       jsonValid
     };
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     clearTimeout(timeoutId);
     
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       throw new Error(`Request timeout after ${config.timeout}ms`);
     }
     throw error;
@@ -120,7 +120,7 @@ async function makeRequest(url: string, options: RequestInit = {}): Promise<{ st
 /**
  * Test the business rules config endpoint
  */
-async function testConfigEndpoint(): Promise<{ status: number; jsonValid: boolean; data?: any }> {
+async function testConfigEndpoint(): Promise<{ status: number; jsonValid: boolean; data?: unknown }> {
   console.log('🔍 Testing Business Rules Config endpoint...');
   
   try {
@@ -128,24 +128,25 @@ async function testConfigEndpoint(): Promise<{ status: number; jsonValid: boolea
     
     if (result.status === 200 && result.jsonValid) {
       console.log(`✅ Config endpoint: HTTP ${result.status}, JSON valid`);
-      console.log(`   Version: ${result.data?.version || 'unknown'}`);
-      console.log(`   Environment: ${result.data?.environment || 'unknown'}`);
+      const dataObj = result.data as Record<string, unknown>;
+      console.log(`   Version: ${dataObj?.version || 'unknown'}`);
+      console.log(`   Environment: ${dataObj?.environment || 'unknown'}`);
     } else {
       console.log(`❌ Config endpoint: HTTP ${result.status}, JSON valid = ${result.jsonValid}`);
     }
     
     return result;
     
-  } catch (error: any) {
-    console.log(`❌ Config endpoint failed: ${error.message}`);
-    return { status: 0, jsonValid: false, data: { error: error.message } };
+  } catch (error: unknown) {
+    console.log(`❌ Config endpoint failed: ${error instanceof Error ? error.message : String(error)}`);
+    return { status: 0, jsonValid: false, data: { error: error instanceof Error ? error.message : String(error) } };
   }
 }
 
 /**
  * Test the feature flags endpoint
  */
-async function testFeatureFlagEndpoint(): Promise<{ status: number; jsonValid: boolean; data?: any }> {
+async function testFeatureFlagEndpoint(): Promise<{ status: number; jsonValid: boolean; data?: unknown }> {
   console.log('🔍 Testing Feature Flag endpoint...');
   
   try {
@@ -161,17 +162,18 @@ async function testFeatureFlagEndpoint(): Promise<{ status: number; jsonValid: b
     
     if (result.status === 200 && result.jsonValid) {
       console.log(`✅ Feature flag endpoint: HTTP ${result.status}, JSON valid`);
-      console.log(`   Enabled: ${result.data?.enabled !== undefined ? result.data.enabled : 'unknown'}`);
-      console.log(`   User in rollout: ${result.data?.userInRollout !== undefined ? result.data.userInRollout : 'unknown'}`);
+      const dataObj = result.data as Record<string, unknown>;
+      console.log(`   Enabled: ${dataObj?.enabled !== undefined ? dataObj.enabled : 'unknown'}`);
+      console.log(`   User in rollout: ${dataObj?.userInRollout !== undefined ? dataObj.userInRollout : 'unknown'}`);
     } else {
       console.log(`❌ Feature flag endpoint: HTTP ${result.status}, JSON valid = ${result.jsonValid}`);
     }
     
     return result;
     
-  } catch (error: any) {
-    console.log(`❌ Feature flag endpoint failed: ${error.message}`);
-    return { status: 0, jsonValid: false, data: { error: error.message } };
+  } catch (error: unknown) {
+    console.log(`❌ Feature flag endpoint failed: ${error instanceof Error ? error.message : String(error)}`);
+    return { status: 0, jsonValid: false, data: { error: error instanceof Error ? error.message : String(error) } };
   }
 }
 
@@ -234,8 +236,8 @@ async function runSmokeTests(): Promise<SmokeTestResult> {
       timestamp: new Date().toISOString()
     };
     
-  } catch (error: any) {
-    console.error('❌ Smoke test failed with error:', error.message);
+  } catch (error: unknown) {
+    console.error('❌ Smoke test failed with error:', error instanceof Error ? error.message : String(error));
     throw error;
   }
 }
@@ -263,7 +265,7 @@ async function main(): Promise<void> {
   try {
     const result = await runSmokeTests();
     process.exit(result.passed ? 0 : 1);
-  } catch (error) {
+  } catch {
     process.exit(1);
   }
 }

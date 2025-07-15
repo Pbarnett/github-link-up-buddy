@@ -6,8 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
-import { DollarSign, Plane, Clock, X, RefreshCw, Filter } from 'lucide-react';
+import { DollarSign, Plane, X, RefreshCw, Filter } from 'lucide-react';
 import AirlineSelector from './AirlineSelector';
 
 /**
@@ -78,7 +77,7 @@ const AdvancedFilterControls: React.FC<AdvancedFilterControlsProps> = ({
     [onFiltersChange]
   );
 
-  const updateFilter = useCallback((key: keyof FilterOptions, value: any) => {
+  const updateFilter = useCallback((key: keyof FilterOptions, value: unknown) => {
     const newOptions = { ...localOptions, [key]: value };
     setLocalOptions(newOptions);
     debouncedUpdate(newOptions);
@@ -394,12 +393,12 @@ const AdvancedFilterControls: React.FC<AdvancedFilterControlsProps> = ({
 function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
-): T {
+): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout | null = null;
-  return ((...args: Parameters<T>) => {
+  return (...args: Parameters<T>) => {
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
-  }) as T;
+  };
 }
 
 export default AdvancedFilterControls;

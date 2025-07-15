@@ -49,21 +49,27 @@ interface FieldRendererInternalProps extends Omit<FieldRendererProps, 'onChange'
   sectionIndex: number;
   touched?: boolean;
   isValid?: boolean;
-  onChange: (value: any) => void;
+  onChange: (value: unknown) => void;
 }
 
 export const FieldRenderer: React.FC<FieldRendererInternalProps> = ({
   field,
-  fieldIndex,
-  sectionIndex,
+  fieldIndex: _fieldIndex,
+  sectionIndex: _sectionIndex,
   value,
   error,
-  touched,
+  touched: _touched,
   onChange,
   disabled = false,
-  isValid = true,
+  isValid: _isValid = true,
   className
 }) => {
+  // Mark unused parameters as intentionally unused
+  void _fieldIndex;
+  void _sectionIndex;
+  void _touched;
+  void _isValid;
+  
   const form = useFormContext();
 
   // Handle special field types that don't need FormField wrapper
@@ -133,9 +139,14 @@ export const FieldRenderer: React.FC<FieldRendererInternalProps> = ({
  */
 interface FieldInputProps {
   field: FieldConfiguration;
-  formField: any;
-  value: any;
-  onChange: (value: any) => void;
+  formField: {
+    onChange: (value: unknown) => void;
+    value: unknown;
+    name: string;
+    onBlur: () => void;
+  };
+  value: unknown;
+  onChange: (value: unknown) => void;
   disabled: boolean;
   error?: string;
 }
@@ -148,7 +159,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
   disabled,
   error
 }) => {
-  const handleChange = (newValue: any) => {
+  const handleChange = (newValue: unknown) => {
     formField.onChange(newValue);
     onChange(newValue);
   };
@@ -160,7 +171,9 @@ const FieldInput: React.FC<FieldInputProps> = ({
     case 'number':
       return (
         <Input
-          {...formField}
+          name={formField.name}
+          onBlur={formField.onBlur}
+          value={typeof value === 'string' || typeof value === 'number' ? value : ''}
           type={field.type === 'number' ? 'number' : field.type}
           placeholder={field.placeholder}
           disabled={disabled}
@@ -174,7 +187,9 @@ const FieldInput: React.FC<FieldInputProps> = ({
     case 'textarea':
       return (
         <Textarea
-          {...formField}
+          name={formField.name}
+          onBlur={formField.onBlur}
+          value={typeof value === 'string' ? value : ''}
           placeholder={field.placeholder}
           disabled={disabled}
           onChange={(e) => handleChange(e.target.value)}
@@ -187,7 +202,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
       return (
         <Select
           onValueChange={handleChange}
-          value={value}
+          value={typeof value === 'string' ? value : ''}
           disabled={disabled}
         >
           <SelectTrigger className={cn(error && "border-destructive")}>
@@ -211,8 +226,9 @@ const FieldInput: React.FC<FieldInputProps> = ({
       return (
         <div className="flex items-center space-x-2">
           <Checkbox
-            {...formField}
-            checked={value}
+            name={formField.name}
+            onBlur={formField.onBlur}
+            checked={typeof value === 'boolean' ? value : false}
             onCheckedChange={handleChange}
             disabled={disabled}
             className={cn(error && "border-destructive")}
@@ -229,7 +245,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
       return (
         <div className="flex items-center space-x-2">
           <Switch
-            checked={value}
+            checked={typeof value === 'boolean' ? value : false}
             onCheckedChange={handleChange}
             disabled={disabled}
           />
@@ -245,7 +261,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
       return (
         <div className="space-y-2">
           <Slider
-            value={[value || field.validation?.min || 0]}
+            value={[typeof value === 'number' ? value : (field.validation?.min || 0)]}
             onValueChange={(values) => handleChange(values[0])}
             max={field.validation?.max || 100}
             min={field.validation?.min || 0}
@@ -254,7 +270,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
             className={cn(error && "border-destructive")}
           />
           <div className="text-sm text-muted-foreground text-center">
-            {value || field.validation?.min || 0}
+            {typeof value === 'number' ? value : (field.validation?.min || 0)}
           </div>
         </div>
       );
@@ -262,7 +278,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
     case 'phone':
       return (
         <PhoneInputField
-          value={value}
+          value={typeof value === 'string' ? value : ''}
           onChange={handleChange}
           placeholder={field.placeholder}
           disabled={disabled}
@@ -273,7 +289,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
     case 'date':
       return (
         <DateField
-          value={value}
+          value={typeof value === 'string' ? value : ''}
           onChange={handleChange}
           placeholder={field.placeholder}
           disabled={disabled}
@@ -285,7 +301,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
     case 'date-range-flexible':
       return (
         <DateRangeField
-          value={value}
+          value={value as { from?: string; to?: string; flexible?: boolean }}
           onChange={handleChange}
           placeholder={field.placeholder}
           disabled={disabled}
@@ -297,7 +313,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
     case 'airport-autocomplete':
       return (
         <AirportAutocompleteField
-          value={value}
+          value={value as { code: string; name: string; city?: string; country?: string }}
           onChange={handleChange}
           placeholder={field.placeholder}
           disabled={disabled}
@@ -309,7 +325,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
     case 'country-select':
       return (
         <CountrySelectField
-          value={value}
+          value={typeof value === 'string' ? value : ''}
           onChange={handleChange}
           placeholder={field.placeholder}
           disabled={disabled}
@@ -320,7 +336,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
     case 'address-group':
       return (
         <AddressGroupField
-          value={value}
+          value={value as { street: string; city: string; state: string; zipCode: string; country: string }}
           onChange={handleChange}
           disabled={disabled}
           error={error}
@@ -383,7 +399,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
               variant="ghost"
               size="sm"
               className={`h-8 w-8 p-0 ${
-                value >= star
+                typeof value === 'number' && value >= star
                   ? 'text-yellow-500 hover:text-yellow-600'
                   : 'text-gray-300 hover:text-gray-400'
               }`}
@@ -393,7 +409,7 @@ const FieldInput: React.FC<FieldInputProps> = ({
               ⭐
             </Button>
           ))}
-          {value && (
+          {typeof value === 'number' && value > 0 && (
             <span className="ml-2 text-sm text-muted-foreground">
               {value} of 5 stars
             </span>
@@ -406,7 +422,9 @@ const FieldInput: React.FC<FieldInputProps> = ({
       console.warn(`Unknown field type: ${field.type}. Falling back to text input.`);
       return (
         <Input
-          {...formField}
+          name={formField.name}
+          onBlur={formField.onBlur}
+          value={typeof value === 'string' ? value : ''}
           placeholder={field.placeholder}
           disabled={disabled}
           onChange={(e) => handleChange(e.target.value)}

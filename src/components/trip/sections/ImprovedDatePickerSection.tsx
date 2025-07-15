@@ -1,11 +1,10 @@
 import React from 'react';
-import { Control, useWatch } from 'react-hook-form';
+import { Control } from 'react-hook-form';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { DateRange } from 'react-day-picker';
 import {
   Popover,
   PopoverContent,
@@ -13,7 +12,6 @@ import {
 } from '@/components/ui/popover';
 import {
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -21,13 +19,20 @@ import {
 } from '@/components/ui/form';
 import NightsRangeSection from './NightsRangeSection';
 
+// Date picker form data interface
+interface DatePickerFormData {
+  earliestDeparture?: Date;
+  latestDeparture?: Date;
+  min_duration?: number;
+  max_duration?: number;
+  [key: string]: unknown;
+}
+
 interface ImprovedDatePickerSectionProps {
-  control: Control<any>;
+  control: Control<DatePickerFormData>;
 }
 
 const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) => {
-  const watchedFields = useWatch({ control });
-
   return (
     <div className="space-y-6">
       {/* Travel Window */}

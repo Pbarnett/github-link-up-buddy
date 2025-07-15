@@ -32,7 +32,7 @@ export const getTestDates = () => {
  */
 
 // Helper to set dates using form setValue instead of UI interaction
-export const setFormDatesDirectly = async (getFormRef: () => any, earliestDate: Date, latestDate: Date) => {
+export const setFormDatesDirectly = async (getFormRef: () => { setValue: (field: string, value: unknown) => void; trigger: (fields: string[]) => Promise<boolean> } | null, earliestDate: Date, latestDate: Date) => {
   const form = getFormRef();
   if (form) {
     form.setValue('earliestDeparture', earliestDate);
@@ -215,11 +215,11 @@ export const getFormErrors = () => {
 
 // NEW: Programmatic date setting using calendar mocks
 export const setDatesWithMockedCalendar = async () => {
-  const { tomorrow, nextWeek } = getTestDates();
+  // const { tomorrow, nextWeek } = getTestDates();
   
   try {
-    // Open earliest date picker
-    const earliestButton = screen.getByText('Earliest');
+    // Open earliest date picker - looking for the actual button text
+    const earliestButton = screen.getByText('Pick departure date');
     await userEvent.click(earliestButton);
     
     // Wait for mocked calendar to appear
@@ -231,8 +231,8 @@ export const setDatesWithMockedCalendar = async () => {
     const tomorrowButton = screen.getByTestId('calendar-day-tomorrow');
     await userEvent.click(tomorrowButton);
     
-    // Open latest date picker
-    const latestButton = screen.getByText('Latest');
+    // Open latest date picker - looking for the actual button text
+    const latestButton = screen.getByText('Latest acceptable date');
     await userEvent.click(latestButton);
     
     // Wait for calendar again
@@ -265,7 +265,7 @@ export const selectDestinationRobust = async (destination: string) => {
     const option = screen.getByRole('option', { name: new RegExp(destination, 'i') });
     await userEvent.click(option);
     return;
-  } catch (error) {
+  } catch {
     console.warn('Combobox destination selection failed, trying custom input');
   }
   
@@ -275,7 +275,7 @@ export const selectDestinationRobust = async (destination: string) => {
     await userEvent.clear(customInput);
     await userEvent.type(customInput, destination);
     return;
-  } catch (error) {
+  } catch {
     console.warn('Custom destination input failed, using direct value setting');
   }
   
@@ -292,36 +292,36 @@ export const setDatesRobust = async () => {
   try {
     await setDatesWithMockedCalendar();
     return;
-  } catch (error) {
+  } catch {
     console.warn('Mocked calendar failed, trying direct input approach');
   }
   
   // Strategy 2: Find and set hidden inputs (most reliable)
   try {
-    // Look for date inputs by various selectors
+    // Look for date inputs by various selectors that match the actual form
     const earliestInputs = [
       screen.queryByTestId('earliest-departure-input'),
-      screen.queryByLabelText(/earliest/i),
-      screen.queryByPlaceholderText(/earliest/i)
+      screen.queryByLabelText(/departure date/i),
+      screen.queryByPlaceholderText(/departure/i)
     ].filter(Boolean);
     
     const latestInputs = [
       screen.queryByTestId('latest-departure-input'),
-      screen.queryByLabelText(/latest/i),
+      screen.queryByLabelText(/latest departure/i),
       screen.queryByPlaceholderText(/latest/i)
     ].filter(Boolean);
     
     if (earliestInputs.length > 0 && latestInputs.length > 0) {
-      fireEvent.change(earliestInputs[0], { 
+      fireEvent.change(earliestInputs[0]!, { 
         target: { value: tomorrow.toISOString().split('T')[0] } 
       });
-      fireEvent.change(latestInputs[0], { 
+      fireEvent.change(latestInputs[0]!, { 
         target: { value: nextWeek.toISOString().split('T')[0] } 
       });
       
       // Trigger form validation
-      fireEvent.blur(earliestInputs[0]);
-      fireEvent.blur(latestInputs[0]);
+      if (earliestInputs[0]) fireEvent.blur(earliestInputs[0]);
+      if (latestInputs[0]) fireEvent.blur(latestInputs[0]);
       return;
     }
   } catch (error) {

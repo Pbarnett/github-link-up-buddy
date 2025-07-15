@@ -5,7 +5,7 @@ import {
   transformLegacyOffers,
   type GetFlightOffersDeps 
 } from '@/serverActions/getFlightOffers';
-import { createMockSupabaseClient, createEdgeFetchMock } from '@/tests/__helpers';
+import { createMockSupabaseClient } from '@/tests/__helpers';
 
 describe('getFlightOffers (Refactored)', () => {
   let mockSupabaseClient: ReturnType<typeof createMockSupabaseClient>;
@@ -38,6 +38,11 @@ describe('getFlightOffers (Refactored)', () => {
         selected_seat_type: 'Economy',
         created_at: '2024-01-01T00:00:00Z',
         booking_url: 'https://example.com/book',
+        airline: 'Test Airline',
+        auto_book: false,
+        carrier_code: 'TA',
+        booking_error: null,
+        validation_id: 'test-123'
       };
 
       const result = transformLegacyToV2(legacyOffer as any);
@@ -65,11 +70,11 @@ describe('getFlightOffers (Refactored)', () => {
 
     it('transformLegacyOffers should transform an array of legacy offers', () => {
       const legacyOffers = [
-        { id: 'legacy-1', trip_request_id: 'trip-123', price: 500 },
-        { id: 'legacy-2', trip_request_id: 'trip-123', price: 600 },
+        { id: 'legacy-1', trip_request_id: 'trip-123', price: 500, departure_date: '2024-01-15', departure_time: '10:00', airline: 'Test', auto_book: false, baggage_included: true, booking_url: null, carrier_code: null, created_at: '2024-01-01T00:00:00Z', destination_airport: 'LAX', origin_airport: 'JFK', return_date: '2024-01-20', return_time: '18:00', selected_seat_type: 'Economy', stops: 0, booking_error: null, validation_id: 'test-1' },
+        { id: 'legacy-2', trip_request_id: 'trip-123', price: 600, departure_date: '2024-01-15', departure_time: '10:00', airline: 'Test', auto_book: false, baggage_included: true, booking_url: null, carrier_code: null, created_at: '2024-01-01T00:00:00Z', destination_airport: 'LAX', origin_airport: 'JFK', return_date: '2024-01-20', return_time: '18:00', selected_seat_type: 'Economy', stops: 0, booking_error: null, validation_id: 'test-2' },
       ];
 
-      const result = transformLegacyOffers(legacyOffers as any);
+      const result = transformLegacyOffers(legacyOffers as any[]);
 
       expect(result).toHaveLength(2);
       expect(result[0].id).toBe('legacy-1');

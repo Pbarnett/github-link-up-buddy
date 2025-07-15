@@ -129,7 +129,7 @@ serve(async (req: Request) => {
         console.log("Customer ID update took:", Date.now() - updateCustomerStart, "ms");
 
         console.log(`Updated payment method with stripe_customer_id: ${stripeCustomerId}`);
-      } catch (stripeError: any) {
+      } catch (stripeError: unknown) {
         console.error("Error retrieving payment method from Stripe:", stripeError);
         return new Response(
           JSON.stringify({ error: "Failed to retrieve payment method from Stripe" }),
@@ -154,10 +154,10 @@ serve(async (req: Request) => {
       console.log("Stripe customer update took:", Date.now() - stripeUpdateStart, "ms");
 
       console.log("Successfully updated default payment method in Stripe");
-    } catch (stripeError: any) {
+    } catch (stripeError: unknown) {
       console.error("Error updating default payment method in Stripe:", stripeError);
       return new Response(
-        JSON.stringify({ error: `Failed to update default payment method in Stripe: ${stripeError.message}` }),
+        JSON.stringify({ error: `Failed to update default payment method in Stripe: ${stripeError instanceof Error ? stripeError.message : 'Unknown error'}` }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

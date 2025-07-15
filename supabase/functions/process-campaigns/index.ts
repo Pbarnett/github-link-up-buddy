@@ -133,7 +133,33 @@ serve(async (req) => {
   }
 });
 
-async function processCampaign(campaign: any) {
+async function processCampaign(campaign: {
+  id: string;
+  origin: string;
+  destination: string;
+  max_price: number;
+  currency: string;
+  max_bookings: number;
+  departure_date_start?: string;
+  return_date_start?: string;
+  cabin_class?: string;
+  user_id: string;
+  traveler_profiles: {
+    full_name: string;
+    date_of_birth: string;
+    gender: string;
+    email: string;
+    phone: string;
+    passport_number_encrypted?: string;
+    passport_country?: string;
+    passport_expiry?: string;
+  };
+  payment_methods: {
+    stripe_customer_id: string;
+    stripe_payment_method_id: string;
+  };
+  [key: string]: unknown;
+}) {
   console.log(`Processing campaign ${campaign.id}: ${campaign.origin} to ${campaign.destination}`);
 
   // 1. Search for flights using Duffel API
@@ -224,7 +250,13 @@ async function processCampaign(campaign: any) {
   }
 }
 
-async function searchFlights(campaign: any): Promise<FlightOffer[]> {
+async function searchFlights(campaign: {
+  origin: string;
+  destination: string;
+  departure_date_start?: string;
+  return_date_start?: string;
+  cabin_class?: string;
+}): Promise<FlightOffer[]> {
   // Build search request for Duffel
   const searchRequest = {
     data: {
@@ -285,7 +317,24 @@ async function searchFlights(campaign: any): Promise<FlightOffer[]> {
   return offersResult.data || [];
 }
 
-async function bookFlight(campaign: any, offer: FlightOffer) {
+async function bookFlight(campaign: {
+  id: string;
+  user_id: string;
+  traveler_profiles: {
+    full_name: string;
+    date_of_birth: string;
+    gender: string;
+    email: string;
+    phone: string;
+    passport_number_encrypted?: string;
+    passport_country?: string;
+    passport_expiry?: string;
+  };
+  payment_methods: {
+    stripe_customer_id: string;
+    stripe_payment_method_id: string;
+  };
+}, offer: FlightOffer) {
   console.log(`Attempting to book flight for campaign ${campaign.id}`);
 
   // 1. First charge the payment method
@@ -412,7 +461,14 @@ async function bookFlight(campaign: any, offer: FlightOffer) {
   }
 }
 
-async function chargePayment(campaign: any, offer: FlightOffer) {
+async function chargePayment(campaign: {
+  id: string;
+  user_id: string;
+  payment_methods: {
+    stripe_customer_id: string;
+    stripe_payment_method_id: string;
+  };
+}, offer: FlightOffer) {
   try {
     const paymentMethod = campaign.payment_methods;
     const amount = Math.round(parseFloat(offer.total_amount) * 100); // Convert to cents
@@ -452,7 +508,7 @@ async function chargePayment(campaign: any, offer: FlightOffer) {
   }
 }
 
-async function sendBookingConfirmation(campaign: any, booking: any, order: any) {
+async function sendBookingConfirmation(_campaign: unknown, booking: { id: string }) {
   // TODO: Implement email sending using your preferred email service
   // This could use the existing send-booking-confirmation function
   console.log(`Booking confirmation should be sent for booking ${booking.id}`);

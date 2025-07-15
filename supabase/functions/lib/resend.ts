@@ -115,7 +115,7 @@ export async function sendEmail(emailData: EmailData): Promise<EmailResponse> {
 interface EmailTask {
   emailData: EmailData;
   resolve: (value: EmailResponse | PromiseLike<EmailResponse>) => void;
-  reject: (reason?: any) => void;
+  reject: (reason?: unknown) => void;
 }
 
 const emailQueue: EmailTask[] = [];
@@ -162,7 +162,7 @@ console.error('[Resend] Email send failed:', error);
     // Additional detailed logging goes here
     console.error('Detailed error info:', {
       emailData,
-      errorStack: error.stack
+      errorStack: error instanceof Error ? error.stack : 'No stack available'
     });
     return {
       id: '',
@@ -290,13 +290,14 @@ export async function sendTemplatedEmail({
   to: string | string[];
   subject: string;
   template: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   tags?: Array<{ name: string; value: string }>;
   notificationId?: string;
 }): Promise<EmailResponse> {
   // Simple template rendering (replace {{variable}} with data[variable])
   const renderedTemplate = template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-    return data[key] || match;
+    const value = data[key];
+    return (typeof value === 'string' || typeof value === 'number') ? String(value) : match;
   });
   
   const emailTags = [

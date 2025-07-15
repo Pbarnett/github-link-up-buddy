@@ -7,17 +7,17 @@
 
 import { useMemo, useCallback } from 'react';
 import type { 
-  DynamicFormConfig, 
+  FormConfiguration, 
   FieldConfiguration, 
   FormSection 
-} from '@/types/dynamic-forms';
+} from '../types/dynamic-forms';
 
 import { 
   evaluateConditionalLogic,
   createConditionalDependencyGraph,
   hasCircularDependencies,
   validateConditionalLogic
-} from '@/lib/conditional-logic';
+} from '../lib/conditional-logic';
 
 export interface UseConditionalLogicReturn {
   /** Fields that are currently visible based on conditional logic */
@@ -31,7 +31,7 @@ export interface UseConditionalLogicReturn {
   /** Check if a specific section is visible */
   isSectionVisible: (sectionId: string) => boolean;
   /** Re-evaluate all conditional logic */
-  evaluateConditions: (formData: Record<string, any>) => void;
+  evaluateConditions: (formData: Record<string, unknown>) => void;
   /** Get fields that depend on a specific field */
   getDependentFields: (fieldId: string) => string[];
   /** Validation errors in conditional logic setup */
@@ -41,8 +41,8 @@ export interface UseConditionalLogicReturn {
 }
 
 export const useConditionalLogic = (
-  config: DynamicFormConfig | null,
-  formData: Record<string, any>
+  config: FormConfiguration | null,
+  formData: Record<string, unknown>
 ): UseConditionalLogicReturn => {
   
   // Create dependency graph
@@ -66,19 +66,19 @@ export const useConditionalLogic = (
 
     // Get all field IDs for validation
     const allFieldIds: string[] = [];
-    config.sections.forEach(section => {
-      section.fields.forEach(field => {
+    config.sections.forEach((section: FormSection) => {
+      section.fields.forEach((field: FieldConfiguration) => {
         allFieldIds.push(field.id);
       });
     });
 
     // Validate each field's conditional logic
-    config.sections.forEach(section => {
-      section.fields.forEach(field => {
+    config.sections.forEach((section: FormSection) => {
+      section.fields.forEach((field: FieldConfiguration) => {
         if (field.conditional) {
           const validation = validateConditionalLogic(field.conditional, allFieldIds);
           if (!validation.isValid) {
-            errors.push(...validation.errors.map(error => 
+            errors.push(...validation.errors.map((error: string) => 
               `Field "${field.id}": ${error}`
             ));
             isValid = false;
@@ -90,7 +90,7 @@ export const useConditionalLogic = (
       if (section.conditional) {
         const validation = validateConditionalLogic(section.conditional, allFieldIds);
         if (!validation.isValid) {
-          errors.push(...validation.errors.map(error => 
+          errors.push(...validation.errors.map((error: string) => 
             `Section "${section.id}": ${error}`
           ));
           isValid = false;
@@ -107,8 +107,8 @@ export const useConditionalLogic = (
 
     const states = new Map<string, { visible: boolean; enabled: boolean }>();
 
-    config.sections.forEach(section => {
-      section.fields.forEach(field => {
+    config.sections.forEach((section: FormSection) => {
+      section.fields.forEach((field: FieldConfiguration) => {
         if (field.conditional) {
           const { visible, enabled } = evaluateConditionalLogic(field.conditional, formData);
           states.set(field.id, { visible, enabled });
@@ -127,7 +127,7 @@ export const useConditionalLogic = (
 
     const states = new Map<string, { visible: boolean; enabled: boolean }>();
 
-    config.sections.forEach(section => {
+    config.sections.forEach((section: FormSection) => {
       if (section.conditional) {
         const { visible, enabled } = evaluateConditionalLogic(section.conditional, formData);
         states.set(section.id, { visible, enabled });
@@ -145,12 +145,12 @@ export const useConditionalLogic = (
 
     const visible: FieldConfiguration[] = [];
 
-    config.sections.forEach(section => {
+    config.sections.forEach((section: FormSection) => {
       const sectionState = sectionStates.get(section.id);
       const isSectionVisible = sectionState?.visible ?? true;
 
       if (isSectionVisible) {
-        section.fields.forEach(field => {
+        section.fields.forEach((field: FieldConfiguration) => {
           const fieldState = fieldStates.get(field.id);
           const isFieldVisible = fieldState?.visible ?? true;
 
@@ -168,7 +168,7 @@ export const useConditionalLogic = (
   const visibleSections = useMemo(() => {
     if (!config) return [];
 
-    return config.sections.filter(section => {
+    return config.sections.filter((section: FormSection) => {
       const sectionState = sectionStates.get(section.id);
       return sectionState?.visible ?? true;
     });
@@ -193,7 +193,7 @@ export const useConditionalLogic = (
   }, [sectionStates]);
 
   // Re-evaluate all conditional logic (useful for manual triggers)
-  const evaluateConditions = useCallback((newFormData: Record<string, any>) => {
+  const evaluateConditions = useCallback((newFormData: Record<string, unknown>) => {
     // This will trigger a re-render with new formData
     // The useMemo hooks above will recalculate based on the new data
     console.log('Re-evaluating conditions with new form data:', newFormData);
@@ -203,11 +203,11 @@ export const useConditionalLogic = (
   const getDependentFields = useCallback((fieldId: string): string[] => {
     const dependents: string[] = [];
 
-    for (const [targetField, dependencies] of dependencyGraph.entries()) {
+    dependencyGraph.forEach((dependencies, targetField) => {
       if (dependencies.includes(fieldId)) {
         dependents.push(targetField);
       }
-    }
+    });
 
     return dependents;
   }, [dependencyGraph]);

@@ -7,7 +7,6 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Set up CORS headers
 const corsHeaders = {
@@ -16,11 +15,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey",
 };
 
-// Create a Supabase client with the service role key
-const supabaseClient = createClient(
-  Deno.env.get("SUPABASE_URL") || "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
-);
 
 serve(async (req: Request) => {
   // Handle CORS preflight requests

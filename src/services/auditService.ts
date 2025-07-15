@@ -13,8 +13,8 @@ export interface AuditEvent {
   action: string;
   table_name: string;
   record_id: string;
-  old_data?: Record<string, any>;
-  new_data?: Record<string, any>;
+  old_data?: Record<string, unknown>;
+  new_data?: Record<string, unknown>;
   ip_address?: string;
   user_agent?: string;
   session_id?: string;
@@ -88,7 +88,7 @@ export async function logPaymentMethodEvent(
 export async function logAIActivity(
   userId: string,
   action: string,
-  details: Record<string, any>
+  details: Record<string, unknown>
 ): Promise<void> {
   try {
     const { error } = await supabase
@@ -107,3 +107,9 @@ export async function logAIActivity(
     console.error('Error logging AI activity:', error);
   }
 }
+
+//
+// Auto-added placeholder exports so TypeScript can compile.
+// Replace with real implementation when ready.
+export const placeholder = () => undefined;
+export default placeholder;

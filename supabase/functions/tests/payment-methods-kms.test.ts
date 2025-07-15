@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { vi, describe, it, expect, beforeAll } from 'vitest';
 
 // Mock fetch for edge function tests
 const mockFetch = vi.fn();
@@ -104,7 +104,7 @@ describe('Payment Methods KMS Integration', () => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Test that the payment_methods table exists and has expected columns
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('payment_methods')
       .select('*')
       .limit(1);
@@ -113,7 +113,7 @@ describe('Payment Methods KMS Integration', () => {
     expect(error).toBeNull();
     
     // Test that stripe_customers table exists
-    const { data: customerData, error: customerError } = await supabase
+    const { error: customerError } = await supabase
       .from('stripe_customers')
       .select('*')
       .limit(1);
@@ -126,7 +126,7 @@ describe('Payment Methods KMS Integration', () => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Test that the kms_audit_log table exists
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('kms_audit_log')
       .select('*')
       .limit(1);
@@ -155,7 +155,7 @@ describe('Payment Methods KMS Integration', () => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Test that the required functions exist
-    const { data: functions, error } = await supabase
+    const { error } = await supabase
       .rpc('get_function_names');
     
     // This is a basic check - in a real test we'd check for specific functions

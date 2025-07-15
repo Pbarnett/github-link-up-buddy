@@ -20,22 +20,28 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 interface DetailedTestResult {
   step: string
   success: boolean
-  data?: any
-  error?: any
+  data?: unknown
+  error?: unknown
   notes?: string
 }
 
-async function getDetailedErrorInfo(error: any): Promise<string> {
+async function getDetailedErrorInfo(error: unknown): Promise<string> {
   try {
-    if (error.context && error.context.body) {
-      const response = error.context as Response
-      const errorText = await response.text()
-      return errorText
+    if (error && typeof error === 'object' && 'context' in error) {
+      const errorObj = error as { context: { body?: unknown } }
+      if (errorObj.context && errorObj.context.body) {
+        const response = errorObj.context as Response
+        const errorText = await response.text()
+        return errorText
+      }
     }
-  } catch (e) {
+  } catch {
     // Ignore parsing errors
   }
-  return error.message || 'Unknown error'
+  if (error && typeof error === 'object' && 'message' in error) {
+    return (error as { message: string }).message
+  }
+  return 'Unknown error'
 }
 
 async function testEmailTrackingDetailed() {
@@ -144,7 +150,8 @@ const testUserId = uuidv4()
       console.log('📋 Response:', sendResult)
     }
   } catch (error) {
-    console.log('❌ Function test failed:', error.message)
+    const errorMessage = error && typeof error === 'object' && 'message' in error ? (error as { message: string }).message : 'Unknown error'
+    console.log('❌ Function test failed:', errorMessage)
   }
 
   // Test 4: Template verification
@@ -172,7 +179,7 @@ const testUserId = uuidv4()
     } else {
       console.log('❌ No templates found or error occurred')
     }
-  } catch (error) {
+  } catch {
     console.log('❌ Template check failed')
   }
 
@@ -189,7 +196,7 @@ const testUserId = uuidv4()
 
   for (const table of tables) {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from(table)
         .select('*')
         .limit(1)
@@ -205,7 +212,7 @@ const testUserId = uuidv4()
       })
 
       console.log(`   ${table}: ${tableExists ? '✅ Exists' : '❌ Missing'}`)
-    } catch (error) {
+    } catch {
       console.log(`   ${table}: ❌ Error checking`)
     }
   }
@@ -279,7 +286,8 @@ const testUserId = uuidv4()
       console.log('📋 Response:', webhookResult)
     }
   } catch (error) {
-    console.log('❌ Webhook test failed:', error.message)
+    const errorMessage = error && typeof error === 'object' && 'message' in error ? (error as { message: string }).message : 'Unknown error'
+    console.log('❌ Webhook test failed:', errorMessage)
   }
 
   // Generate detailed report

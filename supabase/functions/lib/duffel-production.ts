@@ -259,7 +259,7 @@ export class DuffelProductionClient {
   /**
    * Cancel order (if supported)
    */
-  async cancelOrder(orderId: string): Promise<{ success: boolean; refund?: any }> {
+  async cancelOrder(orderId: string): Promise<{ success: boolean; refund?: unknown }> {
     try {
       const response = await this.makeRequest(`/air/orders/${orderId}/cancellations`, {
         method: 'POST',
@@ -279,7 +279,7 @@ export class DuffelProductionClient {
   private async makeRequest(
     endpoint: string, 
     options: RequestInit = {}
-  ): Promise<any> {
+  ): Promise<{ data: unknown; errors?: Array<{ message: string }>; message?: string }> {
     const url = `${this.baseURL}${endpoint}`;
     const maxRetries = 3;
     let lastError: Error;
@@ -336,7 +336,15 @@ export class DuffelProductionClient {
 /**
  * Factory function to create Duffel client based on feature flag
  */
-export async function createDuffelProductionClient(supabaseClient: any): Promise<DuffelProductionClient> {
+export async function createDuffelProductionClient(supabaseClient: {
+  from: (table: string) => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        single: () => Promise<{ data: { enabled?: boolean } | null; error?: unknown }>;
+      };
+    };
+  };
+}): Promise<DuffelProductionClient> {
   // Check feature flag for live mode
   const { data: flag } = await supabaseClient
     .from('feature_flags')
@@ -352,7 +360,15 @@ export async function createDuffelProductionClient(supabaseClient: any): Promise
 /**
  * Helper to map trip request to Duffel search parameters
  */
-export function mapTripRequestToDuffelSearch(tripRequest: any) {
+export function mapTripRequestToDuffelSearch(tripRequest: {
+  departure_airports?: string[];
+  origin_location_code?: string;
+  destination_location_code: string;
+  departure_date: string;
+  return_date?: string;
+  adults?: number;
+  travel_class?: string;
+}) {
   return {
     origin: tripRequest.departure_airports?.[0] || tripRequest.origin_location_code,
     destination: tripRequest.destination_location_code,
@@ -366,7 +382,15 @@ export function mapTripRequestToDuffelSearch(tripRequest: any) {
 /**
  * Helper to map traveler data to Duffel passenger format
  */
-export function mapTravelerDataToPassenger(travelerData: any): PassengerDetails {
+export function mapTravelerDataToPassenger(travelerData: {
+  firstName: string;
+  lastName: string;
+  title?: string;
+  gender?: string;
+  dateOfBirth: string;
+  email?: string;
+  phone?: string;
+}): PassengerDetails {
   return {
     type: 'adult',
     given_name: travelerData.firstName,

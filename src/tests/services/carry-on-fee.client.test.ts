@@ -3,7 +3,7 @@
 import { test, expect } from 'vitest';
 
 // Mock implementation for client-side testing
-function computeCarryOnFee(offer: any): number | null {
+function computeCarryOnFee(offer: Record<string, unknown>): number | null {
   // This is a mock implementation for client-side testing
   // The actual implementation is in the edge function
   
@@ -25,12 +25,12 @@ function computeCarryOnFee(offer: any): number | null {
     for (const segDetail of tp.fareDetailsBySegment) {
       if (segDetail && Array.isArray(segDetail.additionalServices)) {
         const baggageService = segDetail.additionalServices.find(
-          (s: any) => s.type === 'BAGGAGE' && /CARRY ON|CABIN BAG/i.test(s.description?.toUpperCase() || '')
+          (s: Record<string, unknown>) => s.type === 'BAGGAGE' && /CARRY ON|CABIN BAG/i.test((s.description as string)?.toUpperCase() || '')
         );
         if (baggageService) {
           infoFoundForThisTraveler = true;
           if (baggageService.amount) {
-            feeForThisTraveler += parseFloat(baggageService.amount) || 0;
+            feeForThisTraveler += parseFloat(baggageService.amount as string) || 0;
           }
         }
       }

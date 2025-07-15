@@ -1,8 +1,8 @@
 // Dynamic imports for edge function compatibility
-let serve: any;
-let createClient: any;
-let stripe: any;
-let supabase: any;
+let serve: unknown;
+let createClient: unknown;
+let stripe: unknown;
+let supabase: unknown;
 
 // Initialize dependencies based on environment
 if (typeof Deno !== 'undefined' && !globalThis.process?.env?.VITEST) {
@@ -67,15 +67,6 @@ interface AutoBookingChargeRequest {
       country: string;
     };
   };
-}
-
-interface AutoBookingChargeResponse {
-  success: boolean;
-  payment_intent_id?: string;
-  booking_request_id?: string;
-  error?: string;
-  requires_action?: boolean;
-  next_action?: any;
 }
 
 // Export handler function for testing
@@ -298,14 +289,15 @@ export async function handlePrepareAutoBookingCharge(req: Request): Promise<Resp
         });
       }
 
-    } catch (stripeError: any) {
+    } catch (stripeError: unknown) {
       console.error("[PREPARE-AUTO-BOOKING-CHARGE] Stripe error:", stripeError);
       
       // Parse Stripe error for user-friendly message
       let errorMessage = "Payment processing failed";
       
-      if (stripeError.type === 'StripeCardError') {
-        switch (stripeError.code) {
+      if (stripeError && typeof stripeError === 'object' && 'type' in stripeError && stripeError.type === 'StripeCardError') {
+        const errorCode = 'code' in stripeError ? stripeError.code : undefined;
+        switch (errorCode) {
           case 'card_declined':
             errorMessage = "Card was declined by your bank";
             break;
@@ -319,15 +311,15 @@ export async function handlePrepareAutoBookingCharge(req: Request): Promise<Resp
             errorMessage = "Payment requires additional authentication";
             break;
           default:
-            errorMessage = stripeError.message || errorMessage;
+            errorMessage = ('message' in stripeError ? stripeError.message as string : undefined) || errorMessage;
         }
       }
 
       return new Response(JSON.stringify({
         success: false,
         error: errorMessage,
-        stripe_error_code: stripeError.code,
-        stripe_error_type: stripeError.type
+        stripe_error_code: stripeError && typeof stripeError === 'object' && 'code' in stripeError ? stripeError.code : undefined,
+        stripe_error_type: stripeError && typeof stripeError === 'object' && 'type' in stripeError ? stripeError.type : undefined
       }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" }

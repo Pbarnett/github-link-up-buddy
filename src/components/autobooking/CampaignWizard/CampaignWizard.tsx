@@ -44,7 +44,7 @@ function CampaignWizard() {
     paymentMethodId: '',
   });
 
-  const handleNext = (data: any) => {
+  const handleNext = (data: CriteriaFormData | TravelerFormData | string) => {
     const newState = { ...wizardState };
     
     switch (currentStep) {

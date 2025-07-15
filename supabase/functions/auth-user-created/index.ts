@@ -6,14 +6,14 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 interface WebhookPayload {
   type: 'INSERT' | 'UPDATE' | 'DELETE'
   table: string
-  record: any
+  record: Record<string, unknown>
   schema: 'auth'
-  old_record: null | any
+  old_record: null | Record<string, unknown>
 }
 
 Deno.serve(async (req) => {
   // Verify the webhook signature for security
-  const signature = req.headers.get('Authorization')
+  const _signature = req.headers.get('Authorization') // eslint-disable-line @typescript-eslint/no-unused-vars
   
   try {
     const payload: WebhookPayload = await req.json()
@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
     
     // Return success even on error to prevent blocking auth flow
     return new Response(
-      JSON.stringify({ success: false, error: error.message }), 
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }), 
       { 
         headers: { 'Content-Type': 'application/json' },
         status: 200 

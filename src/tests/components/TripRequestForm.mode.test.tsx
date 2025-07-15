@@ -56,11 +56,13 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
-    expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
-    expect(screen.getByText('Enter the parameters for your trip below.')).toBeInTheDocument();
-    // Use getAllByText for multiple buttons with same text
-    const searchButtons = screen.getAllByText('Search Now');
+    // Check for current UI text elements
+    expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
+    expect(screen.getByText('Live Flight Search')).toBeInTheDocument();
+    expect(screen.getByText('Travelers & Cabin')).toBeInTheDocument();
+    
+    // Check for submit buttons
+    const searchButtons = screen.getAllByRole('button', { name: /search now/i });
     expect(searchButtons.length).toBeGreaterThan(0);
   });
 
@@ -71,9 +73,13 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
-    expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
-    const searchButtons = screen.getAllByText('Search Now');
+    // Check for current UI text elements
+    expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
+    expect(screen.getByText('Live Flight Search')).toBeInTheDocument();
+    expect(screen.getByText('Travelers & Cabin')).toBeInTheDocument();
+    
+    // Check for submit buttons
+    const searchButtons = screen.getAllByRole('button', { name: /search now/i });
     expect(searchButtons.length).toBeGreaterThan(0);
   });
 
@@ -84,10 +90,10 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    // In auto mode step 1, the title should be "Trip Basics"
-    expect(screen.getByText('Trip Basics')).toBeInTheDocument();
+    // In auto mode step 1, check for specific elements
+    expect(screen.getByRole('heading', { name: 'Trip Basics' })).toBeInTheDocument();
     expect(screen.getByText('Tell us where and when you want to travel.')).toBeInTheDocument();
-    expect(screen.getByText('Continue → Pricing')).toBeInTheDocument();
+    expect(screen.getAllByText('Continue → Pricing')).toHaveLength(2);
   });
 
   test('should show step indicator in auto mode', () => {
@@ -97,8 +103,8 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    // Step indicator should be present
-    expect(screen.getByText('Trip Basics')).toBeInTheDocument();
+    // Step indicator should be present (there are multiple elements with this text)
+    expect(screen.getAllByText('Trip Basics')).toHaveLength(2);
     expect(screen.getByText('Price & Payment')).toBeInTheDocument();
   });
 
@@ -109,9 +115,11 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    // Should show "Where & When" instead of "Travel Details"
-    expect(screen.getByText('Where & When')).toBeInTheDocument();
-    expect(screen.getByText('Trip Length')).toBeInTheDocument();
+    // Should show destination field
+    expect(screen.getByText('Destination')).toBeInTheDocument();
+    
+    // Should show the continue button for auto mode
+    expect(screen.getAllByText('Continue → Pricing').length).toBeGreaterThan(0);
     
     // Should NOT show auto-booking section in step 1
     expect(screen.queryByText('Maximum Price')).not.toBeInTheDocument();

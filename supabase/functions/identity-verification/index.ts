@@ -56,7 +56,7 @@ serve(async (req) => {
       case 'POST':
         return await handleCreateVerificationSession(user.id, await req.json());
       
-      case 'GET':
+      case 'GET': {
         const url = new URL(req.url);
         const sessionId = url.searchParams.get('session_id');
         if (sessionId) {
@@ -64,6 +64,7 @@ serve(async (req) => {
         } else {
           return await handleGetVerificationStatus(user.id);
         }
+      }
       
       default:
         return new Response(
@@ -260,7 +261,7 @@ async function handleGetVerificationStatus(userId: string) {
     }
 
     // Get traveler profile verification status
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('traveler_profiles')
       .select('is_verified')
       .eq('user_id', userId)

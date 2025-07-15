@@ -2,8 +2,15 @@
 import { Control } from "react-hook-form";
 import TripNumberField from "../TripNumberField";
 
+// Trip duration form data interface
+interface TripDurationFormData {
+  min_duration?: number;
+  max_duration?: number;
+  [key: string]: unknown;
+}
+
 interface TripDurationSectionProps {
-  control: Control<any>;
+  control: Control<TripDurationFormData>;
 }
 
 const TripDurationSection = ({ control }: TripDurationSectionProps) => {

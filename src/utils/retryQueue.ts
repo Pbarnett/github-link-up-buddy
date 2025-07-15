@@ -13,12 +13,12 @@ const QUEUE_KEY = 'pf-retry-queue';
 interface QueuedOperation {
   id: string;
   type: string;
-  data: any;
+  data: unknown;
   timestamp: number;
   retryCount: number;
 }
 
-type OperationHandler = (data: any) => Promise<void>;
+type OperationHandler = (data: unknown) => Promise<void>;
 
 const operationHandlers: Map<string, OperationHandler> = new Map();
 
@@ -28,7 +28,7 @@ export function registerOperationHandler(type: string, handler: OperationHandler
 }
 
 // Enqueue operation for later retry
-export async function enqueueOperation(type: string, data: any): Promise<void> {
+export async function enqueueOperation(type: string, data: unknown): Promise<void> {
   try {
     const operations: QueuedOperation[] = (await localforage.getItem(QUEUE_KEY)) || [];
     const task: QueuedOperation = {

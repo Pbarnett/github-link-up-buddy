@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/components/ui/use-toast";
-import { Plus, Plane, Pause, Play, X, Edit } from "lucide-react";
+import { Plus, Plane } from "lucide-react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { CampaignCard } from "@/components/autobooking/CampaignCard";
@@ -16,7 +15,7 @@ import { withErrorBoundary } from "@/components/ErrorBoundary";
 function AutoBookingDashboard() {
   const navigate = useNavigate();
   const { userId, loading } = useCurrentUser();
-  const { campaigns, isLoading, error, refreshCampaigns, pauseCampaign, resumeCampaign, deleteCampaign } = useCampaigns();
+  const { campaigns, isLoading, error, pauseCampaign, resumeCampaign, deleteCampaign } = useCampaigns();
 
   // No breadcrumbs needed since this is the main dashboard page
 
@@ -35,7 +34,7 @@ function AutoBookingDashboard() {
         title: "Campaign paused",
         description: "Your auto-booking campaign has been paused.",
       });
-    } catch (error) {
+    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast({
         title: "Error",
         description: "Failed to pause campaign. Please try again.",
@@ -51,7 +50,7 @@ function AutoBookingDashboard() {
         title: "Campaign resumed",
         description: "Your auto-booking campaign is now active.",
       });
-    } catch (error) {
+    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast({
         title: "Error",
         description: "Failed to resume campaign. Please try again.",
@@ -68,7 +67,7 @@ function AutoBookingDashboard() {
           title: "Campaign deleted",
           description: "Your auto-booking campaign has been deleted.",
         });
-      } catch (error) {
+      } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
         toast({
           title: "Error",
           description: "Failed to delete campaign. Please try again.",

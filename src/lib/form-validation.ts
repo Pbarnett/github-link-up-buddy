@@ -140,8 +140,8 @@ export const generateFieldSchema = (field: FieldConfiguration): z.ZodTypeAny | n
   if (field.validation?.required) {
     // For string fields, ensure they're not empty
     if (['text', 'textarea', 'password', 'email', 'phone'].includes(field.type)) {
-      // Check if schema still has min method (might be modified by custom validation)
-      if (typeof (schema as any).min === 'function') {
+        // Check if schema still has min method (might be modified by custom validation)
+        if (typeof (schema as z.ZodString).min === 'function') {
         schema = (schema as z.ZodString).min(1, field.validation.message || `${field.label} is required`);
       } else {
         // Use refine for complex schemas
@@ -180,13 +180,13 @@ const applyValidationRules = (
   // String validations
   if (schema instanceof z.ZodString) {
     if (rules.minLength !== undefined) {
-      updatedSchema = updatedSchema.min(rules.minLength, 
+      updatedSchema = (updatedSchema as z.ZodString).min(rules.minLength, 
         rules.message || `Must be at least ${rules.minLength} characters`
       );
     }
 
     if (rules.maxLength !== undefined) {
-      updatedSchema = updatedSchema.max(rules.maxLength,
+      updatedSchema = (updatedSchema as z.ZodString).max(rules.maxLength,
         rules.message || `Must be no more than ${rules.maxLength} characters`
       );
     }
@@ -194,22 +194,22 @@ const applyValidationRules = (
     if (rules.pattern) {
       try {
         const regex = new RegExp(rules.pattern);
-        updatedSchema = updatedSchema.regex(regex, 
+        updatedSchema = (updatedSchema as z.ZodString).regex(regex, 
           rules.message || 'Invalid format'
         );
-      } catch (error) {
+      } catch {
         console.warn(`Invalid regex pattern for field: ${rules.pattern}`);
       }
     }
 
     if (rules.email) {
-      updatedSchema = updatedSchema.email(
+      updatedSchema = (updatedSchema as z.ZodString).email(
         rules.message || 'Please enter a valid email address'
       );
     }
 
     if (rules.url) {
-      updatedSchema = updatedSchema.url(
+      updatedSchema = (updatedSchema as z.ZodString).url(
         rules.message || 'Please enter a valid URL'
       );
     }
@@ -218,13 +218,13 @@ const applyValidationRules = (
   // Number validations
   if (schema instanceof z.ZodNumber) {
     if (rules.min !== undefined) {
-      updatedSchema = updatedSchema.min(rules.min,
+      updatedSchema = (updatedSchema as z.ZodNumber).min(rules.min,
         rules.message || `Must be at least ${rules.min}`
       );
     }
 
     if (rules.max !== undefined) {
-      updatedSchema = updatedSchema.max(rules.max,
+      updatedSchema = (updatedSchema as z.ZodNumber).max(rules.max,
         rules.message || `Must be no more than ${rules.max}`
       );
     }
@@ -259,7 +259,7 @@ const applyValidationRules = (
  */
 export const validateFieldValue = (
   field: FieldConfiguration,
-  value: any
+  value: unknown
 ): { isValid: boolean; error?: string } => {
   try {
     const fieldSchema = generateFieldSchema(field);
@@ -288,7 +288,7 @@ export const validateFieldValue = (
  */
 export const validateFormValues = (
   configuration: FormConfiguration,
-  values: Record<string, any>
+  values: Record<string, unknown>
 ): { isValid: boolean; errors: Record<string, string> } => {
   try {
     const schema = generateZodSchema(configuration);
@@ -312,8 +312,8 @@ export const validateFormValues = (
 /**
  * Get default values from form configuration
  */
-export const getDefaultValues = (configuration: FormConfiguration): Record<string, any> => {
-  const defaults: Record<string, any> = {};
+export const getDefaultValues = (configuration: FormConfiguration): Record<string, unknown> => {
+  const defaults: Record<string, unknown> = {};
 
   configuration.sections.forEach(section => {
     section.fields.forEach(field => {
@@ -355,3 +355,13 @@ export const getDefaultValues = (configuration: FormConfiguration): Record<strin
 
   return defaults;
 };
+
+/**
+ * Alias for generateZodSchema for backward compatibility
+ */
+export const generateValidationSchema = generateZodSchema;
+
+/**
+ * Alias for validateFormValues for backward compatibility
+ */
+export const validateFormData = validateFormValues;

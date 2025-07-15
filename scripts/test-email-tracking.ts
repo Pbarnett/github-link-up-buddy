@@ -20,7 +20,21 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 interface EmailTestPayload {
   user_id: string
   type: string
-  payload?: any
+  payload?: {
+    recipient_email?: string;
+    booking_reference?: string;
+    passenger_name?: string;
+    flight_details?: {
+      airline: string;
+      flight_number: string;
+      departure_datetime: string;
+      arrival_datetime: string;
+      origin: string;
+      destination: string;
+      price: string;
+    };
+    [key: string]: unknown; // Allow additional properties
+  }
 }
 
 interface ResendWebhookEvent {
@@ -134,7 +148,7 @@ async function testEmailTracking() {
   
   try {
     // Check if email_events table exists
-    const { data: emailEvents, error: emailEventsError } = await supabase
+    const { error: emailEventsError } = await supabase
       .from('email_events')
       .select('*')
       .limit(1)
@@ -144,13 +158,13 @@ async function testEmailTracking() {
     } else {
       console.log('✅ email_events table is accessible')
     }
-  } catch (error) {
+  } catch {
     console.log('⚠️ email_events table check failed')
   }
 
   try {
     // Check if notification_deliveries table exists
-    const { data: deliveries, error: deliveriesError } = await supabase
+    const { error: deliveriesError } = await supabase
       .from('notification_deliveries')
       .select('*')
       .limit(1)
@@ -160,7 +174,7 @@ async function testEmailTracking() {
     } else {
       console.log('✅ notification_deliveries table is accessible')
     }
-  } catch (error) {
+  } catch {
     console.log('⚠️ notification_deliveries table check failed')
   }
 
@@ -177,7 +191,7 @@ async function testEmailTracking() {
       console.log('✅ notification_templates table is accessible')
       console.log('📋 Available templates:', templates)
     }
-  } catch (error) {
+  } catch {
     console.log('⚠️ notification_templates table check failed')
   }
 

@@ -48,7 +48,8 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
   const [verificationSession, setVerificationSession] = useState<VerificationSession | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const [verificationStatus, setVerificationStatus] = useState<string>('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_verificationStatus, setVerificationStatus] = useState<string>('');
   const [isVerificationRequired, setIsVerificationRequired] = useState<boolean | null>(null);
 
   const returnUrl = `${window.location.origin}/verification-complete`;
@@ -88,9 +89,9 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
         setVerificationSession(data.verification_session);
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error checking verification requirement:', err);
-      setError(err.message || 'Failed to check verification requirement');
+      setError(err instanceof Error ? err.message : 'Failed to check verification requirement');
     } finally {
       setIsLoading(false);
     }
@@ -117,9 +118,9 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
         setVerificationSession(data.verification_session);
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating verification session:', err);
-      setError(err.message || 'Failed to create verification session');
+      setError(err instanceof Error ? err.message : 'Failed to create verification session');
     } finally {
       setIsLoading(false);
     }
@@ -152,9 +153,9 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
         onVerificationComplete?.(data.is_verified);
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error checking verification status:', err);
-      setError(err.message || 'Failed to check verification status');
+      setError(err instanceof Error ? err.message : 'Failed to check verification status');
     } finally {
       setIsLoading(false);
     }

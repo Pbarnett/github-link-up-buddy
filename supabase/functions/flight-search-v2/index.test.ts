@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createClient } from '@supabase/supabase-js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+// Note: createClient is mocked below, no direct import needed
 
 // Import the server from the main module.
 // We need to make 'serve' and potentially other functions available for mocking or direct call.
@@ -16,7 +16,6 @@ import { createClient } from '@supabase/supabase-js';
 // --- Mocks ---
 // Mock Deno.env.get for Node.js environment
 const mockEnv = new Map<string, string>();
-const originalProcess = process.env;
 vi.stubGlobal('process', {
   ...process,
   env: new Proxy(process.env, {
@@ -25,11 +24,11 @@ vi.stubGlobal('process', {
 });
 
 // Mock createClient from Supabase
-let mockSupabaseInsertions: any[] = [];
+let mockSupabaseInsertions: Record<string, unknown>[] = [];
 const mockSupabaseClient = {
-  from: vi.fn((tableName: string) => {
+  from: vi.fn(() => {
     return {
-      insert: vi.fn((dataToInsert: any) => {
+      insert: vi.fn((dataToInsert: Record<string, unknown> | Record<string, unknown>[]) => {
         mockSupabaseInsertions.push(...(Array.isArray(dataToInsert) ? dataToInsert : [dataToInsert]));
         // Simulate Supabase returning the inserted data and a count
         const count = Array.isArray(dataToInsert) ? dataToInsert.length : 1;
@@ -89,7 +88,7 @@ describe('Edge Function: flight-search-v2', () => {
     vi.clearAllMocks();
 
     // Mock the global fetch if Amadeus calls were using it directly
-    const mockFetch = vi.fn(async (url: string, options: RequestInit) => {
+    const mockFetch = vi.fn(async (url: string, _options?: RequestInit) => {
       // This mock assumes fetchAmadeusOffers makes a call to a known Amadeus endpoint
       // For the internal mock, this global fetch override isn't strictly needed
       // but shown for a more realistic external API call scenario.
@@ -100,6 +99,8 @@ describe('Edge Function: flight-search-v2', () => {
            { id: 'amadeus-test-offer-2', price: { total: '150.00', currency: 'USD' }, itineraries: [{ segments: [{ numberOfStops: 0, departure: {iataCode: 'CCC', at: '2024-01-02T10:00:00Z'}, arrival: {iataCode: 'DDD', at: '2024-01-02T12:00:00Z'} }] }], travelerPricings: [{ fareDetailsBySegment: [{ cabin: 'BUSINESS', includedCheckedBags: {quantity: 0} }]}] },
         ]), { headers: { 'Content-Type': 'application/json' } }));
       }
+      // Mark _options as potentially unused
+      void _options;
       return Promise.resolve(new Response('Not found', { status: 404 }));
     });
     

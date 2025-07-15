@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { stripe } from "../lib/stripe.ts";
-import { encryptPaymentData, decryptPaymentData } from "../shared/kms.ts";
+import { encryptPaymentData } from "../shared/kms.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -64,7 +64,7 @@ export async function handleManagePaymentMethods(req: Request): Promise<Response
       case 'PUT':
         return await handleUpdatePaymentMethod(user.id, await req.json());
       
-      case 'DELETE':
+      case 'DELETE': {
         const paymentMethodId = url.searchParams.get('id');
         if (!paymentMethodId) {
           return new Response(JSON.stringify({ error: 'Payment method ID required' }), {
@@ -73,6 +73,7 @@ export async function handleManagePaymentMethods(req: Request): Promise<Response
           });
         }
         return await handleDeletePaymentMethod(user.id, paymentMethodId);
+      }
       
       default:
         return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -111,11 +112,18 @@ async function handleGetPaymentMethods(userId: string) {
   });
 }
 
-async function handleCreatePaymentMethod(user: any, action: string, requestData: any) {
+async function handleCreatePaymentMethod(user: { id: string; email: string }, action: string, requestData: unknown) {
   if (action === 'create_setup_intent') {
     return await createSetupIntent(user);
   } else if (action === 'confirm_payment_method') {
-    return await confirmPaymentMethod(user, requestData);
+    // Type guard for requestData
+    if (!requestData || typeof requestData !== 'object') {
+      return new Response(JSON.stringify({ error: 'Invalid request data' }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+    return await confirmPaymentMethod(user, requestData as PaymentMethodData);
   } else {
     return new Response(JSON.stringify({ error: 'Invalid action' }), {
       status: 400,
@@ -124,7 +132,7 @@ async function handleCreatePaymentMethod(user: any, action: string, requestData:
   }
 }
 
-async function createSetupIntent(user: any) {
+async function createSetupIntent(user: { id: string; email: string }) {
   try {
     // Get or create Stripe customer
     let stripeCustomerId: string;
@@ -175,7 +183,7 @@ async function createSetupIntent(user: any) {
   }
 }
 
-async function confirmPaymentMethod(user: any, data: PaymentMethodData) {
+async function confirmPaymentMethod(user: { id: string; email: string }, data: PaymentMethodData) {
   const { setup_intent_id } = data;
   
   if (!setup_intent_id) {

@@ -10,8 +10,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
+// Budget form data interface
+interface BudgetFormData {
+  budget?: number;
+  [key: string]: unknown;
+}
+
 interface BudgetSectionProps {
-  control: Control<any>;
+  control: Control<BudgetFormData>;
 }
 
 const BudgetSection = ({ control }: BudgetSectionProps) => {

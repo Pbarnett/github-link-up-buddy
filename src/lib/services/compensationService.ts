@@ -5,7 +5,48 @@
  * Handles rollback operations when booking fails at any stage.
  */
 
-import { DuffelAPIError } from '../errors/duffelErrors';
+// Service interfaces
+interface SupabaseClient {
+  from: (table: string) => {
+    update: (data: Record<string, unknown>) => {
+      eq: (column: string, value: unknown) => Promise<unknown>;
+    };
+    insert: (data: Record<string, unknown>) => Promise<unknown>;
+  };
+}
+
+interface StripeClient {
+  refunds: {
+    create: (params: {
+      payment_intent: string;
+      amount?: number;
+      reason?: string;
+      metadata?: Record<string, string>;
+    }) => Promise<unknown>;
+  };
+}
+
+interface DuffelClient {
+  // Add Duffel specific methods as needed
+  [key: string]: unknown;
+}
+
+interface NotificationData {
+  reason?: string;
+  trip_request_id?: string;
+  refund_initiated?: boolean;
+  order_id?: string;
+  [key: string]: unknown;
+}
+
+type NotificationFunction = (userId: string, type: string, data: NotificationData) => Promise<void>;
+
+interface CompensationServices {
+  supabase: SupabaseClient;
+  stripe?: StripeClient;
+  duffel?: DuffelClient;
+  sendNotification?: NotificationFunction;
+}
 
 export interface CompensationContext {
   tripRequestId: string;
@@ -34,12 +75,7 @@ export async function executeCompensation(
   context: CompensationContext,
   failureStage: 'payment' | 'booking' | 'notification' | 'unknown',
   failureReason: string,
-  services: {
-    supabase: any;
-    stripe?: any;
-    duffel?: any;
-    sendNotification?: (userId: string, type: string, data: any) => Promise<void>;
-  }
+  services: CompensationServices
 ): Promise<CompensationResult> {
   console.log(`[Compensation] Starting compensation for ${context.tripRequestId} at stage: ${failureStage}`);
   
@@ -99,7 +135,7 @@ export async function executeCompensation(
 async function compensatePaymentStageFailure(
   context: CompensationContext,
   failureReason: string,
-  services: any,
+  services: CompensationServices,
   actionsExecuted: string[]
 ): Promise<void> {
   // Update booking request status
@@ -136,7 +172,7 @@ async function compensatePaymentStageFailure(
 async function compensateBookingStageFailure(
   context: CompensationContext,
   failureReason: string,
-  services: any,
+  services: CompensationServices,
   actionsExecuted: string[]
 ): Promise<void> {
   // Attempt to refund payment
@@ -185,7 +221,7 @@ async function compensateBookingStageFailure(
 async function compensateNotificationStageFailure(
   context: CompensationContext,
   failureReason: string,
-  services: any,
+  services: CompensationServices,
   actionsExecuted: string[]
 ): Promise<void> {
   // Log the notification failure
@@ -213,7 +249,7 @@ async function compensateNotificationStageFailure(
 async function compensateUnknownFailure(
   context: CompensationContext,
   failureReason: string,
-  services: any,
+  services: CompensationServices,
   actionsExecuted: string[]
 ): Promise<void> {
   console.error(`[Compensation] Unknown failure detected: ${failureReason}`);
@@ -250,7 +286,7 @@ async function compensateUnknownFailure(
  */
 async function executeRefund(
   context: CompensationContext,
-  services: any
+  services: CompensationServices
 ): Promise<void> {
   const paymentIntentId = context.paymentIntentId || context.stripePaymentIntentId;
   
@@ -291,7 +327,7 @@ async function logCompensationAttempt(
   failureStage: string,
   actionsExecuted: string[],
   errors: string[],
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<void> {
   try {
     const logEntry = {
@@ -321,7 +357,7 @@ async function logCompensationAttempt(
 export async function compensatePaymentFailure(
   context: CompensationContext,
   failureReason: string,
-  services: any
+  services: CompensationServices
 ): Promise<CompensationResult> {
   return executeCompensation(context, 'payment', failureReason, services);
 }
@@ -329,7 +365,7 @@ export async function compensatePaymentFailure(
 export async function compensateBookingFailure(
   context: CompensationContext,
   failureReason: string,
-  services: any
+  services: CompensationServices
 ): Promise<CompensationResult> {
   return executeCompensation(context, 'booking', failureReason, services);
 }
@@ -337,7 +373,7 @@ export async function compensateBookingFailure(
 export async function compensateNotificationFailure(
   context: CompensationContext,
   failureReason: string,
-  services: any
+  services: CompensationServices
 ): Promise<CompensationResult> {
   return executeCompensation(context, 'notification', failureReason, services);
 }

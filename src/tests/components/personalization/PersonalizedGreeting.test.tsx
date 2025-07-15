@@ -9,13 +9,14 @@ vi.mock('@/scripts/analytics/personalization-tracking', () => ({
   trackGreetingDisplay: vi.fn(),
 }));
 
-// Mock fetch
-global.fetch = vi.fn();
+// Mock fetch with proper typing
+const mockFetch = vi.fn() as any;
+global.fetch = mockFetch;
 
 describe('PersonalizedGreeting', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fetch.mockClear();
+    mockFetch.mockClear();
   });
 
   it('renders loading state initially', () => {
@@ -37,7 +38,7 @@ describe('PersonalizedGreeting', () => {
       lastVisit: '2024-12-07T10:00:00Z'
     };
 
-    fetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });
@@ -57,7 +58,7 @@ describe('PersonalizedGreeting', () => {
       lastVisit: '2024-12-07T10:00:00Z'
     };
 
-    fetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });
@@ -70,7 +71,7 @@ describe('PersonalizedGreeting', () => {
   });
 
   it('handles API error gracefully', async () => {
-    fetch.mockRejectedValueOnce(new Error('API Error'));
+    mockFetch.mockRejectedValueOnce(new Error('API Error'));
 
     render(<PersonalizedGreeting userId="123" />);
 
@@ -85,7 +86,7 @@ describe('PersonalizedGreeting', () => {
       greeting: 'Good afternoon, Jane Smith!'
     };
 
-    fetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });
@@ -93,7 +94,7 @@ describe('PersonalizedGreeting', () => {
     render(<PersonalizedGreeting userId="user123" />);
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/personalization/greeting?userId=user123');
+      expect(mockFetch).toHaveBeenCalledWith('/api/personalization/greeting?userId=user123');
     });
   });
 
@@ -105,7 +106,7 @@ describe('PersonalizedGreeting', () => {
       greeting: 'Good evening, Alice Johnson!'
     };
 
-    fetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });
@@ -125,7 +126,7 @@ describe('PersonalizedGreeting', () => {
       greeting: 'Good morning'
     };
 
-    fetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });

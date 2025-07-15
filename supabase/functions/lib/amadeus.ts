@@ -35,7 +35,7 @@ export interface BookingResponse {
   bookingReference?: string; // This is the Amadeus Order ID
   confirmationNumber?: string; // This is usually the Airline PNR
   error?: string;
-  bookingData?: any; // Full response from Amadeus
+  bookingData?: Record<string, unknown>; // Full response from Amadeus
 }
 
 export interface SeatSelection {
@@ -106,7 +106,7 @@ export async function priceWithAmadeus(
     maxOffers?: number; // Max offers to fetch for pricing (e.g., 3)
   },
   token: string
-): Promise<any | null> {
+): Promise<Record<string, unknown> | null> {
   const { AMADEUS_BASE_URL } = getAmadeusEnv();
   
   if (!AMADEUS_BASE_URL) {
@@ -189,7 +189,7 @@ export async function priceWithAmadeus(
 
 // Updated function to book with Amadeus using a provided token
 export async function bookWithAmadeus(
-  pricedOffer: any, // This should be the full priced offer object from the pricing endpoint
+  pricedOffer: Record<string, unknown>, // This should be the full priced offer object from the pricing endpoint
   travelerData: TravelerData,
   seatSelections: SeatSelection[], // Array of { segmentId: string, seatNumber: string }
   token: string

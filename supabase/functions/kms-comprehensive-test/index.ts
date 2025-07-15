@@ -33,11 +33,11 @@ interface TestResult {
   testName: string;
   success: boolean;
   duration: number;
-  details: any;
+  details: Record<string, unknown> | null;
   error?: string;
 }
 
-async function runTest(testName: string, testFn: () => Promise<any>): Promise<TestResult> {
+async function runTest(testName: string, testFn: () => Promise<Record<string, unknown>>): Promise<TestResult> {
   const startTime = Date.now();
   try {
     const result = await testFn();
@@ -212,7 +212,7 @@ serve(async (req) => {
       try {
         await decryptData("invalid-encrypted-data");
         tests.push({ test: "invalid_data", result: "FAIL - should have thrown" });
-      } catch (error) {
+      } catch {
         tests.push({ test: "invalid_data", result: "PASS - correctly threw error" });
       }
       
@@ -225,7 +225,7 @@ serve(async (req) => {
           result: decrypted === "" ? "PASS" : "FAIL",
           details: { encrypted: encrypted.length > 0, decrypted }
         });
-      } catch (error) {
+      } catch {
         tests.push({ test: "empty_data", result: "FAIL - should handle empty data" });
       }
       

@@ -7,8 +7,30 @@ import { describe, it, expect } from 'vitest';
 import { FilterFactory, createFilterContext } from '@/lib/filtering';
 import type { FlightOffer } from '@/lib/filtering';
 
+// Interface for raw offers from different providers
+interface RawOffer {
+  id: string;
+  price_total?: number;
+  price?: number;
+  totalAmount?: number;
+  currency?: string;
+  origin_iata?: string;
+  origin_airport?: string;
+  destination_iata?: string;
+  destination_airport?: string;
+  depart_dt?: string;
+  departure_date?: string;
+  return_dt?: string;
+  return_date?: string;
+  carrier_code?: string;
+  flight_number?: string;
+  nonstop?: boolean;
+  itineraries?: unknown[];
+  [key: string]: unknown;
+}
+
 // Simple test version of normalizeOffers for testing purposes
-function testNormalizeOffers(rawOffers: any[], provider: string): FlightOffer[] {
+function testNormalizeOffers(rawOffers: RawOffer[], provider: string): FlightOffer[] {
   return rawOffers.map(offer => {
     const totalPrice = offer.price_total || offer.price || offer.totalAmount || 0;
     return {
@@ -37,7 +59,7 @@ function testNormalizeOffers(rawOffers: any[], provider: string): FlightOffer[] 
       stopsCount: 0,
       validatingAirlines: [offer.carrier_code || 'AA'],
       rawData: offer
-    };
+    } as FlightOffer;
   });
 }
 

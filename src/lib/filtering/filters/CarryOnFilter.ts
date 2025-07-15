@@ -27,7 +27,7 @@ export class CarryOnFilter implements FlightFilter {
       console.log(`[CarryOnFilter] Filtering for carry-on included offers only (app requirement)`);
       
       const filteredOffers = offers.filter(offer => {
-        return this.offerIncludesCarryOn(offer, context);
+        return this.offerIncludesCarryOn(offer);
       });
 
       const removedCount = offers.length - filteredOffers.length;
@@ -51,7 +51,7 @@ export class CarryOnFilter implements FlightFilter {
   /**
    * Check if an offer includes carry-on baggage
    */
-  private offerIncludesCarryOn(offer: FlightOffer, context: FilterContext): boolean {
+  private offerIncludesCarryOn(offer: FlightOffer): boolean {
     try {
       // Method 1: Check the normalized carryOnIncluded field
       if (offer.carryOnIncluded === true) {
@@ -92,7 +92,7 @@ export class CarryOnFilter implements FlightFilter {
   /**
    * Check raw provider data for carry-on information
    */
-  private checkRawDataForCarryOn(rawData: Record<string, any>, provider: string): boolean {
+  private checkRawDataForCarryOn(rawData: Record<string, unknown>, provider: string): boolean {
     try {
       if (provider === 'Amadeus') {
         return this.checkAmadeusCarryOn(rawData);
@@ -109,7 +109,7 @@ export class CarryOnFilter implements FlightFilter {
   /**
    * Check Amadeus raw data for carry-on information
    */
-  private checkAmadeusCarryOn(rawData: Record<string, any>): boolean {
+  private checkAmadeusCarryOn(rawData: Record<string, unknown>): boolean {
     // Check travelerPricings for baggage information
     if (rawData.travelerPricings && Array.isArray(rawData.travelerPricings)) {
       for (const travelerPricing of rawData.travelerPricings) {
@@ -125,13 +125,16 @@ export class CarryOnFilter implements FlightFilter {
 
             // Check additional services for carry-on fees
             if (segmentDetail.additionalServices && Array.isArray(segmentDetail.additionalServices)) {
-              const carryOnService = segmentDetail.additionalServices.find((service: any) => 
-                service.type === 'BAGGAGE' && 
-                /CARRY ON|CABIN BAG|HAND BAG/i.test(service.description || '')
+              const carryOnService = segmentDetail.additionalServices.find((service: unknown) => 
+                typeof service === 'object' && service !== null &&
+                (service as { type?: string }).type === 'BAGGAGE' && 
+                /CARRY ON|CABIN BAG|HAND BAG/i.test((service as { description?: string }).description || '')
               );
               
               // If carry-on service exists with no fee, it's included
-              if (carryOnService && (!carryOnService.amount || parseFloat(carryOnService.amount) === 0)) {
+              if (carryOnService && 
+                  (!(carryOnService as { amount?: string }).amount || 
+                   parseFloat((carryOnService as { amount?: string }).amount || '0') === 0)) {
                 return true;
               }
             }
@@ -146,7 +149,7 @@ export class CarryOnFilter implements FlightFilter {
   /**
    * Check Duffel raw data for carry-on information
    */
-  private checkDuffelCarryOn(rawData: Record<string, any>): boolean {
+  private checkDuffelCarryOn(rawData: Record<string, unknown>): boolean {
     // Check slices for baggage information
     if (rawData.slices && Array.isArray(rawData.slices)) {
       for (const slice of rawData.slices) {
@@ -170,12 +173,17 @@ export class CarryOnFilter implements FlightFilter {
 
     // Check services for carry-on information
     if (rawData.services && Array.isArray(rawData.services)) {
-      const carryOnService = rawData.services.find((service: any) => 
-        service.type === 'baggage' && 
-        /cabin|carry.on|hand.bag/i.test(service.metadata?.title || service.metadata?.description || '')
+      const carryOnService = rawData.services.find((service: unknown) => 
+        typeof service === 'object' && service !== null &&
+        (service as { type?: string }).type === 'baggage' && 
+        /cabin|carry.on|hand.bag/i.test(
+          (service as { metadata?: { title?: string; description?: string } }).metadata?.title || 
+          (service as { metadata?: { title?: string; description?: string } }).metadata?.description || 
+          ''
+        )
       );
       
-      if (carryOnService && carryOnService.total_amount === "0.00") {
+      if (carryOnService && (carryOnService as { total_amount?: string }).total_amount === "0.00") {
         return true;
       }
     }

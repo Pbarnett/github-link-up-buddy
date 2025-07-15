@@ -23,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { method, headers } = req;
+    const { headers } = req;
     const authHeader = headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });

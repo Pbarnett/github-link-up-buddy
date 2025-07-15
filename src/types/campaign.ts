@@ -33,7 +33,12 @@ export interface Campaign {
   name?: string;
   status: 'active' | 'watching' | 'paused' | 'booked' | 'completed' | 'cancelled' | 'expired';
   criteria: CampaignCriteria;
-  price_history?: any[];
+  price_history?: {
+    timestamp: string;
+    price: number;
+    currency: string;
+    offerId?: string;
+  }[];
   latest_booking_request_id?: string;
   created_at: string;
   updated_at: string;

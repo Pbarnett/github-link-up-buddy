@@ -1,17 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FlightRuleForm } from './FlightRuleForm';
 import { UnifiedFlightRuleForm } from './FlightRuleForm';
 
-// Helper to get future dates
-const getFutureDate = (daysFromNow) => {
-  const date = new Date('2025-01-01');
-  date.setDate(date.getDate() + daysFromNow);
-  return date;
-};
-
-const formatDateForInput = (date) => date.toISOString().split('T')[0];
 
 describe('FlightRuleForm', () => {
   const mockOnSubmit = vi.fn();
@@ -66,13 +58,16 @@ describe('FlightRuleForm', () => {
   });
 
   it('submits form with valid data', async () => {
-    const user = userEvent.setup();           // real timers
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
     
     const defaultValues: Partial<UnifiedFlightRuleForm> = {
       origin: ['JFK'],
       destination: 'LAX',
-      earliestOutbound: new Date('2025-07-15'),
-      latestReturn: new Date('2025-07-22'),
+      earliestOutbound: tomorrow,
+      latestReturn: nextWeek,
       cabinClass: 'economy',
       budget: 800,
     };
@@ -102,12 +97,16 @@ describe('FlightRuleForm', () => {
   it('validates return date is after outbound date', async () => {
     const user = userEvent.setup();           // real timers
     
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const today = new Date();
+    
     const defaultValues = {
       origin: ['JFK'],
       destination: 'LAX',
-      earliestOutbound: new Date('2025-07-15'),  // outbound after return
-      latestReturn: new Date('2025-07-10'),     // return before outbound (invalid)
-      cabinClass: 'economy',
+      earliestOutbound: tomorrow,  // outbound after return
+      latestReturn: today,         // return before outbound (invalid)
+      cabinClass: 'economy' as const,
       budget: 800,
     };
     
@@ -123,12 +122,17 @@ describe('FlightRuleForm', () => {
   });
 
   it('allows selection of different cabin classes', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    
     const defaultValues = {
       origin: ['JFK'],
       destination: 'LAX',
-      earliestOutbound: new Date('2025-07-15'),
-      latestReturn: new Date('2025-07-22'),
-      cabinClass: 'economy',
+      earliestOutbound: tomorrow,
+      latestReturn: nextWeek,
+      cabinClass: 'economy' as const,
       budget: 800,
     };
     

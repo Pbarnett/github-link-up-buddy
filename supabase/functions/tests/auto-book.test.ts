@@ -59,12 +59,12 @@ vi.mock('@supabase/supabase-js', () => ({
 // --- Dynamically Importing the Handler ---
 // This is the tricky part. For robust testing, auto-book/index.ts should export its core logic.
 // Here, we'll assume that after mocks are set up, we can import and access the handler.
-let autoBookHandler: (req: any) => Promise<Response>;
+let autoBookHandler: (req: Request) => Promise<Response>;
 
 describe.skip('auto-book Integration Tests', () => {
-  let consoleLogSpy: MockedFunction<any>;
-  let consoleErrorSpy: MockedFunction<any>;
-  let consoleWarnSpy: MockedFunction<any>;
+let consoleLogSpy: MockedFunction<() => void>;
+let consoleErrorSpy: MockedFunction<() => void>;
+let consoleWarnSpy: MockedFunction<() => void>;
 
   beforeEach(async () => {
     vi.clearAllMocks(); // Reset all mocks
@@ -77,12 +77,12 @@ describe.skip('auto-book Integration Tests', () => {
     await import('../auto-book/index.ts');
     
     // Get the handler that was stored by Deno.serve mock
-    const storedHandler = (globalThis as any).__testHandler;
+    const storedHandler = (globalThis as { __testHandler?: (req: Request) => Promise<Response> }).__testHandler;
     if (typeof storedHandler === 'function') {
         autoBookHandler = storedHandler;
     } else {
         // Fallback if handler wasn't captured
-        autoBookHandler = async (_req) => new Response("Handler not available for test", { status: 501 });
+        autoBookHandler = async () => new Response("Handler not available for test", { status: 501 });
         console.warn("Test setup: Could not get handler from auto-book/index.ts. Tests may not run correctly.");
     }
   });
@@ -93,7 +93,7 @@ describe.skip('auto-book Integration Tests', () => {
     consoleWarnSpy.mockRestore();
   });
 
-  const createMockRequest = (tripData: any, method = 'POST') => ({
+const createMockRequest = (tripData: Record<string, unknown>, method = 'POST') => ({
     method,
     json: async () => ({ trip: tripData }),
     // Add other request properties if your Deno.serve handler uses them (e.g., headers)
@@ -111,7 +111,7 @@ describe.skip('auto-book Integration Tests', () => {
     const mockRequest = createMockRequest(mockTrip);
 
     // Mock Lock Acquisition
-    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: { id: 'attemptLock1' }, error: null }); // booking_attempts.insert
+(mockSupabaseClientInstance.single as MockedFunction<() => Promise<{ data: { id: string } | null; error: Error | null }>>).mockResolvedValueOnce({ data: { id: 'attemptLock1' }, error: null });
 
     // Mock Amadeus
     const pricedOfferData = { id: 'offer001', price: { total: '500.00', grandTotal: '500.00' }, flightOffers: [{ price: {total: '500.00', grandTotal: '500.00'}}], itineraries: [{ segments: [{ id: 'seg001' }] }] };
@@ -130,7 +130,7 @@ describe.skip('auto-book Integration Tests', () => {
     mockStripeInstance.paymentIntents.capture.mockResolvedValue({ status: 'succeeded', id: 'pi_success' });
 
     // Mock DB Updates (bookings, trip_requests, booking_attempts)
-    (mockSupabaseClientInstance.single as MockedFunction<any>)
+(mockSupabaseClientInstance.single as MockedFunction<() => Promise<{ data: { id: string } | null; error: Error | null }>>)
         .mockResolvedValueOnce({ data: { id: 'bookingRec1' }, error: null }) // bookings.update
         .mockResolvedValueOnce({ data: { id: 'tripSuccess123' }, error: null }) // trip_requests.update
         .mockResolvedValueOnce({ data: { id: 'attemptLock1' }, error: null }); // booking_attempts.update (finally)
@@ -158,7 +158,7 @@ describe.skip('auto-book Integration Tests', () => {
   it('should attempt Amadeus cancellation and update statuses if Stripe payment fails', async () => {
     const mockTrip = { id: 'tripStripeFail', payment_intent_id: 'pi_stripe_fail', traveler_data: {}, user_id: 'user2' };
     const mockRequest = createMockRequest(mockTrip);
-    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: { id: 'attemptLock2' }, error: null }); // Lock
+(mockSupabaseClientInstance.single as MockedFunction<() => Promise<{ data: { id: string } | null; error: Error | null }>>).mockResolvedValueOnce({ data: { id: 'attemptLock2' }, error: null });
 
     const pricedOfferData = { id: 'offer002', price: { total: '300.00', grandTotal: '300.00' }, flightOffers: [{price: {total: '300.00', grandTotal: '300.00'}}] };
     mockAmadeusInstance.shopping.flightOffersSearch.get.mockResolvedValue({ data: [pricedOfferData] });
@@ -170,7 +170,7 @@ describe.skip('auto-book Integration Tests', () => {
     mockStripeInstance.paymentIntents.capture.mockRejectedValue(new Error('Stripe Payment Failed')); // Stripe fails
     mockAmadeusInstance.booking.flightOrders.cancel.post.mockResolvedValue({ data: {} }); // Amadeus cancel mock
 
-    (mockSupabaseClientInstance.single as MockedFunction<any>)
+(mockSupabaseClientInstance.single as MockedFunction<() => Promise<{ data: { id: string } | null; error: Error | null }>>)
         .mockResolvedValueOnce({ data: { id: 'tripStripeFail' }, error: null }) // trip_requests.update (to failed)
         .mockResolvedValueOnce({ data: { id: 'attemptLock2' }, error: null }); // booking_attempts.update (to failed in finally)
 
@@ -189,7 +189,7 @@ describe.skip('auto-book Integration Tests', () => {
   it('should proceed with booking if seat map fails, without seat selection', async () => {
     const mockTrip = { id: 'tripSeatFail', max_price: 400, payment_intent_id: 'pi_seat_fail', traveler_data: {firstName: 'Seat', lastName: 'Fail'}, user_id: 'user3' };
     const mockRequest = createMockRequest(mockTrip);
-    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: { id: 'attemptLock3' }, error: null }); // Lock
+(mockSupabaseClientInstance.single as MockedFunction<() => Promise<{ data: { id: string } | null; error: Error | null }>>).mockResolvedValueOnce({ data: { id: 'attemptLock3' }, error: null });
 
     const pricedOfferData = { id: 'offer003', price: { total: '350.00', grandTotal: '350.00' }, flightOffers: [{price: {total: '350.00', grandTotal: '350.00'}}] };
     mockAmadeusInstance.shopping.flightOffersSearch.get.mockResolvedValue({ data: [pricedOfferData] });
@@ -201,7 +201,7 @@ describe.skip('auto-book Integration Tests', () => {
     mockSelectSeat.mockReturnValue(null); // selectSeat will return null if map fails or no seat found
     mockStripeInstance.paymentIntents.capture.mockResolvedValue({ status: 'succeeded', id: 'pi_seat_fail' });
 
-    (mockSupabaseClientInstance.single as MockedFunction<any>)
+(mockSupabaseClientInstance.single as MockedFunction<() => Promise<{ data: { id: string } | null; error: Error | null }>>)
         .mockResolvedValueOnce({ data: {}, error: null }) // bookings.update
         .mockResolvedValueOnce({ data: {}, error: null }) // trip_requests.update
         .mockResolvedValueOnce({ data: {}, error: null }); // booking_attempts.update
@@ -222,7 +222,7 @@ describe.skip('auto-book Integration Tests', () => {
   it('should return error if DB update fails after payment, without Amadeus rollback', async () => {
     const mockTrip = { id: 'tripDbFail', payment_intent_id: 'pi_db_fail', traveler_data: {}, user_id: 'user4' };
     const mockRequest = createMockRequest(mockTrip);
-    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: { id: 'attemptLock4' }, error: null }); // Lock
+(mockSupabaseClientInstance.single as MockedFunction<() => Promise<{ data: { id: string } | null; error: Error | null }>>).mockResolvedValueOnce({ data: { id: 'attemptLock4' }, error: null });
 
     const pricedOfferData = { id: 'offer004', price: { total: '200.00', grandTotal: '200.00' }, flightOffers: [{price: {total: '200.00', grandTotal: '200.00'}}] };
     mockAmadeusInstance.shopping.flightOffersSearch.get.mockResolvedValue({ data: [pricedOfferData] });
@@ -233,10 +233,10 @@ describe.skip('auto-book Integration Tests', () => {
     mockStripeInstance.paymentIntents.capture.mockResolvedValue({ status: 'succeeded', id: 'pi_db_fail' }); // Stripe succeeds
 
     // Mock DB update failure (e.g., bookings update fails)
-    (mockSupabaseClientInstance.single as MockedFunction<any>)
+(mockSupabaseClientInstance.single as MockedFunction<() => Promise<{ data: { id: string } | null; error: Error | null }>>)
         .mockResolvedValueOnce({ data: null, error: new Error('DB Bookings Update Failed') }); // bookings.update fails
         // trip_requests update might not be reached or also fail
-    (mockSupabaseClientInstance.single as MockedFunction<any>)
+    (mockSupabaseClientInstance.single as MockedFunction<() => Promise<{ data: { id: string } | null; error: Error | null }>>)
         .mockResolvedValueOnce({ data: { id: 'attemptLock4' }, error: null }); // booking_attempts.update (finally)
 
     const response = await autoBookHandler(mockRequest);
@@ -255,7 +255,7 @@ describe.skip('auto-book Integration Tests', () => {
     const mockRequest = createMockRequest(mockTrip);
 
     // Mock Lock Acquisition Failure (unique violation)
-    (mockSupabaseClientInstance.single as MockedFunction<any>).mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'Unique constraint violation' } });
+(mockSupabaseClientInstance.single as MockedFunction<() => Promise<{ data: null; error: { code: string; message: string }}>>).mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'Unique constraint violation' } });
 
     const response = await autoBookHandler(mockRequest);
     const responseBody = await response.json();

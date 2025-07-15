@@ -118,15 +118,16 @@ serve(async (req: Request) => {
       console.log("Stripe detach took:", Date.now() - stripeDetachStart, "ms");
 
       console.log("Successfully detached payment method from Stripe");
-    } catch (stripeError: any) {
+    } catch (stripeError: unknown) {
       console.error("Error detaching payment method from Stripe:", stripeError);
       
       // If the payment method doesn't exist in Stripe, we can still delete it from our database
-      if (stripeError.code === 'resource_missing') {
+      if (stripeError && typeof stripeError === 'object' && 'code' in stripeError && stripeError.code === 'resource_missing') {
         console.log("Payment method not found in Stripe, continuing with database deletion");
       } else {
+        const errorMessage = stripeError && typeof stripeError === 'object' && 'message' in stripeError ? stripeError.message : 'Unknown error';
         return new Response(
-          JSON.stringify({ error: `Failed to detach payment method from Stripe: ${stripeError.message}` }),
+          JSON.stringify({ error: `Failed to detach payment method from Stripe: ${errorMessage}` }),
           {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },

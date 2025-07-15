@@ -15,7 +15,6 @@ const Breadcrumbs = () => {
   // Define breadcrumb mappings for different routes
   const getBreadcrumbs = (): BreadcrumbItem[] => {
     const path = location.pathname;
-    const searchParams = new URLSearchParams(location.search);
     
     if (path === '/dashboard') {
       return [
@@ -48,7 +47,6 @@ const Breadcrumbs = () => {
     }
     
     if (path.startsWith('/trips/') && path.endsWith('/v2')) {
-      const tripId = path.split('/')[2];
       return [
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Search Flights', href: '/trip/new' },

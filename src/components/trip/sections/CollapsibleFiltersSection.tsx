@@ -5,8 +5,15 @@ import FilterTogglesSection from './FilterTogglesSection';
 import TripDurationInputs from './TripDurationInputs';
 import { Control } from 'react-hook-form';
 
+// Collapsible filters form data interface
+interface CollapsibleFiltersFormData {
+  minDuration?: number;
+  maxDuration?: number;
+  [key: string]: unknown;
+}
+
 interface CollapsibleFiltersSectionProps {
-  control: Control<any>; // Now required for TripDurationInputs
+  control: Control<CollapsibleFiltersFormData>; // Now required for TripDurationInputs
 }
 
 const CollapsibleFiltersSection = ({ control }: CollapsibleFiltersSectionProps) => {
@@ -40,7 +47,7 @@ const CollapsibleFiltersSection = ({ control }: CollapsibleFiltersSectionProps) 
           {/* Flight Features Information */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <h4 className="text-sm font-semibold text-gray-900 mb-3">Flight Features</h4>
-            <FilterTogglesSection />
+            <FilterTogglesSection control={control} />
           </div>
         </div>
       )}

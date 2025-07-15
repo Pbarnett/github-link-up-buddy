@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Tables } from "@/integrations/supabase/types";
-import { TripFormValues, ExtendedTripFormValues, TripRequestResult } from "@/types/form";
+import { ExtendedTripFormValues, TripRequestResult } from "@/types/form";
 import { safeQuery } from "@/lib/supabaseUtils";
 import { toast } from "@/hooks/use-toast";
 
@@ -32,7 +32,7 @@ const createTrip = async (
     // Include new fields if provided
     departure_airports: formData.departure_airports || [],
     destination_airport: formData.destination_airport || null,
-    destination_location_code: formData.destination_airport || null,
+    destination_location_code: formData.destination_airport || formData.destination_location_code || '',
     min_duration: formData.min_duration || 3,
     max_duration: formData.max_duration || 6,
     // Filter preferences
@@ -51,19 +51,17 @@ const createTrip = async (
   });
   
   // Insert trip request into Supabase with proper types
-  const tripRequestResult = await safeQuery<Tables<"trip_requests">>(() =>
-    supabase
-      .from("trip_requests")
-      .insert(tripRequestData)
-      .select()
-      .single()
-  );
+  const { data: tripRequestResult, error: tripRequestError } = await supabase
+    .from("trip_requests")
+    .insert(tripRequestData)
+    .select()
+    .single();
   
-  if (tripRequestResult.error) {
-    throw new Error(`Failed to submit trip request: ${tripRequestResult.error.message}`);
+  if (tripRequestError) {
+    throw new Error(`Failed to submit trip request: ${tripRequestError.message}`);
   }
   
-  return tripRequestResult.data as Tables<"trip_requests">;
+  return tripRequestResult as unknown as Tables<"trip_requests">;
 };
 
 // Function to create trip request
@@ -122,8 +120,8 @@ export const createTripRequest = async (
     offersQuery = offersQuery.not('return_dt', 'is', null);
   }
 
-  const { data: offers, error: offersError } = await offersQuery
-    .order("price_total", { ascending: true });
+  const offersQueryWithOrder = offersQuery.order("price_total", { ascending: true });
+  const { data: offers, error: offersError } = await (offersQueryWithOrder as any);
   
   if (offersError) {
     console.error("Error fetching offers:", offersError);

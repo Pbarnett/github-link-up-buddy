@@ -9,7 +9,6 @@ import {
   FileText, 
   Settings, 
   Shield, 
-  CheckCircle,
   AlertTriangle,
   TrendingUp,
   Target

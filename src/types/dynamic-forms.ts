@@ -7,13 +7,21 @@
 export interface FormConfiguration {
   id: string;
   name: string;
+  description?: string;
   version: number;
   sections: FormSection[];
   integrations?: FormIntegrations;
   stripeConfig?: StripeConfiguration;
   apiKeys?: Record<string, string>;
   piiFields?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+  settings?: {
+    theme?: string;
+    showProgressBar?: boolean;
+    allowSave?: boolean;
+  };
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface FormSection {
@@ -35,14 +43,31 @@ export interface FieldConfiguration {
   apiIntegration?: APIIntegration;
   stripeConfig?: StripeFieldConfig;
   conditional?: ConditionalLogic;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   className?: string;
-  defaultValue?: any;
+  defaultValue?: unknown;
   options?: FieldOption[]; // For select, radio, checkbox fields
+  
+  // Field-specific properties
+  rows?: number; // For textarea
+  autoComplete?: string; // For input fields
+  tooltip?: string; // For field tooltips
+  defaultCountry?: string; // For phone input
+  addressConfig?: {
+    includeCity?: boolean;
+    includeState?: boolean;
+    includeCountry?: boolean;
+    includePostalCode?: boolean;
+    defaultCountry?: string;
+  }; // For address group fields
+  accept?: string; // For file upload
+  multiple?: boolean; // For file upload
+  maxSize?: number; // For file upload
+  allowHalf?: boolean; // For rating fields
 }
 
 export type FieldType = 
-  | 'text' | 'email' | 'phone' | 'number' | 'password' | 'textarea'
+  | 'text' | 'email' | 'phone' | 'number' | 'password' | 'textarea' | 'url'
   | 'select' | 'multi-select' | 'radio' | 'checkbox' | 'switch'
   | 'date' | 'datetime' | 'date-range' | 'date-range-flexible'
   | 'airport-autocomplete' | 'country-select' | 'currency-select'
@@ -76,13 +101,13 @@ export interface APIIntegration {
 export interface StripeConfiguration {
   publishableKey?: string;
   accountId?: string;
-  appearance?: Record<string, any>;
-  elements?: Record<string, any>;
+  appearance?: Record<string, unknown>;
+  elements?: Record<string, unknown>;
 }
 
 export interface StripeFieldConfig {
-  appearance?: Record<string, any>;
-  options?: Record<string, any>;
+  appearance?: Record<string, unknown>;
+  options?: Record<string, unknown>;
 }
 
 export interface ValidationRules {
@@ -95,6 +120,7 @@ export interface ValidationRules {
   email?: boolean;
   phone?: boolean;
   url?: boolean;
+  step?: number; // For number inputs
   custom?: string; // Custom validation function as string
   message?: string; // Custom error message
 }
@@ -109,12 +135,12 @@ export interface ConditionalLogic {
 export interface ConditionalRule {
   field: string;
   operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'oneOf' | 'notOneOf' | 'greater' | 'less' | 'greaterOrEqual' | 'lessOrEqual';
-  value: any;
+  value: unknown;
 }
 
 // Form State Management
 export interface FormState {
-  values: Record<string, any>;
+  values: Record<string, unknown>;
   errors: Record<string, string>;
   touched: Record<string, boolean>;
   isSubmitting: boolean;
@@ -123,7 +149,7 @@ export interface FormState {
 
 export interface FormContext {
   formState: FormState;
-  updateField: (fieldId: string, value: any) => void;
+  updateField: (fieldId: string, value: unknown) => void;
   validateField: (fieldId: string) => void;
   setFieldError: (fieldId: string, error: string) => void;
   clearFieldError: (fieldId: string) => void;
@@ -137,8 +163,8 @@ export interface FormConfigurationRecord {
   version: number;
   status: 'draft' | 'testing' | 'deployed' | 'archived';
   config_data: FormConfiguration;
-  validation_schema: any;
-  ui_schema: any;
+  validation_schema: Record<string, unknown>;
+  ui_schema: Record<string, unknown>;
   deployment_strategy: 'immediate' | 'canary' | 'blue_green';
   canary_percentage: number;
   rollback_config_id?: string;
@@ -158,10 +184,13 @@ export interface FormDeployment {
   deployed_by: string;
   deployment_strategy: 'immediate' | 'canary' | 'blue_green';
   target_percentage: number;
-  user_segment?: any;
+  user_segment?: {
+    criteria: Record<string, unknown>;
+    percentage?: number;
+  };
   status: 'active' | 'rolled_back' | 'completed';
-  metrics: any;
-  health_check_results: any;
+  metrics: Record<string, unknown>;
+  health_check_results: Record<string, unknown>;
   deployed_at: string;
   rolled_back_at?: string;
   completed_at?: string;
@@ -177,7 +206,7 @@ export interface FormUsageAnalytics {
   user_agent?: string;
   event_type: 'view' | 'interaction' | 'submit' | 'error' | 'abandon';
   field_id?: string;
-  event_data: any;
+  event_data: Record<string, unknown>;
   load_time_ms?: number;
   interaction_time_ms?: number;
   timestamp: string;
@@ -193,7 +222,7 @@ export interface FormConfigResponse {
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: Record<string, unknown>;
   };
 }
 
@@ -208,7 +237,7 @@ export interface SecurityViolation {
   severity: 'low' | 'medium' | 'high' | 'critical';
   message: string;
   field?: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 export interface ValidationResponse {
@@ -261,7 +290,7 @@ export interface FormEvent {
   type: 'field_change' | 'section_change' | 'validation_error' | 'form_submit';
   fieldId?: string;
   sectionId?: string;
-  value?: any;
+  value?: unknown;
   error?: string;
   timestamp: number;
 }
@@ -279,12 +308,15 @@ export interface UseFormConfigurationReturn {
 export interface DeploymentOptions {
   strategy: 'immediate' | 'canary' | 'blue_green';
   percentage?: number;
-  userSegment?: any;
+  userSegment?: {
+    criteria: Record<string, unknown>;
+    percentage?: number;
+  };
 }
 
 export interface UseFormStateReturn {
   formState: FormState;
-  setValue: (fieldId: string, value: any) => void;
+  setValue: (fieldId: string, value: unknown) => void;
   setError: (fieldId: string, error: string) => void;
   clearError: (fieldId: string) => void;
   validateForm: () => boolean;
@@ -299,7 +331,7 @@ export interface DynamicFormRendererProps {
   configName?: string;
   configuration?: FormConfiguration;
   onSubmit?: (data: FormSubmissionData) => void | Promise<void>;
-  onFieldChange?: (fieldId: string, value: any) => void;
+  onFieldChange?: (fieldId: string, value: unknown) => void;
   onValidationError?: (errors: Record<string, string>) => void;
   className?: string;
   disabled?: boolean;
@@ -309,22 +341,22 @@ export interface DynamicFormRendererProps {
 export interface FormSubmissionData {
   formId: string;
   formName: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   metadata: {
     submittedAt: string;
     userAgent: string;
     formVersion: number;
     instanceId: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
 
 export interface FieldRendererProps {
   field: FieldConfiguration;
-  value: any;
+  value: unknown;
   error?: string;
-  onChange: (value: any) => void;
+  onChange: (value: unknown) => void;
   onBlur?: () => void;
   disabled?: boolean;
   className?: string;

@@ -36,7 +36,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 async function createNotification(
   userId: string,
   type: string,
-  payload: Record<string, any>
+  payload: Record<string, unknown>
 ) {
   try {
     const { error } = await supabase

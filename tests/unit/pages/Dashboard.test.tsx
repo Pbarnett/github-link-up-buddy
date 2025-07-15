@@ -2,7 +2,7 @@
 // src/tests/pages/Dashboard.test.tsx
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import Dashboard from '@/pages/Dashboard';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
@@ -10,7 +10,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 // Mock personalization hook
 vi.mock('@/contexts/PersonalizationContext', async (importOriginal) => {
-  const actual = await importOriginal<any>();
+  const actual = await importOriginal<typeof import('@/contexts/PersonalizationContext')>();
   return {
     ...actual,
     usePersonalization: () => ({
@@ -89,26 +89,26 @@ describe('Dashboard Page', () => {
     const { supabase } = await import('@/integrations/supabase/client');
     
     // Reset all mocks to default values
-    (supabase.auth.getUser as any).mockResolvedValue({ 
+    (supabase.auth.getUser as vi.MockedFunction<typeof supabase.auth.getUser>).mockResolvedValue({ 
       data: { user: { id: 'user-123', email: 'test@example.com' } }, 
       error: null 
     });
     
-    (supabase.auth.onAuthStateChange as any).mockReturnValue({
+    (supabase.auth.onAuthStateChange as vi.MockedFunction<typeof supabase.auth.onAuthStateChange>).mockReturnValue({
       data: { subscription: { unsubscribe: vi.fn() } },
     });
     
-    (supabase.auth.signOut as any).mockResolvedValue({ error: null });
+    (supabase.auth.signOut as vi.MockedFunction<typeof supabase.auth.signOut>).mockResolvedValue({ error: null });
     
-    (supabase.channel as any).mockReturnValue({
+    (supabase.channel as vi.MockedFunction<typeof supabase.channel>).mockReturnValue({
       on: vi.fn().mockReturnThis(),
       subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })),
     });
     
-    (supabase.removeChannel as any).mockImplementation(() => {});
+    (supabase.removeChannel as vi.MockedFunction<typeof supabase.removeChannel>).mockImplementation(() => {});
     
     // Mock Supabase 'from' chained calls more robustly
-    (supabase.from as any).mockImplementation((tableName: string) => {
+    (supabase.from as vi.MockedFunction<typeof supabase.from>).mockImplementation((tableName: string) => {
       const chain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
@@ -119,12 +119,12 @@ describe('Dashboard Page', () => {
       };
 
       if (tableName === 'booking_requests') {
-        (chain.order as MockedFunction<any>).mockResolvedValue({ data: mockBookingRequestsData, error: null });
+        (chain.order as vi.MockedFunction<typeof chain.order>).mockResolvedValue({ data: mockBookingRequestsData, error: null });
       } else if (tableName === 'trip_requests') {
-        (chain.limit as MockedFunction<any>).mockResolvedValue({ data: mockTripRequestsData, error: null });
+        (chain.limit as vi.MockedFunction<typeof chain.limit>).mockResolvedValue({ data: mockTripRequestsData, error: null });
       } else {
-        (chain.order as MockedFunction<any>).mockResolvedValue({ data: [], error: null });
-        (chain.limit as MockedFunction<any>).mockResolvedValue({ data: [], error: null });
+        (chain.order as vi.MockedFunction<typeof chain.order>).mockResolvedValue({ data: [], error: null });
+        (chain.limit as vi.MockedFunction<typeof chain.limit>).mockResolvedValue({ data: [], error: null });
       }
 
       return chain;
@@ -144,7 +144,7 @@ describe('Dashboard Page', () => {
 
   it('1. Renders loading state initially', async () => {
     const { supabase } = await import('@/integrations/supabase/client');
-    (supabase.auth.getUser as any).mockImplementationOnce(() => new Promise(() => {})); // Simulate pending promise
+    (supabase.auth.getUser as vi.MockedFunction<typeof supabase.auth.getUser>).mockImplementationOnce(() => new Promise(() => {})); // Simulate pending promise
     renderDashboardWithRouter();
     // Look for loading skeleton elements - the Dashboard shows skeleton loaders with animate-pulse class
     const pulseElements = document.querySelectorAll('.animate-pulse');
@@ -206,7 +206,7 @@ describe('Dashboard Page', () => {
 
   it('5. Handles unauthenticated state (simulates redirect to /login)', async () => {
     const { supabase } = await import('@/integrations/supabase/client');
-    (supabase.auth.getUser as any).mockResolvedValueOnce({ data: { user: null }, error: null });
+    (supabase.auth.getUser as vi.MockedFunction<typeof supabase.auth.getUser>).mockResolvedValueOnce({ data: { user: null }, error: null });
     renderDashboardWithRouter();
 
     await waitFor(() => {

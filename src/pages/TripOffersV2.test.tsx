@@ -1,7 +1,6 @@
 import { render, screen, fireEvent, waitFor, within, cleanup } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach, type Mock } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { format } from 'date-fns';
 import TripOffersV2 from './TripOffersV2';
 import * as useFlightOffersHook from '@/flightSearchV2/useFlightOffers';
 import { FlightOfferV2 } from '@/flightSearchV2/types';

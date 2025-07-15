@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+// import { Input } from '@/components/ui/input';
+// import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,7 +38,7 @@ const cleanupAuthState = () => {
         sessionStorage.removeItem(key);
       }
     });
-  } catch (error) {
+  } catch {
     // Ignore if sessionStorage is not available
   }
 };
@@ -145,8 +145,8 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessi
         title: "Check your email",
         description: "We've sent you a login link",
       });
-    } catch (error: any) {
-      toast({ title: "Login Failed", description: error.message || "An unexpected error occurred. Please try again.", variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Login Failed", description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -191,7 +191,7 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessi
       // }); // Removed
       
       // Now sign in with Google OAuth with explicit parameters
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin + '/login',
@@ -200,8 +200,8 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessi
       });
       
       if (error) throw error;
-    } catch (error: any) {
-      toast({ title: "Google Login Failed", description: error.message || "An unexpected error occurred with Google login. Please try again.", variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "Google Login Failed", description: error instanceof Error ? error.message : "An unexpected error occurred with Google login. Please try again.", variant: "destructive" });
       setLoading(false);
     }
   };

@@ -121,7 +121,7 @@ export function validatePassportExpiry(
     }
     
     return { isValid: true };
-  } catch (error) {
+  } catch {
     return {
       isValid: false,
       error: 'Invalid passport expiry date format. Please use YYYY-MM-DD format.'

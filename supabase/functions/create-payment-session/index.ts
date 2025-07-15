@@ -13,7 +13,7 @@ if (!stripeSecretKey) {
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,10 +23,10 @@ const corsHeaders = {
 
 // Helper function to create notifications
 async function createNotification(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   type: string,
-  payload: Record<string, any>
+  payload: Record<string, unknown>
 ) {
   try {
     const { error } = await supabase
@@ -223,7 +223,7 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error("create-payment-session error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {
         status: 500,
         headers: {
@@ -236,7 +236,7 @@ serve(async (req: Request) => {
 });
 
 // Helper function to create a new Stripe customer
-async function createCustomer(stripe: Stripe, user: any): Promise<string> {
+async function createCustomer(stripe: Stripe, user: { id: string; email: string }): Promise<string> {
   const customer = await stripe.customers.create({
     email: user.email,
     metadata: {

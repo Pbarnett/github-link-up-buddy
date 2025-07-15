@@ -15,8 +15,8 @@ import { HelpCircle } from "lucide-react";
 import { POPULAR_DESTINATIONS } from "@/data/airports";
 
 interface EnhancedDestinationSectionProps {
-  control: Control<any>;
-  watch: UseFormWatch<any>;
+  control: Control<Record<string, unknown>>;
+  watch: UseFormWatch<Record<string, unknown>>;
 }
 
 const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSectionProps) => {
@@ -47,7 +47,7 @@ const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSecti
               </div>
               <Select 
                 onValueChange={field.onChange} 
-                value={field.value || ""}
+                value={(field.value as string) || ""}
               >
                 <FormControl>
                   <SelectTrigger className="h-12 bg-white border-gray-300 text-base font-medium hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
@@ -77,7 +77,8 @@ const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSecti
                 <Input 
                   placeholder="Enter airport code (e.g., LAX)" 
                   className="h-11 bg-white border-gray-300"
-                  {...field} 
+                  {...field}
+                  value={(field.value as string) || ""}
                   disabled={!!selectedDestination}
                 />
               </FormControl>

@@ -10,7 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock Personalization Context
 vi.mock('@/contexts/PersonalizationContext', async (importOriginal) => {
-  const actual = await importOriginal<any>();
+  const actual = await importOriginal<typeof import('@/contexts/PersonalizationContext')>();
   return {
     ...actual,
     usePersonalization: () => ({ firstName: 'Testy', flags: {} }),
@@ -97,23 +97,32 @@ describe('Dashboard Page', () => {
     const { supabase } = await import('@/integrations/supabase/client');
     
     // Reset all mocks to default values
-    (supabase.auth.getUser as any).mockResolvedValue({ 
-      data: { user: { id: 'user-123', email: 'test@example.com' } }, 
+    (supabase.auth.getUser as MockedFunction<typeof supabase.auth.getUser>).mockResolvedValue({ 
+      data: { user: { 
+        id: 'user-123', 
+        email: 'test@example.com',
+        app_metadata: {},
+        user_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString()
+      } }, 
       error: null 
-    });
+    } as any);
     
-    (supabase.auth.onAuthStateChange as any).mockReturnValue({
+    (supabase.auth.onAuthStateChange as MockedFunction<typeof supabase.auth.onAuthStateChange>).mockReturnValue({
       data: { subscription: { unsubscribe: vi.fn() } },
-    });
+      error: null
+    } as any);
     
-    (supabase.auth.signOut as any).mockResolvedValue({ error: null });
+    (supabase.auth.signOut as MockedFunction<typeof supabase.auth.signOut>).mockResolvedValue({ error: null });
     
-    (supabase.channel as any).mockReturnValue({
+    (supabase.channel as MockedFunction<typeof supabase.channel>).mockReturnValue({
       on: vi.fn().mockReturnThis(),
       subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })),
-    });
+      unsubscribe: vi.fn()
+    } as any);
     
-    (supabase.removeChannel as any).mockImplementation(() => {});
+    (supabase.removeChannel as MockedFunction<typeof supabase.removeChannel>).mockImplementation(() => {});
     
     // Mock Supabase 'from' chained calls more robustly
     (supabase.from as any).mockImplementation((tableName: string) => {
@@ -127,12 +136,12 @@ describe('Dashboard Page', () => {
       };
 
       if (tableName === 'booking_requests') {
-        (chain.order as MockedFunction<any>).mockResolvedValue({ data: mockBookingRequestsData, error: null });
+        (chain.order as MockedFunction<typeof chain.order>).mockResolvedValue({ data: mockBookingRequestsData, error: null });
       } else if (tableName === 'trip_requests') {
-        (chain.limit as MockedFunction<any>).mockResolvedValue({ data: mockTripRequestsData, error: null });
+        (chain.limit as MockedFunction<typeof chain.limit>).mockResolvedValue({ data: mockTripRequestsData, error: null });
       } else {
-        (chain.order as MockedFunction<any>).mockResolvedValue({ data: [], error: null });
-        (chain.limit as MockedFunction<any>).mockResolvedValue({ data: [], error: null });
+        (chain.order as MockedFunction<typeof chain.order>).mockResolvedValue({ data: [], error: null });
+        (chain.limit as MockedFunction<typeof chain.limit>).mockResolvedValue({ data: [], error: null });
       }
 
       return chain;
@@ -162,7 +171,7 @@ describe('Dashboard Page', () => {
 
   it('1. Renders loading state initially', async () => {
     const { supabase } = await import('@/integrations/supabase/client');
-    (supabase.auth.getUser as any).mockImplementationOnce(() => new Promise(() => {})); // Simulate pending promise
+    (supabase.auth.getUser as MockedFunction<typeof supabase.auth.getUser>).mockImplementationOnce(() => new Promise(() => {}) as any); // Simulate pending promise
     renderDashboardWithRouter();
     // Look for loading skeleton elements - the Dashboard shows skeleton loaders with animate-pulse class
     const pulseElements = document.querySelectorAll('.animate-pulse');
@@ -224,7 +233,7 @@ describe('Dashboard Page', () => {
 
   it('5. Handles unauthenticated state (simulates redirect to /login)', async () => {
     const { supabase } = await import('@/integrations/supabase/client');
-    (supabase.auth.getUser as any).mockResolvedValueOnce({ data: { user: null }, error: null });
+    (supabase.auth.getUser as MockedFunction<typeof supabase.auth.getUser>).mockResolvedValueOnce({ data: { user: null }, error: null });
     renderDashboardWithRouter();
 
     await waitFor(() => {

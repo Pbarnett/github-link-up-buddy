@@ -43,8 +43,10 @@ export async function fetchToken(): Promise<string> {
 // Main Search Function - DEPRECATED
 // Use supabase/functions/flight-search/flightApi.edge.ts instead
 export async function searchOffers(
-  params: FlightSearchParams,
-  tripRequestId: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _params: FlightSearchParams,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _tripRequestId: string
 ): Promise<TablesInsert<"flight_offers">[]> {
   console.warn("Using deprecated searchOffers implementation. Please migrate to the new version.");
   
@@ -56,7 +58,8 @@ export async function searchOffers(
 
 // Transform Amadeus response to our format - DEPRECATED
 // Use supabase/functions/flight-search/flightApi.edge.ts instead
-export function transformAmadeusToOffers(api: any, tripRequestId: string): TablesInsert<"flight_offers">[] {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function transformAmadeusToOffers(_api: unknown, _tripRequestId: string): TablesInsert<"flight_offers">[] {
   console.warn("Using deprecated transformAmadeusToOffers implementation. Please migrate to the new version.");
   
   // IMPORTANT: Changed to avoid circular imports - don't forward to new implementation

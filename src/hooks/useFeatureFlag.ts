@@ -2,12 +2,11 @@ import { useFlags } from 'launchdarkly-react-client-sdk';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useEffect } from 'react';
 import { trackPersonalizationSeen } from '../services/launchDarklyService';
-import { type FeatureFlag, evaluateFeatureFlag } from '@shared/featureFlag';
+import { type FeatureFlag, isFeatureEnabled as isEnabled } from '@/shared/featureFlag';
 
 // New LaunchDarkly-powered hook with tracking
 export const useFeatureFlag = (flagName: string, defaultValue: boolean = false) => {
   const flags = useFlags<Record<string, boolean>>();
-  const { user } = useCurrentUser();
   
   // Check for test environment or preset flags from tests first
   let flagValue = defaultValue;
@@ -34,7 +33,7 @@ export const useFeatureFlag = (flagName: string, defaultValue: boolean = false) 
           if (parsedFlags[flagName] !== undefined) {
             flagValue = parsedFlags[flagName];
           }
-        } catch (e) {
+        } catch {
           // Ignore parsing errors
         }
       }
@@ -80,5 +79,5 @@ export const useClientFeatureFlag = (flagName: string, rolloutPercentage: number
     rollout_percentage: rolloutPercentage
   };
   
-  return evaluateFeatureFlag(flag, user.id);
+  return isEnabled(flag.name, user.id);
 };

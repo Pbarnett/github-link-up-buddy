@@ -62,18 +62,13 @@ export const useDuffelPayment = (): UseDuffelPaymentReturn => {
       });
 
       // Create payment intent using existing Stripe infrastructure
-      const paymentData = await createStripePaymentIntent({
-        amount: Math.round(options.amount * 100), // Convert to cents
-        currency: options.currency.toLowerCase(),
-        metadata: {
-          ...options.metadata,
-          payment_type: 'duffel_flight_booking',
-          integration_version: '1.0'
-        }
-      });
+      const paymentData = await createStripePaymentIntent(
+        options.amount,
+        options.currency
+      );
 
       const intent: DuffelPaymentIntent = {
-        id: paymentData.payment_intent_id,
+        id: paymentData.id,
         client_secret: paymentData.client_secret,
         amount: options.amount,
         currency: options.currency,
@@ -88,13 +83,16 @@ export const useDuffelPayment = (): UseDuffelPaymentReturn => {
       });
 
       return intent;
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('[DUFFEL-PAYMENT] Failed to create payment intent:', err);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create payment intent';
+      const errorDetails = err instanceof Error ? err.stack : String(err);
       
       const duffelError: DuffelError = {
         type: 'payment',
-        message: err.message || 'Failed to create payment intent',
-        details: err.stack,
+        message: errorMessage,
+        details: errorDetails,
         retryable: true
       };
       
@@ -125,13 +123,15 @@ export const useDuffelPayment = (): UseDuffelPaymentReturn => {
       
       logger.info('[DUFFEL-PAYMENT] Payment confirmed successfully');
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('[DUFFEL-PAYMENT] Payment confirmation failed:', err);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Payment confirmation failed';
       
       const duffelError: DuffelError = {
         type: 'payment',
-        message: 'Payment confirmation failed',
-        details: err.message,
+        message: errorMessage,
+        details: errorMessage,
         retryable: false
       };
       

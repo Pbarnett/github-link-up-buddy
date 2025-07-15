@@ -11,7 +11,7 @@ interface PersonalizationContextType {
   personalizationData: PersonalizationData | null;
   isLoading: boolean;
   error: Error | null;
-  trackEvent: (eventType: string, context?: any) => void;
+  trackEvent: (eventType: string, context?: Record<string, unknown>) => void;
   refetch: () => void;
 }
 
@@ -34,15 +34,21 @@ export function PersonalizationProvider({
     refetch 
   } = usePersonalization(userId);
   
+  const trackEventWrapper = useCallback((eventType: string, context?: Record<string, unknown>) => {
+    trackEvent({ eventType, context });
+  }, [trackEvent]);
+  
+  const refetchWrapper = useCallback(() => {
+    refetch();
+  }, [refetch]);
+  
   const contextValue = useMemo(() => ({
-    personalizationData,
+    personalizationData: personalizationData as PersonalizationData | null,
     isLoading,
     error,
-    trackEvent: useCallback((eventType: string, context?: any) => {
-      trackEvent({ eventType, context });
-    }, [trackEvent]),
-    refetch
-  }), [personalizationData, isLoading, error, trackEvent, refetch]);
+    trackEvent: trackEventWrapper,
+    refetch: refetchWrapper
+  }), [personalizationData, isLoading, error, trackEventWrapper, refetchWrapper]);
   
   return (
     <PersonalizationContext.Provider value={contextValue}>

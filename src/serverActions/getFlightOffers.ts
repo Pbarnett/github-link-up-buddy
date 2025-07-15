@@ -78,9 +78,6 @@ interface CacheEntry {
 
 const cache = new Map<string, CacheEntry>();
 
-interface EdgeFunctionError {
-  error: string;
-}
 
 // Options interface for getFlightOffers
 export interface GetFlightOffersOptions {
@@ -156,7 +153,8 @@ export const getFlightOffers = async (
     throw new Error(`Failed to fetch trip request: ${tripRequestError.message}`);
   }
 
-  let query = supabaseClient
+  // Build the query conditionally
+  let queryBuilder = supabaseClient
     .from('flight_offers_v2')
     .select('*')
     .eq('trip_request_id', tripRequestId);
@@ -164,19 +162,19 @@ export const getFlightOffers = async (
   // If this is a round-trip search (has return_date), exclude one-way flights
   if (tripRequest?.return_date) {
     console.log(`[ServerAction/getFlightOffers] Round-trip search detected, filtering out one-way flights`);
-    query = query.not('return_dt', 'is', null);
+    queryBuilder = queryBuilder.not('return_dt', 'is', null);
   }
 
-  const { data: v2Data, error: v2Error } = await query;
+  const { data: v2Data, error: v2Error } = await (queryBuilder as any);
     
   // If no V2 data, fall back to legacy table and transform
   if (v2Error || !v2Data || v2Data.length === 0) {
     console.log(`[ServerAction/getFlightOffers] No V2 data found, falling back to legacy flight_offers table...`);
     
-    const { data: legacyData, error: legacyError } = await supabaseClient
+    const { data: legacyData, error: legacyError } = await (supabaseClient
       .from('flight_offers')
       .select('*')
-      .eq('trip_request_id', tripRequestId);
+      .eq('trip_request_id', tripRequestId) as any);
       
     if (legacyError) {
       console.error(`[ServerAction/getFlightOffers] Error fetching from 'flight_offers' table for tripRequestId ${tripRequestId}:`, legacyError);

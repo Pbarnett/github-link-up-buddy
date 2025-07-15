@@ -17,8 +17,8 @@ interface PersonalizationContextType {
   refreshPersonalizationData: () => Promise<void>;
   isPersonalizationEnabled: boolean;
   abTestVariant: string | null;
-  experimentConfig: Record<string, any> | null;
-  trackPersonalizationEvent: (eventType: 'exposure' | 'conversion' | 'engagement', eventName: string, metadata?: Record<string, any>) => Promise<void>;
+experimentConfig: Record<string, unknown> | null;
+  trackPersonalizationEvent: (eventType: 'exposure' | 'conversion' | 'engagement', eventName: string, metadata?: Record<string, unknown>) => Promise<void>;
 }
 
 const PersonalizationContext = createContext<PersonalizationContextType | undefined>(undefined);
@@ -42,16 +42,17 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
   
   // Feature flag check for controlled rollout (Alpha/Beta phases)
   // Now enhanced with A/B testing
-  const featureFlagEnabled = useFeatureFlag('personalizedGreetings') ?? false;
+  const featureFlagResult = useFeatureFlag('personalizedGreetings');
+  const featureFlagEnabled = (featureFlagResult?.data ?? false) as boolean;
   const temporaryFlagEnabled = enablePersonalizationForTesting();
-  const abTestPersonalizationEnabled = experimentConfig?.enablePersonalization ?? false;
-  const isPersonalizationEnabled = featureFlagEnabled || temporaryFlagEnabled || abTestPersonalizationEnabled;
+  const abTestPersonalizationEnabled = (experimentConfig?.enablePersonalization ?? false) as boolean;
+  const isPersonalizationEnabled: boolean = featureFlagEnabled || temporaryFlagEnabled || abTestPersonalizationEnabled;
 
   // A/B testing event tracking function
   const trackPersonalizationEvent = async (
     eventType: 'exposure' | 'conversion' | 'engagement',
     eventName: string,
-    metadata?: Record<string, any>
+metadata?: Record<string, unknown>
   ) => {
     if (!userId || !abTestVariant) return;
 
@@ -78,7 +79,7 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
     abTestVariant,
     experimentConfig,
     trackPersonalizationEvent,
-  }), [personalizationData, loading, error, isPersonalizationEnabled, abTestVariant, experimentConfig]);
+  }), [personalizationData, loading, error, isPersonalizationEnabled, abTestVariant, experimentConfig, trackPersonalizationEvent]);
 
   async function fetchPersonalizationData(): Promise<void> {
     if (!userId || !isPersonalizationEnabled) {
