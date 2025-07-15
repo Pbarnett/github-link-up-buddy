@@ -5,7 +5,7 @@
  */
 
 // Import MurmurHash3 for consistent user bucketing
-// @ts-ignore - murmurhash-js doesn't have types but we know the API
+// @ts-expect-error - murmurhash-js doesn't have types but we know the API
 import murmur from 'murmurhash-js';
 
 export interface FeatureFlag {
