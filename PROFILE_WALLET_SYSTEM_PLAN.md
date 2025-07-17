@@ -547,22 +547,378 @@ test.describe('Canary UI Tests', () => {
 });
 ```
 
-## 🔄 Rollback How-To
+## 🔄 Comprehensive Rollback Strategy
+
+> **Philosophy**: Ship behind flags. Every new path—UI or API—must be wrapped in `isEnabled()`. Make migrations reversible. Automate rollback. Any change can be undone in < 5 minutes, with zero end-user data loss.
+
+### 1. Feature Flag Kill Switch
+
+**Instant Rollback (< 30 seconds)**
+```bash
+# Emergency disable any feature
+supabase db remote execute "UPDATE feature_flags SET enabled = false WHERE name = 'wallet_ui';"
+
+# Or via ops dashboard
+curl -X PATCH "$SUPABASE_URL/functions/v1/ops/flags" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -d '{"wallet_ui": {"enabled": false}}'
+```
+
+**Ops Dashboard Implementation**
+```typescript
+// /ops/flags - Emergency flag management UI
+interface FlagOverride {
+  enabled: boolean;
+  rollout_percentage: number;
+  reason: string; // Required for audit
+}
+
+// One-click disable for incidents
+const emergencyDisable = async (flagName: string) => {
+  await supabase.from('feature_flags').update({
+    enabled: false,
+    rollout_percentage: 0,
+    updated_at: new Date().toISOString(),
+    disabled_reason: 'Emergency incident response'
+  }).eq('name', flagName);
+};
+```
+
+### 2. Database Migration Safety
+
+**2.1 Automatic PITR Snapshots**
+```yaml
+# .github/workflows/deploy.yml
+- name: Create pre-migration snapshot
+  run: |
+    # Create branch for rollback
+    supabase db branches create pre_mig_${{ github.sha }}
+    
+    # Tag the current state
+    aws s3 cp s3://pf-backups/$(date +%Y-%m-%d)/snapshot.sql \
+             s3://pf-backups/pre_mig_${{ github.sha }}.sql
+    
+    echo "ROLLBACK_BRANCH=pre_mig_${{ github.sha }}" >> $GITHUB_ENV
+
+- name: Run migration with safety checks
+  run: |
+    # Dry run first
+    supabase db remote commit --dry-run -m "${{ github.event.head_commit.message }}"
+    
+    # Execute if dry run passes
+    supabase db remote commit -m "${{ github.event.head_commit.message }}"
+    
+    # Create post-migration snapshot
+    supabase db branches create post_mig_${{ github.sha }} \
+       && supabase db remote status
+```
+
+**2.2 Expand-Only Migration Pattern**
+```sql
+-- ✅ SAFE: Expand-only migration (Sprint N)
+ALTER TABLE payment_methods 
+ADD COLUMN new_encryption_method TEXT DEFAULT 'kms_v2';
+
+-- ✅ SAFE: Backfill with fallback
+UPDATE payment_methods 
+SET new_encryption_method = 'kms_v2' 
+WHERE encryption_version = 2;
+
+-- ❌ DANGEROUS: Contract migration (Sprint N+1 only)
+-- ALTER TABLE payment_methods DROP COLUMN old_encryption_method;
+```
+
+**2.3 Health-Based Auto-Rollback**
+```yaml
+# Added to blue/green deployment workflow
+- name: Monitor green for 10m
+  run: node scripts/monitor.js   # exits non-zero if p95>200ms or errorRate>0.5%
+
+- name: Auto-rollback if unhealthy
+  if: failure()
+  run: |
+    echo "Health check failed - initiating auto-rollback"
+    gh workflow run dns-swap.yml -f target=blue
+    
+    # Notify incident channel
+    curl -X POST $SLACK_WEBHOOK_URL \
+      -d '{"text": "🚨 AUTO-ROLLBACK: Green environment failed health check"}'
+```
+
+**Health Monitor Script**
+```javascript
+// scripts/monitor.js
+const checkHealth = async () => {
+  const metrics = await Promise.all([
+    checkLatency(),    // p95 < 200ms
+    checkErrorRate(),  // < 0.1%
+    checkFeatureFlags() // Core flags operational
+  ]);
+  
+  const healthy = metrics.every(m => m.healthy);
+  if (!healthy) {
+    console.error('Health check failed:', metrics.filter(m => !m.healthy));
+    process.exit(1);
+  }
+};
+
+const checkLatency = async () => {
+  const response = await fetch(`${PROMETHEUS_URL}/api/v1/query?query=http_request_duration_seconds{quantile="0.95"}`);
+  const data = await response.json();
+  const p95 = parseFloat(data.data.result[0].value[1]);
+  
+  return {
+    metric: 'p95_latency',
+    value: p95,
+    healthy: p95 < 0.2,
+    threshold: 0.2
+  };
+};
+```
+
+### 3. Blue-Green Deployment Pipeline
+
+**3.1 DNS Swap Automation**
+```yaml
+# .github/workflows/dns-swap.yml
+name: DNS Traffic Swap
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target environment (blue/green)'
+        required: true
+        type: choice
+        options: ['blue', 'green']
+
+jobs:
+  dns-swap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update DNS to ${{ inputs.target }}
+        run: |
+          # Update Route53 or CloudFlare DNS
+          aws route53 change-resource-record-sets \
+            --hosted-zone-id $HOSTED_ZONE_ID \
+            --change-batch file://dns-change-${{ inputs.target }}.json
+          
+          # Verify DNS propagation
+          for i in {1..30}; do
+            if dig +short api.parkerflight.com | grep -q "${{ inputs.target }}-ip"; then
+              echo "DNS updated to ${{ inputs.target }}"
+              break
+            fi
+            sleep 10
+          done
+```
+
+**3.2 Blue-Green Health Gates**
+```yaml
+# Deploy to green, test, then swap
+de ploy-green:
+  steps:
+    - name: Deploy to green environment
+      run: |
+        # Deploy application
+        kubectl apply -f k8s/green-deployment.yaml
+        
+        # Wait for rollout
+        kubectl rollout status deployment/parker-flight-green
+    
+    - name: Health check green environment
+      run: |
+        # Run comprehensive health checks
+        npm run health:green
+        
+        # Run smoke tests
+        npm run test:smoke -- --base-url=https://green.parkerflight.com
+        
+        # Check feature flags work
+        npm run test:flags -- --env=green
+    
+    - name: Swap DNS to green
+      if: success()
+      run: gh workflow run dns-swap.yml -f target=green
+```
+
+### 4. Incident Response Runbook
+
+**4.1 Escalation Timeline**
+```bash
+# === INCIDENT RESPONSE PLAYBOOK ===
+# Minutes 00-01: Confirm incident in #pf-alerts
+# "Profile 502s 6% > threshold"
+
+# Minutes 01-02: Flip kill-switch flag for culprit feature
+# /ops/flags → wallet_ui.enabled=false
+curl -X PATCH "$SUPABASE_URL/functions/v1/ops/flags" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -d '{"wallet_ui": {"enabled": false, "reason": "Incident response"}}'
+
+# Minutes 02-05: If still failing, flip DNS back to blue
+gh workflow run dns-swap.yml -f target=blue
+
+# Minutes 05-10: If failure is DB migration
+supabase db branches switch pre_mig_$LAST_GOOD_SHA
+
+# >10 minutes: Post-mortem starts
+# Capture metrics, create GitHub issue, schedule team review
+```
+
+**4.2 Automated Rollback Triggers**
+```yaml
+# .github/workflows/auto-rollback.yml
+name: Auto Rollback
+on:
+  repository_dispatch:
+    types: [health-check-failed]
+
+jobs:
+  emergency-rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disable problematic feature flags
+        run: |
+          # Disable all features deployed in last 2 hours
+          supabase db remote execute "
+            UPDATE feature_flags 
+            SET enabled = false 
+            WHERE updated_at > NOW() - INTERVAL '2 hours' 
+            AND name != 'core_features';
+          "
+      
+      - name: Rollback to previous environment
+        run: |
+          # Get last known good deployment
+          LAST_GOOD=$(git log --oneline -n 10 | grep 'deploy:' | head -1 | cut -d' ' -f1)
+          
+          # Switch DNS back
+          gh workflow run dns-swap.yml -f target=blue
+          
+          # Rollback database if needed
+          if [ "${{ github.event.client_payload.database_issue }}" = "true" ]; then
+            supabase db branches switch pre_mig_$LAST_GOOD
+          fi
+```
+
+### 5. Enhanced CI Gate Requirements
+
+**5.1 Minimum CI Gates**
+```yaml
+# .github/workflows/ci.yml
+name: CI Safety Gates
+on: [push, pull_request]
+
+jobs:
+  safety-gates:
+    runs-on: ubuntu-latest
+    steps:
+      # Static Analysis
+      - name: ESLint + Type Check
+        run: |
+          npm run lint
+          npm run type-check
+          turbo run lint
+      
+      # Test Suite (≤ 10 min)
+      - name: Vitest + Playwright + Accessibility
+        run: |
+          npm run test:unit      # Vitest
+          npm run test:e2e       # Playwright
+          npm run test:a11y      # axe-core
+      
+      # Load Testing
+      - name: k6 Smoke Test
+        run: |
+          k6 run --duration 30s --rps 50 tests/load/smoke.js
+      
+      # Migration Safety
+      - name: Migration Dry Run
+        run: |
+          supabase db remote commit --dry-run -m "CI test migration"
+      
+      # PITR Snapshot Creation
+      - name: Create PITR Tag
+        if: github.ref == 'refs/heads/main'
+        run: |
+          supabase db branches create pre_deploy_$(date +%Y%m%d_%H%M%S)
+      
+      # Deploy to Green Only if All Pass
+      - name: Deploy to Green
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          echo "All safety gates passed - deploying to green"
+          npm run deploy:green
+```
+
+**5.2 Load Test Requirements**
+```javascript
+// tests/load/smoke.js
+import http from 'k6/http';
+import { check } from 'k6';
+
+export const options = {
+  duration: '30s',
+  rps: 50,
+  thresholds: {
+    http_req_duration: ['p(95)<200'], // p95 < 200ms
+    http_req_failed: ['rate<0.01'],   // < 1% error rate
+  },
+};
+
+export default function() {
+  // Test critical endpoints
+  const endpoints = [
+    '/api/health',
+    '/api/profile',
+    '/api/payments',
+    '/api/flags'
+  ];
+  
+  endpoints.forEach(endpoint => {
+    const response = http.get(`${__ENV.BASE_URL}${endpoint}`);
+    check(response, {
+      'status is 200': (r) => r.status === 200,
+      'response time < 200ms': (r) => r.timings.duration < 200,
+    });
+  });
+}
+```
+
+### 6. Timeline Integration
+
+**Days 0-1**: Create /ops/flags UI + kill-switch boolean (2h)
+**Days 4-5**: Add auto-backup step to migrate workflow (1h)
+**Days 8-9**: Blue/green DNS GitHub Action & monitor.js (3h)
+**Days 10-11**: Live fire drill: enable wallet_ui at 5%, auto-rollback verification (1h)
+
+### 7. Rollback Verification
 
 ```bash
-# Dry-run before reverting
-supabase db remote commit --dry-run -m revert_day3_flag_migration
+# Test rollback procedures work
+# 1. Feature flag rollback
+curl -X PATCH "$SUPABASE_URL/functions/v1/ops/flags" \
+  -d '{"wallet_ui": {"enabled": false}}'
 
-# If approved (HITL ✅), execute:
-supabase db remote commit -m revert_day3_flag_migration
+# 2. DNS rollback
+gh workflow run dns-swap.yml -f target=blue
 
-# or, for surgical restore:
-supabase db branches switch production-2025-07-09T15:30Z
-# snapshot in s3://pf-backups/2025-07-day10/
+# 3. Database rollback
+supabase db branches switch pre_mig_$LAST_GOOD_SHA
 
-# Verify rollback worked
-supabase db remote status
+# 4. Verify all systems operational
+npm run health:full
 ```
+
+---
+
+**TL;DR: Four Safety Habits**
+1. **Ship behind flags** - Every new path wrapped in `isEnabled()`
+2. **Reversible migrations** - Expand-only first, contract next sprint
+3. **Blue/green promotion** - Health check 10min before traffic cut
+4. **Automated rollback** - One action to flip DNS, DB, and flags
+
+**Result**: Any change can be undone in < 5 minutes with zero data loss.
 
 ## 🔐 Secrets Rotation Cron
 

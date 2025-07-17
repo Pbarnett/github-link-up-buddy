@@ -1,21 +1,24 @@
-import { useState } from "react";
+import { useState } from 'react';
 import AuthGuard from "@/components/AuthGuard";
 import { Link } from "react-router-dom";
 import { usePaymentMethods, PaymentMethod } from "@/hooks/usePaymentMethods";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { safeQuery } from "@/lib/supabaseUtils";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { AddCardModal } from "@/components/wallet/AddCardModal";
+import { AddPaymentMethodForm } from "@/components/AddPaymentMethodForm";
 import { Plus, X } from "lucide-react";
 
 function WalletPage() {
-  const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+  const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const { data, error, isLoading, refetch } = usePaymentMethods();
   const { user } = useCurrentUser();
+  const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string|null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const queryClient = useQueryClient();
 
@@ -66,11 +69,11 @@ function WalletPage() {
       });
       
       queryClient.invalidateQueries({ queryKey: ["payment_methods"] });
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Error setting default payment method:", err);
       toast({
         title: "Error",
-        description: err instanceof Error ? err.message : 'An unknown error occurred',
+        description: err.message,
         variant: "destructive",
       });
     } finally {
@@ -134,11 +137,11 @@ function WalletPage() {
       });
       
       queryClient.invalidateQueries({ queryKey: ["payment_methods"] });
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Error deleting payment method:", err);
       toast({
         title: "Error",
-        description: err instanceof Error ? err.message : 'An unknown error occurred',
+        description: err.message,
         variant: "destructive",
       });
     } finally {
@@ -162,7 +165,7 @@ function WalletPage() {
                   <li key={pm.id} className="py-4 flex justify-between items-center">
                     <div className="flex items-center space-x-3">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {pm.brand?.toUpperCase() || 'UNKNOWN'}
+                        {pm.brand?.toUpperCase() || 'CARD'}
                       </span>
                       <span className="text-gray-900">•••• {pm.last4}</span>
                       <span className="text-gray-500 text-sm">
@@ -227,20 +230,23 @@ function WalletPage() {
                 </Button>
               </div>
               
-              <AddCardModal
-                isOpen={showAddForm}
-                onClose={() => setShowAddForm(false)}
-                onSuccess={() => {
-                  setShowAddForm(false);
-                  refetch();
-                }}
-              />
+              {showAddForm && (
+                <div className="mt-4">
+                  <AddPaymentMethodForm
+                    onSuccess={() => {
+                      setShowAddForm(false);
+                      refetch();
+                    }}
+                    onCancel={() => setShowAddForm(false)}
+                  />
+                </div>
+              )}
             </div>
 
             {!stripeKey && (
               <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4">
                 <p className="text-yellow-700">
-                  Stripe isn't configured. Please set <code>VITE_STRIPE_PUBLISHABLE_KEY</code> in your
+                  Stripe isn't configured. Please set <code>VITE_STRIPE_PUBLIC_KEY</code> in your
                   <code>.env</code>.
                 </p>
               </div>

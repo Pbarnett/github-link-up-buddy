@@ -39,7 +39,9 @@ export const usePaymentMethods = (): UsePaymentMethodsReturn => {
       setIsLoading(true);
       setError(undefined);
       
+      console.log('🔄 usePaymentMethods: Fetching payment methods...');
       const methods = await paymentMethodsServiceKMS.getPaymentMethods();
+      console.log('📋 usePaymentMethods: Raw methods from service:', methods);
       
       // Transform to match expected interface
       const transformedMethods: PaymentMethod[] = methods.map(method => ({
@@ -57,9 +59,10 @@ export const usePaymentMethods = (): UsePaymentMethodsReturn => {
         nickname: method.cardholder_name // Use cardholder_name as nickname for now
       }));
       
+      console.log('✅ usePaymentMethods: Transformed methods:', transformedMethods);
       setData(transformedMethods);
     } catch (err) {
-      console.error('Error fetching payment methods:', err);
+      console.error('❌ usePaymentMethods: Error fetching payment methods:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch payment methods'));
     } finally {
       setIsLoading(false);

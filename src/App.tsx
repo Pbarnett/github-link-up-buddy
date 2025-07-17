@@ -8,6 +8,7 @@ import { useRetryQueue } from "@/utils/retryQueue";
 import { useEffect } from "react";
 import { BusinessRulesProvider } from "./hooks/useBusinessRules";
 import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
+import { WalletProvider } from "@/contexts/WalletContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 // Import dev auth for easy development authentication
 import "@/utils/devAuth";
@@ -161,7 +162,9 @@ const App = () => {
                     path="/wallet"
                     element={
                       <AuthGuard>
-                        <Wallet />
+                        <WalletProvider>
+                          <Wallet />
+                        </WalletProvider>
                       </AuthGuard>
                     }
                   />

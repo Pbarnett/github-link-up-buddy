@@ -28,19 +28,18 @@ class PaymentMethodsServiceKMS {
    */
   async getPaymentMethods(): Promise<PaymentMethodKMS[]> {
     try {
-      logger.info('[PaymentMethodsKMS] Fetching payment methods');
+      logger.info('[PaymentMethodsKMS] Fetching payment methods via edge function');
       
-      const { data, error } = await (supabase
-        .from('payment_methods')
-        .select('*')
-        .order('created_at', { ascending: false }) as any);
+      // Use the manage-payment-methods edge function
+      const { data, error } = await supabase.functions.invoke('manage-payment-methods');
 
       if (error) {
-        logger.error('[PaymentMethodsKMS] Error fetching payment methods:', error);
+        logger.error('[PaymentMethodsKMS] Error from edge function:', error);
         throw new Error(`Failed to fetch payment methods: ${error.message}`);
       }
 
-      return data || [];
+      logger.info('[PaymentMethodsKMS] Payment methods fetched successfully:', data);
+      return data?.payment_methods || [];
     } catch (error) {
       logger.error('[PaymentMethodsKMS] getPaymentMethods error:', error);
       throw error;

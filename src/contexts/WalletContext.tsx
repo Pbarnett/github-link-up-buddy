@@ -33,25 +33,32 @@ export function WalletProvider({ children }: WalletProviderProps) {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase.functions.invoke('manage-payment-methods', {
-        body: { action: 'list' },
-      });
+      // Check if user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('🔐 Auth check:', { user: user?.id, authError });
+
+      if (authError || !user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Use GET request to fetch payment methods
+      console.log('📡 Calling manage-payment-methods edge function...');
+      const { data, error } = await supabase.functions.invoke('manage-payment-methods');
+
+      console.log('📨 Edge function response:', { data, error });
 
       if (error) {
         throw new Error(`Failed to fetch payment methods: ${error.message}`);
       }
 
-      const response: PaymentMethodsResponse = data;
-      
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to fetch payment methods');
-      }
-
-      setPaymentMethods(response.data || []);
+      // The edge function returns payment_methods directly
+      const paymentMethods = data.payment_methods || [];
+      console.log('💳 Payment methods received:', paymentMethods);
+      setPaymentMethods(paymentMethods);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load payment methods';
       setError(errorMessage);
-      console.error('Error refreshing payment methods:', err);
+      console.error('❌ Error refreshing payment methods:', err);
     } finally {
       setLoading(false);
     }
@@ -62,12 +69,23 @@ export function WalletProvider({ children }: WalletProviderProps) {
     try {
       setError(null);
 
+      // Check if user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('🔐 Auth check for setup intent:', { user: user?.id, authError });
+
+      if (authError || !user) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('📡 Calling create-setup-intent edge function...');
       const { data, error } = await supabase.functions.invoke('create-setup-intent', {
         body: {
           usage: 'off_session',
           payment_method_types: ['card'],
         },
       });
+
+      console.log('📨 Setup intent response:', { data, error });
 
       if (error) {
         throw new Error(`Failed to create setup intent: ${error.message}`);
@@ -77,10 +95,12 @@ export function WalletProvider({ children }: WalletProviderProps) {
         throw new Error('No client secret received from setup intent');
       }
 
+      console.log('✅ Setup intent created successfully');
       return data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create setup intent';
       setError(errorMessage);
+      console.error('❌ Error creating setup intent:', err);
       throw new PaymentMethodError(errorMessage, 'api');
     }
   };

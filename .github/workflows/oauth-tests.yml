@@ -1,0 +1,33 @@
+name: OAuth Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  auth-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        mode: [local, ci]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: 
+          node-version: 20
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run OAuth tests
+        run: pnpm run test:auth${{ matrix.mode == 'ci' && ':ci' || '' }}
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: oauth-test-results-${{ matrix.mode }}
+          path: tests/reports/oauth/

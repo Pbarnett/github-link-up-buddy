@@ -1,6 +1,71 @@
-# Supabase Javascript Documentation
+# Supabase JavaScript Client Library Documentation
 
-This document provides JavaScript client documentation for Supabase.
+This document contains comprehensive information about the Supabase JavaScript/TypeScript client library.
+
+## Overview
+Documentation for the @supabase/supabase-js client library used throughout Parker Flight.
+
+## Installation and Setup
+
+### Client Initialization
+
+### Configuration Options
+
+## Authentication
+
+### Sign In Methods
+- Email/Password
+- Magic Links (OTP)
+- OAuth (Google, GitHub, etc.)
+- Phone Authentication
+
+### Session Management
+
+### User Management
+
+## Database Operations
+
+### Querying Data
+
+### Inserting Data
+
+### Updating Data
+
+### Deleting Data
+
+### Real-time Subscriptions
+
+### Row Level Security (RLS)
+
+## Storage Operations
+
+### File Uploads
+
+### File Downloads
+
+### File Management
+
+## Edge Functions
+
+### Invoking Edge Functions
+
+### Authentication with Edge Functions
+
+## TypeScript Support
+
+### Type Generation
+
+### Type-safe Queries
+
+## Error Handling
+
+### Common Errors
+
+### Best Practices
+
+---
+
+*Add Supabase JavaScript client library documentation content here*
 JavaScript Client Library
 @supabase/supabase-js
 View on GitHub

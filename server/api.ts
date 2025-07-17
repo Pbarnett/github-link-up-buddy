@@ -27,8 +27,8 @@ app.get('/', (req, res) => {
 });
 
 export function startServer(port: number) {
-  const server = app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+  const server = app.listen(port, '127.0.0.1', () => {
+    console.log(`Server running on 127.0.0.1:${port}`);
   });
   
   return server;
