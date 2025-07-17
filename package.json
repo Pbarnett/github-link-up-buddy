@@ -6,6 +6,9 @@
   "scripts": {
     "tsc": "tsc",
     "dev": "concurrently \"vite --port 3000\" \"tsx server/index.ts\"",
+    "dev:safe": "npm run check-localhost && npm run dev",
+    "check-localhost": "node scripts/diagnostics/localhost-binding-check.js",
+    "fix-localhost-binding": "node scripts/diagnostics/fix-localhost-binding.js",
     "smoke-test": "tsx scripts/smoke-test.ts",
     "dev:test": "npm run dev & sleep 8 && npm run smoke-test && kill %1",
     "monitor:ping": "tsx scripts/monitor-ping.ts",
@@ -43,7 +46,7 @@
     "scripts:data": "node scripts/data/",
     "validate-auth": "node scripts/validate-auth-config.js",
     "check-auth": "npm run validate-auth",
-    "test:auth": "node scripts/test-google-auth.js",
+    "test:auth:legacy": "node scripts/test-google-auth.js",
     "test:auth:verbose": "node scripts/test-google-auth.js --verbose",
     "test:auth:fix": "node scripts/test-google-auth.js --fix",
     "test:auth:reset": "node scripts/test-google-auth.js --reset",
@@ -63,7 +66,12 @@
     "test:devices:iphone": "playwright test tests/e2e/wallet-mobile-devices.spec.ts --grep 'iPhone'",
     "test:devices:ipad": "playwright test tests/e2e/wallet-mobile-devices.spec.ts --grep 'iPad'",
     "deploy:wallet-canary": "echo \"UPDATE feature_flags SET rollout_percentage = 5 WHERE name = 'wallet_ui';\" | psql $DATABASE_URL",
-    "verify:launchdarkly": "node scripts/verify-launchdarkly-integration.js"
+    "verify:launchdarkly": "node scripts/verify-launchdarkly-integration.cjs",
+    "// ---------- AUTH TESTS ----------": "",
+    "test:auth": "playwright test tests/auth/oauth.spec.ts",
+    "test:auth:ci": "MOCK_GOOGLE_OAUTH=true playwright test tests/auth/oauth.spec.ts",
+    "test:auth:edge": "pnpm run edge:e2e tests/auth/oauth.spec.ts",
+    "verify:session": "ts-node scripts/verify-oauth-session.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.840.0",
@@ -111,6 +119,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
+    "cors": "^2.8.5",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
     "express": "^5.1.0",
@@ -163,7 +172,7 @@
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
     "artillery": "^2.0.23",
-    "autoprefixer": "^10.4.20",
+    "autoprefixer": "^10.4.21",
     "axe-playwright": "^2.1.0",
     "concurrently": "^9.2.0",
     "dotenv": "^16.6.1",
@@ -184,13 +193,31 @@
     "tailwindcss": "^3.4.11",
     "terser": "^5.40.0",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "tsx": "^4.20.3",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4",
-    "whatwg-fetch": "^3.6.20"
+    "whatwg-fetch": "^3.6.20",
+    "zx": "^8.1.0"
   },
-  "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977"
+  "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977",
+  "playwright": {
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "tests/reports/oauth/html"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "tests/reports/oauth/report.json"
+        }
+      ]
+    ]
+  }
 }
