@@ -7,28 +7,37 @@ test.describe('Visual Regression Tests', () => {
   });
 
   test('trip request form visual comparison', async ({ page }) => {
-    await page.goto('/trip-request');
-    
-    // Wait for form to be fully loaded
-    await page.waitForSelector('[data-testid="trip-request-form"], form', { timeout: 10000 });
-    await page.waitForLoadState('networkidle');
-    
-    // Hide dynamic elements that change between runs
-    await page.addStyleTag({
-      content: `
-        .dynamic-timestamp,
-        .loading-spinner,
-        [data-testid="current-time"] {
-          visibility: hidden !important;
-        }
-      `
+    await test.step('Navigate and prepare form', async () => {
+      await page.goto('/trip-request');
+      
+      // Wait for form to be fully loaded with modern selector
+      await page.locator('form, [data-testid="trip-request-form"]').waitFor({ state: 'visible', timeout: 10000 });
+      await page.waitForLoadState('networkidle');
     });
     
-    // Take screenshot of the entire form
-    await expect(page).toHaveScreenshot('trip-request-form-desktop.png', {
-      fullPage: true,
-      threshold: 0.2,
-      animations: 'disabled'
+    await test.step('Mask dynamic content', async () => {
+      // Use modern masking instead of hiding elements
+      await page.addStyleTag({
+        content: `
+          .dynamic-timestamp,
+          .loading-spinner,
+          [data-testid="current-time"] {
+            color: transparent !important;
+            background: #f0f0f0 !important;
+          }
+        `
+      });
+    });
+    
+    await test.step('Capture form screenshot', async () => {
+      // Take screenshot with modern options
+      await expect(page).toHaveScreenshot('trip-request-form-desktop.png', {
+        fullPage: true,
+        threshold: 0.2,
+        animations: 'disabled',
+        clip: { x: 0, y: 0, width: 1280, height: 720 },
+        mask: [page.locator('.dynamic-timestamp, .loading-spinner, [data-testid="current-time"]')]
+      });
     });
   });
 

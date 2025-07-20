@@ -7,9 +7,10 @@
 import { z } from 'zod';
 import type {
   FormConfiguration,
+  FormSection,
   FieldConfiguration,
   ValidationRules
-} from '@/types/dynamic-forms';
+} from '../types/dynamic-forms';
 
 /**
  * Generate a Zod schema from a form configuration
@@ -18,8 +19,8 @@ export const generateZodSchema = (configuration: FormConfiguration): z.ZodSchema
   const schemaFields: Record<string, z.ZodTypeAny> = {};
 
   // Process all fields from all sections
-  configuration.sections.forEach(section => {
-    section.fields.forEach(field => {
+  configuration.sections.forEach((section: FormSection) => {
+    section.fields.forEach((field: FieldConfiguration) => {
       const fieldSchema = generateFieldSchema(field);
       if (fieldSchema) {
         schemaFields[field.id] = fieldSchema;
@@ -72,7 +73,7 @@ export const generateFieldSchema = (field: FieldConfiguration): z.ZodTypeAny | n
     case 'currency-select':
       // Validate against available options if provided
       if (field.options && field.options.length > 0) {
-        const optionValues = field.options.map(opt => opt.value);
+        const optionValues = field.options.map((opt: any) => opt.value);
         schema = z.enum(optionValues as [string, ...string[]]);
       } else {
         schema = z.string();
@@ -136,29 +137,34 @@ export const generateFieldSchema = (field: FieldConfiguration): z.ZodTypeAny | n
     schema = applyValidationRules(schema, field.validation, field.type);
   }
 
-  // Handle required/optional
+  // Handle required/optional with optimized validation
   if (field.validation?.required) {
-    // For string fields, ensure they're not empty
-    if (['text', 'textarea', 'password', 'email', 'phone'].includes(field.type)) {
-        // Check if schema still has min method (might be modified by custom validation)
-        if (typeof (schema as z.ZodString).min === 'function') {
-        schema = (schema as z.ZodString).min(1, field.validation.message || `${field.label} is required`);
+    // Use superRefine for consolidated required validation
+    schema = schema.superRefine((val, ctx) => {
+      let isValid = false;
+      
+      if (['text', 'textarea', 'password', 'email', 'phone'].includes(field.type)) {
+        isValid = typeof val === 'string' && val.length > 0;
+      } else if (field.type === 'checkbox' || field.type === 'switch') {
+        isValid = val === true;
+      } else if (field.type === 'number') {
+        isValid = typeof val === 'number' && !isNaN(val);
+      } else if (field.type === 'multi-select') {
+        isValid = Array.isArray(val) && val.length > 0;
+      } else if (field.type === 'date' || field.type === 'datetime') {
+        isValid = typeof val === 'string' && val.length > 0 && !isNaN(Date.parse(val));
       } else {
-        // Use refine for complex schemas
-        schema = schema.refine((val) => {
-          return typeof val === 'string' && val.length > 0;
-        }, {
-          message: field.validation.message || `${field.label} is required`
+        // Generic validation - check for non-empty values
+        isValid = val !== undefined && val !== null && val !== '';
+      }
+      
+      if (!isValid) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: field.validation?.message || `${field.label} is required`
         });
       }
-    }
-    // For checkbox/switch, must be true
-    else if (field.type === 'checkbox' || field.type === 'switch') {
-      schema = schema.refine((val) => val === true, {
-        message: field.validation.message || `${field.label} is required`
-      });
-    }
-    // For other types, use default required validation
+    });
   } else {
     // Make optional
     schema = schema.optional();
@@ -170,23 +176,25 @@ export const generateFieldSchema = (field: FieldConfiguration): z.ZodTypeAny | n
 /**
  * Apply validation rules to a Zod schema
  */
-const applyValidationRules = (
-  schema: z.ZodTypeAny,
+const applyValidationRules = <T extends z.ZodTypeAny>(
+  schema: T,
   rules: ValidationRules,
   fieldType: string
 ): z.ZodTypeAny => {
-  let updatedSchema = schema;
+  let updatedSchema: z.ZodTypeAny = schema;
 
   // String validations
   if (schema instanceof z.ZodString) {
+    let stringSchema = schema as z.ZodString;
+    
     if (rules.minLength !== undefined) {
-      updatedSchema = (updatedSchema as z.ZodString).min(rules.minLength, 
+      stringSchema = stringSchema.min(rules.minLength, 
         rules.message || `Must be at least ${rules.minLength} characters`
       );
     }
 
     if (rules.maxLength !== undefined) {
-      updatedSchema = (updatedSchema as z.ZodString).max(rules.maxLength,
+      stringSchema = stringSchema.max(rules.maxLength,
         rules.message || `Must be no more than ${rules.maxLength} characters`
       );
     }
@@ -194,7 +202,7 @@ const applyValidationRules = (
     if (rules.pattern) {
       try {
         const regex = new RegExp(rules.pattern);
-        updatedSchema = (updatedSchema as z.ZodString).regex(regex, 
+        stringSchema = stringSchema.regex(regex, 
           rules.message || 'Invalid format'
         );
       } catch {
@@ -203,31 +211,37 @@ const applyValidationRules = (
     }
 
     if (rules.email) {
-      updatedSchema = (updatedSchema as z.ZodString).email(
+      stringSchema = stringSchema.email(
         rules.message || 'Please enter a valid email address'
       );
     }
 
     if (rules.url) {
-      updatedSchema = (updatedSchema as z.ZodString).url(
+      stringSchema = stringSchema.url(
         rules.message || 'Please enter a valid URL'
       );
     }
+    
+    updatedSchema = stringSchema;
   }
 
   // Number validations
   if (schema instanceof z.ZodNumber) {
+    let numberSchema = schema as z.ZodNumber;
+    
     if (rules.min !== undefined) {
-      updatedSchema = (updatedSchema as z.ZodNumber).min(rules.min,
+      numberSchema = numberSchema.min(rules.min,
         rules.message || `Must be at least ${rules.min}`
       );
     }
 
     if (rules.max !== undefined) {
-      updatedSchema = (updatedSchema as z.ZodNumber).max(rules.max,
+      numberSchema = numberSchema.max(rules.max,
         rules.message || `Must be no more than ${rules.max}`
       );
     }
+    
+    updatedSchema = numberSchema;
   }
 
   // Custom validation
@@ -315,8 +329,8 @@ export const validateFormValues = (
 export const getDefaultValues = (configuration: FormConfiguration): Record<string, unknown> => {
   const defaults: Record<string, unknown> = {};
 
-  configuration.sections.forEach(section => {
-    section.fields.forEach(field => {
+  configuration.sections.forEach((section: FormSection) => {
+    section.fields.forEach((field: FieldConfiguration) => {
       if (field.defaultValue !== undefined) {
         defaults[field.id] = field.defaultValue;
       } else {

@@ -58,6 +58,8 @@ const FilterTogglesSection: React.FC<FilterTogglesSectionProps> = ({ control }) 
           id="nonstop-toggle"
           checked={nonstopField.value}
           onCheckedChange={nonstopField.onChange}
+          name={nonstopField.name}
+          onBlur={nonstopField.onBlur}
           aria-label="Nonstop flights only"
         />
       </div>
@@ -84,6 +86,8 @@ const FilterTogglesSection: React.FC<FilterTogglesSectionProps> = ({ control }) 
           id="baggage-toggle"
           checked={baggageField.value}
           onCheckedChange={baggageField.onChange}
+          name={baggageField.name}
+          onBlur={baggageField.onBlur}
           aria-label="Include carry-on + personal item"
         />
       </div>

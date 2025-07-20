@@ -120,7 +120,7 @@ class LaunchDarklyService {
     }
 
     // Check if resilience features are enabled
-    const resilienceEnabled = this.getVariation('enhanced_launchdarkly_resilience', false);
+    const resilienceEnabled = this._variationRaw('enhanced_launchdarkly_resilience', false);
     if (!resilienceEnabled) {
       return this.initializeClientLegacy(context);
     }
@@ -204,7 +204,24 @@ class LaunchDarklyService {
   }
 
   getVariation<T>(flagKey: string, defaultValue: T): T {
+    // In development mode, always check for overrides first
+    if (import.meta.env.DEV) {
+      return this.getVariationWithOverride(flagKey, defaultValue);
+    }
     return this.getVariationWithResilience(flagKey, defaultValue);
+  }
+
+  // Raw variation without overrides - used internally to avoid circular dependency
+  private _variationRaw<T>(flagKey: string, defaultValue: T): T {
+    if (!this.client || !this.state.isInitialized) {
+      return defaultValue;
+    }
+    return this.client.variation(flagKey, defaultValue);
+  }
+
+  // Helper method for getting raw variation - used by override system
+  private _getRawVariation<T>(flagKey: string, defaultValue: T): T {
+    return this.client?.variation?.(flagKey, defaultValue) ?? defaultValue;
   }
 
   private getVariationWithResilience<T>(flagKey: string, defaultValue: T): T {
@@ -357,7 +374,8 @@ class LaunchDarklyService {
         }
       }
     }
-    return this.getVariation(flagKey, defaultValue);
+    // Use the client's variation method directly - this handles offline/defaults for us
+    return this.client?.variation(flagKey, defaultValue) ?? defaultValue;
   }
 
   // Set localStorage override for development

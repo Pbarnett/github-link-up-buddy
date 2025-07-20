@@ -1,16 +1,152 @@
-Skip to main content
-Identity
-Authentication
-Authorization
-Cross-platform
-Cross-Account Protection (RISC)
-/
-English
-Google Account Authorization
-Google Account Authorization
-App verification to use Google Authorization APIs
-Google Account Linking
-Resources
+# Google OAuth 2.0 Integration Guide
+
+## Document Overview
+
+This comprehensive guide covers Google's OAuth 2.0 implementation for Parker Flight's integration with Google services. It provides essential information for implementing secure authentication and authorization with Google APIs.
+
+### Quick Start Guide
+
+**Essential Prerequisites:**
+- Google Cloud Platform project setup
+- OAuth 2.0 client credentials from Google API Console
+- Understanding of OAuth 2.0 flow patterns
+- SSL/HTTPS enabled for production endpoints
+
+**Core Implementation Steps:**
+1. [Obtain OAuth 2.0 credentials](#basic-steps) from Google API Console
+2. [Configure application type](#basic-steps) (web, mobile, desktop, service account)
+3. [Implement authorization flow](#scenarios) based on your platform
+4. [Handle token management](#token-size) and refresh logic
+5. [Scope permission management](#oauth-20-scopes-for-google-apis)
+
+### Core Workflows
+
+#### Primary Authentication Patterns
+- **Web Server Applications**: Server-side OAuth flow with authorization codes
+- **Client-side (JavaScript)**: Browser-based implicit flow for SPAs
+- **Installed Applications**: Native app flow with PKCE
+- **Limited Input Devices**: Device flow for TVs, IoT devices
+- **Service Accounts**: Server-to-server authentication without user consent
+
+#### Token Management
+- **Access Tokens**: Short-lived (typically 1 hour) for API requests
+- **Refresh Tokens**: Long-lived tokens for obtaining new access tokens
+- **Token Validation**: Verify token scopes and expiration
+- **Token Revocation**: Handle user revocation and token expiry
+
+### Integration Architecture
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Parker App    │    │  Google OAuth    │    │  Google APIs    │
+│                 │────│   Authorization  │────│                 │
+│ - Auth Handler  │    │     Server       │    │ - Gmail API     │
+│ - Token Store   │    │                  │    │ - Calendar API  │
+│ - API Client    │    │                  │    │ - Drive API     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+```
+
+### Critical Implementation Notes
+
+⚠️ **Security Considerations**
+- Never expose client secrets in client-side code
+- Use HTTPS for all OAuth flows in production
+- Implement CSRF protection with state parameters
+- Validate redirect URIs strictly
+- Store refresh tokens securely with encryption
+
+⚠️ **Token Limitations**
+- Access tokens: Maximum 2048 bytes
+- Refresh tokens: Maximum 512 bytes, expire after 6 months of inactivity
+- Authorization codes: Maximum 256 bytes
+- Rate limits: 100 refresh tokens per client per user
+
+### Scope Management Strategy
+
+**Incremental Authorization Approach:**
+- Request minimal scopes initially
+- Add scopes as features are used
+- Handle scope upgrades gracefully
+- Provide clear permission explanations to users
+
+**Common Scopes for Parker Flight:**
+- `userinfo.email`: Basic user identification
+- `userinfo.profile`: User profile information
+- `calendar`: Travel calendar integration
+- `gmail.readonly`: Flight confirmation emails
+- Custom scopes based on integration needs
+
+### Error Handling Strategy
+
+**Common Error Scenarios:**
+- `invalid_grant`: Refresh token expired or revoked
+- `admin_policy_enforced`: Organization policy restrictions
+- `invalid_scope`: Requested scope not available
+- `access_denied`: User denied permission
+- `rate_limit_exceeded`: Too many token requests
+
+**Recovery Strategies:**
+- Implement exponential backoff for rate limits
+- Graceful degradation when scopes are denied
+- Re-authentication flow for expired refresh tokens
+- Clear error messaging to users
+
+### Testing & Validation
+
+**Development Testing:**
+- Use OAuth 2.0 Playground for flow testing
+- Test with different application types
+- Validate token exchange flows
+- Test scope permission scenarios
+
+**Production Checklist:**
+- [ ] SSL/HTTPS enabled for all endpoints
+- [ ] Redirect URIs properly configured
+- [ ] Client secrets secured (server-side only)
+- [ ] Token storage encrypted
+- [ ] Error handling implemented
+- [ ] Logging configured (without token exposure)
+- [ ] Rate limiting handled
+- [ ] User consent flows tested
+
+### Common Integration Gotchas
+
+1. **Client Type Confusion**: Using wrong client type (web vs native)
+2. **Scope Mismatch**: Requesting scopes not matching API requirements
+3. **Refresh Token Loss**: Not handling refresh token expiration
+4. **State Parameter**: Missing CSRF protection in flows
+5. **Token Storage**: Insecure storage of sensitive tokens
+6. **Cross-Client Auth**: Not leveraging cross-client authorization
+
+### Parker Flight Integration Status
+
+**Current Implementation:**
+- ✅ Basic OAuth 2.0 flow setup
+- ✅ User authentication
+- ⏳ Email integration (Gmail API)
+- ⏳ Calendar integration
+- ❌ Advanced scope management
+- ❌ Service account integration
+
+**Next Steps:**
+1. Implement Gmail API integration for flight confirmations
+2. Add Google Calendar integration for travel planning
+3. Implement proper token refresh handling
+4. Add incremental authorization
+5. Set up service account for background tasks
+
+### Strategic Context
+
+This Google OAuth integration enables Parker Flight to:
+- **Authenticate users** securely with Google accounts
+- **Access Gmail** for flight confirmation parsing
+- **Integrate calendars** for travel itinerary management
+- **Leverage Google services** for enhanced user experience
+- **Maintain security** through industry-standard OAuth flows
+
+---
+
+## Technical Implementation Details
 
 
 

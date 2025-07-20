@@ -1,17 +1,28 @@
 import { KMSClient, EncryptCommand, DecryptCommand } from "npm:@aws-sdk/client-kms";
+import { NodeHttpHandler } from "npm:@aws-sdk/node-http-handler";
 
 /**
  * AWS KMS utility functions for Parker Flight
- * Provides secure encryption/decryption for sensitive data
+ * Enhanced with production-grade configuration and error handling
  */
 
-// Initialize KMS client
+// Environment and configuration
+const KMS_REGION = Deno.env.get("AWS_REGION") || "us-east-1";
+const ENVIRONMENT = Deno.env.get("NODE_ENV") || "development";
+
+// Enhanced KMS client with production-grade configuration
 const kmsClient = new KMSClient({
-  region: Deno.env.get("AWS_REGION") || "us-east-1",
+  region: KMS_REGION,
   credentials: {
     accessKeyId: Deno.env.get("AWS_ACCESS_KEY_ID")!,
     secretAccessKey: Deno.env.get("AWS_SECRET_ACCESS_KEY")!,
   },
+  maxAttempts: 3,
+  retryMode: 'adaptive',
+  requestHandler: new NodeHttpHandler({
+    connectionTimeout: 5000,
+    socketTimeout: 30000,
+  }),
 });
 
 // Key aliases for different data types
@@ -219,4 +230,138 @@ export async function testKMS(): Promise<boolean> {
     console.error("KMS test failed:", error);
     return false;
   }
+}
+
+/**
+ * Enhanced error handler for KMS operations
+ */
+export function analyzeKMSError(error: Error): {
+  category: string;
+  retryable: boolean;
+  suggestions: string[];
+} {
+  const errorMessage = error.message.toLowerCase();
+  
+  // Key-related errors
+  if (errorMessage.includes('key') && errorMessage.includes('disabled')) {
+    return {
+      category: 'KEY_DISABLED',
+      retryable: false,
+      suggestions: [
+        'Enable the KMS key in AWS console',
+        'Check key permissions and policies',
+        'Verify the key is not scheduled for deletion'
+      ]
+    };
+  }
+  
+  if (errorMessage.includes('access denied') || errorMessage.includes('unauthorized')) {
+    return {
+      category: 'ACCESS_DENIED',
+      retryable: false,
+      suggestions: [
+        'Check AWS credentials are valid and not expired',
+        'Verify IAM permissions for KMS operations',
+        'Ensure the key policy allows the current principal'
+      ]
+    };
+  }
+  
+  if (errorMessage.includes('throttl') || errorMessage.includes('rate')) {
+    return {
+      category: 'THROTTLED',
+      retryable: true,
+      suggestions: [
+        'Implement exponential backoff',
+        'Reduce request rate',
+        'Consider request limits for your key'
+      ]
+    };
+  }
+  
+  if (errorMessage.includes('network') || errorMessage.includes('timeout')) {
+    return {
+      category: 'NETWORK_ERROR',
+      retryable: true,
+      suggestions: [
+        'Check network connectivity',
+        'Verify AWS service endpoints are reachable',
+        'Consider increasing timeout values'
+      ]
+    };
+  }
+  
+  // Default unknown error
+  return {
+    category: 'UNKNOWN_ERROR',
+    retryable: true,
+    suggestions: [
+      'Check AWS service health',
+      'Review error logs for more details',
+      'Consider contacting AWS support'
+    ]
+  };
+}
+
+/**
+ * Safe KMS operation wrapper with retry logic
+ */
+export async function safeKMSOperation<T>(
+  operation: () => Promise<T>,
+  operationName: string,
+  maxRetries: number = 3
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      
+      const errorAnalysis = analyzeKMSError(lastError);
+      
+      console.warn(`KMS operation '${operationName}' failed (attempt ${attempt}/${maxRetries}):`, {
+        error: errorAnalysis.category,
+        retryable: errorAnalysis.retryable,
+        message: lastError.message
+      });
+      
+      // Don't retry if error is not retryable or we've exhausted retries
+      if (!errorAnalysis.retryable || attempt === maxRetries) {
+        console.error(`KMS operation '${operationName}' failed permanently:`, {
+          category: errorAnalysis.category,
+          suggestions: errorAnalysis.suggestions
+        });
+        break;
+      }
+      
+      // Wait before retry with exponential backoff
+      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError!;
+}
+
+/**
+ * Create audit log for KMS operations
+ */
+export function createKMSAuditLog(
+  operation: string,
+  success: boolean,
+  keyType?: KMSKeyType,
+  metadata?: Record<string, unknown>
+): Record<string, unknown> {
+  return {
+    operation,
+    success,
+    keyType,
+    keyAlias: keyType ? KMS_KEYS[keyType] : undefined,
+    timestamp: new Date().toISOString(),
+    region: KMS_REGION,
+    environment: ENVIRONMENT,
+    metadata: metadata || {},
+  };
 }

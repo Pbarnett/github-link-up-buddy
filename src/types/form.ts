@@ -51,7 +51,7 @@ export const tripFormSchema = z.object({
     message: "Maximum price must be at least $100",
   }).max(10000, {
     message: "Maximum price cannot exceed $10,000",
-  }),
+  }).optional(),
   nyc_airports: z.array(z.string()).optional(),
   other_departure_airport: z.string().optional(),
   destination_airport: z.string().optional(),
@@ -63,53 +63,84 @@ export const tripFormSchema = z.object({
   auto_book_enabled: z.boolean().default(false).optional(),
   preferred_payment_method_id: z.string().optional().nullable(),
   auto_book_consent: z.boolean().default(false).optional(),
-}).refine((data) => data.latestDeparture > data.earliestDeparture, {
-  message: "Latest departure date must be after earliest departure date",
-  path: ["latestDeparture"],
-}).refine((data) => {
-  // Intelligent date range validation - prevent overly wide ranges that cause timeouts
+}).superRefine((data, ctx) => {
+  // Consolidated validation using superRefine for better performance
+  
+  // 1. Date sequence validation
+  if (data.latestDeparture <= data.earliestDeparture) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Latest departure date must be after earliest departure date",
+      path: ["latestDeparture"]
+    });
+  }
+  
+  // 2. Date range validation - prevent overly wide ranges that cause timeouts
   const timeDiff = data.latestDeparture.getTime() - data.earliestDeparture.getTime();
   const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-  return daysDiff <= 60; // Allow up to 60 days for flexibility
-}, {
-  message: "Date range cannot exceed 60 days. For longer searches, please create multiple trips.",
-  path: ["latestDeparture"],
-}).refine((data) => data.max_duration >= data.min_duration, {
-  message: "Maximum duration must be greater than or equal to minimum duration",
-  path: ["max_duration"],
-}).refine((data) => {
+  if (daysDiff > 60) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Date range cannot exceed 60 days. For longer searches, please create multiple trips.",
+      path: ["latestDeparture"]
+    });
+  }
+  
+  // 3. Duration validation
+  if (data.max_duration < data.min_duration) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Maximum duration must be greater than or equal to minimum duration",
+      path: ["max_duration"]
+    });
+  }
+  
+  // 4. Departure airport validation
   const hasNycAirports = data.nyc_airports && data.nyc_airports.length > 0;
   const hasOtherAirport = !!data.other_departure_airport;
-  return hasNycAirports || hasOtherAirport;
-}, {
-  message: "At least one departure airport must be selected",
-  path: ["nyc_airports"],
-}).refine((data) => {
-  return !!data.destination_airport || !!data.destination_other;
-}, {
-  message: "Please select a destination or enter a custom one",
-  path: ["destination_airport"],
-}).refine((data) => {
-  // Auto-booking validation: require max_price and payment method when auto-booking is enabled
-  if (data.auto_book_enabled) {
-    return data.max_price && data.preferred_payment_method_id;
+  if (!hasNycAirports && !hasOtherAirport) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "At least one departure airport must be selected",
+      path: ["nyc_airports"]
+    });
   }
-  return true;
-}, {
-  message: "Maximum price and payment method are required for auto-booking",
-  path: ["preferred_payment_method_id"],
-}).refine((data) => {
-  // Auto-booking consent validation: require consent when auto-booking is enabled AND in auto mode
-  // In manual mode, consent is implicit when user enables auto-booking
-  if (data.auto_book_enabled) {
-    // Check if we're in auto mode by looking at the form context or default to requiring consent
-    // In manual mode, enabling auto-booking is considered consent
-    return data.auto_book_consent !== false; // Allow undefined/true, block false
+  
+  // 5. Destination validation
+  if (!data.destination_airport && !data.destination_other) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please select a destination or enter a custom one",
+      path: ["destination_airport"]
+    });
   }
-  return true;
-}, {
-  message: "You must authorize auto-booking to continue",
-  path: ["auto_book_consent"],
+  
+  // 6. Auto-booking validation
+  if (data.auto_book_enabled) {
+    if (!data.max_price) {
+      ctx.addIssue({
+        path: ['max_price'],
+        code: z.ZodIssueCode.custom,
+        message: 'Maximum price is required when auto-booking is enabled'
+      });
+    }
+    if (!data.preferred_payment_method_id) {
+      ctx.addIssue({
+        path: ['preferred_payment_method_id'],
+        code: z.ZodIssueCode.custom,
+        message: 'Payment method is required when auto-booking is enabled'
+      });
+    }
+    
+    // Auto-booking consent validation
+    if (data.auto_book_consent === false) {
+      ctx.addIssue({
+        path: ['auto_book_consent'],
+        code: z.ZodIssueCode.custom,
+        message: 'You must authorize auto-booking to continue'
+      });
+    }
+  }
 });
 
 // Form values type derived from the schema

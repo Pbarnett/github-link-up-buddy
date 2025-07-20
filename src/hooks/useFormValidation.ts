@@ -9,16 +9,10 @@ import { useState, useCallback, useMemo } from 'react';
 import { z } from 'zod';
 import type { 
   FieldConfiguration,
-  FormConfiguration
+  FormConfiguration,
+  DynamicFormConfig
 } from '@/types/dynamic-forms';
 import { generateValidationSchema, validateFormData } from '@/lib/form-validation';
-
-// Define DynamicFormConfig interface locally
-interface DynamicFormConfig {
-  sections: {
-    fields: FieldConfiguration[];
-  }[];
-}
 
 export interface ValidationResult {
   isValid: boolean;
@@ -229,38 +223,46 @@ export const useFormValidation = (
 };
 
 // Helper function to generate validation schema for a single field
-const generateFieldValidationSchema = (field: FieldConfiguration): z.ZodSchema<unknown> => {
-  let schema: z.ZodSchema<unknown>;
+const generateFieldValidationSchema = (field: FieldConfiguration): z.ZodTypeAny => {
+  let schema: z.ZodTypeAny;
 
   switch (field.type) {
     case 'text':
     case 'email':
     case 'password':
-    case 'textarea':
-      schema = z.string();
+    case 'textarea': {
+      let stringSchema = z.string();
+      
       if (field.validation?.email) {
-        schema = (schema as z.ZodString).email('Invalid email address');
+        stringSchema = stringSchema.email('Invalid email address');
       }
       if (field.validation?.minLength) {
-        schema = (schema as z.ZodString).min(field.validation.minLength, `Minimum ${field.validation.minLength} characters`);
+        stringSchema = stringSchema.min(field.validation.minLength, `Minimum ${field.validation.minLength} characters`);
       }
       if (field.validation?.maxLength) {
-        schema = (schema as z.ZodString).max(field.validation.maxLength, `Maximum ${field.validation.maxLength} characters`);
+        stringSchema = stringSchema.max(field.validation.maxLength, `Maximum ${field.validation.maxLength} characters`);
       }
       if (field.validation?.pattern) {
-        schema = (schema as z.ZodString).regex(new RegExp(field.validation.pattern), 'Invalid format');
+        stringSchema = stringSchema.regex(new RegExp(field.validation.pattern), 'Invalid format');
       }
+      
+      schema = stringSchema;
       break;
+    }
 
-    case 'number':
-      schema = z.number();
+    case 'number': {
+      let numberSchema = z.number();
+      
       if (field.validation?.min !== undefined) {
-        schema = (schema as z.ZodNumber).min(field.validation.min, `Minimum value is ${field.validation.min}`);
+        numberSchema = numberSchema.min(field.validation.min, `Minimum value is ${field.validation.min}`);
       }
       if (field.validation?.max !== undefined) {
-        schema = (schema as z.ZodNumber).max(field.validation.max, `Maximum value is ${field.validation.max}`);
+        numberSchema = numberSchema.max(field.validation.max, `Maximum value is ${field.validation.max}`);
       }
+      
+      schema = numberSchema;
       break;
+    }
 
     case 'date':
     case 'datetime':

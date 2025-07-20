@@ -10,6 +10,7 @@ test.describe('TripRequestForm Analytics', () => {
   test('should emit form_submit analytics event on successful submission', async ({ page }) => {
     // Mock the analytics endpoint to capture events
     const analyticsEvents: { p_event_type: string; p_form_name: string; [key: string]: unknown }[] = [];
+    const analyticsPromise = page.waitForRequest('**/rest/v1/rpc/track_form_event');
     
     await page.route('**/rest/v1/rpc/track_form_event', async (route) => {
       const request = route.request();
@@ -25,14 +26,18 @@ test.describe('TripRequestForm Analytics', () => {
     });
 
     // Fill out the form with valid data
-    await fillTripRequestForm(page);
+    await test.step('Fill form with valid data', async () => {
+      await fillTripRequestForm(page);
+    });
 
     // Submit the form
     const submitButton = page.getByTestId('primary-submit-button');
-    await submitButton.click();
-
-    // Wait for form submission
-    await page.waitForTimeout(2000);
+    await test.step('Submit form and wait for analytics', async () => {
+      await submitButton.click();
+      
+      // Wait for analytics request instead of arbitrary timeout
+      await analyticsPromise;
+    });
 
     // Verify analytics events were fired
     expect(analyticsEvents.length).toBeGreaterThan(0);

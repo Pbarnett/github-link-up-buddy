@@ -1,28 +1,26 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, testSteps } from '../fixtures/extendedTest';
+import { testData, testHelpers } from '../fixtures/testData';
 
 test.describe('TripRequestForm E2E', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to trip request form
-    await page.goto('/');
+    await testSteps.navigateAndWait(page, '/');
     
-    // Look for sign in/up first
+    // Handle authentication with modern selectors
     const signinButton = page.getByRole('button', { name: /sign in|login/i }).first();
     if (await signinButton.isVisible()) {
       await signinButton.click();
-      // Fill in test credentials if needed
+      
+      // Use structured test data
       const emailInput = page.getByRole('textbox', { name: /email/i });
       if (await emailInput.isVisible()) {
-        await emailInput.fill('test@example.com');
-        const passwordInput = page.getByLabel(/password/i);
-        await passwordInput.fill('test123');
+        await emailInput.fill(testData.users.testUser.email);
+        await page.getByLabel(/password/i).fill(testData.users.testUser.password);
         await page.getByRole('button', { name: /sign in/i }).click();
-        await page.waitForLoadState('networkidle');
+        await testHelpers.waitForNetworkIdle(page);
       }
     }
     
-    // Navigate to trip request
-    await page.goto('/trip/new');
-    await page.waitForLoadState('networkidle');
+    await testSteps.navigateAndWait(page, '/trip/new');
   });
 
   test('TripRequestForm renders correctly', async ({ page }) => {

@@ -1,8 +1,8 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { createSupabaseMock } from '../../tests/setup/supabaseMock';
+import { createSupabaseMock } from '../unit/mocks/supabase-mock';
 
 // Mock Supabase with enhanced functionality
-const supabase = createSupabaseMock();
+const { supabase, mocks } = createSupabaseMock();
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => supabase)

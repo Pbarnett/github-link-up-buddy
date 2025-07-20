@@ -150,11 +150,79 @@ export const extractCardMetadata = (paymentMethod: StripePaymentMethod) => {
 
 /**
  * Generate idempotency key for payment operations
+ * Uses V4 UUID as recommended by Stripe API reference
  */
 export const generateIdempotencyKey = (userId: string, operation: string): string => {
-  const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  return `${userId}_${operation}_${timestamp}`;
+  // Generate V4 UUID as recommended by Stripe API documentation
+  const uuid = crypto.randomUUID();
+  const timestamp = new Date().toISOString().slice(0, 10);
+  // Ensure key is under 255 characters and includes context for debugging
+  return `${operation}_${userId}_${timestamp}_${uuid}`.slice(0, 255);
 };
+
+/**
+ * Implement exponential backoff for retryable operations
+ * As specified in Stripe API reference for rate limiting
+ */
+export const exponentialBackoff = async (
+  operation: () => Promise<any>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<any> => {
+  let attempt = 0;
+  
+  while (attempt < maxRetries) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      attempt++;
+      
+      // Check if error is retryable (rate limit, API error, connection error)
+      const isRetryable = error.type === 'rate_limit_error' || 
+                         error.type === 'api_error' ||
+                         error.type === 'connection_error' ||
+                         error.statusCode === 429 ||
+                         error.statusCode >= 500;
+      
+      if (!isRetryable || attempt >= maxRetries) {
+        throw error;
+      }
+      
+      // Exponential backoff with jitter
+      const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+};
+
+/**
+ * Rate limiting helper per Stripe API reference (25 requests per second)
+ */
+class RateLimiter {
+  private requests: number[] = [];
+  private readonly maxRequests = 25;
+  private readonly timeWindow = 1000; // 1 second
+
+  async waitForSlot(): Promise<void> {
+    const now = Date.now();
+    
+    // Remove old requests outside the time window
+    this.requests = this.requests.filter(time => now - time < this.timeWindow);
+    
+    // If we're at the limit, wait
+    if (this.requests.length >= this.maxRequests) {
+      const oldestRequest = Math.min(...this.requests);
+      const waitTime = this.timeWindow - (now - oldestRequest) + 10; // Add 10ms buffer
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      return this.waitForSlot(); // Check again
+    }
+    
+    // Record this request
+    this.requests.push(now);
+  }
+}
+
+export const rateLimiter = new RateLimiter();
 
 /**
  * Error codes for payment operations

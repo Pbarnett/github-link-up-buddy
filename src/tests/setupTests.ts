@@ -1,6 +1,37 @@
-import { vi, afterEach } from 'vitest'
+import { vi, afterEach, expect } from 'vitest'
 import '@testing-library/jest-dom'
+import { cleanup } from '@testing-library/react'
 import React from 'react'
+
+// Custom matchers for date testing
+expect.extend({
+  toMatchISODate(received: string) {
+    const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+    const pass = isoDateRegex.test(received);
+    return {
+      pass,
+      message: () => `Expected ${received} to match ISO date format`
+    };
+  },
+  toBeBefore(received: string | Date, expected: string | Date) {
+    const receivedDate = new Date(received);
+    const expectedDate = new Date(expected);
+    const pass = receivedDate.getTime() < expectedDate.getTime();
+    return {
+      pass,
+      message: () => `Expected ${received} to be before ${expected}`
+    };
+  },
+  toBeFuture(received: string | Date) {
+    const receivedDate = new Date(received);
+    const now = new Date();
+    const pass = receivedDate.getTime() > now.getTime();
+    return {
+      pass,
+      message: () => `Expected ${received} to be in the future`
+    };
+  }
+})
 
 // Set up environment variables for testing before any imports
 Object.defineProperty(import.meta, 'env', {
@@ -16,7 +47,7 @@ Object.defineProperty(import.meta, 'env', {
 ;(globalThis as Record<string, unknown>).React = React
 
 // ==============================================================================
-// JSDOM POLYFILLS FOR RADIX UI
+// JSDOM POLYFILLS FOR MODERN WEB APIS (OAUTH + RADIX UI)
 // ==============================================================================
 
 // ResizeObserver polyfill for Radix UI components
@@ -44,6 +75,94 @@ Object.defineProperty(globalThis, 'matchMedia', {
   })),
   writable: true,
 })
+
+// Crypto API polyfill using Node.js crypto for OAuth token generation
+import * as nodeCrypto from 'node:crypto'
+
+if (!globalThis.crypto) {
+  vi.stubGlobal('crypto', {
+    getRandomValues: nodeCrypto.getRandomValues || ((arr) => {
+      const bytes = nodeCrypto.randomBytes(arr.length)
+      for (let i = 0; i < arr.length; i++) {
+        arr[i] = bytes[i]
+      }
+      return arr
+    }),
+    randomUUID: nodeCrypto.randomUUID || (() => nodeCrypto.randomBytes(16).toString('hex')),
+    subtle: nodeCrypto.webcrypto?.subtle || {}
+  })
+  vi.stubGlobal('CryptoKey', nodeCrypto.webcrypto?.CryptoKey || class CryptoKey {})
+}
+
+// Base64 encoding/decoding for JWT tokens
+if (!globalThis.atob) {
+  Object.defineProperty(globalThis, 'atob', {
+    value: (str) => Buffer.from(str, 'base64').toString('binary'),
+    writable: true,
+  })
+}
+
+if (!globalThis.btoa) {
+  Object.defineProperty(globalThis, 'btoa', {
+    value: (str) => Buffer.from(str, 'binary').toString('base64'),
+    writable: true,
+  })
+}
+
+// URL constructor for OAuth redirects
+if (!globalThis.URL && typeof URL !== 'undefined') {
+  Object.defineProperty(globalThis, 'URL', {
+    value: URL,
+    writable: true,
+  })
+}
+
+// URLSearchParams for OAuth parameter parsing  
+if (!globalThis.URLSearchParams && typeof URLSearchParams !== 'undefined') {
+  Object.defineProperty(globalThis, 'URLSearchParams', {
+    value: URLSearchParams,
+    writable: true,
+  })
+}
+
+// CustomEvent polyfill for OAuth events
+if (!globalThis.CustomEvent) {
+  class CustomEventPolyfill extends Event {
+    detail: any
+    constructor(type: string, eventInitDict: any = {}) {
+      super(type, eventInitDict)
+      this.detail = eventInitDict.detail
+    }
+  }
+  Object.defineProperty(globalThis, 'CustomEvent', {
+    value: CustomEventPolyfill,
+    writable: true,
+  })
+}
+
+// Modern storage APIs with proper error handling
+const createStorageMock = () => ({
+  length: 0,
+  clear: vi.fn(),
+  getItem: vi.fn(() => null),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  key: vi.fn(() => null)
+})
+
+if (!globalThis.localStorage) {
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: createStorageMock(),
+    writable: true,
+  })
+}
+
+if (!globalThis.sessionStorage) {
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    value: createStorageMock(),
+    writable: true,
+  })
+}
 
 // Pointer capture methods for Radix UI components
 Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
@@ -159,7 +278,10 @@ vi.mock('@/lib/utils/formatDate', () => ({
 // ==============================================================================
 
 afterEach(() => {
-// Run all pending timers first, in case they're pending
+  // Clean up React Testing Library components first
+  cleanup()
+  
+  // Run all pending timers first, in case they're pending
   try {
     vi.runAllTimers()
   } catch {
@@ -175,6 +297,9 @@ afterEach(() => {
   
   // Clear all mocks and restore functions
   vi.clearAllMocks()
+  
+  // Unstub all globals to prevent test pollution
+  vi.unstubAllGlobals()
   
   // Clear localStorage and sessionStorage
   localStorage.clear()
@@ -210,6 +335,127 @@ vi.mock('@/components/ui/use-toast', () => ({
   useToast: () => ({ toast: vi.fn(), dismiss: vi.fn() }),
   toast: vi.fn(),
 }))
+
+// ==============================================================================
+// LAUNCHDARKLY MOCKS
+// ==============================================================================
+
+// Mock LaunchDarkly React SDK
+vi.mock('launchdarkly-react-client-sdk', () => {
+  const React = require('react');
+  
+  const mockLDClient = {
+    variation: vi.fn((key: string, defaultValue: any) => defaultValue),
+    allFlags: vi.fn(() => ({})),
+    track: vi.fn(),
+    identify: vi.fn(),
+    flush: vi.fn(),
+    close: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    setStreaming: vi.fn(),
+  };
+
+  const MockLDProvider = ({ children }: { children: React.ReactNode }) => {
+    return React.createElement(React.Fragment, {}, children);
+  };
+
+  return {
+    useFlags: vi.fn(() => ({})),
+    useLDClient: vi.fn(() => mockLDClient),
+    useFlag: vi.fn((key: string, defaultValue: any) => defaultValue),
+    LDProvider: MockLDProvider,
+    asyncWithLDProvider: vi.fn().mockResolvedValue(MockLDProvider),
+    withLDProvider: vi.fn((config: any) => (Component: React.ComponentType) => {
+      return (props: any) => React.createElement(Component, props);
+    }),
+  };
+});
+
+// Mock LaunchDarkly JS Client SDK
+vi.mock('launchdarkly-js-client-sdk', () => ({
+  initialize: vi.fn().mockResolvedValue({
+    variation: vi.fn((key: string, defaultValue: any) => defaultValue),
+    allFlags: vi.fn(() => ({})),
+    track: vi.fn(),
+    identify: vi.fn(),
+    flush: vi.fn(),
+    close: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    waitForInitialization: vi.fn().mockResolvedValue(true),
+  }),
+  createConsoleLogger: vi.fn(),
+  basicLogger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+// Mock our custom LaunchDarkly components
+vi.mock('@/lib/launchdarkly/LaunchDarklyProvider', () => {
+  const React = require('react');
+  return {
+    LaunchDarklyProvider: ({ children }: { children: React.ReactNode }) => {
+      return React.createElement(React.Fragment, {}, children);
+    },
+    useLDClient: vi.fn(() => ({
+      variation: vi.fn((key: string, defaultValue: any) => defaultValue),
+      allFlags: vi.fn(() => ({})),
+      track: vi.fn(),
+      identify: vi.fn(),
+      flush: vi.fn(),
+      close: vi.fn(),
+      on: vi.fn(),
+      off: vi.fn(),
+    })),
+    useFlags: vi.fn(() => ({})),
+  };
+});
+
+vi.mock('@/lib/launchdarkly/DevOverrides', () => {
+  const React = require('react');
+  return {
+    DevFlagOverrides: class {
+      static get = vi.fn((key: string) => null);
+      static set = vi.fn();
+      static remove = vi.fn();
+      static clear = vi.fn();
+      static list = vi.fn(() => []);
+      static isEnabled = vi.fn(() => false);
+    },
+    useDevFlags: vi.fn(() => ({})),
+    useDevFlag: vi.fn((key: string, defaultValue: any) => defaultValue),
+    DevFlagOverrideStatus: ({ children }: { children: React.ReactNode }) => {
+      return React.createElement(React.Fragment, {}, children);
+    },
+  };
+});
+
+vi.mock('@/lib/launchdarkly/context-manager', () => ({
+  LaunchDarklyContextManager: {
+    createContext: vi.fn(() => ({ key: 'test-user', kind: 'user' })),
+    createAnonymousContext: vi.fn(() => ({ key: 'anonymous', kind: 'user', anonymous: true })),
+    updateContextOnAuth: vi.fn((context: any, attributes: any) => ({ ...context, ...attributes })),
+    updateContextOnSubscription: vi.fn((context: any, subscription: string) => ({ ...context, subscription })),
+    updateContextWithFeatureUsage: vi.fn((context: any, feature: string, used: boolean) => context),
+    updateContextWithLocation: vi.fn((context: any, country?: string, timezone?: string) => context),
+    createExperimentContext: vi.fn((attributes: any, group: string) => ({ ...attributes, experimentGroup: group })),
+    validateContext: vi.fn(() => true),
+    sanitizeContext: vi.fn((context: any) => context),
+  },
+}));
+
+vi.mock('@/lib/launchdarkly/AuthSync', () => {
+  const React = require('react');
+  return {
+    AuthSync: ({ children }: { children: React.ReactNode }) => {
+      return React.createElement(React.Fragment, {}, children);
+    },
+  };
+});
 
 // ==============================================================================
 // EXTERNAL SERVICE MOCKS

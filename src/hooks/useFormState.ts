@@ -31,17 +31,20 @@ export const useFormState = (
     if (!form) return;
 
     const subscription = form.watch((values) => {
+      // Read formState values to properly subscribe to Proxy
+      const { errors, isSubmitting, isValid } = form.formState;
+      
       setFormState((prevState: FormState): FormState => ({
         ...prevState,
         values: values || {},
         errors: Object.fromEntries(
-          Object.entries(form.formState.errors || {}).map(([key, error]) => [
+          Object.entries(errors || {}).map(([key, error]) => [
             key,
             error?.message || 'Validation error'
           ])
         ),
-        isSubmitting: form.formState.isSubmitting,
-        isValid: form.formState.isValid
+        isSubmitting,
+        isValid
       }));
     });
 

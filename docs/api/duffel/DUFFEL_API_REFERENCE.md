@@ -1,10 +1,40 @@
 # Duffel API Reference Documentation
 
-This document provides comprehensive API reference for Duffel integration.
+## 📋 Document Overview
 
-# Duffel API Reference Documentation
+This comprehensive reference guide covers all aspects of Duffel API integration for modern flight booking functionality in Parker Flight. Duffel represents the next-generation flight booking provider, offering enhanced booking experiences and streamlined payment processing.
 
-> **Purpose**: This file serves as a comprehensive reference for the Duffel API integration in Parker Flight. Copy and paste your Duffel API documentation, examples, and important details here for easy AI assistant reference.
+### 🎯 What You'll Find Here
+- **Modern API Design**: RESTful API with JSON:API specification compliance
+- **Complete Flight Operations**: Search, booking, payment, and order management
+- **Advanced Payment Processing**: Integrated payment intents and secure transactions
+- **Real-time Updates**: Webhook integration for live status notifications
+- **Comprehensive Data Models**: Detailed schemas for all API objects
+- **Developer Experience**: Clear examples, error handling, and best practices
+- **Testing Environment**: Sandbox setup and test scenarios
+
+### 📍 Quick Navigation
+| Section | Description | Key Information |
+|---------|-------------|----------------|
+| [Quick Reference](#quick-reference) | Essential API basics and concepts | Base URLs, key concepts, authentication |
+| [Authentication](#authentication) | API key setup and headers | Bearer token format, version headers |
+| [Core Endpoints](#core-endpoints) | Primary API operations | Offer requests, offers, orders, management |
+| [Data Models](#data-models) | JSON schemas and structures | Request/response formats, object definitions |
+| [Payment Integration](#payment-integration) | Payment processing workflow | Payment intents, methods, refunds |
+| [Webhooks](#webhooks) | Real-time event notifications | Event types, signature verification |
+| [Error Handling](#error-handling) | Error responses and debugging | Status codes, error formats, troubleshooting |
+| [Code Examples](#code-examples) | Implementation examples | Complete booking flows, common operations |
+| [Rate Limits & Best Practices](#rate-limits--best-practices) | API optimization guidelines | Rate limiting, performance, best practices |
+| [Testing & Sandbox](#testing--sandbox) | Development environment | Test credentials, sandbox data, scenarios |
+| [Troubleshooting](#troubleshooting) | Common issues and solutions | Debug guides, support resources |
+
+### 🔧 Integration Status in Parker Flight
+- **Future Primary Provider**: Next-generation booking experience
+- **Enhanced Features**: Modern payment processing, better UX
+- **Migration Target**: Planned replacement for legacy Amadeus booking
+- **Competitive Advantage**: Streamlined API design, developer-friendly
+
+---
 
 ## Table of Contents
 - [Quick Reference](#quick-reference)

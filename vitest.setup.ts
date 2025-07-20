@@ -1,6 +1,9 @@
 import { vi } from 'vitest';
 import 'dotenv/config';
 
+// Mock react-day-picker before any component imports
+vi.mock('react-day-picker');
+
 /**
  * Business-rules hook (test stub)
  */

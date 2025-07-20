@@ -1,0 +1,358 @@
+{
+  "testRun": {
+    "timestamp": "2025-07-20T04:05:30.145Z",
+    "duration": 5,
+    "environment": "test",
+    "nodeVersion": "v23.11.0",
+    "platform": "darwin"
+  },
+  "results": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "successRate": "100.00%"
+  },
+  "details": [
+    {
+      "timestamp": "2025-07-20T04:05:30.116Z",
+      "level": "info",
+      "message": "Starting Enhanced AWS SDK Integration Tests",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.139Z",
+      "level": "info",
+      "message": "Test Configuration",
+      "data": {
+        "timeout": 30000,
+        "maxRetries": 3,
+        "testDataSize": 1024,
+        "regions": [
+          "us-east-1",
+          "us-west-2"
+        ],
+        "environments": [
+          "development",
+          "staging",
+          "production"
+        ]
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.139Z",
+      "level": "info",
+      "message": "Client factory module found",
+      "data": {
+        "path": "/Users/parkerbarnett/github-link-up-buddy/src/lib/aws-sdk-enhanced/client-factory.ts"
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.139Z",
+      "level": "info",
+      "message": "Testing client factory for environment: development",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.139Z",
+      "level": "info",
+      "message": "Mock client configuration for development",
+      "data": {
+        "region": "us-east-1",
+        "environment": "development",
+        "enableMetrics": false,
+        "enableLogging": true,
+        "maxAttempts": 3,
+        "connectionTimeout": 3000,
+        "socketTimeout": 10000
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.140Z",
+      "level": "info",
+      "message": "Testing client factory for environment: staging",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.140Z",
+      "level": "info",
+      "message": "Mock client configuration for staging",
+      "data": {
+        "region": "us-east-1",
+        "environment": "staging",
+        "enableMetrics": false,
+        "enableLogging": true,
+        "maxAttempts": 3,
+        "connectionTimeout": 3000,
+        "socketTimeout": 10000
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.140Z",
+      "level": "info",
+      "message": "Testing client factory for environment: production",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.140Z",
+      "level": "info",
+      "message": "Mock client configuration for production",
+      "data": {
+        "region": "us-east-1",
+        "environment": "production",
+        "enableMetrics": true,
+        "enableLogging": false,
+        "maxAttempts": 3,
+        "connectionTimeout": 5000,
+        "socketTimeout": 30000
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.141Z",
+      "level": "info",
+      "message": "✅ Enhanced Client Factory PASSED (1ms)",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.142Z",
+      "level": "info",
+      "message": "Error handling module found",
+      "data": {
+        "path": "/Users/parkerbarnett/github-link-up-buddy/src/lib/aws-sdk-enhanced/error-handling.ts"
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.142Z",
+      "level": "info",
+      "message": "Testing error categorization for DisabledException",
+      "data": {
+        "type": "DisabledException",
+        "category": "CONFIGURATION",
+        "retryable": false
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.142Z",
+      "level": "info",
+      "message": "Testing error categorization for KeyUnavailableException",
+      "data": {
+        "type": "KeyUnavailableException",
+        "category": "SERVICE_UNAVAILABLE",
+        "retryable": true
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.142Z",
+      "level": "info",
+      "message": "Testing error categorization for LimitExceededException",
+      "data": {
+        "type": "LimitExceededException",
+        "category": "RATE_LIMIT",
+        "retryable": true
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.142Z",
+      "level": "info",
+      "message": "Testing error categorization for ValidationException",
+      "data": {
+        "type": "ValidationException",
+        "category": "VALIDATION",
+        "retryable": false
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.142Z",
+      "level": "info",
+      "message": "✅ Enhanced Error Handling PASSED (0ms)",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.142Z",
+      "level": "info",
+      "message": "Multi-region manager module found",
+      "data": {
+        "path": "/Users/parkerbarnett/github-link-up-buddy/src/lib/aws-sdk-enhanced/multi-region-manager.ts"
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.142Z",
+      "level": "info",
+      "message": "Mock multi-region configuration",
+      "data": {
+        "primaryRegion": "us-east-1",
+        "backupRegions": [
+          "us-west-2",
+          "eu-west-1"
+        ],
+        "services": [
+          "kms"
+        ],
+        "environment": "production"
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.142Z",
+      "level": "info",
+      "message": "Simulating health check for region: us-east-1",
+      "data": {
+        "region": "us-east-1",
+        "healthy": true,
+        "latency": 147
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.142Z",
+      "level": "info",
+      "message": "Simulating health check for region: us-west-2",
+      "data": {
+        "region": "us-west-2",
+        "healthy": true,
+        "latency": 50
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.142Z",
+      "level": "info",
+      "message": "Simulating health check for region: eu-west-1",
+      "data": {
+        "region": "eu-west-1",
+        "healthy": true,
+        "latency": 122
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.142Z",
+      "level": "info",
+      "message": "✅ Multi-Region Manager PASSED (0ms)",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.143Z",
+      "level": "info",
+      "message": "KMS modules found and integrated",
+      "data": {
+        "sharedModule": "/Users/parkerbarnett/github-link-up-buddy/packages/shared/kms.ts",
+        "supabaseModule": "/Users/parkerbarnett/github-link-up-buddy/supabase/functions/shared/kms.ts"
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.143Z",
+      "level": "info",
+      "message": "Enhanced AWS SDK integration verified in shared KMS module",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.143Z",
+      "level": "info",
+      "message": "✅ KMS Module Integration PASSED (0ms)",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.143Z",
+      "level": "info",
+      "message": "Environment variable check",
+      "data": {
+        "present": [],
+        "missing": [
+          "AWS_REGION",
+          "AWS_ACCESS_KEY_ID",
+          "AWS_SECRET_ACCESS_KEY"
+        ],
+        "allPresent": false
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.143Z",
+      "level": "info",
+      "message": "Configuration file check: package.json",
+      "data": {
+        "path": "/Users/parkerbarnett/github-link-up-buddy/package.json",
+        "exists": true
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.143Z",
+      "level": "info",
+      "message": "Configuration file check: tsconfig.json",
+      "data": {
+        "path": "/Users/parkerbarnett/github-link-up-buddy/tsconfig.json",
+        "exists": true
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.143Z",
+      "level": "info",
+      "message": "✅ Configuration Validation PASSED (0ms)",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.144Z",
+      "level": "info",
+      "message": "Performance metrics collected",
+      "data": {
+        "clientInitialization": 64,
+        "errorHandlingOverhead": 11,
+        "multiRegionFailoverTime": 549,
+        "memoryUsage": {
+          "rss": 27107328,
+          "heapTotal": 6033408,
+          "heapUsed": 4440576,
+          "external": 1454463,
+          "arrayBuffers": 10515
+        },
+        "cpuUsage": {
+          "user": 65549,
+          "system": 51073
+        }
+      }
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.144Z",
+      "level": "info",
+      "message": "All performance metrics within acceptable thresholds",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.144Z",
+      "level": "info",
+      "message": "✅ Performance Metrics PASSED (0ms)",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.145Z",
+      "level": "info",
+      "message": "=== TEST SUMMARY ===",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.145Z",
+      "level": "info",
+      "message": "Total Tests: 6",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.145Z",
+      "level": "info",
+      "message": "Passed: 6",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.145Z",
+      "level": "info",
+      "message": "Failed: 0",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.145Z",
+      "level": "info",
+      "message": "Success Rate: 100.00%",
+      "data": null
+    },
+    {
+      "timestamp": "2025-07-20T04:05:30.145Z",
+      "level": "info",
+      "message": "Total Duration: 5ms",
+      "data": null
+    }
+  ]
+}

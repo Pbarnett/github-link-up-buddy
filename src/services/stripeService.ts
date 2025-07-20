@@ -27,9 +27,78 @@ export interface PaymentIntentParams {
   };
 }
 
+/**
+ * Enhanced metadata builder for comprehensive business intelligence
+ * Follows Stripe API reference: up to 50 keys, 40 char key names, 500 char values
+ */
+export const buildPaymentMetadata = ({
+  userId,
+  flightRoute,
+  bookingType = 'standard',
+  campaignId,
+  marketingSource,
+  deviceInfo,
+  additionalData = {}
+}: {
+  userId: string;
+  flightRoute?: string;
+  bookingType?: 'standard' | 'premium' | 'business' | 'auto_booking';
+  campaignId?: string;
+  marketingSource?: string;
+  deviceInfo?: {
+    platform?: string;
+    userAgent?: string;
+    screenResolution?: string;
+  };
+  additionalData?: Record<string, string>;
+}): Record<string, string> => {
+  const metadata: Record<string, string> = {
+    // Core user data
+    user_id: userId.slice(0, 500),
+    booking_type: bookingType,
+    created_via: 'parker_flight_platform',
+    timestamp: new Date().toISOString(),
+    
+    // Flight-specific data
+    ...(flightRoute && { flight_route: flightRoute.slice(0, 500) }),
+    
+    // Marketing attribution
+    ...(campaignId && { campaign_id: campaignId.slice(0, 500) }),
+    ...(marketingSource && { marketing_source: marketingSource.slice(0, 500) }),
+    
+    // Technical metadata
+    ...(deviceInfo?.platform && { device_platform: deviceInfo.platform.slice(0, 500) }),
+    ...(deviceInfo?.userAgent && { user_agent: deviceInfo.userAgent.slice(0, 500) }),
+    ...(deviceInfo?.screenResolution && { screen_resolution: deviceInfo.screenResolution.slice(0, 500) }),
+    
+    // Additional business data (ensure we don't exceed 50 key limit)
+    ...Object.fromEntries(
+      Object.entries(additionalData)
+        .slice(0, 50 - 10) // Reserve space for core metadata
+        .map(([key, value]) => [
+          key.slice(0, 40), // Max 40 chars for key
+          String(value).slice(0, 500) // Max 500 chars for value
+        ])
+    )
+  };
+  
+  // Ensure we don't exceed 50 keys total
+  const entries = Object.entries(metadata).slice(0, 50);
+  return Object.fromEntries(entries);
+};
+
 export interface PaymentMethodParams {
-  type: 'card';
-  card: unknown; // Stripe card element
+  type: 'card' | 'us_bank_account' | 'sepa_debit' | 'ideal' | 'sofort' | 'bancontact' | 'giropay' | 'eps' | 'p24' | 'alipay' | 'wechat_pay';
+  card?: unknown; // Stripe card element
+  us_bank_account?: {
+    routing_number: string;
+    account_number: string;
+    account_holder_type: 'individual' | 'company';
+    account_type: 'checking' | 'savings';
+  };
+  sepa_debit?: {
+    iban: string;
+  };
   billing_details?: {
     name?: string;
     email?: string;
@@ -43,6 +112,94 @@ export interface PaymentMethodParams {
     };
   };
 }
+
+/**
+ * Enhanced payment method configuration per API reference
+ * Supports all major payment methods and regional preferences
+ */
+export interface PaymentMethodConfiguration {
+  enabled_payment_methods: PaymentMethodType[];
+  automatic_payment_methods?: {
+    enabled: boolean;
+    allow_redirects?: 'always' | 'never';
+  };
+  payment_method_options?: {
+    card?: {
+      setup_future_usage?: 'off_session' | 'on_session';
+      request_three_d_secure?: 'automatic' | 'any' | 'challenge';
+    };
+    us_bank_account?: {
+      verification_method?: 'automatic' | 'instant';
+      setup_future_usage?: 'off_session' | 'on_session';
+    };
+    sepa_debit?: {
+      setup_future_usage?: 'off_session' | 'on_session';
+    };
+  };
+}
+
+type PaymentMethodType = 
+  | 'card' 
+  | 'apple_pay' 
+  | 'google_pay' 
+  | 'link' 
+  | 'us_bank_account' 
+  | 'sepa_debit' 
+  | 'ideal' 
+  | 'sofort' 
+  | 'bancontact' 
+  | 'giropay' 
+  | 'eps' 
+  | 'p24' 
+  | 'alipay' 
+  | 'wechat_pay' 
+  | 'klarna' 
+  | 'afterpay_clearpay' 
+  | 'affirm';
+
+/**
+ * Get optimal payment methods based on customer location and preferences
+ * Per API reference recommendations for international payments
+ */
+export const getOptimalPaymentMethods = (
+  country: string, 
+  currency: string,
+  amount: number
+): PaymentMethodType[] => {
+  const baseMethods: PaymentMethodType[] = ['card'];
+  
+  // Add digital wallets (high conversion)
+  baseMethods.push('apple_pay', 'google_pay', 'link');
+  
+  // Add region-specific methods per API reference
+  switch (country.toUpperCase()) {
+    case 'US':
+      baseMethods.push('us_bank_account');
+      if (amount >= 5000) { // $50+ for BNPL
+        baseMethods.push('klarna', 'afterpay_clearpay', 'affirm');
+      }
+      break;
+    case 'DE':
+    case 'AT':
+    case 'NL':
+    case 'BE':
+      baseMethods.push('sepa_debit');
+      if (country === 'DE') baseMethods.push('sofort', 'giropay');
+      if (country === 'NL') baseMethods.push('ideal');
+      if (country === 'BE') baseMethods.push('bancontact');
+      if (country === 'AT') baseMethods.push('eps');
+      break;
+    case 'PL':
+      baseMethods.push('p24');
+      break;
+    case 'CN':
+      baseMethods.push('alipay', 'wechat_pay');
+      break;
+    // Add more regions as needed
+  }
+  
+  return baseMethods;
+};
 
 export interface DuffelPaymentSession {
   card_id: string;
@@ -81,7 +238,8 @@ export class StripeService {
       });
 
       if (error) {
-        throw new Error(`Payment intent creation failed: ${error.message}`);
+        const handledError = StripeService.handleStripeError(error);
+        throw new Error(handledError.error);
       }
 
       return {
@@ -93,7 +251,8 @@ export class StripeService {
       };
     } catch (error) {
       console.error('Error creating payment intent:', error);
-      throw error;
+      const handledError = StripeService.handleStripeError(error);
+      throw new Error(handledError.error);
     }
   }
 
@@ -137,7 +296,8 @@ export class StripeService {
       });
 
       if (confirmResult.error) {
-        throw new Error(confirmResult.error.message || 'Payment confirmation failed');
+        const handledError = StripeService.handleStripeError(confirmResult.error);
+        throw new Error(handledError.error);
       }
 
       // Step 3: Return combined result
@@ -149,7 +309,8 @@ export class StripeService {
 
     } catch (error) {
       console.error('Error confirming payment:', error);
-      throw error;
+      const handledError = StripeService.handleStripeError(error);
+      throw new Error(handledError.error);
     }
   }
 
@@ -247,6 +408,173 @@ export class StripeService {
   }
 
   /**
+   * Handle Stripe errors according to API reference standards
+   */
+  private static handleStripeError(error: any): { success: false; error: string; retryable: boolean; errorType: string } {
+    // Handle different Stripe error types per API reference documentation
+    if (error.type) {
+      switch (error.type) {
+        case 'StripeCardError':
+        case 'card_error':
+          // Handle card-specific errors (declined, insufficient funds, etc.)
+          return {
+            success: false,
+            error: error.message || 'Card was declined',
+            retryable: false,
+            errorType: 'card_error'
+          };
+        
+        case 'StripeRateLimitError':
+        case 'rate_limit_error':
+          // Handle rate limiting - should retry with exponential backoff
+          return {
+            success: false,
+            error: 'Too many requests. Please try again shortly.',
+            retryable: true,
+            errorType: 'rate_limit_error'
+          };
+        
+        case 'StripeInvalidRequestError':
+        case 'invalid_request_error':
+          // Handle malformed requests - don't retry
+          return {
+            success: false,
+            error: error.message || 'Invalid request parameters',
+            retryable: false,
+            errorType: 'invalid_request_error'
+          };
+        
+        case 'StripeAPIError':
+        case 'api_error':
+          // Handle Stripe API errors - can retry
+          return {
+            success: false,
+            error: 'Payment processing temporarily unavailable',
+            retryable: true,
+            errorType: 'api_error'
+          };
+        
+        case 'StripeConnectionError':
+        case 'connection_error':
+          // Handle network errors - can retry
+          return {
+            success: false,
+            error: 'Network error. Please check your connection and try again.',
+            retryable: true,
+            errorType: 'connection_error'
+          };
+        
+        case 'StripeAuthenticationError':
+        case 'authentication_error':
+          // Handle authentication errors - don't retry
+          return {
+            success: false,
+            error: 'Authentication failed',
+            retryable: false,
+            errorType: 'authentication_error'
+          };
+        
+        case 'idempotency_error':
+          // Handle idempotency errors
+          return {
+            success: false,
+            error: 'Duplicate request detected',
+            retryable: false,
+            errorType: 'idempotency_error'
+          };
+        
+        default:
+          return {
+            success: false,
+            error: error.message || 'An unexpected error occurred',
+            retryable: false,
+            errorType: 'unknown_error'
+          };
+      }
+    }
+
+    // Handle HTTP status codes
+    if (error.statusCode) {
+      switch (error.statusCode) {
+        case 400:
+          return {
+            success: false,
+            error: 'Bad request - please check your payment information',
+            retryable: false,
+            errorType: 'bad_request'
+          };
+        case 401:
+          return {
+            success: false,
+            error: 'Authentication failed',
+            retryable: false,
+            errorType: 'unauthorized'
+          };
+        case 402:
+          return {
+            success: false,
+            error: 'Payment required',
+            retryable: false,
+            errorType: 'payment_required'
+          };
+        case 403:
+          return {
+            success: false,
+            error: 'Forbidden - insufficient permissions',
+            retryable: false,
+            errorType: 'forbidden'
+          };
+        case 404:
+          return {
+            success: false,
+            error: 'Resource not found',
+            retryable: false,
+            errorType: 'not_found'
+          };
+        case 409:
+          return {
+            success: false,
+            error: 'Conflict - request conflicts with existing resource',
+            retryable: false,
+            errorType: 'conflict'
+          };
+        case 429:
+          return {
+            success: false,
+            error: 'Rate limited - please try again shortly',
+            retryable: true,
+            errorType: 'rate_limited'
+          };
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          return {
+            success: false,
+            error: 'Server error - please try again',
+            retryable: true,
+            errorType: 'server_error'
+          };
+        default:
+          return {
+            success: false,
+            error: error.message || 'An unexpected error occurred',
+            retryable: false,
+            errorType: 'unknown_error'
+          };
+      }
+    }
+
+    // Generic error handling
+    return {
+      success: false,
+      error: error.message || 'An unexpected error occurred',
+      retryable: false,
+      errorType: 'generic_error'
+    };
+  }
+
+  /**
    * Process refund (server-side via edge function)
    */
   async processRefund({
@@ -268,13 +596,15 @@ export class StripeService {
       });
 
       if (error) {
-        throw new Error(`Refund processing failed: ${error.message}`);
+        const handledError = StripeService.handleStripeError(error);
+        throw new Error(handledError.error);
       }
 
       return data;
     } catch (error) {
       console.error('Error processing refund:', error);
-      throw error;
+      const handledError = StripeService.handleStripeError(error);
+      throw new Error(handledError.error);
     }
   }
 

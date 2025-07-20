@@ -78,6 +78,17 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
     },
   });
 
+  // Re-compute validity when auto_book_enabled toggle flips
+  const { watch, resetField, clearErrors, reset } = form;
+  const autoBookEnabled = watch('auto_book_enabled');
+  
+  useEffect(() => {
+    if (!autoBookEnabled) {
+      resetField('max_price');          // clear stale value / error
+      clearErrors('max_price');         // Zod / RHF
+    }
+  }, [autoBookEnabled, resetField, clearErrors]);
+
   useEffect(() => {
     if (tripRequestId) {
       const fetchTripDetails = async () => {
@@ -88,7 +99,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
 
           if (tripData) {
             const { nycAirports, otherAirport } = categorizeAirports(tripData.departure_airports);
-            form.reset({
+            reset({
               earliestDeparture: tripData.earliest_departure ? parseISO(tripData.earliest_departure) : undefined,
               latestDeparture: tripData.latest_departure ? parseISO(tripData.latest_departure) : undefined,
               min_duration: tripData.min_duration,
@@ -117,9 +128,9 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       };
       fetchTripDetails();
     } else {
-      form.reset(form.formState.defaultValues);
+      reset(form.formState.defaultValues);
     }
-  }, [tripRequestId, form]);
+  }, [tripRequestId, reset]);
 
   const validateFormData = (data: FormValues): boolean => {
     const destinationAirport = data.destination_airport || data.destination_other || "";
@@ -152,7 +163,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       latestDeparture: data.latestDeparture,
       min_duration: data.min_duration,
       max_duration: data.max_duration,
-      budget: data.max_price, // Map max_price to budget field for backend compatibility
+      budget: data.max_price || 1000, // Map max_price to budget field for backend compatibility
       departure_airports: departureAirports,
       destination_airport: destinationAirport,
       destination_location_code: destinationAirport, // Same as destination_airport for now
@@ -258,7 +269,9 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       'max_duration'
     ];
     
-    const isStep1Valid = await form.trigger(step1Fields as (keyof FormValues)[]);
+    // ✅ FIXED: Destructure trigger method to avoid dependency issues
+    const { trigger } = form;
+    const isStep1Valid = await trigger(step1Fields as (keyof FormValues)[]);
     
     if (!isStep1Valid) {
       // Validation failed - errors will be displayed automatically
@@ -305,6 +318,8 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       }
 
       console.log("Form data before transform:", data);
+      console.log("DEBUG: formData.destination_airport:", data.destination_airport);
+      console.log("DEBUG: formData.destination_other:", data.destination_other);
       // Specifically to check data.preferred_payment_method_id when auto_book_enabled is true
       
       const action = tripRequestId ? "Updating" : "Creating";
@@ -314,6 +329,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       });
       
       const transformedData = transformFormData(data);
+      console.log("DEBUG: transformedData.destination_location_code:", transformedData.destination_location_code);
       let resultingTripRequest: TripRequestFromDB;
 
       if (tripRequestId) {

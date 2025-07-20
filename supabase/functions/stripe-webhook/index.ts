@@ -22,7 +22,8 @@ const corsHeaders = {
 };
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-  apiVersion: "2023-10-16",
+  apiVersion: "2025-06-30.basil",
+  typescript: true,
 });
 
 const endpointSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";

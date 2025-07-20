@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures/extendedTest';
 import { injectAxe, checkA11y } from 'axe-playwright';
 
 test.describe('Core User Journey', () => {
@@ -9,7 +9,7 @@ test.describe('Core User Journey', () => {
 
   test('complete user flow: landing → signup → search → booking', async ({ page }) => {
     // Step 1: Landing page
-    test.step('Navigate to landing page', async () => {
+    await test.step('Navigate to landing page', async () => {
       await page.goto('/');
       await expect(page).toHaveTitle(/Parker Flight/);
       
@@ -21,8 +21,8 @@ test.describe('Core User Journey', () => {
     });
 
     // Step 2: Navigation to signup
-    test.step('Navigate to signup', async () => {
-      const signupButton = page.locator('text=Sign Up, text=Get Started').first();
+    await test.step('Navigate to signup', async () => {
+      const signupButton = page.getByRole('link', { name: /sign up|get started/i }).first();
       if (await signupButton.isVisible()) {
         await signupButton.click();
         await page.waitForURL('**/signup');

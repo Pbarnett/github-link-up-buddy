@@ -192,12 +192,17 @@ export const DEFAULT_CONFIGS: Record<string, Partial<BusinessRulesConfig>> = {
   },
 };
 
-// Configuration validation helper
+// Configuration validation helper with optimized error reporting
 export function validateBusinessRulesConfig(config: unknown): BusinessRulesConfig {
   const result = BusinessRulesConfigSchema.safeParse(config);
   
   if (!result.success) {
-    throw new Error(`Invalid business rules configuration: ${result.error.message}`);
+    // Create more detailed error message
+    const errorDetails = result.error.errors.map(err => 
+      `${err.path.join('.')}: ${err.message}`
+    ).join('; ');
+    
+    throw new Error(`Invalid business rules configuration: ${errorDetails}`);
   }
   
   return result.data;

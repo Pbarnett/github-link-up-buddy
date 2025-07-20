@@ -24,6 +24,9 @@ export interface FormConfiguration {
   updated_at?: string;
 }
 
+// Legacy alias for backward compatibility
+export type DynamicFormConfig = FormConfiguration;
+
 export interface FormSection {
   id: string;
   title: string;

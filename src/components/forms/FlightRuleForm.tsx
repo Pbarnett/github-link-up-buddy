@@ -24,22 +24,23 @@ const unifiedFlightFormSchema = z.object({
   budget: z.number().min(100, 'Budget must be at least $100').max(10000, 'Budget cannot exceed $10,000'),
   autoBookEnabled: z.boolean().optional(),
   paymentMethodId: z.string().optional(),
-}).refine(data => {
-  if (!data.earliestOutbound || !data.latestReturn) return true;
-  return data.latestReturn > data.earliestOutbound;
-}, {
-  message: 'Latest return date must be after earliest outbound date',
-  path: ['latestReturn'],
+}).superRefine((data, ctx) => {
+  // Consolidated validation for better performance
+  
+  // Date sequence validation - only validate if both dates exist
+  if (data.earliestOutbound && data.latestReturn) {
+    if (data.latestReturn <= data.earliestOutbound) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Latest return date must be after earliest outbound date',
+        path: ['latestReturn']
+      });
+    }
+  }
 });
 
-// Add a separate refine for the root level to ensure cross-field validation is triggered
-const finalSchema = unifiedFlightFormSchema.refine(data => {
-  if (!data.earliestOutbound || !data.latestReturn) return true;
-  return data.latestReturn > data.earliestOutbound;
-}, {
-  message: 'Latest return date must be after earliest outbound date',
-  path: ['latestReturn'],
-});
+// Use the optimized schema directly
+const finalSchema = unifiedFlightFormSchema;
 
 export type UnifiedFlightRuleForm = z.infer<typeof unifiedFlightFormSchema>;
 
@@ -56,9 +57,9 @@ export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaul
   
   const form = useForm<UnifiedFlightRuleForm>({
     resolver: zodResolver(finalSchema),
-    mode: 'onChange',        // validate every keystroke
-    reValidateMode: 'onChange',
-    criteriaMode: 'firstError',
+    mode: 'onChange',        // validate on change for immediate feedback
+    reValidateMode: 'onChange', // re-validate on change after submission
+    criteriaMode: 'firstError', // show first error only
     shouldFocusError: true,
     defaultValues: {
       origin: [],
@@ -84,19 +85,22 @@ export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaul
   const watchedEarliestOutbound = form.watch('earliestOutbound');
   const watchedLatestReturn = form.watch('latestReturn');
   
+  // ✅ FIXED: Destructure specific methods to avoid infinite loops
+  const { trigger } = form;
+  
   useEffect(() => {
     if (watchedEarliestOutbound && watchedLatestReturn) {
-      form.trigger(['latestReturn']);
+      trigger(['latestReturn']);
     }
-  }, [watchedEarliestOutbound, watchedLatestReturn, form]);
+  }, [watchedEarliestOutbound, watchedLatestReturn, trigger]);
 
-  // Debug form state
-  const formState = form.formState;
+  // ✅ FIXED: Read formState properties before render to enable Proxy subscription
+  const { isValid, errors, isSubmitting, isDirty } = form.formState;
   console.log('Form validation state:', {
-    isValid: formState.isValid,
-    errors: formState.errors,
-    isSubmitting: formState.isSubmitting,
-    isDirty: formState.isDirty,
+    isValid,
+    errors,
+    isSubmitting,
+    isDirty,
     values: form.getValues()
   });
 
@@ -118,8 +122,8 @@ export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaul
               <FormLabel>Origin Airports</FormLabel>
               <FormControl>
                 <Input 
-                  {...field}
                   placeholder="Enter origin airports"
+                  {...field}
                   value={Array.isArray(field.value) ? field.value.join(', ') : ''}
                   onChange={(e) => {
                     const value = e.target.value.trim();
@@ -154,14 +158,14 @@ export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaul
               <FormLabel>Earliest Outbound</FormLabel>
               <FormControl>
                 <Input 
-                  {...field}
                   type="date"
+                  {...field}
                   value={field.value ? field.value.toISOString().split('T')[0] : ''}
                   onChange={(e) => {
                     field.onChange(
                       e.target.value 
                         ? new Date(e.target.value) 
-                        : undefined  // use undefined for empty to trigger required error
+                        : undefined
                     );
                   }}
                 />
@@ -179,8 +183,8 @@ export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaul
               <FormLabel>Latest Return</FormLabel>
               <FormControl>
                 <Input 
-                  {...field}
                   type="date"
+                  {...field}
                   value={field.value ? field.value.toISOString().split('T')[0] : ''}
                   onChange={(e) => {
                     field.onChange(e.target.value ? new Date(e.target.value) : undefined);
@@ -225,9 +229,9 @@ export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaul
               <FormLabel>Budget</FormLabel>
               <FormControl>
                 <Input 
-                  {...field}
                   type="number" 
                   placeholder="Enter budget"
+                  {...field} // ✅ FIXED: Use field spread for proper ref/name/blur handling
                   value={field.value ?? ''}  // show empty string if undefined
                   onChange={(e) => {
                     const value = e.target.value;
@@ -239,8 +243,8 @@ export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaul
                         field.onChange(numValue);
                       }
                     }
-                    // Trigger validation immediately on change
-                    form.trigger('budget');
+                    // ✅ FIXED: Use destructured trigger method
+                    trigger('budget');
                   }}
                 />
               </FormControl>
@@ -254,4 +258,3 @@ export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaul
     </Form>
   );
 };
-

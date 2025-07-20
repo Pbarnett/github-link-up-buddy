@@ -1,0 +1,247 @@
+version: '3.8'
+
+services:
+  # Enhanced AWS SDK Backend Service
+  aws-sdk-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: production
+      args:
+        NODE_ENV: ${NODE_ENV:-production}
+    image: parker-flight/aws-sdk-enhanced:${VERSION:-latest}
+    container_name: parker-flight-aws-sdk
+    restart: unless-stopped
+    
+    # Environment variables for AWS SDK Enhanced integration
+    environment:
+      # Node.js configuration
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
+      
+      # AWS Configuration
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+      
+      # KMS Configuration
+      KMS_GENERAL_ALIAS: ${KMS_GENERAL_ALIAS:-alias/parker-flight-general-production}
+      KMS_PII_ALIAS: ${KMS_PII_ALIAS:-alias/parker-flight-pii-production}
+      KMS_PAYMENT_ALIAS: ${KMS_PAYMENT_ALIAS:-alias/parker-flight-payment-production}
+      
+      # Enhanced AWS SDK Configuration
+      AWS_SDK_LOAD_CONFIG: 1
+      AWS_SDK_LOG_LEVEL: ${AWS_SDK_LOG_LEVEL:-warn}
+      AWS_SDK_ENABLE_METRICS: ${AWS_SDK_ENABLE_METRICS:-true}
+      AWS_SDK_ENABLE_TRACING: ${AWS_SDK_ENABLE_TRACING:-true}
+      
+      # Multi-region Configuration
+      MULTI_REGION_ENABLED: ${MULTI_REGION_ENABLED:-true}
+      BACKUP_REGIONS: ${BACKUP_REGIONS:-us-west-2,eu-west-1,ap-southeast-1}
+      FAILOVER_STRATEGY: ${FAILOVER_STRATEGY:-latency}
+      HEALTH_CHECK_INTERVAL: ${HEALTH_CHECK_INTERVAL:-30000}
+      CIRCUIT_BREAKER_THRESHOLD: ${CIRCUIT_BREAKER_THRESHOLD:-5}
+      
+      # Monitoring Configuration
+      ALERT_EMAIL: ${ALERT_EMAIL:-}
+      CLOUDWATCH_NAMESPACE: ${CLOUDWATCH_NAMESPACE:-ParkerFlight/KMS}
+      ENABLE_DETAILED_METRICS: ${ENABLE_DETAILED_METRICS:-true}
+      
+      # Performance Configuration
+      MAX_SOCKETS: ${MAX_SOCKETS:-50}
+      CONNECTION_TIMEOUT: ${CONNECTION_TIMEOUT:-5000}
+      SOCKET_TIMEOUT: ${SOCKET_TIMEOUT:-30000}
+      MAX_RETRY_ATTEMPTS: ${MAX_RETRY_ATTEMPTS:-3}
+      RETRY_BASE_DELAY: ${RETRY_BASE_DELAY:-1000}
+      
+      # Security Configuration
+      CREDENTIAL_SOURCE: ${CREDENTIAL_SOURCE:-auto}
+      ENABLE_AUDIT_LOGGING: ${ENABLE_AUDIT_LOGGING:-true}
+      ENABLE_ENCRYPTION_CONTEXT: ${ENABLE_ENCRYPTION_CONTEXT:-true}
+      
+      # Application Configuration
+      APPLICATION_NAME: ${APPLICATION_NAME:-Parker Flight}
+      SERVICE_NAME: ${SERVICE_NAME:-KMS Encryption Service}
+      APPLICATION_VERSION: ${APPLICATION_VERSION:-1.0.0}
+    
+    # Port mapping
+    ports:
+      - "${HOST_PORT:-3000}:${PORT:-3000}"
+    
+    # Volume mounts
+    volumes:
+      # AWS credentials (if using file-based credentials)
+      - ~/.aws:/home/nodejs/.aws:ro
+      # Application logs
+      - aws-sdk-logs:/app/logs
+      # Configuration overrides
+      - ./config:/app/config:ro
+    
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('./config/aws-sdk-enhanced.config.js').validate().isValid ? process.exit(0) : process.exit(1)\" || curl -f http://localhost:${PORT:-3000}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    
+    # Network configuration
+    networks:
+      - parker-flight-network
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service,version,environment"
+    
+    # Labels for container management
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.aws-sdk.rule=Host(`aws-sdk.parker-flight.local`)"
+      - "traefik.http.services.aws-sdk.loadbalancer.server.port=3000"
+      - "com.parker-flight.service=aws-sdk-enhanced"
+      - "com.parker-flight.version=${VERSION:-latest}"
+      - "com.parker-flight.environment=${NODE_ENV:-production}"
+
+  # AWS CLI container for deployment operations
+  aws-cli:
+    image: amazon/aws-cli:latest
+    container_name: parker-flight-aws-cli
+    restart: "no"
+    
+    environment:
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+    
+    volumes:
+      - ~/.aws:/root/.aws:ro
+      - ./deployment:/deployment:ro
+      - ./scripts:/scripts:ro
+    
+    networks:
+      - parker-flight-network
+    
+    # Override default command
+    command: ["--version"]
+    
+    profiles:
+      - deployment
+
+  # Deployment runner container
+  deployment-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: builder
+    image: parker-flight/deployment:${VERSION:-latest}
+    container_name: parker-flight-deployment
+    restart: "no"
+    
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+      ALERT_EMAIL: ${ALERT_EMAIL:-}
+    
+    volumes:
+      - ~/.aws:/home/nodejs/.aws:ro
+      - ./deployment:/app/deployment:ro
+    
+    networks:
+      - parker-flight-network
+    
+    command: ["node", "scripts/deploy-enhanced-aws-sdk.cjs"]
+    
+    depends_on:
+      - aws-cli
+    
+    profiles:
+      - deployment
+
+  # Monitoring container (optional)
+  monitoring-setup:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: builder
+    image: parker-flight/monitoring:${VERSION:-latest}
+    container_name: parker-flight-monitoring
+    restart: "no"
+    
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      ALERT_EMAIL: ${ALERT_EMAIL:-}
+    
+    volumes:
+      - ~/.aws:/home/nodejs/.aws:ro
+    
+    networks:
+      - parker-flight-network
+    
+    command: ["node", "scripts/setup-monitoring.cjs"]
+    
+    profiles:
+      - monitoring
+
+  # Testing container
+  integration-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: builder
+    image: parker-flight/tests:${VERSION:-latest}
+    container_name: parker-flight-tests
+    restart: "no"
+    
+    environment:
+      NODE_ENV: test
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    
+    volumes:
+      - ./tests:/app/tests:ro
+      - aws-sdk-logs:/app/logs
+    
+    networks:
+      - parker-flight-network
+    
+    command: ["node", "tests/integration/enhanced-aws-sdk-integration.test.cjs"]
+    
+    profiles:
+      - testing
+
+# Named volumes
+volumes:
+  aws-sdk-logs:
+    driver: local
+    labels:
+      - "com.parker-flight.volume=logs"
+
+# Networks
+networks:
+  parker-flight-network:
+    driver: bridge
+    labels:
+      - "com.parker-flight.network=main"

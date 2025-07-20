@@ -18,6 +18,55 @@ console.log('🔍 Supabase client initialization:', {
 // Create the Supabase client with proper error handling for testing
 let supabaseClient: SupabaseClient<Database> | MockSupabaseClient;
 
+// Connection pooler configuration for different environments
+const getConnectionConfig = () => {
+  const isProduction = import.meta.env.PROD;
+  const isServerSide = typeof window === 'undefined';
+  
+  if (isServerSide && isProduction) {
+    // Use pooler for server-side production (session mode for persistent connections)
+    return {
+      db: {
+        schema: 'public',
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+      global: {
+        headers: {
+          'x-client-info': 'github-link-up-buddy@1.0.0',
+          'Connection': 'close', // Prevent connection pooling issues
+        },
+      },
+    };
+  }
+  
+  // Client-side configuration or development
+  return {
+    auth: {
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      flowType: 'pkce', // Use PKCE for better security
+    },
+    global: {
+      headers: {
+        'x-client-info': 'github-link-up-buddy@1.0.0',
+      },
+    },
+    db: {
+      schema: 'public',
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
+  };
+};
+
 // Mock client interface for testing
 interface MockQueryChain {
   select: () => MockQueryChain;
@@ -163,30 +212,15 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 } else {
   // Normal initialization when environment variables are available
   try {
-    supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-        flowType: 'pkce', // Use PKCE for better security
-      },
-      global: {
-        headers: {
-          'x-client-info': 'github-link-up-buddy@1.0.0',
-        },
-      },
-      db: {
-        schema: 'public',
-      },
-      realtime: {
-        params: {
-          eventsPerSecond: 10,
-        },
-      },
-    });
+    const config = getConnectionConfig();
+    supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, config);
     
-    console.log('✅ Supabase client initialized successfully');
+    console.log('✅ Supabase client initialized successfully', {
+      mode: import.meta.env.MODE,
+      isProduction: import.meta.env.PROD,
+      isServerSide: typeof window === 'undefined',
+      authConfig: config.auth ? 'configured' : 'default',
+    });
   } catch (error) {
     console.error('❌ Failed to initialize Supabase client:', error);
     throw error;

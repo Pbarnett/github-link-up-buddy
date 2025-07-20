@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, useTransition, startTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +35,7 @@ const STEPS = [
 function CampaignWizard() {
   const navigate = useNavigate();
   const { userId } = useCurrentUser();
+  const [isPending, startTransition] = useTransition();
   
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,40 +46,44 @@ function CampaignWizard() {
   });
 
   const handleNext = (data: CriteriaFormData | TravelerFormData | string) => {
-    const newState = { ...wizardState };
-    
-    switch (currentStep) {
-      case 0:
-        newState.criteria = data as CriteriaFormData;
-        trackCampaignEvent('wizard_step_completed', 'temp-id', {
-          step_name: 'criteria',
-          step_number: currentStep + 1,
-        });
-        break;
-      case 1:
-        newState.traveler = data as TravelerFormData;
-        trackCampaignEvent('wizard_step_completed', 'temp-id', {
-          step_name: 'traveler',
-          step_number: currentStep + 1,
-        });
-        break;
-      case 2:
-        newState.paymentMethodId = data as string;
-        trackCampaignEvent('wizard_step_completed', 'temp-id', {
-          step_name: 'payment',
-          step_number: currentStep + 1,
-        });
-        break;
-    }
-    
-    setWizardState(newState);
-    setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
+    startTransition(() => {
+      const newState = { ...wizardState };
+      
+      switch (currentStep) {
+        case 0:
+          newState.criteria = data as CriteriaFormData;
+          trackCampaignEvent('wizard_step_completed', 'temp-id', {
+            step_name: 'criteria',
+            step_number: currentStep + 1,
+          });
+          break;
+        case 1:
+          newState.traveler = data as TravelerFormData;
+          trackCampaignEvent('wizard_step_completed', 'temp-id', {
+            step_name: 'traveler',
+            step_number: currentStep + 1,
+          });
+          break;
+        case 2:
+          newState.paymentMethodId = data as string;
+          trackCampaignEvent('wizard_step_completed', 'temp-id', {
+            step_name: 'payment',
+            step_number: currentStep + 1,
+          });
+          break;
+      }
+      
+      setWizardState(newState);
+      setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
+    });
   };
 
   const handleBack = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 0));
-    trackCampaignEvent('wizard_step_back', 'temp-id', {
-      step_number: currentStep,
+    startTransition(() => {
+      setCurrentStep((prev) => Math.max(prev - 1, 0));
+      trackCampaignEvent('wizard_step_back', 'temp-id', {
+        step_number: currentStep,
+      });
     });
   };
 
@@ -257,7 +262,9 @@ function CampaignWizard() {
   );
 
   return (
-    <div className="container mx-auto py-8 space-y-6 max-w-6xl">
+    <div className={`container mx-auto py-8 space-y-6 max-w-6xl ${
+      isPending ? 'opacity-75 transition-opacity duration-200' : ''
+    }`}>
       {renderProgressIndicator()}
       
       <Suspense fallback={<LoadingSkeleton />}>

@@ -1,10 +1,43 @@
 # Amadeus API Reference Documentation
 
-This document provides comprehensive API reference for Amadeus integration.
+## 📋 Document Overview
 
-# Amadeus API Reference Documentation
+This comprehensive reference guide covers all aspects of Amadeus API integration for flight search and booking functionality in Parker Flight. The document serves as the primary resource for developers working with Amadeus flight services.
 
-> **Purpose**: This file serves as a comprehensive reference for the Amadeus API integration in Parker Flight. Copy and paste your Amadeus API documentation, examples, and important details here for easy AI assistant reference.
+### 🎯 What You'll Find Here
+- **Complete API Reference**: All endpoints, parameters, and response formats
+- **Authentication Guide**: OAuth 2.0 implementation and token management
+- **Flight Operations**: Search, pricing, booking, and management workflows
+- **Data Models**: Schema definitions and object structures
+- **Code Examples**: Real-world implementation examples and best practices
+- **Testing Resources**: Sandbox environment setup and test data
+- **Error Handling**: Common issues, error codes, and troubleshooting
+- **Rate Limits**: Quota management and optimization strategies
+
+### 📍 Quick Navigation
+| Section | Description | Key Information |
+|---------|-------------|----------------|
+| [Quick Reference](#quick-reference) | Base URLs, key endpoints, auth flow | Essential API basics |
+| [Authentication](#authentication) | OAuth 2.0 setup and token handling | Client credentials flow |
+| [Core Endpoints](#core-endpoints) | Primary API operations | Search, pricing, booking, locations |
+| [Data Models](#data-models) | JSON schemas and object structures | Flight offers, travelers, pricing |
+| [Flight Search](#flight-search) | Search functionality and options | Basic/advanced search, multi-city |
+| [Flight Booking](#flight-booking) | Complete booking workflow | Pricing confirmation, order creation |
+| [Airport & City Codes](#airport--city-codes) | Location services and IATA codes | Airport search, city lookup |
+| [Error Handling](#error-handling) | Error responses and debugging | Status codes, error categories |
+| [Rate Limits & Quotas](#rate-limits--quotas) | API usage limits and optimization | Quotas, rate limiting, best practices |
+| [Testing & Sandbox](#testing--sandbox) | Development environment setup | Test URLs, sample data, credentials |
+| [Code Examples](#code-examples) | Implementation examples | Complete booking flow, common operations |
+| [Best Practices](#best-practices) | Performance and security guidelines | Optimization, caching, security |
+| [Troubleshooting](#troubleshooting) | Common issues and solutions | Debug checklist, support resources |
+
+### 🔧 Integration Status in Parker Flight
+- **Current Role**: Primary flight search provider
+- **Active Features**: Flight search, pricing, booking workflow
+- **Integration Points**: Search functionality, auto-booking system
+- **Fallback Strategy**: Maintained as backup for Duffel integration
+
+---
 
 ## Table of Contents
 - [Quick Reference](#quick-reference)

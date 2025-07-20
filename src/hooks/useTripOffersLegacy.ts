@@ -184,15 +184,15 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
       const fetchedOffers: Offer[] = await fetchTripOffers(tripId);
       logger.info(`[useTripOffersLegacy] Fetched ${fetchedOffers.length} offers via service for tripId: ${tripId}`);
       
-      // 🔍 DEBUG: Log all fetched offers before any filtering
-      console.log(`🔍 [OFFERS-DEBUG] All ${fetchedOffers.length} offers before filtering:`, fetchedOffers.map(o => ({
-        id: o.id,
-        airline: o.airline,
-        departure_date: o.departure_date,
-        return_date: o.return_date,
-        duration: o.duration,
-        price: o.price
-      })));
+      // Log summary of fetched offers
+      logger.debug(`[useTripOffersLegacy] Fetched ${fetchedOffers.length} offers`, {
+        tripId,
+        sampleOffers: fetchedOffers.slice(0, 3).map(o => ({
+          id: o.id,
+          airline: o.airline,
+          price: o.price
+        }))
+      });
 
       if (fetchedOffers.length === 0) {
         logger.warn("[useTripOffersLegacy] No offers found via service for tripId:", tripId);
@@ -214,22 +214,10 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
       } else {
         let finalOffers: Offer[];
         if (!overrideFilterArg && currentTripDetails) {
-          console.log(`🔍 [DURATION-FILTER-DEBUG] Applying duration filter: ${currentTripDetails.min_duration}-${currentTripDetails.max_duration} days`);
+          logger.debug(`[useTripOffersLegacy] Applying duration filter: ${currentTripDetails.min_duration}-${currentTripDetails.max_duration} days`);
           
-          const validOffers = fetchedOffers.filter((offer, index) => {
-            const isValid = validateOfferDuration(offer, currentTripDetails.min_duration, currentTripDetails.max_duration);
-            
-            // Calculate actual trip duration for debugging
-            let actualDuration = 'unknown';
-            if (offer.departure_date && offer.return_date) {
-              const departDate = new Date(offer.departure_date);
-              const returnDate = new Date(offer.return_date);
-              const tripDays = Math.round((returnDate.getTime() - departDate.getTime()) / (1000 * 60 * 60 * 24));
-              actualDuration = `${tripDays} days`;
-            }
-            
-            console.log(`🔍 [DURATION-FILTER-DEBUG] Offer ${index + 1}: ${offer.airline} - Duration: ${actualDuration} - Valid: ${isValid ? '✓' : '✗'}`);
-            return isValid;
+          const validOffers = fetchedOffers.filter(offer => {
+            return validateOfferDuration(offer, currentTripDetails.min_duration, currentTripDetails.max_duration);
           });
 
           if (validOffers.length < fetchedOffers.length) {
@@ -247,7 +235,7 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
             });
           }
         } else {
-          console.log(`🔍 [DURATION-FILTER-DEBUG] BYPASSING duration filter (overrideFilterArg=${overrideFilterArg}). Using all ${fetchedOffers.length} offers.`);
+          logger.debug(`[useTripOffersLegacy] Bypassing duration filter (override=${overrideFilterArg}). Using all ${fetchedOffers.length} offers.`);
           finalOffers = fetchedOffers;
           if (overrideFilterArg) {
             toast({

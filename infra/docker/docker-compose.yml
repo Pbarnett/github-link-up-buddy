@@ -75,9 +75,16 @@ services:
   #     - parker-flight-network
 
 networks:
-  parker-flight-network:
+  app_network:
     driver: bridge
+    internal: false  # Allow external access for the app
+  internal_network:
+    driver: bridge
+    internal: true   # Internal network for service communication
 
-# Optional: Add volumes for logs or persistent data
+# Volumes for logs and persistent data
 volumes:
   app_logs:
+    driver: local
+  nginx_cache:
+    driver: local

@@ -79,7 +79,11 @@ async function retry<T>(fn: () => Promise<T>, config: RetryConfig = DEFAULT_RETR
   throw new Error('Retry failed after maximum attempts');
 }
 
-export const RESEND_FROM = "Parker Flight <noreply@parkerflight.com>"; // Update with your verified domain
+// Import configuration management
+import { getResendConfig, validateDomainConfiguration, EmailTemplateType, getTemplateConfig } from './resend-config.ts';
+
+// Get configuration at module level
+const resendConfig = getResendConfig();
 
 export interface EmailData {
   to: string | string[];
@@ -182,12 +186,12 @@ async function sendEmailWithIntegration(emailData: EmailData): Promise<EmailResp
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
     
     const emailPayload = {
-      from: emailData.from || RESEND_FROM,
+      from: emailData.from || resendConfig.fromEmail,
       to: emailData.to,
       subject: emailData.subject,
       html: emailData.html,
       text: emailData.text,
-      reply_to: emailData.reply_to,
+      reply_to: emailData.reply_to || resendConfig.replyToEmail,
       tags: emailData.tags,
       headers: emailData.headers,
       attachments: emailData.attachments
@@ -227,12 +231,12 @@ async function sendEmailDirect(emailData: EmailData): Promise<EmailResponse> {
     }
     
     const emailPayload = {
-      from: emailData.from || RESEND_FROM,
+      from: emailData.from || resendConfig.fromEmail,
       to: emailData.to,
       subject: emailData.subject,
       html: emailData.html,
       text: emailData.text,
-      reply_to: emailData.reply_to,
+      reply_to: emailData.reply_to || resendConfig.replyToEmail,
       tags: emailData.tags,
       headers: emailData.headers,
       attachments: emailData.attachments

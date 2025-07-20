@@ -1,5 +1,188 @@
 # Resend API Reference Documentation
 
+## Document Overview
+
+### Purpose
+This document serves as the comprehensive API reference for integrating Resend email services into Parker Flight's platform. Resend provides a modern, developer-friendly email API that enables reliable transactional email delivery, broadcast campaigns, and audience management.
+
+### Quick Start Guide
+1. **Authentication Setup**: Obtain API key from Resend dashboard
+2. **Initialize Client**: Configure Resend SDK with your API key
+3. **Send First Email**: Use the `/emails` endpoint to send transactional emails
+4. **Domain Configuration**: Set up and verify your sending domain
+5. **Production Deployment**: Configure rate limits and error handling
+
+### Core Email Workflows
+- **Transactional Emails**: User confirmations, password resets, notifications
+- **Batch Email Processing**: Send up to 100 emails per API call for efficiency
+- **Scheduled Emails**: Queue emails for future delivery with precise timing
+- **Broadcast Campaigns**: Send marketing emails to managed audiences
+- **Email Tracking**: Monitor delivery status, opens, and click-through rates
+
+### Integration Architecture
+```
+Parker Flight Application
+        ↓
+  Resend API Client
+        ↓
+    Resend API
+        ↓
+   Email Delivery
+```
+
+### Critical Implementation Notes
+
+#### Rate Limits & Quotas
+- **Default Rate Limit**: 2 requests per second
+- **Daily Quota**: Varies by plan tier
+- **Batch Processing**: Use `/emails/batch` for bulk operations
+- **Rate Limit Headers**: Monitor `ratelimit-*` response headers
+
+#### Security Considerations
+- **API Key Protection**: Store API keys securely, never in client-side code
+- **Domain Verification**: Verify sending domains via DNS records (SPF, DKIM)
+- **TLS Configuration**: Use enforced TLS for sensitive email communications
+- **Permission Scoping**: Use `sending_access` keys for email-only operations
+
+#### Email Authentication
+- **SPF Records**: Configure sender policy framework
+- **DKIM Signing**: Enable DomainKeys Identified Mail
+- **Return Path**: Configure custom return paths for bounces
+- **Domain Status**: Monitor domain verification status
+
+### Domain Management Strategy
+
+#### Domain Setup Process
+1. Create domain via API or dashboard
+2. Configure DNS records (SPF, DKIM, MX)
+3. Verify domain configuration
+4. Monitor domain status and authentication
+
+#### Best Practices
+- Use dedicated subdomains for different email types
+- Configure custom return paths for bounce handling
+- Implement proper DNS record management
+- Monitor domain reputation and deliverability
+
+### Error Handling Strategy
+
+#### Response Codes
+- **2xx**: Success - process response data
+- **400**: Bad Request - validate input parameters
+- **401/403**: Authentication - check API key validity
+- **422**: Validation Error - review field requirements
+- **429**: Rate Limited - implement exponential backoff
+- **5xx**: Server Error - retry with jitter
+
+#### Retry Logic Implementation
+```javascript
+const retryWithBackoff = async (operation, maxRetries = 3) => {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (error.status === 429 || error.status >= 500) {
+        const delay = Math.min(1000 * Math.pow(2, i) + Math.random() * 1000, 10000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw error;
+      }
+    }
+  }
+};
+```
+
+### Testing & Validation
+
+#### Development Environment
+- Use Resend's sandbox mode for testing
+- Test with `@resend.dev` email addresses
+- Validate DNS configuration before production
+- Test rate limiting and error handling
+
+#### Email Validation
+- Verify email address format validation
+- Test attachment handling (max 40MB)
+- Validate HTML and text content rendering
+- Test internationalization and character encoding
+
+### API Endpoint Categories
+
+#### Email Operations
+- **Send Email**: `/emails` (POST) - Send individual transactional emails
+- **Send Batch**: `/emails/batch` (POST) - Send up to 100 emails at once
+- **Retrieve Email**: `/emails/:id` (GET) - Get email status and details
+- **Update Email**: `/emails/:id` (PATCH) - Modify scheduled emails
+- **Cancel Email**: `/emails/:id/cancel` (POST) - Cancel scheduled delivery
+
+#### Domain Management
+- **Create Domain**: `/domains` (POST) - Add new sending domain
+- **Retrieve Domain**: `/domains/:id` (GET) - Get domain configuration
+- **Verify Domain**: `/domains/:id/verify` (POST) - Trigger domain verification
+- **Update Domain**: `/domains/:id` (PATCH) - Modify domain settings
+- **List Domains**: `/domains` (GET) - Get all configured domains
+- **Delete Domain**: `/domains/:id` (DELETE) - Remove domain
+
+#### Authentication Management
+- **Create API Key**: `/api-keys` (POST) - Generate new API key
+- **List API Keys**: `/api-keys` (GET) - Get all API keys
+- **Delete API Key**: `/api-keys/:id` (DELETE) - Revoke API key
+
+#### Broadcast & Audience Management
+- **Create Broadcast**: `/broadcasts` (POST) - Create email campaign
+- **Manage Audiences**: `/audiences` - Create and manage subscriber lists
+- **Contact Management**: `/contacts` - Handle individual subscribers
+
+### Common Integration Pitfalls
+
+#### Email Delivery Issues
+- **Missing DNS Records**: Ensure SPF, DKIM, and MX records are configured
+- **Invalid From Addresses**: Use verified domains for sender addresses
+- **Attachment Size Limits**: Keep attachments under 40MB after Base64 encoding
+- **Rate Limit Violations**: Implement proper request throttling
+
+#### Authentication Problems
+- **API Key Exposure**: Never commit API keys to version control
+- **Insufficient Permissions**: Use appropriate permission scope for operations
+- **Key Rotation**: Implement API key rotation for security
+- **Domain Verification**: Complete DNS configuration before sending
+
+#### Content & Formatting
+- **HTML Rendering**: Test email templates across different clients
+- **Character Encoding**: Use UTF-8 for international content
+- **Link Tracking**: Configure tracking domains properly
+- **Unsubscribe Links**: Include required unsubscribe mechanisms
+
+### Parker Flight Integration Status
+
+#### Current Implementation
+- ✅ **Basic Email Sending**: Transactional emails implemented
+- ✅ **Domain Configuration**: Production domains verified
+- ✅ **Error Handling**: Basic retry logic in place
+- 🔄 **Batch Processing**: Under development for bulk notifications
+- 📋 **Broadcast Campaigns**: Planned for user engagement
+- 📋 **Advanced Analytics**: Planned for email performance tracking
+
+#### Integration Checkpoints
+1. **API Key Security**: Verify secure storage and rotation
+2. **Domain Health**: Monitor DNS record status
+3. **Delivery Rates**: Track email delivery success rates
+4. **Error Monitoring**: Implement comprehensive error logging
+5. **Performance Metrics**: Monitor API response times and rate limits
+
+### Strategic Integration Context
+
+Resend serves as Parker Flight's primary email delivery platform, handling:
+- **User Authentication**: Email verification and password resets
+- **Booking Confirmations**: Flight booking and itinerary updates
+- **Notification System**: Real-time flight status and gate changes
+- **Marketing Communications**: Promotional campaigns and user engagement
+- **Support Communications**: Customer service and help desk emails
+
+The integration prioritizes reliability, deliverability, and compliance with email authentication standards to ensure critical flight-related communications reach users promptly and securely.
+
+---
+
 This document provides comprehensive API reference for Resend email service.
 
 

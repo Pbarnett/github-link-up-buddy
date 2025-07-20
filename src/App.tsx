@@ -1,4 +1,5 @@
 
+import RadixThemeProvider from "./components/providers/RadixThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -92,7 +93,8 @@ const PersonalizationWrapper = ({ children }: { children: React.ReactNode }) => 
 
 const App = () => {
   return (
-    <SmartErrorBoundary level="global">
+    <RadixThemeProvider>
+      <SmartErrorBoundary level="global">
       <QueryClientProvider client={queryClient}>
         <BusinessRulesProvider>
           <TooltipProvider>
@@ -227,6 +229,7 @@ const App = () => {
         </BusinessRulesProvider>
       </QueryClientProvider>
     </SmartErrorBoundary>
+    </RadixThemeProvider>
   );
 };
 

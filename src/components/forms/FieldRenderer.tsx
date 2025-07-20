@@ -127,7 +127,14 @@ export const FieldRenderer: React.FC<FieldRendererInternalProps> = ({
             </FormDescription>
           )}
 
-          <FormMessage className="form-field-error" />
+          {error && (
+            <FormMessage 
+              className="form-field-error" 
+              id={`${field.id}-error`}
+              role="alert"
+              aria-live="polite"
+            />
+          )}
         </FormItem>
       )}
     />
@@ -181,6 +188,8 @@ const FieldInput: React.FC<FieldInputProps> = ({
             field.type === 'number' ? Number(e.target.value) : e.target.value
           )}
           className={cn(error && "border-destructive")}
+          aria-invalid={error ? "true" : "false"}
+          aria-describedby={error ? `${field.id}-error` : undefined}
         />
       );
 

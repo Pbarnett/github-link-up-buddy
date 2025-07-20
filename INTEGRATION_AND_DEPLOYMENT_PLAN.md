@@ -1,4 +1,214 @@
-# Comprehensive Plan for Resolving Integration Issues
+# Comprehensive Plan for Resolving Integration Issues and Zod Performance Optimizations
+
+## Zod Performance Optimizations Plan
+
+### 🎯 **What "Production-Ready" Means**
+
+#### **Production Environment**
+- **Real users** accessing your application
+- **Live data** being processed and stored
+- **High availability** requirements (99.9%+ uptime)
+- **Performance at scale** (hundreds/thousands of concurrent users)
+- **Data integrity** and security critical
+- **Zero tolerance** for breaking changes
+
+#### **Production-Ready Criteria**
+✅ **Thoroughly tested** (unit, integration, end-to-end)  
+✅ **Performance validated** under load  
+✅ **Error handling** for all edge cases  
+✅ **Monitoring and logging** implemented  
+✅ **Rollback plan** in place  
+✅ **Security review** completed  
+✅ **Documentation** for maintenance  
+✅ **Backward compatibility** ensured  
+
+
+---
+
+### 🚀 **Deployment Strategy: Phased Rollout**
+
+#### **Phase 1: Development & Testing (Week 1-2)**
+##### **Integration Steps:**
+
+1. **Code Integration**
+   ```bash
+   # Create feature branch
+   git checkout -b feature/zod-performance-optimization
+   
+   # Integrate new validation system
+   git add src/lib/validation/
+   git commit -m "feat: add advanced Zod schema caching system"
+   ```
+
+2. **Update Existing Components**
+   ```typescript
+   // Replace existing validation with optimized version
+   - import { generateZodSchema } from '@/lib/form-validation';
+   + import { useCachedSchema } from '@/lib/validation/schema-cache';
+   
+   const MyForm = ({ config }) => {
+   -  const schema = generateZodSchema(config);
+   +  const schema = useCachedSchema(config);
+     
+     return <Form schema={schema} />;
+   };
+   ```
+
+3. **Testing Checklist**
+   - [ ] Unit tests pass for all validation functions
+   - [ ] Integration tests with React Hook Form
+   - [ ] Performance tests with 100+ field forms
+   - [ ] Memory leak tests for long-running sessions
+   - [ ] Cross-browser compatibility testing
+
+#### **Phase 2: Staging Deployment (Week 3)**
+##### **Pre-Production Environment**
+
+1. **Deploy to Staging**
+   ```bash
+   # Deploy to staging environment
+   npm run build:staging
+   npm run deploy:staging
+   ```
+
+2. **Staging Tests**
+   - Load testing with realistic data volumes
+   - User acceptance testing (UAT)
+   - Performance monitoring setup
+   - Error tracking validation
+
+3. **Metrics to Monitor**
+   ```typescript
+   // Performance metrics to track
+   const productionMetrics = {
+     schemaGenerationTime: 'avg < 5ms per field',
+     cacheHitRate: 'target > 80%',
+     memoryUsage: 'stable over 24h',
+     formRenderTime: 'avg < 100ms',
+     validationLatency: 'p95 < 50ms'
+   };
+   ```
+
+#### **Phase 3: Production Rollout (Week 4)**
+##### **Gradual Production Deployment**
+
+1. **Feature Flag Rollout**
+   ```typescript
+   // Use feature flags for controlled rollout
+   const useOptimizedValidation = useFeatureFlag('zod-performance-v2');
+   
+   const schema = useOptimizedValidation 
+     ? useCachedSchema(config)
+     : generateZodSchema(config); // fallback
+   ```
+
+2. **Rollout Schedule**
+   - **5% of users** (Day 1-2) - Monitor for issues
+   - **25% of users** (Day 3-4) - Validate performance gains
+   - **50% of users** (Day 5-6) - Confirm stability
+   - **100% of users** (Day 7+) - Full rollout
+
+---
+
+## Playwright Testing Infrastructure Improvements
+
+Based on comprehensive analysis of Playwright documentation (v1.53.2), the following critical updates have been implemented:
+
+### ✅ **Completed Playwright Updates**
+
+#### **1. Modern Configuration Enhancements**
+- **Enhanced `playwright.config.ts`** with modern features:
+  - Test step timeouts and enhanced tracing
+  - Path templates for screenshots/snapshots
+  - Mobile device testing projects (Pixel 5, iPhone 12)
+  - Accessibility-specific test configuration
+  - Health checks and graceful shutdown for web servers
+  - Git information capture for CI reports
+  - Blob reporter for trace storage in CI
+
+#### **2. Global Setup & Teardown**
+- **`tests/global-setup.ts`**: Browser installation validation, environment checks, service connectivity tests
+- **`tests/global-teardown.ts`**: Authentication state cleanup and resource management
+- Automatic directory creation and CI cleanup
+
+#### **3. Test Pattern Modernization**
+- **Replaced deprecated patterns**:
+  - `waitForTimeout` → `waitForRequest`/`waitForResponse` with specific conditions
+  - Generic text selectors → semantic `getByRole`, `getByTestId` locators
+  - Added proper `test.step()` organization for better error tracing
+
+#### **4. Accessibility Testing (WCAG 2.2 AA)**
+- **New `accessibility.a11y.spec.ts`** implementing:
+  - WCAG 2.2 specific tests (Focus indicators 2.4.11, Target sizes 2.5.5)
+  - New criteria: Dragging movements (2.5.7), Redundant entry (3.3.7), Accessible auth (3.3.8)
+  - Touch target validation for mobile (44x44px minimum)
+  - Keyboard navigation and screen reader compatibility
+  - Color contrast and reduced motion preference testing
+
+#### **5. Visual Regression Improvements**
+- **Modern screenshot testing** with:
+  - Element masking instead of hiding for consistent visuals
+  - Clip regions and animation disabling
+  - Test step organization for better debugging
+  - Mobile/desktop viewport testing
+
+#### **6. Enhanced CLI Scripts**
+New npm scripts added:
+```json
+"test:e2e-debug": "playwright test --debug",
+"test:e2e-trace": "playwright test --trace on",
+"test:a11y": "playwright test tests/e2e/accessibility.a11y.spec.ts",
+"test:e2e-mobile": "playwright test --project='Mobile Chrome' --project='Mobile Safari'",
+"test:e2e-changed": "playwright test --only-changed",
+"test:visual-update": "playwright test tests/e2e/visual/ --update-snapshots"
+```
+
+### 🔧 **Key Technical Improvements**
+
+#### **Network Handling**
+- Replaced arbitrary timeouts with specific request/response waiters
+- Enhanced request interception with proper route handling
+- Added offline/online state testing capabilities
+
+#### **Error Handling & Debugging**
+- Test steps provide granular failure points
+- Enhanced trace collection and attachment system
+- Better error messages with context preservation
+
+#### **Performance & Reliability**
+- Headless mode optimization for CI (new Chrome headless)
+- Reduced motion preferences for consistent testing
+- Proper focus management and accessibility compliance
+- Element masking for consistent visual comparisons
+
+### 🚨 **Deprecated Features Removed**
+- `noWaitAfter` option usage eliminated
+- Old-style `text=` selectors replaced with semantic alternatives
+- Fixed use of deprecated element selection methods
+
+### 📈 **CI/CD Integration Ready**
+- Global setup validates environment and connectivity
+- Health checks ensure web server readiness
+- Graceful shutdown procedures implemented
+- Git information capture for deployment tracking
+- Blob reporting for trace storage and analysis
+
+### 🎯 **Next Steps for Production Deployment**
+1. **Environment Variables**: Ensure all test environment variables are configured in CI
+2. **Browser Installation**: CI pipeline includes `npx playwright install`
+3. **Parallel Execution**: Configure appropriate worker counts for CI environment
+4. **Report Storage**: Set up blob storage for trace files and reports
+5. **Accessibility Gates**: Integrate a11y tests into PR/merge requirements
+
+This modernized Playwright setup ensures:
+- ✅ WCAG 2.2 AA compliance testing
+- ✅ Modern browser compatibility (Chrome, Firefox, Safari + mobile)
+- ✅ Visual regression prevention
+- ✅ Performance optimization
+- ✅ CI/CD pipeline readiness
+- ✅ Developer experience improvements
+
+---
 
 ## Project Context
 **Application**: GitHub Link-Up Buddy - A flight booking and travel personalization platform
@@ -27,7 +237,64 @@
 ## Introduction
 This document outlines a step-by-step approach to resolving the current challenges in integrating LaunchDarkly and Amadeus with your application. The objective is to ensure a seamless integration that is reliable, maintainable, and scales efficiently as the application grows.
 
-## Phase 1: LaunchDarkly Integration
+## Phase 1: AWS Integration and Deployment Enhancements
+
+### 6. AWS Integration and Deployment Enhancements
+
+This section adds AWS-specific best practices and setup based on detailed study of AWS KMS, SDK, and tools documentation, focused on your current app architecture and production readiness criteria.
+
+#### 6.1 AWS KMS
+
+- **Key Management Usage**: Use AWS KMS to securely manage encryption keys for sensitive data like wallet payment methods or profile information.
+- **API Integration**: Utilize AWS KMS SDK calls (encrypt, decrypt, generate data keys) via the AWS SDK for JavaScript in Node.js backend and Edge Functions.
+- **Security Best Practices**: Ensure KMS key policies use least privilege access, condition keys (e.g., kms:EncryptionContext) to tightly control usage.
+- **Region and Endpoint Configuration**: Configure SDK clients with region-specific KMS endpoints and, where applicable, use VPC endpoints for private connectivity.
+- **Error Handling and Retries**: Implement retry logic on failed KMS calls, respecting eventual consistency (delays in state propagation).
+- **Decryption and Data Key Usage**: For performance and security, use enveloped encryption where data keys are generated, encrypted with KMS keys, and used locally for encrypt/decrypt of data.
+- **Advanced Features**: Consider multi-Region keys if your app requires geographic redundancy or failover.
+- **Developer Tools**: Use IAM conditions (e.g., kms:EncryptionContextKeys) in policies to enforce proper encryption context is applied for operations.
+
+#### 6.2 AWS SDK for JavaScript (Node.js & Browser)
+
+- **Credential Management**: Configure the SDK to use IAM Identity Center authentication during development and production as recommended.
+- **Environment Configuration**: Use shared config and credentials files or environment variables to supply AWS region, credentials, and other SDK settings.
+- **Client Initialization**: Instantiate AWS service clients (S3, KMS, Cognito) explicitly setting region and credentials providers appropriate for the runtime environment.
+- **Error Handling**: Use promises, async/await with try/catch; add retry and backoff strategies for robustness.
+- **Browser Usage**: Bundle SDK modules efficiently with tools like webpack; implement CORS-safe requests; access AWS services with Cognito Identity Pools for authentication.
+- **React Native**: Use '@aws-sdk/client-*' packages with React Native; configure Cognito identity pools properly.
+
+#### 6.3 AWS IAM and Authentication
+
+- **IAM Identity Center**: Adopt IAM Identity Center as the primary method for developer and deployer authentication to AWS services.
+- **Role Assumption**: Use AssumeRole delegation for cross-account or elevated privileges, configured via shared config or environment variables.
+- **Credentials Refresh**: Handle token expiration and refresh automatically using built-in SDK features.
+- **Least Privilege**: Follow AWS IAM best practices by limiting key policies, roles, and permissions strictly to necessary actions and resources.
+
+#### 6.4 AWS CLI and Tooling
+
+- Limited doc coverage; however:
+- Use AWS CLI for IAM Identity Center login (`aws sso login`), configuration, and deployment scripting.
+- Automate environment setup with CLI scripts and leverage AWS CLI profiles in CI/CD pipelines.
+- Use CLI to verify connectivity to KMS and other AWS services.
+
+#### 6.5 Gaps to Address Separately
+
+The following critical AWS services are not covered in the provided documentation and should be integrated into your plan using official AWS resources or separate investigations:
+
+- **AWS Secrets Manager**: For secret rotation, injection into containers, and secure secret retrieval at runtime.
+- **Amazon ECS/Fargate**: For container orchestration, deployment configuration, health checks, autoscaling.
+- **AWS CloudFormation/CDK**: For IaC-based infrastructure deployment and versioning.
+- **Amazon RDS/Aurora**: For managing your relational database backend, connection pooling, backups.
+- **AWS ALB**: For SSL termination, CORS handling, routing.
+- **Amazon CloudWatch**: For metrics, logging, alerting, dashboarding integration.
+
+### Summary
+
+This update enriches the integration and deployment plan with detailed, actionable instructions and best practices around your immediate AWS integration components: KMS encryption, SDK usage, IAM, and CLI tooling. You should source additional docs for the missing AWS services to further complete your plan.
+
+If you want, I can assist in drafting specific code snippets, IAM policies, or CI/CD pipeline steps based on this analysis.
+
+## Phase 2: LaunchDarkly Integration
 
 ### Objective
 The primary goal is to ensure both the client-side and server-side LaunchDarkly SDKs are correctly integrated, configured, and functioning as expected.

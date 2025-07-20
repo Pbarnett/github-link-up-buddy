@@ -1,16 +1,30 @@
-import { KMSClient, EncryptCommand, DecryptCommand } from '@aws-sdk/client-kms';
+import { EncryptCommand, DecryptCommand } from '@aws-sdk/client-kms';
+import { EnhancedAWSClientFactory, Environment } from '../src/lib/aws-sdk-enhanced/client-factory';
+import { EnhancedAWSErrorHandler, ErrorCategory } from '../src/lib/aws-sdk-enhanced/error-handling';
+import { MultiRegionAWSManager } from '../src/lib/aws-sdk-enhanced/multi-region-manager';
 
 // KMS Configuration
 const KMS_KEY_ID = 'parker-kms-key';
 const KMS_REGION = process.env.AWS_REGION || 'us-east-1';
+const ENVIRONMENT = (process.env.NODE_ENV as Environment) || 'development';
 
-// Initialize KMS client
-const kmsClient = new KMSClient({ 
+// Initialize enhanced KMS client with production-grade configuration
+const kmsClient = EnhancedAWSClientFactory.createKMSClient({
   region: KMS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  }
+  environment: ENVIRONMENT,
+  enableMetrics: true,
+  enableLogging: ENVIRONMENT !== 'production',
+  maxAttempts: 3,
+  connectionTimeout: 5000,
+  socketTimeout: 30000,
+});
+
+// Initialize multi-region manager for high availability
+const multiRegionManager = new MultiRegionAWSManager({
+  primaryRegion: KMS_REGION,
+  backupRegions: ['us-west-2', 'eu-west-1'],
+  services: ['kms'],
+  environment: ENVIRONMENT,
 });
 
 export interface PaymentMethodData {
@@ -30,7 +44,7 @@ export interface EncryptedPaymentData {
 }
 
 /**
- * Encrypt sensitive payment method data using AWS KMS
+ * Encrypt sensitive payment method data using AWS KMS with enhanced error handling
  */
 export async function encryptPaymentData(
   data: PaymentMethodData, 
@@ -49,11 +63,23 @@ export async function encryptPaymentData(
       },
     });
 
-    const response = await kmsClient.send(command);
+    // Use multi-region manager for high availability
+    const response = await multiRegionManager.executeWithFailover(
+      'kms',
+      async (client) => await client.send(command),
+      { operation: 'encrypt', keyId }
+    );
     
     if (!response.CiphertextBlob) {
       throw new Error('KMS encryption failed: no ciphertext returned');
     }
+
+    // Create audit log for successful encryption
+    const auditLog = createEncryptionAuditLog('encrypt', true, keyId, {
+      dataSize: plaintext.length,
+      encryptionContext: command.input.EncryptionContext,
+    });
+    console.info('Payment data encrypted successfully:', auditLog);
 
     return {
       encryptedData: response.CiphertextBlob,
@@ -61,13 +87,29 @@ export async function encryptPaymentData(
       encryptionVersion: 1,
     };
   } catch (error) {
-    console.error('KMS encryption error:', error);
-    throw new Error(`Failed to encrypt payment data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // Use enhanced error handling for detailed diagnostics
+    const enhancedError = EnhancedAWSErrorHandler.analyzeError(
+      error as Error,
+      'kms',
+      'encrypt'
+    );
+    
+    // Create audit log for failed encryption
+    const auditLog = createEncryptionAuditLog('encrypt', false, keyId, {
+      errorCategory: enhancedError.category,
+      errorCode: enhancedError.code,
+      retryable: enhancedError.retryable,
+    });
+    console.error('Payment data encryption failed:', auditLog);
+    
+    // Provide actionable error message with suggestions
+    const errorMessage = `Failed to encrypt payment data: ${enhancedError.message}. Suggestions: ${enhancedError.suggestions.join(', ')}`;
+    throw new Error(errorMessage);
   }
 }
 
 /**
- * Decrypt sensitive payment method data using AWS KMS
+ * Decrypt sensitive payment method data using AWS KMS with enhanced error handling
  */
 export async function decryptPaymentData(
   encryptedData: Uint8Array
@@ -81,17 +123,47 @@ export async function decryptPaymentData(
       },
     });
 
-    const response = await kmsClient.send(command);
+    // Use multi-region manager for high availability
+    const response = await multiRegionManager.executeWithFailover(
+      'kms',
+      async (client) => await client.send(command),
+      { operation: 'decrypt' }
+    );
     
     if (!response.Plaintext) {
       throw new Error('KMS decryption failed: no plaintext returned');
     }
 
     const decryptedText = Buffer.from(response.Plaintext).toString('utf8');
-    return JSON.parse(decryptedText);
+    const result = JSON.parse(decryptedText);
+    
+    // Create audit log for successful decryption
+    const auditLog = createEncryptionAuditLog('decrypt', true, response.KeyId || 'unknown', {
+      dataSize: decryptedText.length,
+      encryptionContext: command.input.EncryptionContext,
+    });
+    console.info('Payment data decrypted successfully:', auditLog);
+    
+    return result;
   } catch (error) {
-    console.error('KMS decryption error:', error);
-    throw new Error(`Failed to decrypt payment data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // Use enhanced error handling for detailed diagnostics
+    const enhancedError = EnhancedAWSErrorHandler.analyzeError(
+      error as Error,
+      'kms',
+      'decrypt'
+    );
+    
+    // Create audit log for failed decryption
+    const auditLog = createEncryptionAuditLog('decrypt', false, 'unknown', {
+      errorCategory: enhancedError.category,
+      errorCode: enhancedError.code,
+      retryable: enhancedError.retryable,
+    });
+    console.error('Payment data decryption failed:', auditLog);
+    
+    // Provide actionable error message with suggestions
+    const errorMessage = `Failed to decrypt payment data: ${enhancedError.message}. Suggestions: ${enhancedError.suggestions.join(', ')}`;
+    throw new Error(errorMessage);
   }
 }
 
@@ -150,12 +222,13 @@ export function createEncryptionAuditLog(
 }
 
 /**
- * Helper function to safely handle KMS operations with retries
+ * Enhanced KMS operation handler with intelligent retry logic
  */
 export async function safeKMSOperation<T>(
   operation: () => Promise<T>,
+  operationName: string,
   maxRetries: number = 3,
-  retryDelay: number = 1000
+  baseDelayMs: number = 1000
 ): Promise<T> {
   let lastError: Error | null = null;
   
@@ -165,12 +238,35 @@ export async function safeKMSOperation<T>(
     } catch (error) {
       lastError = error instanceof Error ? error : new Error('Unknown error');
       
-      if (attempt === maxRetries) {
+      // Analyze error to determine if retry is appropriate
+      const enhancedError = EnhancedAWSErrorHandler.analyzeError(
+        lastError,
+        'kms',
+        operationName
+      );
+      
+      console.warn(`KMS operation '${operationName}' failed (attempt ${attempt}/${maxRetries}):`, {
+        error: enhancedError.code,
+        category: enhancedError.category,
+        retryable: enhancedError.retryable,
+        message: enhancedError.message
+      });
+      
+      // Don't retry if error is not retryable
+      if (!enhancedError.retryable || attempt === maxRetries) {
         break;
       }
       
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+      // Calculate delay with exponential backoff and jitter
+      const delay = Math.min(
+        baseDelayMs * Math.pow(2, attempt - 1),
+        30000 // Max 30 seconds
+      );
+      const jitter = delay * 0.1 * Math.random();
+      const totalDelay = delay + jitter;
+      
+      console.info(`Retrying KMS operation '${operationName}' in ${Math.round(totalDelay)}ms...`);
+      await new Promise(resolve => setTimeout(resolve, totalDelay));
     }
   }
   

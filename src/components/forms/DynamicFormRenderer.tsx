@@ -56,26 +56,59 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
     return generateZodSchema(configuration);
   }, [configuration]);
 
+  // Initialize React Hook Form with proper default values
+  const defaultValues = useMemo(() => {
+    if (!configuration) return {};
+    
+    const defaults: Record<string, unknown> = {};
+    
+    configuration.sections.forEach(section => {
+      section.fields.forEach(field => {
+        if (field.defaultValue !== undefined) {
+          defaults[field.id] = field.defaultValue;
+        } else {
+          // Provide appropriate defaults based on field type to avoid undefined values
+          switch (field.type) {
+            case 'text':
+            case 'email':
+            case 'password':
+            case 'textarea':
+              defaults[field.id] = '';
+              break;
+            case 'number':
+              defaults[field.id] = 0;
+              break;
+            case 'checkbox':
+            case 'switch':
+              defaults[field.id] = false;
+              break;
+            case 'multi-select':
+              defaults[field.id] = [];
+              break;
+            case 'date':
+            case 'datetime':
+              // Don't set default dates, let them be undefined until user selects
+              break;
+            default:
+              defaults[field.id] = '';
+          }
+        }
+      });
+    });
+    
+    return defaults;
+  }, [configuration]);
+
   // Initialize React Hook Form
   const form = useForm({
-    resolver: zodResolver(validationSchema),
-    defaultValues: useMemo(() => {
-      if (!configuration) return {};
-      
-      const defaults: Record<string, unknown> = {};
-      
-      configuration.sections.forEach(section => {
-        section.fields.forEach(field => {
-          if (field.defaultValue !== undefined) {
-            defaults[field.id] = field.defaultValue;
-          }
-        });
-      });
-      
-      return defaults;
-    }, [configuration]),
-    mode: 'onChange'
+    resolver: validationSchema ? zodResolver(validationSchema) : undefined,
+    defaultValues,
+    mode: 'onChange',
+    reValidateMode: 'onChange'
   });
+
+  // Destructure formState properties for proper Proxy subscription
+  const { errors, isSubmitting, isValid } = form.formState;
 
   // Form state management
   const {
@@ -93,7 +126,7 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
     onFieldChange?.(fieldId, value);
     
     // Clear field error when value changes
-    if (form.formState.errors[fieldId]) {
+    if (errors[fieldId]) {
       clearError(fieldId);
     }
   };
@@ -102,7 +135,6 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
   const handleSubmit = form.handleSubmit(async (data) => {
     try {
       if (!validateForm()) {
-        const errors = form.formState.errors;
         onValidationError?.(
           Object.fromEntries(
             Object.entries(errors).map(([key, error]) => {
@@ -191,13 +223,13 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
             ))}
 
             {/* Validation Summary */}
-            {showValidationSummary && Object.keys(form.formState.errors).length > 0 && (
+            {showValidationSummary && Object.keys(errors).length > 0 && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   <div className="font-medium mb-2">Please fix the following errors:</div>
                   <ul className="list-disc list-inside space-y-1">
-                    {Object.entries(form.formState.errors).map(([field, error]) => {
+                    {Object.entries(errors).map(([field, error]) => {
                       const errorMessage = error && typeof error === 'object' && 'message' in error 
                         ? (error as { message?: string }).message 
                         : `Invalid value for ${field}`;
@@ -216,10 +248,10 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
             <div className="flex justify-end pt-6">
               <Button
                 type="submit"
-                disabled={disabled || form.formState.isSubmitting}
+                disabled={disabled || isSubmitting}
                 className="min-w-[120px]"
               >
-                {form.formState.isSubmitting ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     Submitting...

@@ -1,0 +1,119 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "KMSBasicOperations",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey"
+      ],
+      "Resource": [
+        "arn:aws:kms:us-east-1:ACCOUNT_ID:key/KEY_ID_GENERAL",
+        "arn:aws:kms:us-east-1:ACCOUNT_ID:key/KEY_ID_PII",
+        "arn:aws:kms:us-east-1:ACCOUNT_ID:key/KEY_ID_PAYMENT",
+        "arn:aws:kms:us-west-2:ACCOUNT_ID:key/KEY_ID_GENERAL",
+        "arn:aws:kms:us-west-2:ACCOUNT_ID:key/KEY_ID_PII",
+        "arn:aws:kms:us-west-2:ACCOUNT_ID:key/KEY_ID_PAYMENT",
+        "arn:aws:kms:eu-west-1:ACCOUNT_ID:key/KEY_ID_GENERAL",
+        "arn:aws:kms:eu-west-1:ACCOUNT_ID:key/KEY_ID_PII",
+        "arn:aws:kms:eu-west-1:ACCOUNT_ID:key/KEY_ID_PAYMENT"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "kms:EncryptionContext:purpose": [
+            "payment-method-data",
+            "user-profile-data",
+            "general-data"
+          ],
+          "kms:EncryptionContext:application": "parker-flight"
+        }
+      }
+    },
+    {
+      "Sid": "KMSAliasAccess",
+      "Effect": "Allow",
+      "Action": [
+        "kms:ListAliases",
+        "kms:DescribeKey"
+      ],
+      "Resource": [
+        "arn:aws:kms:us-east-1:ACCOUNT_ID:alias/parker-flight-*",
+        "arn:aws:kms:us-west-2:ACCOUNT_ID:alias/parker-flight-*",
+        "arn:aws:kms:eu-west-1:ACCOUNT_ID:alias/parker-flight-*",
+        "arn:aws:kms:ap-southeast-1:ACCOUNT_ID:alias/parker-flight-*"
+      ]
+    },
+    {
+      "Sid": "CloudWatchMetrics",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricData",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "cloudwatch:namespace": "ParkerFlight/KMS"
+        }
+      }
+    },
+    {
+      "Sid": "XRayTracing",
+      "Effect": "Allow",
+      "Action": [
+        "xray:PutTraceSegments",
+        "xray:PutTelemetryRecords",
+        "xray:GetSamplingRules",
+        "xray:GetSamplingTargets"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "STSHealthCheck",
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetCallerIdentity"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "LogsForAuditing",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": [
+        "arn:aws:logs:*:ACCOUNT_ID:log-group:/aws/lambda/parker-flight-*",
+        "arn:aws:logs:*:ACCOUNT_ID:log-group:/parker-flight/*"
+      ]
+    },
+    {
+      "Sid": "MultiRegionHealthChecks",
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetCallerIdentity",
+        "kms:ListKeys"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": [
+            "us-east-1",
+            "us-west-2",
+            "eu-west-1",
+            "ap-southeast-1"
+          ]
+        }
+      }
+    }
+  ]
+}

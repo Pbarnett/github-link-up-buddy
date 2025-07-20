@@ -35,6 +35,9 @@ export interface BookingResponse {
   bookingReference?: string; // This is the Amadeus Order ID
   confirmationNumber?: string; // This is usually the Airline PNR
   error?: string;
+  errorCategory?: 'CLIENT_ERROR' | 'SERVER_ERROR' | 'NETWORK_ERROR' | 'RATE_LIMIT' | 'AUTHENTICATION';
+  errorCode?: string; // HTTP status code or Amadeus error code
+  retryable?: boolean; // Whether the error can be retried
   bookingData?: Record<string, unknown>; // Full response from Amadeus
 }
 
@@ -47,7 +50,63 @@ export interface SeatSelection {
 let _cachedToken: string | undefined;
 let _cachedExpiry = 0;
 
-// Function to get Amadeus Access Token with caching
+// Enhanced error categorization for better debugging
+function categorizeError(status: number, response?: any): {
+  category: 'CLIENT_ERROR' | 'SERVER_ERROR' | 'NETWORK_ERROR' | 'RATE_LIMIT' | 'AUTHENTICATION';
+  retryable: boolean;
+  errorCode: string;
+} {
+  if (status === 401) {
+    return { category: 'AUTHENTICATION', retryable: true, errorCode: status.toString() };
+  }
+  if (status === 429) {
+    return { category: 'RATE_LIMIT', retryable: true, errorCode: status.toString() };
+  }
+  if (status >= 400 && status < 500) {
+    return { category: 'CLIENT_ERROR', retryable: false, errorCode: status.toString() };
+  }
+  if (status >= 500) {
+    return { category: 'SERVER_ERROR', retryable: true, errorCode: status.toString() };
+  }
+  return { category: 'NETWORK_ERROR', retryable: true, errorCode: 'UNKNOWN' };
+}
+
+// Exponential backoff retry mechanism
+async function retryWithBackoff<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelayMs: number = 1000
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+      
+      // Check if error is retryable
+      if (error instanceof Response) {
+        const errorInfo = categorizeError(error.status);
+        if (!errorInfo.retryable) {
+          throw lastError;
+        }
+      }
+      
+      const delayMs = baseDelayMs * Math.pow(2, attempt);
+      console.log(`[AmadeusLib] Retry attempt ${attempt + 1}/${maxRetries} after ${delayMs}ms delay`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  
+  throw lastError!;
+}
+
+// Function to get Amadeus Access Token with caching and enhanced error handling
 export async function getAmadeusAccessToken(): Promise<string> {
   const { AMADEUS_CLIENT_ID, AMADEUS_CLIENT_SECRET, AMADEUS_BASE_URL } = getAmadeusEnv();
   
@@ -79,8 +138,14 @@ export async function getAmadeusAccessToken(): Promise<string> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`Failed to get Amadeus access token: ${response.status} ${response.statusText}`, errorText);
-    throw new Error(`Failed to get Amadeus access token: ${response.status} ${errorText}`);
+    const errorInfo = categorizeError(response.status);
+    console.error(`[AmadeusLib] Token request failed - ${errorInfo.category}:`, {
+      status: response.status,
+      statusText: response.statusText,
+      errorText,
+      retryable: errorInfo.retryable
+    });
+    throw new Error(`Authentication failed: ${errorInfo.category} - ${errorText}`);
   }
 
   const data = await response.json();
@@ -93,7 +158,30 @@ export async function getAmadeusAccessToken(): Promise<string> {
   return _cachedToken;
 }
 
-// New function to search and price flight offers
+// Interface for CO2 emissions data
+export interface CO2EmissionsData {
+  weight: number; // grams of CO2
+  weightUnit: string; // 'G' for grams
+  cabin: string; // cabin class used in calculation
+}
+
+// Interface for fare rules
+export interface FareRules {
+  category: string; // e.g., 'EXCHANGE', 'REFUND', 'REVALIDATION'
+  rules?: string; // Rules text if available
+  maxPenaltyAmount?: string; // Maximum penalty amount
+  currency?: string; // Currency for penalties
+}
+
+// Enhanced pricing response with CO2 and fare rules
+export interface EnhancedPricingResponse {
+  flightOffers: Record<string, unknown>[];
+  co2Emissions?: CO2EmissionsData[];
+  fareRules?: FareRules[];
+  dictionaries?: Record<string, unknown>;
+}
+
+// New function to search and price flight offers with CO2 emissions
 export async function priceWithAmadeus(
   tripParams: {
     originLocationCode: string;
@@ -104,9 +192,11 @@ export async function priceWithAmadeus(
     travelClass?: string; // e.g., ECONOMY, BUSINESS
     nonStop?: boolean;
     maxOffers?: number; // Max offers to fetch for pricing (e.g., 3)
+    includeCO2Emissions?: boolean; // Include CO2 emissions data
+    includeFareRules?: boolean; // Include fare rules information
   },
   token: string
-): Promise<Record<string, unknown> | null> {
+): Promise<EnhancedPricingResponse | null> {
   const { AMADEUS_BASE_URL } = getAmadeusEnv();
   
   if (!AMADEUS_BASE_URL) {
@@ -127,20 +217,36 @@ export async function priceWithAmadeus(
   if (tripParams.nonStop !== undefined) searchParams.append('nonStop', String(tripParams.nonStop));
 
   console.log(`[AmadeusLib] Searching offers with params: ${searchParams.toString()}`);
-  let offersResponse;
-  try {
-    offersResponse = await fetch(`${AMADEUS_BASE_URL}/v2/shopping/flight-offers?${searchParams.toString()}`, {
+  
+  // Enhanced search with retry mechanism
+  const offersResponse = await retryWithBackoff(async () => {
+    const response = await fetch(`${AMADEUS_BASE_URL}/v2/shopping/flight-offers?${searchParams.toString()}`, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${token}` },
     });
 
-    if (!offersResponse.ok) {
-      const errorText = await offersResponse.text();
-      console.error(`[AmadeusLib] Flight Offers Search failed: ${offersResponse.status}`, errorText);
-      return null; // Or throw new Error(`Flight Offers Search failed: ${errorText}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      const errorInfo = categorizeError(response.status);
+      console.error(`[AmadeusLib] Flight search failed - ${errorInfo.category}:`, {
+        status: response.status,
+        errorText,
+        retryable: errorInfo.retryable
+      });
+      
+      if (!errorInfo.retryable) {
+        throw new Error(`Non-retryable flight search error: ${errorText}`);
+      }
+      throw response; // Will be caught and retried
     }
-  } catch (searchError) {
-    console.error(`[AmadeusLib] Network error during Flight Offers Search:`, searchError);
+    
+    return response;
+  }).catch(error => {
+    console.error(`[AmadeusLib] Flight search failed after retries:`, error);
+    return null;
+  });
+  
+  if (!offersResponse) {
     return null;
   }
 
@@ -157,27 +263,78 @@ export async function priceWithAmadeus(
   for (let i = 0; i < offersToPrice.length; i++) {
     const offer = offersToPrice[i];
     console.log(`[AmadeusLib] Attempting to price offer ${i + 1} (ID: ${offer.id})`);
+    
     try {
-      const pricingResponse = await fetch(`${AMADEUS_BASE_URL}/v1/shopping/flight-offers/pricing`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ data: { type: 'flight-offers-pricing', flightOffers: [offer] } }),
+      // Enhanced pricing request body with optional CO2 and fare rules
+      const pricingPayload: any = {
+        data: {
+          type: 'flight-offers-pricing',
+          flightOffers: [offer]
+        }
+      };
+      
+      // Add CO2 emissions request if enabled
+      if (tripParams.includeCO2Emissions) {
+        pricingPayload.data.include = ['co2Emissions'];
+      }
+      
+      const pricingResponse = await retryWithBackoff(async () => {
+        const response = await fetch(`${AMADEUS_BASE_URL}/v1/shopping/flight-offers/pricing`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(pricingPayload),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          const errorInfo = categorizeError(response.status);
+          
+          if (response.status === 422) {
+            // Offer is stale, try next offer instead of retrying
+            throw new Error('STALE_OFFER');
+          }
+          
+          if (!errorInfo.retryable) {
+            throw new Error(`Non-retryable pricing error: ${errorText}`);
+          }
+          throw response; // Will be caught and retried
+        }
+        
+        return response;
       });
 
-      if (pricingResponse.ok) {
-        const pricedOfferData = await pricingResponse.json();
-        console.log(`[AmadeusLib] Successfully priced offer ${i + 1} (ID: ${offer.id}).`);
-        return pricedOfferData.data; // Return the data part of the first successfully priced offer
-      } else {
-        const errorText = await pricingResponse.text();
-        console.warn(`[AmadeusLib] Pricing failed for offer ${i + 1} (ID: ${offer.id}): ${pricingResponse.status}`, errorText);
-        // Try next offer if pricing fails (e.g. 422 Unprocessable Entity if offer is stale)
+      const pricedOfferData = await pricingResponse.json();
+      console.log(`[AmadeusLib] Successfully priced offer ${i + 1} (ID: ${offer.id}).`);
+      
+      // Extract enhanced data
+      const enhancedResponse: EnhancedPricingResponse = {
+        flightOffers: pricedOfferData.data?.flightOffers || [pricedOfferData.data],
+        co2Emissions: pricedOfferData.data?.co2Emissions,
+        dictionaries: pricedOfferData.dictionaries
+      };
+      
+      // Fetch fare rules if requested (separate API call)
+      if (tripParams.includeFareRules && pricedOfferData.data?.flightOffers?.[0]) {
+        try {
+          const fareRules = await fetchFareRules(pricedOfferData.data.flightOffers[0], token);
+          enhancedResponse.fareRules = fareRules;
+        } catch (fareRulesError) {
+          console.warn(`[AmadeusLib] Failed to fetch fare rules:`, fareRulesError);
+          // Continue without fare rules
+        }
       }
+      
+      return enhancedResponse;
+      
     } catch (priceError) {
-      console.warn(`[AmadeusLib] Network error during pricing for offer ${i + 1} (ID: ${offer.id}):`, priceError);
+      if (priceError.message === 'STALE_OFFER') {
+        console.warn(`[AmadeusLib] Offer ${i + 1} (ID: ${offer.id}) is stale, trying next offer`);
+        continue; // Try next offer
+      }
+      console.warn(`[AmadeusLib] Pricing failed for offer ${i + 1} (ID: ${offer.id}):`, priceError);
       // Try next offer
     }
   }
@@ -187,7 +344,49 @@ export async function priceWithAmadeus(
 }
 
 
-// Updated function to book with Amadeus using a provided token
+
+// Helper function to fetch fare rules (if available)
+async function fetchFareRules(
+  flightOffer: Record<string, unknown>,
+  token: string
+): Promise<FareRules[]> {
+  const { AMADEUS_BASE_URL } = getAmadeusEnv();
+  
+  if (!AMADEUS_BASE_URL) {
+    throw new Error("AMADEUS_BASE_URL not configured.");
+  }
+  
+  // Note: Fare rules API might not be available in test environment
+  // This is a placeholder implementation
+  try {
+    const response = await fetch(`${AMADEUS_BASE_URL}/v1/shopping/flight-offers/fare-rules`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: {
+          type: 'fare-rules',
+          flightOffers: [flightOffer]
+        }
+      }),
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.data || [];
+    } else {
+      console.warn(`[AmadeusLib] Fare rules request failed: ${response.status}`);
+      return [];
+    }
+  } catch (error) {
+    console.warn(`[AmadeusLib] Fare rules fetch error:`, error);
+    return [];
+  }
+}
+
+// Enhanced booking function with better error handling
 export async function bookWithAmadeus(
   pricedOffer: Record<string, unknown>, // This should be the full priced offer object from the pricing endpoint
   travelerData: TravelerData,
@@ -203,10 +402,7 @@ export async function bookWithAmadeus(
 
   try {
     console.log("[AmadeusLib] Booking flight with Amadeus using provided token.");
-    // console.log("[AmadeusLib] Priced offer for booking:", JSON.stringify(pricedOffer, null, 2));
-    // console.log("[AmadeusLib] Traveler data for booking:", JSON.stringify(travelerData, null, 2));
-    // console.log("[AmadeusLib] Seat selections for booking:", JSON.stringify(seatSelections, null, 2));
-
+    
     // Construct traveler payload with seat selections
     const travelersPayload = [{
       id: "1", // Assuming one traveler for now; this might need to be dynamic
@@ -222,67 +418,92 @@ export async function bookWithAmadeus(
       },
       documents: travelerData.documents, // Pass as is, can be undefined
       // Add seatSelections to the first traveler.
-      // Amadeus API expects seatSelections at the traveler level if specific seats are chosen.
-      // The structure is an array of objects, each specifying segmentId and seatNumber.
       seatSelections: seatSelections && seatSelections.length > 0 ? seatSelections : undefined,
     }];
     
-    // Remove undefined documents or seatSelections from payload if they are truly optional and Amadeus dislikes null/empty
+    // Clean up undefined fields
     if (travelersPayload[0].documents === undefined) delete travelersPayload[0].documents;
     if (travelersPayload[0].seatSelections === undefined) delete travelersPayload[0].seatSelections;
-
 
     const bookingPayload = {
       data: {
         type: "flight-order",
-        // Amadeus expects an array of flight offer objects that were confirmed by pricing.
-        // pricedOffer from pricing response often contains `flightOffers` array.
-        flightOffers: pricedOffer.flightOffers || [pricedOffer], // Use the flightOffers array from priced object, or wrap it
+        flightOffers: pricedOffer.flightOffers || [pricedOffer],
         travelers: travelersPayload,
-        // Add remarks, ticketingAgreement, contacts, etc. as needed by your specific Amadeus setup or requirements
         remarks: {
-            general: [{
-                subType: "GENERAL_MISCELLANEOUS",
-                text: "Automated booking via system." // Example remark
-            }]
+          general: [{
+            subType: "GENERAL_MISCELLANEOUS",
+            text: "Automated booking via system."
+          }]
         },
         ticketingAgreement: {
-            option: "DELAY_TO_CANCEL", // Or "CONFIRM_IMMEDIATELY"
-            delay: "6H" // Relevant if DELAY_TO_CANCEL
+          option: "DELAY_TO_CANCEL",
+          delay: "6H"
         }
       }
     };
 
     console.log("[AmadeusLib] Making Amadeus booking request...");
-    const response = await fetch(`${AMADEUS_BASE_URL}/v1/booking/flight-orders`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json', // Amadeus uses application/vnd.amadeus+json but often application/json works
-        'Accept': 'application/json, application/vnd.amadeus+json'
-      },
-      body: JSON.stringify(bookingPayload),
+    
+    // Enhanced booking with retry mechanism
+    const response = await retryWithBackoff(async () => {
+      const bookingResponse = await fetch(`${AMADEUS_BASE_URL}/v1/booking/flight-orders`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json, application/vnd.amadeus+json'
+        },
+        body: JSON.stringify(bookingPayload),
+      });
+      
+      if (!bookingResponse.ok) {
+        const errorInfo = categorizeError(bookingResponse.status);
+        if (!errorInfo.retryable) {
+          throw bookingResponse; // Don't retry client errors
+        }
+        throw bookingResponse; // Will be retried for server errors
+      }
+      
+      return bookingResponse;
     });
 
     const responseData = await response.json();
     
-    if (!response.ok) {
-      console.error("[AmadeusLib] Amadeus booking failed:", response.status, JSON.stringify(responseData, null, 2));
-      const errorDetail = responseData.errors?.[0]?.detail || responseData.errors?.[0]?.title || `Amadeus API error: ${response.status}`;
-      return { success: false, error: errorDetail, bookingData: responseData };
-    }
-
     console.log("[AmadeusLib] Amadeus booking successful.");
     return {
       success: true,
-      bookingReference: responseData.data?.id, // This is the Amadeus Order ID
-      confirmationNumber: responseData.data?.associatedRecords?.[0]?.reference, // Airline PNR
+      bookingReference: responseData.data?.id,
+      confirmationNumber: responseData.data?.associatedRecords?.[0]?.reference,
       bookingData: responseData.data,
     };
 
   } catch (error) {
     console.error("[AmadeusLib] Exception during Amadeus booking:", error);
-    return { success: false, error: error.message || "Unknown booking error" };
+    
+    let errorResponse: BookingResponse = {
+      success: false,
+      error: "Unknown booking error"
+    };
+    
+    if (error instanceof Response) {
+      const errorText = await error.text();
+      const errorInfo = categorizeError(error.status);
+      const responseData = JSON.parse(errorText || '{}');
+      
+      errorResponse = {
+        success: false,
+        error: responseData.errors?.[0]?.detail || responseData.errors?.[0]?.title || `Amadeus API error: ${error.status}`,
+        errorCategory: errorInfo.category,
+        errorCode: errorInfo.errorCode,
+        retryable: errorInfo.retryable,
+        bookingData: responseData
+      };
+    } else if (error instanceof Error) {
+      errorResponse.error = error.message;
+    }
+    
+    return errorResponse;
   }
 }
 

@@ -81,6 +81,8 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
                   <Switch
                     checked={field.value}
                     onCheckedChange={field.onChange}
+                    name={field.name}
+                    onBlur={field.onBlur}
                   />
                 </FormControl>
               </FormItem>
@@ -114,11 +116,12 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
                     <CreditCard className="h-4 w-4" />
                     Payment Method {isAutoMode && <span className="text-red-500">*</span>}
                   </FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value || ""}
-                    disabled={isLoadingPaymentMethods}
-                  >
+            <Select 
+              onValueChange={field.onChange} 
+              value={field.value || ""}
+              disabled={isLoadingPaymentMethods}
+              name={field.name}
+            >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder={
@@ -170,6 +173,8 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
                         <Checkbox
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          name={field.name}
+                          onBlur={field.onBlur}
                           className="mt-1"
                         />
                       </FormControl>

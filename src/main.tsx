@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'
 import { asyncWithLDProvider } from 'launchdarkly-react-client-sdk'
+import { ThemeProvider } from 'next-themes'
 import App from './App.tsx'
 import './index.css'
 
@@ -44,7 +45,9 @@ if (import.meta.env.VITE_SUPABASE_URL?.includes('127.0.0.1')) {
 
   const WrappedApp = () => (
     <LDProvider>
-      <App />
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <App />
+      </ThemeProvider>
     </LDProvider>
   );
   createRoot(document.getElementById("root")!).render(<WrappedApp />);

@@ -204,7 +204,7 @@ describe('LaunchDarklyService', () => {
         return Promise.resolve();
       });
       
-      const getVariationSpy = vi.spyOn(LaunchDarklyService, 'getVariation');
+      const getVariationSpy = vi.spyOn(LaunchDarklyService as any, '_variationRaw');
       getVariationSpy.mockReturnValue(true); // Enable resilience
       
       await LaunchDarklyService.initializeClient(mockContext);
@@ -218,7 +218,7 @@ describe('LaunchDarklyService', () => {
     it('should fail after max retries', async () => {
       mockClient.waitForInitialization = vi.fn().mockRejectedValue(new Error('Persistent failure'));
       
-      const getVariationSpy = vi.spyOn(LaunchDarklyService, 'getVariation');
+      const getVariationSpy = vi.spyOn(LaunchDarklyService as any, '_variationRaw');
       getVariationSpy.mockReturnValue(true); // Enable resilience
       
       await LaunchDarklyService.initializeClient(mockContext);
@@ -236,7 +236,7 @@ describe('LaunchDarklyService', () => {
   describe('Circuit Breaker', () => {
     it('should open circuit breaker after threshold failures', async () => {
       // Enable resilience features
-      const getVariationSpy = vi.spyOn(LaunchDarklyService, 'getVariation');
+      const getVariationSpy = vi.spyOn(LaunchDarklyService as any, '_variationRaw');
       getVariationSpy.mockReturnValue(true);
       
       // Mock multiple failures
@@ -270,7 +270,7 @@ describe('LaunchDarklyService', () => {
       // Cause circuit breaker to open
       mockClient.waitForInitialization = vi.fn().mockRejectedValue(new Error('Failure'));
       
-      const getVariationSpy = vi.spyOn(service, 'getVariation');
+      const getVariationSpy = vi.spyOn(service as any, '_variationRaw');
       getVariationSpy.mockReturnValue(true); // Enable resilience
       
       await service.initializeClient(mockContext);
@@ -298,7 +298,7 @@ describe('LaunchDarklyService', () => {
         return new Promise(() => {}); // Never resolves
       });
       
-      const getVariationSpy = vi.spyOn(LaunchDarklyService, 'getVariation');
+      const getVariationSpy = vi.spyOn(LaunchDarklyService as any, '_variationRaw');
       getVariationSpy.mockReturnValue(true); // Enable resilience
       
       await LaunchDarklyService.initializeClient(mockContext);
@@ -434,7 +434,7 @@ describe('LaunchDarklyService', () => {
 
     it('should track success and failure counts', async () => {
       // Success case - use resilience mode for metrics tracking
-      const getVariationSpy = vi.spyOn(LaunchDarklyService, 'getVariation');
+      const getVariationSpy = vi.spyOn(LaunchDarklyService as any, '_variationRaw');
       getVariationSpy.mockReturnValue(true); // Enable resilience
       
       await LaunchDarklyService.initializeClient(mockContext);

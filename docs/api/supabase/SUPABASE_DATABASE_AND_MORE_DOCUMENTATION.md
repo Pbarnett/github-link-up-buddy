@@ -1,4 +1,313 @@
-Database
+# Supabase Database and Platform Documentation
+
+## Table of Contents
+
+### Quick Navigation
+- [Document Overview](#document-overview) - Comprehensive platform integration guide
+- [Database Core](#database) - PostgreSQL database fundamentals and management
+- [Connection Management](#connect-to-your-database) - Connection strings, pooling, and troubleshooting
+- [Data Import/Export](#import-data-into-supabase) - Bulk data operations and migration strategies
+- [Security & Access Control](#securing-your-data) - RLS, authentication, and authorization
+- [Performance & Optimization](#query-optimization) - Indexing, query optimization, and monitoring
+- [Extensions & Advanced Features](#cron) - Cron jobs, queues, replication, and custom functions
+
+### Core Integration Sections
+
+#### 🚀 Getting Started
+| Section | Description | Key Information |
+|---------|-------------|----------------|
+| [Document Overview](#document-overview) | Platform introduction and quick start | Purpose, architecture, integration status |
+| [Database Basics](#database) | PostgreSQL fundamentals | Tables, columns, data types, primary keys |
+| [Connection Guide](#connect-to-your-database) | Database connectivity | Direct, pooled, and API connections |
+| [Data Import](#import-data-into-supabase) | Initial data migration | CSV import, pgloader, bulk operations |
+
+#### 🔐 Security & Authentication
+| Section | Description | Key Information |
+|---------|-------------|----------------|
+| [Securing Data](#securing-your-data) | Security fundamentals | RLS setup, API key management |
+| [Row Level Security](#row-level-security) | Granular access control | Policy creation, user roles, helper functions |
+| [Column Security](#column-level-security) | Column-level permissions | Privilege management, advanced controls |
+| [Custom Claims & RBAC](#custom-claims--role-based-access-control-rbac) | Role-based access | Custom roles, auth hooks, permissions |
+| [Postgres Roles](#postgres-roles) | Database role management | User creation, permissions, hierarchy |
+| [Vault](#vault) | Secret management | Encrypted storage, key management |
+
+#### 📊 Data Management
+| Section | Description | Key Information |
+|---------|-------------|----------------|
+| [Tables & Data](#managing-tables-views-and-data) | Basic data operations | CRUD operations, table management |
+| [Working with Arrays](#working-with-arrays) | Array data types | Creation, querying, manipulation |
+| [JSON/JSONB](#managing-json-and-unstructured-data) | Unstructured data | JSON operations, validation, querying |
+| [Joins & Relationships](#querying-joins-and-nested-tables) | Relational queries | Foreign keys, one-to-many, many-to-many |
+| [Views](#views) | Query abstractions | Regular views, materialized views, security |
+| [Enums](#managing-enums-in-postgres) | Enumerated types | Creation, usage, management |
+
+#### ⚡ Performance & Optimization
+| Section | Description | Key Information |
+|---------|-------------|----------------|
+| [Indexing](#managing-indexes-in-postgresql) | Query optimization | B-tree, partial, composite indexes |
+| [Query Performance](#query-optimization) | Performance tuning | Execution plans, optimization strategies |
+| [Performance Advisors](#performance-and-security-advisors) | Automated recommendations | Missing indexes, security issues |
+| [Debugging Performance](#debugging-performance-issues) | Troubleshooting | Query analysis, bottleneck identification |
+| [Connection Management](#connection-management) | Resource optimization | Pool sizing, monitoring, best practices |
+
+#### 🛠 Advanced Features
+| Section | Description | Key Information |
+|---------|-------------|----------------|
+| [Database Functions](#database-functions) | Custom server-side logic | PL/pgSQL, security, debugging |
+| [Database Webhooks](#database-webhooks) | Event-driven automation | Triggers, HTTP requests, monitoring |
+| [Full Text Search](#full-text-search) | Search capabilities | ts_vector, ts_query, indexing |
+| [Partitioning](#partitioning-tables) | Table scaling | Range, list, hash partitioning |
+| [Cascade Deletes](#cascade-deletes) | Referential integrity | Foreign key constraints, deletion behavior |
+
+#### 🔄 Automation & Scheduling
+| Section | Description | Key Information |
+|---------|-------------|----------------|
+| [Cron Jobs](#cron) | Scheduled tasks | pg_cron, syntax, management |
+| [Queues](#supabase-queues) | Message queuing | pgmq, durability, processing |
+| [Replication](#replication-and-change-data-capture) | Data replication | CDC, monitoring, configuration |
+| [Realtime Subscriptions](#subscribing-to-database-changes) | Live data updates | Broadcast, postgres changes |
+
+#### 🔧 Configuration & Maintenance
+| Section | Description | Key Information |
+|---------|-------------|----------------|
+| [Database Configuration](#customizing-postgres-configs) | Custom settings | Parameters, CLI management, considerations |
+| [Timeouts](#timeouts) | Execution limits | Session, function, role, global timeouts |
+| [Debugging & Monitoring](#debugging-and-monitoring) | System observability | Performance metrics, query analysis |
+
+### Quick Reference Lookups
+
+#### Common Tasks
+- **Connect to Database**: [Connection strings](#connect-to-your-database) | [Pooling setup](#connection-management)
+- **Import Data**: [CSV upload](#import-data-into-supabase) | [Bulk operations](#bulk-data-loading)
+- **Security Setup**: [Enable RLS](#row-level-security) | [Create policies](#creating-policies)
+- **Performance Issues**: [Query optimization](#query-optimization) | [Index creation](#managing-indexes-in-postgresql)
+- **Automation**: [Schedule jobs](#cron) | [Set up webhooks](#database-webhooks)
+
+#### Troubleshooting Guides
+- **Connection Issues**: [Connection troubleshooting](#troubleshooting-and-postgres-connection-string-faqs)
+- **Performance Problems**: [Debugging queries](#debugging-performance-issues) | [Index advisor](#performance-and-security-advisors)
+- **Security Concerns**: [RLS policies](#row-level-security) | [Security advisor](#performance-and-security-advisors)
+- **Timeout Errors**: [Timeout configuration](#timeouts) | [Query identification](#identifying-timeouts)
+
+#### Integration Patterns
+- **Parker Flight Status**: [Current implementation](#parker-flight-integration-status) | [Integration checkpoints](#integration-checkpoints)
+- **Error Handling**: [Common errors](#error-handling-strategy) | [Recovery patterns](#error-recovery-patterns)
+- **Best Practices**: [Security practices](#security-best-practices) | [Performance optimization](#performance-optimization)
+
+---
+
+## Document Overview
+
+### Purpose
+This document serves as the comprehensive reference for integrating Supabase's full-stack platform into Parker Flight. Supabase provides a complete backend-as-a-service solution built on PostgreSQL, offering database management, authentication, real-time subscriptions, edge functions, and storage capabilities.
+
+### Quick Start Guide
+1. **Project Setup**: Create Supabase project and obtain API credentials
+2. **Database Configuration**: Set up tables, relationships, and Row Level Security (RLS)
+3. **Client Integration**: Initialize Supabase client with project URL and anon key
+4. **Authentication Setup**: Configure auth providers and user management
+5. **Real-time Features**: Implement real-time subscriptions for live data updates
+
+### Core Platform Components
+- **PostgreSQL Database**: Full-featured relational database with extensions
+- **Authentication & Authorization**: Built-in user management with multiple auth providers
+- **Real-time Subscriptions**: Live data updates via WebSocket connections
+- **Edge Functions**: Serverless compute for custom business logic
+- **Storage & CDN**: File storage with automatic CDN distribution
+- **API Generation**: Auto-generated REST and GraphQL APIs
+
+### Integration Architecture
+```
+Parker Flight Frontend
+        ↓
+  Supabase Client SDK
+        ↓
+    Supabase APIs
+        ↓
+┌─────────────────────────────────────┐
+│  PostgreSQL Database  │  Auth Service │
+│  Real-time Engine    │  Edge Functions │
+│  Storage & CDN       │  API Gateway   │
+└─────────────────────────────────────┘
+```
+
+### Critical Implementation Notes
+
+#### Security Best Practices
+- **Row Level Security (RLS)**: Enable RLS on all tables with public API access
+- **API Key Management**: Use anon key for client-side, service key for server-side only
+- **Authentication Integration**: Implement proper auth flows with JWT validation
+- **Database Policies**: Create granular security policies for data access
+
+#### Performance Optimization
+- **Connection Pooling**: Use appropriate connection pooling for your deployment type
+- **Indexing Strategy**: Implement proper database indexing for query performance
+- **Real-time Filters**: Use targeted subscriptions to minimize bandwidth
+- **Edge Function Caching**: Implement caching strategies for serverless functions
+
+#### Data Management
+- **Migration Strategy**: Use Supabase CLI for database schema management
+- **Backup & Recovery**: Implement automated backups and disaster recovery plans
+- **Data Import/Export**: Use appropriate tools for bulk data operations
+- **Schema Evolution**: Plan for database schema changes and versioning
+
+### Connection Management Strategy
+
+#### Connection Types
+- **Direct Connection**: For persistent servers and development (IPv6 required)
+- **Supavisor Session Mode**: For persistent backends needing IPv4 support
+- **Supavisor Transaction Mode**: For serverless functions and transient connections
+- **Data APIs**: For frontend applications with RLS-protected access
+
+#### Client Library Usage
+- Use Supabase client libraries for automatic auth token management
+- Implement proper error handling and retry logic
+- Configure appropriate timeouts for your use case
+- Handle connection pooling based on deployment architecture
+
+### Authentication & Authorization
+
+#### Supported Auth Providers
+- **Email/Password**: Traditional email-based authentication
+- **Magic Links**: Passwordless email authentication
+- **OAuth Providers**: Google, GitHub, Discord, and 25+ social providers
+- **Phone Auth**: SMS-based authentication with OTP
+- **SAML/SSO**: Enterprise single sign-on integration
+
+#### Security Features
+- Multi-factor authentication (MFA) support
+- JWT-based session management
+- Configurable password policies
+- Rate limiting and abuse protection
+- Audit logging and session monitoring
+
+### Real-time Capabilities
+
+#### Subscription Types
+- **Table Changes**: Listen to INSERT, UPDATE, DELETE operations
+- **Row-level Changes**: Subscribe to specific row changes with filters
+- **Custom Events**: Send and receive custom real-time messages
+- **Presence**: Track online users and their status
+
+#### Real-time Best Practices
+- Use specific filters to reduce bandwidth usage
+- Implement connection state management
+- Handle reconnection logic for network interruptions
+- Monitor real-time usage and costs
+
+### Error Handling Strategy
+
+#### Common Error Categories
+- **Authentication Errors**: Invalid tokens, expired sessions
+- **Authorization Errors**: RLS policy violations, insufficient permissions
+- **Database Errors**: Constraint violations, connection issues
+- **Network Errors**: Timeouts, connectivity problems
+- **Rate Limiting**: API quota exceeded, request throttling
+
+#### Error Recovery Patterns
+```javascript
+const handleSupabaseError = (error) => {
+  switch (error.code) {
+    case 'PGRST116': // Row Level Security violation
+      return { type: 'auth', action: 'redirect_login' };
+    case '23505': // Unique constraint violation
+      return { type: 'validation', action: 'show_validation_error' };
+    case 'ECONNREFUSED': // Connection refused
+      return { type: 'network', action: 'retry_with_backoff' };
+    default:
+      return { type: 'unknown', action: 'log_and_report' };
+  }
+};
+```
+
+### Testing & Development
+
+#### Local Development
+- Use Supabase CLI for local development environment
+- Set up database seeding and migration scripts
+- Implement proper test data management
+- Use environment-specific configuration
+
+#### Testing Strategies
+- Unit tests for database functions and policies
+- Integration tests for API endpoints
+- End-to-end tests for auth flows
+- Performance testing for real-time subscriptions
+
+### Platform Service Categories
+
+#### Database Services
+- **PostgreSQL**: Full-featured relational database
+- **Extensions**: PostGIS, pg_vector, and 50+ extensions
+- **Functions**: Custom database functions and triggers
+- **Migrations**: Schema versioning and deployment
+
+#### API Services
+- **REST API**: Auto-generated REST endpoints
+- **GraphQL**: Auto-generated GraphQL API
+- **Real-time API**: WebSocket-based subscriptions
+- **Edge Functions**: Serverless compute with Deno runtime
+
+#### Platform Features
+- **Authentication**: Multi-provider auth service
+- **Storage**: S3-compatible file storage with CDN
+- **Dashboard**: Web-based management interface
+- **CLI**: Command-line tools for development
+
+### Common Integration Pitfalls
+
+#### Security Issues
+- **RLS Not Enabled**: Exposing sensitive data through public APIs
+- **Overprivileged Policies**: Creating overly permissive RLS policies
+- **Client Secret Exposure**: Using service key in client-side code
+- **Insufficient Input Validation**: Not validating data before database insertion
+
+#### Performance Problems
+- **Missing Indexes**: Poor query performance due to lack of proper indexing
+- **Connection Pool Exhaustion**: Not using appropriate connection pooling
+- **Inefficient Queries**: N+1 queries and unoptimized database operations
+- **Real-time Overuse**: Too many active subscriptions causing performance issues
+
+#### Development Issues
+- **Environment Confusion**: Using wrong API keys for different environments
+- **Migration Problems**: Schema changes not properly versioned
+- **Auth Flow Issues**: Improper session management and token handling
+- **Local Development**: Not using Supabase CLI for local development
+
+### Parker Flight Integration Status
+
+#### Current Implementation
+- ✅ **Database Core**: PostgreSQL database with core tables implemented
+- ✅ **Authentication**: User auth with multiple providers configured
+- ✅ **API Integration**: REST API endpoints active for core functionality
+- ✅ **Row Level Security**: RLS policies implemented for data protection
+- 🔄 **Real-time Features**: Under development for live flight updates
+- 🔄 **Edge Functions**: KMS integration and custom business logic
+- 📋 **Storage Integration**: Planned for user avatars and documents
+- 📋 **Advanced Analytics**: Planned for usage analytics and reporting
+
+#### Integration Checkpoints
+1. **Security Audit**: Review RLS policies and access patterns
+2. **Performance Monitoring**: Track query performance and connection usage
+3. **Backup Validation**: Ensure backup and recovery procedures work
+4. **Scaling Preparation**: Plan for traffic growth and resource scaling
+5. **Monitoring Setup**: Implement logging and alerting for production
+
+### Strategic Integration Context
+
+Supabase serves as Parker Flight's comprehensive backend platform, providing:
+- **Data Persistence**: All application data stored in PostgreSQL
+- **User Management**: Complete authentication and authorization system
+- **API Layer**: Auto-generated APIs for frontend integration
+- **Real-time Updates**: Live flight status and booking updates
+- **Secure Access**: Row-level security for multi-tenant data isolation
+- **Scalable Infrastructure**: Managed platform handling traffic growth
+
+The integration prioritizes security, performance, and developer experience while providing a robust foundation for Parker Flight's data layer, user management, and real-time features.
+
+---
+
+## Database
 
 Every Supabase project comes with a full Postgres database, a free and open source database which is considered one of the world's most stable and advanced databases.
 Features#
