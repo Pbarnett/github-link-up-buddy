@@ -196,38 +196,51 @@ class DockerDeployment {
     const startTime = Date.now();
     const timeout = timeoutSeconds * 1000;
     
-    while (Date.now() - startTime < timeout) {
-      try {
-        const status = this.exec(
-          `docker-compose -f ${this.composeFile} ps --format json`,
-          { stdio: 'pipe' }
-        );
+    const checkHealth = () => {
+      return new Promise((resolve) => {
+        const checkLoop = () => {
+          if (Date.now() - startTime >= timeout) {
+            this.log('warn', '⚠️  Timeout waiting for services to be healthy');
+            resolve(false);
+            return;
+          }
+          
+          try {
+            const status = this.exec(
+              `docker-compose -f ${this.composeFile} ps --format json`,
+              { stdio: 'pipe' }
+            );
+            
+            const containers = status.split('\n')
+              .filter(line => line.trim())
+              .map(line => JSON.parse(line))
+              .filter(container => services.some(service => container.Service === service));
+            
+            const allHealthy = containers.every(container => 
+              container.State === 'running' && 
+              (container.Health === 'healthy' || !container.Health)
+            );
+            
+            if (allHealthy) {
+              this.log('info', '✅ All services are healthy');
+              resolve(true);
+              return;
+            }
+            
+            // Wait before checking again
+            setTimeout(checkLoop, 5000);
+            
+          } catch (error) {
+            // Continue waiting
+            setTimeout(checkLoop, 5000);
+          }
+        };
         
-        const containers = status.split('\n')
-          .filter(line => line.trim())
-          .map(line => JSON.parse(line))
-          .filter(container => services.some(service => container.Service === service));
-        
-        const allHealthy = containers.every(container => 
-          container.State === 'running' && 
-          (container.Health === 'healthy' || !container.Health)
-        );
-        
-        if (allHealthy) {
-          this.log('info', '✅ All services are healthy');
-          return true;
-        }
-        
-        // Wait before checking again
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        
-      } catch (error) {
-        // Continue waiting
-      }
-    }
+        checkLoop();
+      });
+    };
     
-    this.log('warn', '⚠️  Timeout waiting for services to be healthy');
-    return false;
+    return checkHealth();
   }
 
   /**

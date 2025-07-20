@@ -3,6 +3,54 @@ import { Database, Tables, TablesInsert, TablesUpdate } from '@/types/database';
 import { SupabaseErrorHandler, withRetry } from './error-handler';
 import { QueryData, QueryError } from '@supabase/supabase-js';
 
+// Connection health monitoring
+class ConnectionMonitor {
+  private lastHealthCheck = 0;
+  private healthCheckInterval = 30000; // 30 seconds
+  private isHealthy = true;
+
+  async checkHealth(): Promise<boolean> {
+    const now = Date.now();
+    
+    // Skip if we checked recently
+    if (now - this.lastHealthCheck < this.healthCheckInterval) {
+      return this.isHealthy;
+    }
+
+    this.lastHealthCheck = now;
+
+    try {
+      // Simple health check - query feature flags table
+      const { error } = await supabase
+        .from('feature_flags')
+        .select('id')
+        .limit(1)
+        .abortSignal(AbortSignal.timeout(5000));
+      
+      this.isHealthy = !error;
+      
+      if (!this.isHealthy) {
+        console.warn('🔗 Database connection health check failed:', error);
+      }
+      
+      return this.isHealthy;
+    } catch (error) {
+      console.error('🔗 Database health check error:', error);
+      this.isHealthy = false;
+      return false;
+    }
+  }
+
+  getStatus(): { healthy: boolean; lastCheck: number } {
+    return {
+      healthy: this.isHealthy,
+      lastCheck: this.lastHealthCheck
+    };
+  }
+}
+
+const connectionMonitor = new ConnectionMonitor();
+
 // Type-safe database operations with automatic error handling and retry logic
 
 /**
@@ -357,6 +405,48 @@ export class DatabaseOperations {
         .order('is_default', { ascending: false })
         .order('created_at', { ascending: true })
     , options);
+  }
+
+  /**
+   * Check database connection health
+   */
+  static async healthCheck(): Promise<{
+    healthy: boolean;
+    latency?: number;
+    error?: string;
+    timestamp: number;
+  }> {
+    const startTime = Date.now();
+    
+    try {
+      const { error } = await supabase
+        .from('feature_flags')
+        .select('id')
+        .limit(1)
+        .abortSignal(AbortSignal.timeout(5000));
+      
+      const latency = Date.now() - startTime;
+      
+      return {
+        healthy: !error,
+        latency,
+        error: error?.message,
+        timestamp: Date.now(),
+      };
+    } catch (error: any) {
+      return {
+        healthy: false,
+        error: error.message || 'Health check failed',
+        timestamp: Date.now(),
+      };
+    }
+  }
+
+  /**
+   * Get connection monitoring status
+   */
+  static getConnectionStatus() {
+    return connectionMonitor.getStatus();
   }
 
   /**

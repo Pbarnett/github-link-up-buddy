@@ -44,10 +44,7 @@ RUN apk add --no-cache curl && \
     mkdir -p /var/cache/nginx /var/log/nginx && \
     chown -R nginx:nginx /var/cache/nginx /var/log/nginx && \
     # Remove unnecessary packages and files
-    rm -rf /var/cache/apk/* /tmp/* && \
-    # Create non-root user for better security
-    addgroup -g 101 -S nginx-group && \
-    adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx-group nginx-user
+    rm -rf /var/cache/apk/* /tmp/*
 
 # Copy custom nginx configuration with proper ownership
 COPY --chown=nginx:nginx docker/nginx.conf /etc/nginx/conf.d/default.conf
@@ -63,8 +60,8 @@ LABEL org.opencontainers.image.title="Parker Flight" \
       org.opencontainers.image.created="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
       org.opencontainers.image.source="https://github.com/parkerbarnett/github-link-up-buddy"
 
-# Security: Switch to non-root user
-USER nginx
+# Run as root to avoid PID file issues in production
+# USER nginx
 
 # Expose port 80
 EXPOSE 80

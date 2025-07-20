@@ -1,6 +1,7 @@
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { createClient } from '@supabase/supabase-js';
 import StripeServerModule from 'stripe';
+import { rateLimiter, exponentialBackoff } from '../../packages/shared/stripe';
 
 // Initialize Stripe
 let stripePromise: Promise<Stripe | null>;
@@ -671,6 +672,172 @@ export const getCurrencySymbol = (currency: string): string => {
   };
   
   return symbols[currency.toUpperCase()] || currency.toUpperCase();
+};
+
+/**
+ * Performance and Caching Utilities per API Reference
+ */
+class StripeCache {
+  private cache = new Map<string, { data: any; expiry: number }>();
+  private readonly defaultTTL = 5 * 60 * 1000; // 5 minutes
+
+  set(key: string, data: any, ttl: number = this.defaultTTL): void {
+    this.cache.set(key, {
+      data,
+      expiry: Date.now() + ttl
+    });
+  }
+
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    
+    if (Date.now() > entry.expiry) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return entry.data as T;
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+export const stripeCache = new StripeCache();
+
+/**
+ * Cursor-based pagination helper per API reference
+ */
+export interface PaginationParams {
+  limit?: number;
+  starting_after?: string;
+  ending_before?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  has_more: boolean;
+  url: string;
+}
+
+/**
+ * Batch operations helper
+ * Optimizes multiple API calls per API reference recommendations
+ */
+export class StripeBatch {
+  private operations: Array<() => Promise<any>> = [];
+  private readonly batchSize = 10;
+
+  add(operation: () => Promise<any>): void {
+    this.operations.push(operation);
+  }
+
+  async execute(): Promise<any[]> {
+    const results: any[] = [];
+    
+    // Process operations in batches to respect rate limits
+    for (let i = 0; i < this.operations.length; i += this.batchSize) {
+      const batch = this.operations.slice(i, i + this.batchSize);
+      
+      // Wait for rate limit slot before processing batch
+      await rateLimiter.waitForSlot();
+      
+      const batchResults = await Promise.allSettled(
+        batch.map(operation => exponentialBackoff(operation))
+      );
+      
+      results.push(...batchResults);
+    }
+    
+    return results;
+  }
+
+  clear(): void {
+    this.operations = [];
+  }
+}
+
+/**
+ * Enhanced search with query optimization per API reference
+ */
+export const searchCharges = async (params: {
+  query: string;
+  limit?: number;
+  expand?: string[];
+}): Promise<PaginatedResponse<any>> => {
+  const cacheKey = `search_charges_${JSON.stringify(params)}`;
+  
+  // Try cache first
+  const cached = stripeCache.get<PaginatedResponse<any>>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  await rateLimiter.waitForSlot();
+  
+  const { data, error } = await supabase.functions.invoke('search-charges', {
+    body: {
+      query: params.query,
+      limit: params.limit || 10,
+      expand: params.expand || []
+    }
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  // Cache results
+  stripeCache.set(cacheKey, data, 2 * 60 * 1000); // 2 minutes
+  
+  return data;
+};
+
+/**
+ * Multi-currency conversion with caching
+ * Optimizes currency lookups per API reference
+ */
+export const convertCurrency = async (
+  amount: number,
+  fromCurrency: string,
+  toCurrency: string
+): Promise<{ amount: number; rate: number; converted_amount: number }> => {
+  const cacheKey = `fx_rate_${fromCurrency}_${toCurrency}`;
+  
+  // Try cache first (rates change infrequently)
+  const cached = stripeCache.get<{ rate: number; timestamp: number }>(cacheKey);
+  if (cached) {
+    return {
+      amount,
+      rate: cached.rate,
+      converted_amount: Math.round(amount * cached.rate)
+    };
+  }
+
+  const { data, error } = await supabase.functions.invoke('get-fx-rate', {
+    body: {
+      from: fromCurrency.toLowerCase(),
+      to: toCurrency.toLowerCase()
+    }
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  // Cache exchange rate for 1 hour
+  stripeCache.set(cacheKey, {
+    rate: data.rate,
+    timestamp: Date.now()
+  }, 60 * 60 * 1000);
+
+  return {
+    amount,
+    rate: data.rate,
+    converted_amount: Math.round(amount * data.rate)
+  };
 };
 
 export default stripeService;

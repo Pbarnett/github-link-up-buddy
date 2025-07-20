@@ -62,7 +62,10 @@ const getConnectionConfig = () => {
     realtime: {
       params: {
         eventsPerSecond: 10,
+        log_level: import.meta.env.DEV ? 'info' : 'error',
       },
+      heartbeatIntervalMs: 30000,
+      reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000),
     },
   };
 };

@@ -8,6 +8,9 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createTwilioService, SMSTemplateRenderer } from "../lib/twilio.ts";
+
+const twilioService = createTwilioService();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -74,10 +77,29 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const offerData = bookingRequest.offer_data as Record<string, unknown>;
-    const message = `Hi ${profile.first_name || 'traveler'}! Reminder: Your flight ${offerData.flight_number || ''} to ${offerData.destination || ''} departs tomorrow at ${offerData.departure_time || ''}. Have a great trip! ✈️`;
+    
+    // Use SMSTemplateRenderer for consistent message formatting
+    const templateRenderer = new SMSTemplateRenderer();
+    const message = templateRenderer.renderBookingReminder({
+      firstName: profile.first_name || 'traveler',
+      flightNumber: offerData.flight_number as string || '',
+      destination: offerData.destination as string || '',
+      departureTime: offerData.departure_time as string || '',
+    });
 
-    // TODO: Implement actual Twilio SMS sending here
-    console.log("Would send SMS to:", profile.phone, "Message:", message);
+    try {
+      const smsResult = await twilioService.sendSMS({
+        to: profile.phone,
+        body: message,
+      });
+      console.log("SMS sent successfully:", smsResult);
+    } catch (error) {
+      console.error("Failed to send SMS via Twilio:", error);
+      return new Response(JSON.stringify({ error: "Failed to send SMS" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     // Record notification
     await supabase.from("notifications").insert({
