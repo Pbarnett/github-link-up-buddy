@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Enhanced Amadeus API integration test with CO2 emissions and improved error handling
 // This test demonstrates the improvements you identified in your review
 

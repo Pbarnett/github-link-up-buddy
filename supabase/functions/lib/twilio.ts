@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Twilio SMS Service Integration
  * Provides SMS messaging capabilities for the notification system

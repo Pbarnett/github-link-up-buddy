@@ -1,5 +1,8 @@
 
-import { useState, useEffect } from 'react';
+
+import * as React from 'react';
+const { useState, useEffect } = React;
+
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 

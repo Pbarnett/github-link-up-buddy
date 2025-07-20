@@ -1,10 +1,14 @@
+
 /**
  * Form Section Component
  * 
  * Renders a section of form fields with optional conditional logic
  */
 
-import React from 'react';
+import * as React from 'react';
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -27,7 +31,7 @@ interface FormSectionProps {
   disabled?: boolean;
 }
 
-export const FormSection: React.FC<FormSectionProps> = ({
+export const FormSection: FC<FormSectionProps> = ({
   section,
   sectionIndex,
   formState,

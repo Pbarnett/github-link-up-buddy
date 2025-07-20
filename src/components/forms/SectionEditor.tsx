@@ -1,10 +1,15 @@
+
 /**
  * Section Editor Component
  * 
  * Provides editing interface for form sections and their fields
  */
 
-import React, { useState } from 'react';
+import * as React from 'react';
+const { useState } = React;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
+
 import { Settings, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +35,7 @@ interface SectionEditorProps {
   readonly?: boolean;
 }
 
-export const SectionEditor: React.FC<SectionEditorProps> = ({
+export const SectionEditor: FC<SectionEditorProps> = ({
   section,
   onUpdate,
   onUpdateField,

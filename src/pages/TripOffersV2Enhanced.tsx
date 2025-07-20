@@ -1,4 +1,9 @@
-import React, { useEffect } from 'react';
+
+
+import * as React from 'react';
+const { useEffect, useMemo } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -11,8 +16,7 @@ import { useFilterState } from '@/hooks/useFilterState';
 import { useTripOffersPools } from '@/hooks/useTripOffers';
 import { toast } from '@/components/ui/use-toast';
 
-
-const EmptyStateCard: React.FC = () => (
+const EmptyStateCard: FC = () => (
   <Card className="shadow-lg">
     <CardHeader>
       <CardTitle className="flex items-center">
@@ -29,7 +33,7 @@ const EmptyStateCard: React.FC = () => (
   </Card>
 );
 
-const TripOffersV2Enhanced: React.FC = () => {
+const TripOffersV2Enhanced: FC = () => {
   const { tripId } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
   
@@ -61,7 +65,7 @@ const TripOffersV2Enhanced: React.FC = () => {
   );
 
   // Combine all pool offers
-  const allOffers = React.useMemo(() => {
+  const allOffers = useMemo(() => {
     return [...pool1, ...pool2, ...pool3];
   }, [pool1, pool2, pool3]);
 

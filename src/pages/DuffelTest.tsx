@@ -1,9 +1,13 @@
+
 /**
  * @file Test page for validating Duffel integration components
  * Battle-tested approach: Build and test incrementally
  */
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +24,7 @@ import { DuffelTraveler } from '@/services/api/duffelBookingApi';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
-const DuffelTest: React.FC = () => {
+const DuffelTest: FC = () => {
   // Authentication state
   const [, setUser] = useState<User | null>(null);
   const [, setIsAuthenticating] = useState(false);

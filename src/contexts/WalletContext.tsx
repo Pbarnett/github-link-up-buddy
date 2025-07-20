@@ -1,4 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+
+
+import * as React from 'react';
+import { useState, useEffect, useContext, createContext } from 'react';
+type ReactNode = React.ReactNode;
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   PaymentMethod, 
@@ -10,7 +15,7 @@ import {
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-export function useWallet() {
+export function useWallet(): WalletContextType {
   const context = useContext(WalletContext);
   if (!context) {
     throw new Error('useWallet must be used within a WalletProvider');
@@ -19,7 +24,7 @@ export function useWallet() {
 }
 
 interface WalletProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function WalletProvider({ children }: WalletProviderProps) {
@@ -227,14 +232,29 @@ export function WalletProvider({ children }: WalletProviderProps) {
     };
   }, []);
 
+  // Add payment method - creates setup intent and returns client secret
+  const addPaymentMethod = async (idempotencyKey: string): Promise<string> => {
+    const setupIntent = await createSetupIntent();
+    return setupIntent.client_secret;
+  };
+
+  // Alias for setDefaultPaymentMethod
+  const setDefault = setDefaultPaymentMethod;
+  
+  // Alias for deletePaymentMethod 
+  const removePaymentMethod = deletePaymentMethod;
+
   const value: WalletContextType = {
     paymentMethods,
     loading,
     error,
     refreshPaymentMethods,
     createSetupIntent,
+    addPaymentMethod,
     deletePaymentMethod,
     setDefaultPaymentMethod,
+    setDefault,
+    removePaymentMethod,
     updatePaymentMethodNickname,
   };
 

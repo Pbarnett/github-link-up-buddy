@@ -1,8 +1,15 @@
-import { vi, afterEach, expect } from 'vitest'
-import '@testing-library/jest-dom'
-import { cleanup } from '@testing-library/react'
-import React from 'react'
 
+
+import * as React from 'react';
+const { use } = React;
+type ReactNode = React.ReactNode;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
+import { vi, afterEach, expect } from "vitest";
+import { cleanup } from '@testing-library/react';
+
+// Import testing-library jest-dom for custom matchers
+import '@testing-library/jest-dom';
 // Custom matchers for date testing
 expect.extend({
   toMatchISODate(received: string) {
@@ -225,7 +232,7 @@ vi.mock('@/hooks/useBusinessRules', () => ({
     error: null,
     refetch: vi.fn(),
   })),
-  BusinessRulesProvider: ({ children }: { children: React.ReactNode }) => children,
+  BusinessRulesProvider: ({ children }: { children: ReactNode }) => children,
 }))
 
 // ==============================================================================
@@ -356,7 +363,7 @@ vi.mock('launchdarkly-react-client-sdk', () => {
     setStreaming: vi.fn(),
   };
 
-  const MockLDProvider = ({ children }: { children: React.ReactNode }) => {
+  const MockLDProvider = ({ children }: { children: ReactNode }) => {
     return React.createElement(React.Fragment, {}, children);
   };
 
@@ -366,7 +373,7 @@ vi.mock('launchdarkly-react-client-sdk', () => {
     useFlag: vi.fn((key: string, defaultValue: any) => defaultValue),
     LDProvider: MockLDProvider,
     asyncWithLDProvider: vi.fn().mockResolvedValue(MockLDProvider),
-    withLDProvider: vi.fn((config: any) => (Component: React.ComponentType) => {
+    withLDProvider: vi.fn((config: any) => (Component: ComponentType) => {
       return (props: any) => React.createElement(Component, props);
     }),
   };
@@ -398,7 +405,7 @@ vi.mock('launchdarkly-js-client-sdk', () => ({
 vi.mock('@/lib/launchdarkly/LaunchDarklyProvider', () => {
   const React = require('react');
   return {
-    LaunchDarklyProvider: ({ children }: { children: React.ReactNode }) => {
+    LaunchDarklyProvider: ({ children }: { children: ReactNode }) => {
       return React.createElement(React.Fragment, {}, children);
     },
     useLDClient: vi.fn(() => ({
@@ -428,7 +435,7 @@ vi.mock('@/lib/launchdarkly/DevOverrides', () => {
     },
     useDevFlags: vi.fn(() => ({})),
     useDevFlag: vi.fn((key: string, defaultValue: any) => defaultValue),
-    DevFlagOverrideStatus: ({ children }: { children: React.ReactNode }) => {
+    DevFlagOverrideStatus: ({ children }: { children: ReactNode }) => {
       return React.createElement(React.Fragment, {}, children);
     },
   };
@@ -451,7 +458,7 @@ vi.mock('@/lib/launchdarkly/context-manager', () => ({
 vi.mock('@/lib/launchdarkly/AuthSync', () => {
   const React = require('react');
   return {
-    AuthSync: ({ children }: { children: React.ReactNode }) => {
+    AuthSync: ({ children }: { children: ReactNode }) => {
       return React.createElement(React.Fragment, {}, children);
     },
   };

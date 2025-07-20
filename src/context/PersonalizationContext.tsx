@@ -1,4 +1,9 @@
-import React, { createContext, useContext, useMemo, useCallback } from 'react';
+
+
+import * as React from 'react';
+const { useCallback, useMemo, useContext } = React;
+type ReactNode = React.ReactNode;
+
 import { usePersonalization } from '@/hooks/usePersonalization';
 
 interface PersonalizationData {
@@ -18,7 +23,7 @@ interface PersonalizationContextType {
 const PersonalizationContext = createContext<PersonalizationContextType | null>(null);
 
 export interface PersonalizationProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
   userId?: string;
 }
 

@@ -1,3 +1,4 @@
+
 /**
  * Radix Theme Provider Component
  * 
@@ -13,13 +14,17 @@
  * - Customizable theme configuration
  */
 
-import React from 'react';
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
+
 import { Theme } from '@radix-ui/themes';
 import { useTheme } from 'next-themes';
 import { themeConfig } from '@/lib/theme';
 
 interface RadixThemeProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
   /**
    * Override theme configuration
    */
@@ -34,7 +39,7 @@ interface RadixThemeProviderProps {
  * RadixThemeProvider component that wraps the application with Radix Themes
  * and integrates with next-themes for dark mode support.
  */
-export const RadixThemeProvider: React.FC<RadixThemeProviderProps> = ({
+export const RadixThemeProvider: FC<RadixThemeProviderProps> = ({
   children,
   themeOverride,
   forceAppearance,
@@ -85,7 +90,7 @@ export const useRadixTheme = () => {
 /**
  * Theme toggle component for easy theme switching
  */
-export const ThemeToggle: React.FC<{
+export const ThemeToggle: FC<{
   className?: string;
 }> = ({ className }) => {
   const { theme, setTheme } = useTheme();

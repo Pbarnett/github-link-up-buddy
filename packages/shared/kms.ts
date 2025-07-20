@@ -3,10 +3,18 @@ import { EnhancedAWSClientFactory, Environment } from '../src/lib/aws-sdk-enhanc
 import { EnhancedAWSErrorHandler, ErrorCategory } from '../src/lib/aws-sdk-enhanced/error-handling';
 import { MultiRegionAWSManager } from '../src/lib/aws-sdk-enhanced/multi-region-manager';
 
-// KMS Configuration
-const KMS_KEY_ID = 'parker-kms-key';
+// KMS Configuration - Production Keys from AWS SDK Enhanced Integration
 const KMS_REGION = process.env.AWS_REGION || 'us-east-1';
 const ENVIRONMENT = (process.env.NODE_ENV as Environment) || 'development';
+
+// Production KMS Key Aliases (deployed successfully)
+const KMS_KEYS = {
+  GENERAL: process.env.KMS_GENERAL_ALIAS || 'alias/parker-flight-general-production',
+  PII: process.env.KMS_PII_ALIAS || 'alias/parker-flight-pii-production', 
+  PAYMENT: process.env.KMS_PAYMENT_ALIAS || 'alias/parker-flight-payment-production',
+} as const;
+
+type KMSKeyType = keyof typeof KMS_KEYS;
 
 // Initialize enhanced KMS client with production-grade configuration
 const kmsClient = EnhancedAWSClientFactory.createKMSClient({
@@ -48,8 +56,9 @@ export interface EncryptedPaymentData {
  */
 export async function encryptPaymentData(
   data: PaymentMethodData, 
-  keyId: string = KMS_KEY_ID
+  keyType: KMSKeyType = 'PAYMENT'
 ): Promise<EncryptedPaymentData> {
+  const keyId = KMS_KEYS[keyType];
   try {
     const plaintext = JSON.stringify(data);
     
@@ -58,7 +67,8 @@ export async function encryptPaymentData(
       Plaintext: Buffer.from(plaintext, 'utf8'),
       EncryptionContext: {
         purpose: 'payment-method-data',
-        version: '1',
+        application: 'parker-flight',
+        version: '2', // Version 2 = Enhanced AWS SDK Integration
         timestamp: new Date().toISOString(),
       },
     });
@@ -119,7 +129,8 @@ export async function decryptPaymentData(
       CiphertextBlob: encryptedData,
       EncryptionContext: {
         purpose: 'payment-method-data',
-        version: '1',
+        application: 'parker-flight',
+        version: '2',
       },
     });
 
@@ -172,14 +183,14 @@ export async function decryptPaymentData(
  */
 export async function rotateEncryption(
   oldEncryptedData: Uint8Array,
-  newKeyId: string = KMS_KEY_ID
+  newKeyType: KMSKeyType = 'PAYMENT'
 ): Promise<EncryptedPaymentData> {
   try {
     // Decrypt with old key
     const decryptedData = await decryptPaymentData(oldEncryptedData);
     
     // Re-encrypt with new key
-    return await encryptPaymentData(decryptedData, newKeyId);
+    return await encryptPaymentData(decryptedData, newKeyType);
   } catch (error) {
     console.error('Encryption rotation error:', error);
     throw new Error(`Failed to rotate encryption: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -189,10 +200,10 @@ export async function rotateEncryption(
 /**
  * Validate KMS key accessibility
  */
-export async function validateKMSKey(keyId: string = KMS_KEY_ID): Promise<boolean> {
+export async function validateKMSKey(keyType: KMSKeyType = 'PAYMENT'): Promise<boolean> {
   try {
     const testData = { test: 'validation' };
-    const encrypted = await encryptPaymentData(testData, keyId);
+    const encrypted = await encryptPaymentData(testData, keyType);
     const decrypted = await decryptPaymentData(encrypted.encryptedData);
     
     return JSON.stringify(testData) === JSON.stringify(decrypted);
@@ -208,7 +219,7 @@ export async function validateKMSKey(keyId: string = KMS_KEY_ID): Promise<boolea
 export function createEncryptionAuditLog(
   operation: 'encrypt' | 'decrypt' | 'rotate',
   success: boolean,
-  keyId: string = KMS_KEY_ID,
+  keyId: string,
   metadata?: Record<string, unknown>
 ): Record<string, unknown> {
   return {

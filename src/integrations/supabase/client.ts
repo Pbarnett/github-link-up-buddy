@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../../types/database';
+import type { Database } from './types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Get environment variables with fallbacks for development
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Log for debugging
 console.log('🔍 Supabase client initialization:', {
@@ -61,11 +61,13 @@ const getConnectionConfig = () => {
     },
     realtime: {
       params: {
-        eventsPerSecond: 10,
+        eventsPerSecond: 100,
         log_level: import.meta.env.DEV ? 'info' : 'error',
       },
       heartbeatIntervalMs: 30000,
       reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000),
+      broadcastEnabled: true,
+      presenceEnabled: true,
     },
   };
 };

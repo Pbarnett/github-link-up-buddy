@@ -1,9 +1,12 @@
-import { useState, useDeferredValue, useMemo } from 'react';
+
 
 /**
  * Custom hook that provides deferred search functionality for better performance.
  * Uses React 19's useDeferredValue to defer expensive search operations.
  */
+import * as React from 'react';
+const { useState, useMemo, useDeferredValue } = React;
+
 export function useDeferredSearch<T>(
   items: T[],
   searchFn: (item: T, query: string) => boolean,

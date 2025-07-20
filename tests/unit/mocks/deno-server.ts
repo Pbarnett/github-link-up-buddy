@@ -1,3 +1,4 @@
+import * as React from 'react';
 // src/tests/mocks/deno-server.ts
 // Mock for Deno's HTTP server module
 

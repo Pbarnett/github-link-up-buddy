@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  parker-flight:
+    container_name: parker-flight-dev
+    ports:
+      - "3000:80"  # Development port mapping
+    environment:
+      - NODE_ENV=development
+      - PORT=80
+    labels:
+      - "com.docker.compose.service=parker-flight-dev"
+      - "environment=development"
+      - "version=1.5.0"

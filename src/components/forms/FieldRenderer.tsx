@@ -1,3 +1,4 @@
+
 /**
  * Field Renderer Component
  * 
@@ -5,7 +6,10 @@
  * Supports all field types defined in the dynamic forms system
  */
 
-import React from 'react';
+import * as React from 'react';
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
+
 import { useFormContext } from 'react-hook-form';
 import {
   FormField,
@@ -52,7 +56,7 @@ interface FieldRendererInternalProps extends Omit<FieldRendererProps, 'onChange'
   onChange: (value: unknown) => void;
 }
 
-export const FieldRenderer: React.FC<FieldRendererInternalProps> = ({
+export const FieldRenderer: FC<FieldRendererInternalProps> = ({
   field,
   fieldIndex: _fieldIndex,
   sectionIndex: _sectionIndex,
@@ -158,7 +162,7 @@ interface FieldInputProps {
   error?: string;
 }
 
-const FieldInput: React.FC<FieldInputProps> = ({
+const FieldInput: FC<FieldInputProps> = ({
   field,
   formField,
   value,

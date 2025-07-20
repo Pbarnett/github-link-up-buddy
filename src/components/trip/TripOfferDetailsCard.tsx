@@ -1,4 +1,8 @@
-import React from "react";
+
+
+import * as React from 'react';
+type FC<T = {}> = React.FC<T>;
+
 import {
   Card,
   CardHeader,
@@ -16,7 +20,7 @@ interface TripOfferDetailsCardProps {
   usedRelaxedCriteria: boolean;
 }
 
-const TripOfferDetailsCard: React.FC<TripOfferDetailsCardProps> = ({
+const TripOfferDetailsCard: FC<TripOfferDetailsCardProps> = ({
   tripDetails,
   ignoreFilter,
   usedRelaxedCriteria,

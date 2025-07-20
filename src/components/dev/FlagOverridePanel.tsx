@@ -1,4 +1,9 @@
-import React, { useState, useEffect } from 'react';
+
+
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,7 +81,7 @@ interface FlagOverridePanelProps {
   className?: string;
 }
 
-export const FlagOverridePanel: React.FC<FlagOverridePanelProps> = ({ className }) => {
+export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [overrides, setOverrides] = useState<FlagOverride[]>([]);
   const [newFlagKey, setNewFlagKey] = useState('');

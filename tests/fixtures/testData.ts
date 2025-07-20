@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Test data fixtures for consistent data management across E2E tests
 export const testData = {
   flights: {

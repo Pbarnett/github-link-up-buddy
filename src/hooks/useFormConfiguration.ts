@@ -1,10 +1,14 @@
+
+
 /**
  * useFormConfiguration Hook
  * 
  * Manages loading, caching, and updating of form configurations
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
+const { useState, useEffect, useCallback } = React;
+
 import { formConfigService } from '@/services/form-config.service';
 import type {
   FormConfiguration,

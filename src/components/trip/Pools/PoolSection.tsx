@@ -1,5 +1,9 @@
 
-import React from 'react';
+
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+type FC<T = {}> = React.FC<T>;
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import PoolHeader from './PoolHeader';
 
@@ -7,10 +11,10 @@ interface PoolSectionProps {
   name: string;
   count: number;
   defaultOpen?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-const PoolSection: React.FC<PoolSectionProps> = ({
+const PoolSection: FC<PoolSectionProps> = ({
   name,
   count,
   defaultOpen = false,

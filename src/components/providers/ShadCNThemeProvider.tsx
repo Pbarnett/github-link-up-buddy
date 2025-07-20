@@ -1,3 +1,4 @@
+
 /**
  * ShadCN Theme Provider Component
  * 
@@ -13,13 +14,16 @@
  * - CSS variable theming support
  */
 
-import React from 'react'
-import { createContext, useContext, useEffect, useState } from 'react'
+import * as React from 'react';
+const { useState, useEffect, useContext } = React;
+type ReactNode = React.ReactNode;
+type FC<T = {}> = React.FC<T>;
+type Component<P = {}, S = {}> = React.Component<P, S>;
 
 type Theme = 'dark' | 'light' | 'system'
 
 type ThemeProviderProps = {
-  children: React.ReactNode
+  children: ReactNode
   defaultTheme?: Theme
   storageKey?: string
 }
@@ -96,7 +100,7 @@ interface ModeToggleProps {
   className?: string
 }
 
-export const ModeToggle: React.FC<ModeToggleProps> = ({ className }) => {
+export const ModeToggle: FC<ModeToggleProps> = ({ className }) => {
   const { theme, setTheme } = useShadCNTheme()
 
   const toggleTheme = () => {

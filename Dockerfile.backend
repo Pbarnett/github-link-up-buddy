@@ -48,19 +48,11 @@ RUN pnpm install --prod --frozen-lockfile && \
     pnpm store prune && \
     npm cache clean --force
 
-# Copy enhanced AWS SDK modules
-COPY --from=builder --chown=nodejs:nodejs /app/src/lib/aws-sdk-enhanced ./src/lib/aws-sdk-enhanced
-COPY --from=builder --chown=nodejs:nodejs /app/packages ./packages
-COPY --from=builder --chown=nodejs:nodejs /app/supabase ./supabase
+# Copy essential application files from builder
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nodejs:nodejs /app/scripts/docker-deploy.cjs ./scripts/docker-deploy.cjs
 COPY --from=builder --chown=nodejs:nodejs /app/config ./config
-COPY --from=builder --chown=nodejs:nodejs /app/scripts ./scripts
-COPY --from=builder --chown=nodejs:nodejs /app/docs ./docs
-
-# Copy deployment files
-COPY --chown=nodejs:nodejs deployment ./deployment
-
-# Copy tests for validation
-COPY --from=builder --chown=nodejs:nodejs /app/tests ./tests
+COPY --from=builder --chown=nodejs:nodejs /app/deployment ./deployment
 
 # Set ownership and permissions
 RUN chown -R nodejs:nodejs /app && \
@@ -75,10 +67,9 @@ USER nodejs
 # Expose port (configurable via environment)
 EXPOSE ${PORT:-3000}
 
-# Health check for KMS connectivity
+# Health check - simple curl to port
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('./config/aws-sdk-enhanced.config.js').validate().isValid ? process.exit(0) : process.exit(1)" || \
-      curl -f http://localhost:${PORT:-3000}/health || exit 1
+  CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
 
 # Set environment variables
 ENV NODE_ENV=production \
@@ -90,8 +81,8 @@ ENV NODE_ENV=production \
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Default command - run the enhanced AWS SDK deployment validation
-CMD ["node", "scripts/deploy-enhanced-aws-sdk.cjs", "validate"]
+# Default command - run the docker deployment script
+CMD ["node", "scripts/docker-deploy.cjs", "start"]
 
 # Labels for metadata
 LABEL maintainer="Parker Flight Team" \

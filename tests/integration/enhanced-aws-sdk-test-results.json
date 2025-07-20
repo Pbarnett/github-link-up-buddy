@@ -1,8 +1,8 @@
 {
   "testRun": {
-    "timestamp": "2025-07-20T04:05:30.145Z",
-    "duration": 5,
-    "environment": "test",
+    "timestamp": "2025-07-20T20:23:38.187Z",
+    "duration": 199,
+    "environment": "production",
     "nodeVersion": "v23.11.0",
     "platform": "darwin"
   },
@@ -14,13 +14,13 @@
   },
   "details": [
     {
-      "timestamp": "2025-07-20T04:05:30.116Z",
+      "timestamp": "2025-07-20T20:23:37.424Z",
       "level": "info",
       "message": "Starting Enhanced AWS SDK Integration Tests",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.139Z",
+      "timestamp": "2025-07-20T20:23:37.981Z",
       "level": "info",
       "message": "Test Configuration",
       "data": {
@@ -39,7 +39,7 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.139Z",
+      "timestamp": "2025-07-20T20:23:38.012Z",
       "level": "info",
       "message": "Client factory module found",
       "data": {
@@ -47,13 +47,13 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.139Z",
+      "timestamp": "2025-07-20T20:23:38.016Z",
       "level": "info",
       "message": "Testing client factory for environment: development",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.139Z",
+      "timestamp": "2025-07-20T20:23:38.017Z",
       "level": "info",
       "message": "Mock client configuration for development",
       "data": {
@@ -67,13 +67,13 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.140Z",
+      "timestamp": "2025-07-20T20:23:38.017Z",
       "level": "info",
       "message": "Testing client factory for environment: staging",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.140Z",
+      "timestamp": "2025-07-20T20:23:38.141Z",
       "level": "info",
       "message": "Mock client configuration for staging",
       "data": {
@@ -87,13 +87,13 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.140Z",
+      "timestamp": "2025-07-20T20:23:38.166Z",
       "level": "info",
       "message": "Testing client factory for environment: production",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.140Z",
+      "timestamp": "2025-07-20T20:23:38.167Z",
       "level": "info",
       "message": "Mock client configuration for production",
       "data": {
@@ -107,13 +107,13 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.141Z",
+      "timestamp": "2025-07-20T20:23:38.169Z",
       "level": "info",
-      "message": "✅ Enhanced Client Factory PASSED (1ms)",
+      "message": "✅ Enhanced Client Factory PASSED (157ms)",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.142Z",
+      "timestamp": "2025-07-20T20:23:38.170Z",
       "level": "info",
       "message": "Error handling module found",
       "data": {
@@ -121,7 +121,7 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.142Z",
+      "timestamp": "2025-07-20T20:23:38.171Z",
       "level": "info",
       "message": "Testing error categorization for DisabledException",
       "data": {
@@ -131,7 +131,7 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.142Z",
+      "timestamp": "2025-07-20T20:23:38.171Z",
       "level": "info",
       "message": "Testing error categorization for KeyUnavailableException",
       "data": {
@@ -141,7 +141,7 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.142Z",
+      "timestamp": "2025-07-20T20:23:38.171Z",
       "level": "info",
       "message": "Testing error categorization for LimitExceededException",
       "data": {
@@ -151,7 +151,7 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.142Z",
+      "timestamp": "2025-07-20T20:23:38.171Z",
       "level": "info",
       "message": "Testing error categorization for ValidationException",
       "data": {
@@ -161,13 +161,13 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.142Z",
+      "timestamp": "2025-07-20T20:23:38.171Z",
       "level": "info",
-      "message": "✅ Enhanced Error Handling PASSED (0ms)",
+      "message": "✅ Enhanced Error Handling PASSED (1ms)",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.142Z",
+      "timestamp": "2025-07-20T20:23:38.172Z",
       "level": "info",
       "message": "Multi-region manager module found",
       "data": {
@@ -175,7 +175,7 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.142Z",
+      "timestamp": "2025-07-20T20:23:38.172Z",
       "level": "info",
       "message": "Mock multi-region configuration",
       "data": {
@@ -191,17 +191,17 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.142Z",
+      "timestamp": "2025-07-20T20:23:38.172Z",
       "level": "info",
       "message": "Simulating health check for region: us-east-1",
       "data": {
         "region": "us-east-1",
         "healthy": true,
-        "latency": 147
+        "latency": 92
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.142Z",
+      "timestamp": "2025-07-20T20:23:38.173Z",
       "level": "info",
       "message": "Simulating health check for region: us-west-2",
       "data": {
@@ -211,23 +211,23 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.142Z",
+      "timestamp": "2025-07-20T20:23:38.173Z",
       "level": "info",
       "message": "Simulating health check for region: eu-west-1",
       "data": {
         "region": "eu-west-1",
         "healthy": true,
-        "latency": 122
+        "latency": 70
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.142Z",
+      "timestamp": "2025-07-20T20:23:38.173Z",
       "level": "info",
-      "message": "✅ Multi-Region Manager PASSED (0ms)",
+      "message": "✅ Multi-Region Manager PASSED (1ms)",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.143Z",
+      "timestamp": "2025-07-20T20:23:38.174Z",
       "level": "info",
       "message": "KMS modules found and integrated",
       "data": {
@@ -236,25 +236,26 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.143Z",
+      "timestamp": "2025-07-20T20:23:38.174Z",
       "level": "info",
       "message": "Enhanced AWS SDK integration verified in shared KMS module",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.143Z",
+      "timestamp": "2025-07-20T20:23:38.174Z",
       "level": "info",
-      "message": "✅ KMS Module Integration PASSED (0ms)",
+      "message": "✅ KMS Module Integration PASSED (1ms)",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.143Z",
+      "timestamp": "2025-07-20T20:23:38.175Z",
       "level": "info",
       "message": "Environment variable check",
       "data": {
-        "present": [],
+        "present": [
+          "AWS_REGION"
+        ],
         "missing": [
-          "AWS_REGION",
           "AWS_ACCESS_KEY_ID",
           "AWS_SECRET_ACCESS_KEY"
         ],
@@ -262,7 +263,7 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.143Z",
+      "timestamp": "2025-07-20T20:23:38.176Z",
       "level": "info",
       "message": "Configuration file check: package.json",
       "data": {
@@ -271,7 +272,7 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.143Z",
+      "timestamp": "2025-07-20T20:23:38.183Z",
       "level": "info",
       "message": "Configuration file check: tsconfig.json",
       "data": {
@@ -280,78 +281,78 @@
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.143Z",
+      "timestamp": "2025-07-20T20:23:38.183Z",
       "level": "info",
-      "message": "✅ Configuration Validation PASSED (0ms)",
+      "message": "✅ Configuration Validation PASSED (8ms)",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.144Z",
+      "timestamp": "2025-07-20T20:23:38.186Z",
       "level": "info",
       "message": "Performance metrics collected",
       "data": {
-        "clientInitialization": 64,
-        "errorHandlingOverhead": 11,
-        "multiRegionFailoverTime": 549,
+        "clientInitialization": 54,
+        "errorHandlingOverhead": 8,
+        "multiRegionFailoverTime": 271,
         "memoryUsage": {
-          "rss": 27107328,
+          "rss": 27656192,
           "heapTotal": 6033408,
-          "heapUsed": 4440576,
+          "heapUsed": 4447240,
           "external": 1454463,
           "arrayBuffers": 10515
         },
         "cpuUsage": {
-          "user": 65549,
-          "system": 51073
+          "user": 244740,
+          "system": 146971
         }
       }
     },
     {
-      "timestamp": "2025-07-20T04:05:30.144Z",
+      "timestamp": "2025-07-20T20:23:38.186Z",
       "level": "info",
       "message": "All performance metrics within acceptable thresholds",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.144Z",
+      "timestamp": "2025-07-20T20:23:38.186Z",
       "level": "info",
-      "message": "✅ Performance Metrics PASSED (0ms)",
+      "message": "✅ Performance Metrics PASSED (2ms)",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.145Z",
+      "timestamp": "2025-07-20T20:23:38.189Z",
       "level": "info",
       "message": "=== TEST SUMMARY ===",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.145Z",
+      "timestamp": "2025-07-20T20:23:38.189Z",
       "level": "info",
       "message": "Total Tests: 6",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.145Z",
+      "timestamp": "2025-07-20T20:23:38.189Z",
       "level": "info",
       "message": "Passed: 6",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.145Z",
+      "timestamp": "2025-07-20T20:23:38.189Z",
       "level": "info",
       "message": "Failed: 0",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.145Z",
+      "timestamp": "2025-07-20T20:23:38.189Z",
       "level": "info",
       "message": "Success Rate: 100.00%",
       "data": null
     },
     {
-      "timestamp": "2025-07-20T04:05:30.145Z",
+      "timestamp": "2025-07-20T20:23:38.189Z",
       "level": "info",
-      "message": "Total Duration: 5ms",
+      "message": "Total Duration: 199ms",
       "data": null
     }
   ]

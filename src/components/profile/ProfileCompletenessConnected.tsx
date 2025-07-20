@@ -1,4 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+
+
+import * as React from 'react';
+const { useState, useEffect, useCallback } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { useUser } from '@supabase/auth-helpers-react';
 import { DatabaseOperations } from '@/lib/supabase/database-operations';
 import { ProfileCompletenessIndicator, ProfileCompletenessData, ProfileField } from './ProfileCompletenessIndicator';
@@ -122,7 +127,7 @@ const FIELD_METADATA: Record<string, {
   }
 };
 
-export const ProfileCompletenessConnected: React.FC<ProfileCompletenessConnectedProps> = ({
+export const ProfileCompletenessConnected: FC<ProfileCompletenessConnectedProps> = ({
   onFieldClick,
   showFieldList = true,
   compact = false,

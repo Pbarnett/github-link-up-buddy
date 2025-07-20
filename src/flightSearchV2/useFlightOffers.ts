@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
+
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getFlightOffers } from '@/serverActions/getFlightOffers';
 import { mapFlightOfferDbRowToV2 } from './utils/mapFlightOfferDbRowToV2';

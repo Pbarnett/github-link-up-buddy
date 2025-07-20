@@ -1,10 +1,14 @@
+
 /**
  * Form Analytics Dashboard
  * 
  * Displays comprehensive analytics for dynamic forms
  */
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +44,7 @@ interface FormAnalyticsOverview {
   avgCompletionTime: number;
 }
 
-export const FormAnalyticsDashboard: React.FC = () => {
+export const FormAnalyticsDashboard: FC = () => {
   const [analytics, setAnalytics] = useState<FormAnalytics[]>([]);
   const [overview, setOverview] = useState<FormAnalyticsOverview | null>(null);
   const [loading, setLoading] = useState(true);

@@ -1,5 +1,8 @@
 
-import React from 'react';
+
+import * as React from 'react';
+const { use } = React;
+
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
@@ -64,9 +67,7 @@ describe('TripConfirm Page', () => {
 
     render(
 
-
       <MemoryRouter initialEntries={['/trip/confirm?id=offer-for-auto-book&airline=AA&flight_number=123&price=500&departure_date=2024-01-01&departure_time=10:00&return_date=2024-01-05&return_time=12:00&duration=PT2H']}>
-
 
         <Routes>
           <Route path="/trip/confirm" element={<TripConfirm />} />
@@ -102,9 +103,7 @@ describe('TripConfirm Page', () => {
 
     render(
 
-
       <MemoryRouter initialEntries={['/trip/confirm?id=offer-for-manual-book&airline=BB&flight_number=456&price=600&departure_date=2024-02-01&departure_time=11:00&return_date=2024-02-05&return_time=13:00&duration=PT3H']}>
-
 
         <Routes>
           <Route path="/trip/confirm" element={<TripConfirm />} />

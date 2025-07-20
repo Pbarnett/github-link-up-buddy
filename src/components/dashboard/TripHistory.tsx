@@ -1,4 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
+
+
+import * as React from 'react';
+const { useState, useEffect, useCallback } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,7 +16,7 @@ interface TripHistoryProps {
   userId: string;
 }
 
-const TripHistory: React.FC<TripHistoryProps> = ({ userId }) => {
+const TripHistory: FC<TripHistoryProps> = ({ userId }) => {
   const [tripHistory, setTripHistory] = useState<Array<{
     id: string;
     trip_request_id: string;

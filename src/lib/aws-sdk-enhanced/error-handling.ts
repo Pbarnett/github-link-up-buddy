@@ -58,6 +58,16 @@ import {
   LimitExceededException as CloudWatchLimitExceeded,
 } from '@aws-sdk/client-cloudwatch';
 
+import {
+  SecretsManagerServiceException,
+  ResourceNotFoundException as SecretsManagerResourceNotFound,
+  InvalidParameterException,
+  InvalidRequestException,
+  DecryptionFailureException,
+  InternalServiceErrorException,
+  LimitExceededException as SecretsManagerLimitExceeded,
+} from '@aws-sdk/client-secrets-manager';
+
 // Enhanced error types for application-level handling
 export enum ErrorCategory {
   AUTHENTICATION = 'AUTHENTICATION',
@@ -144,6 +154,8 @@ export class EnhancedAWSErrorHandler {
         return this.analyzeSTSError(error, enhancedError);
       case 'cloudwatch':
         return this.analyzeCloudWatchError(error, enhancedError);
+      case 'secretsmanager':
+        return this.analyzeSecretsManagerError(error, enhancedError);
       default:
         return this.analyzeGenericAWSError(error, enhancedError);
     }
@@ -455,6 +467,121 @@ export class EnhancedAWSErrorHandler {
   }
 
   /**
+   * Secrets Manager-specific error analysis
+   */
+  private static analyzeSecretsManagerError(error: Error, base: EnhancedError): EnhancedError {
+    if (error instanceof SecretsManagerResourceNotFound) {
+      return {
+        ...base,
+        category: ErrorCategory.NOT_FOUND,
+        code: 'SECRETS_MANAGER_SECRET_NOT_FOUND',
+        message: 'The specified secret was not found',
+        retryable: false,
+        statusCode: 404,
+        suggestions: [
+          'Verify the secret name or ARN is correct',
+          'Check if the secret exists in the correct region',
+          'Ensure you have permission to access the secret',
+        ],
+      };
+    }
+
+    if (error instanceof InvalidParameterException) {
+      return {
+        ...base,
+        category: ErrorCategory.VALIDATION,
+        code: 'SECRETS_MANAGER_INVALID_PARAMETER',
+        message: 'Invalid parameter provided to Secrets Manager',
+        retryable: false,
+        statusCode: 400,
+        suggestions: [
+          'Review the API documentation for valid parameter values',
+          'Check secret name format and constraints',
+        ],
+      };
+    }
+
+    if (error instanceof InvalidRequestException) {
+      return {
+        ...base,
+        category: ErrorCategory.VALIDATION,
+        code: 'SECRETS_MANAGER_INVALID_REQUEST',
+        message: 'Invalid request to Secrets Manager',
+        retryable: false,
+        statusCode: 400,
+        suggestions: [
+          'Review request format and required parameters',
+          'Check API documentation for correct usage',
+        ],
+      };
+    }
+
+    if (error instanceof DecryptionFailureException) {
+      return {
+        ...base,
+        category: ErrorCategory.AUTHORIZATION,
+        code: 'SECRETS_MANAGER_DECRYPTION_FAILED',
+        message: 'Failed to decrypt secret value',
+        retryable: false,
+        statusCode: 403,
+        suggestions: [
+          'Verify IAM permissions for secretsmanager:GetSecretValue',
+          'Check if the KMS key used for encryption is accessible',
+          'Ensure the secret is not corrupted',
+        ],
+      };
+    }
+
+    if (error instanceof InternalServiceErrorException) {
+      return {
+        ...base,
+        category: ErrorCategory.SERVICE_UNAVAILABLE,
+        code: 'SECRETS_MANAGER_INTERNAL_ERROR',
+        message: 'AWS Secrets Manager internal error',
+        retryable: true,
+        statusCode: 500,
+        suggestions: [
+          'Retry the operation with exponential backoff',
+          'Check AWS service health dashboard',
+        ],
+      };
+    }
+
+    if (error instanceof SecretsManagerLimitExceeded) {
+      return {
+        ...base,
+        category: ErrorCategory.RATE_LIMIT,
+        code: 'SECRETS_MANAGER_RATE_LIMIT',
+        message: 'Secrets Manager rate limit exceeded',
+        retryable: true,
+        statusCode: 429,
+        suggestions: [
+          'Implement exponential backoff with jitter',
+          'Review service quotas and request limits',
+          'Consider caching secret values where appropriate',
+        ],
+      };
+    }
+
+    if (error instanceof SecretsManagerServiceException) {
+      return {
+        ...base,
+        category: ErrorCategory.SERVICE_UNAVAILABLE,
+        code: 'SECRETS_MANAGER_SERVICE_ERROR',
+        message: `Secrets Manager service error: ${error.message}`,
+        retryable: true,
+        statusCode: 500,
+        suggestions: [
+          'Retry the operation with exponential backoff',
+          'Check AWS service health dashboard',
+        ],
+      };
+    }
+
+    return base;
+  }
+
+  /**
    * Generic AWS error analysis
    */
   private static analyzeGenericAWSError(error: Error, base: EnhancedError): EnhancedError {
@@ -632,6 +759,9 @@ export const withS3ErrorHandling = <T>(operation: () => Promise<T>, operationNam
 
 export const withDynamoDBErrorHandling = <T>(operation: () => Promise<T>, operationName?: string) =>
   EnhancedAWSErrorHandler.executeWithRetry(operation, 'dynamodb', operationName);
+
+export const withSecretsManagerErrorHandling = <T>(operation: () => Promise<T>, operationName?: string) =>
+  EnhancedAWSErrorHandler.executeWithRetry(operation, 'secretsmanager', operationName);
 
 // Export types for external use
 export type { EnhancedError, RetryConfig };

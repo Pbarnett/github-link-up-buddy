@@ -1,4 +1,8 @@
-import React from 'react';
+
+
+import * as React from 'react';
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import { GreetingBanner } from '@/components/personalization/GreetingBanner';

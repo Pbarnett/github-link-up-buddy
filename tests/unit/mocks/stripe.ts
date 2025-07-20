@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Mock Stripe for testing
 export default class Stripe {
   customers = {

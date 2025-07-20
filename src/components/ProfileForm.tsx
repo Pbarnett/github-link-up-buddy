@@ -1,13 +1,30 @@
 
-import React, { useState } from "react";
+
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FormEvent = React.FormEvent;
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/hooks/useProfile";
+import { useProfileKMS } from "@/hooks/useProfileKMS";
+import { useState as reactUseState } from 'react';
 
-export function ProfileForm() {
-  const { profile, isLoading, updateProfile, isUpdating } = useProfile();
+interface ProfileFormProps {
+  useKMS?: boolean;
+}
+
+export function ProfileForm({ useKMS = false }: ProfileFormProps = {}) {
+  const legacyProfile = useProfile();
+  const kmsProfile = useProfileKMS();
+  
+  // Choose which profile service to use
+  const { profile, isLoading, updateProfile, isUpdating, error } = useKMS ? kmsProfile : legacyProfile;
+  const [encryptionEnabled] = reactUseState(useKMS);
+  
+  console.log(`ProfileForm: Using ${useKMS ? 'KMS-encrypted' : 'legacy'} profile service`);
   
   const [formData, setFormData] = useState({
     first_name: profile?.first_name || "",
@@ -16,7 +33,7 @@ export function ProfileForm() {
   });
 
   // Update form data when profile loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (profile) {
       setFormData({
         first_name: profile.first_name || "",
@@ -26,7 +43,7 @@ export function ProfileForm() {
     }
   }, [profile]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     updateProfile(formData);
   };
@@ -48,9 +65,21 @@ export function ProfileForm() {
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
-        <CardTitle>Profile Information</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Profile Information
+          {encryptionEnabled && (
+            <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">
+              🔐 Encrypted
+            </span>
+          )}
+        </CardTitle>
         <CardDescription>
           Manage your personal information. Your phone number is required for SMS notifications about your flight bookings.
+          {encryptionEnabled && (
+            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+              <strong>🔐 Enhanced Security:</strong> Your sensitive data is encrypted using AWS KMS.
+            </div>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>

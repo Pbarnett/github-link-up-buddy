@@ -1,5 +1,4 @@
 
-import React from "react";
 import { useSearchParams, useLocation } from "react-router-dom";
 import PoolLayout from "@/components/trip/Pools/PoolLayout";
 import PoolOfferControls from "@/components/trip/PoolOfferControls";

@@ -1,3 +1,4 @@
+
 /**
  * Dynamic Field Renderer
  * 
@@ -5,7 +6,10 @@
  * Supports all field types and handles conditional logic
  */
 
-import React, { useMemo, useCallback } from 'react';
+import * as React from 'react';
+const { useCallback, useMemo } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { useFormContext } from 'react-hook-form';
 import {
   FormField,
@@ -68,7 +72,7 @@ export interface DynamicFieldRendererProps {
   className?: string;
 }
 
-export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
+export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
   field,
   value,
   onChange,
@@ -495,7 +499,7 @@ interface SelectOption {
   disabled?: boolean;
 }
 
-const MultiSelectField: React.FC<{
+const MultiSelectField: FC<{
   options: SelectOption[];
   value: unknown[];
   onChange: (value: unknown[]) => void;
@@ -563,7 +567,7 @@ const MultiSelectField: React.FC<{
 };
 
 // File upload field component (placeholder)
-const FileUploadField: React.FC<{
+const FileUploadField: FC<{
   value?: FileList | null;
   onChange: (value: FileList | null) => void;
   disabled?: boolean;
@@ -594,7 +598,7 @@ const FileUploadField: React.FC<{
 };
 
 // Rating field component (placeholder)
-const RatingField: React.FC<{
+const RatingField: FC<{
   value?: number;
   onChange: (value: number) => void;
   disabled?: boolean;

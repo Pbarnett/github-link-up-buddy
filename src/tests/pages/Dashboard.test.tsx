@@ -1,4 +1,8 @@
-import React from 'react';
+
+
+import * as React from 'react';
+const { use } = React;
+
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
@@ -76,7 +80,6 @@ vi.mock('react-router-dom', async () => {
     useNavigate: () => mockNavigateFn,
   };
 });
-
 
 // --- Test Data ---
 const mockUser = { id: 'user-123', email: 'test@example.com' };

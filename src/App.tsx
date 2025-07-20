@@ -1,4 +1,9 @@
 
+
+import * as React from 'react';
+const { useEffect } = React;
+type ReactNode = React.ReactNode;
+
 import RadixThemeProvider from "./components/providers/RadixThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,7 +11,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { SmartErrorBoundary } from "@/components/ErrorBoundary";
 import { useRetryQueue } from "@/utils/retryQueue";
-import { useEffect } from "react";
 import { BusinessRulesProvider } from "./hooks/useBusinessRules";
 import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
 import { WalletProvider } from "@/contexts/WalletContext";
@@ -68,7 +72,7 @@ const BreadcrumbsWrapper = () => {
 };
 
 // Global middleware component
-const GlobalMiddleware = ({ children }: { children: React.ReactNode }) => {
+const GlobalMiddleware = ({ children }: { children: ReactNode }) => {
   // Initialize retry queue
   useRetryQueue();
   
@@ -81,7 +85,7 @@ const GlobalMiddleware = ({ children }: { children: React.ReactNode }) => {
 };
 
 // Personalization wrapper to provide user context
-const PersonalizationWrapper = ({ children }: { children: React.ReactNode }) => {
+const PersonalizationWrapper = ({ children }: { children: ReactNode }) => {
   const { userId } = useCurrentUser();
   
   return (

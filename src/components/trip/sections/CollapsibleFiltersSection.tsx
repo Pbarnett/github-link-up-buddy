@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import * as React from 'react';
+const { useState } = React;
+
 import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FilterTogglesSection from './FilterTogglesSection';

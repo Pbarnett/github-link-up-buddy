@@ -1,4 +1,9 @@
-import React, { useState, useEffect } from 'react';
+
+
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
 
 interface VerificationSession {
@@ -35,7 +40,7 @@ interface IdentityVerificationProps {
   className?: string;
 }
 
-const IdentityVerification: React.FC<IdentityVerificationProps> = ({
+const IdentityVerification: FC<IdentityVerificationProps> = ({
   purpose = 'identity_document',
   high_value_booking = false,
   campaign_id,

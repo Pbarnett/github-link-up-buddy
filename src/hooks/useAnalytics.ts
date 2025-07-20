@@ -1,6 +1,9 @@
-import { useEffect, useRef } from 'react';
+
 
 // Analytics event types for the trip/new page optimization
+import * as React from 'react';
+const { useEffect, useRef } = React;
+
 export interface CTAClickEvent {
   type: 'auto' | 'manual';
   cardPosition: 'left' | 'right';

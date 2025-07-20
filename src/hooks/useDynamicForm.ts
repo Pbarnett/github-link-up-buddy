@@ -1,3 +1,4 @@
+
 /**
  * useDynamicForm Hook
  * 
@@ -9,7 +10,10 @@
  * - Analytics and performance tracking
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import * as React from 'react';
+const { useState, useEffect, useCallback, useMemo } = React;
+type FormEvent = React.FormEvent;
+
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { 

@@ -1,10 +1,14 @@
+
+
 /**
  * useFormState Hook
  * 
  * Manages form state, validation, and conditional logic evaluation
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import * as React from 'react';
+const { useState, useEffect, useCallback, useMemo } = React;
+
 import { UseFormReturn } from 'react-hook-form';
 import type {
   FormConfiguration,

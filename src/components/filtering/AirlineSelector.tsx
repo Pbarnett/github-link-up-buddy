@@ -1,3 +1,4 @@
+
 /**
  * AirlineSelector Component - Phase 4.1
  * 
@@ -5,7 +6,11 @@
  * Displays airline logos, names, and allows easy selection/deselection.
  */
 
-import React, { useState, useMemo } from 'react';
+import * as React from 'react';
+const { useState, useMemo } = React;
+type FC<T = {}> = React.FC<T>;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -56,7 +61,7 @@ const COMMON_AIRLINES: Airline[] = [
   { code: 'OS', name: 'Austrian Airlines', country: 'AT' },
 ];
 
-const AirlineSelector: React.FC<AirlineSelectorProps> = ({
+const AirlineSelector: FC<AirlineSelectorProps> = ({
   selectedAirlines,
   onSelectionChange,
   availableAirlines = COMMON_AIRLINES,

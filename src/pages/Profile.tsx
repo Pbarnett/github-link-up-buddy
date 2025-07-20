@@ -1,4 +1,9 @@
 
+
+import * as React from 'react';
+const { useState, useMemo, use } = React;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import AuthGuard from "@/components/AuthGuard";
 import { ProfileForm } from "@/components/ProfileForm";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
@@ -6,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTravelerProfile } from "@/hooks/useTravelerProfile";
 import { SimpleProfileStatus } from "@/components/profile/SimpleProfileStatus";
 import { toast } from "@/hooks/use-toast";
-import { useState, useMemo } from "react";
+
 import { ProfileCompletenessScore, ProfileRecommendation } from "@/services/profileCompletenessService";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { ProfileV2 } from "@/components/profile/ProfileV2";
@@ -357,7 +362,7 @@ function LegacyProfilePage() {
                 onActionClick={handleActionClick}
                 className="mb-6"
               />
-              <ProfileForm />
+              <ProfileForm useKMS={true} />
             </TabsContent>
             
             <TabsContent value="notifications" className="space-y-6">

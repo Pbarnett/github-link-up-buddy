@@ -1,8 +1,12 @@
-import React from 'react';
+
+
+import * as React from 'react';
+type FC<T = {}> = React.FC<T>;
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton'; // Assuming you have a Skeleton component
 
-const TripOffersV2Skeleton: React.FC = () => {
+const TripOffersV2Skeleton: FC = () => {
   return (
     <div className="container mx-auto p-4">
       <Card>

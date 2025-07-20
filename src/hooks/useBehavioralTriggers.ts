@@ -1,4 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+
+
+import * as React from 'react';
+const { useState, useEffect, useRef } = React;
 
 interface BehavioralState {
   mouseHoverTime: number;

@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Production-Ready Duffel Service
  * 

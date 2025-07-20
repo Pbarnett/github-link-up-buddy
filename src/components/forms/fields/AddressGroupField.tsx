@@ -1,10 +1,14 @@
+
 /**
  * Address Group Field Component
  * 
  * Renders a grouped address input with multiple fields
  */
 
-import React from 'react';
+import * as React from 'react';
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
+
 import { MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -27,7 +31,7 @@ interface AddressGroupFieldProps {
   className?: string;
 }
 
-export const AddressGroupField: React.FC<AddressGroupFieldProps> = ({
+export const AddressGroupField: FC<AddressGroupFieldProps> = ({
   value = {
     street: '',
     city: '',

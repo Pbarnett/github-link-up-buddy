@@ -1,9 +1,12 @@
 #!/bin/bash
 
-# Deployment script for Parker Flight application
-# This script handles production deployment with zero-downtime updates
+# =============================================================================
+# Parker Flight - Enhanced Docker Deployment Script
+# Production deployment with TypeScript validation, comprehensive monitoring,
+# zero-downtime updates, and robust error handling
+# =============================================================================
 
-set -e  # Exit on any error
+set -euo pipefail  # Exit on error, undefined vars, and pipe failures
 
 # Colors for output
 RED='\033[0;31m'
@@ -13,136 +16,375 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 COMPOSE_FILE="docker-compose.yml"
 PROJECT_NAME="parker-flight"
 BACKUP_DIR="./backups"
+LOG_FILE="deployment.log"
+ENV_FILE=".env.production"
 
-echo -e "${GREEN}🚀 Parker Flight Deployment Script${NC}"
-echo -e "${BLUE}=================================${NC}"
+# Default options
+SKIP_TYPESCRIPT_CHECK=false
+SKIP_HEALTHCHECK=false
+ENABLE_MONITORING=false
+VERBOSE=false
+FORCE_REBUILD=false
+CLEANUP_OLD_IMAGES=true
 
+# Enhanced logging function
+log() {
+    local level=$1
+    shift
+    local message="$*"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    case $level in
+        "INFO")  echo -e "${GREEN}[INFO]${NC}  $timestamp - $message" | tee -a "$LOG_FILE" ;;
+        "WARN")  echo -e "${YELLOW}[WARN]${NC}  $timestamp - $message" | tee -a "$LOG_FILE" ;;
+        "ERROR") echo -e "${RED}[ERROR]${NC} $timestamp - $message" | tee -a "$LOG_FILE" ;;
+        "DEBUG") echo -e "${BLUE}[DEBUG]${NC} $timestamp - $message" | tee -a "$LOG_FILE" ;;
+    esac
+}
+
+# Parse command line arguments
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --skip-typescript)
+                SKIP_TYPESCRIPT_CHECK=true
+                shift
+                ;;
+            --skip-healthcheck)
+                SKIP_HEALTHCHECK=true
+                shift
+                ;;
+            --enable-monitoring)
+                ENABLE_MONITORING=true
+                shift
+                ;;
+            --verbose)
+                VERBOSE=true
+                set -x
+                shift
+                ;;
+            --force-rebuild)
+                FORCE_REBUILD=true
+                shift
+                ;;
+            --no-cleanup)
+                CLEANUP_OLD_IMAGES=false
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            deploy|rollback|status|logs|stop|restart|validate)
+                # Valid commands, continue
+                break
+                ;;
+            *)
+                log ERROR "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# Help function
+show_help() {
+    cat << EOF
+Parker Flight Docker Deployment Script
+
+Usage: $0 [OPTIONS] [COMMAND]
+
+COMMANDS:
+    deploy      Deploy the application (default)
+    rollback    Rollback to previous version
+    status      Show current status
+    logs        Show application logs
+    stop        Stop the application
+    restart     Restart the application
+    validate    Validate TypeScript and configuration
+
+OPTIONS:
+    --skip-typescript    Skip TypeScript validation
+    --skip-healthcheck   Skip health checks
+    --enable-monitoring  Enable monitoring stack
+    --verbose           Enable verbose output
+    --force-rebuild     Force rebuild without cache
+    --no-cleanup        Don't cleanup old images
+    -h, --help          Show this help message
+
+EXAMPLES:
+    $0                           # Standard deployment
+    $0 --verbose deploy          # Verbose deployment
+    $0 --force-rebuild deploy    # Force rebuild
+    $0 validate                  # Validate only
+EOF
+}
+
+log INFO "🚀 Starting Parker Flight Deployment Script"
+log INFO "============================================"
+
+# TypeScript validation function
+validate_typescript() {
+    if [[ "$SKIP_TYPESCRIPT_CHECK" == "true" ]]; then
+        log WARN "Skipping TypeScript validation as requested"
+        return 0
+    fi
+    
+    log INFO "Validating TypeScript configuration and types..."
+    
+    cd "$PROJECT_DIR"
+    
+    # Check if node_modules exists
+    if [[ ! -d "node_modules" ]]; then
+        log INFO "Installing dependencies for TypeScript validation..."
+        pnpm install --frozen-lockfile
+    fi
+    
+    # Run TypeScript compiler check
+    log INFO "Running TypeScript compiler check..."
+    if ! pnpm run tsc --noEmit; then
+        log ERROR "TypeScript validation failed"
+        return 1
+    fi
+    
+    # Run linting if available
+    if grep -q '"lint"' package.json; then
+        log INFO "Running ESLint checks..."
+        if ! pnpm run lint --max-warnings=0; then
+            log WARN "Linting completed with warnings"
+        fi
+    fi
+    
+    log INFO "TypeScript validation completed successfully"
+}
+
+# Enhanced health checks
+perform_health_checks() {
+    if [[ "$SKIP_HEALTHCHECK" == "true" ]]; then
+        log WARN "Skipping health checks as requested"
+        return 0
+    fi
+    
+    log INFO "Performing enhanced health checks..."
+    
+    local max_attempts=30
+    local attempt=1
+    local health_url="http://localhost:80/health"
+    
+    while [[ $attempt -le $max_attempts ]]; do
+        log DEBUG "Health check attempt $attempt/$max_attempts"
+        
+        if curl -f -s "$health_url" > /dev/null 2>&1; then
+            log INFO "Application is healthy and responding"
+            return 0
+        fi
+        
+        if [[ $attempt -eq $max_attempts ]]; then
+            log ERROR "Health check failed after $max_attempts attempts"
+            log INFO "Container logs for debugging:"
+            docker-compose logs --tail=50 parker-flight
+            return 1
+        fi
+        
+        log DEBUG "Health check failed, retrying in 10 seconds..."
+        sleep 10
+        ((attempt++))
+    done
+}
 # Function to check prerequisites
 check_prerequisites() {
-    echo -e "${YELLOW}Checking prerequisites...${NC}"
+    log INFO "Checking prerequisites..."
     
     # Check if Docker is running
-    if ! docker info >/dev/null 2>&1; then
-        echo -e "${RED}Error: Docker is not running${NC}"
+    if ! docker info > /dev/null 2>&1; then
+        log ERROR "Docker is not running"
         exit 1
     fi
     
     # Check if Docker Compose is available
     if ! command -v docker-compose &> /dev/null; then
-        echo -e "${RED}Error: Docker Compose is not installed${NC}"
+        log ERROR "Docker Compose is not installed"
         exit 1
     fi
     
     # Check if .env.production exists
-    if [ ! -f ".env.production" ]; then
-        echo -e "${RED}Error: .env.production file not found!${NC}"
-        echo -e "${YELLOW}Please create .env.production with your environment variables.${NC}"
+    if [ ! -f "$ENV_FILE" ]; then
+        log ERROR "$ENV_FILE file not found!"
+        log INFO "Please create $ENV_FILE with your environment variables."
         exit 1
     fi
     
-    echo -e "${GREEN}✓ Prerequisites check passed${NC}"
+    # Check if TypeScript config exists
+    if [[ ! -f "tsconfig.json" ]] && [[ "$SKIP_TYPESCRIPT_CHECK" == "false" ]]; then
+        log WARN "TypeScript configuration not found, skipping TS validation"
+        SKIP_TYPESCRIPT_CHECK=true
+    fi
+    
+    log INFO "Prerequisites check passed"
 }
 
 # Function to backup current deployment
 backup_current() {
-    echo -e "${YELLOW}Creating backup...${NC}"
+    log INFO "Creating deployment backup..."
     
     # Create backup directory
     mkdir -p "${BACKUP_DIR}"
     
     # Backup current env file
-    if [ -f ".env.production" ]; then
-        cp ".env.production" "${BACKUP_DIR}/.env.production.$(date +%Y%m%d_%H%M%S)"
-        echo -e "${GREEN}✓ Environment backup created${NC}"
+    if [ -f "$ENV_FILE" ]; then
+        cp "$ENV_FILE" "${BACKUP_DIR}/.env.production.$(date +%Y%m%d_%H%M%S)"
+        log INFO "Environment backup created"
     fi
     
     # Export current container if it exists
-    if docker ps -q -f name=${PROJECT_NAME}-app >/dev/null 2>&1; then
-        echo -e "${YELLOW}Exporting current container...${NC}"
+    if docker ps -q -f name=${PROJECT_NAME}-app > /dev/null 2>&1; then
+        log INFO "Exporting current container..."
         docker commit ${PROJECT_NAME}-app ${PROJECT_NAME}-backup:$(date +%Y%m%d_%H%M%S)
-        echo -e "${GREEN}✓ Container backup created${NC}"
+        log INFO "Container backup created"
     fi
 }
 
-# Function to deploy
+# Enhanced deploy function
 deploy() {
-    echo -e "${YELLOW}Starting deployment...${NC}"
+    log INFO "Starting enhanced deployment process..."
     
     # Pull latest changes (if in git repo)
     if [ -d ".git" ]; then
-        echo -e "${YELLOW}Pulling latest changes...${NC}"
+        log INFO "Pulling latest changes from repository..."
         git pull origin main || git pull origin master
-        echo -e "${GREEN}✓ Code updated${NC}"
+        log INFO "Code updated successfully"
     fi
     
+    # Validate TypeScript before building
+    validate_typescript
+    
     # Build new image
-    echo -e "${YELLOW}Building application...${NC}"
-    ./scripts/build.sh
+    log INFO "Building application Docker image..."
+    local build_args=""
+    if [[ "$FORCE_REBUILD" == "true" ]]; then
+        build_args="--no-cache"
+    fi
+    
+    if [[ "$FORCE_REBUILD" == "true" ]]; then
+        BUILD_ARGS="--force-rebuild" ./scripts/build.sh
+    else
+        ./scripts/build.sh
+    fi
     
     # Deploy with zero downtime
-    echo -e "${YELLOW}Deploying application...${NC}"
+    log INFO "Deploying application with zero downtime..."
     
     # Start new containers
     docker-compose -f ${COMPOSE_FILE} up -d --remove-orphans
     
-    # Wait for health check
-    echo -e "${YELLOW}Waiting for application to be healthy...${NC}"
-    timeout 120 bash -c 'until docker-compose -f docker-compose.yml ps | grep -q "healthy"; do sleep 2; done'
+    # Enhanced health check
+    perform_health_checks
     
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✓ Application is healthy${NC}"
-    else
-        echo -e "${RED}✗ Health check failed - rolling back${NC}"
-        rollback
-        exit 1
+    # Deploy monitoring stack if requested
+    if [[ "$ENABLE_MONITORING" == "true" ]] && [[ -f "docker-compose.monitoring.yml" ]]; then
+        log INFO "Deploying monitoring stack..."
+        docker-compose -f docker-compose.monitoring.yml up -d
     fi
     
-    # Clean up old images
-    echo -e "${YELLOW}Cleaning up old images...${NC}"
-    docker image prune -f
+    # Clean up old images if enabled
+    if [[ "$CLEANUP_OLD_IMAGES" == "true" ]]; then
+        log INFO "Cleaning up old Docker images..."
+        docker image prune -f
+        docker system prune -f --volumes
+    fi
     
-    echo -e "${GREEN}🎉 Deployment completed successfully!${NC}"
+    log INFO "🎉 Deployment completed successfully!"
 }
 
-# Function to rollback
+# Enhanced rollback function
 rollback() {
-    echo -e "${RED}Rolling back deployment...${NC}"
+    log ERROR "Initiating deployment rollback..."
     
     # Find latest backup
     LATEST_BACKUP=$(docker images ${PROJECT_NAME}-backup --format "table {{.Tag}}" | tail -n +2 | sort -r | head -n 1)
     
     if [ ! -z "$LATEST_BACKUP" ]; then
-        echo -e "${YELLOW}Rolling back to backup: ${LATEST_BACKUP}${NC}"
+        log INFO "Rolling back to backup: ${LATEST_BACKUP}"
         
         # Stop current containers
+        log INFO "Stopping current containers..."
         docker-compose -f ${COMPOSE_FILE} down
         
         # Start backup container
+        log INFO "Starting rollback container..."
         docker run -d --name ${PROJECT_NAME}-app-rollback -p 80:80 ${PROJECT_NAME}-backup:${LATEST_BACKUP}
         
-        echo -e "${GREEN}✓ Rollback completed${NC}"
+        # Verify rollback
+        log INFO "Verifying rollback..."
+        sleep 10
+        if curl -f -s "http://localhost:80/health" > /dev/null 2>&1; then
+            log INFO "Rollback completed successfully"
+        else
+            log WARN "Rollback container started but health check failed"
+        fi
     else
-        echo -e "${RED}No backup found for rollback${NC}"
+        log ERROR "No backup found for rollback"
+        exit 1
     fi
 }
 
-# Function to show status
+# Enhanced status function
 show_status() {
-    echo -e "${BLUE}Current deployment status:${NC}"
+    log INFO "Current deployment status:"
     docker-compose -f ${COMPOSE_FILE} ps
     
-    echo -e "\n${BLUE}Application logs (last 20 lines):${NC}"
+    echo
+    log INFO "Application logs (last 20 lines):"
     docker-compose -f ${COMPOSE_FILE} logs --tail=20 parker-flight
     
-    echo -e "\n${BLUE}Resource usage:${NC}"
+    echo
+    log INFO "Resource usage:"
     docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}"
+    
+    echo
+    log INFO "Application URLs:"
+    echo "  Main application: http://localhost:80"
+    echo "  Health check: http://localhost:80/health"
+    
+    if [[ "$ENABLE_MONITORING" == "true" ]]; then
+        echo "  Monitoring: http://localhost:9090 (if configured)"
+    fi
 }
 
-# Main execution
-case "${1:-deploy}" in
+# Parse command line arguments and extract command
+COMMAND="deploy"  # Default command
+ARGS=()
+
+# Process arguments to separate options from command
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        deploy|rollback|status|logs|stop|restart|validate)
+            COMMAND="$1"
+            shift
+            ;;
+        *)
+            ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# Parse the extracted arguments
+parse_arguments "${ARGS[@]}"
+
+# Change to project directory
+cd "$PROJECT_DIR"
+
+# Set up error handling
+trap 'log ERROR "Deployment failed on line $LINENO. Exit code: $?"' ERR
+
+case "$COMMAND" in
     "deploy")
         check_prerequisites
         backup_current
@@ -156,26 +398,29 @@ case "${1:-deploy}" in
         show_status
         ;;
     "logs")
+        log INFO "Showing application logs..."
         docker-compose -f ${COMPOSE_FILE} logs -f parker-flight
         ;;
     "stop")
-        echo -e "${YELLOW}Stopping application...${NC}"
+        log INFO "Stopping application..."
         docker-compose -f ${COMPOSE_FILE} down
-        echo -e "${GREEN}✓ Application stopped${NC}"
+        log INFO "Application stopped successfully"
         ;;
     "restart")
-        echo -e "${YELLOW}Restarting application...${NC}"
+        log INFO "Restarting application..."
         docker-compose -f ${COMPOSE_FILE} restart
-        echo -e "${GREEN}✓ Application restarted${NC}"
+        log INFO "Application restarted successfully"
+        ;;
+    "validate")
+        log INFO "Running validation checks only..."
+        check_prerequisites
+        validate_typescript
+        log INFO "Validation completed successfully"
         ;;
     *)
-        echo -e "${BLUE}Usage: $0 {deploy|rollback|status|logs|stop|restart}${NC}"
-        echo -e "  deploy   - Deploy the application (default)"
-        echo -e "  rollback - Rollback to previous version"
-        echo -e "  status   - Show current status"
-        echo -e "  logs     - Show application logs"
-        echo -e "  stop     - Stop the application"
-        echo -e "  restart  - Restart the application"
+        show_help
         exit 1
         ;;
 esac
+
+log INFO "Script execution completed"

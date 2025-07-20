@@ -6,6 +6,7 @@
  */
 
 import { KMSClient, KMSClientConfig } from '@aws-sdk/client-kms';
+import { SecretsManagerClient, SecretsManagerClientConfig } from '@aws-sdk/client-secrets-manager';
 import { S3Client, S3ClientConfig } from '@aws-sdk/client-s3';
 import { DynamoDBClient, DynamoDBClientConfig } from '@aws-sdk/client-dynamodb';
 import { STSClient, STSClientConfig } from '@aws-sdk/client-sts';
@@ -293,6 +294,28 @@ export class EnhancedAWSClientFactory {
     };
 
     const client = new CloudWatchClient(cwConfig);
+    this.clientInstances.set(cacheKey, client);
+
+    return client;
+  }
+
+  /**
+   * Creates or retrieves cached Secrets Manager client
+   */
+  static createSecretsManagerClient(config: EnhancedClientConfig): SecretsManagerClient {
+    const cacheKey = `secretsmanager-${config.region}-${config.environment}`;
+    
+    if (this.clientInstances.has(cacheKey)) {
+      return this.clientInstances.get(cacheKey);
+    }
+
+    const baseConfig = this.createBaseConfig(config);
+    const secretsManagerConfig: SecretsManagerClientConfig = {
+      ...baseConfig,
+      serviceId: 'SecretsManager',
+    };
+
+    const client = new SecretsManagerClient(secretsManagerConfig);
     this.clientInstances.set(cacheKey, client);
 
     return client;

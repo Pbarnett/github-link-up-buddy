@@ -1,5 +1,11 @@
+
 // Enhanced profile component with React 19 features
-import React, { Suspense, useState, useDeferredValue, useMemo, startTransition } from 'react';
+
+import * as React from 'react';
+const { useState, useMemo, useDeferredValue, useTransition } = React;
+type FC<T = {}> = React.FC<T>;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +23,7 @@ const mockActivities = [
   { id: '5', type: 'search', title: 'Flight Search', date: '2024-03-01', status: 'completed' },
 ];
 
-const ProfileRevamp: React.FC = () => {
+const ProfileRevamp: FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeView, setActiveView] = useState<'overview' | 'activity'>('overview');
   const deferredQuery = useDeferredValue(searchQuery);
@@ -222,7 +228,7 @@ const ProfileRevamp: React.FC = () => {
 };
 
 // Legacy Profile Component
-const LegacyProfile: React.FC = () => {
+const LegacyProfile: FC = () => {
   return (
     <div className="space-y-6">
       <Card>
@@ -240,7 +246,7 @@ const LegacyProfile: React.FC = () => {
 };
 
 // Loading component
-const ProfileSkeleton: React.FC = () => {
+const ProfileSkeleton: FC = () => {
   return (
     <div className="space-y-6">
       <Card>
@@ -260,7 +266,7 @@ const ProfileSkeleton: React.FC = () => {
 };
 
 // Main Profile component with feature flag
-const Profile: React.FC = () => {
+const Profile: FC = () => {
   const { data: showNewUI, isLoading } = useFeatureFlag('profile_ui_revamp', false);
 
   // Show loading state

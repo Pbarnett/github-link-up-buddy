@@ -1,3 +1,4 @@
+
 /**
  * Form Error Boundary Component
  * 
@@ -5,7 +6,12 @@
  * following best practices for error handling and user experience
  */
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import * as React from 'react';
+const { useCallback } = React;
+type ReactNode = React.ReactNode;
+type ErrorInfo = React.ErrorInfo;
+type ComponentType<P = {}> = React.ComponentType<P>;
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -29,7 +35,7 @@ interface State {
  * Form Error Boundary that catches form-related errors and provides
  * user-friendly error messages with recovery options
  */
-export class FormErrorBoundary extends Component<Props, State> {
+export class FormErrorBoundary extends React.Component<Props, State> {
   private resetTimeoutId: number | null = null;
 
   constructor(props: Props) {
@@ -225,7 +231,7 @@ export class FormErrorBoundary extends Component<Props, State> {
  * Hook for using form error boundary functionality
  */
 export const useFormErrorHandler = () => {
-  const handleFormError = React.useCallback((error: Error) => {
+  const handleFormError = useCallback((error: Error) => {
     console.error('Form error:', error);
     
     // You can integrate with error reporting services here
@@ -241,7 +247,7 @@ export const useFormErrorHandler = () => {
  * Higher-order component wrapper for form error boundary
  */
 export const withFormErrorBoundary = <P extends object>(
-  Component: React.ComponentType<P>,
+  Component: ComponentType<P>,
   errorBoundaryProps?: Omit<Props, 'children'>
 ) => {
   const WrappedComponent = (props: P) => (

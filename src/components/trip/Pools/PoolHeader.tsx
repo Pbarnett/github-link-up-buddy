@@ -1,5 +1,8 @@
 
-import React from 'react';
+
+import * as React from 'react';
+type FC<T = {}> = React.FC<T>;
+
 import { Badge } from '@/components/ui/badge';
 
 interface PoolHeaderProps {
@@ -7,7 +10,7 @@ interface PoolHeaderProps {
   count: number;
 }
 
-const PoolHeader: React.FC<PoolHeaderProps> = ({ name, count }) => {
+const PoolHeader: FC<PoolHeaderProps> = ({ name, count }) => {
   return (
     <div className="flex items-center justify-between">
       <h3 className="text-lg font-semibold">{name}</h3>

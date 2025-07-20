@@ -1,10 +1,15 @@
+
 /**
  * Date Range Field Component
  * 
  * Renders a date range picker with optional flexible dates
  */
 
-import React from 'react';
+import * as React from 'react';
+const { useState } = React;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
+
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,7 +38,7 @@ interface DateRangeFieldProps {
   className?: string;
 }
 
-export const DateRangeField: React.FC<DateRangeFieldProps> = ({
+export const DateRangeField: FC<DateRangeFieldProps> = ({
   value = { from: undefined, to: undefined },
   onChange,
   placeholder = "Select date range",
@@ -42,7 +47,7 @@ export const DateRangeField: React.FC<DateRangeFieldProps> = ({
   flexible = false,
   className
 }) => {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   
   // Parse date values
   const fromDate = value.from ? new Date(value.from) : undefined;

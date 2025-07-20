@@ -1,6 +1,8 @@
+import * as React from 'react';
+const { useEffect } = React;
+
 import { useFlags } from 'launchdarkly-react-client-sdk';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useEffect } from 'react';
 import { trackPersonalizationSeen } from '../services/launchDarklyService';
 import { type FeatureFlag, isFeatureEnabled as isEnabled } from '@/shared/featureFlag';
 

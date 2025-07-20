@@ -1,4 +1,7 @@
-import React, { useActionState, useCallback, useEffect } from 'react';
+import * as React from 'react';
+const { useState, useEffect, useCallback } = React;
+type FormEvent = React.FormEvent;
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -80,7 +83,20 @@ interface ActionStateFormProps {
 }
 
 export function ActionStateForm({ onSearchComplete, className }: ActionStateFormProps) {
-  const [state, formAction, isPending] = useActionState(searchFlights, null);
+  const [state, setState] = useState<FormState | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  
+  // Handle form submission
+  const handleSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsPending(true);
+    
+    const formData = new FormData(event.currentTarget);
+    const result = await searchFlights(state, formData);
+    
+    setState(result);
+    setIsPending(false);
+  }, [state]);
   
   // Handle successful search
   const handleSuccess = useCallback(() => {
@@ -105,7 +121,7 @@ export function ActionStateForm({ onSearchComplete, className }: ActionStateForm
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form action={formAction} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="origin">From</Label>

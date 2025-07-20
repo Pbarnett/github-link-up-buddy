@@ -1,4 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+
+
+import * as React from 'react';
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +31,7 @@ export interface ProfileField {
   required: boolean;
   category: 'basic' | 'contact' | 'travel' | 'payment' | 'verification';
   description?: string;
-  icon?: React.ComponentType<{ className?: string }>;
+  icon?: ComponentType<{ className?: string }>;
 }
 
 export interface ProfileCompletenessData {

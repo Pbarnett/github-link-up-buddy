@@ -1,3 +1,4 @@
+
 /**
  * ShadCN Integration Demo Component
  * 
@@ -9,7 +10,11 @@
  * - Component composition patterns
  */
 
-import React, { useState } from 'react'
+import * as React from 'react';
+const { useState } = React;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
+
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -64,7 +69,7 @@ const demoFormSchema = z.object({
 
 type DemoFormValues = z.infer<typeof demoFormSchema>
 
-const ShadCNIntegrationDemo: React.FC = () => {
+const ShadCNIntegrationDemo: FC = () => {
   const [activeTab, setActiveTab] = useState('components')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -243,7 +248,7 @@ const ShadCNIntegrationDemo: React.FC = () => {
                           required
                           placeholder="Enter your full name"
                           value={form.watch('fullName')}
-                          onValueChange={(value) => form.setValue('fullName', value)}
+                          onValueChange={(value: string) => form.setValue('fullName', value)}
                           error={form.formState.errors.fullName?.message}
                         />
                         
@@ -254,7 +259,7 @@ const ShadCNIntegrationDemo: React.FC = () => {
                           required
                           placeholder="Enter your email"
                           value={form.watch('email')}
-                          onValueChange={(value) => form.setValue('email', value)}
+                          onValueChange={(value: string) => form.setValue('email', value)}
                           error={form.formState.errors.email?.message}
                         />
                       </div>
@@ -264,7 +269,7 @@ const ShadCNIntegrationDemo: React.FC = () => {
                         required
                         placeholder="Select your role"
                         value={form.watch('role')}
-                        onValueChange={(value) => form.setValue('role', value as any)}
+                        onValueChange={(value: string) => form.setValue('role', value as any)}
                         options={roleOptions}
                         error={form.formState.errors.role?.message}
                       />
@@ -275,7 +280,7 @@ const ShadCNIntegrationDemo: React.FC = () => {
                         description="Tell us a bit about yourself (optional)"
                         placeholder="Enter your bio..."
                         value={form.watch('bio') || ''}
-                        onValueChange={(value) => form.setValue('bio', value)}
+                        onValueChange={(value: string) => form.setValue('bio', value)}
                         error={form.formState.errors.bio?.message}
                         rows={4}
                       />
@@ -292,7 +297,7 @@ const ShadCNIntegrationDemo: React.FC = () => {
                           label="Enable notifications"
                           description="Receive email notifications about important updates"
                           checked={form.watch('notifications')}
-                          onCheckedChange={(checked) => form.setValue('notifications', checked)}
+                          onCheckedChange={(checked: boolean) => form.setValue('notifications', checked)}
                         />
                         
                         <CheckboxField
@@ -300,7 +305,7 @@ const ShadCNIntegrationDemo: React.FC = () => {
                           label="Subscribe to newsletter"
                           description="Get the latest news and updates"
                           checked={form.watch('newsletter')}
-                          onCheckedChange={(checked) => form.setValue('newsletter', checked)}
+                          onCheckedChange={(checked: boolean) => form.setValue('newsletter', checked)}
                         />
                       </FormGroup>
                       
@@ -309,7 +314,7 @@ const ShadCNIntegrationDemo: React.FC = () => {
                         label="Dark Mode"
                         description="Use dark theme for the interface"
                         checked={form.watch('darkMode')}
-                        onCheckedChange={(checked) => form.setValue('darkMode', checked)}
+                        onCheckedChange={(checked: boolean) => form.setValue('darkMode', checked)}
                       />
                       
                       <SelectField
@@ -317,7 +322,7 @@ const ShadCNIntegrationDemo: React.FC = () => {
                         required
                         placeholder="Select privacy level"
                         value={form.watch('privacy')}
-                        onValueChange={(value) => form.setValue('privacy', value as any)}
+                        onValueChange={(value: string) => form.setValue('privacy', value as any)}
                         options={privacyOptions}
                         error={form.formState.errors.privacy?.message}
                       />

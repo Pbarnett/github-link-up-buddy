@@ -1,8 +1,13 @@
-import React, { Component, ReactNode } from 'react';
+
+
+import * as React from 'react';
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type ReactNode = React.ReactNode;
+type ErrorInfo = React.ErrorInfo;
 
 interface Props {
   children: ReactNode;
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
   fallback?: ReactNode;
 }
 
@@ -21,7 +26,7 @@ export class TestErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }

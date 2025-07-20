@@ -1,4 +1,9 @@
-import React from 'react';
+
+
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import { PersonalizationProvider, usePersonalization } from '@/contexts/PersonalizationContext';
@@ -74,7 +79,7 @@ const TestComponent = () => {
   );
 };
 
-const renderWithProviders = (children: React.ReactNode) => {
+const renderWithProviders = (children: ReactNode) => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {

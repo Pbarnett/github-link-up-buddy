@@ -1,10 +1,15 @@
+
 /**
  * Form Builder Component
  * 
  * Admin interface for creating and editing dynamic form configurations
  */
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FC<T = {}> = React.FC<T>;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { Plus, Save, Settings, Eye, Trash2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +35,7 @@ import { FieldTemplateLibrary } from './FieldTemplateLibrary';
 import { SectionEditor } from './SectionEditor';
 import { useFormStore } from '@/stores/useFormStore';
 
-export const FormBuilder: React.FC<FormBuilderProps> = ({
+export const FormBuilder: FC<FormBuilderProps> = ({
   initialConfiguration,
   onSave,
   onDeploy,

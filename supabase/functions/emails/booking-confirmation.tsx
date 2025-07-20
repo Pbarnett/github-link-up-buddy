@@ -3,7 +3,7 @@
  * Following Resend best practices for email templates
  */
 
-import React from 'react';
+import * as React from 'react';
 
 export interface BookingConfirmationProps {
   passengerName: string;

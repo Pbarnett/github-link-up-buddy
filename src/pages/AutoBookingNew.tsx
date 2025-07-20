@@ -1,4 +1,6 @@
-import { lazy, Suspense } from 'react';
+import * as React from 'react';
+const { useDeferredValue, useActionState } = React;
+
 import { Skeleton } from '@/components/ui/skeleton';
 import PageWrapper from '@/components/layout/PageWrapper';
 import { withErrorBoundary } from '@/components/ErrorBoundary';

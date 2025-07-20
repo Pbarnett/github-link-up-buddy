@@ -1,3 +1,6 @@
+import * as React from 'react';
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { GripVertical } from "lucide-react"
 import * as ResizablePrimitive from "react-resizable-panels"
 

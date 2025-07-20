@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+const { useState } = React;
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +48,6 @@ export function PaymentMethodList({
       });
     }
   };
-
 
   const formatExpiry = (month: number, year: number) => {
     return `${month.toString().padStart(2, '0')}/${year.toString().slice(-2)}`;

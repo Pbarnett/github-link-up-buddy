@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
+
+
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FC<T = {}> = React.FC<T>;
 
 interface SimplifiedSocialProofProps {
   className?: string;
 }
 
-export const SimplifiedSocialProof: React.FC<SimplifiedSocialProofProps> = ({ 
+export const SimplifiedSocialProof: FC<SimplifiedSocialProofProps> = ({ 
   className = "" 
 }) => {
   const [todayBookings, setTodayBookings] = useState(23);

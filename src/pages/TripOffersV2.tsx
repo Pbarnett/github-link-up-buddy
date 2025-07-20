@@ -1,4 +1,8 @@
-import React from 'react';
+
+
+import * as React from 'react';
+type FC<T = {}> = React.FC<T>;
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFlightOffers } from '@/flightSearchV2/useFlightOffers';
 import { FlightOfferV2 } from '@/flightSearchV2/types';
@@ -11,7 +15,7 @@ import { format } from 'date-fns';
 import { toast } from '@/components/ui/use-toast';
 
 // Placeholder for a component to show when the feature flag is disabled
-const FlagDisabledPlaceholder: React.FC = () => (
+const FlagDisabledPlaceholder: FC = () => (
   <Alert variant="destructive">
     <Terminal className="h-4 w-4" />
     <AlertTitle>Feature Disabled</AlertTitle>
@@ -21,7 +25,7 @@ const FlagDisabledPlaceholder: React.FC = () => (
   </Alert>
 );
 
-const EmptyStateCard: React.FC = () => (
+const EmptyStateCard: FC = () => (
   <Card className="shadow-lg">
     <CardHeader>
       <CardTitle className="flex items-center">
@@ -38,8 +42,7 @@ const EmptyStateCard: React.FC = () => (
   </Card>
 );
 
-
-const TripOffersV2: React.FC = () => {
+const TripOffersV2: FC = () => {
   const { tripId } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
   const { offers, isLoading, error, isFeatureEnabled, refetch } = useFlightOffers(tripId || 'default-trip-id');
@@ -208,7 +211,6 @@ const TripOffersV2: React.FC = () => {
       description: `You've selected flight ${offer.originIata} → ${offer.destinationIata} for booking.`,
     });
   };
-
 
   // Filter out one-way flights if this search expects round-trip flights
   // Check if this is a round-trip search by looking for offers that have return dates

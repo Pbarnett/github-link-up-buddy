@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Amadeus API integration for flight search only (like Google Flights)
 // This integration does NOT handle booking - users are redirected to airline websites
 

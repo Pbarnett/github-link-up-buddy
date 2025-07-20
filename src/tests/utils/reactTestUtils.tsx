@@ -1,4 +1,9 @@
-import React from 'react';
+
+
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { render, RenderOptions, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -18,13 +23,13 @@ export const mockToast = {
 // Setup toast mocking
 vi.mock('sonner', () => ({
   toast: mockToast,
-  Toaster: ({ children }: { children?: React.ReactNode }) => <div data-testid="toaster">{children}</div>,
+  Toaster: ({ children }: { children?: ReactNode }) => <div data-testid="toaster">{children}</div>,
 }));
 
 // Mock react-hot-toast if used
 vi.mock('react-hot-toast', () => ({
   toast: mockToast,
-  Toaster: ({ children }: { children?: React.ReactNode }) => <div data-testid="toaster">{children}</div>,
+  Toaster: ({ children }: { children?: ReactNode }) => <div data-testid="toaster">{children}</div>,
 }));
 
 // Mock Supabase context/hooks if they exist
@@ -48,7 +53,7 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   queryClient?: QueryClient;
   
   // Custom wrapper
-  wrapper?: React.ComponentType<{ children: React.ReactNode }>;
+  wrapper?: ComponentType<{ children: ReactNode }>;
 }
 
 export function renderWithProviders(
@@ -71,7 +76,7 @@ export function renderWithProviders(
   } = options;
 
   // Create a wrapper with all necessary providers
-  function AllTheProviders({ children }: { children: React.ReactNode }) {
+  function AllTheProviders({ children }: { children: ReactNode }) {
     const content = (
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={initialEntries}>

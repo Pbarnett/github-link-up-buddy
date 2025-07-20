@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import * as React from 'react';
+const { useState } = React;
+
 import AuthGuard from "@/components/AuthGuard";
 import { Link } from "react-router-dom";
 import { usePaymentMethods, PaymentMethod } from "@/hooks/usePaymentMethods";

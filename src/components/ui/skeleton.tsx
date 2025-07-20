@@ -1,3 +1,6 @@
+import * as React from 'react';
+type HTMLAttributes<T = HTMLElement> = React.HTMLAttributes<T>;
+
 import { cn } from "@/lib/utils"
 
 function Skeleton({

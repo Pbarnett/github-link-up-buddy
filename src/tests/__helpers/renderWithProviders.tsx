@@ -1,4 +1,8 @@
-import React from 'react';
+
+
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+
 import { render, RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -34,7 +38,7 @@ export const renderWithProviders = (
     ...renderOptions
   } = options;
 
-  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+  const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={initialEntries}>
         {children}

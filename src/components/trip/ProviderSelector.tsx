@@ -1,9 +1,12 @@
+
 /**
  * @file Provider selector component for choosing flight search providers
  * Battle-tested approach with feature flags and user preferences
  */
 
-import React from 'react';
+import * as React from 'react';
+type FC<T = {}> = React.FC<T>;
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -48,7 +51,7 @@ const providerInfo = {
   }
 };
 
-export const ProviderSelector: React.FC<ProviderSelectorProps> = ({
+export const ProviderSelector: FC<ProviderSelectorProps> = ({
   selectedProvider,
   onProviderChange,
   disabled = false,
@@ -148,7 +151,7 @@ export const ProviderSelector: React.FC<ProviderSelectorProps> = ({
 /**
  * Compact version for inline use in forms
  */
-export const ProviderSelectorCompact: React.FC<ProviderSelectorProps> = ({
+export const ProviderSelectorCompact: FC<ProviderSelectorProps> = ({
   selectedProvider,
   onProviderChange,
   disabled = false,

@@ -53,22 +53,22 @@ vi.mock('@/components/ui/slider', () => ({
 }));
 
 interface SelectProps {
-  children?: React.ReactNode;
+  children?: ReactNode;
   value?: string;
   onValueChange?: (value: string) => void;
 }
 
 interface SelectContentProps {
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 interface SelectItemProps {
   value: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 interface SelectTriggerProps {
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 interface SelectValueProps {
@@ -272,7 +272,7 @@ const mockOffers: ScoredOffer[] = [
   },
 ];
 
-const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+const TestWrapper: FC<{ children: ReactNode }> = ({ children }) => (
   <BrowserRouter>{children}</BrowserRouter>
 );
 

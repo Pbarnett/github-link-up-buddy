@@ -15,6 +15,13 @@ NC='\033[0m' # No Color
 IMAGE_NAME="parker-flight"
 IMAGE_TAG="${1:-latest}"
 REGISTRY="${REGISTRY:-}"
+FORCE_REBUILD=false
+
+# Check for force rebuild flag
+if [[ "$BUILD_ARGS" == *"--force-rebuild"* ]] || [[ "$1" == "--force-rebuild" ]]; then
+    FORCE_REBUILD=true
+    shift 2>/dev/null || true
+fi
 
 # Build arguments
 BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
@@ -42,7 +49,16 @@ set +a
 
 # Build the Docker image
 echo -e "${GREEN}Building Docker image...${NC}"
+
+# Set build cache option
+BUILD_CACHE_OPTION=""
+if [[ "$FORCE_REBUILD" == "true" ]]; then
+    echo -e "${YELLOW}Force rebuild enabled - building without cache${NC}"
+    BUILD_CACHE_OPTION="--no-cache"
+fi
+
 docker build \
+    $BUILD_CACHE_OPTION \
     --target production \
     --build-arg BUILD_DATE="${BUILD_DATE}" \
     --build-arg VERSION="${VERSION}" \

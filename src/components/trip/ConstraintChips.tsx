@@ -1,5 +1,8 @@
 
-import React from 'react';
+
+import * as React from 'react';
+type FC<T = {}> = React.FC<T>;
+
 import { Badge } from '@/components/ui/badge';
 import { Lock, ToggleLeft, ToggleRight } from 'lucide-react';
 
@@ -23,7 +26,7 @@ export const formatDateRange = (startDate: string, endDate: string, timezone?: s
   return `${formatDate(startDate)} – ${formatDate(endDate)}`;
 };
 
-const ConstraintChips: React.FC<ConstraintChipsProps> = ({
+const ConstraintChips: FC<ConstraintChipsProps> = ({
   dateRange,
   nonStopOnly,
   onToggleNonStop,

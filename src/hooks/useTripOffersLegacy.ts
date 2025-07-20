@@ -1,6 +1,10 @@
+
+
 // Legacy useTripOffers hook with dependency injection and improved testability.
 
-import { useState, useEffect, useCallback } from "react";
+import * as React from 'react';
+const { useState, useEffect, useCallback } = React;
+
 import { supabase } from "@/integrations/supabase/client";
 import { Offer, fetchTripOffers } from "@/services/tripOffersService";
 import { toast } from "@/components/ui/use-toast";
@@ -275,7 +279,6 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
     }
   }, [tripId, initialTripDetails, tripDetailsState, isRefreshing, validateOfferDuration, mapTripRequestToTripDetails, CACHE_DURATION]);
 
-
   useEffect(() => {
     if (tripId) {
         loadOffers(ignoreFilterState, usedRelaxedCriteriaState, true);
@@ -283,7 +286,6 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
         setIsLoading(false);
     }
   }, [tripId, loadOffers]);
-
 
   const refreshOffers = useCallback(async () => {
     if (!tripId) return;
@@ -301,7 +303,6 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
     const cacheKey = `legacy-${tripId}-${ignoreFilterState}-${usedRelaxedCriteriaState}`;
     unifiedCache.delete(cacheKey);
     logger.info("[useTripOffersLegacy] unifiedCache entry deleted for key:", cacheKey, "before refresh.");
-
 
     setIsRefreshing(true);
     await loadOffers(ignoreFilterState, usedRelaxedCriteriaState, false);

@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
+
 import { Badge } from '@/components/ui/badge';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 

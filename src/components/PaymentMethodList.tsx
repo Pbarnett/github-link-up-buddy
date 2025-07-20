@@ -1,11 +1,15 @@
+
 // PaymentMethodList.tsx - Component to display and manage payment methods
 // Day 4: Payments & Wallet System
 
-import React from 'react';
+import * as React from 'react';
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
+
 import { useWallet } from '../context/WalletProvider';
 import { Button } from '../components/ui/button';
 
-export const PaymentMethodList: React.FC = () => {
+export const PaymentMethodList: FC = () => {
   const { paymentMethods, setDefault, removePaymentMethod } = useWallet();
 
   return (

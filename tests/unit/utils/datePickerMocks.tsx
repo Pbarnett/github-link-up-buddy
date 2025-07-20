@@ -1,5 +1,5 @@
 // Test utilities for mocking react-day-picker components
-import React from 'react';
+import * as React from 'react';
 
 // Mock Calendar component that allows easy date setting
 export const MockCalendar = ({ onSelect }: {

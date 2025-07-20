@@ -1,9 +1,13 @@
+
 /**
  * @file Enhanced booking card specifically for Duffel flights
  * Battle-tested component that integrates with validated backend
  */
 
-import React, { useState } from 'react';
+import * as React from 'react';
+const { useState } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +43,7 @@ interface DuffelBookingCardProps {
   onBookingError?: (error: string) => void;
 }
 
-export const DuffelBookingCard: React.FC<DuffelBookingCardProps> = ({
+export const DuffelBookingCard: FC<DuffelBookingCardProps> = ({
   offer,
   traveler,
   onBookingComplete,

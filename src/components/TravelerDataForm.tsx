@@ -1,23 +1,31 @@
 
-import { useState } from "react";
+
+import * as React from 'react';
+const { useState } = React;
+type FormEvent = React.FormEvent;
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, Calendar, FileText } from "lucide-react";
+import { travelerProfileServiceKMS, TravelerProfileKMS } from '@/services/travelerProfileServiceKMS';
+
+// Legacy import for fallback
 import { travelerProfileService, TravelerProfile } from '@/services/travelerProfileService';
 
-type TravelerData = TravelerProfile;
+type TravelerData = TravelerProfileKMS;
 
 interface TravelerDataFormProps {
   onSubmit: (data: TravelerData) => void;
   isLoading?: boolean;
   initialData?: Partial<TravelerData>;
   mode?: 'create' | 'edit';
+  useKMS?: boolean; // Option to use KMS encryption
 }
 
-const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode = 'create' }: TravelerDataFormProps) => {
+const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode = 'create', useKMS = true }: TravelerDataFormProps) => {
   const [formData, setFormData] = useState<TravelerData>({
     fullName: initialData.fullName || '',
     dateOfBirth: initialData.dateOfBirth || '',
@@ -75,22 +83,57 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
       const submitAction = async () => {
         try {
           let response;
-          if (mode === 'edit' && initialData.id) {
-            response = await travelerProfileService.updateProfile(initialData.id, formData);
-            alert('Profile updated successfully!');
+          
+          if (useKMS) {
+            // Use KMS-encrypted service
+            console.log('Using KMS-encrypted traveler profile service');
+            if (mode === 'edit' && initialData.id) {
+              response = await travelerProfileServiceKMS.updateProfile(initialData.id, formData);
+              alert('Profile updated successfully! 🔐 Your sensitive data is encrypted.');
+            } else {
+              response = await travelerProfileServiceKMS.createProfile(formData);
+              alert('Profile created successfully! 🔐 Your sensitive data is encrypted.');
+            }
           } else {
-            response = await travelerProfileService.createProfile(formData);
-            alert('Profile created successfully!');
+            // Fallback to legacy service
+            console.log('Using legacy traveler profile service');
+            if (mode === 'edit' && initialData.id) {
+              response = await travelerProfileService.updateProfile(initialData.id, formData);
+              alert('Profile updated successfully!');
+            } else {
+              response = await travelerProfileService.createProfile(formData);
+              alert('Profile created successfully!');
+            }
           }
+          
           onSubmit(response);
         } catch (error) {
           console.error('Error saving traveler profile:', error);
+          
+          // If KMS fails, try fallback to legacy service
+          if (useKMS && error instanceof Error && error.message.includes('KMS')) {
+            console.warn('KMS service failed, falling back to legacy service');
+            try {
+              let response;
+              if (mode === 'edit' && initialData.id) {
+                response = await travelerProfileService.updateProfile(initialData.id, formData);
+              } else {
+                response = await travelerProfileService.createProfile(formData);
+              }
+              onSubmit(response);
+              alert('Profile saved successfully! (Note: encryption temporarily unavailable)');
+              return;
+            } catch (fallbackError) {
+              console.error('Fallback service also failed:', fallbackError);
+            }
+          }
+          
           alert('Failed to save profile. Please try again.');
         }
       };

@@ -1,4 +1,9 @@
-import React from 'react';
+
+
+import * as React from 'react';
+const { forwardRef } = React;
+type HTMLAttributes<T = HTMLElement> = React.HTMLAttributes<T>;
+
 import { cn } from '@/lib/utils';
 import { Slot } from '@radix-ui/react-slot';
 

@@ -1,4 +1,8 @@
 
+
+import * as React from 'react';
+const { useState, useEffect, useRef } = React;
+
 import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +14,6 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { ActiveBookingsPill } from "@/components/ActiveBookingsPill";
 import ThreeStepExplainer from "@/components/ThreeStepExplainer";
 import SimplifiedSocialProof from "@/components/SimplifiedSocialProof";
-import { useEffect, useRef, useState } from "react";
 
 const TripNew = () => {
   const [searchParams] = useSearchParams();

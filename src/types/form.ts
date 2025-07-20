@@ -1,5 +1,14 @@
 import { z } from "zod";
 import { Tables } from "@/integrations/supabase/types";
+import { 
+  commonErrorMessages,
+  createLocalizedErrorMap
+} from "@/lib/validation/error-formatting";
+import {
+  globalRegistry,
+  createEnhancedSchema,
+  type GlobalMeta
+} from "@/lib/validation/schema-registry";
 
 // Base trip form values interface for core trip parameters
 export interface TripFormValues {
@@ -146,9 +155,136 @@ export const tripFormSchema = z.object({
 // Form values type derived from the schema
 export type FormValues = z.infer<typeof tripFormSchema>;
 
+// Enhanced trip form schema with metadata (Zod v4-inspired)
+export const enhancedTripFormSchema = createEnhancedSchema(tripFormSchema, {
+  id: 'trip_form_schema',
+  title: 'Trip Request Form Schema',
+  description: 'Comprehensive validation schema for trip request forms with advanced cross-field validation',
+  category: 'forms',
+  tags: ['trip', 'form', 'validation', 'travel'],
+  version: '2.0.0',
+  examples: [{
+    earliestDeparture: new Date('2024-03-01'),
+    latestDeparture: new Date('2024-03-15'),
+    min_duration: 3,
+    max_duration: 7,
+    max_price: 1500,
+    nyc_airports: ['JFK', 'LGA'],
+    destination_airport: 'LAX'
+  }]
+});
+
+// Register the schema in the global registry
+globalRegistry.add(tripFormSchema, {
+  id: 'trip_form_validation',
+  title: 'Trip Form Validation',
+  description: 'Main validation schema for trip request forms',
+  category: 'forms',
+  tags: ['validation', 'forms', 'travel']
+});
+
+// Enhanced validation functions with Zod v4-inspired features
+export const validateTripForm = {
+  /**
+   * Validate with enhanced error formatting
+   */
+  enhanced: (values: unknown, locale?: string) => {
+    let schema = tripFormSchema;
+    
+    // Apply localization if requested (Zod v3 compatible approach)
+    if (locale) {
+      const localizedErrorMap = createLocalizedErrorMap(locale);
+      // Create new schema instance with error map
+      schema = tripFormSchema.refine(() => true, { message: '' })
+        .transform(v => v) // Keep the same structure
+        ._def.errorMap = localizedErrorMap;
+      schema = tripFormSchema; // Fallback to original schema for now
+    }
+    
+    return schema.safeParse(values);
+  },
+  
+  /**
+   * Validate specific field with context
+   */
+  field: (fieldName: keyof FormValues, value: unknown, formData?: Partial<FormValues>) => {
+    // Extract the specific field schema for targeted validation
+    const fieldSchema = tripFormSchema.shape[fieldName];
+    if (!fieldSchema) {
+      throw new Error(`Unknown field: ${String(fieldName)}`);
+    }
+    
+    const result = fieldSchema.safeParse(value);
+    
+    // For cross-field validation, we need to validate against the full form
+    if (formData && !result.success) {
+      const fullFormResult = tripFormSchema.safeParse({
+        ...formData,
+        [fieldName]: value
+      });
+      
+      // Return errors specific to this field
+      const fieldErrors = fullFormResult.error?.errors.filter(
+        err => err.path.includes(String(fieldName))
+      ) || [];
+      
+      if (fieldErrors.length > 0) {
+        return {
+          success: false,
+          error: { errors: fieldErrors }
+        };
+      }
+    }
+    
+    return result;
+  },
+  
+  /**
+   * Async validation for complex scenarios
+   */
+  async: async (values: unknown) => {
+    // For now, just wrap the sync validation
+    // In the future, this could include API calls for validation
+    return Promise.resolve(tripFormSchema.safeParse(values));
+  }
+};
+
+// Common field schemas that can be reused (inspired by Zod v4 top-level functions)
+export const tripFormFields = {
+  email: () => z.string().email(commonErrorMessages.email),
+  positivePrice: () => z.number().positive('Price must be positive').max(50000, 'Price seems unreasonably high'),
+  airportCode: () => z.string().length(3, 'Airport code must be 3 characters')
+    .transform(val => val.toUpperCase()) // Transform to uppercase since .toUpperCase() doesn't exist in v3
+    .refine(val => /^[A-Z]{3}$/.test(val), 'Must be a valid 3-letter airport code'),
+  dateInFuture: () => z.date().refine(
+    date => date > new Date(),
+    'Date must be in the future'
+  ),
+  duration: () => z.number().int().min(1, 'Duration must be at least 1 day').max(365, 'Duration cannot exceed 1 year'),
+  boolean: () => z.boolean(),
+  optionalString: () => z.string().optional(),
+  requiredString: () => z.string().min(1, 'This field is required')
+};
+
 // Interface for trip request creation result - simplified to match actual response
 export interface TripRequestResult {
   tripRequest: Tables<"trip_requests">;
   offers: Tables<"flight_offers">[];
   offersCount: number;
+}
+
+// Enhanced form validation result with better error handling
+export interface EnhancedValidationResult<T = any> {
+  success: boolean;
+  data?: T;
+  errors?: {
+    fieldErrors: Record<string, string[]>;
+    formErrors: string[];
+    formattedError?: string;
+  };
+  metadata?: {
+    validationTime: number;
+    schemaVersion: string;
+    locale?: string;
+  };
 }

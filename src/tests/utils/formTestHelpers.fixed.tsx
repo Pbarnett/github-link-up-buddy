@@ -1,3 +1,4 @@
+
 /**
  * React Hook Form Test Helpers - Fixed Version
  * 
@@ -8,17 +9,21 @@
  * - FormProvider context handling
  */
 
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+type FC<T = {}> = React.FC<T>;
+
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useForm, FormProvider, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import React from 'react';
+
 import { vi, Mock } from 'vitest';
 
 // ✅ CORRECT: Test wrapper that provides form context
-export const FormTestWrapper: React.FC<{
-  children: React.ReactNode;
+export const FormTestWrapper: FC<{
+  children: ReactNode;
   defaultValues?: Record<string, unknown>;
   validationSchema?: z.ZodSchema;
   onSubmit?: (data: any) => void;
@@ -146,8 +151,8 @@ export const testAsyncValidation = async (options: {
 };
 
 // ✅ CORRECT: Helper for testing Controller components
-export const TestControllerWrapper: React.FC<{
-  children: (props: { control: UseFormReturn['control'] }) => React.ReactNode;
+export const TestControllerWrapper: FC<{
+  children: (props: { control: UseFormReturn['control'] }) => ReactNode;
   defaultValues?: Record<string, unknown>;
 }> = ({ children, defaultValues = {} }) => {
   const form = useForm({
@@ -252,7 +257,7 @@ export const testFormStateChange = async (options: {
 export const exampleFormTest = () => {
   const mockSubmit = vi.fn();
   
-  const TestForm: React.FC = () => {
+  const TestForm: FC = () => {
     const validationSchema = z.object({
       email: z.string().email('Invalid email format'),
       password: z.string().min(5, 'Password must be at least 5 characters'),

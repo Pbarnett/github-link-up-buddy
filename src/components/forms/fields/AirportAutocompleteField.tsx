@@ -1,10 +1,15 @@
+
 /**
  * Airport Autocomplete Field Component
  * 
  * Renders an airport search input with autocomplete functionality
  */
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FC<T = {}> = React.FC<T>;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { Plane } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -40,7 +45,7 @@ interface AirportAutocompleteFieldProps {
   className?: string;
 }
 
-export const AirportAutocompleteField: React.FC<AirportAutocompleteFieldProps> = ({
+export const AirportAutocompleteField: FC<AirportAutocompleteFieldProps> = ({
   value,
   onChange,
   placeholder = "Search airports...",

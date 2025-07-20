@@ -1,8 +1,14 @@
+
+
 /**
  * TypeScript Types for Dynamic Forms System
  * 
  * Shared types for form configurations, validation, and rendering
  */
+
+import * as React from 'react';
+type FormEvent = React.FormEvent;
+type Component<P = {}, S = {}> = React.Component<P, S>;
 
 export interface FormConfiguration {
   id: string;
@@ -353,7 +359,6 @@ export interface FormSubmissionData {
     [key: string]: unknown;
   };
 }
-
 
 export interface FieldRendererProps {
   field: FieldConfiguration;

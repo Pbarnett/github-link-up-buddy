@@ -1,3 +1,4 @@
+import * as React from 'react';
 // supabase/functions/lib/amadeus.ts
 
 // Helper function to get environment variables dynamically

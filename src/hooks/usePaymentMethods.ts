@@ -1,6 +1,9 @@
 
+
 // Hook for usePaymentMethods with KMS encryption
-import { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
+const { useState, useEffect, useCallback } = React;
+
 import { paymentMethodsServiceKMS, PaymentMethodKMS, PaymentMethodCreateData } from '@/services/api/paymentMethodsApiKMS';
 
 export interface PaymentMethod {

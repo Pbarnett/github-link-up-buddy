@@ -153,7 +153,7 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
                     id="minDuration" 
                     min="1" 
                     max="365"
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt(e.target.value) || 0)}
                   />
                 )}
               />
@@ -171,7 +171,7 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
                     id="maxDuration" 
                     min="1" 
                     max="365"
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt(e.target.value) || 0)}
                   />
                 )}
               />
@@ -243,7 +243,7 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
                   step="50"
                   placeholder="e.g., 500"
                   className={errors.maxPrice ? "border-red-500" : ""}
-                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt(e.target.value) || 0)}
                 />
               )}
             />

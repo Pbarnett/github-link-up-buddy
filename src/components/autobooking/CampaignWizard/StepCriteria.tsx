@@ -1,9 +1,13 @@
+
+
 /**
  * Step 1: Campaign Criteria
  * Define travel search criteria (destination, dates, budget)
  */
 
-import { useState } from 'react';
+import * as React from 'react';
+const { useState } = React;
+
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -292,7 +296,7 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                     min="50"
                     max="10000"
                     step="50"
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt(e.target.value) || 0)}
                     className={errors.maxPrice ? 'border-red-500' : ''}
                   />
                 )}
@@ -356,7 +360,7 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                       id="minDuration"
                       min="1"
                       max="365"
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt(e.target.value) || 0)}
                     />
                   )}
                 />
@@ -374,7 +378,7 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                       id="maxDuration"
                       min="1"
                       max="365"
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt(e.target.value) || 0)}
                     />
                   )}
                 />

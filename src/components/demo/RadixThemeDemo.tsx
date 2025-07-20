@@ -1,3 +1,4 @@
+
 /**
  * Radix Themes Demo Component
  * 
@@ -12,7 +13,11 @@
  * - Integrates with existing design tokens
  */
 
-import React, { useState } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FC<T = {}> = React.FC<T>;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import {
   Theme,
   Box,
@@ -53,18 +58,18 @@ import {
 } from '@radix-ui/react-icons';
 import { ThemeToggle } from '../providers/RadixThemeProvider';
 
-export const RadixThemeDemo: React.FC = () => {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [selectedTab, setSelectedTab] = React.useState('overview');
-  const [progressValue, setProgressValue] = React.useState(0);
-  const [switchValue, setSwitchValue] = React.useState(false);
+export const RadixThemeDemo: FC = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedTab, setSelectedTab] = useState('overview');
+  const [progressValue, setProgressValue] = useState(0);
+  const [switchValue, setSwitchValue] = useState(false);
   const [checkboxValue, setCheckboxValue] = useState<boolean | "indeterminate">(false);
-  const [radioValue, setRadioValue] = React.useState('option-1');
-  const [textValue, setTextValue] = React.useState('');
-  const [selectValue, setSelectValue] = React.useState('option-1');
+  const [radioValue, setRadioValue] = useState('option-1');
+  const [textValue, setTextValue] = useState('');
+  const [selectValue, setSelectValue] = useState('option-1');
 
   // Progress simulation
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setInterval(() => {
       setProgressValue(prev => (prev >= 100 ? 0 : prev + 10));
     }, 500);
@@ -249,7 +254,7 @@ export const RadixThemeDemo: React.FC = () => {
                             </Text>
                             <TextField.Root
                               value={textValue}
-                              onChange={(e) => setTextValue(e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTextValue(e.target.value)}
                               placeholder="Enter text..."
                             >
                               <TextField.Slot>
@@ -293,7 +298,7 @@ export const RadixThemeDemo: React.FC = () => {
                             <Flex align="center" gap="2">
                               <Checkbox
                                 checked={checkboxValue}
-onCheckedChange={(checked) => setCheckboxValue(checked)}
+onCheckedChange={(checked: boolean) => setCheckboxValue(checked)}
                               />
                               <Text size="2">I agree to the terms</Text>
                             </Flex>

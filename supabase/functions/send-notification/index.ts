@@ -6,6 +6,28 @@ let createClient: (supabaseUrl: string, supabaseServiceKey: string, options?: { 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let SupabaseClient: unknown = undefined;
 
+// Twilio service imports
+let createTwilioService: () => { sendSMS: (params: { to: string; body: string }) => Promise<{ success: boolean; messageId?: string; error?: string }> } | undefined;
+let SMSTemplateRenderer: new () => {
+  renderBookingConfirmation: (params: { firstName: string; pnr: string; airline: string; flightNumber: string; departureDateTime: string; price: number }) => string;
+  renderBookingFailure: (params: { firstName: string; error: string }) => string;
+  renderBookingReminder: (params: { firstName: string; flightNumber: string; destination: string; departureTime: string }) => string;
+  renderPriceAlert: (params: { firstName: string; route: string; newPrice: number; originalPrice: number }) => string;
+  renderTemplate: (template: string, params: Record<string, unknown>) => string;
+} | undefined;
+
+async function initializeTwilio() {
+  if (typeof Deno !== 'undefined') {
+    try {
+      const { createTwilioService: denoCreateTwilioService, SMSTemplateRenderer: denoSMSTemplateRenderer } = await import('../lib/twilio.ts');
+      createTwilioService = denoCreateTwilioService;
+      SMSTemplateRenderer = denoSMSTemplateRenderer;
+    } catch (error) {
+      console.warn('Failed to import Twilio service in Deno environment:', error);
+    }
+  }
+}
+
 async function initializeEnvironment() {
   if (typeof Deno !== 'undefined') {
     // Deno environment - use https imports
@@ -14,6 +36,8 @@ async function initializeEnvironment() {
     serve = denoServe;
     createClient = denoCreateClient;
     SupabaseClient = denoSupabaseClient;
+    // Initialize Twilio services
+    await initializeTwilio();
   } else {
     // Node.js/test environment - use npm packages
     try {
@@ -369,12 +393,124 @@ export const handler = async (req: Request): Promise<Response> => {
         console.warn(`[SendNotification] No email address found for user ${user_id}. Cannot send email notification.`);
     }
 
-    // 4. SMS Fallback (Stub)
+    // 4. SMS handling for critical notifications
     const twilioAccountSid = getEnv('VITE_TWILIO_ACCOUNT_SID') || getEnv('TWILIO_ACCOUNT_SID');
     if (!twilioAccountSid) {
       console.log(`[SendNotification] SMS (Twilio SID) not configured, skipping SMS for user ${user_id}.`);
     } else {
-      console.log(`[SendNotification] SMS STUB: Would attempt to send SMS to user ${user_id} for type ${type}. Payload: ${JSON.stringify(validatedPayload)}`);
+      // Send SMS for critical notifications
+      if (type.includes('booking') || type === 'reminder_23h' || type === 'price_alert') {
+        try {
+          if (!createTwilioService || !SMSTemplateRenderer) {
+            console.warn(`[SendNotification] Twilio services not initialized, skipping SMS for user ${user_id}.`);
+          } else {
+            const twilioService = createTwilioService();
+            const templateRenderer = new SMSTemplateRenderer();
+            
+            // Get user's phone number
+            let userPhone: string | null = null;
+            try {
+              const { data: profile } = await supabaseAdmin
+                .from("profiles")
+                .select("phone, first_name")
+                .eq("id", user_id)
+                .single();
+              
+              userPhone = profile?.phone || null;
+            } catch (profileError) {
+              console.warn(`[SendNotification] Failed to fetch user profile for SMS: ${profileError}`);
+            }
+            
+            if (userPhone) {
+              let smsMessage: string;
+              
+              // Generate appropriate SMS message based on type
+              if (type === 'booking_success') {
+                smsMessage = templateRenderer.renderBookingConfirmation({
+                  firstName: userEmail?.split('@')[0] || 'traveler',
+                  pnr: (validatedPayload?.pnr as string) || 'N/A',
+                  airline: (validatedPayload?.airline as string) || 'Airline',
+                  flightNumber: (validatedPayload?.flight_number as string) || 'N/A',
+                  departureDateTime: (validatedPayload?.departure_datetime as string) || 'TBD',
+                  price: (validatedPayload?.price as number) || 0,
+                });
+              } else if (type === 'booking_failure') {
+                smsMessage = templateRenderer.renderBookingFailure({
+                  firstName: userEmail?.split('@')[0] || 'traveler',
+                  error: (validatedPayload?.error as string) || 'Unknown error',
+                });
+              } else if (type === 'reminder_23h') {
+                smsMessage = templateRenderer.renderBookingReminder({
+                  firstName: userEmail?.split('@')[0] || 'traveler',
+                  flightNumber: (validatedPayload?.flight_number as string) || 'N/A',
+                  destination: (validatedPayload?.destination as string) || 'your destination',
+                  departureTime: (validatedPayload?.departure_time as string) || 'scheduled time',
+                });
+              } else if (type === 'price_alert') {
+                smsMessage = templateRenderer.renderPriceAlert({
+                  firstName: userEmail?.split('@')[0] || 'traveler',
+                  route: (validatedPayload?.route as string) || 'your route',
+                  newPrice: (validatedPayload?.new_price as number) || 0,
+                  originalPrice: (validatedPayload?.original_price as number) || 0,
+                });
+              } else {
+                // Fallback for other types
+                smsMessage = templateRenderer.renderTemplate(
+                  `Notification: ${type}`,
+                  validatedPayload as Record<string, unknown> || {}
+                );
+              }
+              
+              const smsResult = await twilioService.sendSMS({
+                to: userPhone,
+                body: smsMessage,
+              });
+              
+              console.log(`[SendNotification] SMS sent successfully to ${userPhone}:`, smsResult);
+              
+              // Log SMS delivery status
+              if (notificationRecord?.id) {
+                await supabaseAdmin
+                  .from('notification_deliveries')
+                  .insert({
+                    notification_id: notificationRecord.id,
+                    channel: 'sms',
+                    status: smsResult.success ? 'sent' : 'failed',
+                    provider: 'twilio',
+                    provider_response: { message_id: smsResult.messageId },
+                    metadata: {
+                      phone: userPhone,
+                      message_length: smsMessage.length,
+                      error: smsResult.success ? null : smsResult.error,
+                    },
+                    sent_at: smsResult.success ? new Date().toISOString() : null,
+                  });
+              }
+            } else {
+              console.warn(`[SendNotification] No phone number available for user ${user_id}, skipping SMS.`);
+            }
+          }
+        } catch (smsError) {
+          console.error(`[SendNotification] Failed to send SMS to user ${user_id}:`, smsError);
+          
+          // Log SMS failure
+          if (notificationRecord?.id) {
+            await supabaseAdmin
+              .from('notification_deliveries')
+              .insert({
+                notification_id: notificationRecord.id,
+                channel: 'sms',
+                status: 'failed',
+                provider: 'twilio',
+                metadata: {
+                  error: smsError instanceof Error ? smsError.message : String(smsError),
+                },
+              });
+          }
+        }
+      } else {
+        console.log(`[SendNotification] SMS not configured for notification type '${type}', skipping SMS for user ${user_id}.`);
+      }
     }
 
     return new Response(JSON.stringify({ success: true, notification_id: notificationRecord?.id }), {

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Control } from 'react-hook-form';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';

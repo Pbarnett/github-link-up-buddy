@@ -1,7 +1,11 @@
+
 /**
  * Performance Monitoring Service for Supabase Operations
  * Tracks query performance, connection health, and provides analytics
  */
+
+import * as React from 'react';
+const { useState, useEffect } = React;
 
 import { DatabaseOperations } from '@/lib/supabase/database-operations';
 
@@ -363,11 +367,12 @@ class PerformanceMonitor {
 export const performanceMonitor = new PerformanceMonitor();
 
 // React hook for accessing performance data
-export function usePerformanceMonitor() {
-  const [stats, setStats] = React.useState<PerformanceStats | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
 
-  React.useEffect(() => {
+export function usePerformanceMonitor() {
+  const [stats, setStats] = useState<PerformanceStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
     const updateStats = () => {
       setStats(performanceMonitor.getStats());
       setIsLoading(false);

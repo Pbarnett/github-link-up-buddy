@@ -1,4 +1,8 @@
-import React from "react";
+
+
+import * as React from 'react';
+type FC<T = {}> = React.FC<T>;
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Offer } from "@/services/tripOffersService"; // Assuming Offer type is needed for offers.length
@@ -15,7 +19,7 @@ interface TripOfferControlsProps {
   hasError: boolean; // To decide when to show action buttons for error/no offers scenarios
 }
 
-const TripOfferControls: React.FC<TripOfferControlsProps> = ({
+const TripOfferControls: FC<TripOfferControlsProps> = ({
   onRefreshOffers,
   onRelaxCriteria,
   onOverrideSearch,

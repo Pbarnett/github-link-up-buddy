@@ -39,7 +39,7 @@ describe('PoolOfferControls', () => {
     (useTripOffersPools as any).mockReturnValue(mockHookData);
   });
 
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
+  const wrapper = ({ children }: { children: ReactNode }) => (
     <MemoryRouter>{children}</MemoryRouter>
   );
 

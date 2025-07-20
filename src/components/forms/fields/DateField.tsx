@@ -1,10 +1,15 @@
+
 /**
  * Date Field Component
  * 
  * Renders a date picker input for forms
  */
 
-import React from 'react';
+import * as React from 'react';
+const { useState } = React;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
+
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -25,7 +30,7 @@ interface DateFieldProps {
   className?: string;
 }
 
-export const DateField: React.FC<DateFieldProps> = ({
+export const DateField: FC<DateFieldProps> = ({
   value,
   onChange,
   placeholder = "Select a date",
@@ -33,7 +38,7 @@ export const DateField: React.FC<DateFieldProps> = ({
   error,
   className
 }) => {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   
   // Parse the date value
   const selectedDate = value ? new Date(value) : undefined;

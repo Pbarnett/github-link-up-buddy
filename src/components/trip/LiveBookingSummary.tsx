@@ -1,4 +1,6 @@
-import { useMemo } from 'react';
+import * as React from 'react';
+const { useMemo } = React;
+
 import { Control, useWatch } from 'react-hook-form';
 import { FormValues } from '@/types/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

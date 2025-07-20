@@ -1,3 +1,4 @@
+
 /**
  * A/B Testing Manager Component
  * 
@@ -5,7 +6,11 @@
  * Part of Phase 3: Advanced Features
  */
 
-import React, { useState } from 'react';
+import * as React from 'react';
+const { useState } = React;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
+
 import { 
   TestTube,
   Play, 
@@ -123,7 +128,7 @@ const MOCK_AB_TESTS: ABTestSummary[] = [
 // Form variants would be loaded dynamically in a real implementation
 // const FORM_VARIANTS: FormConfiguration[] = [...]
 
-export const ABTestingManager: React.FC<ABTestingManagerProps> = ({
+export const ABTestingManager: FC<ABTestingManagerProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onCreateTest,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

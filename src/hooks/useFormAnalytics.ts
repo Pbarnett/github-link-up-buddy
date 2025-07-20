@@ -1,10 +1,14 @@
+
+
 /**
  * Form Analytics Tracking Hook
  * 
  * Tracks form interactions and performance metrics
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import * as React from 'react';
+const { useEffect, useCallback, useRef } = React;
+
 import { supabase } from '@/integrations/supabase/client';
 import type { FormConfiguration } from '@/types/dynamic-forms';
 

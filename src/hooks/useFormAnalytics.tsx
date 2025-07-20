@@ -1,4 +1,8 @@
-import { useCallback, useContext, createContext, ReactNode } from 'react';
+
+
+import * as React from 'react';
+const { useCallback, useContext } = React;
+type ReactNode = React.ReactNode;
 
 export interface FormAnalyticsEvent {
   eventType: 'form_start' | 'form_submit' | 'form_error' | 'field_change' | 'field_blur';

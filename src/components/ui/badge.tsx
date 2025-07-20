@@ -1,5 +1,8 @@
-import * as React from "react"
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+
 import { cva, type VariantProps } from "class-variance-authority"
+import { Slot } from "@radix-ui/react-slot"
 
 import { cn } from "@/lib/utils"
 
@@ -27,11 +30,18 @@ const badgeVariants = cva(
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+    VariantProps<typeof badgeVariants> {
+  children?: ReactNode;
+  className?: string;
+  asChild?: boolean;
+}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
+function Badge({ className, variant, asChild = false, children, ...props }: BadgeProps) {
+  const Comp = asChild ? Slot : "div";
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <Comp className={cn(badgeVariants({ variant }), className)} {...props}>
+      {children}
+    </Comp>
   )
 }
 

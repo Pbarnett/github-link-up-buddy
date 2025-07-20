@@ -1,7 +1,12 @@
+
 // WalletProvider.tsx - Context provider for Wallet functionality
 // Day 4: Payments & Wallet System
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import * as React from 'react';
+const { useState, useCallback, useContext } = React;
+type ReactNode = React.ReactNode;
+type FC<T = {}> = React.FC<T>;
+
 import {
   createSetupIntent,
   getUserPaymentMethods,
@@ -20,7 +25,7 @@ interface WalletContextType {
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
   const fetchPaymentMethods = useCallback(async () => {

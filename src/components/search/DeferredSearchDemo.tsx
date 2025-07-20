@@ -1,4 +1,6 @@
-import React, { useState, useDeferredValue, useMemo, memo } from 'react';
+import * as React from 'react';
+const { useState, useMemo, useDeferredValue } = React;
+
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

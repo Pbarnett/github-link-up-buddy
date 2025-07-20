@@ -1,3 +1,4 @@
+import * as React from 'react';
 // packages/shared/stripe.ts
 export interface StripeCustomer {
   id: string;

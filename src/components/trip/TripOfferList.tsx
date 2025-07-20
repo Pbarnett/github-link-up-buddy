@@ -1,4 +1,8 @@
-import React from "react";
+
+
+import * as React from 'react';
+type FC<T = {}> = React.FC<T>;
+
 import { Offer } from "@/services/tripOffersService";
 import TripOfferCard from "@/components/trip/TripOfferCard";
 import TripOffersLoading from "@/components/trip/TripOffersLoading";
@@ -11,7 +15,7 @@ interface TripOfferListProps {
   ignoreFilter: boolean;
 }
 
-const TripOfferList: React.FC<TripOfferListProps> = ({
+const TripOfferList: FC<TripOfferListProps> = ({
   offers,
   isLoading,
   usedRelaxedCriteria,

@@ -1,9 +1,13 @@
+
+
 /**
  * @file Hook for managing Duffel flight search state
  * Battle-tested pattern following existing useTripOffers approach
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
+const { useState, useEffect, useCallback } = React;
+
 import { fetchDuffelFlights, DuffelSearchResponse } from '@/services/api/duffelSearchApi';
 import logger from '@/lib/logger';
 

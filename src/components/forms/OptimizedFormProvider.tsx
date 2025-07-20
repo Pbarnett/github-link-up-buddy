@@ -1,3 +1,4 @@
+
 /**
  * Optimized FormProvider Component
  * 
@@ -5,11 +6,16 @@
  * to prevent unnecessary re-renders in complex form applications.
  */
 
-import React, { memo, useMemo } from 'react';
+import * as React from 'react';
+const { useMemo } = React;
+type ReactNode = React.ReactNode;
+type FC<T = {}> = React.FC<T>;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { FormProvider, UseFormReturn } from 'react-hook-form';
 
 interface OptimizedFormProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
   form: UseFormReturn<any>;
   className?: string;
 }
@@ -18,7 +24,7 @@ interface OptimizedFormProviderProps {
  * Optimized FormProvider that uses React.memo to prevent
  * unnecessary re-renders when form state hasn't changed
  */
-export const OptimizedFormProvider: React.FC<OptimizedFormProviderProps> = memo(
+export const OptimizedFormProvider: FC<OptimizedFormProviderProps> = memo(
   ({ children, form, className }) => {
     // Memoize form methods to prevent recreation on each render
     const memoizedFormMethods = useMemo(() => ({
@@ -61,7 +67,7 @@ OptimizedFormProvider.displayName = 'OptimizedFormProvider';
  * form state changes, following React Hook Form best practices
  */
 interface OptimizedFormSectionProps {
-  children: React.ReactNode;
+  children: ReactNode;
   formState: {
     isDirty?: boolean;
     isValid?: boolean;
@@ -71,7 +77,7 @@ interface OptimizedFormSectionProps {
   className?: string;
 }
 
-export const OptimizedFormSection: React.FC<OptimizedFormSectionProps> = memo(
+export const OptimizedFormSection: FC<OptimizedFormSectionProps> = memo(
   ({ children, formState, className }) => {
     // Destructure formState to properly subscribe to changes
     const { isDirty, isValid, isSubmitting, errors } = formState;

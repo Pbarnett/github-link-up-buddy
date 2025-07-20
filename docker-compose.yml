@@ -1,4 +1,5 @@
 services:
+  # Production environment (default)
   parker-flight:
     build:
       context: .
@@ -23,9 +24,10 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - "80:80"
+      - "${EXTERNAL_PORT:-80}:80"  # Flexible external port mapping
     environment:
       - NODE_ENV=production
+      - PORT=80  # Internal nginx port
       - VITE_SUPABASE_URL=https://bbonngdyfyfjqfhvoljl.supabase.co
       - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJib25uZ2R5ZnlmanFmaHZvbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNTE5NTQsImV4cCI6MjA2MjgyNzk1NH0.qoXypUh-SemZwFjTyONGztNbhoowqLMiKSRKgA7fRR0
       - VITE_FLAG_FS_V2=true

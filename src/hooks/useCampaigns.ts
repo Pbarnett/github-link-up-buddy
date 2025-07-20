@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import * as React from 'react';
+const { useState, useEffect } = React;
+
 import { Campaign } from "@/types/campaign";
 import { campaignService } from "@/services/campaignService";
 import { useCurrentUser } from "./useCurrentUser";

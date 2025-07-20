@@ -1,5 +1,8 @@
 
-import React from 'react';
+
+import * as React from 'react';
+type FC<T = {}> = React.FC<T>;
+
 import { usePoolsSafe } from '@/hooks/usePoolsSafe';
 import { getPoolDisplayName } from '@/utils/getPoolDisplayName';
 import PoolSection from './PoolSection';
@@ -10,7 +13,7 @@ interface PoolLayoutProps {
   tripId: string;
 }
 
-const PoolLayout: React.FC<PoolLayoutProps> = ({ tripId }) => {
+const PoolLayout: FC<PoolLayoutProps> = ({ tripId }) => {
   const {
     pool1,
     pool2,

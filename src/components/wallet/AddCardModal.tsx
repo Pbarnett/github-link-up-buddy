@@ -1,4 +1,9 @@
-import React, { useState } from 'react';
+
+
+import * as React from 'react';
+const { useState } = React;
+type FormEvent = React.FormEvent;
+
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import {
@@ -51,7 +56,7 @@ function AddCardForm({ onSuccess, onClose }: AddCardFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [cardComplete, setCardComplete] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
     if (!stripe || !elements) {

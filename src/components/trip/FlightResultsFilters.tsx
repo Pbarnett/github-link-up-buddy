@@ -1,4 +1,8 @@
-import React from 'react';
+
+
+import * as React from 'react';
+type FC<T = {}> = React.FC<T>;
+
 import { Badge } from '@/components/ui/badge';
 import { Plane, Package, Check } from 'lucide-react';
 
@@ -7,7 +11,7 @@ interface FlightResultsFiltersProps {
   // Removed filter props since nonstop and carry-on are always included
 }
 
-const FlightResultsFilters: React.FC<FlightResultsFiltersProps> = ({
+const FlightResultsFilters: FC<FlightResultsFiltersProps> = ({
   totalResults
 }) => {
   return (

@@ -42,8 +42,11 @@ export interface WalletContextType {
   error: string | null;
   refreshPaymentMethods: () => Promise<void>;
   createSetupIntent: () => Promise<SetupIntentResponse>;
+  addPaymentMethod: (idempotencyKey: string) => Promise<string>;
   deletePaymentMethod: (id: string) => Promise<void>;
   setDefaultPaymentMethod: (id: string) => Promise<void>;
+  setDefault: (id: string) => Promise<void>;
+  removePaymentMethod: (id: string) => Promise<void>;
   updatePaymentMethodNickname: (id: string, nickname?: string) => Promise<void>;
 }
 

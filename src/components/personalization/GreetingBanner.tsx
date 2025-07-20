@@ -1,4 +1,9 @@
-import React, { useEffect } from 'react';
+
+
+import * as React from 'react';
+const { useEffect } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { cn } from '@/lib/utils';
 import { GreetingBannerProps, PersonalizationEvent } from '@/types/personalization';
 import { usePersonalization } from '@/contexts/PersonalizationContext';
@@ -10,7 +15,7 @@ interface GreetingBannerComponentProps extends GreetingBannerProps {
   showIcon?: boolean;
 }
 
-export const GreetingBanner: React.FC<GreetingBannerComponentProps> = ({
+export const GreetingBanner: FC<GreetingBannerComponentProps> = ({
   context,
   userId,
   className,
@@ -189,19 +194,19 @@ export const GreetingBanner: React.FC<GreetingBannerComponentProps> = ({
 };
 
 // Convenience wrapper components for specific contexts
-export const DashboardGreeting: React.FC<Omit<GreetingBannerComponentProps, 'context'>> = (props) => (
+export const DashboardGreeting: FC<Omit<GreetingBannerComponentProps, 'context'>> = (props) => (
   <GreetingBanner {...props} context="dashboard" />
 );
 
-export const ProfileGreeting: React.FC<Omit<GreetingBannerComponentProps, 'context'>> = (props) => (
+export const ProfileGreeting: FC<Omit<GreetingBannerComponentProps, 'context'>> = (props) => (
   <GreetingBanner {...props} context="profile" />
 );
 
-export const ConfirmationGreeting: React.FC<Omit<GreetingBannerComponentProps, 'context'>> = (props) => (
+export const ConfirmationGreeting: FC<Omit<GreetingBannerComponentProps, 'context'>> = (props) => (
   <GreetingBanner {...props} context="bookingConfirmation" />
 );
 
-export const ErrorGreeting: React.FC<Omit<GreetingBannerComponentProps, 'context'>> = (props) => (
+export const ErrorGreeting: FC<Omit<GreetingBannerComponentProps, 'context'>> = (props) => (
   <GreetingBanner {...props} context="error" />
 );
 

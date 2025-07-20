@@ -1,4 +1,8 @@
-import React from 'react';
+
+
+import * as React from 'react';
+const { Fragment  } = React;
+type FC<T = {}> = React.FC<T>;
 
 const steps = [
   {
@@ -25,7 +29,7 @@ interface ThreeStepExplainerProps {
   className?: string;
 }
 
-export const ThreeStepExplainer: React.FC<ThreeStepExplainerProps> = ({ 
+export const ThreeStepExplainer: FC<ThreeStepExplainerProps> = ({ 
   className = "" 
 }) => {
   return (

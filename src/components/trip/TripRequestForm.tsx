@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import * as React from 'react';
+const { useState, useEffect } = React;
+
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, FormProvider } from "react-hook-form";
@@ -30,6 +32,7 @@ import CollapsibleFiltersSection from "./sections/CollapsibleFiltersSection";
 import LiveBookingSummary from "./LiveBookingSummary";
 import TripSummaryChips from "./sections/TripSummaryChips";
 import AutoBookingSection from "./sections/AutoBookingSection";
+
 // import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface TripRequestFormProps {

@@ -1,4 +1,8 @@
+import * as React from 'react';
+const { use } = React;
+
 import { useToast } from "@/hooks/use-toast"
+
 import {
   Toast,
   ToastClose,

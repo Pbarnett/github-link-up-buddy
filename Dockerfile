@@ -1,5 +1,5 @@
-# Use the official Node.js 18 image as base
-FROM node:18-alpine AS base
+# Use the official Node.js 20 image as base for better TypeScript support
+FROM node:20-alpine AS base
 
 # Install pnpm globally and setup build dependencies
 RUN apk add --no-cache \
@@ -39,12 +39,15 @@ RUN pnpm build
 # Production stage with enhanced security
 FROM nginx:alpine AS production
 
-# Install curl for health checks, create directories, and apply security hardening in single layer
-RUN apk add --no-cache curl && \
+# Install curl and envsubst for health checks and template processing
+RUN apk add --no-cache curl gettext && \
     mkdir -p /var/cache/nginx /var/log/nginx && \
     chown -R nginx:nginx /var/cache/nginx /var/log/nginx && \
     # Remove unnecessary packages and files
     rm -rf /var/cache/apk/* /tmp/*
+
+# Set default port (can be overridden at runtime)
+ENV PORT=80
 
 # Copy custom nginx configuration with proper ownership
 COPY --chown=nginx:nginx docker/nginx.conf /etc/nginx/conf.d/default.conf

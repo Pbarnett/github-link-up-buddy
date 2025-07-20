@@ -1,10 +1,15 @@
+
 /**
  * Country Select Field Component
  * 
  * Renders a searchable country selector
  */
 
-import React, { useState } from 'react';
+import * as React from 'react';
+const { useState } = React;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
+
 import { Globe, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -92,7 +97,7 @@ interface CountrySelectFieldProps {
   className?: string;
 }
 
-export const CountrySelectField: React.FC<CountrySelectFieldProps> = ({
+export const CountrySelectField: FC<CountrySelectFieldProps> = ({
   value,
   onChange,
   placeholder = "Select country",

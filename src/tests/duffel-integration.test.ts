@@ -15,25 +15,27 @@ import { DuffelServiceGuided } from '../services/duffelServiceGuided'
 import { validateDuffelEnvironment } from '../lib/duffel/environmentValidator'
 
 // Mock the Duffel client
+const mockDuffelInstance = {
+  offerRequests: {
+    create: vi.fn()
+  },
+  offers: {
+    list: vi.fn(),
+    get: vi.fn()
+  },
+  orders: {
+    create: vi.fn(),
+    get: vi.fn(),
+    cancel: vi.fn()
+  },
+  airports: {
+    list: vi.fn()
+  }
+}
+
 vi.mock('@duffel/api', () => {
   return {
-    Duffel: vi.fn().mockImplementation(() => ({
-      offerRequests: {
-        create: vi.fn()
-      },
-      offers: {
-        list: vi.fn(),
-        get: vi.fn()
-      },
-      orders: {
-        create: vi.fn(),
-        get: vi.fn(),
-        cancel: vi.fn()
-      },
-      airports: {
-        list: vi.fn()
-      }
-    }))
+    Duffel: vi.fn(() => mockDuffelInstance)
   }
 })
 
@@ -53,9 +55,8 @@ describe('Duffel Integration Tests', () => {
     // Create service instance
     duffelService = new DuffelServiceGuided()
     
-    // Get mock client reference
-    const { Duffel } = require('@duffel/api')
-    mockDuffelClient = Duffel.mock.results[0].value
+    // Use the mock instance directly
+    mockDuffelClient = mockDuffelInstance
   })
 
   afterEach(() => {

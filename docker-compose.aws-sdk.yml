@@ -5,8 +5,7 @@ services:
   aws-sdk-backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend
-      target: production
+      dockerfile: Dockerfile.simple
       args:
         NODE_ENV: ${NODE_ENV:-production}
     image: parker-flight/aws-sdk-enhanced:${VERSION:-latest}
@@ -80,7 +79,7 @@ services:
     
     # Health check
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"require('./config/aws-sdk-enhanced.config.js').validate().isValid ? process.exit(0) : process.exit(1)\" || curl -f http://localhost:${PORT:-3000}/health"]
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep node || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

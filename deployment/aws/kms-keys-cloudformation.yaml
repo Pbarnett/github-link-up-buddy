@@ -55,7 +55,6 @@ Resources:
                 'kms:EncryptionContext:purpose': 'general-data'
                 'kms:EncryptionContext:application': !Ref ApplicationName
       EnableKeyRotation: !Ref KeyRotationEnabled
-      KeyRotationStatus: !Ref KeyRotationEnabled
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -102,7 +101,6 @@ Resources:
                 'kms:EncryptionContext:purpose': 'user-profile-data'
                 'kms:EncryptionContext:application': !Ref ApplicationName
       EnableKeyRotation: !Ref KeyRotationEnabled
-      KeyRotationStatus: !Ref KeyRotationEnabled
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -149,7 +147,6 @@ Resources:
                 'kms:EncryptionContext:purpose': 'payment-method-data'
                 'kms:EncryptionContext:application': !Ref ApplicationName
       EnableKeyRotation: !Ref KeyRotationEnabled
-      KeyRotationStatus: !Ref KeyRotationEnabled
       Tags:
         - Key: Environment
           Value: !Ref Environment

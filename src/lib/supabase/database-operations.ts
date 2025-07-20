@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database, Tables, TablesInsert, TablesUpdate } from '@/types/database';
 import { SupabaseErrorHandler, withRetry } from './error-handler';
 import { QueryData, QueryError } from '@supabase/supabase-js';
+import { performanceMonitor } from '@/services/monitoring/performanceMonitor';
 
 // Connection health monitoring
 class ConnectionMonitor {
@@ -101,11 +102,15 @@ export class DatabaseOperations {
     };
 
     try {
-      if (enableRetry) {
-        return await withRetry(operation, maxRetries);
-      } else {
-        return await operation();
-      }
+      const result = enableRetry ? 
+        await withRetry(operation, maxRetries) : 
+        await operation();
+        
+      return await performanceMonitor.timeOperation(
+        `select_${table}`,
+        Promise.resolve(result),
+        { table, withRetry: enableRetry, timeout }
+      );
     } catch (error) {
       const handledError = SupabaseErrorHandler.handle(error as Error);
       return { data: null, error: handledError };
@@ -135,11 +140,11 @@ export class DatabaseOperations {
 
       if (onConflict) {
         // Handle upsert scenarios
-        queryBuilder = supabase.from(table).upsert(data, { onConflict }).select(returning);
+        queryBuilder = queryBuilder.upsert(data, { onConflict }).select(returning);
       }
 
       const result = await queryBuilder;
-      
+
       if (result.error) {
         throw result.error;
       }

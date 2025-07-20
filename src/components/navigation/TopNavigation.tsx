@@ -1,4 +1,8 @@
-import React from 'react';
+
+
+import * as React from 'react';
+const { useState, useEffect } = React;
+
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -28,7 +32,7 @@ import {
   Search
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect, useState } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface User {

@@ -385,3 +385,103 @@ export async function decryptData(encryptedData: string): Promise<string> {
   
   return await kms.decryptData(decryptionInput);
 }
+
+/**
+ * Validate that all required KMS configuration is present
+ */
+export function validateKMSConfig(): boolean {
+  try {
+    const region = Deno.env.get('AWS_REGION');
+    const accessKeyId = Deno.env.get('AWS_ACCESS_KEY_ID');
+    const secretAccessKey = Deno.env.get('AWS_SECRET_ACCESS_KEY');
+    const piiKeyId = Deno.env.get('AWS_KMS_PII_KEY_ID');
+    const paymentKeyId = Deno.env.get('AWS_KMS_PAYMENT_KEY_ID');
+    
+    return !!(region && accessKeyId && secretAccessKey && piiKeyId && paymentKeyId);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Test basic KMS functionality
+ */
+export async function testKMS(): Promise<boolean> {
+  try {
+    const testData = 'KMS test data';
+    const encrypted = await encryptData(testData, 'PII');
+    const decrypted = await decryptData(encrypted);
+    return decrypted === testData;
+  } catch (error) {
+    console.error('KMS test failed:', error);
+    return false;
+  }
+}
+
+/**
+ * Encrypt PII data using the PII-specific key
+ */
+export async function encryptPII(plaintext: string): Promise<string> {
+  return await encryptData(plaintext, 'PII');
+}
+
+/**
+ * Decrypt PII data
+ */
+export async function decryptPII(encryptedData: string): Promise<string> {
+  return await decryptData(encryptedData);
+}
+
+/**
+ * Encrypt payment data using the payment-specific key
+ */
+export async function encryptPaymentData(paymentData: any): Promise<string> {
+  const jsonString = JSON.stringify(paymentData);
+  return await encryptData(jsonString, 'PAYMENT');
+}
+
+/**
+ * Decrypt payment data and optionally parse as JSON
+ */
+export async function decryptPaymentData(encryptedData: string, parseJson: boolean = false): Promise<any> {
+  const decrypted = await decryptData(encryptedData);
+  return parseJson ? JSON.parse(decrypted) : decrypted;
+}
+
+/**
+ * Encrypt user profile data (uses PII key since profiles contain PII)
+ */
+export async function encryptUserProfile(profileData: any): Promise<Record<string, string>> {
+  const encryptedProfile: Record<string, string> = {};
+  
+  for (const [key, value] of Object.entries(profileData)) {
+    if (value !== null && value !== undefined) {
+      const jsonString = typeof value === 'string' ? value : JSON.stringify(value);
+      encryptedProfile[key] = await encryptPII(jsonString);
+    }
+  }
+  
+  return encryptedProfile;
+}
+
+/**
+ * Decrypt user profile data
+ */
+export async function decryptUserProfile(encryptedProfile: Record<string, string>): Promise<any> {
+  const decryptedProfile: any = {};
+  
+  for (const [key, encryptedValue] of Object.entries(encryptedProfile)) {
+    if (encryptedValue) {
+      const decrypted = await decryptPII(encryptedValue);
+      
+      // Try to parse as JSON, fallback to string
+      try {
+        decryptedProfile[key] = JSON.parse(decrypted);
+      } catch {
+        decryptedProfile[key] = decrypted;
+      }
+    }
+  }
+  
+  return decryptedProfile;
+}

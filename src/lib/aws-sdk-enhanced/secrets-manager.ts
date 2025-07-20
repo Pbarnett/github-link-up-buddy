@@ -1,0 +1,31 @@
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { EnhancedAWSClientFactory } from './client-factory';
+import { EnhancedAWSErrorHandler } from './error-handling';
+
+/**
+ * Retrieves a secret value from AWS Secrets Manager.
+ *
+ * This function uses the SecretsManagerClient from the client factory.
+ * It retrieves the specified secret using GetSecretValueCommand
+ * and handles errors using EnhancedAWSErrorHandler.
+ */
+export async function getSecretValue(secretId: string, region: string): Promise<string | undefined> {
+  const client = EnhancedAWSClientFactory.createSecretsManagerClient({
+    region,
+    environment: process.env.NODE_ENV || 'development',
+  });
+
+  try {
+    const command = new GetSecretValueCommand({ SecretId: secretId });
+    const response = await EnhancedAWSErrorHandler.executeWithRetry(
+      () => client.send(command),
+      'secretsmanager',
+      'getSecretValue'
+    );
+
+    return response.SecretString;
+  } catch (error) {
+    console.error('Failed to retrieve secret:', error);
+    throw error;
+  }
+}

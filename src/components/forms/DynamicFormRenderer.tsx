@@ -1,3 +1,4 @@
+
 /**
  * Dynamic Form Renderer
  * 
@@ -5,7 +6,10 @@
  * Integrates with React Hook Form and Zod for validation
  */
 
-import React, { useMemo } from 'react';
+import * as React from 'react';
+const { useMemo } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,7 +29,7 @@ import { useFormConfiguration } from '@/hooks/useFormConfiguration';
 import { useFormState } from '@/hooks/useFormState';
 import { generateZodSchema } from '@/lib/form-validation';
 
-export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
+export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
   configId,
   configName,
   configuration: providedConfiguration,

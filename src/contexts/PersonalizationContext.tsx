@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+
+
+import * as React from 'react';
+const { useState, useEffect, useMemo, useContext } = React;
+type ReactNode = React.ReactNode;
+type FC<T = {}> = React.FC<T>;
+
 import { PersonalizationData, PersonalizationError } from '@/types/personalization';
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
@@ -24,11 +30,11 @@ experimentConfig: Record<string, unknown> | null;
 const PersonalizationContext = createContext<PersonalizationContextType | undefined>(undefined);
 
 interface PersonalizationProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
   userId?: string;
 }
 
-export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = ({ 
+export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({ 
   children, 
   userId 
 }) => {

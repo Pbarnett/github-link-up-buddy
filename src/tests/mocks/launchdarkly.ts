@@ -1,5 +1,9 @@
+
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { vi } from 'vitest';
-import React from 'react';
 
 // Mock LaunchDarkly React SDK
 const mockLDClient = {
@@ -20,7 +24,7 @@ const mockUseLDClient = vi.fn(() => mockLDClient);
 const mockUseFlag = vi.fn((key: string, defaultValue: any) => defaultValue);
 
 // Mock LaunchDarkly Provider components
-const MockLDProvider = ({ children }: { children: React.ReactNode }) => {
+const MockLDProvider = ({ children }: { children: ReactNode }) => {
   return React.createElement(React.Fragment, {}, children);
 };
 
@@ -28,7 +32,7 @@ const MockLDProvider = ({ children }: { children: React.ReactNode }) => {
 const mockAsyncWithLDProvider = vi.fn().mockResolvedValue(MockLDProvider);
 
 // Mock withLDProvider HOC
-const mockWithLDProvider = vi.fn((config: any) => (Component: React.ComponentType) => {
+const mockWithLDProvider = vi.fn((config: any) => (Component: ComponentType) => {
   return (props: any) => React.createElement(Component, props);
 });
 

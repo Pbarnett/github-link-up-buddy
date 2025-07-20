@@ -1,7 +1,11 @@
+
 // Privacy-first consent management for personalization features
 // Based on GDPR/CCPA compliance requirements
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -35,7 +39,7 @@ const DEFAULT_PREFERENCES: ConsentPreferences = {
   version: '1.0',
 };
 
-export const ConsentManager: React.FC<ConsentManagerProps> = ({
+export const ConsentManager: FC<ConsentManagerProps> = ({
   isOpen,
   onClose,
   onSave,
@@ -310,7 +314,7 @@ interface ConsentToggleProps {
   required: boolean;
 }
 
-const ConsentToggle: React.FC<ConsentToggleProps> = ({
+const ConsentToggle: FC<ConsentToggleProps> = ({
   title,
   description,
   enabled,

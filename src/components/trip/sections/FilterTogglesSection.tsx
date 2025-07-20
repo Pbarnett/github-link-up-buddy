@@ -1,4 +1,8 @@
-import React from 'react';
+
+
+import * as React from 'react';
+type FC<T = {}> = React.FC<T>;
+
 import { Control, useController } from 'react-hook-form';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -15,7 +19,7 @@ interface FilterTogglesSectionProps {
   control: Control<FilterToggleFormData>;
 }
 
-const FilterTogglesSection: React.FC<FilterTogglesSectionProps> = ({ control }) => {
+const FilterTogglesSection: FC<FilterTogglesSectionProps> = ({ control }) => {
   // Controller for nonstop_required switch
   const {
     field: nonstopField,

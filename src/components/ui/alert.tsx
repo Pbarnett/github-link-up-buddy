@@ -1,4 +1,9 @@
-import * as React from "react"
+
+
+import * as React from 'react';
+const { forwardRef } = React;
+type HTMLAttributes<T = HTMLElement> = React.HTMLAttributes<T>;
+
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"

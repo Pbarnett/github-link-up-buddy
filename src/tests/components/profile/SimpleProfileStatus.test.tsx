@@ -1,4 +1,9 @@
-import React from 'react';
+
+
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { SimpleProfileStatus, CompactProfileStatus } from '@/components/profile/SimpleProfileStatus';
@@ -6,7 +11,7 @@ import { ProfileCompletenessScore } from '@/services/profileCompletenessService'
 
 // Mock the UI components
 interface MockComponentProps {
-  children?: React.ReactNode;
+  children?: ReactNode;
   className?: string;
 }
 

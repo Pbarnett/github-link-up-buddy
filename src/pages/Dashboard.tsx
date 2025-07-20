@@ -1,5 +1,8 @@
 
-import { useEffect, useState, useRef } from 'react';
+
+import * as React from 'react';
+const { useState, useEffect, useRef } = React;
+
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

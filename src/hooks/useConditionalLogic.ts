@@ -1,3 +1,5 @@
+
+
 /**
  * useConditionalLogic Hook
  * 
@@ -5,7 +7,9 @@
  * Handles field visibility, enablement, and dependency tracking
  */
 
-import { useMemo, useCallback } from 'react';
+import * as React from 'react';
+const { useCallback, useMemo } = React;
+
 import type { 
   FormConfiguration, 
   FieldConfiguration, 

@@ -1,5 +1,9 @@
+
+
 // src/tests/mocks/deno-server.ts
 // Mock for Deno's HTTP server module
+
+import * as React from 'react';
 
 export function serve(handler: (req: Request) => Promise<Response> | Response) {
   // In tests, we don't actually start a server, just return the handler

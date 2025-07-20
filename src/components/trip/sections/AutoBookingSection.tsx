@@ -1,10 +1,14 @@
 
+
+import * as React from 'react';
+const { useEffect } = React;
+
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Control, useWatch, useFormContext } from "react-hook-form";
 import { FormValues } from "@/types/form";
-import React from "react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, DollarSign, CreditCard, Shield } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -37,7 +41,7 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
   
   // In manual mode, automatically set consent when auto-booking is enabled
   // This simulates the UI behavior where enabling auto-booking implies consent
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isAutoMode && autoBookEnabled) {
       // In manual mode, enabling auto-booking implies consent
       setValue('auto_book_consent', true);

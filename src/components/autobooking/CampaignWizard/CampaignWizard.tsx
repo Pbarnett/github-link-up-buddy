@@ -1,4 +1,6 @@
-import { lazy, Suspense, useState, useTransition, startTransition } from 'react';
+import * as React from 'react';
+import { useState, useTransition, lazy, Suspense } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';

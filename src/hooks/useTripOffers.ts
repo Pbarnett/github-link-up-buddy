@@ -1,4 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import * as React from 'react';
+const { useState, useEffect, useCallback, useMemo } = React;
+
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Offer } from "@/services/tripOffersService";

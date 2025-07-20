@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 
 export default function MockCalendar(props: {
   onSelect?: (d: Date) => void;

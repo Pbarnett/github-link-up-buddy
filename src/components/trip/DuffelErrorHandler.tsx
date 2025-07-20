@@ -1,9 +1,12 @@
+
 /**
  * @file Enhanced error handling component for Duffel API operations
  * Provides user-friendly error messages and recovery options
  */
 
-import React from 'react';
+import * as React from 'react';
+type FC<T = {}> = React.FC<T>;
+
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, Clock, Wifi, CreditCard } from 'lucide-react';
@@ -23,7 +26,7 @@ interface DuffelErrorHandlerProps {
   className?: string;
 }
 
-export const DuffelErrorHandler: React.FC<DuffelErrorHandlerProps> = ({
+export const DuffelErrorHandler: FC<DuffelErrorHandlerProps> = ({
   error,
   onRetry,
   onCancel,

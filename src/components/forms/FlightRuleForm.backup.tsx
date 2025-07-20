@@ -1,4 +1,9 @@
-import React, { useEffect } from 'react';
+
+
+import * as React from 'react';
+const { useEffect } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -49,7 +54,7 @@ interface FlightRuleFormProps {
   defaultValues?: Partial<UnifiedFlightRuleForm>;
 }
 
-export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaultValues }) => {
+export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValues }) => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const nextWeek = new Date();
@@ -79,7 +84,6 @@ export const FlightRuleForm: React.FC<FlightRuleFormProps> = ({ onSubmit, defaul
     console.log('Form errors:', form.formState.errors);
     onSubmit(data);
   };
-
 
   // Watch for changes in date fields and trigger validation
   const watchedEarliestOutbound = form.watch('earliestOutbound');

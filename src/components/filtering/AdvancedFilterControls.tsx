@@ -1,4 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+
+import * as React from 'react';
+const { useState, useEffect, useCallback } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -51,7 +56,7 @@ interface AdvancedFilterControlsProps {
   tripBudget?: number;
 }
 
-const AdvancedFilterControls: React.FC<AdvancedFilterControlsProps> = ({
+const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
   filterState,
   onFiltersChange,
   onResetFilters,

@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+
+
+import * as React from 'react';
+const { useState, useEffect, use } = React;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -583,6 +588,7 @@ const TripConfirm = () => {
           <TravelerDataForm
             onSubmit={handleTravelerDataSubmit}
             isLoading={isSavingTravelerData}
+            useKMS={true}
           />
         )}
 

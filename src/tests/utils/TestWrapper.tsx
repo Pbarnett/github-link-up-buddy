@@ -1,4 +1,9 @@
-import React from 'react';
+
+
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+type FC<T = {}> = React.FC<T>;
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
@@ -18,25 +23,25 @@ const createTestQueryClient = () => new QueryClient({
 });
 
 interface TestWrapperProps {
-  children: React.ReactNode;
+  children: ReactNode;
   initialEntries?: string[];
   queryClient?: QueryClient;
 }
 
 // Mock providers that might be needed
-const MockBusinessRulesProvider = ({ children }: { children: React.ReactNode }) => {
+const MockBusinessRulesProvider = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
-const MockPersonalizationProvider = ({ children }: { children: React.ReactNode }) => {
+const MockPersonalizationProvider = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
-const MockLaunchDarklyProvider = ({ children }: { children: React.ReactNode }) => {
+const MockLaunchDarklyProvider = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
-export const TestWrapper: React.FC<TestWrapperProps> = ({
+export const TestWrapper: FC<TestWrapperProps> = ({
   children,
   initialEntries = ['/'],
   queryClient = createTestQueryClient(),
@@ -58,7 +63,7 @@ export const TestWrapper: React.FC<TestWrapperProps> = ({
 
 // Helper function to create a wrapper with specific route
 export const createTestWrapper = (initialEntries: string[] = ['/']) => {
-  return ({ children }: { children: React.ReactNode }) => (
+  return ({ children }: { children: ReactNode }) => (
     <TestWrapper initialEntries={initialEntries}>
       {children}
     </TestWrapper>
@@ -73,7 +78,7 @@ export const renderWithProviders = (
     queryClient?: QueryClient;
   }
 ) => {
-  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+  const Wrapper = ({ children }: { children: ReactNode }) => (
     <TestWrapper
       initialEntries={options?.initialEntries}
       queryClient={options?.queryClient}

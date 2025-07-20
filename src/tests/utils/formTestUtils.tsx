@@ -1,4 +1,8 @@
-import React from 'react';
+
+
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { render } from '@testing-library/react';
@@ -227,7 +231,7 @@ export const renderWithFormProvider = (
 
   let formRef: { setValue: (name: string, value: unknown) => void; trigger: (names: string[]) => Promise<boolean>; getValues: (name: string) => unknown; handleSubmit: (handler: () => void) => () => void; formState: { isValid: boolean } } | null = null;
   
-  const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  const TestWrapper = ({ children }: { children: ReactNode }) => {
     const formMethods = useForm({
       mode,
       defaultValues,
@@ -277,7 +281,6 @@ export const renderWithFormProvider = (
     expectFormInvalid: (reason?: string) => expectFormInvalid(reason),
   };
 };
-
 
 // Export utility for getting common form validation error messages
 export const getFormErrors = () => {

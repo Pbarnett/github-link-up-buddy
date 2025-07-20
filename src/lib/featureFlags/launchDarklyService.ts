@@ -7,6 +7,17 @@ import {
   DEFAULT_LAUNCHDARKLY_CONFIG 
 } from '../../types/launchDarkly';
 
+// Import metrics for monitoring (only in browser environment)
+let metricsModule: any = null;
+try {
+  // Check if we can import metrics (won't work in all environments)
+  if (typeof window !== 'undefined') {
+    // In browser - metrics are handled client-side, we'll track basic events
+  }
+} catch (error) {
+  // Metrics not available in this environment
+}
+
 class LaunchDarklyService {
   private client: LDClient | null = null;
   private state: LaunchDarklyServiceState;

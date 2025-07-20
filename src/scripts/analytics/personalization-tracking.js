@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Personalization Feature Analytics Tracking
  * Tracks user interactions, engagement metrics, and performance indicators

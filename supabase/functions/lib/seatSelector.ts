@@ -1,3 +1,4 @@
+import * as React from 'react';
 // supabase/functions/lib/seatSelector.ts
 
 export type SeatMap = {

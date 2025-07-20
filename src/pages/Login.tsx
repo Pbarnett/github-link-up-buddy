@@ -1,4 +1,9 @@
-import { useState, useEffect } from 'react';
+
+
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FormEvent = React.FormEvent;
+
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 // import { Input } from '@/components/ui/input';
@@ -106,7 +111,7 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessi
   // ARCHIVED: Magic Link Login (commented out for Google-only MVP)
   // Uncomment this function to restore magic link functionality
   /*
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
     
     if (!email) {

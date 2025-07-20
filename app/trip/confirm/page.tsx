@@ -1,7 +1,10 @@
 
+
 "use client";
 
-import { useEffect, useState } from "react";
+import * as React from 'react';
+const { useState, useEffect } = React;
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
-import { TablesInsert, Tables } from "@/integrations/supabase/types";
+import type { Database } from "@/integrations/supabase/types";
+
+type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
+type TablesInsert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert'];
 import { safeQuery } from "@/lib/supabaseUtils";
 
 const TripConfirm = () => {
@@ -99,10 +105,13 @@ const TripConfirm = () => {
         throw new Error(flightOfferResult.error?.message || "Could not find flight offer details");
       }
 
+      // Type assertion since we know this is a single result from .single()
+      const tripRequestData = flightOfferResult.data as { trip_request_id: string };
+
       // 3. Create booking record
       const bookingData: TablesInsert<"bookings"> = {
         user_id: user.id,
-        trip_request_id: flightOfferResult.data.trip_request_id,
+        trip_request_id: tripRequestData.trip_request_id,
         flight_offer_id: offer.id,
       };
 

@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
+
 import { useFlags as useLDFlags, useLDClient } from 'launchdarkly-react-client-sdk';
 import { LDFlagValue } from 'launchdarkly-js-client-sdk';
 

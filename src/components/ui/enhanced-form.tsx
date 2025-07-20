@@ -1,3 +1,5 @@
+
+
 /**
  * Enhanced Form Components
  * 
@@ -5,7 +7,11 @@
  * and modern patterns following ShadCN documentation best practices.
  */
 
-import * as React from 'react'
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+type ChangeEvent<T = Element> = React.ChangeEvent<T>;
+type FC<T = {}> = React.FC<T>;
+
 import { cn } from '@/lib/utils'
 import { FormControl, FormDescription, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -25,14 +31,14 @@ interface BaseFieldProps {
 /**
  * Enhanced Text Input with better accessibility and validation states
  */
-interface TextFieldProps extends BaseFieldProps, React.ComponentProps<typeof Input> {
+interface TextFieldProps extends BaseFieldProps, ComponentProps<typeof Input> {
   value?: string
   onValueChange?: (value: string) => void
 }
 
 export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
   ({ label, description, required, error, className, value, onValueChange, onChange, ...props }, ref) => {
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
       onChange?.(e)
       onValueChange?.(e.target.value)
     }
@@ -114,14 +120,14 @@ SelectField.displayName = 'SelectField'
 /**
  * Enhanced Textarea Field
  */
-interface TextareaFieldProps extends BaseFieldProps, React.ComponentProps<typeof Textarea> {
+interface TextareaFieldProps extends BaseFieldProps, ComponentProps<typeof Textarea> {
   value?: string
   onValueChange?: (value: string) => void
 }
 
 export const TextareaField = React.forwardRef<HTMLTextAreaElement, TextareaFieldProps>(
   ({ label, description, required, error, className, value, onValueChange, onChange, ...props }, ref) => {
-    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
       onChange?.(e)
       onValueChange?.(e.target.value)
     }
@@ -259,11 +265,11 @@ SwitchField.displayName = 'SwitchField'
 interface FormGroupProps {
   title?: string
   description?: string
-  children: React.ReactNode
+  children: ReactNode
   className?: string
 }
 
-export const FormGroup: React.FC<FormGroupProps> = ({ title, description, children, className }) => {
+export const FormGroup: FC<FormGroupProps> = ({ title, description, children, className }) => {
   return (
     <fieldset className={cn("space-y-4", className)}>
       {(title || description) && (
@@ -285,12 +291,12 @@ export const FormGroup: React.FC<FormGroupProps> = ({ title, description, childr
 interface FormSectionProps {
   title?: string
   description?: string
-  children: React.ReactNode
+  children: ReactNode
   className?: string
   variant?: 'default' | 'bordered' | 'card'
 }
 
-export const FormSection: React.FC<FormSectionProps> = ({ 
+export const FormSection: FC<FormSectionProps> = ({ 
   title, 
   description, 
   children, 

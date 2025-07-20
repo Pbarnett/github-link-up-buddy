@@ -1,10 +1,15 @@
+
 /**
  * Field Template Library Component
  * 
  * Provides a library of field templates for form building
  */
 
-import React, { useState } from 'react';
+import * as React from 'react';
+const { useState } = React;
+type Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
+
 import { 
   Type, Mail, Phone, Hash, Calendar, MapPin, List, 
   CheckSquare, ToggleLeft, SlidersHorizontal, Star, Upload, 
@@ -299,7 +304,7 @@ const fieldTemplates: FieldTemplate[] = [
 ];
 
 // Icon mapping
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+const iconMap: Record<string, ComponentType<{ className?: string }>> = {
   Type,
   Mail,
   Phone,
@@ -319,7 +324,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   FileText
 };
 
-export const FieldTemplateLibrary: React.FC<FieldTemplateLibraryProps> = ({
+export const FieldTemplateLibrary: FC<FieldTemplateLibraryProps> = ({
   onFieldSelect,
   disabled = false
 }) => {

@@ -27,34 +27,10 @@ interface QueryResult<T> {
  */
 
 /**
- * For `.single()` or `.maybeSingle()` responses — returns QueryResult with T
+ * Universal safeQuery function that handles all Supabase query types
  */
 export async function safeQuery<T>(
-  queryFn: () => Promise<PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T>> | PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T>,
-  options?: {
-    errorMessage?: string;
-    showErrorToast?: boolean;
-  }
-): Promise<QueryResult<T>>;
-
-/**
- * For `.select()` responses — returns QueryResult with T[]
- */
-export async function safeQuery<T>(
-  queryFn: () => Promise<PostgrestResponse<T>> | PostgrestResponse<T>,
-  options?: {
-    errorMessage?: string;
-    showErrorToast?: boolean;
-  }
-): Promise<QueryResult<T[]>>;
-
-// Implementation
-export async function safeQuery<T>(
-  queryFn: () => 
-    | Promise<PostgrestSingleResponse<T> | PostgrestMaybeSingleResponse<T> | PostgrestResponse<T>>
-    | PostgrestSingleResponse<T>
-    | PostgrestMaybeSingleResponse<T>
-    | PostgrestResponse<T>,
+  queryFn: () => any,
   options?: {
     errorMessage?: string;
     showErrorToast?: boolean;

@@ -1,11 +1,15 @@
 
-import { useEffect, useState } from 'react';
+
+import * as React from 'react';
+const { useState, useEffect } = React;
+type ReactNode = React.ReactNode;
+
 import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { UserInitializationService } from '@/services/userInitialization';
 
 type AuthGuardProps = {
-  children: React.ReactNode;
+  children: ReactNode;
 };
 
 const AuthGuard = ({ children }: AuthGuardProps) => {

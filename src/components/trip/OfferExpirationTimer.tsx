@@ -1,9 +1,13 @@
+
 /**
  * @file Offer expiration countdown timer component
  * Handles the 5-20 minute validity window for Duffel flight offers
  */
 
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { Badge } from '@/components/ui/badge';
 import { Clock, AlertTriangle } from 'lucide-react';
 
@@ -13,7 +17,7 @@ interface OfferExpirationTimerProps {
   className?: string;
 }
 
-export const OfferExpirationTimer: React.FC<OfferExpirationTimerProps> = ({
+export const OfferExpirationTimer: FC<OfferExpirationTimerProps> = ({
   expiresAt,
   onExpired,
   className

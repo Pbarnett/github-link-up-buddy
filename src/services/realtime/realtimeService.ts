@@ -1,8 +1,13 @@
+
+
 /**
  * Enhanced Real-time Service for Supabase
  * Implements targeted subscriptions and optimized connection management
  * Based on Supabase real-time documentation best practices
  */
+
+import * as React from 'react';
+const { useState, useEffect } = React;
 
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
@@ -327,9 +332,9 @@ export function useRealtimeSubscription<T extends TableName>(
   callback: (payload: RealtimePostgresChangesPayload<Tables[T]['Row']>) => void,
   deps: React.DependencyList = []
 ) {
-  const [subscriptionId, setSubscriptionId] = React.useState<string | null>(null);
+  const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const id = realtimeService.subscribe(config, callback);
     setSubscriptionId(id);
 

@@ -121,14 +121,15 @@ public
 .gitignore
 README.md
 
-# Documentation
-docs/
+# Documentation (exclude most docs but keep deployment guides)
 *.md
+!docs/docker-deployment*.md
 
-# Tests
+# Tests (exclude most tests but keep integration tests)
 tests/
 test/
 __tests__/
+!tests/integration/
 *.test.js
 *.test.ts
 *.spec.js
@@ -155,9 +156,9 @@ docker-compose.dev.yml
 .dockerignore
 docker-compose.override.yml
 
-# Scripts and documentation
-scripts/
-docs/
+# Scripts and documentation (include deployment scripts)
+!scripts/docker-deploy.cjs
+!scripts/deploy-enhanced-aws-sdk.cjs
 
 # Backups
 backups/

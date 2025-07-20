@@ -1,5 +1,9 @@
 
-import React, { useState } from 'react';
+
+import * as React from 'react';
+const { useState } = React;
+type FC<T = {}> = React.FC<T>;
+
 import { useTripOffersPools } from '@/hooks/useTripOffers';
 import ConstraintChips from './ConstraintChips';
 import { Button } from '@/components/ui/button';
@@ -9,7 +13,7 @@ interface PoolOfferControlsProps {
   tripId: string;
 }
 
-const PoolOfferControls: React.FC<PoolOfferControlsProps> = ({ tripId }) => {
+const PoolOfferControls: FC<PoolOfferControlsProps> = ({ tripId }) => {
   const [nonStopOnly, setNonStopOnly] = useState(false);
   
   const {

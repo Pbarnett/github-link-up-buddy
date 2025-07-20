@@ -1,5 +1,9 @@
-import React from 'react';
+
+
 // src/tests/components/dashboard/TripHistory.test.tsx
+import * as React from 'react';
+type Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed

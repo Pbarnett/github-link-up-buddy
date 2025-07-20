@@ -208,7 +208,12 @@ mockSupabaseSingle.mockResolvedValue({ data: { id: 'notification_id_123' }, erro
       if (!twilioAccountSid) {
         console.log(`[SendNotification] SMS (Twilio SID) not configured, skipping SMS for user ${user_id}.`);
       } else {
-        console.log(`[SendNotification] SMS STUB: Would attempt to send SMS to user ${user_id} for type ${type}.`);
+        // Send SMS for critical notifications
+        if (type.includes('booking') || type === 'reminder_23h' || type === 'price_alert') {
+          console.warn(`[SendNotification] Twilio services not initialized, skipping SMS for user ${user_id}.`);
+        } else {
+          console.log(`[SendNotification] SMS not configured for notification type '${type}', skipping SMS for user ${user_id}.`);
+        }
       }
 
       return new Response(JSON.stringify({ success: true, notification_id: insertResult.data.id }), {
@@ -305,7 +310,22 @@ mockSupabaseSingle.mockResolvedValue({ data: { id: 'notification_id_123' }, erro
     expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('RESEND_API_KEY (VITE_RESEND_API_KEY) not configured'));
   });
 
-  it('5a. Logs SMS stub message if Twilio SID is present', async () => {
+  it('5a. Logs SMS not configured for non-critical notification types', async () => {
+    mockEnvGet.mockImplementation((key: string) => {
+        if (key === 'VITE_TWILIO_ACCOUNT_SID') return 'twilio_sid_mock';
+        if (key === 'SUPABASE_URL') return 'http://mock-supabase.url';
+        if (key === 'SUPABASE_SERVICE_ROLE_KEY') return 'mock-service-role-key';
+        if (key === 'VITE_RESEND_API_KEY') return 'mock-resend-api-key';
+        if (key === 'RESEND_FROM_EMAIL') return 'from@example.com';
+        return undefined;
+    });
+
+    const requestBody = { user_id: 'user123', type: 'non_critical_notification', payload: {} };
+    await sendNotificationHandler(createMockRequest(requestBody));
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('SMS not configured for notification type'));
+  });
+
+  it('5b. Warns about Twilio services not initialized for critical notifications', async () => {
     mockEnvGet.mockImplementation((key: string) => {
         if (key === 'VITE_TWILIO_ACCOUNT_SID') return 'twilio_sid_mock';
         if (key === 'SUPABASE_URL') return 'http://mock-supabase.url';
@@ -317,7 +337,7 @@ mockSupabaseSingle.mockResolvedValue({ data: { id: 'notification_id_123' }, erro
 
     const requestBody = { user_id: 'user123', type: 'booking_success', payload: {} };
     await sendNotificationHandler(createMockRequest(requestBody));
-    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('SMS STUB: Would attempt to send SMS'));
+    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Twilio services not initialized'));
   });
 
   it('5b. Logs SMS not configured if Twilio SID is missing', async () => {

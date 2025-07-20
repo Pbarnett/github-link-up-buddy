@@ -1,4 +1,6 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import * as React from 'react';
+const { useState, useEffect, useCallback, useMemo } = React;
+
 import { FilterOptions, FilterState } from '@/components/filtering/AdvancedFilterControls';
 import { ScoredOffer } from '@/types/offer';
 import { toast } from '@/components/ui/use-toast';

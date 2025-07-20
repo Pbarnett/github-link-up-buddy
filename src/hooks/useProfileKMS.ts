@@ -1,5 +1,7 @@
 // Hook for useProfile with KMS encryption
-import { useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
+const { useState, useEffect, useCallback } = React;
+
 import { profileServiceKMS, UserProfile } from '@/services/api/profileApiKMS';
 
 export interface UseProfileKMSReturn {

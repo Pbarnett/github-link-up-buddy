@@ -1,4 +1,8 @@
-import { useEffect, useState } from 'react';
+
+
+import * as React from 'react';
+const { useState, useEffect } = React;
+
 import { useLDClient } from 'launchdarkly-react-client-sdk';
 import { supabase } from '../../integrations/supabase/client';
 import { LaunchDarklyContextManager, UserAttributes } from './context-manager';

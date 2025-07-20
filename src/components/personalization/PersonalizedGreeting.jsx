@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { trackGreetingDisplay } from '@/scripts/analytics/personalization-tracking';
 
 const PersonalizedGreeting = ({ userId, isPersonalizationEnabled = true }) => {

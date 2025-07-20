@@ -1,6 +1,9 @@
 
+
+import * as React from 'react';
+const { useState } = React;
+
 import { Control } from "react-hook-form";
-import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";

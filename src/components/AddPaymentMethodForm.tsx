@@ -1,4 +1,11 @@
-import { useState } from 'react';
+
+
+import * as React from 'react';
+const { useState } = React;
+type FC<T = {}> = React.FC<T>;
+type FormEvent = React.FormEvent;
+type ChangeEvent<T = Element> = React.ChangeEvent<T>;
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +19,7 @@ interface AddPaymentMethodFormProps {
   onCancel?: () => void;
 }
 
-export const AddPaymentMethodForm: React.FC<AddPaymentMethodFormProps> = ({ 
+export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({ 
   onSuccess, 
   onCancel 
 }) => {
@@ -27,7 +34,7 @@ export const AddPaymentMethodForm: React.FC<AddPaymentMethodFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { addPaymentMethod } = usePaymentMethods();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -55,26 +62,26 @@ export const AddPaymentMethodForm: React.FC<AddPaymentMethodFormProps> = ({
     }
   };
 
-  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCardNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCardNumber(e.target.value);
     setFormData(prev => ({ ...prev, card_number: formatted }));
   };
 
-  const handleExpMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleExpMonthChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '');
     if (value.length <= 2) {
       setFormData(prev => ({ ...prev, exp_month: value }));
     }
   };
 
-  const handleExpYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleExpYearChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '');
     if (value.length <= 4) {
       setFormData(prev => ({ ...prev, exp_year: value }));
     }
   };
 
-  const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCvvChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '');
     if (value.length <= 4) {
       setFormData(prev => ({ ...prev, cvv: value }));
@@ -135,7 +142,7 @@ export const AddPaymentMethodForm: React.FC<AddPaymentMethodFormProps> = ({
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {

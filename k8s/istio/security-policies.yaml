@@ -1,0 +1,61 @@
+---
+# Enable mutual TLS for the entire namespace
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: parker-flight
+spec:
+  mtls:
+    mode: STRICT
+---
+# Authorization policy - allow all traffic for now, can be restricted later
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: parker-flight-authz
+  namespace: parker-flight
+spec:
+  selector:
+    matchLabels:
+      app: parker-flight
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/parker-flight/sa/default"]
+  - to:
+    - operation:
+        methods: ["GET", "POST"]
+---
+# Network Policy for additional layer of security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: parker-flight-network-policy
+  namespace: parker-flight
+spec:
+  podSelector:
+    matchLabels:
+      app: parker-flight
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: istio-system
+    ports:
+    - protocol: TCP
+      port: 80
+  egress:
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443  # HTTPS outbound
+    - protocol: TCP  
+      port: 80   # HTTP outbound
+    - protocol: TCP
+      port: 53   # DNS
+    - protocol: UDP
+      port: 53   # DNS

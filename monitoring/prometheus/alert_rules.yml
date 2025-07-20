@@ -1,0 +1,52 @@
+groups:
+- name: parker_flight_alerts
+  rules:
+  # High CPU usage alert
+  - alert: HighCPUUsage
+    expr: (rate(container_cpu_usage_seconds_total{name="parker-flight"}[5m]) * 100) > 80
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage on Parker Flight container"
+      description: "Parker Flight container CPU usage is above 80% for more than 2 minutes"
+
+  # High memory usage alert  
+  - alert: HighMemoryUsage
+    expr: (container_memory_usage_bytes{name="parker-flight"} / container_spec_memory_limit_bytes{name="parker-flight"}) * 100 > 85
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High memory usage on Parker Flight container"
+      description: "Parker Flight container memory usage is above 85% for more than 5 minutes"
+
+  # Container down alert
+  - alert: ContainerDown
+    expr: up{job="parker-flight"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Parker Flight container is down"
+      description: "Parker Flight container has been down for more than 1 minute"
+
+  # High error rate alert
+  - alert: HighErrorRate
+    expr: rate(nginx_http_requests_total{status=~"5.."}[5m]) > 0.1
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High error rate on Parker Flight"
+      description: "Error rate is above 10% for more than 2 minutes"
+
+  # Disk space alert
+  - alert: LowDiskSpace
+    expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Low disk space"
+      description: "Disk space is below 10% for more than 5 minutes"

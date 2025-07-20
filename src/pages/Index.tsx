@@ -1,11 +1,14 @@
 
+
+import * as React from 'react';
+const { useState } = React;
+
 import { Button } from "@/components/ui/button";
 import { InteractiveButton } from "@/components/ui/interactive-button";
 import { EnhancedInput } from "@/components/ui/enhanced-input";
 import { ModernScrollArea, ScrollItem } from "@/components/ui/modern-scroll-area";
 import { Link } from "react-router-dom";
 import RadixThemeDemo from "@/components/demo/RadixThemeDemo";
-import { useState } from "react";
 import { Search, Plane, Users, Star } from "lucide-react";
 
 const Index = () => {

@@ -60,7 +60,7 @@ function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
     if (cardElement) {
       const { error, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
-        card: cardElement,
+        card: cardElement as any, // Type assertion to resolve compatibility issue
         billing_details: {
           name: 'Jenny Rosen', // TODO: Use actual cardholder name
         },

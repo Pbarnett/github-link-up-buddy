@@ -1,9 +1,14 @@
+
 /**
  * Smart Error Boundary
  * Global error boundary with retry mechanisms and graceful degradation
  */
 
-import React, { Component, ReactNode } from 'react';
+import * as React from 'react';
+type ReactNode = React.ReactNode;
+type ErrorInfo = React.ErrorInfo;
+type ComponentType<P = {}> = React.ComponentType<P>;
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -19,12 +24,12 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
-  errorInfo?: React.ErrorInfo;
+  errorInfo?: ErrorInfo;
   retryCount: number;
   isRetrying: boolean;
 }
 
-export class SmartErrorBoundary extends Component<Props, State> {
+export class SmartErrorBoundary extends React.Component<Props, State> {
   private retryTimeoutId: number | null = null;
 
   constructor(props: Props) {
@@ -40,7 +45,7 @@ export class SmartErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo });
     
     // Report error with context
@@ -206,7 +211,7 @@ export class SmartErrorBoundary extends Component<Props, State> {
 
 // HOC for wrapping components with error boundary
 export function withErrorBoundary<P extends object>(
-  Component: React.ComponentType<P>,
+  Component: ComponentType<P>,
   level: Props['level'] = 'component'
 ) {
   return function WithErrorBoundaryComponent(props: P) {

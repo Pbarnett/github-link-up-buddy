@@ -1,9 +1,13 @@
+
+
 /**
  * Retry Queue for Offline Operations
  * Queues tasks for re-execution when network becomes available
  */
 
-import { useEffect, useState } from 'react';
+import * as React from 'react';
+const { useState, useEffect } = React;
+
 import localforage from 'localforage';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { trackEvent } from './monitoring';

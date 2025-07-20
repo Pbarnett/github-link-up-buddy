@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Test-safe wrapper for computeCarryOnFee that doesn't execute module-level Deno calls
 // This isolates the function logic from the edge function environment setup
 

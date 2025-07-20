@@ -1,5 +1,7 @@
+
+import * as React from 'react';
+
 import { vi } from 'vitest';
-import React from 'react';
 
 // Create predictable test dates
 export const getTestDates = () => {

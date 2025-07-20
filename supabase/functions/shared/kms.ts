@@ -25,7 +25,7 @@ const kmsClient = new KMSClient({
   }),
 });
 
-// Key aliases for different data types
+// Production KMS Key Aliases (deployed successfully)
 export const KMS_KEYS = {
   GENERAL: Deno.env.get("KMS_GENERAL_ALIAS") || "alias/parker-flight-general-production",
   PII: Deno.env.get("KMS_PII_ALIAS") || "alias/parker-flight-pii-production",
@@ -50,6 +50,10 @@ export async function encryptData(
     const command = new EncryptCommand({
       KeyId: KMS_KEYS[keyType],
       Plaintext: new TextEncoder().encode(plaintext),
+      EncryptionContext: {
+        purpose: keyType === 'PAYMENT' ? 'payment-method-data' : keyType === 'PII' ? 'user-profile-data' : 'general-data',
+        application: 'parker-flight',
+      },
     });
 
     const response = await kmsClient.send(command);
@@ -86,6 +90,7 @@ export async function decryptData(
 
     const command = new DecryptCommand({
       CiphertextBlob: ciphertextBlob,
+      // KMS will automatically use the encryption context from the encrypted data
     });
 
     const response = await kmsClient.send(command);

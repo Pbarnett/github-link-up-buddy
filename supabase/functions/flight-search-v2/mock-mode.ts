@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Mock mode implementation for flight-search-v2 edge function
 // This allows offline testing without consuming Amadeus API quota
 

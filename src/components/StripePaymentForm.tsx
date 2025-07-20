@@ -1,4 +1,10 @@
-import React, { useState, useEffect } from 'react';
+
+
+import * as React from 'react';
+const { useState, useEffect } = React;
+type FC<T = {}> = React.FC<T>;
+type FormEvent = React.FormEvent;
+
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -37,7 +43,7 @@ interface PaymentFormProps {
 
 // Note: DuffelPaymentDetails interface removed as it's not used
 
-const PaymentForm: React.FC<PaymentFormProps> = ({
+const PaymentForm: FC<PaymentFormProps> = ({
   amount,
   currency,
   offerId,
@@ -80,7 +86,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     createPaymentIntent();
   }, [amount, currency, offerId, passengers.length]);
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
     if (!stripe || !elements || !clientSecret) {
@@ -295,7 +301,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   );
 };
 
-const StripePaymentForm: React.FC<PaymentFormProps> = (props) => {
+const StripePaymentForm: FC<PaymentFormProps> = (props) => {
   return (
     <Elements stripe={stripePromise}>
       <PaymentForm {...props} />
