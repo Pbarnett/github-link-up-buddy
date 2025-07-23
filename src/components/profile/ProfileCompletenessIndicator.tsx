@@ -1,28 +1,19 @@
-
-
-import * as React from 'react';
-type Component<P = {}, S = {}> = React.Component<P, S>;
-
+import React, { ComponentType } from 'react';
+import {
+  CheckCircle2,
+  AlertCircle,
+  User,
+  CreditCard,
+  Phone,
+  MapPin,
+  FileText,
+  Award
+} from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  CheckCircle2, 
-  AlertCircle, 
-  User, 
-  CreditCard, 
-  Phone, 
-  MapPin,
-  FileText,
-  Award,
-  Loader2,
-  RefreshCw
-} from 'lucide-react';
-import { useUser } from '@supabase/auth-helpers-react';
-import { DatabaseOperations } from '@/lib/supabase/database-operations';
-import { cn } from '@/lib/utils';
 
 export interface ProfileField {
   id: string;
@@ -76,11 +67,6 @@ export function ProfileCompletenessIndicator({
 }: ProfileCompletenessIndicatorProps) {
   const { completionPercentage, completedFields, totalFields, fields, tier = 'basic' } = data;
   
-  const getProgressColor = (percentage: number) => {
-    if (percentage >= 90) return 'bg-green-500';
-    if (percentage >= 70) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
 
   const getTierBadge = (tier: string) => {
     const variants = {

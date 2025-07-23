@@ -1,26 +1,73 @@
 
 
-import * as React from 'react';
-const { useState, useMemo, use } = React;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 import AuthGuard from "@/components/AuthGuard";
 import { ProfileForm } from "@/components/ProfileForm";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTravelerProfile } from "@/hooks/useTravelerProfile";
+import { useTravelerProfile, TravelerProfile } from "@/hooks/useTravelerProfile";
 import { SimpleProfileStatus } from "@/components/profile/SimpleProfileStatus";
+import { ProfileCompletenessIndicator, ProfileCompletenessData, ProfileField } from "@/components/profile/ProfileCompletenessIndicator";
 import { toast } from "@/hooks/use-toast";
-
 import { ProfileCompletenessScore, ProfileRecommendation } from "@/services/profileCompletenessService";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { ProfileV2 } from "@/components/profile/ProfileV2";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { WalletProvider, useWallet } from "@/contexts/WalletContext";
+import { useWallet } from "@/contexts/WalletContext";
 import { PaymentMethodList } from "@/components/wallet/PaymentMethodList";
 import { AddCardModal } from "@/components/wallet/AddCardModal";
+import { User, Phone, MapPin, FileText } from "lucide-react";
+import { useState, useMemo } from 'react';
+
+// Utility function to convert ProfileCompletenessScore to ProfileCompletenessData
+function convertToIndicatorData(
+  completenessScore: ProfileCompletenessScore,
+  profile: TravelerProfile | null
+): ProfileCompletenessData {
+  const fieldMappings: Record<string, { category: ProfileField['category'], label: string, required: boolean, icon: any }> = {
+    full_name: { category: 'basic', label: 'Full Name', required: true, icon: User },
+    date_of_birth: { category: 'basic', label: 'Date of Birth', required: true, icon: User },
+    gender: { category: 'basic', label: 'Gender', required: true, icon: User },
+    email: { category: 'contact', label: 'Email Address', required: true, icon: Phone },
+    phone: { category: 'contact', label: 'Phone Number', required: false, icon: Phone },
+    passport_number: { category: 'travel', label: 'Passport Number', required: false, icon: MapPin },
+    passport_country: { category: 'travel', label: 'Passport Country', required: false, icon: MapPin },
+    passport_expiry: { category: 'travel', label: 'Passport Expiry', required: false, icon: MapPin },
+    known_traveler_number: { category: 'travel', label: 'Known Traveler Number', required: false, icon: MapPin },
+    phone_verified: { category: 'verification', label: 'Phone Verification', required: false, icon: FileText },
+    is_verified: { category: 'verification', label: 'Identity Verification', required: false, icon: FileText },
+  };
+
+  const fields: ProfileField[] = Object.entries(fieldMappings).map(([fieldId, config]) => {
+    const value = profile?.[fieldId as keyof TravelerProfile];
+    const isCompleted = fieldId === 'phone_verified' || fieldId === 'is_verified' 
+      ? Boolean(value) 
+      : Boolean(value && value !== '');
+    
+    return {
+      id: fieldId,
+      label: config.label,
+      completed: isCompleted,
+      required: config.required,
+      category: config.category,
+      icon: config.icon,
+      description: `Complete your ${config.label.toLowerCase()} for a better booking experience`
+    };
+  });
+
+  return {
+    completionPercentage: completenessScore.overall,
+    completedFields: fields.filter(f => f.completed).length,
+    totalFields: fields.length,
+    fields,
+    lastUpdated: profile?.updated_at ? new Date(profile.updated_at) : new Date(),
+    tier: completenessScore.overall >= 100 ? 'verified' : 
+          completenessScore.overall >= 70 ? 'complete' : 'basic'
+  };
+}
 
 // Wallet Tab Component (inside WalletProvider)
 function WalletTab({ 
@@ -89,7 +136,7 @@ function EnhancedProfilePage() {
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   
   // Calculate completeness from profile data if completion tracking is not available
-  const _completenessData: ProfileCompletenessScore = useMemo(() => { // eslint-disable-line @typescript-eslint/no-unused-vars
+  const _completenessData: ProfileCompletenessScore = useMemo(() => {  
     if (completion) {
       return {
         overall: completion.completion_percentage,
@@ -130,7 +177,67 @@ function EnhancedProfilePage() {
     };
   }, [completion, profile, calculateCompleteness]);
   
-  const _handleActionClick = (action: string) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+  // Convert to indicator data format
+  const indicatorData = useMemo(() => {
+    return convertToIndicatorData(_completenessData, profile);
+  }, [_completenessData, profile]);
+  
+  // Handle field clicks from the indicator
+  const handleFieldClick = (fieldId: string) => {
+    setActiveTab('profile');
+    
+    // Focus on specific form fields based on the field ID
+    setTimeout(() => {
+      let selector = '';
+      switch (fieldId) {
+        case 'full_name':
+          selector = '[id^="first_name"], [id^="full_name"]';
+          break;
+        case 'date_of_birth':
+        case 'gender':
+        case 'email':
+        case 'phone':
+          selector = `[id^="${fieldId}"]`;
+          break;
+        case 'passport_number':
+        case 'passport_country':
+        case 'passport_expiry':
+        case 'known_traveler_number':
+          selector = `[id^="${fieldId}"]`;
+          break;
+        default:
+          selector = '[id^="first_name"]';
+      }
+      
+      const formElement = document.querySelector(selector);
+      if (formElement && formElement instanceof HTMLElement) {
+        formElement.focus();
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+    
+    // Show appropriate toast message
+    const fieldLabels: Record<string, string> = {
+      full_name: 'Full Name',
+      date_of_birth: 'Date of Birth',
+      gender: 'Gender',
+      email: 'Email Address',
+      phone: 'Phone Number',
+      passport_number: 'Passport Number',
+      passport_country: 'Passport Country',
+      passport_expiry: 'Passport Expiry Date',
+      known_traveler_number: 'Known Traveler Number',
+      phone_verified: 'Phone Verification',
+      is_verified: 'Identity Verification'
+    };
+    
+    toast({
+      title: `Complete ${fieldLabels[fieldId] || 'Field'}`,
+      description: `Please fill out your ${(fieldLabels[fieldId] || fieldId).toLowerCase()} in the form below.`,
+    });
+  };
+  
+  const _handleActionClick = (action: string) => {
     switch (action) {
       case 'complete_profile':
         setActiveTab('profile');
@@ -198,7 +305,19 @@ function EnhancedProfilePage() {
             </TabsList>
             
             <TabsContent value="profile" className="space-y-6">
-              <ProfileV2 />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <ProfileV2 />
+                </div>
+                <div className="space-y-4">
+                  <ProfileCompletenessIndicator
+                    data={indicatorData}
+                    onFieldClick={handleFieldClick}
+                    showFieldList={true}
+                    compact={false}
+                  />
+                </div>
+              </div>
             </TabsContent>
             
             <TabsContent value="notifications" className="space-y-6">
@@ -207,12 +326,10 @@ function EnhancedProfilePage() {
             
             {showWalletUI && !walletFlagLoading && (
               <TabsContent value="wallet" className="space-y-6">
-                <WalletProvider>
-                  <WalletTab 
-                    showAddCardModal={showAddCardModal} 
-                    setShowAddCardModal={setShowAddCardModal} 
-                  />
-                </WalletProvider>
+                <WalletTab 
+                  showAddCardModal={showAddCardModal} 
+                  setShowAddCardModal={setShowAddCardModal} 
+                />
               </TabsContent>
             )}
             
@@ -298,6 +415,66 @@ function LegacyProfilePage() {
     };
   }, [completion, profile, calculateCompleteness]);
   
+  // Convert to indicator data format
+  const indicatorData = useMemo(() => {
+    return convertToIndicatorData(completenessData, profile);
+  }, [completenessData, profile]);
+  
+  // Handle field clicks from the indicator
+  const handleFieldClick = (fieldId: string) => {
+    setActiveTab('profile');
+    
+    // Focus on specific form fields based on the field ID
+    setTimeout(() => {
+      let selector = '';
+      switch (fieldId) {
+        case 'full_name':
+          selector = '[id^="first_name"], [id^="full_name"]';
+          break;
+        case 'date_of_birth':
+        case 'gender':
+        case 'email':
+        case 'phone':
+          selector = `[id^="${fieldId}"]`;
+          break;
+        case 'passport_number':
+        case 'passport_country':
+        case 'passport_expiry':
+        case 'known_traveler_number':
+          selector = `[id^="${fieldId}"]`;
+          break;
+        default:
+          selector = '[id^="first_name"]';
+      }
+      
+      const formElement = document.querySelector(selector);
+      if (formElement && formElement instanceof HTMLElement) {
+        formElement.focus();
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+    
+    // Show appropriate toast message
+    const fieldLabels: Record<string, string> = {
+      full_name: 'Full Name',
+      date_of_birth: 'Date of Birth',
+      gender: 'Gender',
+      email: 'Email Address',
+      phone: 'Phone Number',
+      passport_number: 'Passport Number',
+      passport_country: 'Passport Country',
+      passport_expiry: 'Passport Expiry Date',
+      known_traveler_number: 'Known Traveler Number',
+      phone_verified: 'Phone Verification',
+      is_verified: 'Identity Verification'
+    };
+    
+    toast({
+      title: `Complete ${fieldLabels[fieldId] || 'Field'}`,
+      description: `Please fill out your ${(fieldLabels[fieldId] || fieldId).toLowerCase()} in the form below.`,
+    });
+  };
+  
   const handleActionClick = (action: string) => {
     switch (action) {
       case 'complete_profile':
@@ -357,12 +534,24 @@ function LegacyProfilePage() {
             </TabsList>
             
             <TabsContent value="profile" className="space-y-6">
-              <SimpleProfileStatus 
-                completeness={completenessData}
-                onActionClick={handleActionClick}
-                className="mb-6"
-              />
-              <ProfileForm useKMS={true} />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                  <SimpleProfileStatus 
+                    completeness={completenessData}
+                    onActionClick={handleActionClick}
+                    className="mb-6"
+                  />
+                  <ProfileForm useKMS={true} />
+                </div>
+                <div className="space-y-4">
+                  <ProfileCompletenessIndicator
+                    data={indicatorData}
+                    onFieldClick={handleFieldClick}
+                    showFieldList={true}
+                    compact={false}
+                  />
+                </div>
+              </div>
             </TabsContent>
             
             <TabsContent value="notifications" className="space-y-6">
