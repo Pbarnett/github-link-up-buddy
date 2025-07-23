@@ -1,27 +1,27 @@
-import * as React from 'react';
-const { useState } = React;
-
-import AuthGuard from "@/components/AuthGuard";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { usePaymentMethods, PaymentMethod } from "@/hooks/usePaymentMethods";
+import { X, Plus } from "lucide-react";
+import AuthGuard from "@/components/AuthGuard";
+import { useWallet } from "@/contexts/WalletContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { AddCardModal } from "@/components/wallet/AddCardModal";
-import { Plus, X } from "lucide-react";
-
 function WalletPage() {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const { data, error, isLoading, refetch } = usePaymentMethods();
+  const { 
+    paymentMethods, 
+    loading, 
+    error, 
+    refreshPaymentMethods, 
+    setDefaultPaymentMethod, 
+    deletePaymentMethod 
+  } = useWallet();
   const { user } = useCurrentUser();
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const queryClient = useQueryClient();
 
-  const handleSetDefault = async (paymentMethod: PaymentMethod) => {
+  const handleSetDefault = async (paymentMethod: any) => {
     if (!user) {
       toast({
         title: "Error",
@@ -33,41 +33,12 @@ function WalletPage() {
 
     try {
       setIsUpdating(paymentMethod.id);
-      
-      const res = await fetch(
-        `${supabaseUrl}/functions/v1/set-default-payment-method`,
-        {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          },
-          body: JSON.stringify({ 
-            id: paymentMethod.id  // Keep using the database ID since our edge function expects it
-          }),
-        }
-      );
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        let errorMessage = "Failed to update default payment method";
-        
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.error || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
-        
-        throw new Error(errorMessage);
-      }
+      await setDefaultPaymentMethod(paymentMethod.id);
       
       toast({
         title: "Payment method updated",
-        description: "Your default payment method has been updated in both our system and Stripe.",
+        description: "Your default payment method has been updated.",
       });
-      
-      queryClient.invalidateQueries({ queryKey: ["payment_methods"] });
     } catch (err: unknown) {
       console.error("Error setting default payment method:", err);
       toast({
@@ -80,7 +51,7 @@ function WalletPage() {
     }
   };
 
-  const handleDeleteCard = async (paymentMethod: PaymentMethod) => {
+  const handleDeleteCard = async (paymentMethod: any) => {
     if (!user) {
       toast({
         title: "Error",
@@ -101,41 +72,12 @@ function WalletPage() {
 
     try {
       setIsUpdating(paymentMethod.id);
-      
-      const res = await fetch(
-        `${supabaseUrl}/functions/v1/delete-payment-method`,
-        {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          },
-          body: JSON.stringify({ 
-            id: paymentMethod.id  // Keep using the database ID since our edge function expects it
-          }),
-        }
-      );
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        let errorMessage = "Failed to delete payment method";
-        
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.error || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
-        
-        throw new Error(errorMessage);
-      }
+      await deletePaymentMethod(paymentMethod.id);
       
       toast({
         title: "Payment method deleted",
-        description: "Your payment method has been removed from both our system and Stripe.",
+        description: "Your payment method has been removed successfully.",
       });
-      
-      queryClient.invalidateQueries({ queryKey: ["payment_methods"] });
     } catch (err: unknown) {
       console.error("Error deleting payment method:", err);
       toast({
@@ -155,12 +97,12 @@ function WalletPage() {
           <div className="px-4 py-5 sm:p-6 space-y-6">
             <h1 className="text-2xl font-semibold">Wallet</h1>
             
-            {isLoading && <p className="text-gray-600">Loading saved cards…</p>}
-            {error && <p className="text-red-600">Error loading cards: {error.message}</p>}
+            {loading && <p className="text-gray-600">Loading saved cards…</p>}
+            {error && <p className="text-red-600">Error loading cards: {error}</p>}
 
-            {data && data.length > 0 ? (
+            {paymentMethods && paymentMethods.length > 0 ? (
               <ul className="divide-y divide-gray-200">
-                {data.map((pm: PaymentMethod) => (
+                {paymentMethods.map((pm: any) => (
                   <li key={pm.id} className="py-4 flex justify-between items-center">
                     <div className="flex items-center space-x-3">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -201,7 +143,7 @@ function WalletPage() {
                   </li>
                 ))}
               </ul>
-            ) : !isLoading && (
+            ) : !loading && (
               <p className="text-gray-600 py-4">No payment methods saved yet.</p>
             )}
 
@@ -234,7 +176,7 @@ function WalletPage() {
                 onClose={() => setShowAddForm(false)}
                 onSuccess={() => {
                   setShowAddForm(false);
-                  refetch();
+                  refreshPaymentMethods();
                 }}
               />
             </div>
