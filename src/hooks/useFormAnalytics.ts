@@ -6,11 +6,10 @@
  * Tracks form interactions and performance metrics
  */
 
-import * as React from 'react';
-const { useEffect, useCallback, useRef } = React;
 
 import { supabase } from '@/integrations/supabase/client';
 import type { FormConfiguration } from '@/types/dynamic-forms';
+import { useRef, useEffect, useCallback } from 'react';
 
 interface FormAnalyticsConfig {
   formConfig: FormConfiguration;
@@ -33,26 +32,19 @@ export const useFormAnalytics = ({ formConfig, sessionId, userId }: FormAnalytic
   const fieldStartTimes = useRef<Record<string, number>>({});
   const hasTrackedView = useRef<boolean>(false);
 
-  // Track form view on mount
-  useEffect(() => {
-    if (!hasTrackedView.current && formConfig) {
-      trackEvent({
-        type: 'form_view'
+  // Queue events locally when network fails
+  const queueEventLocally = useCallback((eventPayload: Record<string, unknown>) => {
+    try {
+      const queue = JSON.parse(localStorage.getItem('pf_analytics_queue') || '[]');
+      queue.push({
+        ...eventPayload,
+        queued_at: Date.now()
       });
-      hasTrackedView.current = true;
+      // Keep only last 100 events to prevent storage bloat
+      localStorage.setItem('pf_analytics_queue', JSON.stringify(queue.slice(-100)));
+    } catch (error) {
+      console.warn('Failed to queue analytics event locally:', error);
     }
-  }, [formConfig]);
-
-  // Track form abandon on unmount
-  useEffect(() => {
-    return () => {
-      if (hasTrackedView.current) {
-        trackEvent({
-          type: 'form_abandon',
-          duration: Date.now() - startTime.current
-        });
-      }
-    };
   }, []);
 
   const trackEvent = useCallback(async (event: AnalyticsEvent) => {
@@ -77,10 +69,10 @@ export const useFormAnalytics = ({ formConfig, sessionId, userId }: FormAnalytic
     };
 
     // Retry logic with exponential backoff
-    let retryCount = 0;
-    const maxRetries = 3;
+    let attempt = 0;
+    const maxRetries = 2; // Maximum retry attempts (total attempts = maxRetries + 1)
     
-    while (retryCount <= maxRetries) {
+    while (attempt <= maxRetries) {
       try {
         const { error } = await supabase.rpc('track_form_event', eventPayload);
 
@@ -92,36 +84,43 @@ export const useFormAnalytics = ({ formConfig, sessionId, userId }: FormAnalytic
         break;
         
       } catch (error: unknown) {
-        retryCount++;
-        
-        if (retryCount > maxRetries) {
+        if (attempt >= maxRetries) {
           // Final failure - queue locally for later retry
           console.warn('Analytics tracking failed after retries, queuing locally:', error);
           queueEventLocally(eventPayload);
           break;
         }
         
+        attempt++;
+        
         // Wait before retry (exponential backoff)
-        const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 5000);
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
-  }, [formConfig, sessionId, userId]);
-  
-  // Queue events locally when network fails
-  const queueEventLocally = useCallback((eventPayload: Record<string, unknown>) => {
-    try {
-      const queue = JSON.parse(localStorage.getItem('pf_analytics_queue') || '[]');
-      queue.push({
-        ...eventPayload,
-        queued_at: Date.now()
+  }, [formConfig, sessionId, userId, queueEventLocally]);
+
+  // Track form view on mount
+  useEffect(() => {
+    if (!hasTrackedView.current && formConfig) {
+      trackEvent({
+        type: 'form_view'
       });
-      // Keep only last 100 events to prevent storage bloat
-      localStorage.setItem('pf_analytics_queue', JSON.stringify(queue.slice(-100)));
-    } catch (error) {
-      console.warn('Failed to queue analytics event locally:', error);
+      hasTrackedView.current = true;
     }
-  }, []);
+  }, [formConfig, trackEvent]);
+
+  // Track form abandon on unmount
+  useEffect(() => {
+    return () => {
+      if (hasTrackedView.current) {
+        trackEvent({
+          type: 'form_abandon',
+          duration: Date.now() - startTime.current
+        });
+      }
+    };
+  }, [trackEvent]);
 
   const trackFieldInteraction = useCallback((fieldId: string, fieldType: string) => {
     fieldStartTimes.current[fieldId] = Date.now();
