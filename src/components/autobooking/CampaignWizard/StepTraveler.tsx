@@ -5,11 +5,23 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
@@ -45,8 +57,18 @@ interface StepTravelerProps {
   isLoading?: boolean;
 }
 
-function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTravelerProps) {
-  const { control, handleSubmit, formState: { errors }, watch } = useForm<TravelerFormData>({
+function StepTraveler({
+  initialData,
+  onNext,
+  onBack,
+  isLoading = false,
+}: StepTravelerProps) {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    watch,
+  } = useForm<TravelerFormData>({
     resolver: zodResolver(travelerSchema),
     defaultValues: {
       firstName: initialData?.firstName || '',
@@ -89,16 +111,17 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
           Traveler Information
         </CardTitle>
         <CardDescription>
-          Provide traveler details for automated booking. This information will be securely stored and encrypted.
+          Provide traveler details for automated booking. This information will
+          be securely stored and encrypted.
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Basic Information</h3>
-            
+
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name *</Label>
@@ -115,7 +138,9 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
                   )}
                 />
                 {errors.firstName && (
-                  <p className="text-sm text-red-500">{errors.firstName.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.firstName.message}
+                  </p>
                 )}
               </div>
 
@@ -134,7 +159,9 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
                   )}
                 />
                 {errors.lastName && (
-                  <p className="text-sm text-red-500">{errors.lastName.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.lastName.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -203,7 +230,9 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
                   )}
                 />
                 {errors.dateOfBirth && (
-                  <p className="text-sm text-red-500">{errors.dateOfBirth.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.dateOfBirth.message}
+                  </p>
                 )}
               </div>
 
@@ -214,7 +243,9 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
                   control={control}
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className={errors.nationality ? 'border-red-500' : ''}>
+                      <SelectTrigger
+                        className={errors.nationality ? 'border-red-500' : ''}
+                      >
                         <SelectValue placeholder="Select nationality" />
                       </SelectTrigger>
                       <SelectContent>
@@ -231,7 +262,9 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
                   )}
                 />
                 {errors.nationality && (
-                  <p className="text-sm text-red-500">{errors.nationality.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.nationality.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -240,7 +273,7 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
           {/* Travel Documents */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Travel Documents (Optional)</h3>
-            
+
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="passportNumber">Passport Number</Label>
@@ -266,18 +299,16 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
                   name="passportExpiry"
                   control={control}
                   render={({ field }) => (
-                    <Input
-                      {...field}
-                      type="date"
-                      id="passportExpiry"
-                    />
+                    <Input {...field} type="date" id="passportExpiry" />
                   )}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="knownTravelerNumber">Known Traveler Number (TSA PreCheck/Global Entry)</Label>
+              <Label htmlFor="knownTravelerNumber">
+                Known Traveler Number (TSA PreCheck/Global Entry)
+              </Label>
               <Controller
                 name="knownTravelerNumber"
                 control={control}
@@ -294,16 +325,23 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
 
           {/* Preferences */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Travel Preferences (Optional)</h3>
-            
+            <h3 className="text-lg font-medium">
+              Travel Preferences (Optional)
+            </h3>
+
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="frequentFlyerAirline">Frequent Flyer Airline</Label>
+                <Label htmlFor="frequentFlyerAirline">
+                  Frequent Flyer Airline
+                </Label>
                 <Controller
                   name="frequentFlyerAirline"
                   control={control}
                   render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ''}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select airline" />
                       </SelectTrigger>
@@ -323,7 +361,9 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="frequentFlyerNumber">Frequent Flyer Number</Label>
+                <Label htmlFor="frequentFlyerNumber">
+                  Frequent Flyer Number
+                </Label>
                 <Controller
                   name="frequentFlyerNumber"
                   control={control}
@@ -354,7 +394,9 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="accessibilityRequirements">Accessibility Requirements</Label>
+              <Label htmlFor="accessibilityRequirements">
+                Accessibility Requirements
+              </Label>
               <Controller
                 name="accessibilityRequirements"
                 control={control}
@@ -402,18 +444,31 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
                 )}
               />
               <Label htmlFor="agreeToTerms" className="text-sm">
-                I agree to the <a href="/terms" className="text-blue-600 hover:underline">Terms and Conditions</a> and <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a> *
+                I agree to the{' '}
+                <a href="/terms" className="text-blue-600 hover:underline">
+                  Terms and Conditions
+                </a>{' '}
+                and{' '}
+                <a href="/privacy" className="text-blue-600 hover:underline">
+                  Privacy Policy
+                </a>{' '}
+                *
               </Label>
             </div>
             {errors.agreeToTerms && (
-              <p className="text-sm text-red-500">{errors.agreeToTerms.message}</p>
+              <p className="text-sm text-red-500">
+                {errors.agreeToTerms.message}
+              </p>
             )}
           </div>
 
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              All traveler information is encrypted and securely stored. {watchSaveProfile ? 'Your profile will be saved for future bookings.' : 'Your information will only be used for this campaign.'}
+              All traveler information is encrypted and securely stored.{' '}
+              {watchSaveProfile
+                ? 'Your profile will be saved for future bookings.'
+                : 'Your information will only be used for this campaign.'}
             </AlertDescription>
           </Alert>
 
@@ -427,11 +482,8 @@ function StepTraveler({ initialData, onNext, onBack, isLoading = false }: StepTr
             >
               Back
             </Button>
-            
-            <Button
-              type="submit"
-              disabled={isLoading}
-            >
+
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Processing...' : 'Next: Payment Info'}
             </Button>
           </div>

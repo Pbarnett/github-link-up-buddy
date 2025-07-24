@@ -1,8 +1,6 @@
-
-
 /**
  * TypeScript Types for Dynamic Forms System
- * 
+ *
  * Shared types for form configurations, validation, and rendering
  */
 
@@ -55,7 +53,7 @@ export interface FieldConfiguration {
   className?: string;
   defaultValue?: unknown;
   options?: FieldOption[]; // For select, radio, checkbox fields
-  
+
   // Field-specific properties
   rows?: number; // For textarea
   autoComplete?: string; // For input fields
@@ -74,14 +72,35 @@ export interface FieldConfiguration {
   allowHalf?: boolean; // For rating fields
 }
 
-export type FieldType = 
-  | 'text' | 'email' | 'phone' | 'number' | 'password' | 'textarea' | 'url'
-  | 'select' | 'multi-select' | 'radio' | 'checkbox' | 'switch'
-  | 'date' | 'datetime' | 'date-range' | 'date-range-flexible'
-  | 'airport-autocomplete' | 'country-select' | 'currency-select'
-  | 'stripe-card' | 'stripe-payment' | 'address-group'
-  | 'file-upload' | 'slider' | 'rating'
-  | 'conditional-group' | 'section-header' | 'divider';
+export type FieldType =
+  | 'text'
+  | 'email'
+  | 'phone'
+  | 'number'
+  | 'password'
+  | 'textarea'
+  | 'url'
+  | 'select'
+  | 'multi-select'
+  | 'radio'
+  | 'checkbox'
+  | 'switch'
+  | 'date'
+  | 'datetime'
+  | 'date-range'
+  | 'date-range-flexible'
+  | 'airport-autocomplete'
+  | 'country-select'
+  | 'currency-select'
+  | 'stripe-card'
+  | 'stripe-payment'
+  | 'address-group'
+  | 'file-upload'
+  | 'slider'
+  | 'rating'
+  | 'conditional-group'
+  | 'section-header'
+  | 'divider';
 
 export interface FieldOption {
   label: string;
@@ -142,7 +161,17 @@ export interface ConditionalLogic {
 
 export interface ConditionalRule {
   field: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'oneOf' | 'notOneOf' | 'greater' | 'less' | 'greaterOrEqual' | 'lessOrEqual';
+  operator:
+    | 'equals'
+    | 'not_equals'
+    | 'contains'
+    | 'not_contains'
+    | 'oneOf'
+    | 'notOneOf'
+    | 'greater'
+    | 'less'
+    | 'greaterOrEqual'
+    | 'lessOrEqual';
   value: unknown;
 }
 
@@ -372,7 +401,10 @@ export interface FieldRendererProps {
 export interface FormBuilderProps {
   initialConfiguration?: FormConfiguration;
   onSave?: (configuration: FormConfiguration) => void;
-  onDeploy?: (configuration: FormConfiguration, options: DeploymentOptions) => void;
+  onDeploy?: (
+    configuration: FormConfiguration,
+    options: DeploymentOptions
+  ) => void;
   readonly?: boolean;
   showPreview?: boolean;
 }

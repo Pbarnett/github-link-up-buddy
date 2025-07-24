@@ -1,4 +1,3 @@
-
 /**
  * Utility function to get human-friendly pool display names based on mode
  */
@@ -8,7 +7,7 @@ export function getPoolDisplayName(
 ): string {
   const names = {
     manual: ['Best Value', 'Low Cost', 'Premium'],
-    auto: ['Perfect', 'Close', 'Backup']
+    auto: ['Perfect', 'Close', 'Backup'],
   };
   return names[mode][pool - 1];
 }

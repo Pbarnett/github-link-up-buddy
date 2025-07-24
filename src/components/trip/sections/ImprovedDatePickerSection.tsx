@@ -31,7 +31,9 @@ interface ImprovedDatePickerSectionProps {
   control: Control<DatePickerFormData>;
 }
 
-const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) => {
+const ImprovedDatePickerSection = ({
+  control,
+}: ImprovedDatePickerSectionProps) => {
   return (
     <div className="space-y-6">
       {/* Travel Window */}
@@ -39,7 +41,7 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
         <FormLabel className="text-base font-semibold text-gray-900 mb-4 block">
           When do you want to travel?
         </FormLabel>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={control}
@@ -55,13 +57,13 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full h-12 justify-start text-left font-normal border-gray-300 hover:border-gray-400",
-                          !field.value && "text-muted-foreground"
+                          'w-full h-12 justify-start text-left font-normal border-gray-300 hover:border-gray-400',
+                          !field.value && 'text-muted-foreground'
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {field.value ? (
-                          format(field.value, "MMM dd, yyyy")
+                          format(field.value, 'MMM dd, yyyy')
                         ) : (
                           <span>Pick departure date</span>
                         )}
@@ -73,7 +75,7 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
-                      disabled={(date) =>
+                      disabled={date =>
                         date < new Date(new Date().setHours(0, 0, 0, 0))
                       }
                       initialFocus
@@ -85,7 +87,7 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={control}
             name="latestDeparture"
@@ -100,13 +102,13 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full h-12 justify-start text-left font-normal border-gray-300 hover:border-gray-400",
-                          !field.value && "text-muted-foreground"
+                          'w-full h-12 justify-start text-left font-normal border-gray-300 hover:border-gray-400',
+                          !field.value && 'text-muted-foreground'
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {field.value ? (
-                          format(field.value, "MMM dd, yyyy")
+                          format(field.value, 'MMM dd, yyyy')
                         ) : (
                           <span>Latest acceptable date</span>
                         )}
@@ -118,7 +120,7 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
-                      disabled={(date) =>
+                      disabled={date =>
                         date < new Date(new Date().setHours(0, 0, 0, 0))
                       }
                       initialFocus

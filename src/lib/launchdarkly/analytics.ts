@@ -44,18 +44,20 @@ export class FlagAnalytics {
   private static usageStats = new Map<string, FlagUsageStats>();
   private static maxEvents = 1000; // Prevent memory bloat
   private static flushInterval: NodeJS.Timeout | null = null;
-  
+
   /**
    * Initialize analytics with configuration
    */
-  static initialize(config: {
-    maxEvents?: number;
-    autoFlush?: boolean;
-    flushIntervalMs?: number;
-    enableTelemetry?: boolean;
-  } = {}): void {
+  static initialize(
+    config: {
+      maxEvents?: number;
+      autoFlush?: boolean;
+      flushIntervalMs?: number;
+      enableTelemetry?: boolean;
+    } = {}
+  ): void {
     this.maxEvents = config.maxEvents || 1000;
-    
+
     if (config.autoFlush !== false) {
       const interval = config.flushIntervalMs || 60000; // 1 minute default
       this.flushInterval = setInterval(() => {
@@ -86,12 +88,12 @@ export class FlagAnalytics {
       timestamp: Date.now(),
       evaluationTime: options.evaluationTime,
       variation: options.variation,
-      reason: options.reason
+      reason: options.reason,
     };
 
     // Add to events array
     this.evaluationEvents.push(event);
-    
+
     // Trim if needed
     if (this.evaluationEvents.length > this.maxEvents) {
       this.evaluationEvents.shift();
@@ -107,30 +109,38 @@ export class FlagAnalytics {
   /**
    * Track flag performance metrics
    */
-  static trackFlagPerformance(flagKey: string, metrics: {
-    evaluationTime: number;
-    success: boolean;
-    error?: string;
-    contextHash?: string;
-  }): void {
+  static trackFlagPerformance(
+    flagKey: string,
+    metrics: {
+      evaluationTime: number;
+      success: boolean;
+      error?: string;
+      contextHash?: string;
+    }
+  ): void {
     const performanceMetric: FlagPerformanceMetrics = {
       flagKey,
       evaluationTime: metrics.evaluationTime,
       success: metrics.success,
       error: metrics.error,
       timestamp: Date.now(),
-      contextHash: metrics.contextHash
+      contextHash: metrics.contextHash,
     };
 
     this.performanceMetrics.push(performanceMetric);
-    
+
     // Trim if needed
     if (this.performanceMetrics.length > this.maxEvents) {
       this.performanceMetrics.shift();
     }
 
     // Update usage statistics
-    this.updateUsageStats(flagKey, null, metrics.evaluationTime, metrics.success);
+    this.updateUsageStats(
+      flagKey,
+      null,
+      metrics.evaluationTime,
+      metrics.success
+    );
   }
 
   /**
@@ -143,7 +153,7 @@ export class FlagAnalytics {
     success: boolean = true
   ): void {
     let stats = this.usageStats.get(flagKey);
-    
+
     if (!stats) {
       stats = {
         flagKey,
@@ -152,7 +162,7 @@ export class FlagAnalytics {
         averageEvaluationTime: 0,
         errorRate: 0,
         lastEvaluated: 0,
-        variations: {}
+        variations: {},
       };
       this.usageStats.set(flagKey, stats);
     }
@@ -163,21 +173,27 @@ export class FlagAnalytics {
 
     // Update evaluation time average
     if (evaluationTime) {
-      const totalTime = stats.averageEvaluationTime * (stats.evaluationCount - 1) + evaluationTime;
+      const totalTime =
+        stats.averageEvaluationTime * (stats.evaluationCount - 1) +
+        evaluationTime;
       stats.averageEvaluationTime = totalTime / stats.evaluationCount;
     }
 
     // Update error rate
     if (!success) {
-      stats.errorRate = ((stats.errorRate * (stats.evaluationCount - 1)) + 1) / stats.evaluationCount;
+      stats.errorRate =
+        (stats.errorRate * (stats.evaluationCount - 1) + 1) /
+        stats.evaluationCount;
     } else {
-      stats.errorRate = (stats.errorRate * (stats.evaluationCount - 1)) / stats.evaluationCount;
+      stats.errorRate =
+        (stats.errorRate * (stats.evaluationCount - 1)) / stats.evaluationCount;
     }
 
     // Track variations
     if (value !== null && value !== undefined) {
       const variationKey = String(value);
-      stats.variations[variationKey] = (stats.variations[variationKey] || 0) + 1;
+      stats.variations[variationKey] =
+        (stats.variations[variationKey] || 0) + 1;
     }
   }
 
@@ -207,7 +223,7 @@ export class FlagAnalytics {
     timePeriodMs: number = 3600000 // 1 hour default
   ): FlagPerformanceMetrics[] {
     const cutoff = Date.now() - timePeriodMs;
-    
+
     return this.performanceMetrics.filter(metric => {
       const matchesFlag = !flagKey || metric.flagKey === flagKey;
       const withinTimeRange = metric.timestamp >= cutoff;
@@ -223,7 +239,7 @@ export class FlagAnalytics {
     timePeriodMs: number = 3600000
   ): FlagEvaluationEvent[] {
     const cutoff = Date.now() - timePeriodMs;
-    
+
     return this.evaluationEvents.filter(event => {
       const matchesFlag = !flagKey || event.flagKey === flagKey;
       const withinTimeRange = event.timestamp >= cutoff;
@@ -246,28 +262,30 @@ export class FlagAnalytics {
   } {
     const stats = this.getAllFlagStats();
     const flagKeys = Object.keys(stats);
-    
+
     // Calculate summary metrics
     let totalEvaluations = 0;
     let totalEvaluationTime = 0;
     let totalErrors = 0;
-    
+
     for (const stat of Object.values(stats)) {
       totalEvaluations += stat.evaluationCount;
       totalEvaluationTime += stat.averageEvaluationTime * stat.evaluationCount;
       totalErrors += stat.errorRate * stat.evaluationCount;
     }
-    
-    const averageEvaluationTime = totalEvaluations > 0 ? totalEvaluationTime / totalEvaluations : 0;
-    const overallErrorRate = totalEvaluations > 0 ? totalErrors / totalEvaluations : 0;
-    
+
+    const averageEvaluationTime =
+      totalEvaluations > 0 ? totalEvaluationTime / totalEvaluations : 0;
+    const overallErrorRate =
+      totalEvaluations > 0 ? totalErrors / totalEvaluations : 0;
+
     // Find slowest flags
     const slowestFlags = Object.values(stats)
       .sort((a, b) => b.averageEvaluationTime - a.averageEvaluationTime)
       .slice(0, 5)
       .map(stat => ({
         flagKey: stat.flagKey,
-        avgTime: stat.averageEvaluationTime
+        avgTime: stat.averageEvaluationTime,
       }));
 
     return {
@@ -276,9 +294,9 @@ export class FlagAnalytics {
         totalEvaluations,
         averageEvaluationTime,
         overallErrorRate,
-        slowestFlags
+        slowestFlags,
       },
-      flagDetails: stats
+      flagDetails: stats,
     };
   }
 
@@ -295,8 +313,8 @@ export class FlagAnalytics {
         custom_map: {
           timestamp: event.timestamp,
           variation: event.variation,
-          context_kind: event.context.kind
-        }
+          context_kind: event.context.kind,
+        },
       });
     }
 
@@ -306,7 +324,7 @@ export class FlagAnalytics {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.ANALYTICS_API_KEY}`
+          Authorization: `Bearer ${process.env.ANALYTICS_API_KEY}`,
         },
         body: JSON.stringify({
           event: 'flag_evaluation',
@@ -315,9 +333,9 @@ export class FlagAnalytics {
             value: event.value,
             timestamp: event.timestamp,
             evaluationTime: event.evaluationTime,
-            contextType: event.context.kind
-          }
-        })
+            contextType: event.context.kind,
+          },
+        }),
       }).catch(error => {
         console.warn('Failed to send analytics:', error);
       });
@@ -329,7 +347,7 @@ export class FlagAnalytics {
    */
   static flushMetrics(): void {
     const report = this.generatePerformanceReport();
-    
+
     // Log performance report
     if (process.env.NODE_ENV === 'development') {
       console.log('LaunchDarkly Performance Report:', report);
@@ -341,13 +359,13 @@ export class FlagAnalytics {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.MONITORING_API_KEY}`
+          Authorization: `Bearer ${process.env.MONITORING_API_KEY}`,
         },
         body: JSON.stringify({
           service: 'launchdarkly',
           timestamp: Date.now(),
-          metrics: report
-        })
+          metrics: report,
+        }),
       }).catch(error => {
         console.warn('Failed to send monitoring data:', error);
       });
@@ -358,7 +376,10 @@ export class FlagAnalytics {
       try {
         localStorage.setItem('ld_performance_report', JSON.stringify(report));
       } catch (error) {
-        console.warn('Failed to store performance report in localStorage:', error);
+        console.warn(
+          'Failed to store performance report in localStorage:',
+          error
+        );
       }
     }
   }
@@ -380,7 +401,7 @@ export class FlagAnalytics {
       clearInterval(this.flushInterval);
       this.flushInterval = null;
     }
-    
+
     // Final flush before shutdown
     this.flushMetrics();
   }
@@ -392,26 +413,26 @@ export function measureFlagEvaluation<T>(
   evaluationFn: () => T
 ): T {
   const startTime = performance.now();
-  
+
   try {
     const result = evaluationFn();
     const evaluationTime = performance.now() - startTime;
-    
+
     FlagAnalytics.trackFlagPerformance(flagKey, {
       evaluationTime,
-      success: true
+      success: true,
     });
-    
+
     return result;
   } catch (error) {
     const evaluationTime = performance.now() - startTime;
-    
+
     FlagAnalytics.trackFlagPerformance(flagKey, {
       evaluationTime,
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
+
     throw error;
   }
 }
@@ -421,7 +442,7 @@ FlagAnalytics.initialize({
   maxEvents: parseInt(process.env.LD_MAX_ANALYTICS_EVENTS || '1000'),
   autoFlush: process.env.LD_AUTO_FLUSH !== 'false',
   flushIntervalMs: parseInt(process.env.LD_FLUSH_INTERVAL_MS || '60000'),
-  enableTelemetry: process.env.LD_ENABLE_TELEMETRY !== 'false'
+  enableTelemetry: process.env.LD_ENABLE_TELEMETRY !== 'false',
 });
 
 // Cleanup on process exit
@@ -429,7 +450,7 @@ if (typeof process !== 'undefined') {
   const cleanup = () => {
     FlagAnalytics.shutdown();
   };
-  
+
   process.on('exit', cleanup);
   process.on('SIGTERM', cleanup);
   process.on('SIGINT', cleanup);

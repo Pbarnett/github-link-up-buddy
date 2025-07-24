@@ -1,22 +1,28 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Activity,
+  Server,
+  Database,
+  Flag,
+  Users,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  BarChart3,
+} from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HealthCheck } from '@/components/monitoring/HealthCheck';
-import { 
-  Activity, 
-  Server, 
-  Database, 
-  Flag, 
-  Users, 
-  TrendingUp, 
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  BarChart3
-} from 'lucide-react';
 
 interface MetricCard {
   title: string;
@@ -33,29 +39,29 @@ export default function AdminDashboard() {
       value: '1,234',
       change: '+12%',
       icon: <Users className="h-4 w-4" />,
-      status: 'success'
+      status: 'success',
     },
     {
       title: 'Response Time',
       value: '120ms',
       change: '-5ms',
       icon: <Clock className="h-4 w-4" />,
-      status: 'success'
+      status: 'success',
     },
     {
       title: 'Error Rate',
       value: '0.02%',
       change: '-0.01%',
       icon: <AlertCircle className="h-4 w-4" />,
-      status: 'success'
+      status: 'success',
     },
     {
       title: 'Uptime',
       value: '99.98%',
       change: '+0.01%',
       icon: <TrendingUp className="h-4 w-4" />,
-      status: 'success'
-    }
+      status: 'success',
+    },
   ]);
 
   const [deploymentInfo, setDeploymentInfo] = useState({
@@ -63,7 +69,7 @@ export default function AdminDashboard() {
     buildTime: new Date().toISOString(),
     commit: 'abc123f',
     environment: 'production',
-    buildSize: '1.4MB'
+    buildSize: '1.4MB',
   });
 
   const getStatusColor = (status: string) => {
@@ -97,7 +103,9 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Monitor and manage Parker Flight application</p>
+          <p className="text-muted-foreground">
+            Monitor and manage Parker Flight application
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge className={getStatusColor('success')}>
@@ -121,7 +129,9 @@ export default function AdminDashboard() {
             {systemMetrics.map((metric, index) => (
               <Card key={index}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{metric.title}</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {metric.title}
+                  </CardTitle>
                   {metric.icon}
                 </CardHeader>
                 <CardContent>
@@ -194,11 +204,15 @@ export default function AdminDashboard() {
               <CardContent className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span>Build Size</span>
-                  <span className="text-sm font-mono">{deploymentInfo.buildSize}</span>
+                  <span className="text-sm font-mono">
+                    {deploymentInfo.buildSize}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Version</span>
-                  <span className="text-sm font-mono">{deploymentInfo.version}</span>
+                  <span className="text-sm font-mono">
+                    {deploymentInfo.version}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Environment</span>
@@ -211,11 +225,13 @@ export default function AdminDashboard() {
 
         <TabsContent value="health" className="space-y-4">
           <HealthCheck />
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Service Dependencies</CardTitle>
-              <CardDescription>Status of external services and integrations</CardDescription>
+              <CardDescription>
+                Status of external services and integrations
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -224,29 +240,35 @@ export default function AdminDashboard() {
                     <Database className="h-5 w-5" />
                     <div>
                       <div className="font-medium">Supabase Database</div>
-                      <div className="text-sm text-muted-foreground">Primary database connection</div>
+                      <div className="text-sm text-muted-foreground">
+                        Primary database connection
+                      </div>
                     </div>
                   </div>
                   <Badge className={getStatusColor('success')}>Connected</Badge>
                 </div>
-                
+
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <Flag className="h-5 w-5" />
                     <div>
                       <div className="font-medium">LaunchDarkly</div>
-                      <div className="text-sm text-muted-foreground">Feature flag service</div>
+                      <div className="text-sm text-muted-foreground">
+                        Feature flag service
+                      </div>
                     </div>
                   </div>
                   <Badge className={getStatusColor('success')}>Active</Badge>
                 </div>
-                
+
                 <div className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <Server className="h-5 w-5" />
                     <div>
                       <div className="font-medium">Duffel API</div>
-                      <div className="text-sm text-muted-foreground">Flight search and booking</div>
+                      <div className="text-sm text-muted-foreground">
+                        Flight search and booking
+                      </div>
                     </div>
                   </div>
                   <Badge className={getStatusColor('success')}>Available</Badge>
@@ -261,7 +283,9 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Bundle Analysis</CardTitle>
-                <CardDescription>Application bundle size and optimization metrics</CardDescription>
+                <CardDescription>
+                  Application bundle size and optimization metrics
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -294,7 +318,9 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Performance Metrics</CardTitle>
-                <CardDescription>Core Web Vitals and loading performance</CardDescription>
+                <CardDescription>
+                  Core Web Vitals and loading performance
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -324,39 +350,55 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Deployment Information</CardTitle>
-              <CardDescription>Current deployment details and build information</CardDescription>
+              <CardDescription>
+                Current deployment details and build information
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <div>
                     <label className="text-sm font-medium">Version</label>
-                    <div className="font-mono text-sm">{deploymentInfo.version}</div>
+                    <div className="font-mono text-sm">
+                      {deploymentInfo.version}
+                    </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Environment</label>
                     <div>
-                      <Badge variant="outline">{deploymentInfo.environment}</Badge>
+                      <Badge variant="outline">
+                        {deploymentInfo.environment}
+                      </Badge>
                     </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Build Time</label>
-                    <div className="text-sm">{new Date(deploymentInfo.buildTime).toLocaleString()}</div>
+                    <div className="text-sm">
+                      {new Date(deploymentInfo.buildTime).toLocaleString()}
+                    </div>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div>
                     <label className="text-sm font-medium">Git Commit</label>
-                    <div className="font-mono text-sm">{deploymentInfo.commit}</div>
+                    <div className="font-mono text-sm">
+                      {deploymentInfo.commit}
+                    </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Build Size</label>
-                    <div className="font-mono text-sm">{deploymentInfo.buildSize}</div>
+                    <div className="font-mono text-sm">
+                      {deploymentInfo.buildSize}
+                    </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Deployment Status</label>
+                    <label className="text-sm font-medium">
+                      Deployment Status
+                    </label>
                     <div>
-                      <Badge className={getStatusColor('success')}>Active</Badge>
+                      <Badge className={getStatusColor('success')}>
+                        Active
+                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -367,7 +409,9 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Deployment Actions</CardTitle>
-              <CardDescription>Manage deployment and monitoring</CardDescription>
+              <CardDescription>
+                Manage deployment and monitoring
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex gap-4">

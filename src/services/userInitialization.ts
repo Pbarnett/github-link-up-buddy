@@ -11,21 +11,27 @@ export class UserInitializationService {
   static async initializeUserPreferences(userId: string): Promise<void> {
     try {
       console.log(`🔧 Initializing user preferences for user: ${userId}`);
-      
+
       // Get the current session to use the user's JWT
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
       if (sessionError || !session) {
         throw new Error('No valid session found for user initialization');
       }
 
       // Call the user preferences initialization Edge Function
-      const { data, error } = await supabase.functions.invoke('create-user-preferences', {
-        body: { user_id: userId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      const { data, error } = await supabase.functions.invoke(
+        'create-user-preferences',
+        {
+          body: { user_id: userId },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
 
       if (error) {
         console.error('❌ Failed to initialize user preferences:', error);
@@ -78,14 +84,14 @@ export class UserInitializationService {
    */
   static async handlePostSignin(userId: string): Promise<void> {
     console.log('🚀 Starting post-signin initialization for user:', userId);
-    
+
     try {
       // Ensure user preferences exist
       await this.ensureUserPreferences(userId);
-      
+
       // Add any other post-signin initialization here
       // For example: analytics tracking, feature flags, etc.
-      
+
       console.log('✅ Post-signin initialization completed successfully');
     } catch (error) {
       console.error('❌ Post-signin initialization failed:', error);

@@ -37,7 +37,7 @@ export interface UnifiedProfile {
     phone?: string;
     phone_verified: boolean;
   };
-  
+
   // Travel details (collected progressively)
   travel_info?: {
     date_of_birth: Date;
@@ -47,13 +47,13 @@ export interface UnifiedProfile {
     passport_expiry?: Date;
     known_traveler_number?: string;
   };
-  
+
   // Preferences (enhanced from current system)
   preferences: {
     notifications: NotificationPreferences;
     travel: TravelPreferences;
   };
-  
+
   // Metadata
   profile_completeness_score: number;
   is_verified: boolean;
@@ -95,15 +95,14 @@ export interface TravelPreferences {
   seat_preference?: 'window' | 'aisle' | 'middle' | 'any';
   meal_preference?: string;
   accessibility_needs?: string[];
-  frequent_flyer_programs?: Array<{ 
-    airline: string; 
-    number: string; 
-    tier?: string; 
-  }>; 
+  frequent_flyer_programs?: Array<{
+    airline: string;
+    number: string;
+    tier?: string;
+  }>;
 }
 
 class ProfileCompletenessService {
-  
   /**
    * Calculate comprehensive profile completeness score
    */
@@ -113,15 +112,15 @@ class ProfileCompletenessService {
       contact_info: this.calculateContactInfoScore(profile),
       travel_documents: this.calculateTravelDocumentsScore(profile),
       preferences: this.calculatePreferencesScore(profile),
-      verification: this.calculateVerificationScore(profile)
+      verification: this.calculateVerificationScore(profile),
     };
 
     const overall = Math.round(
-      (scores.basic_info * 0.3) +
-      (scores.contact_info * 0.2) +
-      (scores.travel_documents * 0.2) +
-      (scores.preferences * 0.15) +
-      (scores.verification * 0.15)
+      scores.basic_info * 0.3 +
+        scores.contact_info * 0.2 +
+        scores.travel_documents * 0.2 +
+        scores.preferences * 0.15 +
+        scores.verification * 0.15
     );
 
     const missing_fields = this.identifyMissingFields(profile);
@@ -131,7 +130,7 @@ class ProfileCompletenessService {
       overall,
       categories: scores,
       missing_fields,
-      recommendations
+      recommendations,
     };
   }
 
@@ -141,7 +140,7 @@ class ProfileCompletenessService {
       { field: 'full_name', weight: 30, required: true },
       { field: 'date_of_birth', weight: 30, required: true },
       { field: 'gender', weight: 20, required: true },
-      { field: 'email', weight: 20, required: true }
+      { field: 'email', weight: 20, required: true },
     ];
 
     fields.forEach(({ field, weight, required }) => {
@@ -159,7 +158,7 @@ class ProfileCompletenessService {
 
   private calculateContactInfoScore(profile: TravelerProfile): number {
     let score = 0;
-    
+
     // Email (already counted in basic info, but verify format)
     if (profile.email && this.isValidEmail(profile.email)) {
       score += 40;
@@ -190,8 +189,9 @@ class ProfileCompletenessService {
     if (profile.passport_expiry) {
       const expiry = new Date(profile.passport_expiry);
       const now = new Date();
-      const monthsUntilExpiry = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30);
-      
+      const monthsUntilExpiry =
+        (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30);
+
       if (monthsUntilExpiry > 6) {
         score += 20; // Valid passport
       } else if (monthsUntilExpiry > 0) {
@@ -232,7 +232,7 @@ class ProfileCompletenessService {
     if (profile.is_verified) {
       score += 100;
     } else {
-    // Partial credit for having verification-ready information
+      // Partial credit for having verification-ready information
       if (profile.passport_number && profile.passport_country) {
         score += 30;
       }
@@ -273,9 +273,10 @@ class ProfileCompletenessService {
         category: 'contact_info',
         priority: 'high',
         title: 'Verify your phone number',
-        description: 'Verify your phone number to receive important booking updates via SMS',
+        description:
+          'Verify your phone number to receive important booking updates via SMS',
         action: 'verify_phone',
-        points_value: 15
+        points_value: 15,
       });
     }
 
@@ -285,9 +286,10 @@ class ProfileCompletenessService {
         category: 'contact_info',
         priority: 'medium',
         title: 'Add phone number',
-        description: 'Add your phone number for SMS notifications and account security',
+        description:
+          'Add your phone number for SMS notifications and account security',
         action: 'add_phone',
-        points_value: 10
+        points_value: 10,
       });
     }
 
@@ -297,9 +299,10 @@ class ProfileCompletenessService {
         category: 'travel_documents',
         priority: 'medium',
         title: 'Add passport information',
-        description: 'Add your passport details for faster international booking',
+        description:
+          'Add your passport details for faster international booking',
         action: 'add_passport',
-        points_value: 20
+        points_value: 20,
       });
     }
 
@@ -309,9 +312,10 @@ class ProfileCompletenessService {
         category: 'verification',
         priority: 'low',
         title: 'Verify your identity',
-        description: 'Complete identity verification for higher booking limits and security',
+        description:
+          'Complete identity verification for higher booking limits and security',
         action: 'verify_identity',
-        points_value: 25
+        points_value: 25,
       });
     }
 
@@ -319,16 +323,18 @@ class ProfileCompletenessService {
     if (profile.passport_expiry) {
       const expiry = new Date(profile.passport_expiry);
       const now = new Date();
-      const monthsUntilExpiry = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30);
-      
+      const monthsUntilExpiry =
+        (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30);
+
       if (monthsUntilExpiry < 6 && monthsUntilExpiry > 0) {
         recommendations.push({
           category: 'travel_documents',
           priority: 'high',
           title: 'Passport expires soon',
-          description: 'Your passport expires soon. Update your passport information.',
+          description:
+            'Your passport expires soon. Update your passport information.',
           action: 'update_passport',
-          points_value: 10
+          points_value: 10,
         });
       }
     }
@@ -367,11 +373,13 @@ class ProfileCompletenessService {
     missingRequirements: string[];
   } {
     const required = ['full_name', 'date_of_birth', 'gender', 'email'];
-    const missing = required.filter(field => !profile[field as keyof TravelerProfile]);
+    const missing = required.filter(
+      field => !profile[field as keyof TravelerProfile]
+    );
 
     return {
       canBook: missing.length === 0,
-      missingRequirements: missing
+      missingRequirements: missing,
     };
   }
 }

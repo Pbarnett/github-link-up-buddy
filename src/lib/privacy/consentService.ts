@@ -28,12 +28,14 @@ export function getStoredConsent(): ConsentPreferences | null {
     if (!stored) return null;
 
     const parsed = JSON.parse(stored);
-    
+
     // Check if consent is still valid (not expired)
     const consentDate = new Date(parsed.timestamp);
     const now = new Date();
-    const daysSinceConsent = Math.floor((now.getTime() - consentDate.getTime()) / (1000 * 60 * 60 * 24));
-    
+    const daysSinceConsent = Math.floor(
+      (now.getTime() - consentDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
     // Consent expires after 13 months (GDPR recommendation)
     if (daysSinceConsent > 395) {
       localStorage.removeItem(CONSENT_STORAGE_KEY);
@@ -51,7 +53,10 @@ export function getStoredConsent(): ConsentPreferences | null {
 }
 
 // Save consent preferences
-export function saveConsent(preferences: ConsentPreferences, userId?: string): void {
+export function saveConsent(
+  preferences: ConsentPreferences,
+  userId?: string
+): void {
   try {
     const consentRecord: ConsentRecord = {
       preferences,
@@ -66,16 +71,19 @@ export function saveConsent(preferences: ConsentPreferences, userId?: string): v
     // Log consent for audit trail (in production, send to secure backend)
     console.log('🔒 Consent saved:', {
       userId: userId?.slice(0, 8) + '...' || 'anonymous',
-    preferences: Object.entries(preferences).filter(([key]) => 
-      key !== 'timestamp' && key !== 'version'
-    ).map(([key, value]) => `${key}: ${value}`).join(', '),
+      preferences: Object.entries(preferences)
+        .filter(([key]) => key !== 'timestamp' && key !== 'version')
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', '),
       timestamp: consentRecord.timestamp.toISOString(),
     });
 
     // Trigger personalization update
-    window.dispatchEvent(new CustomEvent('consentUpdated', { 
-      detail: preferences 
-    }));
+    window.dispatchEvent(
+      new CustomEvent('consentUpdated', {
+        detail: preferences,
+      })
+    );
   } catch (error) {
     console.error('Failed to save consent:', error);
   }
@@ -93,7 +101,7 @@ export function hasConsentFor(type: keyof ConsentPreferences): boolean {
 export function withdrawConsent(): void {
   try {
     localStorage.removeItem(CONSENT_STORAGE_KEY);
-    
+
     // Log withdrawal for audit trail
     console.log('🔒 Consent withdrawn:', {
       timestamp: new Date().toISOString(),
@@ -101,9 +109,11 @@ export function withdrawConsent(): void {
     });
 
     // Trigger personalization update
-    window.dispatchEvent(new CustomEvent('consentUpdated', { 
-      detail: null 
-    }));
+    window.dispatchEvent(
+      new CustomEvent('consentUpdated', {
+        detail: null,
+      })
+    );
   } catch (error) {
     console.error('Failed to withdraw consent:', error);
   }
@@ -112,11 +122,11 @@ export function withdrawConsent(): void {
 // Check if consent banner should be shown
 export function shouldShowConsentBanner(): boolean {
   const consent = getStoredConsent();
-  
+
   // Show banner if no consent or consent version is outdated
   if (!consent) return true;
   if (consent.version !== CONSENT_VERSION) return true;
-  
+
   return false;
 }
 
@@ -145,12 +155,12 @@ export function getUserData(userId: string): Promise<UserDataExport> {
 export function deleteUserData(userId: string): Promise<void> {
   // In a real implementation, this would call backend API
   withdrawConsent();
-  
+
   console.log('🔒 Data deletion requested:', {
     userId: userId.slice(0, 8) + '...',
     timestamp: new Date().toISOString(),
   });
-  
+
   return Promise.resolve();
 }
 
@@ -164,13 +174,16 @@ export function validatePrivacyCompliance(): {
   const recommendations: string[] = [];
 
   const consent = getStoredConsent();
-  
+
   if (!consent) {
     issues.push('No consent record found');
     recommendations.push('Show consent banner to user');
   } else {
     // Check consent freshness
-    const consentAge = Math.floor((new Date().getTime() - consent.timestamp.getTime()) / (1000 * 60 * 60 * 24));
+    const consentAge = Math.floor(
+      (new Date().getTime() - consent.timestamp.getTime()) /
+        (1000 * 60 * 60 * 24)
+    );
     if (consentAge > 365) {
       issues.push('Consent is over 1 year old');
       recommendations.push('Request fresh consent from user');
@@ -212,9 +225,9 @@ export function processPersonalData<T>(
   fallback: T
 ): T {
   const consent = getStoredConsent();
-  
+
   if (!consent) return fallback;
-  
+
   switch (purpose) {
     case 'personalization':
       return consent.personalization ? data : fallback;
@@ -228,9 +241,13 @@ export function processPersonalData<T>(
 }
 
 // Cookie consent helper
-export function setCookie(name: string, value: string, type: 'functional' | 'analytics' | 'marketing'): void {
+export function setCookie(
+  name: string,
+  value: string,
+  type: 'functional' | 'analytics' | 'marketing'
+): void {
   const consent = getStoredConsent();
-  
+
   // Always allow functional cookies
   if (type === 'functional') {
     document.cookie = `${name}=${value}; path=/; secure; samesite=strict`;

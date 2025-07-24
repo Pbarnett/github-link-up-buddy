@@ -1,6 +1,6 @@
 /**
  * Form Configuration Service
- * 
+ *
  * Handles form configuration management and persistence
  */
 
@@ -8,21 +8,65 @@ import { supabase } from '@/integrations/supabase/client';
 import type { FormConfiguration } from '@/types/dynamic-forms';
 
 export interface FormConfigurationService {
-  getConfiguration(id: string): Promise<{ success: boolean; data?: { config: any }; error?: { message: string } }>;
-  getConfigurationByName(name: string): Promise<{ success: boolean; data?: { config: any }; error?: { message: string } }>;
-  saveConfiguration(config: FormConfiguration): Promise<{ success: boolean; data?: { config: any }; error?: { message: string } }>;
-  createConfiguration(config: FormConfiguration): Promise<{ success: boolean; data?: { config: any }; error?: { message: string } }>;
-  updateConfiguration(id: string, config: FormConfiguration): Promise<{ success: boolean; data?: { config: any }; error?: { message: string } }>;
-  deployConfiguration(id: string, options?: any): Promise<{ success: boolean; error?: { message: string } }>;
+  getConfiguration(id: string): Promise<{
+    success: boolean;
+    data?: { config: any };
+    error?: { message: string };
+  }>;
+  getConfigurationByName(name: string): Promise<{
+    success: boolean;
+    data?: { config: any };
+    error?: { message: string };
+  }>;
+  saveConfiguration(config: FormConfiguration): Promise<{
+    success: boolean;
+    data?: { config: any };
+    error?: { message: string };
+  }>;
+  createConfiguration(config: FormConfiguration): Promise<{
+    success: boolean;
+    data?: { config: any };
+    error?: { message: string };
+  }>;
+  updateConfiguration(
+    id: string,
+    config: FormConfiguration
+  ): Promise<{
+    success: boolean;
+    data?: { config: any };
+    error?: { message: string };
+  }>;
+  deployConfiguration(
+    id: string,
+    options?: any
+  ): Promise<{ success: boolean; error?: { message: string } }>;
   listConfigurations(): Promise<FormConfiguration[]>;
-  deleteConfiguration(id: string): Promise<{ success: boolean; error?: { message: string } }>;
-  validateConfiguration(config: FormConfiguration, type: string, comprehensive: boolean): Promise<{ success: boolean; validationResults?: any; error?: { message: string } }>;
-  logUsageAnalytics(configId: string, eventType: string, eventData?: unknown): Promise<void>;
+  deleteConfiguration(
+    id: string
+  ): Promise<{ success: boolean; error?: { message: string } }>;
+  validateConfiguration(
+    config: FormConfiguration,
+    type: string,
+    comprehensive: boolean
+  ): Promise<{
+    success: boolean;
+    validationResults?: any;
+    error?: { message: string };
+  }>;
+  logUsageAnalytics(
+    configId: string,
+    eventType: string,
+    eventData?: unknown
+  ): Promise<void>;
   getFormAnalytics(configId: string, timeRange: string): Promise<any>;
 }
 
 class FormConfigService implements FormConfigurationService {
-  async getConfiguration(id: string): Promise<{ success: boolean; data?: { config: any }; error?: { message: string } }> {
+  async getConfiguration(id: string): Promise<{
+    success: boolean;
+    data?: { config: any };
+    error?: { message: string };
+  }> {
     try {
       const { data, error } = await supabase
         .from('form_configurations')
@@ -35,22 +79,31 @@ class FormConfigService implements FormConfigurationService {
         return { success: false, error: { message: error.message } };
       }
 
-      return { 
-        success: true, 
-        data: { 
-          config: { 
-            id: data.id, 
-            config_data: data as FormConfiguration 
-          } 
-        } 
+      return {
+        success: true,
+        data: {
+          config: {
+            id: data.id,
+            config_data: data as FormConfiguration,
+          },
+        },
       };
     } catch (error) {
       console.error('Error in getConfiguration:', error);
-      return { success: false, error: { message: error instanceof Error ? error.message : 'Unknown error' } };
+      return {
+        success: false,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
     }
   }
 
-  async saveConfiguration(config: FormConfiguration): Promise<{ success: boolean; data?: { config: any }; error?: { message: string } }> {
+  async saveConfiguration(config: FormConfiguration): Promise<{
+    success: boolean;
+    data?: { config: any };
+    error?: { message: string };
+  }> {
     try {
       const { data, error } = await supabase
         .from('form_configurations')
@@ -63,22 +116,31 @@ class FormConfigService implements FormConfigurationService {
         return { success: false, error: { message: error.message } };
       }
 
-      return { 
-        success: true, 
-        data: { 
-          config: { 
-            id: data.id, 
-            config_data: data as FormConfiguration 
-          } 
-        } 
+      return {
+        success: true,
+        data: {
+          config: {
+            id: data.id,
+            config_data: data as FormConfiguration,
+          },
+        },
       };
     } catch (error) {
       console.error('Error in saveConfiguration:', error);
-      return { success: false, error: { message: error instanceof Error ? error.message : 'Unknown error' } };
+      return {
+        success: false,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
     }
   }
 
-  async getConfigurationByName(name: string): Promise<{ success: boolean; data?: { config: any }; error?: { message: string } }> {
+  async getConfigurationByName(name: string): Promise<{
+    success: boolean;
+    data?: { config: any };
+    error?: { message: string };
+  }> {
     try {
       const { data, error } = await supabase
         .from('form_configurations')
@@ -91,22 +153,31 @@ class FormConfigService implements FormConfigurationService {
         return { success: false, error: { message: error.message } };
       }
 
-      return { 
-        success: true, 
-        data: { 
-          config: { 
-            id: data.id, 
-            config_data: data as FormConfiguration 
-          } 
-        } 
+      return {
+        success: true,
+        data: {
+          config: {
+            id: data.id,
+            config_data: data as FormConfiguration,
+          },
+        },
       };
     } catch (error) {
       console.error('Error in getConfigurationByName:', error);
-      return { success: false, error: { message: error instanceof Error ? error.message : 'Unknown error' } };
+      return {
+        success: false,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
     }
   }
 
-  async createConfiguration(config: FormConfiguration): Promise<{ success: boolean; data?: { config: any }; error?: { message: string } }> {
+  async createConfiguration(config: FormConfiguration): Promise<{
+    success: boolean;
+    data?: { config: any };
+    error?: { message: string };
+  }> {
     try {
       const { data, error } = await supabase
         .from('form_configurations')
@@ -119,22 +190,34 @@ class FormConfigService implements FormConfigurationService {
         return { success: false, error: { message: error.message } };
       }
 
-      return { 
-        success: true, 
-        data: { 
-          config: { 
-            id: data.id, 
-            config_data: data as FormConfiguration 
-          } 
-        } 
+      return {
+        success: true,
+        data: {
+          config: {
+            id: data.id,
+            config_data: data as FormConfiguration,
+          },
+        },
       };
     } catch (error) {
       console.error('Error in createConfiguration:', error);
-      return { success: false, error: { message: error instanceof Error ? error.message : 'Unknown error' } };
+      return {
+        success: false,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
     }
   }
 
-  async updateConfiguration(id: string, config: FormConfiguration): Promise<{ success: boolean; data?: { config: any }; error?: { message: string } }> {
+  async updateConfiguration(
+    id: string,
+    config: FormConfiguration
+  ): Promise<{
+    success: boolean;
+    data?: { config: any };
+    error?: { message: string };
+  }> {
     try {
       const { data, error } = await supabase
         .from('form_configurations')
@@ -148,22 +231,30 @@ class FormConfigService implements FormConfigurationService {
         return { success: false, error: { message: error.message } };
       }
 
-      return { 
-        success: true, 
-        data: { 
-          config: { 
-            id: data.id, 
-            config_data: data as FormConfiguration 
-          } 
-        } 
+      return {
+        success: true,
+        data: {
+          config: {
+            id: data.id,
+            config_data: data as FormConfiguration,
+          },
+        },
       };
     } catch (error) {
       console.error('Error in updateConfiguration:', error);
-      return { success: false, error: { message: error instanceof Error ? error.message : 'Unknown error' } };
+      return {
+        success: false,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
     }
   }
 
-  async deployConfiguration(id: string, options?: any): Promise<{ success: boolean; error?: { message: string } }> {
+  async deployConfiguration(
+    id: string,
+    options?: any
+  ): Promise<{ success: boolean; error?: { message: string } }> {
     try {
       // For now, just mark as deployed
       const { error } = await (supabase as any)
@@ -179,7 +270,12 @@ class FormConfigService implements FormConfigurationService {
       return { success: true };
     } catch (error) {
       console.error('Error in deployConfiguration:', error);
-      return { success: false, error: { message: error instanceof Error ? error.message : 'Unknown error' } };
+      return {
+        success: false,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
     }
   }
 
@@ -202,7 +298,9 @@ class FormConfigService implements FormConfigurationService {
     }
   }
 
-  async deleteConfiguration(id: string): Promise<{ success: boolean; error?: { message: string } }> {
+  async deleteConfiguration(
+    id: string
+  ): Promise<{ success: boolean; error?: { message: string } }> {
     try {
       const { error } = await (supabase
         .from('form_configurations')
@@ -217,12 +315,19 @@ class FormConfigService implements FormConfigurationService {
       return { success: true };
     } catch (error) {
       console.error('Error in deleteConfiguration:', error);
-      return { success: false, error: { message: error instanceof Error ? error.message : 'Unknown error' } };
+      return {
+        success: false,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
     }
   }
 
   // Get form configuration by type
-  async getConfigurationByType(type: string): Promise<FormConfiguration | null> {
+  async getConfigurationByType(
+    type: string
+  ): Promise<FormConfiguration | null> {
     try {
       const { data, error } = await supabase
         .from('form_configurations')
@@ -246,30 +351,50 @@ class FormConfigService implements FormConfigurationService {
   }
 
   // Validate form configuration
-  async validateConfiguration(config: FormConfiguration, type: string, comprehensive: boolean): Promise<{ success: boolean; validationResults?: any; error?: { message: string } }> {
+  async validateConfiguration(
+    config: FormConfiguration,
+    type: string,
+    comprehensive: boolean
+  ): Promise<{
+    success: boolean;
+    validationResults?: any;
+    error?: { message: string };
+  }> {
     try {
       // Basic validation
       if (!config.name || !config.sections || config.sections.length === 0) {
-        return { success: false, error: { message: 'Invalid configuration: missing name or sections' } };
+        return {
+          success: false,
+          error: { message: 'Invalid configuration: missing name or sections' },
+        };
       }
 
       const validationResults = {
         isValid: true,
         errors: [] as string[],
-        warnings: [] as string[]
+        warnings: [] as string[],
       };
 
       // Validate each section
       for (const section of config.sections) {
-        if (!section.id || !section.title || !section.fields || section.fields.length === 0) {
-          validationResults.errors.push(`Section '${section.id}' is missing required fields`);
+        if (
+          !section.id ||
+          !section.title ||
+          !section.fields ||
+          section.fields.length === 0
+        ) {
+          validationResults.errors.push(
+            `Section '${section.id}' is missing required fields`
+          );
           validationResults.isValid = false;
         }
 
         // Validate each field
         for (const field of section.fields) {
           if (!field.id || !field.type || !field.label) {
-            validationResults.errors.push(`Field '${field.id}' is missing required properties`);
+            validationResults.errors.push(
+              `Field '${field.id}' is missing required properties`
+            );
             validationResults.isValid = false;
           }
         }
@@ -278,20 +403,27 @@ class FormConfigService implements FormConfigurationService {
       return { success: true, validationResults };
     } catch (error) {
       console.error('Error in validateConfiguration:', error);
-      return { success: false, error: { message: error instanceof Error ? error.message : 'Unknown error' } };
+      return {
+        success: false,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
+      };
     }
   }
 
-  async logUsageAnalytics(configId: string, eventType: string, eventData?: unknown): Promise<void> {
+  async logUsageAnalytics(
+    configId: string,
+    eventType: string,
+    eventData?: unknown
+  ): Promise<void> {
     try {
-      const { error } = await (supabase as any)
-        .from('form_analytics')
-        .insert({
-          config_id: configId,
-          event_type: eventType,
-          event_data: eventData,
-          timestamp: new Date().toISOString()
-        });
+      const { error } = await (supabase as any).from('form_analytics').insert({
+        config_id: configId,
+        event_type: eventType,
+        event_data: eventData,
+        timestamp: new Date().toISOString(),
+      });
 
       if (error) {
         console.error('Error logging usage analytics:', error);
@@ -338,27 +470,27 @@ class FormConfigService implements FormConfigurationService {
               type: 'text',
               label: 'Name',
               validation: {
-                required: true
-              }
+                required: true,
+              },
             },
             {
               id: 'email',
               type: 'email',
               label: 'Email',
               validation: {
-                required: true
-              }
-            }
-          ]
-        }
+                required: true,
+              },
+            },
+          ],
+        },
       ],
       settings: {
         theme: 'default',
         showProgressBar: true,
-        allowSave: true
+        allowSave: true,
       },
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
   }
 }

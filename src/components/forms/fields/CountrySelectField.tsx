@@ -1,18 +1,17 @@
-
 /**
  * Country Select Field Component
- * 
+ *
  * Renders a searchable country selector
  */
 
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
 
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import * as React from 'react';
 import { useState } from 'react';
 import { Globe, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   Command,
   CommandEmpty,
@@ -100,10 +99,10 @@ interface CountrySelectFieldProps {
 export const CountrySelectField: FC<CountrySelectFieldProps> = ({
   value,
   onChange,
-  placeholder = "Select country",
+  placeholder = 'Select country',
   disabled = false,
   error,
-  className
+  className,
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -122,9 +121,9 @@ export const CountrySelectField: FC<CountrySelectFieldProps> = ({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "w-full justify-between",
-            !selectedCountry && "text-muted-foreground",
-            error && "border-destructive",
+            'w-full justify-between',
+            !selectedCountry && 'text-muted-foreground',
+            error && 'border-destructive',
             className
           )}
           disabled={disabled}
@@ -141,7 +140,7 @@ export const CountrySelectField: FC<CountrySelectFieldProps> = ({
           <CommandList>
             <CommandEmpty>No countries found.</CommandEmpty>
             <CommandGroup>
-              {countries.map((country) => (
+              {countries.map(country => (
                 <CommandItem
                   key={country.code}
                   onSelect={() => handleCountrySelect(country.code)}
@@ -151,9 +150,7 @@ export const CountrySelectField: FC<CountrySelectFieldProps> = ({
                     <Globe className="mr-2 h-4 w-4" />
                     {country.name}
                   </div>
-                  {value === country.code && (
-                    <Check className="h-4 w-4" />
-                  )}
+                  {value === country.code && <Check className="h-4 w-4" />}
                 </CommandItem>
               ))}
             </CommandGroup>

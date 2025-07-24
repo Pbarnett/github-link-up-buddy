@@ -1,9 +1,9 @@
 /**
  * @file DEPRECATED: Round-trip flight filtering utilities
- * 
+ *
  * ⚠️  DEPRECATED: This module is deprecated and will be removed in a future version.
  * Use the new FilterFactory from @/lib/filtering/FilterFactory instead.
- * 
+ *
  * This module provides legacy filtering functions that are now replaced by
  * the comprehensive filtering architecture in @/lib/filtering/
  */
@@ -42,7 +42,7 @@ export interface TripSearchParams {
 
 /**
  * Enhanced round-trip filtering for Amadeus flight offers
- * 
+ *
  * This function implements multiple layers of filtering to ensure only true
  * round-trip flights are returned when searching for round-trip itineraries.
  */
@@ -51,9 +51,11 @@ export function filterAmadeusRoundTripOffers(
   searchParams: TripSearchParams
 ): FlightOffer[] {
   LegacyFilterAdapter.deprecatedWarning('filterAmadeusRoundTripOffers');
-  
-  const isRoundTripSearch = !!(searchParams.returnDate || searchParams.return_date);
-  
+
+  const isRoundTripSearch = !!(
+    searchParams.returnDate || searchParams.return_date
+  );
+
   if (!isRoundTripSearch) {
     // For one-way searches, ensure offers have only 1 itinerary
     return offers.filter(offer => {
@@ -83,14 +85,18 @@ export function filterAmadeusRoundTripOffers(
 
     // Verify outbound goes from origin to destination
     const outboundOrigin = outbound.segments?.[0]?.departure?.iataCode;
-    const outboundDestination = outbound.segments?.[outbound.segments.length - 1]?.arrival?.iataCode;
+    const outboundDestination =
+      outbound.segments?.[outbound.segments.length - 1]?.arrival?.iataCode;
 
     // Verify inbound goes from destination back to origin
     const inboundOrigin = inbound.segments?.[0]?.departure?.iataCode;
-    const inboundDestination = inbound.segments?.[inbound.segments.length - 1]?.arrival?.iataCode;
+    const inboundDestination =
+      inbound.segments?.[inbound.segments.length - 1]?.arrival?.iataCode;
 
-    const expectedOrigin = searchParams.originLocationCode || searchParams.origin;
-    const expectedDestination = searchParams.destinationLocationCode || searchParams.destination;
+    const expectedOrigin =
+      searchParams.originLocationCode || searchParams.origin;
+    const expectedDestination =
+      searchParams.destinationLocationCode || searchParams.destination;
 
     return (
       outboundOrigin === expectedOrigin &&
@@ -100,14 +106,16 @@ export function filterAmadeusRoundTripOffers(
     );
   });
 
-  console.log(`[RoundTripFilter] Amadeus filtering: ${beforeFilter} -> ${filteredOffers.length} offers (removed ${beforeFilter - filteredOffers.length} non-round-trip offers)`);
-  
+  console.log(
+    `[RoundTripFilter] Amadeus filtering: ${beforeFilter} -> ${filteredOffers.length} offers (removed ${beforeFilter - filteredOffers.length} non-round-trip offers)`
+  );
+
   return filteredOffers;
 }
 
 /**
  * Enhanced round-trip filtering for Duffel flight offers
- * 
+ *
  * This function implements the same filtering logic for Duffel API responses
  * which use a different data structure (slices instead of itineraries).
  */
@@ -116,9 +124,11 @@ export function filterDuffelRoundTripOffers(
   searchParams: TripSearchParams
 ): FlightOffer[] {
   LegacyFilterAdapter.deprecatedWarning('filterDuffelRoundTripOffers');
-  
-  const isRoundTripSearch = !!(searchParams.returnDate || searchParams.return_date);
-  
+
+  const isRoundTripSearch = !!(
+    searchParams.returnDate || searchParams.return_date
+  );
+
   if (!isRoundTripSearch) {
     // For one-way searches, ensure offers have only 1 slice
     return offers.filter(offer => {
@@ -143,14 +153,18 @@ export function filterDuffelRoundTripOffers(
 
     // Verify outbound goes from origin to destination
     const outboundOrigin = outbound.segments?.[0]?.origin?.iata_code;
-    const outboundDestination = outbound.segments?.[outbound.segments.length - 1]?.destination?.iata_code;
+    const outboundDestination =
+      outbound.segments?.[outbound.segments.length - 1]?.destination?.iata_code;
 
     // Verify inbound goes from destination back to origin
     const inboundOrigin = inbound.segments?.[0]?.origin?.iata_code;
-    const inboundDestination = inbound.segments?.[inbound.segments.length - 1]?.destination?.iata_code;
+    const inboundDestination =
+      inbound.segments?.[inbound.segments.length - 1]?.destination?.iata_code;
 
-    const expectedOrigin = searchParams.origin || searchParams.originLocationCode;
-    const expectedDestination = searchParams.destination || searchParams.destinationLocationCode;
+    const expectedOrigin =
+      searchParams.origin || searchParams.originLocationCode;
+    const expectedDestination =
+      searchParams.destination || searchParams.destinationLocationCode;
 
     return (
       outboundOrigin === expectedOrigin &&
@@ -160,14 +174,16 @@ export function filterDuffelRoundTripOffers(
     );
   });
 
-  console.log(`[RoundTripFilter] Duffel filtering: ${beforeFilter} -> ${filteredOffers.length} offers (removed ${beforeFilter - filteredOffers.length} non-round-trip offers)`);
-  
+  console.log(
+    `[RoundTripFilter] Duffel filtering: ${beforeFilter} -> ${filteredOffers.length} offers (removed ${beforeFilter - filteredOffers.length} non-round-trip offers)`
+  );
+
   return filteredOffers;
 }
 
 /**
  * Database-level round-trip filtering for stored flight offers
- * 
+ *
  * This function filters flight offers stored in the database to ensure
  * only round-trip results are shown when appropriate.
  */
@@ -185,14 +201,16 @@ export function filterDatabaseRoundTripOffers(
     return offer.return_dt !== null && offer.return_dt !== undefined;
   });
 
-  console.log(`[RoundTripFilter] Database filtering: ${offers.length} -> ${filteredOffers.length} offers (removed ${offers.length - filteredOffers.length} one-way offers)`);
-  
+  console.log(
+    `[RoundTripFilter] Database filtering: ${offers.length} -> ${filteredOffers.length} offers (removed ${offers.length - filteredOffers.length} one-way offers)`
+  );
+
   return filteredOffers;
 }
 
 /**
  * Validate that search parameters include return date for round-trip searches
- * 
+ *
  * This function ensures that API requests for round-trip flights always include
  * a return date parameter to prevent accidentally receiving one-way results.
  */
@@ -201,41 +219,41 @@ export function validateRoundTripSearchParams(searchParams: TripSearchParams): {
   errors: string[];
 } {
   const errors: string[] = [];
-  
+
   const hasReturnDate = !!(searchParams.returnDate || searchParams.return_date);
   const isRoundTrip = searchParams.isRoundTrip;
-  
+
   // If explicitly marked as round-trip but no return date provided
   if (isRoundTrip && !hasReturnDate) {
     errors.push('Round-trip search requires a return date');
   }
-  
+
   // If return date provided but not marked as round-trip (warning)
   if (hasReturnDate && isRoundTrip === false) {
     errors.push('Return date provided but search marked as one-way');
   }
-  
+
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
 /**
  * Get appropriate oneWay parameter for API calls
- * 
+ *
  * This function determines the correct oneWay parameter value based on
  * search criteria to ensure APIs return the correct type of flights.
  */
 export function getOneWayParameter(searchParams: TripSearchParams): boolean {
   const hasReturnDate = !!(searchParams.returnDate || searchParams.return_date);
   const isRoundTrip = searchParams.isRoundTrip;
-  
+
   // If explicitly set, use that
   if (isRoundTrip !== undefined) {
     return !isRoundTrip;
   }
-  
+
   // Otherwise, determine from return date presence
   return !hasReturnDate;
 }
@@ -251,10 +269,14 @@ export function logFilteringResults(
 ): void {
   const tripType = isRoundTrip ? 'round-trip' : 'one-way';
   const removedCount = beforeCount - afterCount;
-  
-  console.log(`[RoundTripFilter] ${filterType} ${tripType} filtering: ${beforeCount} -> ${afterCount} offers (removed ${removedCount} invalid offers)`);
-  
+
+  console.log(
+    `[RoundTripFilter] ${filterType} ${tripType} filtering: ${beforeCount} -> ${afterCount} offers (removed ${removedCount} invalid offers)`
+  );
+
   if (removedCount > 0) {
-    console.warn(`[RoundTripFilter] Filtered out ${removedCount} offers that didn't match ${tripType} criteria`);
+    console.warn(
+      `[RoundTripFilter] Filtered out ${removedCount} offers that didn't match ${tripType} criteria`
+    );
   }
 }

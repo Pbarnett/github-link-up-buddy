@@ -1,6 +1,6 @@
 /**
  * Filter Factory - Central Configuration Point
- * 
+ *
  * This factory creates and configures the comprehensive filtering system,
  * replacing the old ad-hoc filtering logic throughout the application.
  */
@@ -11,9 +11,12 @@ import {
   FilterConfig,
   UserPreferences,
   PerformanceLogger,
-  FlightOffer
+  FlightOffer,
 } from './core/types';
-import { DefaultFilterPipeline, ConsolePerformanceLogger } from './core/FilterPipeline';
+import {
+  DefaultFilterPipeline,
+  ConsolePerformanceLogger,
+} from './core/FilterPipeline';
 import { BudgetFilter, SimpleCurrencyConverter } from './filters/BudgetFilter';
 import { RoundTripFilter } from './filters/RoundTripFilter';
 import { CarryOnFilter } from './filters/CarryOnFilter';
@@ -31,7 +34,7 @@ export class FilterFactory {
     exchangeRateBuffer: 0.05,
     baseCurrency: 'USD',
     maxOffersToProcess: 1000,
-    enableParallelProcessing: false
+    enableParallelProcessing: false,
   };
 
   /**
@@ -63,21 +66,26 @@ export class FilterFactory {
   ): FilterPipeline {
     const finalConfig = { ...FilterFactory.defaultConfig, ...config };
     const finalLogger = logger || new ConsolePerformanceLogger();
-    
+
     console.log('[FilterFactory] Creating standard filtering pipeline');
-    
+
     const pipeline = new DefaultFilterPipeline(finalConfig, finalLogger);
-    
+
     // Add filters in priority order (lower numbers = higher priority)
-    pipeline.addFilter(new RoundTripFilter());                    // Priority 5
+    pipeline.addFilter(new RoundTripFilter()); // Priority 5
     pipeline.addFilter(new BudgetFilter(new SimpleCurrencyConverter())); // Priority 10
-    pipeline.addFilter(new CarryOnFilter());                     // Priority 12
-    pipeline.addFilter(new NonstopFilter());                      // Priority 15
-    pipeline.addFilter(new AirlineFilter());                      // Priority 20
-    
-    console.log('[FilterFactory] Standard pipeline created with filters:', 
-      pipeline.getFilters().map(f => `${f.name}(${f.priority})`).join(', '));
-    
+    pipeline.addFilter(new CarryOnFilter()); // Priority 12
+    pipeline.addFilter(new NonstopFilter()); // Priority 15
+    pipeline.addFilter(new AirlineFilter()); // Priority 20
+
+    console.log(
+      '[FilterFactory] Standard pipeline created with filters:',
+      pipeline
+        .getFilters()
+        .map(f => `${f.name}(${f.priority})`)
+        .join(', ')
+    );
+
     return pipeline;
   }
 
@@ -92,16 +100,16 @@ export class FilterFactory {
       ...FilterFactory.defaultConfig,
       budgetTolerance: 25, // Stricter budget tolerance
       enabledFilters: ['RoundTripFilter', 'BudgetFilter'], // Only essential filters
-      ...config
+      ...config,
     };
-    
+
     console.log('[FilterFactory] Creating budget-focused pipeline');
-    
+
     const pipeline = new DefaultFilterPipeline(budgetConfig, logger);
-    
+
     pipeline.addFilter(new RoundTripFilter());
     pipeline.addFilter(new BudgetFilter(new SimpleCurrencyConverter()));
-    
+
     return pipeline;
   }
 
@@ -116,17 +124,17 @@ export class FilterFactory {
       ...FilterFactory.defaultConfig,
       maxOffersToProcess: 500, // Limit for speed
       carryOnFeeTimeoutMs: 2000, // Faster timeout
-      ...config
+      ...config,
     };
-    
+
     console.log('[FilterFactory] Creating fast filtering pipeline');
-    
+
     const pipeline = new DefaultFilterPipeline(fastConfig, logger);
-    
+
     // Only the most essential filters for speed
     pipeline.addFilter(new RoundTripFilter());
     pipeline.addFilter(new BudgetFilter(new SimpleCurrencyConverter()));
-    
+
     return pipeline;
   }
 
@@ -145,7 +153,7 @@ export class FilterFactory {
     returnDate?: string;
     return_date?: string;
     tripType?: 'roundtrip' | 'oneway';
-    
+
     // User preferences
     nonstopRequired?: boolean;
     nonstop_required?: boolean;
@@ -158,36 +166,42 @@ export class FilterFactory {
     preferredCabinClass?: string;
     maxTotalTripTime?: string;
     passengers?: number;
-    
+
     // Feature flags
     featureFlags?: Record<string, boolean>;
-    
+
     // Configuration overrides
     configOverrides?: Partial<FilterConfig>;
   }): FilterContext {
-    
     // Normalize parameters
-    const originCode = searchParams.originLocationCode || searchParams.origin || '';
-    const destinationCode = searchParams.destinationLocationCode || searchParams.destination || '';
+    const originCode =
+      searchParams.originLocationCode || searchParams.origin || '';
+    const destinationCode =
+      searchParams.destinationLocationCode || searchParams.destination || '';
     const returnDate = searchParams.returnDate || searchParams.return_date;
-    const nonstopRequired = searchParams.nonstopRequired || searchParams.nonstop_required || false;
-    
-    
+    const nonstopRequired =
+      searchParams.nonstopRequired || searchParams.nonstop_required || false;
+
     const userPrefs: UserPreferences = {
       nonstopRequired,
       maxLayoverMinutes: searchParams.maxLayoverMinutes,
       preferredAirlines: searchParams.preferredAirlines,
       excludedAirlines: searchParams.excludedAirlines,
       preferredCabinClass: searchParams.preferredCabinClass,
-      maxTotalTripTime: searchParams.maxTotalTripTime
+      maxTotalTripTime: searchParams.maxTotalTripTime,
     };
 
     // Determine trip type
     const isRoundTrip = !!(returnDate || searchParams.tripType === 'roundtrip');
-    const tripType = searchParams.tripType || (isRoundTrip ? 'roundtrip' : 'oneway');
-    
+    const tripType =
+      searchParams.tripType || (isRoundTrip ? 'roundtrip' : 'oneway');
+
     // Normalize nonstop preference
-    const nonstop = searchParams.nonstop ?? searchParams.nonstopRequired ?? searchParams.nonstop_required ?? false;
+    const nonstop =
+      searchParams.nonstop ??
+      searchParams.nonstopRequired ??
+      searchParams.nonstop_required ??
+      false;
 
     const context: FilterContext = {
       budget: searchParams.budget || 0,
@@ -205,8 +219,8 @@ export class FilterFactory {
       featureFlags: searchParams.featureFlags || {},
       config: {
         ...FilterFactory.defaultConfig,
-        ...searchParams.configOverrides
-      }
+        ...searchParams.configOverrides,
+      },
     };
 
     console.log('[FilterFactory] Created filter context:', {
@@ -214,7 +228,7 @@ export class FilterFactory {
       currency: context.currency,
       route: `${originCode} → ${destinationCode}`,
       roundTrip: !!returnDate,
-      nonstopRequired: userPrefs.nonstopRequired
+      nonstopRequired: userPrefs.nonstopRequired,
     });
 
     return context;
@@ -233,16 +247,17 @@ export class FilterFactory {
 
     // Required fields
     const origin = searchParams.originLocationCode || searchParams.origin;
-    const destination = searchParams.destinationLocationCode || searchParams.destination;
-    
+    const destination =
+      searchParams.destinationLocationCode || searchParams.destination;
+
     if (!origin) {
       errors.push('Origin location is required');
     }
-    
+
     if (!destination) {
       errors.push('Destination location is required');
     }
-    
+
     if (!searchParams.departureDate) {
       errors.push('Departure date is required');
     }
@@ -258,7 +273,7 @@ export class FilterFactory {
     if (searchParams.departureDate && searchParams.returnDate) {
       const depDate = new Date(searchParams.departureDate as string);
       const retDate = new Date(searchParams.returnDate as string);
-      
+
       if (retDate <= depDate) {
         errors.push('Return date must be after departure date');
       }
@@ -266,7 +281,10 @@ export class FilterFactory {
 
     // Preferences validation
     if (searchParams.maxLayoverMinutes !== undefined) {
-      if (typeof searchParams.maxLayoverMinutes !== 'number' || searchParams.maxLayoverMinutes < 0) {
+      if (
+        typeof searchParams.maxLayoverMinutes !== 'number' ||
+        searchParams.maxLayoverMinutes < 0
+      ) {
         errors.push('Maximum layover time must be a non-negative number');
       }
     }
@@ -274,24 +292,31 @@ export class FilterFactory {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
   /**
    * Helper to determine the best pipeline type for given search parameters
    */
-  static recommendPipelineType(searchParams: Record<string, unknown>): 'standard' | 'budget' | 'fast' {
+  static recommendPipelineType(
+    searchParams: Record<string, unknown>
+  ): 'standard' | 'budget' | 'fast' {
     // Budget-focused if budget is specified and relatively low
-    if (searchParams.budget && typeof searchParams.budget === 'number' && searchParams.budget < 500) {
+    if (
+      searchParams.budget &&
+      typeof searchParams.budget === 'number' &&
+      searchParams.budget < 500
+    ) {
       return 'budget';
     }
 
     // Fast pipeline for simple searches
-    const isSimpleSearch = !searchParams.preferredAirlines && 
-                          !searchParams.excludedAirlines &&
-                          !searchParams.maxLayoverMinutes;
-    
+    const isSimpleSearch =
+      !searchParams.preferredAirlines &&
+      !searchParams.excludedAirlines &&
+      !searchParams.maxLayoverMinutes;
+
     if (isSimpleSearch) {
       return 'fast';
     }
@@ -311,7 +336,10 @@ export class FilterFactory {
    * Update default configuration
    */
   static updateDefaultConfig(updates: Partial<FilterConfig>): void {
-    FilterFactory.defaultConfig = { ...FilterFactory.defaultConfig, ...updates };
+    FilterFactory.defaultConfig = {
+      ...FilterFactory.defaultConfig,
+      ...updates,
+    };
     console.log('[FilterFactory] Updated default configuration');
   }
 }
@@ -328,22 +356,29 @@ export class LegacyFilterAdapter {
     searchParams: Record<string, unknown>,
     provider: 'Amadeus' | 'Duffel' = 'Amadeus'
   ): Promise<unknown[]> {
-    console.log('[LegacyFilterAdapter] Migrating old round-trip filtering to new system');
-    
+    console.log(
+      '[LegacyFilterAdapter] Migrating old round-trip filtering to new system'
+    );
+
     // Create new filtering system
     const pipeline = FilterFactory.createFastPipeline();
     const context = FilterFactory.createFilterContext(searchParams);
-    
+
     // For legacy compatibility, we need to adapt the offers format
     // This will be provider-specific
     const normalizedOffers = this.adaptLegacyOffers(offers, provider);
-    
+
     // Execute new filtering
-    const result = await pipeline.execute(normalizedOffers as FlightOffer[], context);
-    
-    console.log('[LegacyFilterAdapter] Legacy filtering migration complete:', 
-      `${offers.length} → ${result.filteredOffers.length} offers`);
-    
+    const result = await pipeline.execute(
+      normalizedOffers as FlightOffer[],
+      context
+    );
+
+    console.log(
+      '[LegacyFilterAdapter] Legacy filtering migration complete:',
+      `${offers.length} → ${result.filteredOffers.length} offers`
+    );
+
     // Convert back to legacy format if needed
     return result.filteredOffers.map(offer => offer.rawData || offer);
   }
@@ -351,19 +386,24 @@ export class LegacyFilterAdapter {
   /**
    * Adapt legacy offer formats to new normalized format
    */
-  private static adaptLegacyOffers(offers: unknown[], provider: 'Amadeus' | 'Duffel'): unknown[] {
+  private static adaptLegacyOffers(
+    offers: unknown[],
+    provider: 'Amadeus' | 'Duffel'
+  ): unknown[] {
     // This would use the provider adapters to normalize
     // For now, return as-is with provider info
     return offers.map(offer => {
       const offerRecord = offer as Record<string, unknown>;
       const price = offerRecord.price as Record<string, unknown> | undefined;
       const itineraries = offerRecord.itineraries as unknown[] | undefined;
-      
+
       return {
         ...offerRecord,
         provider,
         // Add any missing required fields with defaults
-        id: offerRecord.id || `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id:
+          offerRecord.id ||
+          `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         itineraries: itineraries || offerRecord.slices || [],
         totalBasePrice: price?.total || offerRecord.total_amount || 0,
         currency: price?.currency || offerRecord.total_currency || 'USD',
@@ -374,8 +414,9 @@ export class LegacyFilterAdapter {
         rawData: {
           ...offerRecord,
           // Ensure oneWay is properly set for round-trip filtering
-          oneWay: offerRecord.oneWay || (itineraries && itineraries.length === 1)
-        }
+          oneWay:
+            offerRecord.oneWay || (itineraries && itineraries.length === 1),
+        },
       };
     });
   }
@@ -384,7 +425,9 @@ export class LegacyFilterAdapter {
    * Mark old filtering functions as deprecated
    */
   static deprecatedWarning(functionName: string): void {
-    console.warn(`[DEPRECATED] ${functionName} is deprecated. Use FilterFactory.createStandardPipeline() instead.`);
+    console.warn(
+      `[DEPRECATED] ${functionName} is deprecated. Use FilterFactory.createStandardPipeline() instead.`
+    );
   }
 }
 

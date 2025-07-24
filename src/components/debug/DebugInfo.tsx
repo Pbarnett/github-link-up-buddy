@@ -1,16 +1,20 @@
+import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import * as React from 'react';
 
 interface DebugInfoProps {
   tripId?: string | null;
 }
 
 export default function DebugInfo({ tripId }: DebugInfoProps) {
-  const [_featureFlags, setFeatureFlags] = useState<Record<string, unknown>[]>([]);  
-  const [tripData, setTripData] = useState<Record<string, unknown> | null>(null);
+  const [_featureFlags, setFeatureFlags] = useState<Record<string, unknown>[]>(
+    []
+  );
+  const [tripData, setTripData] = useState<Record<string, unknown> | null>(
+    null
+  );
   const [offersCount, setOffersCount] = useState<number>(0);
-  
+
   // Current feature flags being used
   const useNewPoolsUI = useFeatureFlag('use_new_pools_ui', false);
   const flightSearchV2Flag = import.meta.env.VITE_FLAG_FS_V2 === 'true';
@@ -23,7 +27,7 @@ export default function DebugInfo({ tripId }: DebugInfoProps) {
           .from('feature_flags')
           .select('*')
           .order('name') as any);
-        
+
         if (!error && data) {
           setFeatureFlags(data);
           console.log('🔍 [DEBUG-INFO] Feature flags from database:', data);
@@ -36,14 +40,14 @@ export default function DebugInfo({ tripId }: DebugInfoProps) {
     // Fetch trip data if tripId provided
     const fetchTripData = async () => {
       if (!tripId) return;
-      
+
       try {
         const { data: trip, error: tripError } = await (supabase
           .from('trip_requests')
           .select('*')
           .eq('id', tripId)
           .single() as any);
-        
+
         if (!tripError && trip) {
           setTripData(trip);
           console.log('🔍 [DEBUG-INFO] Trip data:', trip);
@@ -54,11 +58,13 @@ export default function DebugInfo({ tripId }: DebugInfoProps) {
           .from('flight_offers')
           .select('*', { count: 'exact' })
           .eq('trip_request_id', tripId) as any);
-        
+
         if (!offersError) {
           setOffersCount(offers?.length || 0);
-          console.log(`🔍 [DEBUG-INFO] Found ${offers?.length || 0} offers in flight_offers table for trip ${tripId}`);
-          
+          console.log(
+            `🔍 [DEBUG-INFO] Found ${offers?.length || 0} offers in flight_offers table for trip ${tripId}`
+          );
+
           if (offers && offers.length > 0) {
             console.log('🔍 [DEBUG-INFO] Sample offers:', offers.slice(0, 3));
           }
@@ -74,26 +80,30 @@ export default function DebugInfo({ tripId }: DebugInfoProps) {
 
   useEffect(() => {
     // Print comprehensive debug info to console
-    console.log('🔍 [DEBUG-INFO] ==================== SYSTEM DEBUG INFO ====================');
+    console.log(
+      '🔍 [DEBUG-INFO] ==================== SYSTEM DEBUG INFO ===================='
+    );
     console.log('🔍 [DEBUG-INFO] Environment:', {
       NODE_ENV: import.meta.env.NODE_ENV,
       VITE_FLAG_FS_V2: import.meta.env.VITE_FLAG_FS_V2,
-      SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL
+      SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
     });
     console.log('🔍 [DEBUG-INFO] React Feature Flags:', {
       use_new_pools_ui: useNewPoolsUI,
-      VITE_FLAG_FS_V2: flightSearchV2Flag
+      VITE_FLAG_FS_V2: flightSearchV2Flag,
     });
     console.log('🔍 [DEBUG-INFO] Current Trip:', {
       tripId,
       hasData: !!tripData,
-      offersCount
+      offersCount,
     });
     console.log('🔍 [DEBUG-INFO] Active Implementation:', {
       usingPools: useNewPoolsUI,
-      usingV2Search: flightSearchV2Flag
+      usingV2Search: flightSearchV2Flag,
     });
-    console.log('🔍 [DEBUG-INFO] =======================================================');
+    console.log(
+      '🔍 [DEBUG-INFO] ======================================================='
+    );
   }, [useNewPoolsUI, flightSearchV2Flag, tripId, tripData, offersCount]);
 
   // Only render in development

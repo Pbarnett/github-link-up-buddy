@@ -1,1 +1,4 @@
-export declare function trackGreetingDisplay(type: 'personalized' | 'generic', data: any): void;
+export declare function trackGreetingDisplay(
+  type: 'personalized' | 'generic',
+  data: any
+): void;

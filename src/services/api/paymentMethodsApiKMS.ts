@@ -28,17 +28,24 @@ class PaymentMethodsServiceKMS {
    */
   async getPaymentMethods(): Promise<PaymentMethodKMS[]> {
     try {
-      logger.info('[PaymentMethodsKMS] Fetching payment methods via edge function');
-      
+      logger.info(
+        '[PaymentMethodsKMS] Fetching payment methods via edge function'
+      );
+
       // Use the manage-payment-methods edge function
-      const { data, error } = await supabase.functions.invoke('manage-payment-methods');
+      const { data, error } = await supabase.functions.invoke(
+        'manage-payment-methods'
+      );
 
       if (error) {
         logger.error('[PaymentMethodsKMS] Error from edge function:', error);
         throw new Error(`Failed to fetch payment methods: ${error.message}`);
       }
 
-      logger.info('[PaymentMethodsKMS] Payment methods fetched successfully:', data);
+      logger.info(
+        '[PaymentMethodsKMS] Payment methods fetched successfully:',
+        data
+      );
       return data?.payment_methods || [];
     } catch (error) {
       logger.error('[PaymentMethodsKMS] getPaymentMethods error:', error);
@@ -49,17 +56,22 @@ class PaymentMethodsServiceKMS {
   /**
    * Add a new payment method with KMS encryption
    */
-  async addPaymentMethod(paymentData: PaymentMethodCreateData): Promise<PaymentMethodKMS> {
+  async addPaymentMethod(
+    paymentData: PaymentMethodCreateData
+  ): Promise<PaymentMethodKMS> {
     try {
       logger.info('[PaymentMethodsKMS] Adding new payment method');
-      
+
       // Call edge function to handle encryption and storage
-      const { data, error } = await supabase.functions.invoke('payment-methods-kms', {
-        body: {
-          action: 'create',
-          paymentData
+      const { data, error } = await supabase.functions.invoke(
+        'payment-methods-kms',
+        {
+          body: {
+            action: 'create',
+            paymentData,
+          },
         }
-      });
+      );
 
       if (error) {
         logger.error('[PaymentMethodsKMS] Error from edge function:', error);
@@ -77,10 +89,13 @@ class PaymentMethodsServiceKMS {
   /**
    * Update an existing payment method
    */
-  async updatePaymentMethod(id: string, updates: { is_default?: boolean }): Promise<PaymentMethodKMS> {
+  async updatePaymentMethod(
+    id: string,
+    updates: { is_default?: boolean }
+  ): Promise<PaymentMethodKMS> {
     try {
       logger.info('[PaymentMethodsKMS] Updating payment method:', id);
-      
+
       // For simple updates like is_default, we can update directly
       const { data, error } = await supabase
         .from('payment_methods')
@@ -90,7 +105,10 @@ class PaymentMethodsServiceKMS {
         .single();
 
       if (error) {
-        logger.error('[PaymentMethodsKMS] Error updating payment method:', error);
+        logger.error(
+          '[PaymentMethodsKMS] Error updating payment method:',
+          error
+        );
         throw new Error(`Failed to update payment method: ${error.message}`);
       }
 
@@ -107,14 +125,17 @@ class PaymentMethodsServiceKMS {
   async deletePaymentMethod(id: string): Promise<void> {
     try {
       logger.info('[PaymentMethodsKMS] Deleting payment method:', id);
-      
+
       const { error } = await (supabase
         .from('payment_methods')
         .delete()
         .eq('id', id) as any);
 
       if (error) {
-        logger.error('[PaymentMethodsKMS] Error deleting payment method:', error);
+        logger.error(
+          '[PaymentMethodsKMS] Error deleting payment method:',
+          error
+        );
         throw new Error(`Failed to delete payment method: ${error.message}`);
       }
 
@@ -131,18 +152,23 @@ class PaymentMethodsServiceKMS {
   async setDefaultPaymentMethod(id: string): Promise<PaymentMethodKMS> {
     try {
       logger.info('[PaymentMethodsKMS] Setting default payment method:', id);
-      
+
       // Call edge function to handle the transaction (unset all defaults, set new default)
-      const { data, error } = await supabase.functions.invoke('payment-methods-kms', {
-        body: {
-          action: 'setDefault',
-          paymentMethodId: id
+      const { data, error } = await supabase.functions.invoke(
+        'payment-methods-kms',
+        {
+          body: {
+            action: 'setDefault',
+            paymentMethodId: id,
+          },
         }
-      });
+      );
 
       if (error) {
         logger.error('[PaymentMethodsKMS] Error from edge function:', error);
-        throw new Error(`Failed to set default payment method: ${error.message}`);
+        throw new Error(
+          `Failed to set default payment method: ${error.message}`
+        );
       }
 
       return data as PaymentMethodKMS;

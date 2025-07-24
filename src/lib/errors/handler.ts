@@ -1,21 +1,21 @@
 /**
  * Centralized Error Handler
- * 
+ *
  * Provides consistent error processing, logging, and response formatting
  * across the entire application.
  */
 
 import { PostgrestError } from '@supabase/supabase-js';
-import { 
-  AppError, 
-  ErrorCode, 
-  ValidationError, 
-  ExternalApiError as AppExternalApiError, 
+import {
+  AppError,
+  ErrorCode,
+  ValidationError,
+  ExternalApiError as AppExternalApiError,
   DatabaseError,
   BusinessLogicError,
   AMADEUS_ERROR_MAPPINGS,
   DUFFEL_ERROR_MAPPINGS,
-  type ErrorContext
+  type ErrorContext,
 } from './types';
 
 /**
@@ -96,19 +96,31 @@ interface UnknownError {
  */
 class ConsoleLogger implements Logger {
   error(message: string, meta?: unknown): void {
-    console.error(`[ERROR] ${message}`, meta ? JSON.stringify(meta, null, 2) : '');
+    console.error(
+      `[ERROR] ${message}`,
+      meta ? JSON.stringify(meta, null, 2) : ''
+    );
   }
 
   warn(message: string, meta?: unknown): void {
-    console.warn(`[WARN] ${message}`, meta ? JSON.stringify(meta, null, 2) : '');
+    console.warn(
+      `[WARN] ${message}`,
+      meta ? JSON.stringify(meta, null, 2) : ''
+    );
   }
 
   info(message: string, meta?: unknown): void {
-    console.info(`[INFO] ${message}`, meta ? JSON.stringify(meta, null, 2) : '');
+    console.info(
+      `[INFO] ${message}`,
+      meta ? JSON.stringify(meta, null, 2) : ''
+    );
   }
 
   debug(message: string, meta?: unknown): void {
-    console.debug(`[DEBUG] ${message}`, meta ? JSON.stringify(meta, null, 2) : '');
+    console.debug(
+      `[DEBUG] ${message}`,
+      meta ? JSON.stringify(meta, null, 2) : ''
+    );
   }
 }
 
@@ -135,9 +147,9 @@ export class ErrorHandler {
     this.logger = config.logger || new ConsoleLogger();
     this.includeStackTrace = config.includeStackTrace ?? false;
     this.sanitizeErrors = config.sanitizeErrors ?? true;
-    this.requestIdGenerator = config.requestIdGenerator || (() => 
-      Math.random().toString(36).substring(2, 15)
-    );
+    this.requestIdGenerator =
+      config.requestIdGenerator ||
+      (() => Math.random().toString(36).substring(2, 15));
   }
 
   /**
@@ -153,10 +165,11 @@ export class ErrorHandler {
 
     // Supabase PostgrestError
     if (this.isPostgrestError(error)) {
-      return new DatabaseError(
-        error.message,
-        { ...context, postgrestCode: error.code, requestId }
-      );
+      return new DatabaseError(error.message, {
+        ...context,
+        postgrestCode: error.code,
+        requestId,
+      });
     }
 
     // Standard JavaScript Error
@@ -167,12 +180,7 @@ export class ErrorHandler {
       }
 
       if (this.isNetworkError(error)) {
-        return new AppExternalApiError(
-          'Network',
-          error.message,
-          context,
-          true
-        );
+        return new AppExternalApiError('Network', error.message, context, true);
       }
 
       // Generic error
@@ -199,10 +207,10 @@ export class ErrorHandler {
       ErrorCode.UNKNOWN_ERROR,
       'Unknown error occurred',
       'An unexpected error occurred. Please try again.',
-      { 
-        ...context, 
+      {
+        ...context,
         originalError: JSON.stringify(error, null, 2),
-        requestId 
+        requestId,
       }
     );
   }
@@ -215,11 +223,12 @@ export class ErrorHandler {
     error: ExternalApiError,
     context?: ErrorContext
   ): AppError {
-    const mappings = provider === 'amadeus' 
-      ? AMADEUS_ERROR_MAPPINGS 
-      : provider === 'duffel' 
-      ? DUFFEL_ERROR_MAPPINGS 
-      : {};
+    const mappings =
+      provider === 'amadeus'
+        ? AMADEUS_ERROR_MAPPINGS
+        : provider === 'duffel'
+          ? DUFFEL_ERROR_MAPPINGS
+          : {};
 
     // Extract error code/message from different API response formats
     const errorCode = this.extractErrorCode(error, provider);
@@ -227,32 +236,28 @@ export class ErrorHandler {
 
     // Look up known error mapping
     const mapping = errorCode ? mappings[errorCode] : null;
-    
+
     if (mapping) {
       return new BusinessLogicError(
         mapping.code,
         errorMessage,
         mapping.userMessage,
-        { 
-          ...context, 
-          provider, 
+        {
+          ...context,
+          provider,
           externalErrorCode: errorCode,
-          externalErrorMessage: errorMessage
+          externalErrorMessage: errorMessage,
         },
         mapping.retryable
       );
     }
 
     // Fallback to generic external API error
-    return new AppExternalApiError(
-      provider,
-      errorMessage,
-      { 
-        ...context, 
-        externalErrorCode: errorCode,
-        externalErrorMessage: errorMessage 
-      }
-    );
+    return new AppExternalApiError(provider, errorMessage, {
+      ...context,
+      externalErrorCode: errorCode,
+      externalErrorMessage: errorMessage,
+    });
   }
 
   /**
@@ -260,7 +265,7 @@ export class ErrorHandler {
    */
   public handle(error: unknown, context?: ErrorContext): ErrorResponse {
     const appError = this.normalizeError(error, context);
-    
+
     // Log the error with appropriate level
     this.logError(appError);
 
@@ -288,13 +293,16 @@ export class ErrorHandler {
       retryable: error.retryable,
       timestamp: error.timestamp,
       requestId: error.requestId,
-      ...(this.includeStackTrace && { stack: error.stack })
+      ...(this.includeStackTrace && { stack: error.stack }),
     };
 
     // Use appropriate log level based on error type
     if (error.retryable) {
       this.logger.warn(`Retryable error: ${error.message}`, logContext);
-    } else if (error.code.includes('VALIDATION') || error.code.includes('UNAUTHORIZED')) {
+    } else if (
+      error.code.includes('VALIDATION') ||
+      error.code.includes('UNAUTHORIZED')
+    ) {
       this.logger.info(`Client error: ${error.message}`, logContext);
     } else {
       this.logger.error(`Application error: ${error.message}`, logContext);
@@ -308,9 +316,11 @@ export class ErrorHandler {
     const response: ErrorResponse = {
       error: true,
       code: error.code,
-      message: this.sanitizeErrors ? (error.userMessage || error.message) : error.message,
+      message: this.sanitizeErrors
+        ? error.userMessage || error.message
+        : error.message,
       timestamp: error.timestamp.toISOString(),
-      retryable: error.retryable
+      retryable: error.retryable,
     };
 
     // Add optional fields
@@ -334,81 +344,104 @@ export class ErrorHandler {
    * Type guards and utility methods
    */
   private isPostgrestError(error: unknown): error is PostgrestError {
-    return !!(error && typeof error === 'object' && 
-           'code' in error && typeof (error as UnknownError).code === 'string' && 
-           'message' in error && 'details' in error);
+    return !!(
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      typeof (error as UnknownError).code === 'string' &&
+      'message' in error &&
+      'details' in error
+    );
   }
 
   private isValidationError(error: Error): boolean {
     const message = error.message.toLowerCase();
-    return message.includes('validation') || 
-           message.includes('required') || 
-           message.includes('invalid') ||
-           message.includes('missing');
+    return (
+      message.includes('validation') ||
+      message.includes('required') ||
+      message.includes('invalid') ||
+      message.includes('missing')
+    );
   }
 
   private isNetworkError(error: Error): boolean {
     const message = error.message.toLowerCase();
-    return message.includes('network') ||
-           message.includes('timeout') ||
-           message.includes('fetch') ||
-           message.includes('connection');
+    return (
+      message.includes('network') ||
+      message.includes('timeout') ||
+      message.includes('fetch') ||
+      message.includes('connection')
+    );
   }
 
-  private extractErrorCode(error: ExternalApiError, provider: string): string | null {
+  private extractErrorCode(
+    error: ExternalApiError,
+    provider: string
+  ): string | null {
     if (provider === 'amadeus') {
       const amadeusError = error as AmadeusError;
-      return amadeusError?.errors?.[0]?.code || 
-             amadeusError?.error?.code || 
-             amadeusError?.code || 
-             null;
+      return (
+        amadeusError?.errors?.[0]?.code ||
+        amadeusError?.error?.code ||
+        amadeusError?.code ||
+        null
+      );
     }
-    
+
     if (provider === 'duffel') {
       const duffelError = error as DuffelError;
-      return duffelError?.errors?.[0]?.type || 
-             duffelError?.error?.type || 
-             duffelError?.type || 
-             null;
+      return (
+        duffelError?.errors?.[0]?.type ||
+        duffelError?.error?.type ||
+        duffelError?.type ||
+        null
+      );
     }
 
     if (provider === 'stripe') {
       const stripeError = error as StripeError;
-      return stripeError?.code || 
-             stripeError?.type || 
-             null;
+      return stripeError?.code || stripeError?.type || null;
     }
 
     return null;
   }
 
-  private extractErrorMessage(error: ExternalApiError, provider: string): string {
+  private extractErrorMessage(
+    error: ExternalApiError,
+    provider: string
+  ): string {
     const defaultMessage = `${provider} API error occurred`;
 
     if (provider === 'amadeus') {
       const amadeusError = error as AmadeusError;
-      return amadeusError?.errors?.[0]?.detail || 
-             amadeusError?.error?.message || 
-             amadeusError?.message || 
-             defaultMessage;
+      return (
+        amadeusError?.errors?.[0]?.detail ||
+        amadeusError?.error?.message ||
+        amadeusError?.message ||
+        defaultMessage
+      );
     }
-    
+
     if (provider === 'duffel') {
       const duffelError = error as DuffelError;
-      return duffelError?.errors?.[0]?.message || 
-             duffelError?.error?.message || 
-             duffelError?.message || 
-             defaultMessage;
+      return (
+        duffelError?.errors?.[0]?.message ||
+        duffelError?.error?.message ||
+        duffelError?.message ||
+        defaultMessage
+      );
     }
 
     if (provider === 'stripe') {
       const stripeError = error as StripeError;
-      return stripeError?.message || 
-             stripeError?.user_message || 
-             defaultMessage;
+      return (
+        stripeError?.message || stripeError?.user_message || defaultMessage
+      );
     }
 
-    return 'message' in error && typeof error.message === 'string' ? error.message : defaultMessage;
+    return 'message' in error && typeof error.message === 'string'
+      ? error.message
+      : defaultMessage;
   }
 }
 
@@ -418,28 +451,43 @@ export class ErrorHandler {
 export const errorHandler = new ErrorHandler({
   logger: new ConsoleLogger(),
   includeStackTrace: process.env.NODE_ENV === 'development',
-  sanitizeErrors: process.env.NODE_ENV === 'production'
+  sanitizeErrors: process.env.NODE_ENV === 'production',
 });
 
 /**
  * Convenience functions for common error handling patterns
  */
-export function handleError(error: unknown, context?: ErrorContext): ErrorResponse {
+export function handleError(
+  error: unknown,
+  context?: ErrorContext
+): ErrorResponse {
   return errorHandler.handle(error, context);
 }
 
-export function handleAndThrowError(error: unknown, context?: ErrorContext): never {
+export function handleAndThrowError(
+  error: unknown,
+  context?: ErrorContext
+): never {
   return errorHandler.handleAndThrow(error, context);
 }
 
-export function mapAmadeusError(error: AmadeusError, context?: ErrorContext): AppError {
+export function mapAmadeusError(
+  error: AmadeusError,
+  context?: ErrorContext
+): AppError {
   return errorHandler.mapExternalApiError('amadeus', error, context);
 }
 
-export function mapDuffelError(error: DuffelError, context?: ErrorContext): AppError {
+export function mapDuffelError(
+  error: DuffelError,
+  context?: ErrorContext
+): AppError {
   return errorHandler.mapExternalApiError('duffel', error, context);
 }
 
-export function mapStripeError(error: StripeError, context?: ErrorContext): AppError {
+export function mapStripeError(
+  error: StripeError,
+  context?: ErrorContext
+): AppError {
   return errorHandler.mapExternalApiError('stripe', error, context);
 }

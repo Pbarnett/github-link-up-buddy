@@ -32,22 +32,30 @@ class TravelerProfileService {
   }
 
   private async getAuthHeaders(): Promise<HeadersInit> {
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session?.access_token) {
       throw new Error('No authenticated session found');
     }
 
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
+      Authorization: `Bearer ${session.access_token}`,
     };
   }
 
-  private async handleResponse(response: Response): Promise<TravelerProfileResponse> {
+  private async handleResponse(
+    response: Response
+  ): Promise<TravelerProfileResponse> {
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: 'Network error' }));
+      throw new Error(
+        errorData.error || `HTTP ${response.status}: ${response.statusText}`
+      );
     }
 
     return await response.json();
@@ -56,21 +64,23 @@ class TravelerProfileService {
   /**
    * Create a new traveler profile
    */
-  async createProfile(profileData: Omit<TravelerProfile, 'id' | 'createdAt' | 'updatedAt'>): Promise<TravelerProfile> {
+  async createProfile(
+    profileData: Omit<TravelerProfile, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<TravelerProfile> {
     try {
       const headers = await this.getAuthHeaders();
-      
+
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify({
           action: 'create',
-          data: profileData
-        })
+          data: profileData,
+        }),
       });
 
       const result = await this.handleResponse(response);
-      
+
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to create traveler profile');
       }
@@ -88,14 +98,14 @@ class TravelerProfileService {
   async getProfiles(): Promise<TravelerProfile[]> {
     try {
       const headers = await this.getAuthHeaders();
-      
+
       const response = await fetch(`${this.baseUrl}?action=get`, {
         method: 'GET',
-        headers
+        headers,
       });
 
       const result = await this.handleResponse(response);
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch traveler profiles');
       }
@@ -113,14 +123,17 @@ class TravelerProfileService {
   async getProfile(profileId: string): Promise<TravelerProfile> {
     try {
       const headers = await this.getAuthHeaders();
-      
-      const response = await fetch(`${this.baseUrl}?action=get&profileId=${profileId}`, {
-        method: 'GET',
-        headers
-      });
+
+      const response = await fetch(
+        `${this.baseUrl}?action=get&profileId=${profileId}`,
+        {
+          method: 'GET',
+          headers,
+        }
+      );
 
       const result = await this.handleResponse(response);
-      
+
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to fetch traveler profile');
       }
@@ -135,22 +148,25 @@ class TravelerProfileService {
   /**
    * Update an existing traveler profile
    */
-  async updateProfile(profileId: string, updates: Partial<TravelerProfile>): Promise<TravelerProfile> {
+  async updateProfile(
+    profileId: string,
+    updates: Partial<TravelerProfile>
+  ): Promise<TravelerProfile> {
     try {
       const headers = await this.getAuthHeaders();
-      
+
       const response = await fetch(this.baseUrl, {
         method: 'PUT',
         headers,
         body: JSON.stringify({
           action: 'update',
           profileId,
-          data: updates
-        })
+          data: updates,
+        }),
       });
 
       const result = await this.handleResponse(response);
-      
+
       if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to update traveler profile');
       }
@@ -168,18 +184,18 @@ class TravelerProfileService {
   async deleteProfile(profileId: string): Promise<void> {
     try {
       const headers = await this.getAuthHeaders();
-      
+
       const response = await fetch(this.baseUrl, {
         method: 'DELETE',
         headers,
         body: JSON.stringify({
           action: 'delete',
-          profileId
-        })
+          profileId,
+        }),
       });
 
       const result = await this.handleResponse(response);
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to delete traveler profile');
       }
@@ -194,7 +210,9 @@ class TravelerProfileService {
    */
   async isAuthenticated(): Promise<boolean> {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       return !!session?.access_token;
     } catch {
       return false;

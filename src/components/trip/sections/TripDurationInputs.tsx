@@ -1,13 +1,12 @@
-
-import { Control } from "react-hook-form";
-import { 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Control } from 'react-hook-form';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 
 // Trip duration form data interface
 interface TripDurationFormData {
@@ -28,8 +27,8 @@ const TripDurationInputs = ({ control }: TripDurationInputsProps) => {
         name="min_duration"
         render={({ field }) => (
           <FormItem>
-            <FormLabel 
-              htmlFor="min_duration_input" 
+            <FormLabel
+              htmlFor="min_duration_input"
               className="text-sm font-medium text-gray-900"
             >
               Minimum trip duration (days)
@@ -55,8 +54,8 @@ const TripDurationInputs = ({ control }: TripDurationInputsProps) => {
         name="max_duration"
         render={({ field }) => (
           <FormItem>
-            <FormLabel 
-              htmlFor="max_duration_input" 
+            <FormLabel
+              htmlFor="max_duration_input"
               className="text-sm font-medium text-gray-900"
             >
               Maximum trip duration (days)

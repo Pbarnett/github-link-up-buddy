@@ -1,6 +1,6 @@
 /**
  * Secure Flight Booking Component
- * 
+ *
  * Complete flight booking flow with secure flight search and payment processing.
  * Integrates AWS Secrets Manager, Stripe payments, and Supabase backend.
  */
@@ -13,7 +13,12 @@ import SecureFlightSearch from '@/components/flights/SecureFlightSearch';
 import { useSecureOAuth } from '@/components/auth/SecureOAuthLogin';
 
 // Booking flow steps
-type BookingStep = 'search' | 'details' | 'passenger' | 'payment' | 'confirmation';
+type BookingStep =
+  | 'search'
+  | 'details'
+  | 'passenger'
+  | 'payment'
+  | 'confirmation';
 
 // Passenger information interface
 interface PassengerInfo {
@@ -54,7 +59,7 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
   className = '',
 }) => {
   const { user, session } = useSecureOAuth();
-  
+
   const [bookingState, setBookingState] = useState<BookingState>({
     step: 'search',
     selectedFlight: null,
@@ -70,55 +75,61 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
   /**
    * Handle flight selection from search results
    */
-  const handleFlightSelect = useCallback((flight: FlightOffer) => {
-    const totalPassengers = (flight.travelerPricings?.length || 1);
-    const basePrice = parseFloat(flight.price.total);
-    const totalPrice = basePrice * totalPassengers;
+  const handleFlightSelect = useCallback(
+    (flight: FlightOffer) => {
+      const totalPassengers = flight.travelerPricings?.length || 1;
+      const basePrice = parseFloat(flight.price.total);
+      const totalPrice = basePrice * totalPassengers;
 
-    // Initialize passenger information
-    const passengers: PassengerInfo[] = flight.travelerPricings?.map((pricing, index) => ({
-      type: pricing.travelerType,
-      firstName: '',
-      lastName: '',
-      dateOfBirth: '',
-      gender: 'M',
-      email: index === 0 ? user?.email || '' : '',
-      phone: index === 0 ? bookingState.contactPhone : '',
-    })) || [{
-      type: 'ADULT',
-      firstName: '',
-      lastName: '',
-      dateOfBirth: '',
-      gender: 'M',
-      email: user?.email || '',
-      phone: '',
-    }];
+      // Initialize passenger information
+      const passengers: PassengerInfo[] = flight.travelerPricings?.map(
+        (pricing, index) => ({
+          type: pricing.travelerType,
+          firstName: '',
+          lastName: '',
+          dateOfBirth: '',
+          gender: 'M',
+          email: index === 0 ? user?.email || '' : '',
+          phone: index === 0 ? bookingState.contactPhone : '',
+        })
+      ) || [
+        {
+          type: 'ADULT',
+          firstName: '',
+          lastName: '',
+          dateOfBirth: '',
+          gender: 'M',
+          email: user?.email || '',
+          phone: '',
+        },
+      ];
 
-    setBookingState(prev => ({
-      ...prev,
-      step: 'details',
-      selectedFlight: flight,
-      passengers,
-      totalPrice,
-      paymentError: null,
-    }));
-  }, [user?.email, bookingState.contactPhone]);
+      setBookingState(prev => ({
+        ...prev,
+        step: 'details',
+        selectedFlight: flight,
+        passengers,
+        totalPrice,
+        paymentError: null,
+      }));
+    },
+    [user?.email, bookingState.contactPhone]
+  );
 
   /**
    * Handle passenger information updates
    */
-  const handlePassengerUpdate = useCallback((
-    index: number, 
-    field: keyof PassengerInfo, 
-    value: string
-  ) => {
-    setBookingState(prev => ({
-      ...prev,
-      passengers: prev.passengers.map((passenger, i) => 
-        i === index ? { ...passenger, [field]: value } : passenger
-      ),
-    }));
-  }, []);
+  const handlePassengerUpdate = useCallback(
+    (index: number, field: keyof PassengerInfo, value: string) => {
+      setBookingState(prev => ({
+        ...prev,
+        passengers: prev.passengers.map((passenger, i) =>
+          i === index ? { ...passenger, [field]: value } : passenger
+        ),
+      }));
+    },
+    []
+  );
 
   /**
    * Validate passenger information
@@ -126,15 +137,15 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
   const validatePassengers = (): string | null => {
     for (let i = 0; i < bookingState.passengers.length; i++) {
       const passenger = bookingState.passengers[i];
-      
+
       if (!passenger.firstName.trim()) {
         return `First name is required for passenger ${i + 1}`;
       }
-      
+
       if (!passenger.lastName.trim()) {
         return `Last name is required for passenger ${i + 1}`;
       }
-      
+
       if (!passenger.dateOfBirth) {
         return `Date of birth is required for passenger ${i + 1}`;
       }
@@ -142,22 +153,27 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
       // Validate age based on passenger type
       const birthDate = new Date(passenger.dateOfBirth);
       const today = new Date();
-      const age = Math.floor((today.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-      
+      const age = Math.floor(
+        (today.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+      );
+
       if (passenger.type === 'ADULT' && age < 12) {
         return `Passenger ${i + 1} must be at least 12 years old for adult fare`;
       }
-      
+
       if (passenger.type === 'CHILD' && (age < 2 || age >= 12)) {
         return `Passenger ${i + 1} age must be between 2-11 years for child fare`;
       }
-      
+
       if (passenger.type === 'INFANT' && age >= 2) {
         return `Passenger ${i + 1} must be under 2 years old for infant fare`;
       }
     }
 
-    if (!bookingState.contactEmail.trim() || !bookingState.contactEmail.includes('@')) {
+    if (
+      !bookingState.contactEmail.trim() ||
+      !bookingState.contactEmail.includes('@')
+    ) {
       return 'Valid contact email is required';
     }
 
@@ -191,9 +207,9 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
    */
   const processPayment = async () => {
     if (!bookingState.selectedFlight || !session) {
-      setBookingState(prev => ({ 
-        ...prev, 
-        paymentError: 'Authentication required for booking' 
+      setBookingState(prev => ({
+        ...prev,
+        paymentError: 'Authentication required for booking',
       }));
       return;
     }
@@ -263,17 +279,17 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
       }));
 
       onBookingComplete?.(bookingReference, bookingState.selectedFlight);
-
     } catch (error) {
       console.error('Payment processing failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Payment processing failed';
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Payment processing failed';
+
       setBookingState(prev => ({
         ...prev,
         paymentLoading: false,
         paymentError: errorMessage,
       }));
-      
+
       onError?.(errorMessage);
     }
   };
@@ -312,33 +328,47 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
     if (!bookingState.selectedFlight) return null;
 
     const flight = bookingState.selectedFlight;
-    
+
     return (
       <div className="space-y-6">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Selected Flight
           </h3>
-          
+
           {flight.itineraries.map((itinerary, index) => (
             <div key={index} className="mb-4 last:mb-0">
               <div className="flex justify-between items-center">
                 <div>
                   <div className="text-lg font-medium">
-                    {itinerary.segments[0].departure.iataCode} → {' '}
-                    {itinerary.segments[itinerary.segments.length - 1].arrival.iataCode}
+                    {itinerary.segments[0].departure.iataCode} →{' '}
+                    {
+                      itinerary.segments[itinerary.segments.length - 1].arrival
+                        .iataCode
+                    }
                   </div>
                   <div className="text-sm text-gray-600">
-                    {new Date(itinerary.segments[0].departure.at).toLocaleString()} - {' '}
-                    {new Date(itinerary.segments[itinerary.segments.length - 1].arrival.at).toLocaleString()}
+                    {new Date(
+                      itinerary.segments[0].departure.at
+                    ).toLocaleString()}{' '}
+                    -{' '}
+                    {new Date(
+                      itinerary.segments[
+                        itinerary.segments.length - 1
+                      ].arrival.at
+                    ).toLocaleString()}
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-xl font-bold text-blue-600">
-                    {formatPrice(bookingState.totalPrice, flight.price.currency)}
+                    {formatPrice(
+                      bookingState.totalPrice,
+                      flight.price.currency
+                    )}
                   </div>
                   <div className="text-xs text-gray-500">
-                    Total for {bookingState.passengers.length} passenger{bookingState.passengers.length > 1 ? 's' : ''}
+                    Total for {bookingState.passengers.length} passenger
+                    {bookingState.passengers.length > 1 ? 's' : ''}
                   </div>
                 </div>
               </div>
@@ -348,13 +378,17 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
 
         <div className="flex justify-between">
           <button
-            onClick={() => setBookingState(prev => ({ ...prev, step: 'search' }))}
+            onClick={() =>
+              setBookingState(prev => ({ ...prev, step: 'search' }))
+            }
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
           >
             Back to Search
           </button>
           <button
-            onClick={() => setBookingState(prev => ({ ...prev, step: 'passenger' }))}
+            onClick={() =>
+              setBookingState(prev => ({ ...prev, step: 'passenger' }))
+            }
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
           >
             Continue
@@ -376,11 +410,14 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
           </h3>
 
           {bookingState.passengers.map((passenger, index) => (
-            <div key={index} className="mb-8 last:mb-6 pb-6 border-b last:border-b-0">
+            <div
+              key={index}
+              className="mb-8 last:mb-6 pb-6 border-b last:border-b-0"
+            >
               <h4 className="font-medium text-gray-800 mb-4">
                 Passenger {index + 1} ({passenger.type})
               </h4>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -389,7 +426,13 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
                   <input
                     type="text"
                     value={passenger.firstName}
-                    onChange={(e) => handlePassengerUpdate(index, 'firstName', (e.target as HTMLInputElement).value)}
+                    onChange={e =>
+                      handlePassengerUpdate(
+                        index,
+                        'firstName',
+                        (e.target as HTMLInputElement).value
+                      )
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
@@ -401,7 +444,13 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
                   <input
                     type="text"
                     value={passenger.lastName}
-                    onChange={(e) => handlePassengerUpdate(index, 'lastName', (e.target as HTMLInputElement).value)}
+                    onChange={e =>
+                      handlePassengerUpdate(
+                        index,
+                        'lastName',
+                        (e.target as HTMLInputElement).value
+                      )
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
@@ -416,7 +465,13 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
                   <input
                     type="date"
                     value={passenger.dateOfBirth}
-                    onChange={(e) => handlePassengerUpdate(index, 'dateOfBirth', (e.target as HTMLInputElement).value)}
+                    onChange={e =>
+                      handlePassengerUpdate(
+                        index,
+                        'dateOfBirth',
+                        (e.target as HTMLInputElement).value
+                      )
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
@@ -427,7 +482,13 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
                   </label>
                   <select
                     value={passenger.gender}
-                    onChange={(e) => handlePassengerUpdate(index, 'gender', (e.target as HTMLSelectElement).value)}
+                    onChange={e =>
+                      handlePassengerUpdate(
+                        index,
+                        'gender',
+                        (e.target as HTMLSelectElement).value
+                      )
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="M">Male</option>
@@ -440,8 +501,10 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
 
           {/* Contact Information */}
           <div className="border-t pt-6">
-            <h4 className="font-medium text-gray-800 mb-4">Contact Information</h4>
-            
+            <h4 className="font-medium text-gray-800 mb-4">
+              Contact Information
+            </h4>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -450,10 +513,12 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
                 <input
                   type="email"
                   value={bookingState.contactEmail}
-                  onChange={(e) => setBookingState(prev => ({ 
-                    ...prev, 
-                    contactEmail: (e.target as HTMLInputElement).value 
-                  }))}
+                  onChange={e =>
+                    setBookingState(prev => ({
+                      ...prev,
+                      contactEmail: (e.target as HTMLInputElement).value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
@@ -465,10 +530,12 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
                 <input
                   type="tel"
                   value={bookingState.contactPhone}
-                  onChange={(e) => setBookingState(prev => ({ 
-                    ...prev, 
-                    contactPhone: (e.target as HTMLInputElement).value 
-                  }))}
+                  onChange={e =>
+                    setBookingState(prev => ({
+                      ...prev,
+                      contactPhone: (e.target as HTMLInputElement).value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
@@ -488,7 +555,9 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
 
         <div className="flex justify-between">
           <button
-            onClick={() => setBookingState(prev => ({ ...prev, step: 'details' }))}
+            onClick={() =>
+              setBookingState(prev => ({ ...prev, step: 'details' }))
+            }
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
           >
             Back
@@ -513,16 +582,19 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
     return (
       <div className="space-y-6">
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">
-            Payment
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Payment</h3>
 
           {/* Booking Summary */}
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <h4 className="font-medium text-gray-800 mb-2">Booking Summary</h4>
             <div className="flex justify-between text-sm">
               <span>Flight Total:</span>
-              <span>{formatPrice(bookingState.totalPrice, bookingState.selectedFlight.price.currency)}</span>
+              <span>
+                {formatPrice(
+                  bookingState.totalPrice,
+                  bookingState.selectedFlight.price.currency
+                )}
+              </span>
             </div>
             <div className="flex justify-between text-sm mt-1">
               <span>Passengers:</span>
@@ -530,7 +602,12 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
             </div>
             <div className="border-t mt-2 pt-2 flex justify-between font-semibold">
               <span>Total:</span>
-              <span>{formatPrice(bookingState.totalPrice, bookingState.selectedFlight.price.currency)}</span>
+              <span>
+                {formatPrice(
+                  bookingState.totalPrice,
+                  bookingState.selectedFlight.price.currency
+                )}
+              </span>
             </div>
           </div>
 
@@ -589,7 +666,9 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
 
         <div className="flex justify-between">
           <button
-            onClick={() => setBookingState(prev => ({ ...prev, step: 'passenger' }))}
+            onClick={() =>
+              setBookingState(prev => ({ ...prev, step: 'passenger' }))
+            }
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
             disabled={bookingState.paymentLoading}
           >
@@ -618,7 +697,8 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
    * Render confirmation step
    */
   const renderConfirmation = () => {
-    if (!bookingState.selectedFlight || !bookingState.bookingReference) return null;
+    if (!bookingState.selectedFlight || !bookingState.bookingReference)
+      return null;
 
     return (
       <div className="text-center space-y-6">
@@ -630,7 +710,7 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
           <p className="text-gray-600 mb-6">
             Your flight has been booked successfully.
           </p>
-          
+
           <div className="bg-gray-50 p-4 rounded-lg mb-6">
             <h3 className="font-semibold text-gray-800 mb-2">
               Booking Reference
@@ -643,16 +723,27 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
           <div className="text-left">
             <h4 className="font-medium text-gray-800 mb-2">Flight Details:</h4>
             <div className="text-sm text-gray-600">
-              {bookingState.selectedFlight.itineraries[0].segments[0].departure.iataCode} → {' '}
-              {bookingState.selectedFlight.itineraries[0].segments[
-                bookingState.selectedFlight.itineraries[0].segments.length - 1
-              ].arrival.iataCode}
+              {
+                bookingState.selectedFlight.itineraries[0].segments[0].departure
+                  .iataCode
+              }{' '}
+              →{' '}
+              {
+                bookingState.selectedFlight.itineraries[0].segments[
+                  bookingState.selectedFlight.itineraries[0].segments.length - 1
+                ].arrival.iataCode
+              }
             </div>
             <div className="text-sm text-gray-600">
-              {bookingState.passengers.length} passenger{bookingState.passengers.length > 1 ? 's' : ''}
+              {bookingState.passengers.length} passenger
+              {bookingState.passengers.length > 1 ? 's' : ''}
             </div>
             <div className="text-sm text-gray-600">
-              Total: {formatPrice(bookingState.totalPrice, bookingState.selectedFlight.price.currency)}
+              Total:{' '}
+              {formatPrice(
+                bookingState.totalPrice,
+                bookingState.selectedFlight.price.currency
+              )}
             </div>
           </div>
         </div>
@@ -663,7 +754,7 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
         >
           Book Another Flight
         </button>
-        
+
         <div className="text-center">
           <p className="text-xs text-gray-500">
             🔒 Secure booking powered by AWS Secrets Manager & Stripe
@@ -678,7 +769,7 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
     switch (bookingState.step) {
       case 'search':
         return (
-          <SecureFlightSearch 
+          <SecureFlightSearch
             onFlightSelect={handleFlightSelect}
             onError={onError}
           />
@@ -702,32 +793,51 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
       {bookingState.step !== 'confirmation' && (
         <div className="mb-8">
           <div className="flex justify-center space-x-4">
-            {['search', 'details', 'passenger', 'payment'].map((step, index) => (
-              <div
-                key={step}
-                className={`flex items-center ${
-                  index === ['search', 'details', 'passenger', 'payment'].indexOf(bookingState.step)
-                    ? 'text-blue-600'
-                    : index < ['search', 'details', 'passenger', 'payment'].indexOf(bookingState.step)
-                    ? 'text-green-600'
-                    : 'text-gray-400'
-                }`}
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  index === ['search', 'details', 'passenger', 'payment'].indexOf(bookingState.step)
-                    ? 'bg-blue-600 text-white'
-                    : index < ['search', 'details', 'passenger', 'payment'].indexOf(bookingState.step)
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-200'
-                }`}>
-                  {index + 1}
+            {['search', 'details', 'passenger', 'payment'].map(
+              (step, index) => (
+                <div
+                  key={step}
+                  className={`flex items-center ${
+                    index ===
+                    ['search', 'details', 'passenger', 'payment'].indexOf(
+                      bookingState.step
+                    )
+                      ? 'text-blue-600'
+                      : index <
+                          ['search', 'details', 'passenger', 'payment'].indexOf(
+                            bookingState.step
+                          )
+                        ? 'text-green-600'
+                        : 'text-gray-400'
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      index ===
+                      ['search', 'details', 'passenger', 'payment'].indexOf(
+                        bookingState.step
+                      )
+                        ? 'bg-blue-600 text-white'
+                        : index <
+                            [
+                              'search',
+                              'details',
+                              'passenger',
+                              'payment',
+                            ].indexOf(bookingState.step)
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-200'
+                    }`}
+                  >
+                    {index + 1}
+                  </div>
+                  <span className="ml-2 text-sm font-medium capitalize">
+                    {step === 'passenger' ? 'Passengers' : step}
+                  </span>
+                  {index < 3 && <div className="ml-4 text-gray-300">→</div>}
                 </div>
-                <span className="ml-2 text-sm font-medium capitalize">
-                  {step === 'passenger' ? 'Passengers' : step}
-                </span>
-                {index < 3 && <div className="ml-4 text-gray-300">→</div>}
-              </div>
-            ))}
+              )
+            )}
           </div>
         </div>
       )}

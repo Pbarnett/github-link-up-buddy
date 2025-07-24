@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ConstraintChips, { formatDateRange } from '@/components/trip/ConstraintChips';
+import ConstraintChips, {
+  formatDateRange,
+} from '@/components/trip/ConstraintChips';
 import { renderWithProviders } from '@/tests/__helpers';
 
 describe('ConstraintChips (Refactored)', () => {
@@ -56,7 +58,7 @@ describe('ConstraintChips (Refactored)', () => {
 
     it('should render formatted date range', () => {
       renderWithProviders(<ConstraintChips {...defaultProps} />);
-      
+
       const dateChip = screen.getByTestId('chip-date-range');
       // Check that it contains the expected month and dash, accounting for timezone differences
       expect(dateChip.textContent).toMatch(/Jan \d{1,2} – Jan \d{1,2}/);
@@ -64,20 +66,26 @@ describe('ConstraintChips (Refactored)', () => {
 
     it('should show non-stop toggle as disabled by default', () => {
       renderWithProviders(<ConstraintChips {...defaultProps} />);
-      
+
       const nonStopButton = screen.getByTestId('chip-nonstop');
       expect(nonStopButton).toHaveAttribute('aria-pressed', 'false');
-      expect(nonStopButton).toHaveAttribute('aria-label', 'Non-stop flights disabled');
+      expect(nonStopButton).toHaveAttribute(
+        'aria-label',
+        'Non-stop flights disabled'
+      );
     });
 
     it('should show non-stop toggle as enabled when nonStopOnly is true', () => {
       renderWithProviders(
         <ConstraintChips {...defaultProps} nonStopOnly={true} />
       );
-      
+
       const nonStopButton = screen.getByTestId('chip-nonstop');
       expect(nonStopButton).toHaveAttribute('aria-pressed', 'true');
-      expect(nonStopButton).toHaveAttribute('aria-label', 'Non-stop flights enabled');
+      expect(nonStopButton).toHaveAttribute(
+        'aria-label',
+        'Non-stop flights enabled'
+      );
     });
   });
 
@@ -105,10 +113,10 @@ describe('ConstraintChips (Refactored)', () => {
       );
 
       // Test accessibility - should be able to find by role and name
-      const nonStopButton = screen.getByRole('button', { 
-        name: /non-stop flights disabled/i 
+      const nonStopButton = screen.getByRole('button', {
+        name: /non-stop flights disabled/i,
       });
-      
+
       await user.click(nonStopButton);
       expect(mockToggle).toHaveBeenCalledTimes(1);
     });
@@ -122,11 +130,11 @@ describe('ConstraintChips (Refactored)', () => {
       );
 
       const nonStopButton = screen.getByTestId('chip-nonstop');
-      
+
       // Focus and press Enter
       nonStopButton.focus();
       await user.keyboard('{Enter}');
-      
+
       expect(mockToggle).toHaveBeenCalledTimes(1);
     });
   });
@@ -136,28 +144,34 @@ describe('ConstraintChips (Refactored)', () => {
       const { rerender } = renderWithProviders(
         <ConstraintChips {...defaultProps} nonStopOnly={false} />
       );
-      
+
       // Check that button has correct aria-pressed for disabled state
       const nonStopButton = screen.getByTestId('chip-nonstop');
       expect(nonStopButton).toHaveAttribute('aria-pressed', 'false');
-      
+
       // Rerender with enabled state
       rerender(<ConstraintChips {...defaultProps} nonStopOnly={true} />);
-      
+
       expect(nonStopButton).toHaveAttribute('aria-pressed', 'true');
     });
 
     it('should have proper accessibility labels for each state', () => {
-      renderWithProviders(<ConstraintChips {...defaultProps} nonStopOnly={false} />);
-      
-      const disabledButton = screen.getByRole('button', { name: /non-stop flights disabled/i });
+      renderWithProviders(
+        <ConstraintChips {...defaultProps} nonStopOnly={false} />
+      );
+
+      const disabledButton = screen.getByRole('button', {
+        name: /non-stop flights disabled/i,
+      });
       expect(disabledButton).toBeInTheDocument();
-      
+
       renderWithProviders(
         <ConstraintChips {...defaultProps} nonStopOnly={true} />
       );
-      
-      const enabledButton = screen.getByRole('button', { name: /non-stop flights enabled/i });
+
+      const enabledButton = screen.getByRole('button', {
+        name: /non-stop flights enabled/i,
+      });
       expect(enabledButton).toBeInTheDocument();
     });
   });

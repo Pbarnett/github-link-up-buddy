@@ -1,7 +1,6 @@
-
 /**
  * Form Builder Component
- * 
+ *
  * Admin interface for creating and editing dynamic form configurations
  */
 
@@ -22,7 +21,7 @@ import type {
   FieldConfiguration,
   FieldTemplate,
   SecurityValidationResult,
-  SecurityViolation
+  SecurityViolation,
 } from '@/types/dynamic-forms';
 
 type FC<T = {}> = React.FC<T>;
@@ -37,34 +36,35 @@ export const FormBuilder: FC<FormBuilderProps> = ({
   onSave,
   onDeploy,
   readonly = false,
-  showPreview = true
+  showPreview = true,
 }) => {
   const [configuration, setConfiguration] = useState<FormConfiguration>(
     initialConfiguration || {
       id: crypto.randomUUID(),
       name: '',
       version: 1,
-      sections: []
+      sections: [],
     }
   );
 
   const [activeTab, setActiveTab] = useState('builder');
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
-  const [validationResults, setValidationResults] = useState<SecurityValidationResult | null>(null);
+  const [validationResults, setValidationResults] =
+    useState<SecurityValidationResult | null>(null);
 
-  const {
-    validateConfiguration,
-    loading,
-    errors
-  } = useFormStore();
+  const { validateConfiguration, loading, errors } = useFormStore();
 
   // Mark as dirty when configuration changes
   useEffect(() => {
     if (initialConfiguration) {
-      setIsDirty(JSON.stringify(configuration) !== JSON.stringify(initialConfiguration));
+      setIsDirty(
+        JSON.stringify(configuration) !== JSON.stringify(initialConfiguration)
+      );
     } else {
-      setIsDirty(configuration.name !== '' || configuration.sections.length > 0);
+      setIsDirty(
+        configuration.name !== '' || configuration.sections.length > 0
+      );
     }
   }, [configuration, initialConfiguration]);
 
@@ -79,12 +79,12 @@ export const FormBuilder: FC<FormBuilderProps> = ({
       id: `section_${Date.now()}`,
       title: 'New Section',
       description: '',
-      fields: []
+      fields: [],
     };
 
     setConfiguration(prev => ({
       ...prev,
-      sections: [...prev.sections, newSection]
+      sections: [...prev.sections, newSection],
     }));
     setSelectedSection(newSection.id);
   };
@@ -95,7 +95,7 @@ export const FormBuilder: FC<FormBuilderProps> = ({
       ...prev,
       sections: prev.sections.map(section =>
         section.id === sectionId ? { ...section, ...updates } : section
-      )
+      ),
     }));
   };
 
@@ -103,7 +103,7 @@ export const FormBuilder: FC<FormBuilderProps> = ({
   const deleteSection = (sectionId: string) => {
     setConfiguration(prev => ({
       ...prev,
-      sections: prev.sections.filter(section => section.id !== sectionId)
+      sections: prev.sections.filter(section => section.id !== sectionId),
     }));
     if (selectedSection === sectionId) {
       setSelectedSection(null);
@@ -111,31 +111,38 @@ export const FormBuilder: FC<FormBuilderProps> = ({
   };
 
   // Add field to section
-  const addFieldToSection = (sectionId: string, fieldTemplate: FieldTemplate) => {
+  const addFieldToSection = (
+    sectionId: string,
+    fieldTemplate: FieldTemplate
+  ) => {
     const newField: FieldConfiguration = {
       id: `field_${Date.now()}`,
       type: fieldTemplate.type,
       label: fieldTemplate.label,
-      ...fieldTemplate.defaultConfig
+      ...fieldTemplate.defaultConfig,
     };
 
     updateSection(sectionId, {
       fields: [
-        ...configuration.sections.find(s => s.id === sectionId)?.fields || [],
-        newField
-      ]
+        ...(configuration.sections.find(s => s.id === sectionId)?.fields || []),
+        newField,
+      ],
     });
   };
 
   // Update field
-  const updateField = (sectionId: string, fieldId: string, updates: Partial<FieldConfiguration>) => {
+  const updateField = (
+    sectionId: string,
+    fieldId: string,
+    updates: Partial<FieldConfiguration>
+  ) => {
     const section = configuration.sections.find(s => s.id === sectionId);
     if (!section) return;
 
     updateSection(sectionId, {
       fields: section.fields.map(field =>
         field.id === fieldId ? { ...field, ...updates } : field
-      )
+      ),
     });
   };
 
@@ -145,7 +152,7 @@ export const FormBuilder: FC<FormBuilderProps> = ({
     if (!section) return;
 
     updateSection(sectionId, {
-      fields: section.fields.filter(field => field.id !== fieldId)
+      fields: section.fields.filter(field => field.id !== fieldId),
     });
   };
 
@@ -171,7 +178,9 @@ export const FormBuilder: FC<FormBuilderProps> = ({
     }
   };
 
-  const selectedSectionData = configuration.sections.find(s => s.id === selectedSection);
+  const selectedSectionData = configuration.sections.find(
+    s => s.id === selectedSection
+  );
 
   return (
     <div className="form-builder h-full flex flex-col">
@@ -179,19 +188,24 @@ export const FormBuilder: FC<FormBuilderProps> = ({
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">Form Builder</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Form Builder
+            </h1>
             <p className="text-sm text-muted-foreground">
               Create and edit dynamic form configurations
             </p>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {isDirty && (
-              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+              <Badge
+                variant="outline"
+                className="bg-orange-50 text-orange-700 border-orange-200"
+              >
                 Unsaved Changes
               </Badge>
             )}
-            
+
             {!readonly && (
               <>
                 <Button
@@ -202,7 +216,7 @@ export const FormBuilder: FC<FormBuilderProps> = ({
                   <Settings className="h-4 w-4 mr-2" />
                   Validate
                 </Button>
-                
+
                 <Button
                   variant="outline"
                   onClick={handleSave}
@@ -211,10 +225,12 @@ export const FormBuilder: FC<FormBuilderProps> = ({
                   <Save className="h-4 w-4 mr-2" />
                   Save
                 </Button>
-                
+
                 <Button
                   onClick={handleDeploy}
-                  disabled={!configuration.name || configuration.sections.length === 0}
+                  disabled={
+                    !configuration.name || configuration.sections.length === 0
+                  }
                 >
                   Deploy
                 </Button>
@@ -226,18 +242,31 @@ export const FormBuilder: FC<FormBuilderProps> = ({
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="h-full flex flex-col"
+        >
           <TabsList className="w-full justify-start border-b rounded-none bg-transparent p-0">
-            <TabsTrigger value="builder" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+            <TabsTrigger
+              value="builder"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
               Builder
             </TabsTrigger>
             {showPreview && (
-              <TabsTrigger value="preview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+              <TabsTrigger
+                value="preview"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+              >
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
               </TabsTrigger>
             )}
-            <TabsTrigger value="settings" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+            <TabsTrigger
+              value="settings"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
+            >
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </TabsTrigger>
@@ -249,7 +278,7 @@ export const FormBuilder: FC<FormBuilderProps> = ({
               {/* Field Library */}
               <div className="lg:col-span-1">
                 <FieldTemplateLibrary
-                  onFieldSelect={(template) => {
+                  onFieldSelect={template => {
                     if (selectedSection) {
                       addFieldToSection(selectedSection, template);
                     }
@@ -271,23 +300,25 @@ export const FormBuilder: FC<FormBuilderProps> = ({
                 </div>
 
                 <div className="space-y-4">
-                  {configuration.sections.map((section) => (
+                  {configuration.sections.map(section => (
                     <Card
                       key={section.id}
                       className={cn(
-                        "cursor-pointer transition-colors",
-                        selectedSection === section.id && "ring-2 ring-primary"
+                        'cursor-pointer transition-colors',
+                        selectedSection === section.id && 'ring-2 ring-primary'
                       )}
                       onClick={() => setSelectedSection(section.id)}
                     >
                       <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-base">{section.title}</CardTitle>
+                          <CardTitle className="text-base">
+                            {section.title}
+                          </CardTitle>
                           {!readonly && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.stopPropagation();
                                 deleteSection(section.id);
                               }}
@@ -297,12 +328,15 @@ export const FormBuilder: FC<FormBuilderProps> = ({
                           )}
                         </div>
                         {section.description && (
-                          <p className="text-sm text-muted-foreground">{section.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {section.description}
+                          </p>
                         )}
                       </CardHeader>
                       <CardContent>
                         <div className="text-sm text-muted-foreground">
-                          {section.fields.length} field{section.fields.length !== 1 ? 's' : ''}
+                          {section.fields.length} field
+                          {section.fields.length !== 1 ? 's' : ''}
                         </div>
                       </CardContent>
                     </Card>
@@ -321,16 +355,24 @@ export const FormBuilder: FC<FormBuilderProps> = ({
                 {selectedSectionData ? (
                   <SectionEditor
                     section={selectedSectionData}
-                    onUpdate={(updates) => updateSection(selectedSectionData.id, updates)}
-                    onUpdateField={(fieldId, updates) => updateField(selectedSectionData.id, fieldId, updates)}
-                    onDeleteField={(fieldId) => deleteField(selectedSectionData.id, fieldId)}
+                    onUpdate={updates =>
+                      updateSection(selectedSectionData.id, updates)
+                    }
+                    onUpdateField={(fieldId, updates) =>
+                      updateField(selectedSectionData.id, fieldId, updates)
+                    }
+                    onDeleteField={fieldId =>
+                      deleteField(selectedSectionData.id, fieldId)
+                    }
                     readonly={readonly}
                   />
                 ) : (
                   <Card>
                     <CardContent className="pt-6">
                       <div className="text-center text-muted-foreground">
-                        <p>Select a section to edit its properties and fields.</p>
+                        <p>
+                          Select a section to edit its properties and fields.
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -346,7 +388,9 @@ export const FormBuilder: FC<FormBuilderProps> = ({
                 {configuration.sections.length > 0 ? (
                   <DynamicFormRenderer
                     configuration={configuration}
-                    onSubmit={(data) => console.log('Preview form submitted:', data)}
+                    onSubmit={data =>
+                      console.log('Preview form submitted:', data)
+                    }
                     showValidationSummary={true}
                   />
                 ) : (
@@ -371,7 +415,11 @@ export const FormBuilder: FC<FormBuilderProps> = ({
                     <Input
                       id="form-name"
                       value={configuration.name}
-                      onChange={(e) => updateConfiguration({ name: (e.target as HTMLInputElement).value })}
+                      onChange={e =>
+                        updateConfiguration({
+                          name: (e.target as HTMLInputElement).value,
+                        })
+                      }
                       placeholder="Enter form name"
                       disabled={readonly}
                     />
@@ -383,7 +431,13 @@ export const FormBuilder: FC<FormBuilderProps> = ({
                       id="form-version"
                       type="number"
                       value={configuration.version}
-                      onChange={(e) => updateConfiguration({ version: parseInt((e.target as HTMLInputElement).value) })}
+                      onChange={e =>
+                        updateConfiguration({
+                          version: parseInt(
+                            (e.target as HTMLInputElement).value
+                          ),
+                        })
+                      }
                       disabled={readonly}
                     />
                   </div>
@@ -411,11 +465,16 @@ export const FormBuilder: FC<FormBuilderProps> = ({
                           <div className="space-y-2">
                             <p>Form configuration has validation issues:</p>
                             <ul className="list-disc list-inside space-y-1">
-                              {validationResults.violations.map((violation: SecurityViolation, index: number) => (
-                                <li key={index} className="text-sm">
-                                  {violation.message}
-                                </li>
-                              ))}
+                              {validationResults.violations.map(
+                                (
+                                  violation: SecurityViolation,
+                                  index: number
+                                ) => (
+                                  <li key={index} className="text-sm">
+                                    {violation.message}
+                                  </li>
+                                )
+                              )}
                             </ul>
                           </div>
                         </AlertDescription>
@@ -429,9 +488,7 @@ export const FormBuilder: FC<FormBuilderProps> = ({
               {errors.configuration && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    {errors.configuration}
-                  </AlertDescription>
+                  <AlertDescription>{errors.configuration}</AlertDescription>
                 </Alert>
               )}
             </div>

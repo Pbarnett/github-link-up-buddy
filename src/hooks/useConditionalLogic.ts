@@ -1,24 +1,21 @@
-
-
 /**
  * useConditionalLogic Hook
- * 
+ *
  * Manages conditional logic evaluation for dynamic forms
  * Handles field visibility, enablement, and dependency tracking
  */
 
-import * as React from 'react';
 import { useCallback, useMemo } from 'react';
-import type { 
-  FormConfiguration, 
-  FieldConfiguration, 
-  FormSection 
+import type {
+  FormConfiguration,
+  FieldConfiguration,
+  FormSection,
 } from '../types/dynamic-forms';
-import { 
+import {
   evaluateConditionalLogic,
   createConditionalDependencyGraph,
   hasCircularDependencies,
-  validateConditionalLogic
+  validateConditionalLogic,
 } from '../lib/conditional-logic';
 
 export interface UseConditionalLogicReturn {
@@ -46,7 +43,6 @@ export const useConditionalLogic = (
   config: FormConfiguration | null,
   formData: Record<string, unknown>
 ): UseConditionalLogicReturn => {
-  
   // Create dependency graph
   const dependencyGraph = useMemo(() => {
     if (!config) return new Map();
@@ -78,11 +74,16 @@ export const useConditionalLogic = (
     config.sections.forEach((section: FormSection) => {
       section.fields.forEach((field: FieldConfiguration) => {
         if (field.conditional) {
-          const validation = validateConditionalLogic(field.conditional, allFieldIds);
+          const validation = validateConditionalLogic(
+            field.conditional,
+            allFieldIds
+          );
           if (!validation.isValid) {
-            errors.push(...validation.errors.map((error: string) => 
-              `Field "${field.id}": ${error}`
-            ));
+            errors.push(
+              ...validation.errors.map(
+                (error: string) => `Field "${field.id}": ${error}`
+              )
+            );
             isValid = false;
           }
         }
@@ -90,11 +91,16 @@ export const useConditionalLogic = (
 
       // Validate section conditional logic
       if (section.conditional) {
-        const validation = validateConditionalLogic(section.conditional, allFieldIds);
+        const validation = validateConditionalLogic(
+          section.conditional,
+          allFieldIds
+        );
         if (!validation.isValid) {
-          errors.push(...validation.errors.map((error: string) => 
-            `Section "${section.id}": ${error}`
-          ));
+          errors.push(
+            ...validation.errors.map(
+              (error: string) => `Section "${section.id}": ${error}`
+            )
+          );
           isValid = false;
         }
       }
@@ -112,7 +118,10 @@ export const useConditionalLogic = (
     config.sections.forEach((section: FormSection) => {
       section.fields.forEach((field: FieldConfiguration) => {
         if (field.conditional) {
-          const { visible, enabled } = evaluateConditionalLogic(field.conditional, formData);
+          const { visible, enabled } = evaluateConditionalLogic(
+            field.conditional,
+            formData
+          );
           states.set(field.id, { visible, enabled });
         } else {
           states.set(field.id, { visible: true, enabled: true });
@@ -131,7 +140,10 @@ export const useConditionalLogic = (
 
     config.sections.forEach((section: FormSection) => {
       if (section.conditional) {
-        const { visible, enabled } = evaluateConditionalLogic(section.conditional, formData);
+        const { visible, enabled } = evaluateConditionalLogic(
+          section.conditional,
+          formData
+        );
         states.set(section.id, { visible, enabled });
       } else {
         states.set(section.id, { visible: true, enabled: true });
@@ -177,42 +189,57 @@ export const useConditionalLogic = (
   }, [config, sectionStates]);
 
   // Check if a specific field is visible
-  const isFieldVisible = useCallback((fieldId: string): boolean => {
-    const fieldState = fieldStates.get(fieldId);
-    return fieldState?.visible ?? true;
-  }, [fieldStates]);
+  const isFieldVisible = useCallback(
+    (fieldId: string): boolean => {
+      const fieldState = fieldStates.get(fieldId);
+      return fieldState?.visible ?? true;
+    },
+    [fieldStates]
+  );
 
   // Check if a specific field is enabled
-  const isFieldEnabled = useCallback((fieldId: string): boolean => {
-    const fieldState = fieldStates.get(fieldId);
-    return fieldState?.enabled ?? true;
-  }, [fieldStates]);
+  const isFieldEnabled = useCallback(
+    (fieldId: string): boolean => {
+      const fieldState = fieldStates.get(fieldId);
+      return fieldState?.enabled ?? true;
+    },
+    [fieldStates]
+  );
 
   // Check if a specific section is visible
-  const isSectionVisible = useCallback((sectionId: string): boolean => {
-    const sectionState = sectionStates.get(sectionId);
-    return sectionState?.visible ?? true;
-  }, [sectionStates]);
+  const isSectionVisible = useCallback(
+    (sectionId: string): boolean => {
+      const sectionState = sectionStates.get(sectionId);
+      return sectionState?.visible ?? true;
+    },
+    [sectionStates]
+  );
 
   // Re-evaluate all conditional logic (useful for manual triggers)
-  const evaluateConditions = useCallback((newFormData: Record<string, unknown>) => {
-    // This will trigger a re-render with new formData
-    // The useMemo hooks above will recalculate based on the new data
-    console.log('Re-evaluating conditions with new form data:', newFormData);
-  }, []);
+  const evaluateConditions = useCallback(
+    (newFormData: Record<string, unknown>) => {
+      // This will trigger a re-render with new formData
+      // The useMemo hooks above will recalculate based on the new data
+      console.log('Re-evaluating conditions with new form data:', newFormData);
+    },
+    []
+  );
 
   // Get fields that depend on a specific field
-  const getDependentFields = useCallback((fieldId: string): string[] => {
-    const dependents: string[] = [];
+  const getDependentFields = useCallback(
+    (fieldId: string): string[] => {
+      const dependents: string[] = [];
 
-    dependencyGraph.forEach((dependencies, targetField) => {
-      if (dependencies.includes(fieldId)) {
-        dependents.push(targetField);
-      }
-    });
+      dependencyGraph.forEach((dependencies, targetField) => {
+        if (dependencies.includes(fieldId)) {
+          dependents.push(targetField);
+        }
+      });
 
-    return dependents;
-  }, [dependencyGraph]);
+      return dependents;
+    },
+    [dependencyGraph]
+  );
 
   return {
     visibleFields,
@@ -223,6 +250,6 @@ export const useConditionalLogic = (
     evaluateConditions,
     getDependentFields,
     conditionalErrors,
-    isValidConfiguration
+    isValidConfiguration,
   };
 };

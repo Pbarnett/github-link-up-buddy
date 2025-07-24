@@ -1,6 +1,6 @@
 /**
  * Type-safe schemas for Supabase JSON columns
- * 
+ *
  * This file provides Zod schemas and TypeScript types for all JSON columns
  * in your Supabase database, enabling both runtime validation and compile-time
  * type safety.
@@ -14,15 +14,19 @@ export const travelerDataSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email format'),
   phone: z.string().min(1, 'Phone number is required'),
-  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  dateOfBirth: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
   gender: z.enum(['male', 'female', 'other']),
   title: z.enum(['Mr', 'Ms', 'Mrs', 'Dr']),
   // Identity documents for international travel
-  passport: z.object({
-    number: z.string().min(1),
-    expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    issuingCountry: z.string().length(2), // ISO country code
-  }).optional(),
+  passport: z
+    .object({
+      number: z.string().min(1),
+      expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      issuingCountry: z.string().length(2), // ISO country code
+    })
+    .optional(),
   // Known traveler numbers
   knownTravelerNumber: z.string().optional(),
   redressNumber: z.string().optional(),
@@ -31,7 +35,10 @@ export const travelerDataSchema = z.object({
 export type TravelerData = z.infer<typeof travelerDataSchema>;
 
 // Support for multiple travelers
-export const multiTravelerDataSchema = z.array(travelerDataSchema).min(1).max(9);
+export const multiTravelerDataSchema = z
+  .array(travelerDataSchema)
+  .min(1)
+  .max(9);
 export type MultiTravelerData = z.infer<typeof multiTravelerDataSchema>;
 
 // ===== OFFER DATA SCHEMAS =====
@@ -53,10 +60,12 @@ export const flightSegmentSchema = z.object({
     code: z.string(),
     name: z.string(),
   }),
-  aircraft: z.object({
-    code: z.string().optional(),
-    name: z.string().optional(),
-  }).optional(),
+  aircraft: z
+    .object({
+      code: z.string().optional(),
+      name: z.string().optional(),
+    })
+    .optional(),
   flightNumber: z.string(),
   duration: z.string(), // ISO 8601 duration format
   cabinClass: z.enum(['economy', 'premium_economy', 'business', 'first']),
@@ -71,7 +80,7 @@ export const offerDataSchema = z.object({
   // Core offer identification
   id: z.string(),
   provider: z.enum(['DUFFEL', 'AMADEUS']),
-  
+
   // Pricing information
   pricing: z.object({
     totalAmount: z.number().positive(),
@@ -83,32 +92,36 @@ export const offerDataSchema = z.object({
       carryOnFee: z.number().nonnegative().optional(),
     }),
   }),
-  
+
   // Flight details
   slices: z.array(flightSliceSchema).min(1).max(2), // Outbound + optional return
-  
+
   // Passenger restrictions
-  passengerRestrictions: z.object({
-    maxAdults: z.number().int().positive().default(9),
-    maxChildren: z.number().int().nonnegative().default(0),
-    maxInfants: z.number().int().nonnegative().default(0),
-  }).optional(),
-  
+  passengerRestrictions: z
+    .object({
+      maxAdults: z.number().int().positive().default(9),
+      maxChildren: z.number().int().nonnegative().default(0),
+      maxInfants: z.number().int().nonnegative().default(0),
+    })
+    .optional(),
+
   // Baggage information
-  baggage: z.object({
-    carryOnIncluded: z.boolean(),
-    checkedBagIncluded: z.boolean(),
-    carryOnSize: z.string().optional(),
-    checkedBagWeight: z.string().optional(),
-  }).optional(),
-  
+  baggage: z
+    .object({
+      carryOnIncluded: z.boolean(),
+      checkedBagIncluded: z.boolean(),
+      carryOnSize: z.string().optional(),
+      checkedBagWeight: z.string().optional(),
+    })
+    .optional(),
+
   // Booking conditions
   conditions: z.object({
     refundable: z.boolean(),
     changeable: z.boolean(),
     expiresAt: z.string(), // ISO datetime
   }),
-  
+
   // Provider-specific data
   providerData: z.record(z.unknown()).optional(),
 });
@@ -127,23 +140,25 @@ export const campaignCriteriaSchema = z.object({
     minDuration: z.number().int().positive(),
     maxDuration: z.number().int().positive(),
   }),
-  
+
   // Budget constraints
   budget: z.object({
     maxPrice: z.number().positive(),
     currency: z.string().length(3).default('USD'),
     includeFees: z.boolean().default(true),
   }),
-  
+
   // Flight preferences
   preferences: z.object({
     nonstopOnly: z.boolean().default(false),
     preferredAirlines: z.array(z.string()).optional(),
     excludedAirlines: z.array(z.string()).optional(),
-    cabinClass: z.enum(['economy', 'premium_economy', 'business', 'first']).default('economy'),
+    cabinClass: z
+      .enum(['economy', 'premium_economy', 'business', 'first'])
+      .default('economy'),
     carryOnRequired: z.boolean().default(false),
   }),
-  
+
   // Auto-booking settings
   autoBooking: z.object({
     enabled: z.boolean(),
@@ -175,60 +190,82 @@ export const flightDetailsSchema = z.object({
   // Booking reference
   pnr: z.string(),
   bookingReference: z.string(),
-  
+
   // Ticket information
-  tickets: z.array(z.object({
-    ticketNumber: z.string(),
-    passenger: z.object({
-      firstName: z.string(),
-      lastName: z.string(),
-    }),
-    status: z.enum(['issued', 'void', 'refunded']),
-  })),
-  
+  tickets: z.array(
+    z.object({
+      ticketNumber: z.string(),
+      passenger: z.object({
+        firstName: z.string(),
+        lastName: z.string(),
+      }),
+      status: z.enum(['issued', 'void', 'refunded']),
+    })
+  ),
+
   // Flight segments with actual details
-  segments: z.array(z.object({
-    flightNumber: z.string(),
-    airline: z.object({
-      code: z.string(),
-      name: z.string(),
-    }),
-    departure: z.object({
-      airport: z.string(),
-      datetime: z.string(),
-      terminal: z.string().optional(),
-      gate: z.string().optional(),
-    }),
-    arrival: z.object({
-      airport: z.string(),
-      datetime: z.string(),
-      terminal: z.string().optional(),
-      gate: z.string().optional(),
-    }),
-    seatAssignments: z.array(z.object({
-      passenger: z.string(),
-      seatNumber: z.string(),
-    })).optional(),
-    status: z.enum(['confirmed', 'cancelled', 'delayed']),
-  })),
-  
+  segments: z.array(
+    z.object({
+      flightNumber: z.string(),
+      airline: z.object({
+        code: z.string(),
+        name: z.string(),
+      }),
+      departure: z.object({
+        airport: z.string(),
+        datetime: z.string(),
+        terminal: z.string().optional(),
+        gate: z.string().optional(),
+      }),
+      arrival: z.object({
+        airport: z.string(),
+        datetime: z.string(),
+        terminal: z.string().optional(),
+        gate: z.string().optional(),
+      }),
+      seatAssignments: z
+        .array(
+          z.object({
+            passenger: z.string(),
+            seatNumber: z.string(),
+          })
+        )
+        .optional(),
+      status: z.enum(['confirmed', 'cancelled', 'delayed']),
+    })
+  ),
+
   // Additional services
-  services: z.object({
-    meals: z.array(z.object({
-      passenger: z.string(),
-      type: z.string(),
-    })).optional(),
-    baggage: z.array(z.object({
-      passenger: z.string(),
-      type: z.enum(['carry_on', 'checked']),
-      weight: z.string().optional(),
-    })).optional(),
-    seats: z.array(z.object({
-      passenger: z.string(),
-      seatNumber: z.string(),
-      fee: z.number().optional(),
-    })).optional(),
-  }).optional(),
+  services: z
+    .object({
+      meals: z
+        .array(
+          z.object({
+            passenger: z.string(),
+            type: z.string(),
+          })
+        )
+        .optional(),
+      baggage: z
+        .array(
+          z.object({
+            passenger: z.string(),
+            type: z.enum(['carry_on', 'checked']),
+            weight: z.string().optional(),
+          })
+        )
+        .optional(),
+      seats: z
+        .array(
+          z.object({
+            passenger: z.string(),
+            seatNumber: z.string(),
+            fee: z.number().optional(),
+          })
+        )
+        .optional(),
+    })
+    .optional(),
 });
 
 export type FlightDetails = z.infer<typeof flightDetailsSchema>;
@@ -247,13 +284,11 @@ export function parseJsonColumn<T>(
     return schema.parse(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const issues = error.issues.map(issue => 
-        `${issue.path.join('.')}: ${issue.message}`
-      ).join(', ');
-      
-      throw new Error(
-        `Invalid data in ${columnName}: ${issues}`
-      );
+      const issues = error.issues
+        .map(issue => `${issue.path.join('.')}: ${issue.message}`)
+        .join(', ');
+
+      throw new Error(`Invalid data in ${columnName}: ${issues}`);
     }
     throw error;
   }
@@ -271,9 +306,9 @@ export function validateJsonColumn<T>(
     return { success: true, data: result };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const issues = error.issues.map(issue => 
-        `${issue.path.join('.')}: ${issue.message}`
-      ).join(', ');
+      const issues = error.issues
+        .map(issue => `${issue.path.join('.')}: ${issue.message}`)
+        .join(', ');
       return { success: false, error: issues };
     }
     return { success: false, error: 'Unknown validation error' };

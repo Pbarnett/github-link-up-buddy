@@ -1,10 +1,8 @@
-
-
 type FC<T = {}> = React.FC<T>;
 
-import { Badge } from '@/components/ui/badge';
 import { Lock, ToggleRight, ToggleLeft } from 'lucide-react';
 import * as React from 'react';
+import { Badge } from '@/components/ui/badge';
 
 interface ConstraintChipsProps {
   dateRange: { from: string; to: string };
@@ -13,16 +11,20 @@ interface ConstraintChipsProps {
 }
 
 // Pure helper function for date formatting - exported for testing
-export const formatDateRange = (startDate: string, endDate: string, timezone?: string): string => {
+export const formatDateRange = (
+  startDate: string,
+  endDate: string,
+  timezone?: string
+): string => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
-      timeZone: timezone
+      timeZone: timezone,
     });
   };
-  
+
   return `${formatDate(startDate)} – ${formatDate(endDate)}`;
 };
 
@@ -31,12 +33,15 @@ const ConstraintChips: FC<ConstraintChipsProps> = ({
   nonStopOnly,
   onToggleNonStop,
 }) => {
-
   return (
     <div className="flex flex-wrap gap-2">
       {/* Carry-on included chip */}
       <span role="status" className="inline-flex">
-        <Badge variant="secondary" className="flex items-center gap-1" data-testid="chip-carry-on">
+        <Badge
+          variant="secondary"
+          className="flex items-center gap-1"
+          data-testid="chip-carry-on"
+        >
           <Lock className="h-3 w-3" />
           Carry-on included
         </Badge>
@@ -44,7 +49,11 @@ const ConstraintChips: FC<ConstraintChipsProps> = ({
 
       {/* Date range chip */}
       <span role="status" className="inline-flex">
-        <Badge variant="secondary" className="flex items-center gap-1" data-testid="chip-date-range">
+        <Badge
+          variant="secondary"
+          className="flex items-center gap-1"
+          data-testid="chip-date-range"
+        >
           <Lock className="h-3 w-3" />
           {formatDateRange(dateRange.from, dateRange.to)}
         </Badge>
@@ -59,8 +68,8 @@ const ConstraintChips: FC<ConstraintChipsProps> = ({
         aria-label={`Non-stop flights ${nonStopOnly ? 'enabled' : 'disabled'}`}
         data-testid="chip-nonstop"
       >
-        <Badge 
-          variant={nonStopOnly ? "default" : "outline"}
+        <Badge
+          variant={nonStopOnly ? 'default' : 'outline'}
           className="flex items-center gap-1 cursor-pointer hover:bg-opacity-80 transition-colors"
         >
           {nonStopOnly ? (

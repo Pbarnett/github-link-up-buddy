@@ -1,13 +1,14 @@
-
-
 type FC<T = {}> = React.FC<T>;
 
+import React, { useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { GreetingBannerProps, PersonalizationEvent } from '@/types/personalization';
+import {
+  GreetingBannerProps,
+  PersonalizationEvent,
+} from '@/types/personalization';
 import { usePersonalization } from '@/contexts/PersonalizationContext';
 import { getGreeting } from '@/lib/personalization/voiceAndTone';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import * as React from 'react';
 
 interface GreetingBannerComponentProps extends GreetingBannerProps {
   onClick?: () => void;
@@ -22,16 +23,19 @@ export const GreetingBanner: FC<GreetingBannerComponentProps> = ({
   onClick,
   showIcon = true,
 }) => {
-  const { 
-    personalizationData, 
-    abTestVariant, 
+  const {
+    personalizationData,
+    abTestVariant,
     trackPersonalizationEvent,
-    isPersonalizationEnabled 
+    isPersonalizationEnabled,
   } = usePersonalization();
   const analytics = useAnalytics();
 
   // Get the appropriate greeting based on A/B test and personalization data
-  const greetingText = getGreeting(context, isPersonalizationEnabled ? personalizationData : null);
+  const greetingText = getGreeting(
+    context,
+    isPersonalizationEnabled ? personalizationData : null
+  );
 
   // Track analytics when greeting is shown
   useEffect(() => {
@@ -41,7 +45,9 @@ export const GreetingBanner: FC<GreetingBannerComponentProps> = ({
         context,
         data: {
           variant,
-          hasPersonalData: !!(personalizationData?.firstName || personalizationData?.nextTripCity),
+          hasPersonalData: !!(
+            personalizationData?.firstName || personalizationData?.nextTripCity
+          ),
           interactionType: onClick ? 'clickable' : 'static',
         },
         timestamp: new Date(),
@@ -67,13 +73,23 @@ export const GreetingBanner: FC<GreetingBannerComponentProps> = ({
 
       console.log('📊 Greeting shown:', event);
     }
-  }, [userId, context, variant, personalizationData, analytics, onClick, abTestVariant, isPersonalizationEnabled, trackPersonalizationEvent]);
+  }, [
+    userId,
+    context,
+    variant,
+    personalizationData,
+    analytics,
+    onClick,
+    abTestVariant,
+    isPersonalizationEnabled,
+    trackPersonalizationEvent,
+  ]);
 
   // Handle click events
   const handleClick = () => {
     if (onClick) {
       onClick();
-      
+
       // Track click analytics
       if (userId) {
         const clickEvent: PersonalizationEvent = {
@@ -81,7 +97,10 @@ export const GreetingBanner: FC<GreetingBannerComponentProps> = ({
           context,
           data: {
             variant,
-            hasPersonalData: !!(personalizationData?.firstName || personalizationData?.nextTripCity),
+            hasPersonalData: !!(
+              personalizationData?.firstName ||
+              personalizationData?.nextTripCity
+            ),
           },
           timestamp: new Date(),
           userId,
@@ -169,13 +188,19 @@ export const GreetingBanner: FC<GreetingBannerComponentProps> = ({
       onClick={handleClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
-      onKeyDown={onClick ? (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick();
-        }
-      } : undefined}
-      aria-label={onClick ? `${displayText} - Click for more options` : displayText}
+      onKeyDown={
+        onClick
+          ? e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleClick();
+              }
+            }
+          : undefined
+      }
+      aria-label={
+        onClick ? `${displayText} - Click for more options` : displayText
+      }
     >
       {/* Render with icon or text only */}
       {icon && variant !== 'compact' ? (
@@ -193,21 +218,21 @@ export const GreetingBanner: FC<GreetingBannerComponentProps> = ({
 };
 
 // Convenience wrapper components for specific contexts
-export const DashboardGreeting: FC<Omit<GreetingBannerComponentProps, 'context'>> = (props) => (
-  <GreetingBanner {...props} context="dashboard" />
-);
+export const DashboardGreeting: FC<
+  Omit<GreetingBannerComponentProps, 'context'>
+> = props => <GreetingBanner {...props} context="dashboard" />;
 
-export const ProfileGreeting: FC<Omit<GreetingBannerComponentProps, 'context'>> = (props) => (
-  <GreetingBanner {...props} context="profile" />
-);
+export const ProfileGreeting: FC<
+  Omit<GreetingBannerComponentProps, 'context'>
+> = props => <GreetingBanner {...props} context="profile" />;
 
-export const ConfirmationGreeting: FC<Omit<GreetingBannerComponentProps, 'context'>> = (props) => (
-  <GreetingBanner {...props} context="bookingConfirmation" />
-);
+export const ConfirmationGreeting: FC<
+  Omit<GreetingBannerComponentProps, 'context'>
+> = props => <GreetingBanner {...props} context="bookingConfirmation" />;
 
-export const ErrorGreeting: FC<Omit<GreetingBannerComponentProps, 'context'>> = (props) => (
-  <GreetingBanner {...props} context="error" />
-);
+export const ErrorGreeting: FC<
+  Omit<GreetingBannerComponentProps, 'context'>
+> = props => <GreetingBanner {...props} context="error" />;
 
 // Default export
 export default GreetingBanner;

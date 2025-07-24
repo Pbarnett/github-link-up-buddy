@@ -1,15 +1,26 @@
-
 // Privacy-first consent management for personalization features
 // Based on GDPR/CCPA compliance requirements
 
 type FC<T = {}> = React.FC<T>;
 
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import * as React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export interface ConsentPreferences {
   personalization: boolean;
@@ -44,7 +55,8 @@ export const ConsentManager: FC<ConsentManagerProps> = ({
   currentPreferences = DEFAULT_PREFERENCES,
   mode = 'banner',
 }) => {
-  const [preferences, setPreferences] = useState<ConsentPreferences>(currentPreferences);
+  const [preferences, setPreferences] =
+    useState<ConsentPreferences>(currentPreferences);
   const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
@@ -106,8 +118,8 @@ export const ConsentManager: FC<ConsentManagerProps> = ({
               Parker Flight values your privacy
             </DialogTitle>
             <DialogDescription>
-              We'd like to personalize your experience with your permission. 
-              We only use your data to serve you better.
+              We'd like to personalize your experience with your permission. We
+              only use your data to serve you better.
             </DialogDescription>
           </DialogHeader>
 
@@ -122,8 +134,9 @@ export const ConsentManager: FC<ConsentManagerProps> = ({
                       We respect your privacy
                     </h3>
                     <p className="text-sm text-blue-800 mb-3">
-                      Parker Flight uses minimal data (just your first name and upcoming destination) 
-                      to create personalized greetings and improve your experience.
+                      Parker Flight uses minimal data (just your first name and
+                      upcoming destination) to create personalized greetings and
+                      improve your experience.
                     </p>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs">
@@ -140,14 +153,14 @@ export const ConsentManager: FC<ConsentManagerProps> = ({
 
             {/* Quick consent options */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
+              <Button
                 onClick={handleAcceptAll}
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 <Plane className="h-4 w-4 mr-2" />
                 Yes, personalize my experience
               </Button>
-              <Button 
+              <Button
                 onClick={handleDeclineAll}
                 variant="outline"
                 className="flex-1"
@@ -158,8 +171,8 @@ export const ConsentManager: FC<ConsentManagerProps> = ({
 
             {/* Advanced options */}
             <div className="text-center">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => setShowDetails(!showDetails)}
                 className="text-gray-600 hover:text-gray-800"
@@ -182,31 +195,35 @@ export const ConsentManager: FC<ConsentManagerProps> = ({
                     title="Personalization"
                     description="Use your name and trip details for personalized greetings"
                     enabled={preferences.personalization}
-                    onChange={(value) => updatePreference('personalization', value)}
+                    onChange={value =>
+                      updatePreference('personalization', value)
+                    }
                     required={false}
                   />
                   <ConsentToggle
                     title="Analytics"
                     description="Help us improve the service by analyzing how you use the app"
                     enabled={preferences.analytics}
-                    onChange={(value) => updatePreference('analytics', value)}
+                    onChange={value => updatePreference('analytics', value)}
                     required={false}
                   />
                   <ConsentToggle
                     title="Functional Cookies"
                     description="Essential for the app to work properly"
                     enabled={preferences.functionalCookies}
-                    onChange={(value) => updatePreference('functionalCookies', value)}
+                    onChange={value =>
+                      updatePreference('functionalCookies', value)
+                    }
                     required={true}
                   />
                   <ConsentToggle
                     title="Marketing"
                     description="Receive personalized offers and travel recommendations"
                     enabled={preferences.marketing}
-                    onChange={(value) => updatePreference('marketing', value)}
+                    onChange={value => updatePreference('marketing', value)}
                     required={false}
                   />
-                  
+
                   <div className="flex gap-2 pt-4">
                     <Button onClick={handleSave} className="flex-1">
                       Save Preferences
@@ -247,7 +264,8 @@ export const ConsentManager: FC<ConsentManagerProps> = ({
           Privacy Preferences
         </CardTitle>
         <CardDescription>
-          Control how Parker Flight uses your data to personalize your experience
+          Control how Parker Flight uses your data to personalize your
+          experience
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -255,31 +273,31 @@ export const ConsentManager: FC<ConsentManagerProps> = ({
           title="Personalization"
           description="Use your name and trip details for personalized greetings and recommendations"
           enabled={preferences.personalization}
-          onChange={(value) => updatePreference('personalization', value)}
+          onChange={value => updatePreference('personalization', value)}
           required={false}
         />
         <ConsentToggle
           title="Analytics & Improvement"
           description="Help us improve the service by analyzing how you use the app (anonymized)"
           enabled={preferences.analytics}
-          onChange={(value) => updatePreference('analytics', value)}
+          onChange={value => updatePreference('analytics', value)}
           required={false}
         />
         <ConsentToggle
           title="Marketing Communications"
           description="Receive personalized offers, travel tips, and destination recommendations"
           enabled={preferences.marketing}
-          onChange={(value) => updatePreference('marketing', value)}
+          onChange={value => updatePreference('marketing', value)}
           required={false}
         />
         <ConsentToggle
           title="Functional Cookies"
           description="Essential cookies required for the app to work properly"
           enabled={preferences.functionalCookies}
-          onChange={(value) => updatePreference('functionalCookies', value)}
+          onChange={value => updatePreference('functionalCookies', value)}
           required={true}
         />
-        
+
         <div className="flex gap-2 pt-4">
           <Button onClick={handleSave} className="flex-1">
             Save Preferences
@@ -291,12 +309,13 @@ export const ConsentManager: FC<ConsentManagerProps> = ({
 
         <div className="text-sm text-gray-600 space-y-2">
           <p>
-            <strong>Your rights:</strong> You can change these preferences at any time, 
-            request your data, or ask us to delete your account.
+            <strong>Your rights:</strong> You can change these preferences at
+            any time, request your data, or ask us to delete your account.
           </p>
           <p>
-            <strong>Data retention:</strong> Personal data is kept only as long as needed 
-            for personalization. Analytics data is anonymized after 1 year.
+            <strong>Data retention:</strong> Personal data is kept only as long
+            as needed for personalization. Analytics data is anonymized after 1
+            year.
           </p>
         </div>
       </CardContent>

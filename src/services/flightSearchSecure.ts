@@ -1,6 +1,6 @@
 /**
  * Secure Flight Search Service with AWS Secrets Manager Integration
- * 
+ *
  * Handles flight search operations with secure credential management.
  * Supports multiple flight search APIs (Amadeus, Skyscanner, etc.)
  */
@@ -120,13 +120,18 @@ export interface FlightSearchResponse {
  * Secure Flight API Configuration Manager
  */
 export class FlightAPIConfigManager {
-  private static configCache = new Map<string, { config: any; expiry: number }>();
+  private static configCache = new Map<
+    string,
+    { config: any; expiry: number }
+  >();
   private static readonly CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
   /**
    * Get flight API configuration securely
    */
-  static async getAPIConfig(provider: keyof typeof FLIGHT_API_SECRETS): Promise<any> {
+  static async getAPIConfig(
+    provider: keyof typeof FLIGHT_API_SECRETS
+  ): Promise<any> {
     const cacheKey = `flight-api-${provider}`;
     const cached = this.configCache.get(cacheKey);
 
@@ -143,15 +148,17 @@ export class FlightAPIConfigManager {
       );
 
       if (!credentialsJson) {
-        throw new Error(`Flight API credentials not found for provider: ${provider}`);
+        throw new Error(
+          `Flight API credentials not found for provider: ${provider}`
+        );
       }
 
       const credentials = JSON.parse(credentialsJson);
-      
+
       // Cache the configuration
       this.configCache.set(cacheKey, {
         config: credentials,
-        expiry: Date.now() + this.CACHE_TTL
+        expiry: Date.now() + this.CACHE_TTL,
       });
 
       return credentials;
@@ -194,18 +201,21 @@ export class AmadeusFlightSearch {
 
     try {
       const config = await FlightAPIConfigManager.getAPIConfig('amadeus');
-      
-      const response = await fetch('https://api.amadeus.com/v1/security/oauth2/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          grant_type: 'client_credentials',
-          client_id: config.client_id,
-          client_secret: config.client_secret,
-        }),
-      });
+
+      const response = await fetch(
+        'https://api.amadeus.com/v1/security/oauth2/token',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            grant_type: 'client_credentials',
+            client_id: config.client_id,
+            client_secret: config.client_secret,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Amadeus token request failed: ${response.status}`);
@@ -213,7 +223,7 @@ export class AmadeusFlightSearch {
 
       const tokenData = await response.json();
       this.accessToken = tokenData.access_token;
-      this.tokenExpiry = Date.now() + (tokenData.expires_in * 1000) - 60000; // 1 minute buffer
+      this.tokenExpiry = Date.now() + tokenData.expires_in * 1000 - 60000; // 1 minute buffer
 
       return this.accessToken;
     } catch (error) {
@@ -225,10 +235,12 @@ export class AmadeusFlightSearch {
   /**
    * Search flights using Amadeus API
    */
-  async searchFlights(request: FlightSearchRequest): Promise<FlightSearchResponse> {
+  async searchFlights(
+    request: FlightSearchRequest
+  ): Promise<FlightSearchResponse> {
     try {
       const accessToken = await this.getAccessToken();
-      
+
       const searchParams = new URLSearchParams({
         originLocationCode: request.origin,
         destinationLocationCode: request.destination,
@@ -266,19 +278,21 @@ export class AmadeusFlightSearch {
         `https://api.amadeus.com/v2/shopping/flight-offers?${searchParams.toString()}`,
         {
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json',
           },
         }
       );
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Amadeus flight search failed: ${response.status} - ${errorText}`);
+        throw new Error(
+          `Amadeus flight search failed: ${response.status} - ${errorText}`
+        );
       }
 
       const data = await response.json();
-      
+
       // Transform Amadeus response to our standard format
       return this.transformAmadeusResponse(data);
     } catch (error) {
@@ -291,44 +305,49 @@ export class AmadeusFlightSearch {
    * Transform Amadeus API response to standard format
    */
   private transformAmadeusResponse(amadeusData: any): FlightSearchResponse {
-    const offers: FlightOffer[] = amadeusData.data?.map((offer: any) => ({
-      id: offer.id,
-      price: {
-        total: offer.price.total,
-        base: offer.price.base,
-        fees: (parseFloat(offer.price.total) - parseFloat(offer.price.base)).toString(),
-        currency: offer.price.currency,
-      },
-      itineraries: offer.itineraries?.map((itinerary: any) => ({
-        duration: itinerary.duration,
-        segments: itinerary.segments?.map((segment: any) => ({
-          departure: {
-            iataCode: segment.departure.iataCode,
-            terminal: segment.departure.terminal,
-            at: segment.departure.at,
-          },
-          arrival: {
-            iataCode: segment.arrival.iataCode,
-            terminal: segment.arrival.terminal,
-            at: segment.arrival.at,
-          },
-          carrierCode: segment.carrierCode,
-          number: segment.number,
-          aircraft: {
-            code: segment.aircraft.code,
-          },
-          operating: segment.operating,
-          duration: segment.duration,
-          id: segment.id,
-          numberOfStops: segment.numberOfStops,
-          blacklistedInEU: segment.blacklistedInEU,
-        })) || [],
-      })) || [],
-      validatingAirlineCodes: offer.validatingAirlineCodes || [],
-      travelerPricings: offer.travelerPricings || [],
-      provider: 'amadeus',
-      bookingToken: offer.id,
-    })) || [];
+    const offers: FlightOffer[] =
+      amadeusData.data?.map((offer: any) => ({
+        id: offer.id,
+        price: {
+          total: offer.price.total,
+          base: offer.price.base,
+          fees: (
+            parseFloat(offer.price.total) - parseFloat(offer.price.base)
+          ).toString(),
+          currency: offer.price.currency,
+        },
+        itineraries:
+          offer.itineraries?.map((itinerary: any) => ({
+            duration: itinerary.duration,
+            segments:
+              itinerary.segments?.map((segment: any) => ({
+                departure: {
+                  iataCode: segment.departure.iataCode,
+                  terminal: segment.departure.terminal,
+                  at: segment.departure.at,
+                },
+                arrival: {
+                  iataCode: segment.arrival.iataCode,
+                  terminal: segment.arrival.terminal,
+                  at: segment.arrival.at,
+                },
+                carrierCode: segment.carrierCode,
+                number: segment.number,
+                aircraft: {
+                  code: segment.aircraft.code,
+                },
+                operating: segment.operating,
+                duration: segment.duration,
+                id: segment.id,
+                numberOfStops: segment.numberOfStops,
+                blacklistedInEU: segment.blacklistedInEU,
+              })) || [],
+          })) || [],
+        validatingAirlineCodes: offer.validatingAirlineCodes || [],
+        travelerPricings: offer.travelerPricings || [],
+        provider: 'amadeus',
+        bookingToken: offer.id,
+      })) || [];
 
     return {
       data: offers,
@@ -366,7 +385,7 @@ export class FlightSearchServiceSecure {
     request: FlightSearchRequest,
     providers: string[] = ['amadeus']
   ): Promise<FlightSearchResponse> {
-    const searchPromises = providers.map(async (provider) => {
+    const searchPromises = providers.map(async provider => {
       try {
         switch (provider) {
           case 'amadeus':
@@ -382,12 +401,16 @@ export class FlightSearchServiceSecure {
 
     const results = await Promise.allSettled(searchPromises);
     const successfulResults = results
-      .filter((result) => result.status === 'fulfilled' && result.value !== null)
-      .map((result) => (result as PromiseFulfilledResult<FlightSearchResponse>).value);
+      .filter(result => result.status === 'fulfilled' && result.value !== null)
+      .map(
+        result => (result as PromiseFulfilledResult<FlightSearchResponse>).value
+      );
 
     if (successfulResults.length === 0) {
       // Get the first error to provide more specific error information
-      const firstRejection = results.find((result) => result.status === 'rejected');
+      const firstRejection = results.find(
+        result => result.status === 'rejected'
+      );
       if (firstRejection && firstRejection.status === 'rejected') {
         throw firstRejection.reason;
       }
@@ -399,17 +422,19 @@ export class FlightSearchServiceSecure {
     const combinedDictionaries: any = {};
     let totalCount = 0;
 
-    successfulResults.forEach((result) => {
+    successfulResults.forEach(result => {
       combinedOffers.push(...result.data);
       totalCount += result.meta.count;
-      
+
       if (result.dictionaries) {
         Object.assign(combinedDictionaries, result.dictionaries);
       }
     });
 
     // Sort by price
-    combinedOffers.sort((a, b) => parseFloat(a.price.total) - parseFloat(b.price.total));
+    combinedOffers.sort(
+      (a, b) => parseFloat(a.price.total) - parseFloat(b.price.total)
+    );
 
     return {
       data: combinedOffers,
@@ -423,7 +448,10 @@ export class FlightSearchServiceSecure {
   /**
    * Get flight details by offer ID
    */
-  async getFlightDetails(offerId: string, provider: string): Promise<FlightOffer | null> {
+  async getFlightDetails(
+    offerId: string,
+    provider: string
+  ): Promise<FlightOffer | null> {
     try {
       switch (provider) {
         case 'amadeus':
@@ -432,7 +460,9 @@ export class FlightSearchServiceSecure {
           // Add implementation for detailed flight info
           break;
         default:
-          throw new Error(`Unsupported provider for flight details: ${provider}`);
+          throw new Error(
+            `Unsupported provider for flight details: ${provider}`
+          );
       }
     } catch (error) {
       console.error('Failed to get flight details:', error);
@@ -466,7 +496,9 @@ export class FlightSearchServiceSecure {
             validUntil: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min
           };
         default:
-          throw new Error(`Unsupported provider for availability check: ${provider}`);
+          throw new Error(
+            `Unsupported provider for availability check: ${provider}`
+          );
       }
     } catch (error) {
       console.error('Flight availability validation failed:', error);
@@ -492,10 +524,10 @@ export const FlightSearchUtils = {
   formatDuration: (duration: string): string => {
     const match = duration.match(/PT(\d+H)?(\d+M)?/);
     if (!match) return duration;
-    
+
     const hours = match[1]?.replace('H', '') || '0';
     const minutes = match[2]?.replace('M', '') || '0';
-    
+
     return `${hours}h ${minutes}m`;
   },
 
@@ -504,17 +536,19 @@ export const FlightSearchUtils = {
    */
   calculateLayoverTime: (segments: FlightSegment[]): string[] => {
     const layovers: string[] = [];
-    
+
     for (let i = 0; i < segments.length - 1; i++) {
       const arrivalTime = new Date(segments[i].arrival.at);
       const departureTime = new Date(segments[i + 1].departure.at);
       const layoverMs = departureTime.getTime() - arrivalTime.getTime();
       const layoverHours = Math.floor(layoverMs / (1000 * 60 * 60));
-      const layoverMinutes = Math.floor((layoverMs % (1000 * 60 * 60)) / (1000 * 60));
-      
+      const layoverMinutes = Math.floor(
+        (layoverMs % (1000 * 60 * 60)) / (1000 * 60)
+      );
+
       layovers.push(`${layoverHours}h ${layoverMinutes}m`);
     }
-    
+
     return layovers;
   },
 
@@ -541,4 +575,5 @@ export const FlightSearchUtils = {
 };
 
 // Export singleton instance
-export const flightSearchServiceSecure = FlightSearchServiceSecure.getInstance();
+export const flightSearchServiceSecure =
+  FlightSearchServiceSecure.getInstance();

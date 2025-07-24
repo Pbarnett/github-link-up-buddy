@@ -1,7 +1,6 @@
-
 /**
  * Date Range Field Component
- * 
+ *
  * Renders a date range picker with optional flexible dates
  */
 
@@ -9,13 +8,13 @@ type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
 
 import { format } from 'date-fns';
+import * as React from 'react';
+import { useState } from 'react';
+import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
-import * as React from 'react';
-import { useState } from 'react';
-import { CalendarIcon } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -41,14 +40,14 @@ interface DateRangeFieldProps {
 export const DateRangeField: FC<DateRangeFieldProps> = ({
   value = { from: undefined, to: undefined },
   onChange,
-  placeholder = "Select date range",
+  placeholder = 'Select date range',
   disabled = false,
   error,
   flexible = false,
-  className
+  className,
 }) => {
   const [open, setOpen] = useState(false);
-  
+
   // Parse date values
   const fromDate = value.from ? new Date(value.from) : undefined;
   const toDate = value.to ? new Date(value.to) : undefined;
@@ -58,7 +57,7 @@ export const DateRangeField: FC<DateRangeFieldProps> = ({
       onChange({
         ...value,
         from: range.from ? format(range.from, 'yyyy-MM-dd') : undefined,
-        to: range.to ? format(range.to, 'yyyy-MM-dd') : undefined
+        to: range.to ? format(range.to, 'yyyy-MM-dd') : undefined,
       });
     } else {
       onChange({ from: undefined, to: undefined, flexible: value.flexible });
@@ -68,23 +67,23 @@ export const DateRangeField: FC<DateRangeFieldProps> = ({
   const handleFlexibleChange = (checked: boolean) => {
     onChange({
       ...value,
-      flexible: checked
+      flexible: checked,
     });
   };
 
   const displayText = () => {
     if (value.flexible) {
-      return "Flexible dates";
+      return 'Flexible dates';
     }
-    
+
     if (fromDate && toDate) {
-      return `${format(fromDate, "LLL dd")} - ${format(toDate, "LLL dd, y")}`;
+      return `${format(fromDate, 'LLL dd')} - ${format(toDate, 'LLL dd, y')}`;
     }
-    
+
     if (fromDate) {
-      return `From ${format(fromDate, "LLL dd, y")}`;
+      return `From ${format(fromDate, 'LLL dd, y')}`;
     }
-    
+
     return placeholder;
   };
 
@@ -95,9 +94,9 @@ export const DateRangeField: FC<DateRangeFieldProps> = ({
           <Button
             variant="outline"
             className={cn(
-              "w-full justify-start text-left font-normal",
-              (!fromDate && !value.flexible) && "text-muted-foreground",
-              error && "border-destructive",
+              'w-full justify-start text-left font-normal',
+              !fromDate && !value.flexible && 'text-muted-foreground',
+              error && 'border-destructive',
               className
             )}
             disabled={disabled || value.flexible}
@@ -111,7 +110,7 @@ export const DateRangeField: FC<DateRangeFieldProps> = ({
             mode="range"
             selected={{
               from: fromDate,
-              to: toDate
+              to: toDate,
             }}
             onSelect={handleDateSelect}
             disabled={disabled}
@@ -129,8 +128,8 @@ export const DateRangeField: FC<DateRangeFieldProps> = ({
             onCheckedChange={handleFlexibleChange}
             disabled={disabled}
           />
-          <label 
-            htmlFor="flexible-dates" 
+          <label
+            htmlFor="flexible-dates"
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             My dates are flexible

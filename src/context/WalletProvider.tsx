@@ -1,9 +1,14 @@
-
 // WalletProvider.tsx - Context provider for Wallet functionality
 // Day 4: Payments & Wallet System
 
 import * as React from 'react';
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
 
 type ReactNode = React.ReactNode;
 type FC<T = {}> = React.FC<T>;
@@ -13,7 +18,7 @@ import {
   getUserPaymentMethods,
   setDefaultPaymentMethod,
   deletePaymentMethod,
-  PaymentMethod
+  PaymentMethod,
 } from '../services/stripeWalletService';
 
 interface WalletContextType {
@@ -39,23 +44,32 @@ export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const addPaymentMethod = useCallback(async (idempotencyKey: string) => {
     // Assume user's ID is available via context/session
     const userId = 'user-id'; // Replace with context/session retrieval
-    const setupIntent = await createSetupIntent({ id: userId, email: `${userId}@example.com` }, { idempotencyKey });
+    const setupIntent = await createSetupIntent(
+      { id: userId, email: `${userId}@example.com` },
+      { idempotencyKey }
+    );
     return setupIntent.client_secret;
   }, []);
 
-  const removePaymentMethod = useCallback(async (paymentMethodId: string) => {
-    // Assume user's ID is available via context/session
-    const userId = 'user-id'; // Replace with context/session retrieval
-    await deletePaymentMethod(userId, paymentMethodId);
-    await fetchPaymentMethods()();
-  }, [fetchPaymentMethods]);
+  const removePaymentMethod = useCallback(
+    async (paymentMethodId: string) => {
+      // Assume user's ID is available via context/session
+      const userId = 'user-id'; // Replace with context/session retrieval
+      await deletePaymentMethod(userId, paymentMethodId);
+      await fetchPaymentMethods()();
+    },
+    [fetchPaymentMethods]
+  );
 
-  const setDefault = useCallback(async (paymentMethodId: string) => {
-    // Assume user's ID is available via context/session
-    const userId = 'user-id'; // Replace with context/session retrieval
-    await setDefaultPaymentMethod(userId, paymentMethodId);
-    await fetchPaymentMethods()();
-  }, [fetchPaymentMethods]);
+  const setDefault = useCallback(
+    async (paymentMethodId: string) => {
+      // Assume user's ID is available via context/session
+      const userId = 'user-id'; // Replace with context/session retrieval
+      await setDefaultPaymentMethod(userId, paymentMethodId);
+      await fetchPaymentMethods()();
+    },
+    [fetchPaymentMethods]
+  );
 
   return (
     <WalletContext.Provider

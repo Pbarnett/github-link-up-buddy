@@ -1,6 +1,6 @@
 /**
  * Provider Adapters for Flight Offer Normalization
- * 
+ *
  * These adapters convert raw flight offers from different providers
  * (Amadeus, Duffel) into a standardized format for filtering.
  */
@@ -12,7 +12,7 @@ import {
   _ValidationResult,
   Itinerary,
   Segment,
-  Airport
+  Airport,
 } from '../core/types';
 
 // Amadeus API interfaces
@@ -127,13 +127,15 @@ interface DuffelRawOffer {
 export class AmadeusAdapter implements ProviderAdapter {
   readonly providerName = 'Amadeus' as const;
 
-  normalize(rawOffer: AmadeusRawOffer, _context: FilterContext): FlightOffer {  
+  normalize(rawOffer: AmadeusRawOffer, _context: FilterContext): FlightOffer {
     // Extract basic offer information
-    const id = rawOffer.id || `amadeus-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const id =
+      rawOffer.id ||
+      `amadeus-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const price = this.extractPrice(rawOffer);
     const carryOnInfo = this.extractCarryOnInfo(rawOffer);
     const itineraries = this.normalizeItineraries(rawOffer.itineraries || []);
-    
+
     return {
       provider: 'Amadeus',
       id,
@@ -146,7 +148,7 @@ export class AmadeusAdapter implements ProviderAdapter {
       stopsCount: this.calculateStopsCount(itineraries),
       validatingAirlines: this.extractValidatingAirlines(rawOffer),
       bookingUrl: rawOffer.booking_url,
-      rawData: rawOffer as Record<string, unknown>
+      rawData: rawOffer as Record<string, unknown>,
     };
   }
 
@@ -166,49 +168,67 @@ export class AmadeusAdapter implements ProviderAdapter {
     }
 
     // Validate each itinerary
-    rawOffer.itineraries?.forEach((itinerary: AmadeusItinerary, index: number) => {
-      if (!itinerary.segments || !Array.isArray(itinerary.segments)) {
-        errors.push(`Itinerary ${index + 1}: Missing or invalid segments`);
-      } else if (itinerary.segments.length === 0) {
-        errors.push(`Itinerary ${index + 1}: No segments found`);
-      }
+    rawOffer.itineraries?.forEach(
+      (itinerary: AmadeusItinerary, index: number) => {
+        if (!itinerary.segments || !Array.isArray(itinerary.segments)) {
+          errors.push(`Itinerary ${index + 1}: Missing or invalid segments`);
+        } else if (itinerary.segments.length === 0) {
+          errors.push(`Itinerary ${index + 1}: No segments found`);
+        }
 
-      // Validate segments
-      itinerary.segments?.forEach((segment: AmadeusSegment, segIndex: number) => {
-        if (!segment.departure?.iataCode) {
-          errors.push(`Itinerary ${index + 1}, Segment ${segIndex + 1}: Missing departure IATA code`);
-        }
-        if (!segment.arrival?.iataCode) {
-          errors.push(`Itinerary ${index + 1}, Segment ${segIndex + 1}: Missing arrival IATA code`);
-        }
-        if (!segment.carrierCode) {
-          warnings.push(`Itinerary ${index + 1}, Segment ${segIndex + 1}: Missing carrier code`);
-        }
-      });
-    });
+        // Validate segments
+        itinerary.segments?.forEach(
+          (segment: AmadeusSegment, segIndex: number) => {
+            if (!segment.departure?.iataCode) {
+              errors.push(
+                `Itinerary ${index + 1}, Segment ${segIndex + 1}: Missing departure IATA code`
+              );
+            }
+            if (!segment.arrival?.iataCode) {
+              errors.push(
+                `Itinerary ${index + 1}, Segment ${segIndex + 1}: Missing arrival IATA code`
+              );
+            }
+            if (!segment.carrierCode) {
+              warnings.push(
+                `Itinerary ${index + 1}, Segment ${segIndex + 1}: Missing carrier code`
+              );
+            }
+          }
+        );
+      }
+    );
 
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
-  extractCarryOnInfo(rawOffer: AmadeusRawOffer): { included: boolean; fee?: number } {
+  extractCarryOnInfo(rawOffer: AmadeusRawOffer): {
+    included: boolean;
+    fee?: number;
+  } {
     // Amadeus typically includes baggage info in travelerPricings
     const travelerPricings = rawOffer.travelerPricings || [];
-    
+
     for (const pricing of travelerPricings) {
       const fareDetailsBySegment = pricing.fareDetailsBySegment || [];
-      
+
       for (const fareDetails of fareDetailsBySegment) {
         const includedCheckedBags = fareDetails.includedCheckedBags;
-        
+
         // If carry-on information is explicitly provided
-        if (includedCheckedBags?.weight !== undefined || includedCheckedBags?.quantity !== undefined) {
+        if (
+          includedCheckedBags?.weight !== undefined ||
+          includedCheckedBags?.quantity !== undefined
+        ) {
           return {
-            included: (includedCheckedBags.quantity || 0) > 0 || (includedCheckedBags.weight || 0) > 0,
-            fee: undefined // Amadeus typically doesn't provide carry-on fees directly
+            included:
+              (includedCheckedBags.quantity || 0) > 0 ||
+              (includedCheckedBags.weight || 0) > 0,
+            fee: undefined, // Amadeus typically doesn't provide carry-on fees directly
           };
         }
       }
@@ -218,17 +238,26 @@ export class AmadeusAdapter implements ProviderAdapter {
     return { included: true, fee: undefined };
   }
 
-  extractAirlineInfo(rawOffer: AmadeusRawOffer): { validatingAirlines: string[]; operatingAirlines: string[] } {
+  extractAirlineInfo(rawOffer: AmadeusRawOffer): {
+    validatingAirlines: string[];
+    operatingAirlines: string[];
+  } {
     const validatingAirlines = rawOffer.validatingAirlineCodes || [];
     const operatingAirlines: string[] = [];
 
     // Extract operating airlines from segments
     rawOffer.itineraries?.forEach((itinerary: AmadeusItinerary) => {
       itinerary.segments?.forEach((segment: AmadeusSegment) => {
-        if (segment.carrierCode && !operatingAirlines.includes(segment.carrierCode)) {
+        if (
+          segment.carrierCode &&
+          !operatingAirlines.includes(segment.carrierCode)
+        ) {
           operatingAirlines.push(segment.carrierCode);
         }
-        if (segment.operating?.carrierCode && !operatingAirlines.includes(segment.operating.carrierCode)) {
+        if (
+          segment.operating?.carrierCode &&
+          !operatingAirlines.includes(segment.operating.carrierCode)
+        ) {
           operatingAirlines.push(segment.operating.carrierCode);
         }
       });
@@ -237,11 +266,14 @@ export class AmadeusAdapter implements ProviderAdapter {
     return { validatingAirlines, operatingAirlines };
   }
 
-  private extractPrice(rawOffer: AmadeusRawOffer): { base: number; currency: string } {
+  private extractPrice(rawOffer: AmadeusRawOffer): {
+    base: number;
+    currency: string;
+  } {
     const price = rawOffer.price || {};
     return {
       base: parseFloat(price.total || price.base || '0'),
-      currency: price.currency || 'USD'
+      currency: price.currency || 'USD',
     };
   }
 
@@ -249,10 +281,12 @@ export class AmadeusAdapter implements ProviderAdapter {
     return rawOffer.validatingAirlineCodes || [];
   }
 
-  private normalizeItineraries(rawItineraries: AmadeusItinerary[]): Itinerary[] {
+  private normalizeItineraries(
+    rawItineraries: AmadeusItinerary[]
+  ): Itinerary[] {
     return rawItineraries.map(itinerary => ({
       duration: itinerary.duration || '',
-      segments: this.normalizeSegments(itinerary.segments || [])
+      segments: this.normalizeSegments(itinerary.segments || []),
     }));
   }
 
@@ -262,9 +296,11 @@ export class AmadeusAdapter implements ProviderAdapter {
       arrival: this.normalizeAirport(segment.arrival),
       carrierCode: segment.carrierCode || '',
       flightNumber: segment.number || '',
-      aircraft: segment.aircraft ? { code: segment.aircraft.code || '' } : undefined,
+      aircraft: segment.aircraft
+        ? { code: segment.aircraft.code || '' }
+        : undefined,
       duration: segment.duration || '',
-      numberOfStops: segment.numberOfStops || 0
+      numberOfStops: segment.numberOfStops || 0,
     }));
   }
 
@@ -272,13 +308,19 @@ export class AmadeusAdapter implements ProviderAdapter {
     return {
       iataCode: rawAirport?.iataCode || '',
       terminal: rawAirport?.terminal,
-      at: rawAirport?.at || ''
+      at: rawAirport?.at || '',
     };
   }
 
   private calculateStopsCount(itineraries: Itinerary[]): number {
     return itineraries.reduce((total, itinerary) => {
-      return total + itinerary.segments.reduce((stops, segment) => stops + segment.numberOfStops, 0);
+      return (
+        total +
+        itinerary.segments.reduce(
+          (stops, segment) => stops + segment.numberOfStops,
+          0
+        )
+      );
     }, 0);
   }
 }
@@ -289,12 +331,16 @@ export class AmadeusAdapter implements ProviderAdapter {
 export class DuffelAdapter implements ProviderAdapter {
   readonly providerName = 'Duffel' as const;
 
-  normalize(rawOffer: DuffelRawOffer, _context: FilterContext): FlightOffer {  
-    const id = rawOffer.id || `duffel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  normalize(rawOffer: DuffelRawOffer, _context: FilterContext): FlightOffer {
+    const id =
+      rawOffer.id ||
+      `duffel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const price = this.extractPrice(rawOffer);
     const carryOnInfo = this.extractCarryOnInfo(rawOffer);
-    const itineraries = this.normalizeSlicesToItineraries(rawOffer.slices || []);
-    
+    const itineraries = this.normalizeSlicesToItineraries(
+      rawOffer.slices || []
+    );
+
     return {
       provider: 'Duffel',
       id,
@@ -307,7 +353,7 @@ export class DuffelAdapter implements ProviderAdapter {
       stopsCount: this.calculateStopsCount(itineraries),
       validatingAirlines: this.extractValidatingAirlines(rawOffer),
       bookingUrl: rawOffer.booking_url,
-      rawData: rawOffer as Record<string, unknown>
+      rawData: rawOffer as Record<string, unknown>,
     };
   }
 
@@ -337,13 +383,19 @@ export class DuffelAdapter implements ProviderAdapter {
       // Validate segments
       slice.segments?.forEach((segment: DuffelSegment, segIndex: number) => {
         if (!segment.origin?.iata_code) {
-          errors.push(`Slice ${index + 1}, Segment ${segIndex + 1}: Missing origin IATA code`);
+          errors.push(
+            `Slice ${index + 1}, Segment ${segIndex + 1}: Missing origin IATA code`
+          );
         }
         if (!segment.destination?.iata_code) {
-          errors.push(`Slice ${index + 1}, Segment ${segIndex + 1}: Missing destination IATA code`);
+          errors.push(
+            `Slice ${index + 1}, Segment ${segIndex + 1}: Missing destination IATA code`
+          );
         }
         if (!segment.marketing_carrier?.iata_code) {
-          warnings.push(`Slice ${index + 1}, Segment ${segIndex + 1}: Missing marketing carrier code`);
+          warnings.push(
+            `Slice ${index + 1}, Segment ${segIndex + 1}: Missing marketing carrier code`
+          );
         }
       });
     });
@@ -351,19 +403,25 @@ export class DuffelAdapter implements ProviderAdapter {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
-  extractCarryOnInfo(rawOffer: DuffelRawOffer): { included: boolean; fee?: number } {
+  extractCarryOnInfo(rawOffer: DuffelRawOffer): {
+    included: boolean;
+    fee?: number;
+  } {
     // Duffel provides cabin bag information in available_services
     const availableServices = rawOffer.available_services || [];
-    
+
     for (const service of availableServices) {
       if (service.type === 'cabin_bag' || service.type === 'carry_on') {
         return {
-          included: service.total_amount === '0.00' || service.total_amount === 0,
-          fee: service.total_amount ? parseFloat(service.total_amount.toString()) : undefined
+          included:
+            service.total_amount === '0.00' || service.total_amount === 0,
+          fee: service.total_amount
+            ? parseFloat(service.total_amount.toString())
+            : undefined,
         };
       }
     }
@@ -372,11 +430,17 @@ export class DuffelAdapter implements ProviderAdapter {
     const passengers = rawOffer.passengers || [];
     for (const passenger of passengers) {
       const services = passenger.services || [];
-      const cabinBagService = services.find((s: DuffelService) => s.type === 'cabin_bag');
+      const cabinBagService = services.find(
+        (s: DuffelService) => s.type === 'cabin_bag'
+      );
       if (cabinBagService) {
         return {
-          included: cabinBagService.total_amount === '0.00' || cabinBagService.total_amount === 0,
-          fee: cabinBagService.total_amount ? parseFloat(cabinBagService.total_amount.toString()) : undefined
+          included:
+            cabinBagService.total_amount === '0.00' ||
+            cabinBagService.total_amount === 0,
+          fee: cabinBagService.total_amount
+            ? parseFloat(cabinBagService.total_amount.toString())
+            : undefined,
         };
       }
     }
@@ -385,17 +449,28 @@ export class DuffelAdapter implements ProviderAdapter {
     return { included: true, fee: undefined };
   }
 
-  extractAirlineInfo(rawOffer: DuffelRawOffer): { validatingAirlines: string[]; operatingAirlines: string[] } {
-    const validatingAirlines = rawOffer.validating_carrier?.iata_code ? [rawOffer.validating_carrier.iata_code] : [];
+  extractAirlineInfo(rawOffer: DuffelRawOffer): {
+    validatingAirlines: string[];
+    operatingAirlines: string[];
+  } {
+    const validatingAirlines = rawOffer.validating_carrier?.iata_code
+      ? [rawOffer.validating_carrier.iata_code]
+      : [];
     const operatingAirlines: string[] = [];
 
     // Extract operating airlines from segments
     rawOffer.slices?.forEach((slice: DuffelSlice) => {
       slice.segments?.forEach((segment: DuffelSegment) => {
-        if (segment.marketing_carrier?.iata_code && !operatingAirlines.includes(segment.marketing_carrier.iata_code)) {
+        if (
+          segment.marketing_carrier?.iata_code &&
+          !operatingAirlines.includes(segment.marketing_carrier.iata_code)
+        ) {
           operatingAirlines.push(segment.marketing_carrier.iata_code);
         }
-        if (segment.operating_carrier?.iata_code && !operatingAirlines.includes(segment.operating_carrier.iata_code)) {
+        if (
+          segment.operating_carrier?.iata_code &&
+          !operatingAirlines.includes(segment.operating_carrier.iata_code)
+        ) {
           operatingAirlines.push(segment.operating_carrier.iata_code);
         }
       });
@@ -404,21 +479,26 @@ export class DuffelAdapter implements ProviderAdapter {
     return { validatingAirlines, operatingAirlines };
   }
 
-  private extractPrice(rawOffer: DuffelRawOffer): { base: number; currency: string } {
+  private extractPrice(rawOffer: DuffelRawOffer): {
+    base: number;
+    currency: string;
+  } {
     return {
       base: parseFloat(rawOffer.total_amount || rawOffer.base_amount || '0'),
-      currency: rawOffer.total_currency || rawOffer.currency || 'USD'
+      currency: rawOffer.total_currency || rawOffer.currency || 'USD',
     };
   }
 
   private extractValidatingAirlines(rawOffer: DuffelRawOffer): string[] {
-    return rawOffer.validating_carrier?.iata_code ? [rawOffer.validating_carrier.iata_code] : [];
+    return rawOffer.validating_carrier?.iata_code
+      ? [rawOffer.validating_carrier.iata_code]
+      : [];
   }
 
   private normalizeSlicesToItineraries(rawSlices: DuffelSlice[]): Itinerary[] {
     return rawSlices.map(slice => ({
       duration: slice.duration || '',
-      segments: this.normalizeSegments(slice.segments || [])
+      segments: this.normalizeSegments(slice.segments || []),
     }));
   }
 
@@ -428,17 +508,22 @@ export class DuffelAdapter implements ProviderAdapter {
       arrival: this.normalizeAirport(segment.destination, segment.arriving_at),
       carrierCode: segment.marketing_carrier?.iata_code || '',
       flightNumber: segment.flight_number || '',
-      aircraft: segment.aircraft ? { code: segment.aircraft.iata_code || '' } : undefined,
+      aircraft: segment.aircraft
+        ? { code: segment.aircraft.iata_code || '' }
+        : undefined,
       duration: segment.duration || '',
-      numberOfStops: 0 // Duffel segments are direct by definition
+      numberOfStops: 0, // Duffel segments are direct by definition
     }));
   }
 
-  private normalizeAirport(rawAirport: DuffelAirport | undefined, dateTime?: string): Airport {
+  private normalizeAirport(
+    rawAirport: DuffelAirport | undefined,
+    dateTime?: string
+  ): Airport {
     return {
       iataCode: rawAirport?.iata_code || '',
       terminal: rawAirport?.terminal,
-      at: dateTime || ''
+      at: dateTime || '',
     };
   }
 
@@ -453,7 +538,9 @@ export class DuffelAdapter implements ProviderAdapter {
 /**
  * Factory function to get the appropriate adapter
  */
-export function getProviderAdapter(provider: 'Amadeus' | 'Duffel'): ProviderAdapter {
+export function getProviderAdapter(
+  provider: 'Amadeus' | 'Duffel'
+): ProviderAdapter {
   switch (provider) {
     case 'Amadeus':
       return new AmadeusAdapter();
@@ -472,48 +559,67 @@ export function normalizeOffers(
   context: FilterContext
 ): FlightOffer[] {
   const normalizedOffers: FlightOffer[] = [];
-  const errors: Array<{ provider: string; error: string; rawOffer: unknown }> = [];
+  const errors: Array<{ provider: string; error: string; rawOffer: unknown }> =
+    [];
 
   for (const { data: rawOffer, provider } of rawOffers) {
     try {
       const adapter = getProviderAdapter(provider);
-      
+
       // Validate first - need to type cast since we're working with unknown data
-      const validation = adapter.validate(rawOffer as AmadeusRawOffer | DuffelRawOffer);
+      const validation = adapter.validate(
+        rawOffer as AmadeusRawOffer | DuffelRawOffer
+      );
       if (!validation.isValid) {
-        console.warn(`[ProviderAdapter] Skipping invalid ${provider} offer:`, validation.errors);
+        console.warn(
+          `[ProviderAdapter] Skipping invalid ${provider} offer:`,
+          validation.errors
+        );
         errors.push({
           provider,
           error: validation.errors.join(', '),
-          rawOffer
+          rawOffer,
         });
         continue;
       }
 
       // Normalize and add to results
-      const normalizedOffer = adapter.normalize(rawOffer as AmadeusRawOffer | DuffelRawOffer, context);
+      const normalizedOffer = adapter.normalize(
+        rawOffer as AmadeusRawOffer | DuffelRawOffer,
+        context
+      );
       normalizedOffers.push(normalizedOffer);
 
       // Log warnings if any
       if (validation.warnings.length > 0) {
-        console.warn(`[ProviderAdapter] ${provider} offer warnings:`, validation.warnings);
+        console.warn(
+          `[ProviderAdapter] ${provider} offer warnings:`,
+          validation.warnings
+        );
       }
-
     } catch (error) {
-      console.error(`[ProviderAdapter] Error normalizing ${provider} offer:`, error);
+      console.error(
+        `[ProviderAdapter] Error normalizing ${provider} offer:`,
+        error
+      );
       errors.push({
         provider,
         error: error instanceof Error ? error.message : String(error),
-        rawOffer
+        rawOffer,
       });
     }
   }
 
   if (errors.length > 0) {
-    console.warn(`[ProviderAdapter] Failed to normalize ${errors.length} offers:`, errors);
+    console.warn(
+      `[ProviderAdapter] Failed to normalize ${errors.length} offers:`,
+      errors
+    );
   }
 
-  console.log(`[ProviderAdapter] Successfully normalized ${normalizedOffers.length} offers from ${rawOffers.length} raw offers`);
-  
+  console.log(
+    `[ProviderAdapter] Successfully normalized ${normalizedOffers.length} offers from ${rawOffers.length} raw offers`
+  );
+
   return normalizedOffers;
 }

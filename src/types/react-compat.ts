@@ -1,17 +1,32 @@
 import * as React from 'react';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState, useId, useTransition, useDeferredValue, forwardRef, memo, createContext, Fragment, Suspense, createElement } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useId,
+  useTransition,
+  useDeferredValue,
+  forwardRef,
+  memo,
+  createContext,
+  Fragment,
+  Suspense,
+  createElement,
+} from 'react';
 /**
  * React Types Compatibility Helper
- * 
+ *
  * Based on TypeScript API documentation, this file provides compatibility
  * for React types that may vary across different React versions.
- * 
+ *
  * Reference: TypeScript API Part 1 & 2 - Module systems and type definitions
  */
 
-
 // Core React type re-exports for consistency
-export type { 
+export type {
   ReactNode,
   ReactElement,
   FCType,
@@ -31,11 +46,11 @@ export type {
 };
 
 // React utilities
-export const { 
-  forwardRef, 
-  memo, 
-  createContext, 
-  createElement, 
+export const {
+  forwardRef,
+  memo,
+  createContext,
+  createElement,
   Fragment,
   useCallback,
   useContext,
@@ -46,20 +61,23 @@ export const {
   useState,
   useTransition,
   useDeferredValue,
-  Suspense
+  Suspense,
 } = React;
 
 // Type-safe event handler creators
-export const createChangeHandler = <T extends HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
-  handler: (value: string) => void
-) => (e: ChangeEvent<T>) => handler((e.target as T).value);
+export const createChangeHandler =
+  <T extends HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+    handler: (value: string) => void
+  ) =>
+  (e: ChangeEvent<T>) =>
+    handler((e.target as T).value);
 
-export const createClickHandler = <T extends HTMLElement>(
-  handler: () => void
-) => (e: MouseEvent<T>) => {
-  e.preventDefault();
-  handler();
-};
+export const createClickHandler =
+  <T extends HTMLElement>(handler: () => void) =>
+  (e: MouseEvent<T>) => {
+    e.preventDefault();
+    handler();
+  };
 
 // Type guards for React elements
 export const isReactElement = (value: any): value is ReactElement => {

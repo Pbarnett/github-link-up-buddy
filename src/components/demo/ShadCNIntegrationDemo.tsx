@@ -1,6 +1,6 @@
 /**
  * ShadCN Integration Demo Component
- * 
+ *
  * This comprehensive demo showcases the enhanced ShadCN UI integration with:
  * - Modern theme provider
  * - Enhanced form components
@@ -12,16 +12,24 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { Form } from '@/components/ui/form'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Progress } from '@/components/ui/progress'
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Settings, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardAction,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Form } from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 import {
   TextField,
   SelectField,
@@ -29,10 +37,12 @@ import {
   CheckboxField,
   SwitchField,
   FormGroup,
-  FormSection
-} from '@/components/ui/enhanced-form'
-import { ModeToggle, useShadCNTheme } from '@/components/providers/ShadCNThemeProvider'
-import { Settings, CheckCircle, AlertCircle } from 'lucide-react'
+  FormSection,
+} from '@/components/ui/enhanced-form';
+import {
+  ModeToggle,
+  useShadCNTheme,
+} from '@/components/providers/ShadCNThemeProvider';
 
 type FC<T = {}> = React.FC<T>;
 
@@ -44,28 +54,28 @@ const demoFormSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   role: z.enum(['admin', 'user', 'moderator'], {
-    required_error: 'Please select a role'
+    required_error: 'Please select a role',
   }),
   bio: z.string().max(500, 'Bio must not exceed 500 characters').optional(),
-  
+
   // Preferences
   notifications: z.boolean().default(false),
   newsletter: z.boolean().default(true),
   darkMode: z.boolean().default(false),
-  
+
   // Settings
   privacy: z.enum(['public', 'private', 'friends'], {
-    required_error: 'Please select a privacy setting'
-  })
-})
+    required_error: 'Please select a privacy setting',
+  }),
+});
 
-type DemoFormValues = z.infer<typeof demoFormSchema>
+type DemoFormValues = z.infer<typeof demoFormSchema>;
 
 const ShadCNIntegrationDemo: FC = () => {
-  const [activeTab, setActiveTab] = useState('components')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const { theme } = useShadCNTheme()
+  const [activeTab, setActiveTab] = useState('components');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const { theme } = useShadCNTheme();
 
   // Form setup
   const form = useForm<DemoFormValues>({
@@ -79,38 +89,38 @@ const ShadCNIntegrationDemo: FC = () => {
       notifications: false,
       newsletter: true,
       darkMode: theme === 'dark',
-      privacy: 'private'
-    }
-  })
+      privacy: 'private',
+    },
+  });
 
   const onSubmit = async (data: DemoFormValues) => {
-    setIsSubmitting(true)
-    
+    setIsSubmitting(true);
+
     // Simulate form submission with progress
     for (let i = 0; i <= 100; i += 10) {
-      setProgress(i)
-      await new Promise(resolve => setTimeout(resolve, 100))
+      setProgress(i);
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
-    
-    console.log('Form submitted:', data)
-    setIsSubmitting(false)
-    setProgress(0)
-    
+
+    console.log('Form submitted:', data);
+    setIsSubmitting(false);
+    setProgress(0);
+
     // Show success message
-    alert('Form submitted successfully!')
-  }
+    alert('Form submitted successfully!');
+  };
 
   const roleOptions = [
     { value: 'admin', label: 'Administrator' },
     { value: 'user', label: 'User' },
-    { value: 'moderator', label: 'Moderator' }
-  ]
+    { value: 'moderator', label: 'Moderator' },
+  ];
 
   const privacyOptions = [
     { value: 'public', label: 'Public' },
     { value: 'private', label: 'Private' },
-    { value: 'friends', label: 'Friends Only' }
-  ]
+    { value: 'friends', label: 'Friends Only' },
+  ];
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -124,7 +134,8 @@ const ShadCNIntegrationDemo: FC = () => {
                 ShadCN UI Integration Demo
               </CardTitle>
               <CardDescription>
-                Comprehensive showcase of enhanced ShadCN components with modern patterns
+                Comprehensive showcase of enhanced ShadCN components with modern
+                patterns
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -137,7 +148,11 @@ const ShadCNIntegrationDemo: FC = () => {
         </Card>
 
         {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="components">Components</TabsTrigger>
             <TabsTrigger value="forms">Enhanced Forms</TabsTrigger>
@@ -161,11 +176,14 @@ const ShadCNIntegrationDemo: FC = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    This card demonstrates the enhanced card component with proper spacing and typography.
+                    This card demonstrates the enhanced card component with
+                    proper spacing and typography.
                   </p>
                 </CardContent>
                 <CardAction>
-                  <Button variant="outline" size="sm">Learn More</Button>
+                  <Button variant="outline" size="sm">
+                    Learn More
+                  </Button>
                   <Button size="sm">Get Started</Button>
                 </CardAction>
               </Card>
@@ -174,12 +192,17 @@ const ShadCNIntegrationDemo: FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Theme System</CardTitle>
-                  <CardDescription>Dynamic theming with CSS variables</CardDescription>
+                  <CardDescription>
+                    Dynamic theming with CSS variables
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-2">
                     <div className="h-8 bg-primary rounded" title="Primary" />
-                    <div className="h-8 bg-secondary rounded" title="Secondary" />
+                    <div
+                      className="h-8 bg-secondary rounded"
+                      title="Secondary"
+                    />
                     <div className="h-8 bg-accent rounded" title="Accent" />
                     <div className="h-8 bg-muted rounded" title="Muted" />
                   </div>
@@ -190,7 +213,9 @@ const ShadCNIntegrationDemo: FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Status Indicators</CardTitle>
-                  <CardDescription>Various status and feedback components</CardDescription>
+                  <CardDescription>
+                    Various status and feedback components
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Alert>
@@ -199,12 +224,14 @@ const ShadCNIntegrationDemo: FC = () => {
                       This is a sample alert with proper styling
                     </AlertDescription>
                   </Alert>
-                  
+
                   <div className="space-y-2">
                     <Progress value={progress || 33} className="w-full" />
-                    <p className="text-xs text-muted-foreground">Progress indicator</p>
+                    <p className="text-xs text-muted-foreground">
+                      Progress indicator
+                    </p>
                   </div>
-                  
+
                   <div className="flex flex-wrap gap-2">
                     <Badge>Default</Badge>
                     <Badge variant="secondary">Secondary</Badge>
@@ -222,14 +249,18 @@ const ShadCNIntegrationDemo: FC = () => {
               <CardHeader>
                 <CardTitle>Enhanced Form Components</CardTitle>
                 <CardDescription>
-                  Improved form fields with accessibility, validation, and better UX
+                  Improved form fields with accessibility, validation, and
+                  better UX
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                    <FormSection 
-                      title="User Information" 
+                  <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-8"
+                  >
+                    <FormSection
+                      title="User Information"
                       description="Basic information about the user"
                       variant="bordered"
                     >
@@ -240,10 +271,12 @@ const ShadCNIntegrationDemo: FC = () => {
                           required
                           placeholder="Enter your full name"
                           value={form.watch('fullName')}
-                          onValueChange={(value: string) => form.setValue('fullName', value)}
+                          onValueChange={(value: string) =>
+                            form.setValue('fullName', value)
+                          }
                           error={form.formState.errors.fullName?.message}
                         />
-                        
+
                         <TextField
                           id="email"
                           type="email"
@@ -251,35 +284,41 @@ const ShadCNIntegrationDemo: FC = () => {
                           required
                           placeholder="Enter your email"
                           value={form.watch('email')}
-                          onValueChange={(value: string) => form.setValue('email', value)}
+                          onValueChange={(value: string) =>
+                            form.setValue('email', value)
+                          }
                           error={form.formState.errors.email?.message}
                         />
                       </div>
-                      
+
                       <SelectField
                         label="Role"
                         required
                         placeholder="Select your role"
                         value={form.watch('role')}
-                        onValueChange={(value: string) => form.setValue('role', value as any)}
+                        onValueChange={(value: string) =>
+                          form.setValue('role', value as any)
+                        }
                         options={roleOptions}
                         error={form.formState.errors.role?.message}
                       />
-                      
+
                       <TextareaField
                         id="bio"
                         label="Bio"
                         description="Tell us a bit about yourself (optional)"
                         placeholder="Enter your bio..."
                         value={form.watch('bio') || ''}
-                        onValueChange={(value: string) => form.setValue('bio', value)}
+                        onValueChange={(value: string) =>
+                          form.setValue('bio', value)
+                        }
                         error={form.formState.errors.bio?.message}
                         rows={4}
                       />
                     </FormSection>
 
-                    <FormSection 
-                      title="Preferences" 
+                    <FormSection
+                      title="Preferences"
                       description="Configure your account preferences"
                       variant="bordered"
                     >
@@ -289,32 +328,40 @@ const ShadCNIntegrationDemo: FC = () => {
                           label="Enable notifications"
                           description="Receive email notifications about important updates"
                           checked={form.watch('notifications')}
-                          onCheckedChange={(checked: boolean) => form.setValue('notifications', checked)}
+                          onCheckedChange={(checked: boolean) =>
+                            form.setValue('notifications', checked)
+                          }
                         />
-                        
+
                         <CheckboxField
                           id="newsletter"
                           label="Subscribe to newsletter"
                           description="Get the latest news and updates"
                           checked={form.watch('newsletter')}
-                          onCheckedChange={(checked: boolean) => form.setValue('newsletter', checked)}
+                          onCheckedChange={(checked: boolean) =>
+                            form.setValue('newsletter', checked)
+                          }
                         />
                       </FormGroup>
-                      
+
                       <SwitchField
                         id="darkMode"
                         label="Dark Mode"
                         description="Use dark theme for the interface"
                         checked={form.watch('darkMode')}
-                        onCheckedChange={(checked: boolean) => form.setValue('darkMode', checked)}
+                        onCheckedChange={(checked: boolean) =>
+                          form.setValue('darkMode', checked)
+                        }
                       />
-                      
+
                       <SelectField
                         label="Privacy Setting"
                         required
                         placeholder="Select privacy level"
                         value={form.watch('privacy')}
-                        onValueChange={(value: string) => form.setValue('privacy', value as any)}
+                        onValueChange={(value: string) =>
+                          form.setValue('privacy', value as any)
+                        }
                         options={privacyOptions}
                         error={form.formState.errors.privacy?.message}
                       />
@@ -330,15 +377,15 @@ const ShadCNIntegrationDemo: FC = () => {
                     )}
 
                     <div className="flex justify-end gap-4">
-                      <Button 
-                        type="button" 
+                      <Button
+                        type="button"
                         variant="outline"
                         onClick={() => form.reset()}
                       >
                         Reset
                       </Button>
-                      <Button 
-                        type="submit" 
+                      <Button
+                        type="submit"
                         disabled={isSubmitting}
                         className="min-w-[100px]"
                       >
@@ -360,20 +407,25 @@ const ShadCNIntegrationDemo: FC = () => {
                     <User className="h-5 w-5" />
                     Composition Patterns
                   </CardTitle>
-                  <CardDescription>asChild prop and component composition</CardDescription>
+                  <CardDescription>
+                    asChild prop and component composition
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm">
-                    ShadCN components support the <code>asChild</code> prop for flexible composition.
+                    ShadCN components support the <code>asChild</code> prop for
+                    flexible composition.
                   </p>
-                  
+
                   <Separator />
-                  
+
                   <div className="space-y-2">
                     <Button asChild>
-                      <a href="#" className="inline-flex">Link as Button</a>
+                      <a href="#" className="inline-flex">
+                        Link as Button
+                      </a>
                     </Button>
-                    
+
                     <Badge asChild>
                       <button type="button">Interactive Badge</button>
                     </Badge>
@@ -387,12 +439,14 @@ const ShadCNIntegrationDemo: FC = () => {
                     <Lock className="h-5 w-5" />
                     State Management
                   </CardTitle>
-                  <CardDescription>Controlled vs uncontrolled components</CardDescription>
+                  <CardDescription>
+                    Controlled vs uncontrolled components
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    All components support both controlled and uncontrolled usage patterns
-                    with proper TypeScript support.
+                    All components support both controlled and uncontrolled
+                    usage patterns with proper TypeScript support.
                   </p>
                 </CardContent>
               </Card>
@@ -408,13 +462,14 @@ const ShadCNIntegrationDemo: FC = () => {
                   Accessibility Features
                 </CardTitle>
                 <CardDescription>
-                  Built-in accessibility with ARIA support and keyboard navigation
+                  Built-in accessibility with ARIA support and keyboard
+                  navigation
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Key Features</h3>
-                  
+
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
@@ -446,12 +501,34 @@ const ShadCNIntegrationDemo: FC = () => {
                 <Separator />
 
                 <div>
-                  <h4 className="font-medium mb-2">Try these keyboard shortcuts:</h4>
+                  <h4 className="font-medium mb-2">
+                    Try these keyboard shortcuts:
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                    <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Tab</kbd> Navigate forward</div>
-                    <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Shift+Tab</kbd> Navigate backward</div>
-                    <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Enter</kbd> Activate button/link</div>
-                    <div><kbd className="px-2 py-1 bg-muted rounded text-xs">Space</kbd> Toggle checkbox/switch</div>
+                    <div>
+                      <kbd className="px-2 py-1 bg-muted rounded text-xs">
+                        Tab
+                      </kbd>{' '}
+                      Navigate forward
+                    </div>
+                    <div>
+                      <kbd className="px-2 py-1 bg-muted rounded text-xs">
+                        Shift+Tab
+                      </kbd>{' '}
+                      Navigate backward
+                    </div>
+                    <div>
+                      <kbd className="px-2 py-1 bg-muted rounded text-xs">
+                        Enter
+                      </kbd>{' '}
+                      Activate button/link
+                    </div>
+                    <div>
+                      <kbd className="px-2 py-1 bg-muted rounded text-xs">
+                        Space
+                      </kbd>{' '}
+                      Toggle checkbox/switch
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -460,7 +537,7 @@ const ShadCNIntegrationDemo: FC = () => {
         </Tabs>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ShadCNIntegrationDemo
+export default ShadCNIntegrationDemo;

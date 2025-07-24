@@ -1,11 +1,10 @@
-
-import { Button } from '@/components/ui/button';
-import FilterTogglesSection from './FilterTogglesSection';
-import TripDurationInputs from './TripDurationInputs';
 import * as React from 'react';
 import { useState } from 'react';
 import { Control } from 'react-hook-form';
 import { ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import TripDurationInputs from './TripDurationInputs';
+import FilterTogglesSection from './FilterTogglesSection';
 
 // Collapsible filters form data interface
 interface CollapsibleFiltersFormData {
@@ -18,7 +17,9 @@ interface CollapsibleFiltersSectionProps {
   control: Control<CollapsibleFiltersFormData>; // Now required for TripDurationInputs
 }
 
-const CollapsibleFiltersSection = ({ control }: CollapsibleFiltersSectionProps) => {
+const CollapsibleFiltersSection = ({
+  control,
+}: CollapsibleFiltersSectionProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -37,18 +38,22 @@ const CollapsibleFiltersSection = ({ control }: CollapsibleFiltersSectionProps) 
           <ChevronDown className="w-4 h-4" />
         )}
       </Button>
-      
+
       {isExpanded && (
         <div className="mt-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
           {/* Trip Duration Controls */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <h4 className="text-sm font-semibold text-gray-900 mb-3">Trip Length</h4>
+            <h4 className="text-sm font-semibold text-gray-900 mb-3">
+              Trip Length
+            </h4>
             <TripDurationInputs control={control} />
           </div>
-          
+
           {/* Flight Features Information */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <h4 className="text-sm font-semibold text-gray-900 mb-3">Flight Features</h4>
+            <h4 className="text-sm font-semibold text-gray-900 mb-3">
+              Flight Features
+            </h4>
             <FilterTogglesSection control={control} />
           </div>
         </div>

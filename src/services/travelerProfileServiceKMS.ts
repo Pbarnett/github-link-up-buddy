@@ -38,19 +38,26 @@ class TravelerProfileServiceKMS {
    */
   async getTravelerProfiles(): Promise<TravelerProfileKMS[]> {
     try {
-      logger.info('[TravelerProfilesKMS] Fetching traveler profiles via edge function');
-      
+      logger.info(
+        '[TravelerProfilesKMS] Fetching traveler profiles via edge function'
+      );
+
       // Use the manage-traveler-profiles edge function with KMS support
-      const { data, error } = await supabase.functions.invoke('manage-traveler-profiles', {
-        body: { action: 'get' }
-      });
+      const { data, error } = await supabase.functions.invoke(
+        'manage-traveler-profiles',
+        {
+          body: { action: 'get' },
+        }
+      );
 
       if (error) {
         logger.error('[TravelerProfilesKMS] Error from edge function:', error);
         throw new Error(`Failed to fetch traveler profiles: ${error.message}`);
       }
 
-      logger.info('[TravelerProfilesKMS] Traveler profiles fetched successfully');
+      logger.info(
+        '[TravelerProfilesKMS] Traveler profiles fetched successfully'
+      );
       return data || [];
     } catch (error) {
       logger.error('[TravelerProfilesKMS] getTravelerProfiles error:', error);
@@ -61,24 +68,31 @@ class TravelerProfileServiceKMS {
   /**
    * Create a new traveler profile with KMS encryption
    */
-  async createProfile(profileData: TravelerProfileCreateData): Promise<TravelerProfileKMS> {
+  async createProfile(
+    profileData: TravelerProfileCreateData
+  ): Promise<TravelerProfileKMS> {
     try {
       logger.info('[TravelerProfilesKMS] Creating new traveler profile');
-      
+
       // Call edge function to handle encryption and storage
-      const { data, error } = await supabase.functions.invoke('manage-traveler-profiles', {
-        body: {
-          action: 'create',
-          travelerData: profileData
+      const { data, error } = await supabase.functions.invoke(
+        'manage-traveler-profiles',
+        {
+          body: {
+            action: 'create',
+            travelerData: profileData,
+          },
         }
-      });
+      );
 
       if (error) {
         logger.error('[TravelerProfilesKMS] Error from edge function:', error);
         throw new Error(`Failed to create traveler profile: ${error.message}`);
       }
 
-      logger.info('[TravelerProfilesKMS] Traveler profile created successfully');
+      logger.info(
+        '[TravelerProfilesKMS] Traveler profile created successfully'
+      );
       return data as TravelerProfileKMS;
     } catch (error) {
       logger.error('[TravelerProfilesKMS] createProfile error:', error);
@@ -89,17 +103,23 @@ class TravelerProfileServiceKMS {
   /**
    * Update an existing traveler profile
    */
-  async updateProfile(id: string, updates: Partial<TravelerProfileCreateData>): Promise<TravelerProfileKMS> {
+  async updateProfile(
+    id: string,
+    updates: Partial<TravelerProfileCreateData>
+  ): Promise<TravelerProfileKMS> {
     try {
       logger.info('[TravelerProfilesKMS] Updating traveler profile:', id);
-      
+
       // Call edge function to handle encryption and updates
-      const { data, error } = await supabase.functions.invoke('manage-traveler-profiles', {
-        body: {
-          action: 'update',
-          travelerData: { id, ...updates }
+      const { data, error } = await supabase.functions.invoke(
+        'manage-traveler-profiles',
+        {
+          body: {
+            action: 'update',
+            travelerData: { id, ...updates },
+          },
         }
-      });
+      );
 
       if (error) {
         logger.error('[TravelerProfilesKMS] Error from edge function:', error);
@@ -119,20 +139,25 @@ class TravelerProfileServiceKMS {
   async deleteProfile(id: string): Promise<void> {
     try {
       logger.info('[TravelerProfilesKMS] Deleting traveler profile:', id);
-      
-      const { error } = await supabase.functions.invoke('manage-traveler-profiles', {
-        body: {
-          action: 'delete',
-          travelerData: { id }
+
+      const { error } = await supabase.functions.invoke(
+        'manage-traveler-profiles',
+        {
+          body: {
+            action: 'delete',
+            travelerData: { id },
+          },
         }
-      });
+      );
 
       if (error) {
         logger.error('[TravelerProfilesKMS] Error from edge function:', error);
         throw new Error(`Failed to delete traveler profile: ${error.message}`);
       }
 
-      logger.info('[TravelerProfilesKMS] Traveler profile deleted successfully');
+      logger.info(
+        '[TravelerProfilesKMS] Traveler profile deleted successfully'
+      );
     } catch (error) {
       logger.error('[TravelerProfilesKMS] deleteProfile error:', error);
       throw error;
@@ -144,11 +169,16 @@ class TravelerProfileServiceKMS {
    */
   async setPrimaryProfile(id: string): Promise<TravelerProfileKMS> {
     try {
-      logger.info('[TravelerProfilesKMS] Setting primary traveler profile:', id);
-      
+      logger.info(
+        '[TravelerProfilesKMS] Setting primary traveler profile:',
+        id
+      );
+
       // For simple updates like is_primary, we can update directly via database
       // First, unset all other primary profiles for this user
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
       await supabase
@@ -166,8 +196,13 @@ class TravelerProfileServiceKMS {
         .single();
 
       if (error) {
-        logger.error('[TravelerProfilesKMS] Error setting primary profile:', error);
-        throw new Error(`Failed to set primary traveler profile: ${error.message}`);
+        logger.error(
+          '[TravelerProfilesKMS] Error setting primary profile:',
+          error
+        );
+        throw new Error(
+          `Failed to set primary traveler profile: ${error.message}`
+        );
       }
 
       return data as TravelerProfileKMS;
@@ -183,15 +218,17 @@ class TravelerProfileServiceKMS {
   async verifyProfile(id: string): Promise<TravelerProfileKMS> {
     try {
       logger.info('[TravelerProfilesKMS] Verifying traveler profile:', id);
-      
-      const { data: { user } } = await supabase.auth.getUser();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
         .from('traveler_profiles')
-        .update({ 
+        .update({
           is_verified: true,
-          verified_at: new Date().toISOString()
+          verified_at: new Date().toISOString(),
         })
         .eq('id', id)
         .eq('user_id', user.id)

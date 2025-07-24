@@ -43,7 +43,7 @@ class CurrencyService {
         symbol: '$',
         decimal_places: 2,
         stripe_supported: true,
-        regions: ['US', 'EC', 'SV', 'PA', 'ZW']
+        regions: ['US', 'EC', 'SV', 'PA', 'ZW'],
       },
       {
         code: 'EUR',
@@ -51,7 +51,19 @@ class CurrencyService {
         symbol: '€',
         decimal_places: 2,
         stripe_supported: true,
-        regions: ['DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'AT', 'PT', 'IE', 'GR', 'FI']
+        regions: [
+          'DE',
+          'FR',
+          'IT',
+          'ES',
+          'NL',
+          'BE',
+          'AT',
+          'PT',
+          'IE',
+          'GR',
+          'FI',
+        ],
       },
       {
         code: 'GBP',
@@ -59,7 +71,7 @@ class CurrencyService {
         symbol: '£',
         decimal_places: 2,
         stripe_supported: true,
-        regions: ['GB']
+        regions: ['GB'],
       },
       {
         code: 'CAD',
@@ -67,7 +79,7 @@ class CurrencyService {
         symbol: 'C$',
         decimal_places: 2,
         stripe_supported: true,
-        regions: ['CA']
+        regions: ['CA'],
       },
       {
         code: 'AUD',
@@ -75,7 +87,7 @@ class CurrencyService {
         symbol: 'A$',
         decimal_places: 2,
         stripe_supported: true,
-        regions: ['AU']
+        regions: ['AU'],
       },
       {
         code: 'JPY',
@@ -83,7 +95,7 @@ class CurrencyService {
         symbol: '¥',
         decimal_places: 0,
         stripe_supported: true,
-        regions: ['JP']
+        regions: ['JP'],
       },
       {
         code: 'CHF',
@@ -91,7 +103,7 @@ class CurrencyService {
         symbol: 'CHF',
         decimal_places: 2,
         stripe_supported: true,
-        regions: ['CH']
+        regions: ['CH'],
       },
       {
         code: 'SEK',
@@ -99,7 +111,7 @@ class CurrencyService {
         symbol: 'kr',
         decimal_places: 2,
         stripe_supported: true,
-        regions: ['SE']
+        regions: ['SE'],
       },
       {
         code: 'NOK',
@@ -107,7 +119,7 @@ class CurrencyService {
         symbol: 'kr',
         decimal_places: 2,
         stripe_supported: true,
-        regions: ['NO']
+        regions: ['NO'],
       },
       {
         code: 'DKK',
@@ -115,8 +127,8 @@ class CurrencyService {
         symbol: 'kr',
         decimal_places: 2,
         stripe_supported: true,
-        regions: ['DK']
-      }
+        regions: ['DK'],
+      },
     ];
 
     currencies.forEach(currency => {
@@ -125,15 +137,17 @@ class CurrencyService {
   }
 
   private async getAuthHeaders(): Promise<HeadersInit> {
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session?.access_token) {
       throw new Error('No authenticated session found');
     }
 
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
+      Authorization: `Bearer ${session.access_token}`,
     };
   }
 
@@ -157,14 +171,16 @@ class CurrencyService {
   async detectUserCurrency(): Promise<string> {
     try {
       // Try to get user's profile currency preference first
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
           .from('user_preferences')
           .select('preferred_currency')
           .eq('user_id', user.id)
           .single();
-        
+
         if (profile?.preferred_currency) {
           return profile.preferred_currency;
         }
@@ -173,7 +189,7 @@ class CurrencyService {
       // Fallback to geolocation-based detection
       const response = await fetch('https://ipapi.co/json/');
       const geoData = await response.json();
-      
+
       if (geoData.country_code) {
         return this.getCurrencyByCountry(geoData.country_code);
       }
@@ -194,20 +210,20 @@ class CurrencyService {
         return currencyCode;
       }
     }
-    
+
     // Country-specific mappings for common cases
     const countryToCurrency: Record<string, string> = {
-      'US': 'USD',
-      'GB': 'GBP', 
-      'DE': 'EUR',
-      'FR': 'EUR',
-      'CA': 'CAD',
-      'AU': 'AUD',
-      'JP': 'JPY',
-      'CH': 'CHF',
-      'SE': 'SEK',
-      'NO': 'NOK',
-      'DK': 'DKK',
+      US: 'USD',
+      GB: 'GBP',
+      DE: 'EUR',
+      FR: 'EUR',
+      CA: 'CAD',
+      AU: 'AUD',
+      JP: 'JPY',
+      CH: 'CHF',
+      SE: 'SEK',
+      NO: 'NOK',
+      DK: 'DKK',
     };
 
     return countryToCurrency[countryCode] || 'USD';
@@ -216,21 +232,24 @@ class CurrencyService {
   /**
    * Get current exchange rate between two currencies
    */
-  async getExchangeRate(fromCurrency: string, toCurrency: string): Promise<number> {
+  async getExchangeRate(
+    fromCurrency: string,
+    toCurrency: string
+  ): Promise<number> {
     if (fromCurrency === toCurrency) {
       return 1.0;
     }
 
     try {
       const headers = await this.getAuthHeaders();
-      
+
       const response = await fetch(`${this.baseUrl}/exchange-rate`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
           from_currency: fromCurrency.toUpperCase(),
-          to_currency: toCurrency.toUpperCase()
-        })
+          to_currency: toCurrency.toUpperCase(),
+        }),
       });
 
       if (!response.ok) {
@@ -260,10 +279,13 @@ class CurrencyService {
     return {
       original_amount: amount,
       original_currency: fromCurrency.toUpperCase(),
-      converted_amount: this.roundToCurrencyPrecision(convertedAmount, toCurrency),
+      converted_amount: this.roundToCurrencyPrecision(
+        convertedAmount,
+        toCurrency
+      ),
       converted_currency: toCurrency.toUpperCase(),
       exchange_rate: rate,
-      conversion_date: new Date().toISOString()
+      conversion_date: new Date().toISOString(),
     };
   }
 
@@ -273,15 +295,22 @@ class CurrencyService {
   roundToCurrencyPrecision(amount: number, currency: string): number {
     const config = this.getCurrencyConfig(currency);
     const decimalPlaces = config?.decimal_places ?? 2;
-    return Math.round(amount * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
+    return (
+      Math.round(amount * Math.pow(10, decimalPlaces)) /
+      Math.pow(10, decimalPlaces)
+    );
   }
 
   /**
    * Format amount with currency symbol
    */
-  formatCurrencyAmount(amount: number, currency: string, locale?: string): string {
+  formatCurrencyAmount(
+    amount: number,
+    currency: string,
+    locale?: string
+  ): string {
     const config = this.getCurrencyConfig(currency);
-    
+
     if (!config) {
       return `${amount} ${currency}`;
     }
@@ -336,18 +365,18 @@ class CurrencyService {
       throw new Error(`Unsupported currency: ${currency}`);
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       throw new Error('User not authenticated');
     }
 
-    const { error } = await (supabase
-      .from('user_preferences')
-      .upsert({
-        user_id: user.id,
-        preferred_currency: currency.toUpperCase(),
-        updated_at: new Date().toISOString()
-      }) as any);
+    const { error } = await (supabase.from('user_preferences').upsert({
+      user_id: user.id,
+      preferred_currency: currency.toUpperCase(),
+      updated_at: new Date().toISOString(),
+    }) as any);
 
     if (error) {
       throw new Error(`Failed to update currency preference: ${error.message}`);
@@ -364,19 +393,21 @@ class CurrencyService {
   ): Promise<ExchangeRate[]> {
     try {
       const headers = await this.getAuthHeaders();
-      
+
       const response = await fetch(`${this.baseUrl}/historical-rates`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
           from_currency: fromCurrency.toUpperCase(),
           to_currency: toCurrency.toUpperCase(),
-          days
-        })
+          days,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to get historical rates: ${response.statusText}`);
+        throw new Error(
+          `Failed to get historical rates: ${response.statusText}`
+        );
       }
 
       return await response.json();

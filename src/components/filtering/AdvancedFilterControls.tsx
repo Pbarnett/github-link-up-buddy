@@ -1,13 +1,19 @@
 type FC<T = {}> = React.FC<T>;
+import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import AirlineSelector from './AirlineSelector';
-import * as React from 'react';
 
 /**
  * Filter options that integrate with the backend FilterFactory system
@@ -61,7 +67,9 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
   maxBudget = 5000,
   tripBudget = 1000,
 }) => {
-  const [localOptions, setLocalOptions] = useState<FilterOptions>(filterState.options);
+  const [localOptions, setLocalOptions] = useState<FilterOptions>(
+    filterState.options
+  );
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Sync local state with prop changes
@@ -77,28 +85,36 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
     [onFiltersChange]
   );
 
-  const updateFilter = useCallback((key: keyof FilterOptions, value: unknown) => {
-    const newOptions = { ...localOptions, [key]: value };
-    setLocalOptions(newOptions);
-    debouncedUpdate(newOptions);
-  }, [localOptions, debouncedUpdate]);
+  const updateFilter = useCallback(
+    (key: keyof FilterOptions, value: unknown) => {
+      const newOptions = { ...localOptions, [key]: value };
+      setLocalOptions(newOptions);
+      debouncedUpdate(newOptions);
+    },
+    [localOptions, debouncedUpdate]
+  );
 
-  const removeFilter = useCallback((key: keyof FilterOptions) => {
-    const newOptions = { ...localOptions };
-    delete newOptions[key];
-    setLocalOptions(newOptions);
-    onFiltersChange(newOptions);
-  }, [localOptions, onFiltersChange]);
+  const removeFilter = useCallback(
+    (key: keyof FilterOptions) => {
+      const newOptions = { ...localOptions };
+      delete newOptions[key];
+      setLocalOptions(newOptions);
+      onFiltersChange(newOptions);
+    },
+    [localOptions, onFiltersChange]
+  );
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: localOptions.currency || 'USD' 
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: localOptions.currency || 'USD',
     }).format(amount);
   };
 
   const hasActiveFilters = filterState.activeFiltersCount > 0;
-  const showResults = filterState.resultsCount !== undefined && filterState.totalCount !== undefined;
+  const showResults =
+    filterState.resultsCount !== undefined &&
+    filterState.totalCount !== undefined;
 
   return (
     <Card className="mb-6 shadow-sm border border-gray-200">
@@ -127,7 +143,9 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
                 disabled={isLoading}
                 className="text-gray-500 hover:text-gray-700"
               >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
+                />
               </Button>
             )}
             {hasActiveFilters && (
@@ -191,7 +209,7 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
             </label>
             <Select
               value={localOptions.pipelineType || 'standard'}
-              onValueChange={(value: 'standard' | 'budget' | 'fast') => 
+              onValueChange={(value: 'standard' | 'budget' | 'fast') =>
                 updateFilter('pipelineType', value)
               }
             >
@@ -211,7 +229,7 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
             <Switch
               id="nonstop-filter"
               checked={localOptions.nonstop || false}
-              onCheckedChange={(checked) => updateFilter('nonstop', checked)}
+              onCheckedChange={checked => updateFilter('nonstop', checked)}
             />
             <label
               htmlFor="nonstop-filter"
@@ -263,7 +281,7 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
                     </label>
                     <Select
                       value={localOptions.currency || 'USD'}
-                      onValueChange={(value) => updateFilter('currency', value)}
+                      onValueChange={value => updateFilter('currency', value)}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -296,20 +314,23 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
                       <label className="text-sm font-medium text-gray-700">
                         Preferred Airlines
                       </label>
-                      {localOptions.airlines && localOptions.airlines.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeFilter('airlines')}
-                          className="h-auto p-1 text-gray-400 hover:text-gray-600"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
+                      {localOptions.airlines &&
+                        localOptions.airlines.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFilter('airlines')}
+                            className="h-auto p-1 text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
                     </div>
                     <AirlineSelector
                       selectedAirlines={localOptions.airlines || []}
-                      onSelectionChange={(airlines) => updateFilter('airlines', airlines)}
+                      onSelectionChange={airlines =>
+                        updateFilter('airlines', airlines)
+                      }
                     />
                   </div>
 
@@ -336,7 +357,9 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
           <>
             <Separator className="my-4" />
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700">Active Filters:</h4>
+              <h4 className="text-sm font-medium text-gray-700">
+                Active Filters:
+              </h4>
               <div className="flex flex-wrap gap-2">
                 {localOptions.budget && (
                   <Badge variant="outline" className="text-xs">
@@ -366,20 +389,21 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
                     </Button>
                   </Badge>
                 )}
-                {localOptions.pipelineType && localOptions.pipelineType !== 'standard' && (
-                  <Badge variant="outline" className="text-xs">
-                    <Filter className="h-3 w-3 mr-1" />
-                    {localOptions.pipelineType} mode
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => updateFilter('pipelineType', 'standard')}
-                      className="h-auto p-0 ml-2 text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
-                )}
+                {localOptions.pipelineType &&
+                  localOptions.pipelineType !== 'standard' && (
+                    <Badge variant="outline" className="text-xs">
+                      <Filter className="h-3 w-3 mr-1" />
+                      {localOptions.pipelineType} mode
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => updateFilter('pipelineType', 'standard')}
+                        className="h-auto p-0 ml-2 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  )}
               </div>
             </div>
           </>

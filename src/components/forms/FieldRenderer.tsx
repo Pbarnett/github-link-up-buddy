@@ -1,7 +1,6 @@
-
 /**
  * Field Renderer Component
- * 
+ *
  * Renders individual form fields based on their type configuration
  * Supports all field types defined in the dynamic forms system
  */
@@ -35,7 +34,7 @@ import {
 import { cn } from '@/lib/utils';
 import type {
   FieldConfiguration,
-  FieldRendererProps
+  FieldRendererProps,
 } from '@/types/dynamic-forms';
 
 // Field-specific components
@@ -46,7 +45,8 @@ import { CountrySelectField } from './fields/CountrySelectField';
 import { PhoneInputField } from './fields/PhoneInputField';
 import { AddressGroupField } from './fields/AddressGroupField';
 
-interface FieldRendererInternalProps extends Omit<FieldRendererProps, 'onChange'> {
+interface FieldRendererInternalProps
+  extends Omit<FieldRendererProps, 'onChange'> {
   fieldIndex: number;
   sectionIndex: number;
   touched?: boolean;
@@ -64,23 +64,21 @@ export const FieldRenderer: FC<FieldRendererInternalProps> = ({
   onChange,
   disabled = false,
   isValid: _isValid = true,
-  className
+  className,
 }) => {
   // Mark unused parameters as intentionally unused
   void _fieldIndex;
   void _sectionIndex;
   void _touched;
   void _isValid;
-  
+
   const form = useFormContext();
 
   // Handle special field types that don't need FormField wrapper
   if (field.type === 'section-header') {
     return (
-      <div className={cn("form-field-header", className)}>
-        <h3 className="text-lg font-semibold text-foreground">
-          {field.label}
-        </h3>
+      <div className={cn('form-field-header', className)}>
+        <h3 className="text-lg font-semibold text-foreground">{field.label}</h3>
         {field.description && (
           <p className="text-sm text-muted-foreground mt-1">
             {field.description}
@@ -92,7 +90,7 @@ export const FieldRenderer: FC<FieldRendererInternalProps> = ({
 
   if (field.type === 'divider') {
     return (
-      <div className={cn("form-field-divider border-t pt-4 mt-4", className)} />
+      <div className={cn('form-field-divider border-t pt-4 mt-4', className)} />
     );
   }
 
@@ -102,16 +100,19 @@ export const FieldRenderer: FC<FieldRendererInternalProps> = ({
       control={form.control}
       name={field.id}
       render={({ field: formField }) => (
-        <FormItem className={cn("form-field", className, field.className)}>
+        <FormItem className={cn('form-field', className, field.className)}>
           {field.label && field.type !== 'checkbox' && (
-            <FormLabel className={cn(
-              "form-field-label",
-              field.validation?.required && "after:content-['*'] after:text-destructive after:ml-1"
-            )}>
+            <FormLabel
+              className={cn(
+                'form-field-label',
+                field.validation?.required &&
+                  "after:content-['*'] after:text-destructive after:ml-1"
+              )}
+            >
               {field.label}
             </FormLabel>
           )}
-          
+
           <FormControl>
             <FieldInput
               field={field}
@@ -130,8 +131,8 @@ export const FieldRenderer: FC<FieldRendererInternalProps> = ({
           )}
 
           {error && (
-            <FormMessage 
-              className="form-field-error" 
+            <FormMessage
+              className="form-field-error"
               id={`${field.id}-error`}
               role="alert"
               aria-live="polite"
@@ -166,7 +167,7 @@ const FieldInput: FC<FieldInputProps> = ({
   value,
   onChange,
   disabled,
-  error
+  error,
 }) => {
   const handleChange = (newValue: unknown) => {
     formField.onChange(newValue);
@@ -182,15 +183,21 @@ const FieldInput: FC<FieldInputProps> = ({
         <Input
           name={formField.name}
           onBlur={formField.onBlur}
-          value={typeof value === 'string' || typeof value === 'number' ? value : ''}
+          value={
+            typeof value === 'string' || typeof value === 'number' ? value : ''
+          }
           type={field.type === 'number' ? 'number' : field.type}
           placeholder={field.placeholder}
           disabled={disabled}
-          onChange={(e) => handleChange(
-            field.type === 'number' ? Number((e.target as HTMLInputElement).value) : (e.target as HTMLInputElement).value
-          )}
-          className={cn(error && "border-destructive")}
-          aria-invalid={error ? "true" : "false"}
+          onChange={e =>
+            handleChange(
+              field.type === 'number'
+                ? Number((e.target as HTMLInputElement).value)
+                : (e.target as HTMLInputElement).value
+            )
+          }
+          className={cn(error && 'border-destructive')}
+          aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? `${field.id}-error` : undefined}
         />
       );
@@ -203,8 +210,8 @@ const FieldInput: FC<FieldInputProps> = ({
           value={typeof value === 'string' ? value : ''}
           placeholder={field.placeholder}
           disabled={disabled}
-          onChange={(e) => handleChange((e.target as HTMLInputElement).value)}
-          className={cn(error && "border-destructive")}
+          onChange={e => handleChange((e.target as HTMLInputElement).value)}
+          className={cn(error && 'border-destructive')}
           rows={4}
         />
       );
@@ -216,13 +223,15 @@ const FieldInput: FC<FieldInputProps> = ({
           value={typeof value === 'string' ? value : ''}
           disabled={disabled}
         >
-          <SelectTrigger className={cn(error && "border-destructive")}>
-            <SelectValue placeholder={field.placeholder || "Select an option"} />
+          <SelectTrigger className={cn(error && 'border-destructive')}>
+            <SelectValue
+              placeholder={field.placeholder || 'Select an option'}
+            />
           </SelectTrigger>
           <SelectContent>
-            {field.options?.map((option) => (
-              <SelectItem 
-                key={option.value.toString()} 
+            {field.options?.map(option => (
+              <SelectItem
+                key={option.value.toString()}
                 value={option.value.toString()}
                 disabled={option.disabled}
               >
@@ -242,7 +251,7 @@ const FieldInput: FC<FieldInputProps> = ({
             checked={typeof value === 'boolean' ? value : false}
             onCheckedChange={handleChange}
             disabled={disabled}
-            className={cn(error && "border-destructive")}
+            className={cn(error && 'border-destructive')}
           />
           {field.label && (
             <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -272,16 +281,18 @@ const FieldInput: FC<FieldInputProps> = ({
       return (
         <div className="space-y-2">
           <Slider
-            value={[typeof value === 'number' ? value : (field.validation?.min || 0)]}
-            onValueChange={(values) => handleChange(values[0])}
+            value={[
+              typeof value === 'number' ? value : field.validation?.min || 0,
+            ]}
+            onValueChange={values => handleChange(values[0])}
             max={field.validation?.max || 100}
             min={field.validation?.min || 0}
             step={1}
             disabled={disabled}
-            className={cn(error && "border-destructive")}
+            className={cn(error && 'border-destructive')}
           />
           <div className="text-sm text-muted-foreground text-center">
-            {typeof value === 'number' ? value : (field.validation?.min || 0)}
+            {typeof value === 'number' ? value : field.validation?.min || 0}
           </div>
         </div>
       );
@@ -324,7 +335,14 @@ const FieldInput: FC<FieldInputProps> = ({
     case 'airport-autocomplete':
       return (
         <AirportAutocompleteField
-          value={value as { code: string; name: string; city?: string; country?: string }}
+          value={
+            value as {
+              code: string;
+              name: string;
+              city?: string;
+              country?: string;
+            }
+          }
           onChange={handleChange}
           placeholder={field.placeholder}
           disabled={disabled}
@@ -347,7 +365,15 @@ const FieldInput: FC<FieldInputProps> = ({
     case 'address-group':
       return (
         <AddressGroupField
-          value={value as { street: string; city: string; state: string; zipCode: string; country: string }}
+          value={
+            value as {
+              street: string;
+              city: string;
+              state: string;
+              zipCode: string;
+              country: string;
+            }
+          }
           onChange={handleChange}
           disabled={disabled}
           error={error}
@@ -357,11 +383,14 @@ const FieldInput: FC<FieldInputProps> = ({
     case 'multi-select':
       return (
         <div className="space-y-2">
-          {field.options?.map((option) => (
-            <div key={option.value.toString()} className="flex items-center space-x-2">
+          {field.options?.map(option => (
+            <div
+              key={option.value.toString()}
+              className="flex items-center space-x-2"
+            >
               <Checkbox
                 checked={Array.isArray(value) && value.includes(option.value)}
-                onCheckedChange={(checked) => {
+                onCheckedChange={checked => {
                   const currentValues = Array.isArray(value) ? value : [];
                   if (checked) {
                     handleChange([...currentValues, option.value]);
@@ -386,8 +415,11 @@ const FieldInput: FC<FieldInputProps> = ({
           onValueChange={handleChange}
           disabled={disabled}
         >
-          {field.options?.map((option) => (
-            <div key={option.value.toString()} className="flex items-center space-x-2">
+          {field.options?.map(option => (
+            <div
+              key={option.value.toString()}
+              className="flex items-center space-x-2"
+            >
               <RadioGroupItem
                 value={option.value.toString()}
                 disabled={option.disabled}
@@ -403,7 +435,7 @@ const FieldInput: FC<FieldInputProps> = ({
     case 'rating':
       return (
         <div className="flex items-center space-x-1">
-          {[1, 2, 3, 4, 5].map((star) => (
+          {[1, 2, 3, 4, 5].map(star => (
             <Button
               key={star}
               type="button"
@@ -430,7 +462,9 @@ const FieldInput: FC<FieldInputProps> = ({
 
     default:
       // Fallback to text input for unknown types
-      console.warn(`Unknown field type: ${field.type}. Falling back to text input.`);
+      console.warn(
+        `Unknown field type: ${field.type}. Falling back to text input.`
+      );
       return (
         <Input
           name={formField.name}
@@ -438,8 +472,8 @@ const FieldInput: FC<FieldInputProps> = ({
           value={typeof value === 'string' ? value : ''}
           placeholder={field.placeholder}
           disabled={disabled}
-          onChange={(e) => handleChange((e.target as HTMLInputElement).value)}
-          className={cn(error && "border-destructive")}
+          onChange={e => handleChange((e.target as HTMLInputElement).value)}
+          className={cn(error && 'border-destructive')}
         />
       );
   }

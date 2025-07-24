@@ -1,13 +1,25 @@
 import React, { useEffect } from 'react';
 import { useFormContext, useWatch, Control } from 'react-hook-form';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { FormValues } from "@/types/form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { Settings, DollarSign, CreditCard, Shield } from 'lucide-react';
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { FormValues } from '@/types/form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 
 interface AutoBookingSectionProps {
   control: Control<FormValues>;
@@ -15,25 +27,26 @@ interface AutoBookingSectionProps {
 }
 
 const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
-  const { data: paymentMethods, isLoading: isLoadingPaymentMethods } = usePaymentMethods();
+  const { data: paymentMethods, isLoading: isLoadingPaymentMethods } =
+    usePaymentMethods();
   const { setValue } = useFormContext<FormValues>();
-  
+
   // Watch the auto_book_enabled field to conditionally show fields
   const autoBookEnabled = useWatch({
     control,
-    name: "auto_book_enabled",
+    name: 'auto_book_enabled',
   });
 
   // Watch max_price for display
   const maxPrice = useWatch({
     control,
-    name: "max_price",
+    name: 'max_price',
   });
 
   // For auto mode, auto-booking should be enabled and section should be expanded
   const isAutoMode = mode === 'auto';
   const shouldShowFields = isAutoMode || autoBookEnabled;
-  
+
   // In manual mode, automatically set consent when auto-booking is enabled
   // This simulates the UI behavior where enabling auto-booking implies consent
   useEffect(() => {
@@ -54,10 +67,9 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
           <CardTitle className="text-lg">Auto-Booking</CardTitle>
         </div>
         <p className="text-sm text-gray-600">
-          {isAutoMode 
-            ? "Configure automatic booking when flights match your criteria"
-            : "Automatically book flights when they meet your criteria"
-          }
+          {isAutoMode
+            ? 'Configure automatic booking when flights match your criteria'
+            : 'Automatically book flights when they meet your criteria'}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -97,10 +109,14 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">Price Limit</span>
+                  <span className="text-sm font-medium text-blue-900">
+                    Price Limit
+                  </span>
                 </div>
                 <p className="text-sm text-blue-700">
-                  We'll only buy if the fare is <span className="font-semibold">${maxPrice || 1000}</span> or less.
+                  We'll only buy if the fare is{' '}
+                  <span className="font-semibold">${maxPrice || 1000}</span> or
+                  less.
                 </p>
               </div>
             )}
@@ -113,36 +129,43 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
                 <FormItem>
                   <FormLabel className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4" />
-                    Payment Method {isAutoMode && <span className="text-red-500">*</span>}
+                    Payment Method{' '}
+                    {isAutoMode && <span className="text-red-500">*</span>}
                   </FormLabel>
-            <Select 
-              onValueChange={field.onChange} 
-              value={field.value || ""}
-              disabled={isLoadingPaymentMethods}
-              name={field.name}
-            >
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ''}
+                    disabled={isLoadingPaymentMethods}
+                    name={field.name}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={
-                          isLoadingPaymentMethods 
-                            ? "Loading payment methods..." 
-                            : paymentMethods.length === 0
-                              ? "No payment method on file — add one to continue."
-                              : "Select payment method"
-                        } />
+                        <SelectValue
+                          placeholder={
+                            isLoadingPaymentMethods
+                              ? 'Loading payment methods...'
+                              : paymentMethods.length === 0
+                                ? 'No payment method on file — add one to continue.'
+                                : 'Select payment method'
+                          }
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {paymentMethods.map((method) => (
+                      {paymentMethods.map(method => (
                         <SelectItem key={method.id} value={method.id}>
                           <div className="flex items-center gap-2">
                             <span className="capitalize">{method.brand}</span>
                             <span>••{method.last4}</span>
                             {method.is_default && (
-                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Default</span>
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                                Default
+                              </span>
                             )}
                             {method.nickname && (
-                              <span className="text-xs text-gray-500">({method.nickname})</span>
+                              <span className="text-xs text-gray-500">
+                                ({method.nickname})
+                              </span>
                             )}
                           </div>
                         </SelectItem>
@@ -179,7 +202,9 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel className="text-sm font-medium">
-                          I authorize Parker Flight to charge my saved card and issue the ticket automatically when the above criteria are met. I can void within 24 h.
+                          I authorize Parker Flight to charge my saved card and
+                          issue the ticket automatically when the above criteria
+                          are met. I can void within 24 h.
                         </FormLabel>
                       </div>
                     </div>

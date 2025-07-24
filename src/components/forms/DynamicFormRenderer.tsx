@@ -1,7 +1,6 @@
-
 /**
  * Dynamic Form Renderer
- * 
+ *
  * Core component that renders forms from configuration data
  * Integrates with React Hook Form and Zod for validation
  */
@@ -11,12 +10,15 @@ import { useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { DynamicFormRendererProps, FormSubmissionData } from '@/types/dynamic-forms';
+import type {
+  DynamicFormRendererProps,
+  FormSubmissionData,
+} from '@/types/dynamic-forms';
 import { useFormConfiguration } from '@/hooks/useFormConfiguration';
 import { useFormState } from '@/hooks/useFormState';
 import { generateZodSchema } from '@/lib/form-validation';
@@ -33,17 +35,17 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
   onValidationError,
   className,
   disabled = false,
-  showValidationSummary = true
+  showValidationSummary = true,
 }) => {
   // Load configuration if not provided
   const {
     configuration: loadedConfiguration,
     loading: configLoading,
-    error: configError
+    error: configError,
   } = useFormConfiguration({
     configId,
     configName,
-    enabled: !providedConfiguration
+    enabled: !providedConfiguration,
   });
 
   // Use provided configuration or loaded configuration
@@ -58,9 +60,9 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
   // Initialize React Hook Form with proper default values
   const defaultValues = useMemo(() => {
     if (!configuration) return {};
-    
+
     const defaults: Record<string, unknown> = {};
-    
+
     configuration.sections.forEach(section => {
       section.fields.forEach(field => {
         if (field.defaultValue !== undefined) {
@@ -94,7 +96,7 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
         }
       });
     });
-    
+
     return defaults;
   }, [configuration]);
 
@@ -103,7 +105,7 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
     resolver: validationSchema ? zodResolver(validationSchema) : undefined,
     defaultValues,
     mode: 'onChange',
-    reValidateMode: 'onChange'
+    reValidateMode: 'onChange',
   });
 
   // Destructure formState properties for proper Proxy subscription
@@ -116,14 +118,14 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
     clearError,
     validateForm,
     isFieldVisible,
-    isFieldEnabled
+    isFieldEnabled,
   } = useFormState(configuration, form);
 
   // Handle field changes
   const handleFieldChange = (fieldId: string, value: unknown) => {
     setValue(fieldId, value);
     onFieldChange?.(fieldId, value);
-    
+
     // Clear field error when value changes
     if (errors[fieldId]) {
       clearError(fieldId);
@@ -131,15 +133,16 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
   };
 
   // Handle form submission
-  const handleSubmit = form.handleSubmit(async (data) => {
+  const handleSubmit = form.handleSubmit(async data => {
     try {
       if (!validateForm()) {
         onValidationError?.(
           Object.fromEntries(
             Object.entries(errors).map(([key, error]) => {
-              const errorMessage = error && typeof error === 'object' && 'message' in error 
-                ? (error as { message?: string }).message 
-                : 'Invalid value';
+              const errorMessage =
+                error && typeof error === 'object' && 'message' in error
+                  ? (error as { message?: string }).message
+                  : 'Invalid value';
               return [key, errorMessage || 'Invalid value'];
             })
           )
@@ -158,8 +161,8 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
               submittedAt: new Date().toISOString(),
               userAgent: navigator.userAgent,
               formVersion: configuration.version,
-              instanceId: `form-${Date.now()}`
-            }
+              instanceId: `form-${Date.now()}`,
+            },
           };
           await onSubmit(submissionData);
         } else {
@@ -196,14 +199,14 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
   // Get visible sections
   const visibleSections = configuration.sections.filter(section => {
     if (!section.conditional) return true;
-    
+
     // Evaluate conditional logic for sections
     // This will be implemented in the conditional logic engine
     return true; // For now, show all sections
   });
 
   return (
-    <div className={cn("dynamic-form-renderer", className)}>
+    <div className={cn('dynamic-form-renderer', className)}>
       <FormProvider {...form}>
         <Form {...form}>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -226,12 +229,15 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  <div className="font-medium mb-2">Please fix the following errors:</div>
+                  <div className="font-medium mb-2">
+                    Please fix the following errors:
+                  </div>
                   <ul className="list-disc list-inside space-y-1">
                     {Object.entries(errors).map(([field, error]) => {
-                      const errorMessage = error && typeof error === 'object' && 'message' in error 
-                        ? (error as { message?: string }).message 
-                        : `Invalid value for ${field}`;
+                      const errorMessage =
+                        error && typeof error === 'object' && 'message' in error
+                          ? (error as { message?: string }).message
+                          : `Invalid value for ${field}`;
                       return (
                         <li key={field} className="text-sm">
                           {errorMessage || `Invalid value for ${field}`}

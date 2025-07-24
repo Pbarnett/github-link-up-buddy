@@ -1,6 +1,6 @@
 /**
  * Secure OAuth Login Component
- * 
+ *
  * React component for OAuth authentication with secure credential management.
  * Integrates with AWS Secrets Manager and Supabase edge functions.
  */
@@ -13,7 +13,7 @@ import { supabaseClient } from '@/lib/supabase';
 // OAuth provider icons (you can replace with actual icons)
 const ProviderIcons = {
   google: '🔍',
-  github: '🐙', 
+  github: '🐙',
   discord: '🎮',
   microsoft: '🪟',
 };
@@ -48,103 +48,125 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
   /**
    * Complete OAuth flow after callback
    */
-  const completeOAuthFlow = useCallback(async (provider: string, code: string, state: string) => {
-    try {
-      setState(prev => ({ ...prev, loading: true, currentProvider: provider }));
+  const completeOAuthFlow = useCallback(
+    async (provider: string, code: string, state: string) => {
+      try {
+        setState(prev => ({
+          ...prev,
+          loading: true,
+          currentProvider: provider,
+        }));
 
-      // Validate state parameter
-      const storedState = sessionStorage.getItem('oauth_state');
-      const storedProvider = sessionStorage.getItem('oauth_provider');
-      const codeVerifier = sessionStorage.getItem('oauth_code_verifier');
+        // Validate state parameter
+        const storedState = sessionStorage.getItem('oauth_state');
+        const storedProvider = sessionStorage.getItem('oauth_provider');
+        const codeVerifier = sessionStorage.getItem('oauth_code_verifier');
 
-      if (!storedState || !OAuthUtils.validateState(state, storedState)) {
-        throw new Error('Invalid OAuth state parameter - possible CSRF attack');
-      }
-
-      if (storedProvider !== provider) {
-        throw new Error('OAuth provider mismatch');
-      }
-
-      // Call secure OAuth callback edge function
-      const callbackUrl = new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/oauth-callback-secure`);
-      callbackUrl.searchParams.set('provider', provider);
-      callbackUrl.searchParams.set('code', code);
-      callbackUrl.searchParams.set('state', state);
-      callbackUrl.searchParams.set('redirect_uri', `${window.location.origin}/auth/callback`);
-      
-      if (codeVerifier) {
-        callbackUrl.searchParams.set('code_verifier', codeVerifier);
-      }
-
-      const response = await fetch(callbackUrl.toString(), {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `OAuth callback failed: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'OAuth authentication failed');
-      }
-
-      // Clear OAuth session storage
-      sessionStorage.removeItem('oauth_state');
-      sessionStorage.removeItem('oauth_code_verifier');
-      sessionStorage.removeItem('oauth_provider');
-
-      // Set Supabase session (use a different method as setSession may not exist)
-      if (result.session?.access_token) {
-        // Try to set the session, but handle if method doesn't exist
-        try {
-          if ('setSession' in supabaseClient.auth) {
-            await supabaseClient.auth.setSession({
-              access_token: result.session.access_token,
-              refresh_token: result.session.refresh_token,
-            });
-          }
-        } catch (authError) {
-          console.warn('Could not set session:', authError);
+        if (!storedState || !OAuthUtils.validateState(state, storedState)) {
+          throw new Error(
+            'Invalid OAuth state parameter - possible CSRF attack'
+          );
         }
+
+        if (storedProvider !== provider) {
+          throw new Error('OAuth provider mismatch');
+        }
+
+        // Call secure OAuth callback edge function
+        const callbackUrl = new URL(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/oauth-callback-secure`
+        );
+        callbackUrl.searchParams.set('provider', provider);
+        callbackUrl.searchParams.set('code', code);
+        callbackUrl.searchParams.set('state', state);
+        callbackUrl.searchParams.set(
+          'redirect_uri',
+          `${window.location.origin}/auth/callback`
+        );
+
+        if (codeVerifier) {
+          callbackUrl.searchParams.set('code_verifier', codeVerifier);
+        }
+
+        const response = await fetch(callbackUrl.toString(), {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || `OAuth callback failed: ${response.status}`
+          );
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || 'OAuth authentication failed');
+        }
+
+        // Clear OAuth session storage
+        sessionStorage.removeItem('oauth_state');
+        sessionStorage.removeItem('oauth_code_verifier');
+        sessionStorage.removeItem('oauth_provider');
+
+        // Set Supabase session (use a different method as setSession may not exist)
+        if (result.session?.access_token) {
+          // Try to set the session, but handle if method doesn't exist
+          try {
+            if ('setSession' in supabaseClient.auth) {
+              await supabaseClient.auth.setSession({
+                access_token: result.session.access_token,
+                refresh_token: result.session.refresh_token,
+              });
+            }
+          } catch (authError) {
+            console.warn('Could not set session:', authError);
+          }
+        }
+
+        setState({
+          loading: false,
+          error: null,
+          currentProvider: null,
+        });
+
+        // Call success callback
+        onSuccess?.(result.user, result.session);
+
+        // Clean up URL parameters
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
+
+        // Redirect to dashboard or specified URL
+        if (redirectTo && redirectTo !== window.location.pathname) {
+          window.location.href = redirectTo;
+        }
+      } catch (error) {
+        console.error('OAuth completion failed:', error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'OAuth authentication failed';
+
+        setState({
+          loading: false,
+          error: errorMessage,
+          currentProvider: null,
+        });
+
+        onError?.(errorMessage);
       }
-
-      setState({
-        loading: false,
-        error: null,
-        currentProvider: null,
-      });
-
-      // Call success callback
-      onSuccess?.(result.user, result.session);
-
-      // Clean up URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname);
-
-      // Redirect to dashboard or specified URL
-      if (redirectTo && redirectTo !== window.location.pathname) {
-        window.location.href = redirectTo;
-      }
-
-    } catch (error) {
-      console.error('OAuth completion failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'OAuth authentication failed';
-      
-      setState({
-        loading: false,
-        error: errorMessage,
-        currentProvider: null,
-      });
-      
-      onError?.(errorMessage);
-    }
-  }, [onSuccess, onError, redirectTo]);
+    },
+    [onSuccess, onError, redirectTo]
+  );
 
   /**
    * Handle OAuth callback from URL parameters
@@ -185,8 +207,13 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
       });
 
       // Generate authorization URL with PKCE
-      const { url, state: oauthState, codeVerifier } = await oauthServiceSecure
-        .getAuthorizationUrl(provider as 'google' | 'github' | 'discord' | 'microsoft');
+      const {
+        url,
+        state: oauthState,
+        codeVerifier,
+      } = await oauthServiceSecure.getAuthorizationUrl(
+        provider as 'google' | 'github' | 'discord' | 'microsoft'
+      );
 
       // Store OAuth state and code verifier in session storage
       sessionStorage.setItem('oauth_state', oauthState);
@@ -197,22 +224,21 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
 
       // Redirect to OAuth provider
       window.location.href = url;
-
     } catch (error) {
       console.error(`OAuth initiation failed for ${provider}:`, error);
-      const errorMessage = error instanceof Error ? error.message : 'OAuth initiation failed';
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'OAuth initiation failed';
+
       setState(prev => ({
         ...prev,
         loading: false,
         error: errorMessage,
         currentProvider: null,
       }));
-      
+
       onError?.(errorMessage);
     }
   };
-
 
   /**
    * Render OAuth provider button
@@ -246,7 +272,11 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
           </>
         ) : (
           <>
-            <span className="text-xl" role="img" aria-label={`${displayName} icon`}>
+            <span
+              className="text-xl"
+              role="img"
+              aria-label={`${displayName} icon`}
+            >
               {icon}
             </span>
             <span className="text-sm font-medium text-gray-900">
@@ -273,9 +303,7 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
               <h3 className="text-sm font-medium text-red-800">
                 Authentication Error
               </h3>
-              <div className="mt-2 text-sm text-red-700">
-                {state.error}
-              </div>
+              <div className="mt-2 text-sm text-red-700">{state.error}</div>
             </div>
             <div className="ml-auto pl-3">
               <button
@@ -335,14 +363,19 @@ export const useSecureOAuth = () => {
         return;
       }
 
-      const { data: { session }, error } = await supabaseClient.auth.getSession();
-      
+      const {
+        data: { session },
+        error,
+      } = await supabaseClient.auth.getSession();
+
       if (error) {
         throw error;
       }
 
       if (session) {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        const {
+          data: { user },
+        } = await supabaseClient.auth.getUser();
         setAuthState({
           user,
           session,

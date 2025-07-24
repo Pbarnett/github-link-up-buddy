@@ -1,5 +1,3 @@
-
-
 type FormEvent = React.FormEvent;
 
 import * as React from 'react';
@@ -48,7 +46,7 @@ function AddCardForm({ onSuccess, onClose }: AddCardFormProps) {
   const elements = useElements();
   const { createSetupIntent, refreshPaymentMethods } = useWallet();
   const { toast } = useToast();
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cardComplete, setCardComplete] = useState(false);
@@ -71,19 +69,17 @@ function AddCardForm({ onSuccess, onClose }: AddCardFormProps) {
     try {
       // Create setup intent
       const setupIntentResponse = await createSetupIntent();
-      
+
       // Confirm setup intent with card
-      const { error: confirmError, setupIntent } = await stripe.confirmCardSetup(
-        setupIntentResponse.client_secret,
-        {
+      const { error: confirmError, setupIntent } =
+        await stripe.confirmCardSetup(setupIntentResponse.client_secret, {
           payment_method: {
             card: card,
             billing_details: {
               // Add billing details if needed
             },
           },
-        }
-      );
+        });
 
       if (confirmError) {
         throw new Error(confirmError.message);
@@ -92,16 +88,18 @@ function AddCardForm({ onSuccess, onClose }: AddCardFormProps) {
       if (setupIntent && setupIntent.status === 'succeeded') {
         // Refresh payment methods to show the new card
         await refreshPaymentMethods();
-        
+
         toast({
           title: 'Card added successfully',
-          description: 'Your new payment method has been saved and is ready to use.',
+          description:
+            'Your new payment method has been saved and is ready to use.',
         });
-        
+
         onSuccess();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to add card';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to add card';
       setError(errorMessage);
       toast({
         title: 'Error',
@@ -145,7 +143,8 @@ function AddCardForm({ onSuccess, onClose }: AddCardFormProps) {
         <Alert>
           <Shield className="h-4 w-4" />
           <AlertDescription>
-            Your card information is securely processed by Stripe. We never store your full card details.
+            Your card information is securely processed by Stripe. We never
+            store your full card details.
           </AlertDescription>
         </Alert>
       </div>
@@ -154,8 +153,8 @@ function AddCardForm({ onSuccess, onClose }: AddCardFormProps) {
         <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           disabled={!stripe || !cardComplete || loading}
           className="min-w-[120px]"
         >
@@ -173,7 +172,11 @@ function AddCardForm({ onSuccess, onClose }: AddCardFormProps) {
   );
 }
 
-export function AddCardModal({ isOpen, onClose, onSuccess }: AddCardModalProps) {
+export function AddCardModal({
+  isOpen,
+  onClose,
+  onSuccess,
+}: AddCardModalProps) {
   const handleSuccess = () => {
     onSuccess();
     onClose();
@@ -191,7 +194,7 @@ export function AddCardModal({ isOpen, onClose, onSuccess }: AddCardModalProps) 
             Add a new credit or debit card to your wallet for faster checkout.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Card>
           <CardContent className="pt-6">
             <Elements stripe={stripePromise}>

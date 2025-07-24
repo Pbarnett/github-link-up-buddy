@@ -1,21 +1,25 @@
-
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+} from '@/components/ui/popover';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface DateRangeFieldProps {
   control: Control<{
@@ -43,7 +47,7 @@ const DateRangeField = ({ control }: DateRangeFieldProps) => {
           </Tooltip>
         </TooltipProvider>
       </div>
-      
+
       <div className="flex items-center gap-3">
         <div className="flex-1">
           <FormField
@@ -55,14 +59,14 @@ const DateRangeField = ({ control }: DateRangeFieldProps) => {
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
-                        variant={"outline"}
+                        variant={'outline'}
                         className={cn(
-                          "w-full h-11 pl-3 text-left font-normal border-gray-300 hover:bg-gray-50",
-                          !field.value && "text-muted-foreground"
+                          'w-full h-11 pl-3 text-left font-normal border-gray-300 hover:bg-gray-50',
+                          !field.value && 'text-muted-foreground'
                         )}
                       >
                         {field.value ? (
-                          format(field.value, "MMM dd")
+                          format(field.value, 'MMM dd')
                         ) : (
                           <span>Earliest</span>
                         )}
@@ -70,12 +74,15 @@ const DateRangeField = ({ control }: DateRangeFieldProps) => {
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-white z-50" align="start">
+                  <PopoverContent
+                    className="w-auto p-0 bg-white z-50"
+                    align="start"
+                  >
                     <Calendar
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
-                      disabled={(date) =>
+                      disabled={date =>
                         date < new Date(new Date().setHours(0, 0, 0, 0))
                       }
                       initialFocus
@@ -88,9 +95,9 @@ const DateRangeField = ({ control }: DateRangeFieldProps) => {
             )}
           />
         </div>
-        
+
         <ArrowRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
-        
+
         <div className="flex-1">
           <FormField
             control={control}
@@ -101,14 +108,14 @@ const DateRangeField = ({ control }: DateRangeFieldProps) => {
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
-                        variant={"outline"}
+                        variant={'outline'}
                         className={cn(
-                          "w-full h-11 pl-3 text-left font-normal border-gray-300 hover:bg-gray-50",
-                          !field.value && "text-muted-foreground"
+                          'w-full h-11 pl-3 text-left font-normal border-gray-300 hover:bg-gray-50',
+                          !field.value && 'text-muted-foreground'
                         )}
                       >
                         {field.value ? (
-                          format(field.value, "MMM dd")
+                          format(field.value, 'MMM dd')
                         ) : (
                           <span>Latest</span>
                         )}
@@ -116,12 +123,15 @@ const DateRangeField = ({ control }: DateRangeFieldProps) => {
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-white z-50" align="start">
+                  <PopoverContent
+                    className="w-auto p-0 bg-white z-50"
+                    align="start"
+                  >
                     <Calendar
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
-                      disabled={(date) =>
+                      disabled={date =>
                         date < new Date(new Date().setHours(0, 0, 0, 0))
                       }
                       initialFocus

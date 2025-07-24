@@ -1,16 +1,29 @@
-
 /**
  * Field Template Library Component
- * 
+ *
  * Provides a library of field templates for form building
  */
 
 import * as React from 'react';
 import { useState } from 'react';
-import { 
-  Type, Mail, Phone, Hash, Calendar, MapPin, List, 
-  CheckSquare, ToggleLeft, SlidersHorizontal, Star, Upload, 
-  Plane, Globe, CreditCard, Minus, FileText
+import {
+  Type,
+  Mail,
+  Phone,
+  Hash,
+  Calendar,
+  MapPin,
+  List,
+  CheckSquare,
+  ToggleLeft,
+  SlidersHorizontal,
+  Star,
+  Upload,
+  Plane,
+  Globe,
+  CreditCard,
+  Minus,
+  FileText,
 } from 'lucide-react';
 
 type _Component<P = {}, S = {}> = React.Component<P, S>;
@@ -38,8 +51,8 @@ const fieldTemplates: FieldTemplate[] = [
     category: 'basic',
     defaultConfig: {
       placeholder: 'Enter text...',
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
   {
     type: 'textarea',
@@ -49,8 +62,8 @@ const fieldTemplates: FieldTemplate[] = [
     category: 'basic',
     defaultConfig: {
       placeholder: 'Enter text...',
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
   {
     type: 'email',
@@ -60,8 +73,8 @@ const fieldTemplates: FieldTemplate[] = [
     category: 'basic',
     defaultConfig: {
       placeholder: 'Enter email address',
-      validation: { required: false, email: true }
-    }
+      validation: { required: false, email: true },
+    },
   },
   {
     type: 'phone',
@@ -71,8 +84,8 @@ const fieldTemplates: FieldTemplate[] = [
     category: 'basic',
     defaultConfig: {
       placeholder: 'Enter phone number',
-      validation: { required: false, phone: true }
-    }
+      validation: { required: false, phone: true },
+    },
   },
   {
     type: 'number',
@@ -82,8 +95,8 @@ const fieldTemplates: FieldTemplate[] = [
     category: 'basic',
     defaultConfig: {
       placeholder: 'Enter number',
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
   {
     type: 'password',
@@ -93,8 +106,8 @@ const fieldTemplates: FieldTemplate[] = [
     category: 'basic',
     defaultConfig: {
       placeholder: 'Enter password',
-      validation: { required: false, minLength: 8 }
-    }
+      validation: { required: false, minLength: 8 },
+    },
   },
 
   // Selection Fields
@@ -109,10 +122,10 @@ const fieldTemplates: FieldTemplate[] = [
       options: [
         { label: 'Option 1', value: 'option1' },
         { label: 'Option 2', value: 'option2' },
-        { label: 'Option 3', value: 'option3' }
+        { label: 'Option 3', value: 'option3' },
       ],
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
   {
     type: 'multi-select',
@@ -125,10 +138,10 @@ const fieldTemplates: FieldTemplate[] = [
       options: [
         { label: 'Option 1', value: 'option1' },
         { label: 'Option 2', value: 'option2' },
-        { label: 'Option 3', value: 'option3' }
+        { label: 'Option 3', value: 'option3' },
       ],
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
   {
     type: 'checkbox',
@@ -137,8 +150,8 @@ const fieldTemplates: FieldTemplate[] = [
     icon: 'CheckSquare',
     category: 'basic',
     defaultConfig: {
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
   {
     type: 'switch',
@@ -147,8 +160,8 @@ const fieldTemplates: FieldTemplate[] = [
     icon: 'ToggleLeft',
     category: 'basic',
     defaultConfig: {
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
 
   // Date Fields
@@ -160,8 +173,8 @@ const fieldTemplates: FieldTemplate[] = [
     category: 'advanced',
     defaultConfig: {
       placeholder: 'Select date',
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
   {
     type: 'datetime',
@@ -171,8 +184,8 @@ const fieldTemplates: FieldTemplate[] = [
     category: 'advanced',
     defaultConfig: {
       placeholder: 'Select date and time',
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
   {
     type: 'date-range',
@@ -182,8 +195,8 @@ const fieldTemplates: FieldTemplate[] = [
     category: 'advanced',
     defaultConfig: {
       placeholder: 'Select date range',
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
   {
     type: 'date-range-flexible',
@@ -193,8 +206,8 @@ const fieldTemplates: FieldTemplate[] = [
     category: 'advanced',
     defaultConfig: {
       placeholder: 'Select date range or flexible',
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
 
   // Specialized Fields
@@ -209,9 +222,9 @@ const fieldTemplates: FieldTemplate[] = [
       validation: { required: false },
       apiIntegration: {
         endpoint: '/api/airports',
-        method: 'GET'
-      }
-    }
+        method: 'GET',
+      },
+    },
   },
   {
     type: 'country-select',
@@ -221,8 +234,8 @@ const fieldTemplates: FieldTemplate[] = [
     category: 'special',
     defaultConfig: {
       placeholder: 'Select country',
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
   {
     type: 'address-group',
@@ -231,8 +244,8 @@ const fieldTemplates: FieldTemplate[] = [
     icon: 'MapPin',
     category: 'special',
     defaultConfig: {
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
   {
     type: 'slider',
@@ -241,8 +254,8 @@ const fieldTemplates: FieldTemplate[] = [
     icon: 'Slider',
     category: 'advanced',
     defaultConfig: {
-      validation: { required: false, min: 0, max: 100 }
-    }
+      validation: { required: false, min: 0, max: 100 },
+    },
   },
   {
     type: 'rating',
@@ -251,8 +264,8 @@ const fieldTemplates: FieldTemplate[] = [
     icon: 'Star',
     category: 'advanced',
     defaultConfig: {
-      validation: { required: false, min: 1, max: 5 }
-    }
+      validation: { required: false, min: 1, max: 5 },
+    },
   },
   {
     type: 'file-upload',
@@ -262,8 +275,8 @@ const fieldTemplates: FieldTemplate[] = [
     category: 'advanced',
     defaultConfig: {
       placeholder: 'Choose file...',
-      validation: { required: false }
-    }
+      validation: { required: false },
+    },
   },
 
   // Payment Fields
@@ -276,9 +289,9 @@ const fieldTemplates: FieldTemplate[] = [
     defaultConfig: {
       validation: { required: false },
       stripeConfig: {
-        appearance: { theme: 'stripe' }
-      }
-    }
+        appearance: { theme: 'stripe' },
+      },
+    },
   },
 
   // Layout Fields
@@ -289,8 +302,8 @@ const fieldTemplates: FieldTemplate[] = [
     icon: 'Type',
     category: 'basic',
     defaultConfig: {
-      description: 'Section description'
-    }
+      description: 'Section description',
+    },
   },
   {
     type: 'divider',
@@ -298,8 +311,8 @@ const fieldTemplates: FieldTemplate[] = [
     description: 'Visual separator',
     icon: 'Minus',
     category: 'basic',
-    defaultConfig: {}
-  }
+    defaultConfig: {},
+  },
 ];
 
 // Icon mapping
@@ -320,27 +333,32 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Globe,
   CreditCard,
   Minus,
-  FileText
+  FileText,
 };
 
 export const FieldTemplateLibrary: FC<FieldTemplateLibraryProps> = ({
   onFieldSelect,
-  disabled = false
+  disabled = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // Filter templates
   const filteredTemplates = fieldTemplates.filter(template => {
-    const matchesSearch = template.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         template.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
-    
+    const matchesSearch =
+      template.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      template.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === 'all' || template.category === selectedCategory;
+
     return matchesSearch && matchesCategory;
   });
 
   // Get unique categories
-  const categories = ['all', ...Array.from(new Set(fieldTemplates.map(t => t.category)))];
+  const categories = [
+    'all',
+    ...Array.from(new Set(fieldTemplates.map(t => t.category))),
+  ];
 
   const handleFieldSelect = (template: FieldTemplate) => {
     if (!disabled) {
@@ -352,12 +370,12 @@ export const FieldTemplateLibrary: FC<FieldTemplateLibraryProps> = ({
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">Field Library</CardTitle>
-        
+
         {/* Search */}
         <Input
           placeholder="Search fields..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery((e.target as HTMLInputElement).value)}
+          onChange={e => setSearchQuery((e.target as HTMLInputElement).value)}
           className="h-8"
         />
 
@@ -385,14 +403,14 @@ export const FieldTemplateLibrary: FC<FieldTemplateLibraryProps> = ({
 
         {filteredTemplates.map(template => {
           const IconComponent = iconMap[template.icon];
-          
+
           return (
             <Button
               key={`${template.type}-${template.label}`}
               variant="outline"
               className={cn(
-                "w-full h-auto p-3 justify-start text-left",
-                disabled && "opacity-50 cursor-not-allowed"
+                'w-full h-auto p-3 justify-start text-left',
+                disabled && 'opacity-50 cursor-not-allowed'
               )}
               onClick={() => handleFieldSelect(template)}
               disabled={disabled}

@@ -1,15 +1,14 @@
-
-import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 // Lookups
-import { airportNames } from "@/data/airportLookup";
-import { airlineNames } from "@/data/airlineLookup";
+import { airportNames } from '@/data/airportLookup';
+import { airlineNames } from '@/data/airlineLookup';
 
 // Utils
-import { combineDateTime } from "@/utils/combineDateTime";
-import { formatLocalDateTime } from "@/utils/formatDateTime";
-import { parseDuration } from "@/utils/parseDuration";
+import { combineDateTime } from '@/utils/combineDateTime';
+import { formatLocalDateTime } from '@/utils/formatDateTime';
+import { parseDuration } from '@/utils/parseDuration';
 
 export interface OfferProps {
   id: string;
@@ -47,26 +46,30 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
   const total = offer.priceStructure?.total ?? offer.price;
 
   // 1. Determine the IATA carrier code
-  const rawFlightNum = offer.flight_number || "";
-  const extractedCarrier = rawFlightNum.match(/^([A-Z]{1,3})/)?.[1] || "";
-  const carrierCode = offer.carrier_code || extractedCarrier.toUpperCase() || offer.airline;
+  const rawFlightNum = offer.flight_number || '';
+  const extractedCarrier = rawFlightNum.match(/^([A-Z]{1,3})/)?.[1] || '';
+  const carrierCode =
+    offer.carrier_code || extractedCarrier.toUpperCase() || offer.airline;
 
   // 2. Determine friendly airline name
-  const friendlyAirline = 
+  const friendlyAirline =
     (carrierCode && airlineNames[carrierCode]) || offer.airline || carrierCode;
 
   // 3. Airport display with fallbacks
   const originLabel =
-    (offer.origin_airport && airportNames[offer.origin_airport]) || 
-    offer.origin_airport || 
-    "Origin";
+    (offer.origin_airport && airportNames[offer.origin_airport]) ||
+    offer.origin_airport ||
+    'Origin';
   const destLabel =
-    (offer.destination_airport && airportNames[offer.destination_airport]) || 
-    offer.destination_airport || 
-    "Destination";
+    (offer.destination_airport && airportNames[offer.destination_airport]) ||
+    offer.destination_airport ||
+    'Destination';
 
   // 4. Combine date + time into ISO strings
-  const departureISO = combineDateTime(offer.departure_date, offer.departure_time);
+  const departureISO = combineDateTime(
+    offer.departure_date,
+    offer.departure_time
+  );
   const returnISO = combineDateTime(offer.return_date, offer.return_time);
 
   // 5. Convert to local, 12-hour format
@@ -74,14 +77,16 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
   const retLocal = formatLocalDateTime(returnISO);
 
   // 6. Parse duration if ISO format, otherwise show as-is
-  const humanDuration = offer.duration.startsWith("PT")
+  const humanDuration = offer.duration.startsWith('PT')
     ? parseDuration(offer.duration)
     : offer.duration;
 
   // Calculate trip duration in days
   const departureDate = new Date(offer.departure_date);
   const returnDate = new Date(offer.return_date);
-  const tripDays = Math.ceil((returnDate.getTime() - departureDate.getTime()) / (1000 * 60 * 60 * 24));
+  const tripDays = Math.ceil(
+    (returnDate.getTime() - departureDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
 
   const handleSelect = () => {
     if (offer.booking_url) {
@@ -90,12 +95,12 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
         airline: offer.airline,
         price: total,
         bookingUrl: offer.booking_url,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-      
+
       toast({
-        title: "Redirecting to " + friendlyAirline,
-        description: "Opening airline website to complete your booking...",
+        title: 'Redirecting to ' + friendlyAirline,
+        description: 'Opening airline website to complete your booking...',
         duration: 3000,
       });
 
@@ -119,11 +124,11 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
     params.set('return_date', offer.return_date);
     params.set('return_time', offer.return_time);
     params.set('duration', offer.duration);
-    
+
     navigate(`/trip/confirm?${params.toString()}`);
-    
+
     toast({
-      title: "Flight Selected",
+      title: 'Flight Selected',
       description: `You've selected ${friendlyAirline} flight ${offer.flight_number} for booking.`,
     });
   };
@@ -145,7 +150,7 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
               {tripDays} day{tripDays === 1 ? '' : 's'}
             </span>
           </div>
-          
+
           {/* Times and Duration */}
           <div className="flex items-center gap-6 text-sm">
             <div>
@@ -158,7 +163,9 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
             </div>
             <div>
               <span className="text-gray-500">Flight:</span>
-              <span className="ml-1 font-medium text-gray-900">{humanDuration}</span>
+              <span className="ml-1 font-medium text-gray-900">
+                {humanDuration}
+              </span>
             </div>
             {offer.carryOnIncluded && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
@@ -181,8 +188,18 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
             aria-label={`Book flight with ${friendlyAirline}`}
           >
             Book Flight
-            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg
+              className="w-4 h-4 ml-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
         </div>

@@ -1,20 +1,23 @@
-
-
-
-import { useTripOffers } from "@/hooks/useTripOffersLegacy";
-import { TripDetails } from "@/hooks/useTripOffers";
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import TripOfferDetailsCard from "@/components/trip/TripOfferDetailsCard";
-import TripOfferList from "@/components/trip/TripOfferList";
-import TripOfferControls from "@/components/trip/TripOfferControls";
-import TripErrorCard from "@/components/trip/TripErrorCard";
-import DebugInfo from "@/components/debug/DebugInfo";
-import TripOffersWithPools from "./TripOffersWithPools";
 import * as React from 'react';
+import { useTripOffers } from '@/hooks/useTripOffersLegacy';
+import { TripDetails } from '@/hooks/useTripOffers';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import TripOfferDetailsCard from '@/components/trip/TripOfferDetailsCard';
+import TripOfferList from '@/components/trip/TripOfferList';
+import TripOfferControls from '@/components/trip/TripOfferControls';
+import TripErrorCard from '@/components/trip/TripErrorCard';
+import DebugInfo from '@/components/debug/DebugInfo';
+import TripOffersWithPools from './TripOffersWithPools';
 
 // Legacy component wrapper for the existing functionality
-const LegacyTripOffers = ({ tripId, initialTripDetails }: { tripId: string; initialTripDetails?: TripDetails }) => {
+const LegacyTripOffers = ({
+  tripId,
+  initialTripDetails,
+}: {
+  tripId: string;
+  initialTripDetails?: TripDetails;
+}) => {
   const {
     offers,
     tripDetails,
@@ -34,9 +37,17 @@ const LegacyTripOffers = ({ tripId, initialTripDetails }: { tripId: string; init
       <TripErrorCard
         message={errorMessage}
         onOverrideSearch={handleOverrideSearch}
-        showOverrideButton={!ignoreFilter && (errorMessage.toLowerCase().includes("no offers") || offers.length === 0)}
+        showOverrideButton={
+          !ignoreFilter &&
+          (errorMessage.toLowerCase().includes('no offers') ||
+            offers.length === 0)
+        }
         onRelaxCriteria={handleRelaxCriteria}
-        showRelaxButton={!usedRelaxedCriteria && (errorMessage.toLowerCase().includes("no offers") || offers.length === 0)}
+        showRelaxButton={
+          !usedRelaxedCriteria &&
+          (errorMessage.toLowerCase().includes('no offers') ||
+            offers.length === 0)
+        }
       />
     );
   }
@@ -73,25 +84,36 @@ const LegacyTripOffers = ({ tripId, initialTripDetails }: { tripId: string; init
 
 export default function TripOffers() {
   const [searchParams] = useSearchParams();
-  const tripId = searchParams.get("id");
+  const tripId = searchParams.get('id');
   const location = useLocation();
   const navigate = useNavigate();
-  const initialTripDetails = location.state?.tripDetails as TripDetails | undefined;
-  
+  const initialTripDetails = location.state?.tripDetails as
+    | TripDetails
+    | undefined;
+
   // Feature flag for V2 UI
-  const flightSearchV2Enabled = useFeatureFlag('flight_search_v2_enabled', false);
+  const flightSearchV2Enabled = useFeatureFlag(
+    'flight_search_v2_enabled',
+    false
+  );
   // Feature flag to determine which UI to show for legacy path
   const enablePools = useFeatureFlag('use_new_pools_ui', false);
-  
+
   // Debug logging to track which implementation is being used
   console.log('[🔍 TRIP-OFFERS-DEBUG] Feature flag enablePools:', enablePools);
-  console.log('[🔍 TRIP-OFFERS-DEBUG] Will use:', enablePools ? 'TripOffersWithPools' : 'LegacyTripOffers');
+  console.log(
+    '[🔍 TRIP-OFFERS-DEBUG] Will use:',
+    enablePools ? 'TripOffersWithPools' : 'LegacyTripOffers'
+  );
 
   useEffect(() => {
     if (flightSearchV2Enabled && tripId) {
       // Preserve existing search params if any, though V2 might not use them
       const currentSearchParams = new URLSearchParams(searchParams);
-      navigate(`/trips/${tripId}/v2?${currentSearchParams.toString()}`, { replace: true, state: location.state });
+      navigate(`/trips/${tripId}/v2?${currentSearchParams.toString()}`, {
+        replace: true,
+        state: location.state,
+      });
     }
   }, [flightSearchV2Enabled, tripId, navigate, searchParams, location.state]);
 
@@ -101,15 +123,18 @@ export default function TripOffers() {
   if (flightSearchV2Enabled || !tripId) {
     // If flightSearchV2Enabled is true, navigation will occur. Show minimal UI.
     // If !tripId, show error or loading.
-    if (!tripId && !flightSearchV2Enabled) { // Only show error if V2 is not going to take over
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                <h2 className="text-xl font-semibold text-gray-900">Trip ID not found</h2>
-                <p className="text-gray-600">Please provide a valid trip ID.</p>
-                </div>
-            </div>
-        );
+    if (!tripId && !flightSearchV2Enabled) {
+      // Only show error if V2 is not going to take over
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Trip ID not found
+            </h2>
+            <p className="text-gray-600">Please provide a valid trip ID.</p>
+          </div>
+        </div>
+      );
     }
     // Render minimal content or null if V2 is enabled and navigation is pending, or if tripId is missing initially.
     // This prevents rendering legacy UI flashes before navigation.
@@ -123,7 +148,10 @@ export default function TripOffers() {
       {enablePools ? (
         <TripOffersWithPools />
       ) : (
-        <LegacyTripOffers tripId={tripId} initialTripDetails={initialTripDetails} />
+        <LegacyTripOffers
+          tripId={tripId}
+          initialTripDetails={initialTripDetails}
+        />
       )}
     </TooltipProvider>
   );

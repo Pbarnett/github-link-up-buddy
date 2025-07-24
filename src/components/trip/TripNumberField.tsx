@@ -1,5 +1,4 @@
-
-import { Control } from "react-hook-form";
+import { Control } from 'react-hook-form';
 import {
   FormControl,
   FormDescription,
@@ -7,14 +6,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 
 // Define the allowed field names as an enum for better extensibility
 export enum TripNumberFieldName {
-  MaxPrice = "max_price",
-  MinDuration = "min_duration",
-  MaxDuration = "max_duration"
+  MaxPrice = 'max_price',
+  MinDuration = 'min_duration',
+  MaxDuration = 'max_duration',
 }
 
 // Form data interface for trip number fields
@@ -35,12 +34,12 @@ interface TripNumberFieldProps {
 }
 
 const TripNumberField = ({
-  name, 
-  label, 
-  description, 
+  name,
+  label,
+  description,
   placeholder,
   prefix,
-  control
+  control,
 }: TripNumberFieldProps) => {
   return (
     <FormField
@@ -48,7 +47,9 @@ const TripNumberField = ({
       name={name}
       render={({ field }) => (
         <FormItem>
-          <FormLabel className="text-sm font-medium text-gray-900">{label}</FormLabel>
+          <FormLabel className="text-sm font-medium text-gray-900">
+            {label}
+          </FormLabel>
           <FormControl>
             {prefix ? (
               <div className="relative">
@@ -60,7 +61,7 @@ const TripNumberField = ({
                   placeholder={placeholder}
                   className="pl-7"
                   {...field}
-                  value={(field.value as number) || ""}
+                  value={(field.value as number) || ''}
                 />
               </div>
             ) : (
@@ -68,7 +69,7 @@ const TripNumberField = ({
                 type="number"
                 placeholder={placeholder}
                 {...field}
-                value={(field.value as number) || ""}
+                value={(field.value as number) || ''}
               />
             )}
           </FormControl>

@@ -43,7 +43,8 @@ if (keyResult.valid) {
 
 // Validate encryption context
 const context = { department: 'engineering', project: 'web-app' };
-const contextResult = AWSCLIParameterValidator.validateEncryptionContext(context);
+const contextResult =
+  AWSCLIParameterValidator.validateEncryptionContext(context);
 if (!contextResult.valid) {
   console.error(`Invalid context: ${contextResult.error}`);
 }
@@ -53,7 +54,7 @@ const encryptParams = {
   keyId: 'alias/my-encryption-key',
   plaintext: 'Hello, World!',
   encryptionContext: { department: 'engineering' },
-  encryptionAlgorithm: 'SYMMETRIC_DEFAULT'
+  encryptionAlgorithm: 'SYMMETRIC_DEFAULT',
 };
 
 const result = AWSCLIParameterValidator.validateEncryptParams(encryptParams);
@@ -75,7 +76,7 @@ validateKeyId(keyId: string): KeyIdValidationResult
 
 // Supported formats:
 // - UUID: "12345678-1234-1234-1234-123456789012"
-// - Alias: "alias/my-key"  
+// - Alias: "alias/my-key"
 // - ARN: "arn:aws:kms:region:account:key/id"
 ```
 
@@ -99,13 +100,13 @@ validateEncryptionContext(context?: Record<string, string>): ValidationResult
 // Validates encryption algorithms
 validateEncryptionAlgorithm(algorithm?: string): ValidationResult
 
-// Validates signing algorithms  
+// Validates signing algorithms
 validateSigningAlgorithm(algorithm?: string): ValidationResult
 
 // Supported encryption algorithms:
 // - SYMMETRIC_DEFAULT
 // - RSAES_OAEP_SHA_1
-// - RSAES_OAEP_SHA_256  
+// - RSAES_OAEP_SHA_256
 // - SM2PKE
 ```
 
@@ -179,7 +180,7 @@ Prevents control character injection while supporting Unicode:
 const badContext = { 'key\x01': 'value' };
 
 // This will pass (Unicode support)
-const goodContext = { 'café': 'résumé' };
+const goodContext = { café: 'résumé' };
 ```
 
 ## Testing
@@ -212,18 +213,22 @@ This validator can be easily integrated into your existing KMS implementations:
 import { AWSCLIParameterValidator } from '@/lib/aws-cli-compatibility';
 
 export class KMSService {
-  async encrypt(keyId: string, plaintext: string, encryptionContext?: Record<string, string>) {
+  async encrypt(
+    keyId: string,
+    plaintext: string,
+    encryptionContext?: Record<string, string>
+  ) {
     // Validate parameters before AWS SDK call
     const validation = AWSCLIParameterValidator.validateEncryptParams({
       keyId,
       plaintext,
-      encryptionContext
+      encryptionContext,
     });
-    
+
     if (!validation.valid) {
       throw new Error(`Parameter validation failed: ${validation.error}`);
     }
-    
+
     // Proceed with AWS SDK call
     return this.kmsClient.encrypt({ KeyId: keyId, Plaintext: plaintext });
   }

@@ -4,16 +4,25 @@
  */
 
 import * as React from 'react';
-import { import { useContext, useEffect, useState, useCallback, useMemo } from 'react';
-  LDProvider, 
-  LDClient, 
+import {
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  createContext,
+  ComponentType,
+} from 'react';
+import {
+  LDProvider,
+  LDClient,
   LDContext,
   useLDClient,
   useFlags,
   useLDClientError,
   withLDProvider,
   LDFlagSet,
-  LDFlagValue
+  LDFlagValue,
 } from '@launchdarkly/react-client-sdk';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { ContextBuilder } from './context-builder';
@@ -33,7 +42,7 @@ const CLIENT_SIDE_CONFIG = {
   streamReconnectDelay: 1000,
   useReport: false,
   withCredentials: false,
-  timeout: 5000
+  timeout: 5000,
 };
 
 interface LaunchDarklyState {
@@ -49,17 +58,22 @@ interface LaunchDarklyContextValue extends LaunchDarklyState {
   getStringFlag: (key: string, defaultValue: string) => string;
   getNumberFlag: (key: string, defaultValue: number) => number;
   getJsonFlag: <T extends any>(key: string, defaultValue: T) => T;
-  
+
   // Analytics methods
   track: (eventName: string, data?: any, metricValue?: number) => void;
   identify: (context: LDContext) => Promise<void>;
-  
+
   // Utility methods
   getAllFlags: () => LDFlagSet;
-  getFlagDetail: (key: string, defaultValue: any) => { value: any; reason?: any };
+  getFlagDetail: (
+    key: string,
+    defaultValue: any
+  ) => { value: any; reason?: any };
 }
 
-const LaunchDarklyContext = createContext<LaunchDarklyContextValue | undefined>(undefined);
+const LaunchDarklyContext = createContext<LaunchDarklyContextValue | undefined>(
+  undefined
+);
 
 // Hook to access LaunchDarkly functionality
 export function useLaunchDarkly(): LaunchDarklyContextValue {
@@ -71,54 +85,74 @@ export function useLaunchDarkly(): LaunchDarklyContextValue {
 }
 
 // Feature flag hooks
-export function useFeatureFlag(flagKey: string, defaultValue: boolean = false): boolean {
+export function useFeatureFlag(
+  flagKey: string,
+  defaultValue: boolean = false
+): boolean {
   const { getBooleanFlag } = useLaunchDarkly();
   return getBooleanFlag(flagKey, defaultValue);
 }
 
-export function useStringFlag(flagKey: string, defaultValue: string = ''): string {
+export function useStringFlag(
+  flagKey: string,
+  defaultValue: string = ''
+): string {
   const { getStringFlag } = useLaunchDarkly();
   return getStringFlag(flagKey, defaultValue);
 }
 
-export function useNumberFlag(flagKey: string, defaultValue: number = 0): number {
+export function useNumberFlag(
+  flagKey: string,
+  defaultValue: number = 0
+): number {
   const { getNumberFlag } = useLaunchDarkly();
   return getNumberFlag(flagKey, defaultValue);
 }
 
-export function useJsonFlag<T extends any>(flagKey: string, defaultValue: T): T {
+export function useJsonFlag<T extends any>(
+  flagKey: string,
+  defaultValue: T
+): T {
   const { getJsonFlag } = useLaunchDarkly();
   return getJsonFlag(flagKey, defaultValue);
 }
 
 // Multi-flag hook for performance
-export function useFeatureFlags(flagKeys: string[]): Record<string, LDFlagValue> {
+export function useFeatureFlags(
+  flagKeys: string[]
+): Record<string, LDFlagValue> {
   const { getAllFlags } = useLaunchDarkly();
   const allFlags = getAllFlags();
-  
+
   return useMemo(() => {
-    return flagKeys.reduce((acc, key) => {
-      acc[key] = allFlags[key];
-      return acc;
-    }, {} as Record<string, LDFlagValue>);
+    return flagKeys.reduce(
+      (acc, key) => {
+        acc[key] = allFlags[key];
+        return acc;
+      },
+      {} as Record<string, LDFlagValue>
+    );
   }, [allFlags, flagKeys]);
 }
 
 // Flag change subscription hook
-export function useFlagChangeListener(flagKey: string, callback: (value: LDFlagValue) => void): void {
+export function useFlagChangeListener(
+  flagKey: string,
+  callback: (value: LDFlagValue) => void
+): void {
   const { client, flags } = useLaunchDarkly();
-  
+
   useEffect(() => {
     if (!client) return;
-    
+
     const listener = (changes: LDFlagSet) => {
       if (changes[flagKey] !== undefined) {
         callback(changes[flagKey]);
       }
     };
-    
+
     client.on('change', listener);
-    
+
     return () => {
       client.off('change', listener);
     };
@@ -139,30 +173,31 @@ export function LaunchDarklyProvider({
   clientSideID,
   options = {},
   context,
-  deferInitialization = false
+  deferInitialization = false,
 }: LaunchDarklyProviderProps): JSX.Element {
   const { user } = useCurrentUser();
   const [isReady, setIsReady] = useState(!deferInitialization);
-  
+
   // Build context from current user and device info
   const ldContext = useMemo(() => {
     if (context) return context;
-    
+
     return ContextBuilder.buildMultiContext({
       userData: user,
       userAgent: navigator.userAgent,
       includeSession: true,
-      includeOrganization: !!user?.organization
+      includeOrganization: !!user?.organization,
     });
   }, [user, context]);
 
   const clientConfig = {
     ...CLIENT_SIDE_CONFIG,
-    ...options
+    ...options,
   };
 
-  const clientID = clientSideID || process.env.NEXT_PUBLIC_LAUNCHDARKLY_CLIENT_ID;
-  
+  const clientID =
+    clientSideID || process.env.NEXT_PUBLIC_LAUNCHDARKLY_CLIENT_ID;
+
   if (!clientID) {
     console.error('LaunchDarkly client ID is required');
     return <>{children}</>;
@@ -185,18 +220,20 @@ export function LaunchDarklyProvider({
       context={ldContext}
       options={clientConfig}
       reactOptions={{
-        useCamelCaseFlagKeys: false
+        useCamelCaseFlagKeys: false,
       }}
     >
-      <LaunchDarklyContextProvider>
-        {children}
-      </LaunchDarklyContextProvider>
+      <LaunchDarklyContextProvider>{children}</LaunchDarklyContextProvider>
     </LDProvider>
   );
 }
 
 // Internal context provider that wraps LaunchDarkly hooks
-function LaunchDarklyContextProvider({ children }: { children: React.ReactNode }): JSX.Element {
+function LaunchDarklyContextProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}): JSX.Element {
   const client = useLDClient();
   const flags = useFlags();
   const error = useLDClientError();
@@ -206,7 +243,7 @@ function LaunchDarklyContextProvider({ children }: { children: React.ReactNode }
     if (client) {
       const handleReady = () => setIsInitialized(true);
       const handleError = () => setIsInitialized(true); // Still mark as initialized on error
-      
+
       if (client.getInitializationState?.() === 'initialized') {
         setIsInitialized(true);
       } else {
@@ -216,91 +253,114 @@ function LaunchDarklyContextProvider({ children }: { children: React.ReactNode }
   }, [client]);
 
   // Flag evaluation methods with error handling
-  const getBooleanFlag = useCallback((key: string, defaultValue: boolean): boolean => {
-    try {
-      return flags[key] !== undefined ? Boolean(flags[key]) : defaultValue;
-    } catch (err) {
-      console.warn(`Error evaluating boolean flag ${key}:`, err);
-      return defaultValue;
-    }
-  }, [flags]);
+  const getBooleanFlag = useCallback(
+    (key: string, defaultValue: boolean): boolean => {
+      try {
+        return flags[key] !== undefined ? Boolean(flags[key]) : defaultValue;
+      } catch (err) {
+        console.warn(`Error evaluating boolean flag ${key}:`, err);
+        return defaultValue;
+      }
+    },
+    [flags]
+  );
 
-  const getStringFlag = useCallback((key: string, defaultValue: string): string => {
-    try {
-      return flags[key] !== undefined ? String(flags[key]) : defaultValue;
-    } catch (err) {
-      console.warn(`Error evaluating string flag ${key}:`, err);
-      return defaultValue;
-    }
-  }, [flags]);
+  const getStringFlag = useCallback(
+    (key: string, defaultValue: string): string => {
+      try {
+        return flags[key] !== undefined ? String(flags[key]) : defaultValue;
+      } catch (err) {
+        console.warn(`Error evaluating string flag ${key}:`, err);
+        return defaultValue;
+      }
+    },
+    [flags]
+  );
 
-  const getNumberFlag = useCallback((key: string, defaultValue: number): number => {
-    try {
-      const value = flags[key];
-      return value !== undefined && !isNaN(Number(value)) ? Number(value) : defaultValue;
-    } catch (err) {
-      console.warn(`Error evaluating number flag ${key}:`, err);
-      return defaultValue;
-    }
-  }, [flags]);
+  const getNumberFlag = useCallback(
+    (key: string, defaultValue: number): number => {
+      try {
+        const value = flags[key];
+        return value !== undefined && !isNaN(Number(value))
+          ? Number(value)
+          : defaultValue;
+      } catch (err) {
+        console.warn(`Error evaluating number flag ${key}:`, err);
+        return defaultValue;
+      }
+    },
+    [flags]
+  );
 
-  const getJsonFlag = useCallback(<T extends any>(key: string, defaultValue: T): T => {
-    try {
-      const value = flags[key];
-      return value !== undefined ? value as T : defaultValue;
-    } catch (err) {
-      console.warn(`Error evaluating JSON flag ${key}:`, err);
-      return defaultValue;
-    }
-  }, [flags]);
+  const getJsonFlag = useCallback(
+    <T extends any>(key: string, defaultValue: T): T => {
+      try {
+        const value = flags[key];
+        return value !== undefined ? (value as T) : defaultValue;
+      } catch (err) {
+        console.warn(`Error evaluating JSON flag ${key}:`, err);
+        return defaultValue;
+      }
+    },
+    [flags]
+  );
 
   // Analytics methods
-  const track = useCallback((eventName: string, data?: any, metricValue?: number): void => {
-    if (!client) {
-      console.warn('LaunchDarkly client not available for tracking');
-      return;
-    }
-    
-    try {
-      if (metricValue !== undefined) {
-        client.track(eventName, data, metricValue);
-      } else {
-        client.track(eventName, data);
+  const track = useCallback(
+    (eventName: string, data?: any, metricValue?: number): void => {
+      if (!client) {
+        console.warn('LaunchDarkly client not available for tracking');
+        return;
       }
-    } catch (err) {
-      console.error(`Error tracking event ${eventName}:`, err);
-    }
-  }, [client]);
 
-  const identify = useCallback(async (context: LDContext): Promise<void> => {
-    if (!client) {
-      console.warn('LaunchDarkly client not available for identification');
-      return;
-    }
-    
-    try {
-      await client.identify(context);
-    } catch (err) {
-      console.error('Error identifying context:', err);
-    }
-  }, [client]);
+      try {
+        if (metricValue !== undefined) {
+          client.track(eventName, data, metricValue);
+        } else {
+          client.track(eventName, data);
+        }
+      } catch (err) {
+        console.error(`Error tracking event ${eventName}:`, err);
+      }
+    },
+    [client]
+  );
+
+  const identify = useCallback(
+    async (context: LDContext): Promise<void> => {
+      if (!client) {
+        console.warn('LaunchDarkly client not available for identification');
+        return;
+      }
+
+      try {
+        await client.identify(context);
+      } catch (err) {
+        console.error('Error identifying context:', err);
+      }
+    },
+    [client]
+  );
 
   // Utility methods
   const getAllFlags = useCallback((): LDFlagSet => {
     return flags || {};
   }, [flags]);
 
-  const getFlagDetail = useCallback((key: string, defaultValue: any) => {
-    try {
-      if (client?.variationDetail) {
-        return client.variationDetail(key, defaultValue);
+  const getFlagDetail = useCallback(
+    (key: string, defaultValue: any) => {
+      try {
+        if (client?.variationDetail) {
+          return client.variationDetail(key, defaultValue);
+        }
+        return { value: flags[key] !== undefined ? flags[key] : defaultValue };
+      } catch (err) {
+        console.warn(`Error getting flag detail for ${key}:`, err);
+        return { value: defaultValue };
       }
-      return { value: flags[key] !== undefined ? flags[key] : defaultValue };
-    } catch (err) {
-      console.warn(`Error getting flag detail for ${key}:`, err);
-      return { value: defaultValue };
-    }
-  }, [client, flags]);
+    },
+    [client, flags]
+  );
 
   const contextValue: LaunchDarklyContextValue = {
     isInitialized,
@@ -314,7 +374,7 @@ function LaunchDarklyContextProvider({ children }: { children: React.ReactNode }
     track,
     identify,
     getAllFlags,
-    getFlagDetail
+    getFlagDetail,
   };
 
   return (
@@ -353,16 +413,25 @@ export class LaunchDarklyErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    console.error('LaunchDarkly Error Boundary caught an error:', error, errorInfo);
+    console.error(
+      'LaunchDarkly Error Boundary caught an error:',
+      error,
+      errorInfo
+    );
   }
 
   render(): React.ReactNode {
     if (this.state.hasError) {
-      return this.props.fallback || (
-        <div>
-          <h2>LaunchDarkly Integration Error</h2>
-          <p>Feature flags are temporarily unavailable. Please refresh the page.</p>
-        </div>
+      return (
+        this.props.fallback || (
+          <div>
+            <h2>LaunchDarkly Integration Error</h2>
+            <p>
+              Feature flags are temporarily unavailable. Please refresh the
+              page.
+            </p>
+          </div>
+        )
       );
     }
 
@@ -376,7 +445,7 @@ export function useFlagPerformance() {
   const [performanceMetrics, setPerformanceMetrics] = useState({
     flagCount: 0,
     initializationTime: 0,
-    lastUpdate: Date.now()
+    lastUpdate: Date.now(),
   });
 
   useEffect(() => {
@@ -384,7 +453,7 @@ export function useFlagPerformance() {
       setPerformanceMetrics(prev => ({
         ...prev,
         flagCount: Object.keys(flags).length,
-        lastUpdate: Date.now()
+        lastUpdate: Date.now(),
       }));
     }
   }, [flags, isInitialized]);
@@ -395,7 +464,7 @@ export function useFlagPerformance() {
 // Development tools hook
 export function useLaunchDarklyDebug() {
   const { client, flags, isInitialized, error } = useLaunchDarkly();
-  
+
   return {
     client,
     flags,
@@ -404,8 +473,10 @@ export function useLaunchDarklyDebug() {
     debugInfo: {
       clientVersion: client?.getVersion?.(),
       flagCount: Object.keys(flags).length,
-      connectionState: client?.getInternalEventEmitter?.() ? 'connected' : 'disconnected',
-      lastUpdated: Date.now()
+      connectionState: client?.getInternalEventEmitter?.()
+        ? 'connected'
+        : 'disconnected',
+      lastUpdated: Date.now(),
     },
     // Debug methods
     dumpFlags: () => {
@@ -416,8 +487,8 @@ export function useLaunchDarklyDebug() {
         initialized: isInitialized,
         error: error?.message,
         flagCount: Object.keys(flags).length,
-        client: client
+        client: client,
       });
-    }
+    },
   };
 }

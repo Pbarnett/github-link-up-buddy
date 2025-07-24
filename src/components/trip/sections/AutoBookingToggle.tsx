@@ -1,12 +1,11 @@
-
-import { Control } from "react-hook-form";
-import { 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel
-} from "@/components/ui/form";
-import { Switch } from "@/components/ui/switch";
+import { Control } from 'react-hook-form';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
 
 // Auto-booking form data interface
 interface AutoBookingFormData {
@@ -34,10 +33,7 @@ const AutoBookingToggle = ({ control }: AutoBookingToggleProps) => {
             </div>
           </div>
           <FormControl>
-            <Switch
-              checked={field.value}
-              onCheckedChange={field.onChange}
-            />
+            <Switch checked={field.value} onCheckedChange={field.onChange} />
           </FormControl>
         </FormItem>
       )}

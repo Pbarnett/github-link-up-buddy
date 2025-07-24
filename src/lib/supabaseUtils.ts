@@ -1,8 +1,7 @@
-
 import {
   PostgrestResponse,
   PostgrestSingleResponse,
-  PostgrestMaybeSingleResponse
+  PostgrestMaybeSingleResponse,
 } from '@supabase/supabase-js';
 import { toast } from '@/components/ui/use-toast';
 
@@ -20,7 +19,7 @@ interface QueryResult<T> {
  *   safeQuery(() => supabase.from('table').select(...))
  *
  * This ensures type safety and proper promise behavior.
- * 
+ *
  * NOTE: This function handles both .single()/.maybeSingle() queries returning a single item T,
  * and .select() queries returning arrays T[]. The implementation uses Array.isArray(data)
  * to correctly type the return data.
@@ -41,12 +40,12 @@ export async function safeQuery<T>(
     showErrorToast: true,
     ...options,
   };
-  
+
   try {
     // Convert the query result to a promise if it's not already
     const promiseResult = Promise.resolve(queryFn());
     const { data, error } = await promiseResult;
-    
+
     if (error) {
       if (defaultOptions.showErrorToast) {
         toast({
@@ -55,14 +54,14 @@ export async function safeQuery<T>(
           variant: 'destructive',
         });
       }
-      
+
       return {
         data: null,
         error: new Error(error.message || defaultOptions.errorMessage),
         loading: false,
       };
     }
-    
+
     // For array responses (from .select())
     if (Array.isArray(data)) {
       return {
@@ -71,7 +70,7 @@ export async function safeQuery<T>(
         loading: false,
       } as QueryResult<T[]>;
     }
-    
+
     // For single object responses (from .single() or .maybeSingle())
     return {
       data,
@@ -80,7 +79,7 @@ export async function safeQuery<T>(
     } as QueryResult<T>;
   } catch (err) {
     const error = err instanceof Error ? err : new Error(String(err));
-    
+
     if (defaultOptions.showErrorToast) {
       toast({
         title: 'Error',
@@ -88,7 +87,7 @@ export async function safeQuery<T>(
         variant: 'destructive',
       });
     }
-    
+
     return {
       data: null,
       error,

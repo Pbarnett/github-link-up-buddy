@@ -1,10 +1,12 @@
 import { vi } from 'vitest';
 
 // Enhanced Supabase mock that properly handles method chaining
-export function createMockSupabaseClient(customMocks: Record<string, any> = {}) {
+export function createMockSupabaseClient(
+  customMocks: Record<string, any> = {}
+) {
   // Mock data that can be customized per test
   const defaultData = [{ id: '123', name: 'TestData' }];
-  
+
   // Create chainable query builder mock
   const createQueryBuilder = (data = defaultData, error = null) => ({
     select: vi.fn(() => createQueryBuilder(data, error)),
@@ -40,7 +42,7 @@ export function createMockSupabaseClient(customMocks: Record<string, any> = {}) 
     single: vi.fn(() => Promise.resolve({ data: data[0] || null, error })),
     maybeSingle: vi.fn(() => Promise.resolve({ data: data[0] || null, error })),
     // Make the query builder thenable for direct awaiting
-    then: vi.fn((resolve) => resolve({ data, error })),
+    then: vi.fn(resolve => resolve({ data, error })),
     // Also support promise-like behavior
     data,
     error,
@@ -53,64 +55,71 @@ export function createMockSupabaseClient(customMocks: Record<string, any> = {}) 
       const tableError = customMocks[`${table}_error`] || null;
       return createQueryBuilder(tableData, tableError);
     }),
-    
+
     // Auth mock
     auth: {
       getUser: vi.fn().mockResolvedValue({
         data: { user: { id: 'test-user', email: 'test@example.com' } },
-        error: null
+        error: null,
       }),
       signUp: vi.fn().mockResolvedValue({
         data: { user: { id: 'test-user' }, session: null },
-        error: null
+        error: null,
       }),
       signInWithPassword: vi.fn().mockResolvedValue({
-        data: { user: { id: 'test-user' }, session: { access_token: 'test-token' } },
-        error: null
+        data: {
+          user: { id: 'test-user' },
+          session: { access_token: 'test-token' },
+        },
+        error: null,
       }),
       signOut: vi.fn().mockResolvedValue({ error: null }),
       onAuthStateChange: vi.fn().mockReturnValue({
-        data: { subscription: { unsubscribe: vi.fn() } }
+        data: { subscription: { unsubscribe: vi.fn() } },
       }),
       getSession: vi.fn().mockResolvedValue({
         data: { session: { access_token: 'test-token' } },
-        error: null
-      })
+        error: null,
+      }),
     },
 
     // Storage mock
     storage: {
       from: vi.fn(() => ({
-        upload: vi.fn().mockResolvedValue({ data: { path: 'test-path' }, error: null }),
+        upload: vi
+          .fn()
+          .mockResolvedValue({ data: { path: 'test-path' }, error: null }),
         download: vi.fn().mockResolvedValue({ data: new Blob(), error: null }),
         remove: vi.fn().mockResolvedValue({ data: null, error: null }),
         list: vi.fn().mockResolvedValue({ data: [], error: null }),
-        getPublicUrl: vi.fn().mockReturnValue({ 
-          data: { publicUrl: 'https://test.com/test.jpg' } 
+        getPublicUrl: vi.fn().mockReturnValue({
+          data: { publicUrl: 'https://test.com/test.jpg' },
         }),
         createSignedUrl: vi.fn().mockResolvedValue({
           data: { signedUrl: 'https://test.com/signed' },
-          error: null
-        })
-      }))
+          error: null,
+        }),
+      })),
     },
 
     // Functions mock
     functions: {
-      invoke: vi.fn().mockResolvedValue({ data: { result: 'success' }, error: null })
+      invoke: vi
+        .fn()
+        .mockResolvedValue({ data: { result: 'success' }, error: null }),
     },
 
     // Channel mock for real-time
     channel: vi.fn(() => ({
       on: vi.fn().mockReturnThis(),
       subscribe: vi.fn().mockReturnValue(Promise.resolve('SUBSCRIBED')),
-      unsubscribe: vi.fn().mockReturnValue(Promise.resolve('CLOSED'))
+      unsubscribe: vi.fn().mockReturnValue(Promise.resolve('CLOSED')),
     })),
 
     // Other utility methods
     removeAllChannels: vi.fn(),
     getChannels: vi.fn().mockReturnValue([]),
-    
+
     // Allow direct access to mock functions for test assertions
     _mockFunctions: {
       from: vi.fn(),
@@ -118,21 +127,24 @@ export function createMockSupabaseClient(customMocks: Record<string, any> = {}) 
         getUser: vi.fn(),
         signUp: vi.fn(),
         signInWithPassword: vi.fn(),
-        signOut: vi.fn()
-      }
-    }
+        signOut: vi.fn(),
+      },
+    },
   };
 }
 
 // Enhanced mock for hooks that use Supabase
-export const mockSupabaseHook = (hookName: string, customReturnValue: any = {}) => {
+export const mockSupabaseHook = (
+  hookName: string,
+  customReturnValue: any = {}
+) => {
   const defaultReturnValue = {
     data: null,
     error: null,
     loading: false,
     refetch: vi.fn(),
     mutate: vi.fn(),
-    ...customReturnValue
+    ...customReturnValue,
   };
 
   return vi.fn(() => defaultReturnValue);
@@ -143,7 +155,7 @@ export const createMockSupabaseError = (message: string, code?: string) => ({
   message,
   code,
   details: null,
-  hint: null
+  hint: null,
 });
 
 // Utility to reset all Supabase mocks

@@ -1,37 +1,41 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { SmartErrorBoundary } from "@/components/ErrorBoundary";
-import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
-import { WalletProvider } from "@/contexts/WalletContext";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useRetryQueue } from "@/utils/retryQueue";
-import "@/utils/devAuth";
-import "@/utils/authTest";
-import RadixThemeProvider from "./components/providers/RadixThemeProvider";
-import { BusinessRulesProvider } from "./hooks/useBusinessRules";
-import { FormAnalyticsDashboard } from "./components/forms/analytics/FormAnalyticsDashboard";
-import AuthGuard from "./components/AuthGuard";
-import Breadcrumbs from "./components/navigation/Breadcrumbs";
-import TopNavigation from "./components/navigation/TopNavigation";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import TripNew from "./pages/TripNew";
-import TripOffers from "./pages/TripOffers";
-import TripOffersV2 from "./pages/TripOffersV2";
-import TripConfirm from "./pages/TripConfirm";
-import Profile from "./pages/Profile";
-import Wallet from "./pages/Wallet";
-import DuffelTest from "./pages/DuffelTest";
-import AutoBookingDashboard from "./pages/AutoBookingDashboard";
-import AutoBookingNew from "./pages/AutoBookingNew";
-import AdminDashboard from "./pages/AdminDashboard";
-import DynamicFormTest from "./pages/DynamicFormTest";
-import NotFound from "./pages/NotFound";
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { SmartErrorBoundary } from '@/components/ErrorBoundary';
+import { PersonalizationProvider } from '@/contexts/PersonalizationContext';
+import { WalletProvider } from '@/contexts/WalletContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useRetryQueue } from '@/utils/retryQueue';
+import '@/utils/devAuth';
+import '@/utils/authTest';
 import { SecureFlightBooking } from '@/components/booking/SecureFlightBooking';
-import TestBooking from '@/pages/TestBooking';
-import SimpleTestBooking from '@/pages/SimpleTestBooking';
+import RadixThemeProvider from './components/providers/RadixThemeProvider';
+import { BusinessRulesProvider } from './hooks/useBusinessRules';
+import { FormAnalyticsDashboard } from './components/forms/analytics/FormAnalyticsDashboard';
+import AuthGuard from './components/AuthGuard';
+import Breadcrumbs from './components/navigation/Breadcrumbs';
+import TopNavigation from './components/navigation/TopNavigation';
+import Index from './pages/Index';
+import Login from './pages/Login';
+import TripNew from './pages/TripNew';
+import TripOffers from './pages/TripOffers';
+import TripOffersV2 from './pages/TripOffersV2';
+import TripConfirm from './pages/TripConfirm';
+import Profile from './pages/Profile';
+import Wallet from './pages/Wallet';
+import DuffelTest from './pages/DuffelTest';
+import AutoBookingDashboard from './pages/AutoBookingDashboard';
+import AutoBookingNew from './pages/AutoBookingNew';
+import AdminDashboard from './pages/AdminDashboard';
+import DynamicFormTest from './pages/DynamicFormTest';
+import NotFound from './pages/NotFound';
 import React, { useEffect } from 'react';
 
 type ReactNode = React.ReactNode;
@@ -49,26 +53,27 @@ const queryClient = new QueryClient({
 const NavigationWrapper = () => {
   const location = useLocation();
   const shouldHideFindFlights = location.pathname === '/trip/new';
-  
+
   return <TopNavigation hideFindFlights={shouldHideFindFlights} />;
 };
 
 // Breadcrumbs wrapper to conditionally hide on certain pages
 const BreadcrumbsWrapper = () => {
   const location = useLocation();
-  const shouldHideBreadcrumbs = 
-    location.pathname === '/auto-booking' || 
+  const shouldHideBreadcrumbs =
+    location.pathname === '/auto-booking' ||
     location.pathname === '/auto-booking/new' ||
     location.pathname === '/dashboard' ||
     location.pathname === '/admin' ||
     location.pathname === '/search' ||
     location.pathname === '/trip/new' ||
-    location.pathname.includes('/trips/') && location.pathname.includes('/v2'); // Hide on flight results pages
-  
+    (location.pathname.includes('/trips/') &&
+      location.pathname.includes('/v2')); // Hide on flight results pages
+
   if (shouldHideBreadcrumbs) {
     return null;
   }
-  
+
   return <Breadcrumbs />;
 };
 
@@ -76,12 +81,12 @@ const BreadcrumbsWrapper = () => {
 const GlobalMiddleware = ({ children }: { children: ReactNode }) => {
   // Initialize retry queue
   useRetryQueue();
-  
+
   // Initialize monitoring (already done in monitoring.ts)
   useEffect(() => {
     console.log('🚀 Parker Flight global middleware initialized');
   }, []);
-  
+
   return <>{children}</>;
 };
 
@@ -107,10 +112,10 @@ const App = () => {
                 <a href="#main" className="skip-link">
                   Skip to content
                 </a>
-                <BrowserRouter 
+                <BrowserRouter
                   future={{
                     v7_startTransition: true,
-                    v7_relativeSplatPath: true
+                    v7_relativeSplatPath: true,
                   }}
                 >
                   <PersonalizationWrapper>
@@ -131,7 +136,9 @@ const App = () => {
                           />
                           <Route
                             path="/trip/new"
-                            element={<Navigate to="/auto-booking/new" replace />}
+                            element={
+                              <Navigate to="/auto-booking/new" replace />
+                            }
                           />
                           <Route
                             path="/search"
@@ -173,7 +180,8 @@ const App = () => {
                               </AuthGuard>
                             }
                           />
-                          <Route path="/trips/:tripId/v2"
+                          <Route
+                            path="/trips/:tripId/v2"
                             element={
                               <AuthGuard>
                                 <TripOffersV2 />

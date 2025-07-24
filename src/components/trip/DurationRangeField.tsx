@@ -1,10 +1,20 @@
-
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Slider } from "@/components/ui/slider";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Input } from "@/components/ui/input";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Input } from '@/components/ui/input';
 
 // Duration range form data interface
 interface DurationRangeFormData {
@@ -20,23 +30,23 @@ interface DurationRangeFieldProps {
 const DurationRangeField = ({ control }: DurationRangeFieldProps) => {
   const { setValue, watch } = useFormContext();
   const isMobile = useIsMobile();
-  const minDuration = watch("min_duration");
-  const maxDuration = watch("max_duration");
+  const minDuration = watch('min_duration');
+  const maxDuration = watch('max_duration');
 
   const presetDurations = [
-    { label: "3 days", min: 3, max: 3 },
-    { label: "5 days", min: 5, max: 5 },
-    { label: "7 days", min: 7, max: 7 },
+    { label: '3 days', min: 3, max: 3 },
+    { label: '5 days', min: 5, max: 5 },
+    { label: '7 days', min: 7, max: 7 },
   ];
 
   const handlePresetClick = (preset: { min: number; max: number }) => {
-    setValue("min_duration", preset.min, { shouldValidate: true });
-    setValue("max_duration", preset.max, { shouldValidate: true });
+    setValue('min_duration', preset.min, { shouldValidate: true });
+    setValue('max_duration', preset.max, { shouldValidate: true });
   };
 
   const handleSliderChange = (values: number[]) => {
-    setValue("min_duration", values[0], { shouldValidate: true });
-    setValue("max_duration", values[1], { shouldValidate: true });
+    setValue('min_duration', values[0], { shouldValidate: true });
+    setValue('max_duration', values[1], { shouldValidate: true });
   };
 
   if (isMobile) {
@@ -57,9 +67,9 @@ const DurationRangeField = ({ control }: DurationRangeFieldProps) => {
             </Tooltip>
           </TooltipProvider>
         </div>
-        
+
         <div className="flex gap-3 mb-3">
-          {presetDurations.map((preset) => (
+          {presetDurations.map(preset => (
             <Button
               key={preset.label}
               type="button"
@@ -67,8 +77,8 @@ const DurationRangeField = ({ control }: DurationRangeFieldProps) => {
               size="sm"
               className={`h-9 ${
                 minDuration === preset.min && maxDuration === preset.max
-                  ? "bg-blue-50 border-blue-300 text-blue-700"
-                  : ""
+                  ? 'bg-blue-50 border-blue-300 text-blue-700'
+                  : ''
               }`}
               onClick={() => handlePresetClick(preset)}
             >
@@ -76,7 +86,7 @@ const DurationRangeField = ({ control }: DurationRangeFieldProps) => {
             </Button>
           ))}
         </div>
-        
+
         <div className="grid grid-cols-2 gap-3">
           <FormField
             control={control}
@@ -97,7 +107,7 @@ const DurationRangeField = ({ control }: DurationRangeFieldProps) => {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={control}
             name="max_duration"
@@ -139,9 +149,9 @@ const DurationRangeField = ({ control }: DurationRangeFieldProps) => {
           </Tooltip>
         </TooltipProvider>
       </div>
-      
+
       <div className="flex gap-2 mb-4">
-        {presetDurations.map((preset) => (
+        {presetDurations.map(preset => (
           <Button
             key={preset.label}
             type="button"
@@ -149,8 +159,8 @@ const DurationRangeField = ({ control }: DurationRangeFieldProps) => {
             size="sm"
             className={`h-8 px-3 text-xs ${
               minDuration === preset.min && maxDuration === preset.max
-                ? "bg-blue-50 border-blue-300 text-blue-700"
-                : ""
+                ? 'bg-blue-50 border-blue-300 text-blue-700'
+                : ''
             }`}
             onClick={() => handlePresetClick(preset)}
           >
@@ -158,7 +168,7 @@ const DurationRangeField = ({ control }: DurationRangeFieldProps) => {
           </Button>
         ))}
       </div>
-      
+
       <div className="px-2">
         <Slider
           value={[minDuration || 3, maxDuration || 7]}

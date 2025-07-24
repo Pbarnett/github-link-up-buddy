@@ -4,7 +4,7 @@ import * as Sentry from '@sentry/react';
 import { asyncWithLDProvider } from 'launchdarkly-react-client-sdk';
 import { ThemeProvider } from 'next-themes';
 import App from './App.tsx';
-import { SmartErrorBoundary } from './components/ErrorBoundary';
+import {} from './components/ErrorBoundary';
 import './index.css';
 
 // Initialize Sentry
@@ -24,8 +24,14 @@ Sentry.init({
 // Temporary debug logging
 console.log('🔍 Environment Variables at App Startup:');
 console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
-console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'MISSING');
-console.log('VITE_STRIPE_PUBLISHABLE_KEY:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'SET' : 'MISSING');
+console.log(
+  'VITE_SUPABASE_ANON_KEY:',
+  import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'MISSING'
+);
+console.log(
+  'VITE_STRIPE_PUBLISHABLE_KEY:',
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'SET' : 'MISSING'
+);
 
 if (import.meta.env.VITE_SUPABASE_URL?.includes('127.0.0.1')) {
   console.log('❌ Still using LOCAL Supabase instance');
@@ -52,5 +58,5 @@ if (import.meta.env.VITE_SUPABASE_URL?.includes('127.0.0.1')) {
       </ThemeProvider>
     </LDProvider>
   );
-  createRoot(document.getElementById("root")!).render(<WrappedApp />);
+  createRoot(document.getElementById('root')!).render(<WrappedApp />);
 })();

@@ -1,5 +1,3 @@
-
-
 import * as React from 'react';
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 type ReactNode = React.ReactNode;

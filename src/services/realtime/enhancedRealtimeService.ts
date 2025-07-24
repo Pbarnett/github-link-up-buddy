@@ -1,15 +1,16 @@
-
-
 /**
  * Enhanced Real-time Service for Supabase Operations
  * Provides targeted subscriptions, connection monitoring, and specialized methods
  */
 
-
-import { SupabaseClient, RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import {
+  SupabaseClient,
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+} from '@supabase/supabase-js';
+import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database, Tables } from '@/types/database';
-import * as React from 'react';
 
 interface SubscriptionOptions {
   schema?: string;
@@ -82,7 +83,7 @@ export class RealtimeService {
         .limit(1);
 
       const isHealthy = !error;
-      
+
       if (!isHealthy && this.connectionState.isConnected) {
         console.warn('🔗 Realtime connection health check failed');
         this.connectionState.isConnected = false;
@@ -109,7 +110,7 @@ export class RealtimeService {
     this.unsubscribe(channelName);
 
     const channel = supabase.channel(channelName);
-    
+
     // Configure the subscription based on options
     if (options.table) {
       channel.on(
@@ -120,7 +121,7 @@ export class RealtimeService {
           table: options.table,
           filter: options.filter,
         },
-        (payload) => {
+        payload => {
           console.log(`📡 Realtime event on ${options.table}:`, payload);
           callback(payload);
         }
@@ -128,23 +129,26 @@ export class RealtimeService {
     }
 
     // Handle subscription state changes
-    channel.on('system', {}, (payload) => {
+    channel.on('system', {}, payload => {
       console.log('📡 Realtime system event:', payload);
-      
+
       if (payload.status === 'SUBSCRIBED') {
         this.connectionState.isConnected = true;
         this.connectionState.lastConnected = Date.now();
         this.connectionState.connectionAttempts = 0;
-      } else if (payload.status === 'CLOSED' || payload.status === 'TIMED_OUT') {
+      } else if (
+        payload.status === 'CLOSED' ||
+        payload.status === 'TIMED_OUT'
+      ) {
         this.connectionState.isConnected = false;
         this.handleReconnect(channelName, options, callback);
       }
     });
 
     // Subscribe and store the channel
-    channel.subscribe((status) => {
+    channel.subscribe(status => {
       console.log(`📡 Subscription status for ${channelName}:`, status);
-      
+
       if (status === 'SUBSCRIBED') {
         this.connectionState.isConnected = true;
         this.connectionState.lastConnected = Date.now();
@@ -165,15 +169,23 @@ export class RealtimeService {
     options: SubscriptionOptions,
     callback: (payload: RealtimePostgresChangesPayload<Tables<T>>) => void
   ): void {
-    if (this.connectionState.connectionAttempts >= this.connectionState.maxReconnectAttempts) {
+    if (
+      this.connectionState.connectionAttempts >=
+      this.connectionState.maxReconnectAttempts
+    ) {
       console.error(`❌ Max reconnection attempts reached for ${channelName}`);
       return;
     }
 
     this.connectionState.connectionAttempts++;
-    const _delay = Math.min(this.connectionState.connectionAttempts * 1000, 30000);
+    const _delay = Math.min(
+      this.connectionState.connectionAttempts * 1000,
+      30000
+    );
 
-    console.log(`🔄 Attempting to reconnect ${channelName} in ${delay}ms (attempt ${this.connectionState.connectionAttempts})`);
+    console.log(
+      `🔄 Attempting to reconnect ${channelName} in ${delay}ms (attempt ${this.connectionState.connectionAttempts})`
+    );
 
     this.reconnectTimer = setTimeout(() => {
       this.subscribe(channelName, options, callback);
@@ -201,7 +213,7 @@ export class RealtimeService {
     }
 
     console.log('🔄 Reconnecting all realtime channels');
-    
+
     // Note: In a real implementation, you'd need to store the subscription options
     // to be able to recreate the subscriptions. For now, we just clear them.
     this.channels.forEach((channel, channelName) => {
@@ -400,7 +412,10 @@ export function useRealtimeSubscription<T = any>(
 }
 
 // Specialized hooks for common use cases
-export function useUserBookings(userId: string, callback: (payload: any) => void) {
+export function useUserBookings(
+  userId: string,
+  callback: (payload: any) => void
+) {
   return useRealtimeSubscription(
     `user_bookings_${userId}`,
     { table: 'booking_requests', filter: `user_id=eq.${userId}` },
@@ -409,7 +424,10 @@ export function useUserBookings(userId: string, callback: (payload: any) => void
   );
 }
 
-export function useUserNotifications(userId: string, callback: (payload: any) => void) {
+export function useUserNotifications(
+  userId: string,
+  callback: (payload: any) => void
+) {
   return useRealtimeSubscription(
     `user_notifications_${userId}`,
     { table: 'notifications', filter: `user_id=eq.${userId}` },
@@ -418,7 +436,10 @@ export function useUserNotifications(userId: string, callback: (payload: any) =>
   );
 }
 
-export function useTripRequests(userId: string, callback: (payload: any) => void) {
+export function useTripRequests(
+  userId: string,
+  callback: (payload: any) => void
+) {
   return useRealtimeSubscription(
     `trip_requests_${userId}`,
     { table: 'trip_requests', filter: `user_id=eq.${userId}` },

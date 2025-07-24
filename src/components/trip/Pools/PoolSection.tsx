@@ -1,10 +1,12 @@
-
-
 import * as React from 'react';
 type ReactNode = React.ReactNode;
 type FC<T = {}> = React.FC<T>;
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import PoolHeader from './PoolHeader';
 
 interface PoolSectionProps {
@@ -18,7 +20,7 @@ const PoolSection: FC<PoolSectionProps> = ({
   name,
   count,
   defaultOpen = false,
-  children
+  children,
 }) => {
   return (
     <Collapsible defaultOpen={defaultOpen} className="w-full">

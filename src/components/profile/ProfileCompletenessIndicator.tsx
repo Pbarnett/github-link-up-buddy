@@ -7,10 +7,16 @@ import {
   Phone,
   MapPin,
   FileText,
-  Award
+  Award,
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -44,18 +50,18 @@ interface ProfileCompletenessIndicatorProps {
 
 const categoryIcons = {
   basic: User,
-  contact: Phone, 
+  contact: Phone,
   travel: MapPin,
   payment: CreditCard,
-  verification: FileText
+  verification: FileText,
 };
 
 const categoryLabels = {
   basic: 'Basic Information',
-  contact: 'Contact Details', 
+  contact: 'Contact Details',
   travel: 'Travel Preferences',
   payment: 'Payment Methods',
-  verification: 'Identity Verification'
+  verification: 'Identity Verification',
 };
 
 export function ProfileCompletenessIndicator({
@@ -63,37 +69,47 @@ export function ProfileCompletenessIndicator({
   onFieldClick,
   showFieldList = true,
   compact = false,
-  className = ''
+  className = '',
 }: ProfileCompletenessIndicatorProps) {
-  const { completionPercentage, completedFields, totalFields, fields, tier = 'basic' } = data;
-  
+  const {
+    completionPercentage,
+    completedFields,
+    totalFields,
+    fields,
+    tier = 'basic',
+  } = data;
 
   const getTierBadge = (tier: string) => {
     const variants = {
       basic: { variant: 'secondary' as const, label: 'Basic Profile' },
       complete: { variant: 'default' as const, label: 'Complete Profile' },
-      verified: { variant: 'default' as const, label: 'Verified Profile' }
+      verified: { variant: 'default' as const, label: 'Verified Profile' },
     };
-    
+
     return variants[tier as keyof typeof variants] || variants.basic;
   };
 
-  const groupedFields = fields.reduce((groups, field) => {
-    if (!groups[field.category]) {
-      groups[field.category] = [];
-    }
-    groups[field.category].push(field);
-    return groups;
-  }, {} as Record<string, ProfileField[]>);
+  const groupedFields = fields.reduce(
+    (groups, field) => {
+      if (!groups[field.category]) {
+        groups[field.category] = [];
+      }
+      groups[field.category].push(field);
+      return groups;
+    },
+    {} as Record<string, ProfileField[]>
+  );
 
-  const incompleteCriticalFields = fields.filter(f => f.required && !f.completed);
+  const incompleteCriticalFields = fields.filter(
+    f => f.required && !f.completed
+  );
 
   if (compact) {
     return (
       <div className={`flex items-center gap-3 ${className}`}>
         <div className="flex-1">
-          <Progress 
-            value={completionPercentage} 
+          <Progress
+            value={completionPercentage}
             className="h-2"
             aria-label={`Profile ${completionPercentage}% complete`}
           />
@@ -121,9 +137,7 @@ export function ProfileCompletenessIndicator({
               {completedFields} of {totalFields} fields completed
             </CardDescription>
           </div>
-          <Badge {...getTierBadge(tier)}>
-            {getTierBadge(tier).label}
-          </Badge>
+          <Badge {...getTierBadge(tier)}>{getTierBadge(tier).label}</Badge>
         </div>
       </CardHeader>
 
@@ -138,13 +152,13 @@ export function ProfileCompletenessIndicator({
               <CheckCircle2 className="h-5 w-5 text-green-600" />
             )}
           </div>
-          
-          <Progress 
-            value={completionPercentage} 
+
+          <Progress
+            value={completionPercentage}
             className="h-3"
             aria-label={`Profile ${completionPercentage}% complete`}
           />
-          
+
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>0%</span>
             <span>50%</span>
@@ -158,10 +172,12 @@ export function ProfileCompletenessIndicator({
             <AlertCircle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
               <span className="font-medium">
-                {incompleteCriticalFields.length} required field{incompleteCriticalFields.length !== 1 ? 's' : ''} missing
+                {incompleteCriticalFields.length} required field
+                {incompleteCriticalFields.length !== 1 ? 's' : ''} missing
               </span>
               <div className="mt-1 text-sm">
-                Complete these to unlock all features: {incompleteCriticalFields.map(f => f.label).join(', ')}
+                Complete these to unlock all features:{' '}
+                {incompleteCriticalFields.map(f => f.label).join(', ')}
               </div>
             </AlertDescription>
           </Alert>
@@ -172,11 +188,10 @@ export function ProfileCompletenessIndicator({
           <Alert className="border-green-200 bg-green-50">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              <span className="font-medium">Great progress!</span> 
-              {completionPercentage === 100 
-                ? " Your profile is complete and you have access to all features."
-                : ` You're almost there - complete your profile to unlock all features.`
-              }
+              <span className="font-medium">Great progress!</span>
+              {completionPercentage === 100
+                ? ' Your profile is complete and you have access to all features.'
+                : ` You're almost there - complete your profile to unlock all features.`}
             </AlertDescription>
           </Alert>
         )}
@@ -187,12 +202,15 @@ export function ProfileCompletenessIndicator({
             <h4 className="text-sm font-medium text-muted-foreground">
               Complete Your Profile
             </h4>
-            
+
             {Object.entries(groupedFields).map(([category, categoryFields]) => {
-              const CategoryIcon = categoryIcons[category as keyof typeof categoryIcons];
-              const completedInCategory = categoryFields.filter(f => f.completed).length;
+              const CategoryIcon =
+                categoryIcons[category as keyof typeof categoryIcons];
+              const completedInCategory = categoryFields.filter(
+                f => f.completed
+              ).length;
               const totalInCategory = categoryFields.length;
-              
+
               return (
                 <div key={category} className="space-y-2">
                   <div className="flex items-center gap-2">
@@ -204,23 +222,26 @@ export function ProfileCompletenessIndicator({
                       {completedInCategory}/{totalInCategory}
                     </Badge>
                   </div>
-                  
+
                   <div className="grid gap-2 pl-6">
-                    {categoryFields.map((field) => (
+                    {categoryFields.map(field => (
                       <div
                         key={field.id}
                         className={`flex items-center justify-between p-2 rounded-md border ${
-                          field.completed 
-                            ? 'bg-green-50 border-green-200' 
-                            : field.required 
-                              ? 'bg-amber-50 border-amber-200' 
+                          field.completed
+                            ? 'bg-green-50 border-green-200'
+                            : field.required
+                              ? 'bg-amber-50 border-amber-200'
                               : 'bg-gray-50 border-gray-200'
                         } ${onFieldClick ? 'cursor-pointer hover:bg-opacity-80' : ''}`}
                         onClick={() => onFieldClick?.(field.id)}
                         role={onFieldClick ? 'button' : undefined}
                         tabIndex={onFieldClick ? 0 : undefined}
-                        onKeyDown={(e) => {
-                          if (onFieldClick && (e.key === 'Enter' || e.key === ' ')) {
+                        onKeyDown={e => {
+                          if (
+                            onFieldClick &&
+                            (e.key === 'Enter' || e.key === ' ')
+                          ) {
                             e.preventDefault();
                             onFieldClick(field.id);
                           }
@@ -231,22 +252,34 @@ export function ProfileCompletenessIndicator({
                           {field.completed ? (
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
                           ) : (
-                            <div className={`h-4 w-4 rounded-full border-2 ${
-                              field.required ? 'border-amber-400' : 'border-gray-300'
-                            }`} />
+                            <div
+                              className={`h-4 w-4 rounded-full border-2 ${
+                                field.required
+                                  ? 'border-amber-400'
+                                  : 'border-gray-300'
+                              }`}
+                            />
                           )}
-                          <span className={`text-sm ${
-                            field.completed ? 'text-green-800' : 'text-gray-700'
-                          }`}>
+                          <span
+                            className={`text-sm ${
+                              field.completed
+                                ? 'text-green-800'
+                                : 'text-gray-700'
+                            }`}
+                          >
                             {field.label}
                             {field.required && !field.completed && (
                               <span className="text-amber-600 ml-1">*</span>
                             )}
                           </span>
                         </div>
-                        
+
                         {onFieldClick && !field.completed && (
-                          <Button size="sm" variant="ghost" className="h-6 px-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 px-2"
+                          >
                             Complete
                           </Button>
                         )}
@@ -262,8 +295,8 @@ export function ProfileCompletenessIndicator({
         {/* Call to Action */}
         {completionPercentage < 100 && onFieldClick && (
           <div className="pt-4 border-t">
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={() => {
                 const nextIncompleteField = fields.find(f => !f.completed);
                 if (nextIncompleteField) {

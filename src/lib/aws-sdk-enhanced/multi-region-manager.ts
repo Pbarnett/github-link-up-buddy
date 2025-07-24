@@ -1,13 +1,13 @@
 /**
  * Multi-Region AWS Service Manager
- * 
+ *
  * Production-grade multi-region support with automatic failover
  * following AWS SDK v3 and Well-Architected Framework best practices.
  */
 
+import { IS_MOCK_MODE } from '../aws-sdk-browser-compat';
 import { EnhancedAWSClientFactory, Environment } from './client-factory';
 import { EnhancedAWSErrorHandler, ErrorCategory } from './error-handling';
-import { IS_MOCK_MODE } from '../aws-sdk-browser-compat';
 
 // Conditionally import AWS SDK commands based on environment
 let KMSClient: any, S3Client: any, DynamoDBClient: any;
@@ -15,20 +15,38 @@ let EncryptCommand: any, DecryptCommand: any, DescribeKeyCommand: any;
 let HeadBucketCommand: any, DescribeTableCommand: any;
 
 if (!IS_MOCK_MODE) {
-  ({ KMSClient, EncryptCommand, DecryptCommand, DescribeKeyCommand } = require('@aws-sdk/client-kms'));
+  ({
+    KMSClient,
+    EncryptCommand,
+    DecryptCommand,
+    DescribeKeyCommand,
+  } = require('@aws-sdk/client-kms'));
   ({ S3Client, HeadBucketCommand } = require('@aws-sdk/client-s3'));
-  ({ DynamoDBClient, DescribeTableCommand } = require('@aws-sdk/client-dynamodb'));
+  ({
+    DynamoDBClient,
+    DescribeTableCommand,
+  } = require('@aws-sdk/client-dynamodb'));
 } else {
   // Mock clients and commands for browser environments
   KMSClient = class MockKMSClient {};
   S3Client = class MockS3Client {};
   DynamoDBClient = class MockDynamoDBClient {};
-  
-  EncryptCommand = class MockEncryptCommand { constructor(public input: any) {} };
-  DecryptCommand = class MockDecryptCommand { constructor(public input: any) {} };
-  DescribeKeyCommand = class MockDescribeKeyCommand { constructor(public input: any) {} };
-  HeadBucketCommand = class MockHeadBucketCommand { constructor(public input: any) {} };
-  DescribeTableCommand = class MockDescribeTableCommand { constructor(public input: any) {} };
+
+  EncryptCommand = class MockEncryptCommand {
+    constructor(public input: any) {}
+  };
+  DecryptCommand = class MockDecryptCommand {
+    constructor(public input: any) {}
+  };
+  DescribeKeyCommand = class MockDescribeKeyCommand {
+    constructor(public input: any) {}
+  };
+  HeadBucketCommand = class MockHeadBucketCommand {
+    constructor(public input: any) {}
+  };
+  DescribeTableCommand = class MockDescribeTableCommand {
+    constructor(public input: any) {}
+  };
 }
 
 // Region configuration interface
@@ -76,7 +94,7 @@ export interface RegionOperationResult<T> {
 
 /**
  * Multi-Region AWS Service Manager
- * 
+ *
  * Features:
  * - Automatic failover between regions
  * - Circuit breaker pattern implementation
@@ -124,7 +142,7 @@ export class MultiRegionAWSManager {
    */
   createKMSClients(): Map<string, KMSClient> {
     const clients = new Map<string, KMSClient>();
-    
+
     this.config.regions
       .filter(region => region.enabled)
       .forEach(regionConfig => {
@@ -134,7 +152,7 @@ export class MultiRegionAWSManager {
           enableMetrics: true,
           enableLogging: this.config.environment !== 'production',
         });
-        
+
         clients.set(regionConfig.region, client);
       });
 
@@ -147,7 +165,7 @@ export class MultiRegionAWSManager {
    */
   createS3Clients(): Map<string, S3Client> {
     const clients = new Map<string, S3Client>();
-    
+
     this.config.regions
       .filter(region => region.enabled)
       .forEach(regionConfig => {
@@ -157,7 +175,7 @@ export class MultiRegionAWSManager {
           enableMetrics: true,
           enableLogging: this.config.environment !== 'production',
         });
-        
+
         clients.set(regionConfig.region, client);
       });
 
@@ -170,7 +188,7 @@ export class MultiRegionAWSManager {
    */
   createDynamoDBClients(): Map<string, DynamoDBClient> {
     const clients = new Map<string, DynamoDBClient>();
-    
+
     this.config.regions
       .filter(region => region.enabled)
       .forEach(regionConfig => {
@@ -180,7 +198,7 @@ export class MultiRegionAWSManager {
           enableMetrics: true,
           enableLogging: this.config.environment !== 'production',
         });
-        
+
         clients.set(regionConfig.region, client);
       });
 
@@ -204,17 +222,21 @@ export class MultiRegionAWSManager {
     const availableRegions = this.getAvailableRegions();
     let lastError: Error | null = null;
 
-    for (let attempt = 1; attempt <= this.config.maxFailoverAttempts; attempt++) {
+    for (
+      let attempt = 1;
+      attempt <= this.config.maxFailoverAttempts;
+      attempt++
+    ) {
       const region = this.selectRegion(availableRegions, attempt);
       const client = clients.get(region);
-      
+
       if (!client) {
         continue;
       }
 
       try {
         const startTime = Date.now();
-        
+
         // Check circuit breaker
         if (!this.isRegionAvailable(region)) {
           continue;
@@ -239,25 +261,34 @@ export class MultiRegionAWSManager {
           latencyMs,
           attempt,
         };
-
       } catch (error) {
         lastError = error as Error;
-        
+
         // Update region health on failure
         this.updateRegionHealth(region, false, Date.now() - Date.now());
-        
+
         // Check if error is retryable across regions
-        const enhancedError = EnhancedAWSErrorHandler.analyzeError(error as Error, service, operationName);
-        
+        const enhancedError = EnhancedAWSErrorHandler.analyzeError(
+          error as Error,
+          service,
+          operationName
+        );
+
         if (!this.shouldRetryInAnotherRegion(enhancedError)) {
           throw error;
         }
 
-        console.warn(`Region ${region} failed for ${service}.${operationName}, attempting failover...`, {
-          error: enhancedError.message,
-          attempt,
-          nextRegion: attempt < this.config.maxFailoverAttempts ? this.selectRegion(availableRegions, attempt + 1) : null,
-        });
+        console.warn(
+          `Region ${region} failed for ${service}.${operationName}, attempting failover...`,
+          {
+            error: enhancedError.message,
+            attempt,
+            nextRegion:
+              attempt < this.config.maxFailoverAttempts
+                ? this.selectRegion(availableRegions, attempt + 1)
+                : null,
+          }
+        );
       }
     }
 
@@ -267,35 +298,53 @@ export class MultiRegionAWSManager {
   /**
    * KMS-specific multi-region operations
    */
-  async kmsEncrypt(keyId: string, plaintext: string | Uint8Array, encryptionContext?: Record<string, string>): Promise<RegionOperationResult<any>> {
+  async kmsEncrypt(
+    keyId: string,
+    plaintext: string | Uint8Array,
+    encryptionContext?: Record<string, string>
+  ): Promise<RegionOperationResult<any>> {
     if (!this.regionClients.has('kms')) {
       this.createKMSClients();
     }
 
-    return this.executeWithFailover('kms', async (client: KMSClient) => {
-      const command = new EncryptCommand({
-        KeyId: keyId,
-        Plaintext: typeof plaintext === 'string' ? new TextEncoder().encode(plaintext) : plaintext,
-        EncryptionContext: encryptionContext,
-      });
-      
-      return await client.send(command);
-    }, 'encrypt');
+    return this.executeWithFailover(
+      'kms',
+      async (client: KMSClient) => {
+        const command = new EncryptCommand({
+          KeyId: keyId,
+          Plaintext:
+            typeof plaintext === 'string'
+              ? new TextEncoder().encode(plaintext)
+              : plaintext,
+          EncryptionContext: encryptionContext,
+        });
+
+        return await client.send(command);
+      },
+      'encrypt'
+    );
   }
 
-  async kmsDecrypt(ciphertextBlob: Uint8Array, encryptionContext?: Record<string, string>): Promise<RegionOperationResult<any>> {
+  async kmsDecrypt(
+    ciphertextBlob: Uint8Array,
+    encryptionContext?: Record<string, string>
+  ): Promise<RegionOperationResult<any>> {
     if (!this.regionClients.has('kms')) {
       this.createKMSClients();
     }
 
-    return this.executeWithFailover('kms', async (client: KMSClient) => {
-      const command = new DecryptCommand({
-        CiphertextBlob: ciphertextBlob,
-        EncryptionContext: encryptionContext,
-      });
-      
-      return await client.send(command);
-    }, 'decrypt');
+    return this.executeWithFailover(
+      'kms',
+      async (client: KMSClient) => {
+        const command = new DecryptCommand({
+          CiphertextBlob: ciphertextBlob,
+          EncryptionContext: encryptionContext,
+        });
+
+        return await client.send(command);
+      },
+      'decrypt'
+    );
   }
 
   async kmsDescribeKey(keyId: string): Promise<RegionOperationResult<any>> {
@@ -303,10 +352,14 @@ export class MultiRegionAWSManager {
       this.createKMSClients();
     }
 
-    return this.executeWithFailover('kms', async (client: KMSClient) => {
-      const command = new DescribeKeyCommand({ KeyId: keyId });
-      return await client.send(command);
-    }, 'describe-key');
+    return this.executeWithFailover(
+      'kms',
+      async (client: KMSClient) => {
+        const command = new DescribeKeyCommand({ KeyId: keyId });
+        return await client.send(command);
+      },
+      'describe-key'
+    );
   }
 
   /**
@@ -343,13 +396,16 @@ export class MultiRegionAWSManager {
 
     switch (this.config.failoverStrategy) {
       case 'round-robin':
-        const index = (this.currentRegionIndex + attempt - 1) % availableRegions.length;
+        const index =
+          (this.currentRegionIndex + attempt - 1) % availableRegions.length;
         return availableRegions[index];
-      
+
       case 'priority':
       case 'latency':
       default:
-        return availableRegions[Math.min(attempt - 1, availableRegions.length - 1)];
+        return availableRegions[
+          Math.min(attempt - 1, availableRegions.length - 1)
+        ];
     }
   }
 
@@ -384,7 +440,11 @@ export class MultiRegionAWSManager {
   /**
    * Update region health based on operation result
    */
-  private updateRegionHealth(region: string, success: boolean, latencyMs: number): void {
+  private updateRegionHealth(
+    region: string,
+    success: boolean,
+    latencyMs: number
+  ): void {
     const health = this.regionHealth.get(region);
     if (!health) return;
 
@@ -393,9 +453,13 @@ export class MultiRegionAWSManager {
 
     if (success) {
       health.healthy = true;
-      health.latencyMs = this.calculateMovingAverage(health.latencyMs, latencyMs, 10);
+      health.latencyMs = this.calculateMovingAverage(
+        health.latencyMs,
+        latencyMs,
+        10
+      );
       health.consecutiveFailures = 0;
-      
+
       // Reset circuit breaker if it was half-open
       if (health.circuitBreakerState === 'HALF_OPEN') {
         health.circuitBreakerState = 'CLOSED';
@@ -417,7 +481,11 @@ export class MultiRegionAWSManager {
   /**
    * Calculate moving average for latency
    */
-  private calculateMovingAverage(current: number, newValue: number, samples: number): number {
+  private calculateMovingAverage(
+    current: number,
+    newValue: number,
+    samples: number
+  ): number {
     return (current * (samples - 1) + newValue) / samples;
   }
 
@@ -454,7 +522,7 @@ export class MultiRegionAWSManager {
       .map(async regionConfig => {
         try {
           const startTime = Date.now();
-          
+
           // Use STS GetCallerIdentity as a lightweight health check
           const healthResult = await EnhancedAWSClientFactory.healthCheck({
             region: regionConfig.region,
@@ -462,8 +530,12 @@ export class MultiRegionAWSManager {
           });
 
           const latencyMs = Date.now() - startTime;
-          
-          this.updateRegionHealth(regionConfig.region, healthResult.healthy, latencyMs);
+
+          this.updateRegionHealth(
+            regionConfig.region,
+            healthResult.healthy,
+            latencyMs
+          );
         } catch (error) {
           this.updateRegionHealth(regionConfig.region, false, 0);
         }
@@ -491,7 +563,8 @@ export class MultiRegionAWSManager {
         latencyMs: health.latencyMs,
         consecutiveFailures: health.consecutiveFailures,
         circuitBreakerState: health.circuitBreakerState,
-        errorRate: health.requestCount > 0 ? (health.errorCount / health.requestCount) : 0,
+        errorRate:
+          health.requestCount > 0 ? health.errorCount / health.requestCount : 0,
         requestCount: health.requestCount,
         lastChecked: health.lastChecked,
       };
@@ -514,7 +587,7 @@ export class MultiRegionAWSManager {
     const regionConfig = this.config.regions.find(r => r.region === region);
     if (regionConfig) {
       regionConfig.enabled = enabled;
-      
+
       if (!enabled) {
         // Mark as unhealthy immediately
         this.updateRegionHealth(region, false, 0);
@@ -545,7 +618,9 @@ export class MultiRegionAWSManager {
 }
 
 // Default multi-region configurations for common patterns
-export const createProductionMultiRegionConfig = (regions: string[]): MultiRegionConfig => ({
+export const createProductionMultiRegionConfig = (
+  regions: string[]
+): MultiRegionConfig => ({
   regions: regions.map((region, index) => ({
     region,
     priority: index + 1,
@@ -563,7 +638,9 @@ export const createProductionMultiRegionConfig = (regions: string[]): MultiRegio
   },
 });
 
-export const createDevelopmentMultiRegionConfig = (regions: string[]): MultiRegionConfig => ({
+export const createDevelopmentMultiRegionConfig = (
+  regions: string[]
+): MultiRegionConfig => ({
   regions: regions.map((region, index) => ({
     region,
     priority: index + 1,
@@ -582,11 +659,15 @@ export const createDevelopmentMultiRegionConfig = (regions: string[]): MultiRegi
 });
 
 // Convenience factory functions
-export const createMultiRegionKMSManager = (regions: string[], environment: Environment = 'production') => {
-  const config = environment === 'production' 
-    ? createProductionMultiRegionConfig(regions)
-    : createDevelopmentMultiRegionConfig(regions);
-    
+export const createMultiRegionKMSManager = (
+  regions: string[],
+  environment: Environment = 'production'
+) => {
+  const config =
+    environment === 'production'
+      ? createProductionMultiRegionConfig(regions)
+      : createDevelopmentMultiRegionConfig(regions);
+
   const manager = new MultiRegionAWSManager(config);
   manager.createKMSClients();
   return manager;

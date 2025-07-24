@@ -1,19 +1,16 @@
-
-
 /**
  * useFormConfiguration Hook
- * 
+ *
  * Manages loading, caching, and updating of form configurations
  */
 
-import * as React from 'react';
 import { useState, useCallback, useEffect } from 'react';
 import { formConfigService } from '@/services/form-config.service';
 import type {
   FormConfiguration,
   UseFormConfigurationReturn,
   DeploymentOptions,
-  SecurityValidationResult
+  SecurityValidationResult,
 } from '@/types/dynamic-forms';
 
 interface UseFormConfigurationOptions {
@@ -30,10 +27,12 @@ export const useFormConfiguration = (
     configId,
     configName,
     enabled = true,
-    refetchOnMount = true
+    refetchOnMount = true,
   } = options;
 
-  const [configuration, setConfiguration] = useState<FormConfiguration | null>(null);
+  const [configuration, setConfiguration] = useState<FormConfiguration | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,17 +44,20 @@ export const useFormConfiguration = (
     setError(null);
 
     try {
-      const response = configId 
+      const response = configId
         ? await formConfigService.getConfiguration(configId)
         : await formConfigService.getConfigurationByName(configName!);
 
       if (response.success && response.data) {
         setConfiguration(response.data.config.config_data);
       } else {
-        throw new Error(response.error?.message || 'Failed to load configuration');
+        throw new Error(
+          response.error?.message || 'Failed to load configuration'
+        );
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       console.error('Failed to load form configuration:', err);
     } finally {
@@ -64,80 +66,100 @@ export const useFormConfiguration = (
   }, [configId, configName, enabled]);
 
   // Update configuration
-  const updateConfiguration = useCallback(async (updates: Partial<FormConfiguration>) => {
-    if (!configuration || !configId) {
-      throw new Error('No configuration loaded or config ID missing');
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const updatedConfig = { ...configuration, ...updates };
-      const response = await formConfigService.updateConfiguration(configId, updatedConfig);
-
-      if (response.success && response.data) {
-        setConfiguration(response.data.config.config_data);
-      } else {
-        throw new Error(response.error?.message || 'Failed to update configuration');
+  const updateConfiguration = useCallback(
+    async (updates: Partial<FormConfiguration>) => {
+      if (!configuration || !configId) {
+        throw new Error('No configuration loaded or config ID missing');
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [configuration, configId]);
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const updatedConfig = { ...configuration, ...updates };
+        const response = await formConfigService.updateConfiguration(
+          configId,
+          updatedConfig
+        );
+
+        if (response.success && response.data) {
+          setConfiguration(response.data.config.config_data);
+        } else {
+          throw new Error(
+            response.error?.message || 'Failed to update configuration'
+          );
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown error occurred';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [configuration, configId]
+  );
 
   // Deploy configuration
-  const deployConfiguration = useCallback(async (options?: DeploymentOptions) => {
-    if (!configId) {
-      throw new Error('No config ID available for deployment');
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await formConfigService.deployConfiguration(configId, options);
-
-      if (!response.success) {
-        throw new Error(response.error?.message || 'Failed to deploy configuration');
+  const deployConfiguration = useCallback(
+    async (options?: DeploymentOptions) => {
+      if (!configId) {
+        throw new Error('No config ID available for deployment');
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [configId]);
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await formConfigService.deployConfiguration(
+          configId,
+          options
+        );
+
+        if (!response.success) {
+          throw new Error(
+            response.error?.message || 'Failed to deploy configuration'
+          );
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown error occurred';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [configId]
+  );
 
   // Validate configuration
-  const validateConfiguration = useCallback(async (): Promise<SecurityValidationResult> => {
-    if (!configuration) {
-      throw new Error('No configuration loaded');
-    }
-
-    try {
-      const response = await formConfigService.validateConfiguration(
-        configuration,
-        'comprehensive',
-        true
-      );
-
-      if (response.success) {
-        return response.validationResults;
-      } else {
-        throw new Error('Validation failed');
+  const validateConfiguration =
+    useCallback(async (): Promise<SecurityValidationResult> => {
+      if (!configuration) {
+        throw new Error('No configuration loaded');
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Validation error occurred';
-      console.error('Configuration validation failed:', err);
-      throw new Error(errorMessage);
-    }
-  }, [configuration]);
+
+      try {
+        const response = await formConfigService.validateConfiguration(
+          configuration,
+          'comprehensive',
+          true
+        );
+
+        if (response.success) {
+          return response.validationResults;
+        } else {
+          throw new Error('Validation failed');
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Validation error occurred';
+        console.error('Configuration validation failed:', err);
+        throw new Error(errorMessage);
+      }
+    }, [configuration]);
 
   // Load configuration on mount or when dependencies change
   useEffect(() => {
@@ -152,6 +174,6 @@ export const useFormConfiguration = (
     error,
     updateConfiguration,
     deployConfiguration,
-    validateConfiguration
+    validateConfiguration,
   };
 };

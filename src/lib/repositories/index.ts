@@ -1,6 +1,6 @@
 /**
  * Repository Pattern Exports
- * 
+ *
  * Centralized exports for all repository functionality
  */
 
@@ -15,7 +15,7 @@ export {
   BaseRepository,
   type RepositoryConfig,
   type QueryOptions,
-  type FilterCondition
+  type FilterCondition,
 } from './base';
 
 export {
@@ -23,5 +23,5 @@ export {
   type TripRequest,
   type TripRequestInsert,
   type TripRequestUpdate,
-  type TripRequestFilters
+  type TripRequestFilters,
 } from './tripRequestRepository';

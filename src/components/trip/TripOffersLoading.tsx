@@ -1,5 +1,3 @@
-
-
 const TripOffersLoading = () => {
   return (
     <div className="flex justify-center py-8">

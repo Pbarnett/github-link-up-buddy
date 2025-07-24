@@ -1,6 +1,6 @@
 /**
  * Payment API Service
- * 
+ *
  * Handles payment processing and Stripe integration
  */
 
@@ -24,14 +24,20 @@ export interface PaymentMethodData {
 }
 
 class PaymentApiService {
-  async createStripePaymentIntent(amount: number, currency: string = 'usd'): Promise<PaymentIntent> {
+  async createStripePaymentIntent(
+    amount: number,
+    currency: string = 'usd'
+  ): Promise<PaymentIntent> {
     try {
-      const { data, error } = await supabase.functions.invoke('create-payment-intent', {
-        body: {
-          amount,
-          currency
+      const { data, error } = await supabase.functions.invoke(
+        'create-payment-intent',
+        {
+          body: {
+            amount,
+            currency,
+          },
         }
-      });
+      );
 
       if (error) {
         throw new Error(`Failed to create payment intent: ${error.message}`);
@@ -46,7 +52,9 @@ class PaymentApiService {
 
   async getPaymentMethods(): Promise<PaymentMethodData[]> {
     try {
-      const { data, error } = await supabase.functions.invoke('get-payment-methods');
+      const { data, error } = await supabase.functions.invoke(
+        'get-payment-methods'
+      );
 
       if (error) {
         throw new Error(`Failed to get payment methods: ${error.message}`);
@@ -59,14 +67,20 @@ class PaymentApiService {
     }
   }
 
-  async confirmPayment(paymentIntentId: string, paymentMethodId: string): Promise<PaymentIntent> {
+  async confirmPayment(
+    paymentIntentId: string,
+    paymentMethodId: string
+  ): Promise<PaymentIntent> {
     try {
-      const { data, error } = await supabase.functions.invoke('confirm-payment', {
-        body: {
-          payment_intent_id: paymentIntentId,
-          payment_method_id: paymentMethodId
+      const { data, error } = await supabase.functions.invoke(
+        'confirm-payment',
+        {
+          body: {
+            payment_intent_id: paymentIntentId,
+            payment_method_id: paymentMethodId,
+          },
         }
-      });
+      );
 
       if (error) {
         throw new Error(`Failed to confirm payment: ${error.message}`);
@@ -81,12 +95,15 @@ class PaymentApiService {
 
   async refundPayment(paymentIntentId: string, amount?: number): Promise<any> {
     try {
-      const { data, error } = await supabase.functions.invoke('refund-payment', {
-        body: {
-          payment_intent_id: paymentIntentId,
-          amount
+      const { data, error } = await supabase.functions.invoke(
+        'refund-payment',
+        {
+          body: {
+            payment_intent_id: paymentIntentId,
+            amount,
+          },
         }
-      });
+      );
 
       if (error) {
         throw new Error(`Failed to refund payment: ${error.message}`);
@@ -104,9 +121,13 @@ class PaymentApiService {
 const paymentApiService = new PaymentApiService();
 
 // Export specific functions
-export const createStripePaymentIntent = paymentApiService.createStripePaymentIntent.bind(paymentApiService);
-export const getPaymentMethods = paymentApiService.getPaymentMethods.bind(paymentApiService);
-export const confirmPayment = paymentApiService.confirmPayment.bind(paymentApiService);
-export const refundPayment = paymentApiService.refundPayment.bind(paymentApiService);
+export const createStripePaymentIntent =
+  paymentApiService.createStripePaymentIntent.bind(paymentApiService);
+export const getPaymentMethods =
+  paymentApiService.getPaymentMethods.bind(paymentApiService);
+export const confirmPayment =
+  paymentApiService.confirmPayment.bind(paymentApiService);
+export const refundPayment =
+  paymentApiService.refundPayment.bind(paymentApiService);
 
 export default paymentApiService;

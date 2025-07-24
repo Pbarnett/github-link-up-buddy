@@ -1,12 +1,16 @@
-import { Button } from '@/components/ui/button';
 import * as React from 'react';
+import { Button } from '@/components/ui/button';
 interface BehavioralTooltipProps {
   show: boolean;
   onDismiss: () => void;
   variant?: 'hesitation' | 'price-proof';
 }
 
-export const BehavioralTooltip = ({ show, onDismiss, variant = 'hesitation' }: BehavioralTooltipProps) => {
+export const BehavioralTooltip = ({
+  show,
+  onDismiss,
+  variant = 'hesitation',
+}: BehavioralTooltipProps) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -26,21 +30,21 @@ export const BehavioralTooltip = ({ show, onDismiss, variant = 'hesitation' }: B
     switch (variant) {
       case 'hesitation':
         return {
-          title: "Need help choosing?",
-          message: "Most travelers save 40% with Auto-Booking vs manual search",
-          cta: "Learn why"
+          title: 'Need help choosing?',
+          message: 'Most travelers save 40% with Auto-Booking vs manual search',
+          cta: 'Learn why',
         };
       case 'price-proof':
         return {
-          title: "💰 Average savings",
-          message: "$247 per trip with smart auto-booking",
-          cta: "See how"
+          title: '💰 Average savings',
+          message: '$247 per trip with smart auto-booking',
+          cta: 'See how',
         };
       default:
         return {
-          title: "Need help?",
+          title: 'Need help?',
           message: "We're here to help you save on flights",
-          cta: "Learn more"
+          cta: 'Learn more',
         };
     }
   };
@@ -66,11 +70,9 @@ export const BehavioralTooltip = ({ show, onDismiss, variant = 'hesitation' }: B
             <X className="w-3 h-3" />
           </Button>
         </div>
-        
-        <p className="text-xs text-gray-600 mb-3">
-          {content.message}
-        </p>
-        
+
+        <p className="text-xs text-gray-600 mb-3">{content.message}</p>
+
         <div className="flex gap-2">
           <Button
             size="sm"

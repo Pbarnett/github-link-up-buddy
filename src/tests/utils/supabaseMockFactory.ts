@@ -11,8 +11,13 @@ export function createMockSupabaseClient() {
       single: vi.fn().mockResolvedValue({ data: null, error: null }),
     })),
     auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user-id', email: 'test@example.com' } }, error: null }),
-      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+      getUser: vi.fn().mockResolvedValue({
+        data: { user: { id: 'test-user-id', email: 'test@example.com' } },
+        error: null,
+      }),
+      onAuthStateChange: vi.fn(() => ({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      })),
       signOut: vi.fn().mockResolvedValue({ error: null }),
     },
     rpc: vi.fn(),
@@ -24,4 +29,3 @@ export function createMockSupabaseClient() {
 
 // Export a singleton mock client for reuse
 export const mockSupabaseClient = createMockSupabaseClient();
-

@@ -1,14 +1,12 @@
-
-
 import * as React from 'react';
 import { useState, useContext, useEffect, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  PaymentMethod, 
-  SetupIntentResponse, 
-  _PaymentMethodsResponse, 
+import {
+  PaymentMethod,
+  SetupIntentResponse,
+  _PaymentMethodsResponse,
   WalletContextType,
-  PaymentMethodError as ImportedPaymentMethodError
+  PaymentMethodError as ImportedPaymentMethodError,
 } from '@/types/wallet';
 
 type ReactNode = React.ReactNode;
@@ -39,7 +37,10 @@ export function WalletProvider({ children }: WalletProviderProps) {
       setError(null);
 
       // Check if user is authenticated
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
       console.log('🔐 Auth check:', { user: user?.id, authError });
 
       if (authError || !user) {
@@ -48,7 +49,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
 
       // Use GET request to fetch payment methods
       console.log('📡 Calling manage-payment-methods edge function...');
-      const { data, error } = await supabase.functions.invoke('manage-payment-methods');
+      const { data, error } = await supabase.functions.invoke(
+        'manage-payment-methods'
+      );
 
       console.log('📨 Edge function response:', { data, error });
 
@@ -61,7 +64,8 @@ export function WalletProvider({ children }: WalletProviderProps) {
       console.log('💳 Payment methods received:', paymentMethods);
       setPaymentMethods(paymentMethods);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load payment methods';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to load payment methods';
       setError(errorMessage);
       console.error('❌ Error refreshing payment methods:', err);
     } finally {
@@ -75,20 +79,29 @@ export function WalletProvider({ children }: WalletProviderProps) {
       setError(null);
 
       // Check if user is authenticated
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      console.log('🔐 Auth check for setup intent:', { user: user?.id, authError });
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      console.log('🔐 Auth check for setup intent:', {
+        user: user?.id,
+        authError,
+      });
 
       if (authError || !user) {
         throw new Error('User not authenticated');
       }
 
       console.log('📡 Calling create-setup-intent edge function...');
-      const { data, error } = await supabase.functions.invoke('create-setup-intent', {
-        body: {
-          usage: 'off_session',
-          payment_method_types: ['card'],
-        },
-      });
+      const { data, error } = await supabase.functions.invoke(
+        'create-setup-intent',
+        {
+          body: {
+            usage: 'off_session',
+            payment_method_types: ['card'],
+          },
+        }
+      );
 
       console.log('📨 Setup intent response:', { data, error });
 
@@ -103,7 +116,8 @@ export function WalletProvider({ children }: WalletProviderProps) {
       console.log('✅ Setup intent created successfully');
       return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create setup intent';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create setup intent';
       setError(errorMessage);
       console.error('❌ Error creating setup intent:', err);
       throw new PaymentMethodError(errorMessage, 'api');
@@ -115,12 +129,15 @@ export function WalletProvider({ children }: WalletProviderProps) {
     try {
       setError(null);
 
-      const { data, error } = await supabase.functions.invoke('manage-payment-methods', {
-        body: { 
-          action: 'delete',
-          payment_method_id: id,
-        },
-      });
+      const { data, error } = await supabase.functions.invoke(
+        'manage-payment-methods',
+        {
+          body: {
+            action: 'delete',
+            payment_method_id: id,
+          },
+        }
+      );
 
       if (error) {
         throw new Error(`Failed to delete payment method: ${error.message}`);
@@ -133,7 +150,8 @@ export function WalletProvider({ children }: WalletProviderProps) {
       // Remove from local state
       setPaymentMethods(prev => prev.filter(pm => pm.id !== id));
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete payment method';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to delete payment method';
       setError(errorMessage);
       throw new PaymentMethodError(errorMessage, 'api');
     }
@@ -144,15 +162,20 @@ export function WalletProvider({ children }: WalletProviderProps) {
     try {
       setError(null);
 
-      const { data, error } = await supabase.functions.invoke('manage-payment-methods', {
-        body: { 
-          action: 'set_default',
-          payment_method_id: id,
-        },
-      });
+      const { data, error } = await supabase.functions.invoke(
+        'manage-payment-methods',
+        {
+          body: {
+            action: 'set_default',
+            payment_method_id: id,
+          },
+        }
+      );
 
       if (error) {
-        throw new Error(`Failed to set default payment method: ${error.message}`);
+        throw new Error(
+          `Failed to set default payment method: ${error.message}`
+        );
       }
 
       if (!data.success) {
@@ -160,44 +183,62 @@ export function WalletProvider({ children }: WalletProviderProps) {
       }
 
       // Update local state
-      setPaymentMethods(prev => prev.map(pm => ({
-        ...pm,
-        is_default: pm.id === id,
-      })));
+      setPaymentMethods(prev =>
+        prev.map(pm => ({
+          ...pm,
+          is_default: pm.id === id,
+        }))
+      );
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to set default payment method';
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Failed to set default payment method';
       setError(errorMessage);
       throw new PaymentMethodError(errorMessage, 'api');
     }
   };
 
   // Update payment method nickname
-  const updatePaymentMethodNickname = async (id: string, nickname?: string): Promise<void> => {
+  const updatePaymentMethodNickname = async (
+    id: string,
+    nickname?: string
+  ): Promise<void> => {
     try {
       setError(null);
 
-      const { data, error } = await supabase.functions.invoke('manage-payment-methods', {
-        body: { 
-          action: 'update_nickname',
-          payment_method_id: id,
-          nickname,
-        },
-      });
+      const { data, error } = await supabase.functions.invoke(
+        'manage-payment-methods',
+        {
+          body: {
+            action: 'update_nickname',
+            payment_method_id: id,
+            nickname,
+          },
+        }
+      );
 
       if (error) {
-        throw new Error(`Failed to update payment method nickname: ${error.message}`);
+        throw new Error(
+          `Failed to update payment method nickname: ${error.message}`
+        );
       }
 
       if (!data.success) {
-        throw new Error(data.error || 'Failed to update payment method nickname');
+        throw new Error(
+          data.error || 'Failed to update payment method nickname'
+        );
       }
 
       // Update local state
-      setPaymentMethods(prev => prev.map(pm => 
-        pm.id === id ? { ...pm, nickname } : pm
-      ));
+      setPaymentMethods(prev =>
+        prev.map(pm => (pm.id === id ? { ...pm, nickname } : pm))
+      );
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update payment method nickname';
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Failed to update payment method nickname';
       setError(errorMessage);
       throw new PaymentMethodError(errorMessage, 'api');
     }
@@ -214,11 +255,11 @@ export function WalletProvider({ children }: WalletProviderProps) {
       .channel('payment-methods-changes')
       .on(
         'postgres_changes' as any,
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'payment_methods' 
-        } as any, 
+        {
+          event: '*',
+          schema: 'public',
+          table: 'payment_methods',
+        } as any,
         (payload: any) => {
           console.log('Payment method changed:', payload);
           // Refresh payment methods when changes occur
@@ -240,8 +281,8 @@ export function WalletProvider({ children }: WalletProviderProps) {
 
   // Alias for setDefaultPaymentMethod
   const setDefault = setDefaultPaymentMethod;
-  
-  // Alias for deletePaymentMethod 
+
+  // Alias for deletePaymentMethod
   const removePaymentMethod = deletePaymentMethod;
 
   const value: WalletContextType = {
@@ -259,14 +300,15 @@ export function WalletProvider({ children }: WalletProviderProps) {
   };
 
   return (
-    <WalletContext.Provider value={value}>
-      {children}
-    </WalletContext.Provider>
+    <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
   );
 }
 
 class PaymentMethodError extends Error {
-  constructor(message: string, public type: 'validation' | 'api' | 'stripe' | 'network') {
+  constructor(
+    message: string,
+    public type: 'validation' | 'api' | 'stripe' | 'network'
+  ) {
     super(message);
     this.name = 'PaymentMethodError';
   }

@@ -10,7 +10,7 @@ import type {
   ISODateString,
   DeepReadonly,
   Optional,
-  Result
+  Result,
 } from './index';
 
 // ============================================================================
@@ -26,7 +26,7 @@ export interface UserProfile {
   readonly emailVerified: boolean;
   readonly createdAt: ISODateString;
   readonly updatedAt: ISODateString;
-  
+
   // Personal information
   personalInfo: {
     firstName: string;
@@ -41,13 +41,13 @@ export interface UserProfile {
     timezone: string;
     locale: string;
   };
-  
+
   // Account status
   status: UserStatus;
-  
+
   // Preferences
   preferences: UserPreferences;
-  
+
   // Security settings
   security: UserSecuritySettings;
 }
@@ -59,7 +59,10 @@ export type UserStatus =
   | { type: 'active'; data: { lastLoginAt: ISODateString } }
   | { type: 'inactive'; data: { inactiveSince: ISODateString } }
   | { type: 'suspended'; data: { suspendedAt: ISODateString; reason: string } }
-  | { type: 'pending_verification'; data: { verificationSentAt: ISODateString } };
+  | {
+      type: 'pending_verification';
+      data: { verificationSentAt: ISODateString };
+    };
 
 // ============================================================================
 // USER PREFERENCES
@@ -78,7 +81,9 @@ export interface UserPreferences {
       aisle: boolean;
       extra_legroom: boolean;
     };
-    mealPreferences: Array<'vegetarian' | 'vegan' | 'halal' | 'kosher' | 'gluten_free'>;
+    mealPreferences: Array<
+      'vegetarian' | 'vegan' | 'halal' | 'kosher' | 'gluten_free'
+    >;
     accessibility: {
       wheelchair: boolean;
       visualImpairment: boolean;
@@ -86,7 +91,7 @@ export interface UserPreferences {
       other?: string;
     };
   };
-  
+
   // Communication preferences
   notifications: {
     email: {
@@ -107,7 +112,7 @@ export interface UserPreferences {
       promotions: boolean;
     };
   };
-  
+
   // UI preferences
   interface: {
     theme: 'light' | 'dark' | 'auto';
@@ -116,7 +121,7 @@ export interface UserPreferences {
     dateFormat: 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
     timeFormat: '12h' | '24h';
   };
-  
+
   // Privacy settings
   privacy: {
     profileVisibility: 'public' | 'friends' | 'private';
@@ -144,7 +149,7 @@ export interface UserSecuritySettings {
       generatedAt: ISODateString;
     };
   };
-  
+
   // Password policy
   password: {
     lastChanged: ISODateString;
@@ -155,10 +160,10 @@ export interface UserSecuritySettings {
       changedAt: ISODateString;
     }>;
   };
-  
+
   // Session management
   sessions: Array<UserSession>;
-  
+
   // Login attempts
   loginAttempts: {
     failed: number;
@@ -182,14 +187,14 @@ export interface UserSession {
   readonly createdAt: ISODateString;
   readonly expiresAt: ISODateString;
   readonly lastActivity: ISODateString;
-  
+
   device: {
     type: 'desktop' | 'mobile' | 'tablet';
     os: string;
     browser: string;
     userAgent: string;
   };
-  
+
   location: {
     ipAddress: string;
     country?: string;
@@ -199,7 +204,7 @@ export interface UserSession {
       longitude: number;
     };
   };
-  
+
   status: 'active' | 'expired' | 'revoked';
 }
 
@@ -227,9 +232,15 @@ export interface UserPermissions {
  * Available permissions
  */
 export type Permission =
-  | 'user.read' | 'user.write' | 'user.delete'
-  | 'booking.read' | 'booking.write' | 'booking.cancel'
-  | 'admin.users' | 'admin.bookings' | 'admin.system'
+  | 'user.read'
+  | 'user.write'
+  | 'user.delete'
+  | 'booking.read'
+  | 'booking.write'
+  | 'booking.cancel'
+  | 'admin.users'
+  | 'admin.bookings'
+  | 'admin.system'
   | 'super.all';
 
 // ============================================================================
@@ -359,7 +370,7 @@ export interface UserValidationRules {
 export interface UserAnalytics {
   readonly userId: UserId;
   readonly generatedAt: ISODateString;
-  
+
   activity: {
     totalSessions: number;
     averageSessionDuration: number;
@@ -367,7 +378,7 @@ export interface UserAnalytics {
     totalPageViews: number;
     bounceRate: number;
   };
-  
+
   booking: {
     totalBookings: number;
     totalSpent: number;
@@ -375,7 +386,7 @@ export interface UserAnalytics {
     preferredDestinations: string[];
     bookingFrequency: 'frequent' | 'occasional' | 'rare';
   };
-  
+
   engagement: {
     emailOpenRate: number;
     emailClickRate: number;
@@ -383,8 +394,14 @@ export interface UserAnalytics {
     supportTicketsCreated: number;
     reviewsWritten: number;
   };
-  
-  segments: Array<'high_value' | 'frequent_traveler' | 'price_sensitive' | 'new_user' | 'at_risk'>;
+
+  segments: Array<
+    | 'high_value'
+    | 'frequent_traveler'
+    | 'price_sensitive'
+    | 'new_user'
+    | 'at_risk'
+  >;
 }
 
 // ============================================================================
@@ -398,24 +415,33 @@ export interface UserUtilities {
   // Validation
   validateEmail: (email: string) => Result<EmailAddress, string[]>;
   validatePassword: (password: string) => Result<string, string[]>;
-  
+
   // Transformations
   getDisplayName: (user: UserProfile) => string;
   getInitials: (user: UserProfile) => string;
-  formatName: (user: UserProfile, format: 'first_last' | 'last_first' | 'first_only') => string;
-  
+  formatName: (
+    user: UserProfile,
+    format: 'first_last' | 'last_first' | 'first_only'
+  ) => string;
+
   // Permissions
   hasPermission: (user: UserProfile, permission: Permission) => boolean;
-  canAccessResource: (user: UserProfile, resource: string, action: string) => boolean;
-  
+  canAccessResource: (
+    user: UserProfile,
+    resource: string,
+    action: string
+  ) => boolean;
+
   // Status checks
   isActive: (user: UserProfile) => boolean;
   isVerified: (user: UserProfile) => boolean;
   requiresPasswordChange: (user: UserProfile) => boolean;
-  
+
   // Analytics
   calculateUserScore: (analytics: UserAnalytics) => number;
-  getUserSegment: (analytics: UserAnalytics) => UserAnalytics['segments'][number];
+  getUserSegment: (
+    analytics: UserAnalytics
+  ) => UserAnalytics['segments'][number];
 }
 
 // ============================================================================

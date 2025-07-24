@@ -14,7 +14,7 @@ class PersonalizationService {
         {
           key: userId,
           anonymous: false,
-          ...userContext
+          ...userContext,
         }
       );
 
@@ -48,14 +48,16 @@ class PersonalizationService {
     }
 
     try {
-      const response = await fetch(`/api/personalization/greeting?userId=${userId}`);
+      const response = await fetch(
+        `/api/personalization/greeting?userId=${userId}`
+      );
       const data = await response.json();
-      
+
       return {
         greeting: data.greeting,
         name: data.name,
         lastVisit: data.lastVisit,
-        personalized: true
+        personalized: true,
       };
     } catch (error) {
       console.error('Failed to fetch personalized greeting:', error);
@@ -72,7 +74,7 @@ class PersonalizationService {
         },
         body: JSON.stringify({
           userId: userId,
-          personalizationEnabled: enabled
+          personalizationEnabled: enabled,
         }),
       });
 

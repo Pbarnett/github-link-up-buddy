@@ -4,8 +4,8 @@
 export const PERSONALIZATION_FEATURE_FLAGS = {
   // Set to true for Alpha testing (internal users only)
   personalizedGreetings: true, // Enable for testing
-  nextTripSuggestions: false,  // Future feature
-  loyaltyBadges: false,        // Future feature
+  nextTripSuggestions: false, // Future feature
+  loyaltyBadges: false, // Future feature
 };
 
 // Helper function to check if personalization is enabled
@@ -13,7 +13,7 @@ export const isPersonalizationEnabled = (): boolean => {
   // In Alpha phase, we can enable for specific users or environments
   const isAlphaUser = true; // Set to true for testing
   const isFeatureEnabled = PERSONALIZATION_FEATURE_FLAGS.personalizedGreetings;
-  
+
   return isAlphaUser && isFeatureEnabled;
 };
 

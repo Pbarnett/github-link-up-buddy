@@ -1,7 +1,6 @@
-
 /**
  * Dynamic Field Renderer
- * 
+ *
  * Renders individual form fields based on their configuration
  * Supports all field types and handles conditional logic
  */
@@ -38,7 +37,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type {
   FieldConfiguration,
-  FormConfiguration
+  FormConfiguration,
 } from '@/types/dynamic-forms';
 
 // Import specialized field components
@@ -80,9 +79,9 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
   error,
   disabled = false,
   required = false,
-  config: _config,  
-  formData: _formData,  
-  className
+  config: _config,
+  formData: _formData,
+  className,
 }) => {
   const form = useFormContext();
 
@@ -95,23 +94,25 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
     return {
       isRequired,
       isDisabled,
-      hasError
+      hasError,
     };
   }, [required, field.validation?.required, disabled, error]);
 
   // Handle field change with validation
-  const handleChange = useCallback((newValue: unknown) => {
-    onChange(newValue);
-    
-    // Clear error state when user starts typing (for better UX)
-    if (error && form?.clearErrors) {
-      form.clearErrors(field.id);
-    }
-  }, [onChange, error, form, field.id]);
+  const handleChange = useCallback(
+    (newValue: unknown) => {
+      onChange(newValue);
+
+      // Clear error state when user starts typing (for better UX)
+      if (error && form?.clearErrors) {
+        form.clearErrors(field.id);
+      }
+    },
+    [onChange, error, form, field.id]
+  );
 
   // Render the actual field input
   const renderFieldInput = useCallback(() => {
-
     switch (field.type) {
       case 'text':
       case 'email':
@@ -119,12 +120,12 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
       case 'url':
         return (
           <Input
-            value={value as string || ''}
-            onChange={(e) => handleChange((e.target as HTMLInputElement).value)}
+            value={(value as string) || ''}
+            onChange={e => handleChange((e.target as HTMLInputElement).value)}
             onBlur={onBlur}
             disabled={fieldState.isDisabled}
             className={cn(
-              error && "border-destructive focus:border-destructive",
+              error && 'border-destructive focus:border-destructive',
               field.className
             )}
             type={field.type}
@@ -136,11 +137,11 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
       case 'number':
         return (
           <Input
-            value={value as string || ''}
+            value={(value as string) || ''}
             onBlur={onBlur}
             disabled={fieldState.isDisabled}
             className={cn(
-              error && "border-destructive focus:border-destructive",
+              error && 'border-destructive focus:border-destructive',
               field.className
             )}
             type="number"
@@ -148,21 +149,25 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
             min={field.validation?.min}
             max={field.validation?.max}
             step={field.validation?.step || 1}
-            onChange={(e) => handleChange(
-              (e.target as HTMLInputElement).value ? Number((e.target as HTMLInputElement).value) : undefined
-            )}
+            onChange={e =>
+              handleChange(
+                (e.target as HTMLInputElement).value
+                  ? Number((e.target as HTMLInputElement).value)
+                  : undefined
+              )
+            }
           />
         );
 
       case 'textarea':
         return (
           <Textarea
-            value={value as string || ''}
-            onChange={(e) => handleChange((e.target as HTMLInputElement).value)}
+            value={(value as string) || ''}
+            onChange={e => handleChange((e.target as HTMLInputElement).value)}
             onBlur={onBlur}
             disabled={fieldState.isDisabled}
             className={cn(
-              error && "border-destructive focus:border-destructive",
+              error && 'border-destructive focus:border-destructive',
               field.className
             )}
             placeholder={field.placeholder}
@@ -179,13 +184,15 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
             onValueChange={handleChange}
             disabled={fieldState.isDisabled}
           >
-            <SelectTrigger className={cn(error && "border-destructive")}>
-              <SelectValue placeholder={field.placeholder || "Select an option"} />
+            <SelectTrigger className={cn(error && 'border-destructive')}>
+              <SelectValue
+                placeholder={field.placeholder || 'Select an option'}
+              />
             </SelectTrigger>
             <SelectContent>
-              {field.options?.map((option) => (
-                <SelectItem 
-                  key={option.value.toString()} 
+              {field.options?.map(option => (
+                <SelectItem
+                  key={option.value.toString()}
                   value={option.value.toString()}
                   disabled={option.disabled}
                 >
@@ -221,18 +228,21 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
             disabled={fieldState.isDisabled}
             className="flex flex-col space-y-2"
           >
-            {field.options?.map((option) => (
-              <div key={option.value.toString()} className="flex items-center space-x-2">
-                <RadioGroupItem 
-                  value={option.value.toString()} 
+            {field.options?.map(option => (
+              <div
+                key={option.value.toString()}
+                className="flex items-center space-x-2"
+              >
+                <RadioGroupItem
+                  value={option.value.toString()}
                   id={`${field.id}-${option.value}`}
                   disabled={option.disabled}
                 />
-                <Label 
+                <Label
                   htmlFor={`${field.id}-${option.value}`}
                   className={cn(
-                    "text-sm font-medium leading-none",
-                    "peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    'text-sm font-medium leading-none',
+                    'peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
                   )}
                 >
                   {option.label}
@@ -254,12 +264,10 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
               checked={Boolean(value)}
               onCheckedChange={handleChange}
               disabled={fieldState.isDisabled}
-              className={cn(error && "border-destructive")}
+              className={cn(error && 'border-destructive')}
             />
             {field.label && (
-              <Label 
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
+              <Label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 {field.label}
               </Label>
             )}
@@ -287,12 +295,12 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
           <div className="space-y-3">
             <Slider
               value={[(value as number) || field.validation?.min || 0]}
-              onValueChange={(values) => handleChange(values[0])}
+              onValueChange={values => handleChange(values[0])}
               max={field.validation?.max || 100}
               min={field.validation?.min || 0}
               step={field.validation?.step || 1}
               disabled={fieldState.isDisabled}
-              className={cn(error && "border-destructive")}
+              className={cn(error && 'border-destructive')}
             />
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>{field.validation?.min || 0}</span>
@@ -342,7 +350,14 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
       case 'airport-autocomplete':
         return (
           <AirportAutocompleteField
-            value={value as { code: string; name: string; city?: string; country?: string }}
+            value={
+              value as {
+                code: string;
+                name: string;
+                city?: string;
+                country?: string;
+              }
+            }
             onChange={handleChange}
             placeholder={field.placeholder}
             disabled={fieldState.isDisabled}
@@ -365,7 +380,15 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
       case 'address-group':
         return (
           <AddressGroupField
-            value={value as { street: string; city: string; state: string; zipCode: string; country: string }}
+            value={
+              value as {
+                street: string;
+                city: string;
+                state: string;
+                zipCode: string;
+                country: string;
+              }
+            }
             onChange={handleChange}
             disabled={fieldState.isDisabled}
             error={error}
@@ -397,15 +420,17 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
         );
 
       default:
-        console.warn(`Unknown field type: ${field.type}. Falling back to text input.`);
+        console.warn(
+          `Unknown field type: ${field.type}. Falling back to text input.`
+        );
         return (
           <Input
-            value={value as string || ''}
-            onChange={(e) => handleChange((e.target as HTMLInputElement).value)}
+            value={(value as string) || ''}
+            onChange={e => handleChange((e.target as HTMLInputElement).value)}
             onBlur={onBlur}
             disabled={fieldState.isDisabled}
             className={cn(
-              error && "border-destructive focus:border-destructive",
+              error && 'border-destructive focus:border-destructive',
               field.className
             )}
             placeholder={field.placeholder}
@@ -417,10 +442,8 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
   // Handle special field types that don't need FormField wrapper
   if (field.type === 'section-header') {
     return (
-      <div className={cn("form-field-header py-4", className)}>
-        <h3 className="text-lg font-semibold text-foreground">
-          {field.label}
-        </h3>
+      <div className={cn('form-field-header py-4', className)}>
+        <h3 className="text-lg font-semibold text-foreground">{field.label}</h3>
         {field.description && (
           <p className="text-sm text-muted-foreground mt-1">
             {field.description}
@@ -432,7 +455,9 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
 
   if (field.type === 'divider') {
     return (
-      <div className={cn("form-field-divider border-t pt-4 mt-6 mb-2", className)} />
+      <div
+        className={cn('form-field-divider border-t pt-4 mt-6 mb-2', className)}
+      />
     );
   }
 
@@ -444,24 +469,28 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
       control={form?.control}
       name={field.id}
       render={() => (
-        <FormItem className={cn("form-field", className, field.className)}>
+        <FormItem className={cn('form-field', className, field.className)}>
           {showLabel && (
-            <FormLabel className={cn(
-              "form-field-label",
-              fieldState.isRequired && "after:content-['*'] after:text-destructive after:ml-1"
-            )}>
+            <FormLabel
+              className={cn(
+                'form-field-label',
+                fieldState.isRequired &&
+                  "after:content-['*'] after:text-destructive after:ml-1"
+              )}
+            >
               {field.label}
               {field.tooltip && (
-                <span className="ml-1 text-xs text-muted-foreground" title={field.tooltip}>
+                <span
+                  className="ml-1 text-xs text-muted-foreground"
+                  title={field.tooltip}
+                >
                   ⓘ
                 </span>
               )}
             </FormLabel>
           )}
-          
-          <FormControl>
-            {renderFieldInput()}
-          </FormControl>
+
+          <FormControl>{renderFieldInput()}</FormControl>
 
           {field.description && (
             <FormDescription className="form-field-description">
@@ -470,9 +499,7 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
           )}
 
           {error && (
-            <FormMessage className="form-field-error">
-              {error}
-            </FormMessage>
+            <FormMessage className="form-field-error">{error}</FormMessage>
           )}
         </FormItem>
       )}
@@ -486,7 +513,9 @@ const getAutoCompleteValue = (field: FieldConfiguration): string => {
     case 'email':
       return 'email';
     case 'password':
-      return field.id === 'current-password' ? 'current-password' : 'new-password';
+      return field.id === 'current-password'
+        ? 'current-password'
+        : 'new-password';
     default:
       return field.autoComplete || 'off';
   }
@@ -516,22 +545,24 @@ const MultiSelectField: FC<{
 
   return (
     <div className="space-y-2">
-      <div className={cn(
-        "border rounded-md p-3 min-h-[40px]",
-        error && "border-destructive",
-        disabled && "opacity-50 cursor-not-allowed"
-      )}>
+      <div
+        className={cn(
+          'border rounded-md p-3 min-h-[40px]',
+          error && 'border-destructive',
+          disabled && 'opacity-50 cursor-not-allowed'
+        )}
+      >
         {value.length === 0 ? (
           <span className="text-muted-foreground text-sm">
-            {placeholder || "Select options..."}
+            {placeholder || 'Select options...'}
           </span>
         ) : (
           <div className="flex flex-wrap gap-1">
-            {value.map((selectedValue) => {
+            {value.map(selectedValue => {
               const option = options.find(opt => opt.value === selectedValue);
               return (
-                <Badge 
-                  key={String(selectedValue)} 
+                <Badge
+                  key={String(selectedValue)}
                   variant="secondary"
                   className="text-xs"
                 >
@@ -551,8 +582,11 @@ const MultiSelectField: FC<{
         )}
       </div>
       <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-        {options.map((option) => (
-          <div key={String(option.value)} className="flex items-center space-x-2">
+        {options.map(option => (
+          <div
+            key={String(option.value)}
+            className="flex items-center space-x-2"
+          >
             <Checkbox
               checked={value.includes(option.value)}
               onCheckedChange={() => handleToggle(option.value)}
@@ -575,7 +609,15 @@ const FileUploadField: FC<{
   accept?: string;
   multiple?: boolean;
   maxSize?: number;
-}> = ({ value: _value, onChange, disabled, error: _error, accept, multiple, maxSize }) => {  
+}> = ({
+  value: _value,
+  onChange,
+  disabled,
+  error: _error,
+  accept,
+  multiple,
+  maxSize,
+}) => {
   return (
     <div className="border-2 border-dashed rounded-lg p-6 text-center">
       <Input
@@ -583,7 +625,7 @@ const FileUploadField: FC<{
         accept={accept}
         multiple={multiple}
         disabled={disabled}
-        onChange={(e) => onChange(e.target.files)}
+        onChange={e => onChange(e.target.files)}
         className="hidden"
         id="file-upload"
       />
@@ -604,7 +646,7 @@ const RatingField: FC<{
   disabled?: boolean;
   max?: number;
   allowHalf?: boolean;
-}> = ({ value, onChange, disabled, max = 5, allowHalf: _allowHalf }) => {  
+}> = ({ value, onChange, disabled, max = 5, allowHalf: _allowHalf }) => {
   return (
     <div className="flex space-x-1">
       {Array.from({ length: max }, (_, i) => (
@@ -614,9 +656,9 @@ const RatingField: FC<{
           onClick={() => onChange(i + 1)}
           disabled={disabled}
           className={cn(
-            "text-2xl transition-colors",
-            (value || 0) > i ? "text-yellow-400" : "text-gray-300",
-            !disabled && "hover:text-yellow-300"
+            'text-2xl transition-colors',
+            (value || 0) > i ? 'text-yellow-400' : 'text-gray-300',
+            !disabled && 'hover:text-yellow-300'
           )}
         >
           ★

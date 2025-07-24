@@ -1,7 +1,6 @@
-
 /**
  * A/B Testing Manager Component
- * 
+ *
  * Enables creation and management of A/B tests for dynamic forms
  * Part of Phase 3: Advanced Features
  */
@@ -13,14 +12,14 @@ type FC<T = {}> = React.FC<T>;
 
 import {
   TestTube,
-  Play, 
-  Pause, 
+  Play,
+  Pause,
   CheckCircle,
   XCircle,
   Settings,
   Users,
   Target,
-  BarChart3
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -56,7 +55,10 @@ interface ABTestConfiguration {
 interface ABTestingManagerProps {
   formId: string;
   onCreateTest?: (config: ABTestConfiguration) => Promise<void>;
-  onUpdateTest?: (testId: string, updates: Partial<ABTestConfiguration>) => Promise<void>;
+  onUpdateTest?: (
+    testId: string,
+    updates: Partial<ABTestConfiguration>
+  ) => Promise<void>;
   onStartTest?: (testId: string) => Promise<void>;
   onStopTest?: (testId: string) => Promise<void>;
   onViewResults?: (testId: string) => void;
@@ -91,37 +93,62 @@ const MOCK_AB_TESTS: ABTestSummary[] = [
     name: 'Flight Search Form Optimization',
     status: 'running',
     variants: [
-      { id: 'control', name: 'Control (Original)', formConfigId: 'flight-search-v1', trafficPercentage: 50 },
-      { id: 'variant-a', name: 'Simplified Form', formConfigId: 'flight-search-v2', trafficPercentage: 50 }
+      {
+        id: 'control',
+        name: 'Control (Original)',
+        formConfigId: 'flight-search-v1',
+        trafficPercentage: 50,
+      },
+      {
+        id: 'variant-a',
+        name: 'Simplified Form',
+        formConfigId: 'flight-search-v2',
+        trafficPercentage: 50,
+      },
     ],
     metrics: {
       totalViews: 2847,
       totalSubmissions: 1231,
       conversionRate: 43.2,
-      statSignificance: 89.4
+      statSignificance: 89.4,
     },
     startDate: '2025-01-01',
-    duration: 14
+    duration: 14,
   },
   {
     id: 'test-2',
     name: 'Payment Form Layout Test',
     status: 'completed',
     variants: [
-      { id: 'control', name: 'Single Page', formConfigId: 'payment-v1', trafficPercentage: 33 },
-      { id: 'variant-a', name: 'Two Steps', formConfigId: 'payment-v2', trafficPercentage: 33 },
-      { id: 'variant-b', name: 'Progressive', formConfigId: 'payment-v3', trafficPercentage: 34 }
+      {
+        id: 'control',
+        name: 'Single Page',
+        formConfigId: 'payment-v1',
+        trafficPercentage: 33,
+      },
+      {
+        id: 'variant-a',
+        name: 'Two Steps',
+        formConfigId: 'payment-v2',
+        trafficPercentage: 33,
+      },
+      {
+        id: 'variant-b',
+        name: 'Progressive',
+        formConfigId: 'payment-v3',
+        trafficPercentage: 34,
+      },
     ],
     metrics: {
       totalViews: 5432,
       totalSubmissions: 4123,
       conversionRate: 75.9,
-      statSignificance: 99.2
+      statSignificance: 99.2,
     },
     startDate: '2024-12-15',
     endDate: '2024-12-29',
-    duration: 14
-  }
+    duration: 14,
+  },
 ];
 
 // Form variants would be loaded dynamically in a real implementation
@@ -135,7 +162,7 @@ export const ABTestingManager: FC<ABTestingManagerProps> = ({
   onStartTest,
   onStopTest,
   onViewResults,
-  className
+  className,
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [tests, setTests] = useState<ABTestSummary[]>(MOCK_AB_TESTS);
@@ -149,37 +176,37 @@ export const ABTestingManager: FC<ABTestingManagerProps> = ({
         return {
           color: 'bg-green-100 text-green-800 border-green-200',
           icon: <Play className="h-3 w-3" />,
-          label: 'Running'
+          label: 'Running',
         };
       case 'completed':
         return {
           color: 'bg-blue-100 text-blue-800 border-blue-200',
           icon: <CheckCircle className="h-3 w-3" />,
-          label: 'Completed'
+          label: 'Completed',
         };
       case 'paused':
         return {
           color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
           icon: <Pause className="h-3 w-3" />,
-          label: 'Paused'
+          label: 'Paused',
         };
       case 'draft':
         return {
           color: 'bg-gray-100 text-gray-800 border-gray-200',
           icon: <Settings className="h-3 w-3" />,
-          label: 'Draft'
+          label: 'Draft',
         };
       case 'failed':
         return {
           color: 'bg-red-100 text-red-800 border-red-200',
           icon: <XCircle className="h-3 w-3" />,
-          label: 'Failed'
+          label: 'Failed',
         };
       default:
         return {
           color: 'bg-gray-100 text-gray-800 border-gray-200',
           icon: <Settings className="h-3 w-3" />,
-          label: 'Unknown'
+          label: 'Unknown',
         };
     }
   };
@@ -197,9 +224,11 @@ export const ABTestingManager: FC<ABTestingManagerProps> = ({
       await onStartTest(testId);
     }
     // Update local state
-    setTests(prev => prev.map(test => 
-      test.id === testId ? { ...test, status: 'running' as const } : test
-    ));
+    setTests(prev =>
+      prev.map(test =>
+        test.id === testId ? { ...test, status: 'running' as const } : test
+      )
+    );
   };
 
   const handleStopTest = async (testId: string) => {
@@ -207,13 +236,15 @@ export const ABTestingManager: FC<ABTestingManagerProps> = ({
       await onStopTest(testId);
     }
     // Update local state
-    setTests(prev => prev.map(test => 
-      test.id === testId ? { ...test, status: 'paused' as const } : test
-    ));
+    setTests(prev =>
+      prev.map(test =>
+        test.id === testId ? { ...test, status: 'paused' as const } : test
+      )
+    );
   };
 
   return (
-    <div className={cn("ab-testing-manager", className)}>
+    <div className={cn('ab-testing-manager', className)}>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -222,8 +253,8 @@ export const ABTestingManager: FC<ABTestingManagerProps> = ({
               Create and manage A/B tests for your dynamic forms
             </p>
           </div>
-          
-          <Button 
+
+          <Button
             onClick={() => setShowCreateDialog(true)}
             className="bg-primary hover:bg-primary/90"
           >
@@ -243,7 +274,9 @@ export const ABTestingManager: FC<ABTestingManagerProps> = ({
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Tests</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Active Tests
+                </CardTitle>
                 <TestTube className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -258,12 +291,16 @@ export const ABTestingManager: FC<ABTestingManagerProps> = ({
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Views
+                </CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {tests.reduce((acc, test) => acc + test.metrics.totalViews, 0).toLocaleString()}
+                  {tests
+                    .reduce((acc, test) => acc + test.metrics.totalViews, 0)
+                    .toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Across all tests
@@ -273,22 +310,36 @@ export const ABTestingManager: FC<ABTestingManagerProps> = ({
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg Conversion</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Avg Conversion
+                </CardTitle>
                 <Target className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {(tests.reduce((acc, test) => acc + test.metrics.conversionRate, 0) / tests.length).toFixed(1)}%
+                  {(
+                    tests.reduce(
+                      (acc, test) => acc + test.metrics.conversionRate,
+                      0
+                    ) / tests.length
+                  ).toFixed(1)}
+                  %
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Best: {Math.max(...tests.map(t => t.metrics.conversionRate)).toFixed(1)}%
+                  Best:{' '}
+                  {Math.max(
+                    ...tests.map(t => t.metrics.conversionRate)
+                  ).toFixed(1)}
+                  %
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Significance</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Significance
+                </CardTitle>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -305,50 +356,77 @@ export const ABTestingManager: FC<ABTestingManagerProps> = ({
           {/* Test List */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Current Tests</h3>
-            
-            {tests.map((test) => {
+
+            {tests.map(test => {
               const statusDisplay = getStatusDisplay(test.status);
-              
+
               return (
-                <Card key={test.id} className="hover:shadow-md transition-shadow">
+                <Card
+                  key={test.id}
+                  className="hover:shadow-md transition-shadow"
+                >
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-3">
                           <h4 className="font-semibold text-lg">{test.name}</h4>
-                          <Badge 
-                            variant="outline" 
-                            className={cn("flex items-center gap-1", statusDisplay.color)}
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'flex items-center gap-1',
+                              statusDisplay.color
+                            )}
                           >
                             {statusDisplay.icon}
                             {statusDisplay.label}
                           </Badge>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                           <div>
                             <p className="text-muted-foreground">Views</p>
-                            <p className="font-semibold">{test.metrics.totalViews.toLocaleString()}</p>
+                            <p className="font-semibold">
+                              {test.metrics.totalViews.toLocaleString()}
+                            </p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Submissions</p>
-                            <p className="font-semibold">{test.metrics.totalSubmissions.toLocaleString()}</p>
+                            <p className="font-semibold">
+                              {test.metrics.totalSubmissions.toLocaleString()}
+                            </p>
                           </div>
                           <div>
-                            <p className="text-muted-foreground">Conversion Rate</p>
-                            <p className="font-semibold">{test.metrics.conversionRate}%</p>
+                            <p className="text-muted-foreground">
+                              Conversion Rate
+                            </p>
+                            <p className="font-semibold">
+                              {test.metrics.conversionRate}%
+                            </p>
                           </div>
                           <div>
-                            <p className="text-muted-foreground">Significance</p>
-                            <p className={cn("font-semibold", getSignificanceColor(test.metrics.statSignificance))}>
+                            <p className="text-muted-foreground">
+                              Significance
+                            </p>
+                            <p
+                              className={cn(
+                                'font-semibold',
+                                getSignificanceColor(
+                                  test.metrics.statSignificance
+                                )
+                              )}
+                            >
                               {test.metrics.statSignificance}%
                             </p>
                           </div>
                         </div>
 
                         <div className="flex flex-wrap gap-2 pt-2">
-                          {test.variants.map((variant) => (
-                            <Badge key={variant.id} variant="secondary" className="text-xs">
+                          {test.variants.map(variant => (
+                            <Badge
+                              key={variant.id}
+                              variant="secondary"
+                              className="text-xs"
+                            >
                               {variant.name} ({variant.trafficPercentage}%)
                             </Badge>
                           ))}
@@ -366,8 +444,9 @@ export const ABTestingManager: FC<ABTestingManagerProps> = ({
                             Pause
                           </Button>
                         )}
-                        
-                        {(test.status === 'paused' || test.status === 'draft') && (
+
+                        {(test.status === 'paused' ||
+                          test.status === 'draft') && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -377,7 +456,7 @@ export const ABTestingManager: FC<ABTestingManagerProps> = ({
                             Start
                           </Button>
                         )}
-                        
+
                         <Button
                           variant="ghost"
                           size="sm"
@@ -422,17 +501,29 @@ export const ABTestingManager: FC<ABTestingManagerProps> = ({
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="default-duration">Default Test Duration (days)</Label>
-                  <Input id="default-duration" type="number" defaultValue="14" />
+                  <Label htmlFor="default-duration">
+                    Default Test Duration (days)
+                  </Label>
+                  <Input
+                    id="default-duration"
+                    type="number"
+                    defaultValue="14"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="min-sample-size">Minimum Sample Size</Label>
-                  <Input id="min-sample-size" type="number" defaultValue="1000" />
+                  <Input
+                    id="min-sample-size"
+                    type="number"
+                    defaultValue="1000"
+                  />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="significance-threshold">Significance Threshold</Label>
+                <Label htmlFor="significance-threshold">
+                  Significance Threshold
+                </Label>
                 <div className="flex items-center gap-4">
                   <Slider
                     id="significance-threshold"

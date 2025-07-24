@@ -1,6 +1,6 @@
+import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import * as React from 'react';
 interface SocialProofData {
   totalTrips: number;
   avgSavings: number;
@@ -37,14 +37,14 @@ export const DynamicSocialProof = () => {
       return {
         primary: `Welcome back! Ready for your next adventure?`,
         secondary: `Join ${proofData.activeUsers.toLocaleString()}+ smart travelers`,
-        metric: `${proofData.recentBookings} trips auto-booked this week`
+        metric: `${proofData.recentBookings} trips auto-booked this week`,
       };
     } else {
       // Marketing for anonymous users
       return {
         primary: `${proofData.totalTrips.toLocaleString()} trips auto-booked and counting`,
         secondary: `Average savings: $${proofData.avgSavings} per trip`,
-        metric: `${proofData.recentBookings} bookings in the last 24 hours`
+        metric: `${proofData.recentBookings} bookings in the last 24 hours`,
       };
     }
   };
@@ -53,13 +53,12 @@ export const DynamicSocialProof = () => {
 
   return (
     <div className="text-center space-y-2">
-      <p className="text-sm font-medium text-gray-900">
-        {proofText.primary}
-      </p>
-      <p className="text-xs text-gray-600">
-        {proofText.secondary}
-      </p>
-      <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+      <p className="text-sm font-medium text-gray-900">{proofText.primary}</p>
+      <p className="text-xs text-gray-600">{proofText.secondary}</p>
+      <Badge
+        variant="outline"
+        className="text-xs bg-green-50 text-green-700 border-green-200"
+      >
         <span className="animate-pulse w-2 h-2 bg-green-500 rounded-full mr-2"></span>
         {proofText.metric}
       </Badge>

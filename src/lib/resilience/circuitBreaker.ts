@@ -1,22 +1,22 @@
 /**
  * Circuit Breaker Pattern Implementation
- * 
+ *
  * Provides circuit breaker pattern for external API calls
  * to prevent cascading failures and improve system resilience.
  */
 
 export enum CircuitBreakerState {
-  CLOSED = 'CLOSED',     // Normal operation
-  OPEN = 'OPEN',         // Circuit is open, calls are rejected
-  HALF_OPEN = 'HALF_OPEN' // Testing if service has recovered
+  CLOSED = 'CLOSED', // Normal operation
+  OPEN = 'OPEN', // Circuit is open, calls are rejected
+  HALF_OPEN = 'HALF_OPEN', // Testing if service has recovered
 }
 
 export interface CircuitBreakerConfig {
-  failureThreshold: number;    // Number of failures before opening circuit
-  recoveryTimeout: number;     // Time to wait before attempting recovery (ms)
-  monitoringPeriod: number;    // Period for failure rate calculation (ms)
-  minimumRequests: number;     // Minimum requests before calculating failure rate
-  successThreshold: number;    // Successful calls needed to close circuit in half-open state
+  failureThreshold: number; // Number of failures before opening circuit
+  recoveryTimeout: number; // Time to wait before attempting recovery (ms)
+  monitoringPeriod: number; // Period for failure rate calculation (ms)
+  minimumRequests: number; // Minimum requests before calculating failure rate
+  successThreshold: number; // Successful calls needed to close circuit in half-open state
 }
 
 export interface CircuitBreakerMetrics {
@@ -31,7 +31,10 @@ export interface CircuitBreakerMetrics {
 }
 
 export class CircuitBreakerError extends Error {
-  constructor(message: string, public readonly state: CircuitBreakerState) {
+  constructor(
+    message: string,
+    public readonly state: CircuitBreakerState
+  ) {
     super(message);
     this.name = 'CircuitBreakerError';
   }
@@ -68,10 +71,10 @@ export class CircuitBreaker {
    */
   private async call<T>(fn: () => Promise<T>): Promise<T> {
     const now = Date.now();
-    
+
     // Check if circuit should transition states
     this.updateState(now);
-    
+
     // If circuit is open, reject the call
     if (this.state === CircuitBreakerState.OPEN) {
       this.logStateChange('REJECTED', 'Circuit breaker is OPEN');
@@ -80,26 +83,26 @@ export class CircuitBreaker {
         this.state
       );
     }
-    
+
     // Track the request
     this.totalRequests++;
-    
+
     try {
       // Execute the function
       const startTime = performance.now();
       const result = await fn();
       const duration = performance.now() - startTime;
-      
+
       // Record success
       this.onSuccess(now);
       this.logCall('SUCCESS', duration);
-      
+
       return result;
     } catch (error) {
       // Record failure
       this.onFailure(now);
       this.logCall('FAILURE', 0, error);
-      
+
       // Re-throw the original error
       throw error;
     }
@@ -112,7 +115,7 @@ export class CircuitBreaker {
     this.successCount++;
     this.consecutiveFailures = 0;
     this.addToHistory(timestamp, true);
-    
+
     // If in half-open state, check if we can close the circuit
     if (this.state === CircuitBreakerState.HALF_OPEN) {
       this.successfulRecoveryAttempts++;
@@ -131,7 +134,7 @@ export class CircuitBreaker {
     this.consecutiveFailures++;
     this.lastFailureTime = timestamp;
     this.addToHistory(timestamp, false);
-    
+
     // Check if we should open the circuit
     if (this.shouldOpenCircuit()) {
       this.transitionTo(CircuitBreakerState.OPEN);
@@ -143,7 +146,10 @@ export class CircuitBreaker {
    * Update circuit breaker state based on current conditions
    */
   private updateState(now: number): void {
-    if (this.state === CircuitBreakerState.OPEN && now >= this.nextAttemptTime) {
+    if (
+      this.state === CircuitBreakerState.OPEN &&
+      now >= this.nextAttemptTime
+    ) {
       this.transitionTo(CircuitBreakerState.HALF_OPEN);
       this.successfulRecoveryAttempts = 0;
     }
@@ -157,15 +163,17 @@ export class CircuitBreaker {
     if (this.totalRequests < this.config.minimumRequests) {
       return false;
     }
-    
+
     // Check consecutive failures
     if (this.consecutiveFailures >= this.config.failureThreshold) {
       return true;
     }
-    
+
     // Check failure rate over monitoring period
     const failureRate = this.calculateFailureRate();
-    return failureRate >= (this.config.failureThreshold / this.config.minimumRequests);
+    return (
+      failureRate >= this.config.failureThreshold / this.config.minimumRequests
+    );
   }
 
   /**
@@ -174,14 +182,16 @@ export class CircuitBreaker {
   private calculateFailureRate(): number {
     const now = Date.now();
     const cutoff = now - this.config.monitoringPeriod;
-    
+
     // Filter to recent requests
-    const recentRequests = this.requestHistory.filter(r => r.timestamp >= cutoff);
-    
+    const recentRequests = this.requestHistory.filter(
+      r => r.timestamp >= cutoff
+    );
+
     if (recentRequests.length === 0) {
       return 0;
     }
-    
+
     const failures = recentRequests.filter(r => !r.success).length;
     return failures / recentRequests.length;
   }
@@ -191,10 +201,12 @@ export class CircuitBreaker {
    */
   private addToHistory(timestamp: number, success: boolean): void {
     this.requestHistory.push({ timestamp, success });
-    
+
     // Clean up old entries (keep only monitoring period + buffer)
-    const cutoff = timestamp - (this.config.monitoringPeriod * 2);
-    this.requestHistory = this.requestHistory.filter(r => r.timestamp >= cutoff);
+    const cutoff = timestamp - this.config.monitoringPeriod * 2;
+    this.requestHistory = this.requestHistory.filter(
+      r => r.timestamp >= cutoff
+    );
   }
 
   /**
@@ -228,7 +240,7 @@ export class CircuitBreaker {
       lastFailureTime: this.lastFailureTime,
       consecutiveFailures: this.consecutiveFailures,
       successfulRecoveryAttempts: this.successfulRecoveryAttempts,
-      failureRate: this.calculateFailureRate()
+      failureRate: this.calculateFailureRate(),
     };
   }
 
@@ -251,11 +263,16 @@ export class CircuitBreaker {
   /**
    * Log circuit breaker events
    */
-  private logCall(type: 'SUCCESS' | 'FAILURE', duration: number, error?: unknown): void {
-    const message = type === 'SUCCESS' 
-      ? `[CircuitBreaker:${this.name}] Call succeeded in ${duration.toFixed(2)}ms`
-      : `[CircuitBreaker:${this.name}] Call failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-    
+  private logCall(
+    type: 'SUCCESS' | 'FAILURE',
+    duration: number,
+    error?: unknown
+  ): void {
+    const message =
+      type === 'SUCCESS'
+        ? `[CircuitBreaker:${this.name}] Call succeeded in ${duration.toFixed(2)}ms`
+        : `[CircuitBreaker:${this.name}] Call failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+
     if (type === 'SUCCESS') {
       console.log(message);
     } else {
@@ -275,29 +292,29 @@ export const CIRCUIT_BREAKER_CONFIGS = {
   // Configuration for critical external APIs (like Duffel booking)
   CRITICAL_API: {
     failureThreshold: 5,
-    recoveryTimeout: 60000,      // 1 minute
-    monitoringPeriod: 120000,    // 2 minutes
+    recoveryTimeout: 60000, // 1 minute
+    monitoringPeriod: 120000, // 2 minutes
     minimumRequests: 10,
-    successThreshold: 3
+    successThreshold: 3,
   } as CircuitBreakerConfig,
-  
+
   // Configuration for search APIs (more lenient)
   SEARCH_API: {
     failureThreshold: 10,
-    recoveryTimeout: 30000,      // 30 seconds
-    monitoringPeriod: 60000,     // 1 minute
+    recoveryTimeout: 30000, // 30 seconds
+    monitoringPeriod: 60000, // 1 minute
     minimumRequests: 5,
-    successThreshold: 2
+    successThreshold: 2,
   } as CircuitBreakerConfig,
-  
+
   // Configuration for non-critical services
   NON_CRITICAL: {
     failureThreshold: 15,
-    recoveryTimeout: 120000,     // 2 minutes
-    monitoringPeriod: 300000,    // 5 minutes
+    recoveryTimeout: 120000, // 2 minutes
+    monitoringPeriod: 300000, // 5 minutes
     minimumRequests: 20,
-    successThreshold: 5
-  } as CircuitBreakerConfig
+    successThreshold: 5,
+  } as CircuitBreakerConfig,
 };
 
 /**
@@ -349,7 +366,7 @@ export function withCircuitBreaker<T extends unknown[], R>(
   fn: (...args: T) => Promise<R>
 ): (...args: T) => Promise<R> {
   const breaker = circuitBreakerRegistry.getBreaker(name, config);
-  
+
   return async (...args: T): Promise<R> => {
     return breaker.execute(() => fn(...args));
   };

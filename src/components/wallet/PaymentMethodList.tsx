@@ -1,12 +1,13 @@
-
 import * as React from 'react';
 import { useState } from 'react';
-import { 
-  CreditCard, 
-  Plus, 
-  Trash2
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CreditCard, Plus, Trash2 } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,7 +38,10 @@ export function PaymentMethodList({
     } catch (error) {
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to delete payment method',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete payment method',
         variant: 'destructive',
       });
     } finally {
@@ -57,7 +61,7 @@ export function PaymentMethodList({
     const now = new Date();
     const expiryDate = new Date(year, month - 1);
     const threeMonthsFromNow = new Date(now.getFullYear(), now.getMonth() + 3);
-    
+
     return expiryDate <= threeMonthsFromNow;
   };
 
@@ -72,15 +76,13 @@ export function PaymentMethodList({
               Loading...
             </Badge>
           </CardTitle>
-          <CardDescription>
-            Manage your saved payment methods
-          </CardDescription>
+          <CardDescription>Manage your saved payment methods</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div aria-live="polite" aria-label="Loading payment methods">
             {[...Array(3)].map((_, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className="flex items-center justify-between p-4 border rounded-lg animate-pulse"
                 role="status"
                 aria-label={`Loading payment method ${i + 1} of 3`}
@@ -113,12 +115,10 @@ export function PaymentMethodList({
               <CreditCard className="h-5 w-5" />
               Payment Methods
             </CardTitle>
-            <CardDescription>
-              Manage your saved payment methods
-            </CardDescription>
+            <CardDescription>Manage your saved payment methods</CardDescription>
           </div>
-          <Button 
-            onClick={onAddNew} 
+          <Button
+            onClick={onAddNew}
             className="flex items-center gap-2"
             aria-label="Add new payment method"
           >
@@ -133,13 +133,14 @@ export function PaymentMethodList({
             <Alert className="border-blue-200 bg-blue-50">
               <CreditCard className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-800">
-                No payment methods found. Add your first payment method to get started with faster, more secure bookings.
+                No payment methods found. Add your first payment method to get
+                started with faster, more secure bookings.
               </AlertDescription>
             </Alert>
             <div className="text-center py-6">
-              <Button 
-                onClick={onAddNew} 
-                size="lg" 
+              <Button
+                onClick={onAddNew}
+                size="lg"
                 className="flex items-center gap-2"
                 aria-label="Add your first payment method"
                 data-testid="add-card-button"
@@ -150,10 +151,18 @@ export function PaymentMethodList({
             </div>
           </div>
         ) : (
-          <div className="space-y-4" data-testid="payment-methods-section" role="list" aria-label="Payment methods">
-            {paymentMethods.map((method) => {
+          <div
+            className="space-y-4"
+            data-testid="payment-methods-section"
+            role="list"
+            aria-label="Payment methods"
+          >
+            {paymentMethods.map(method => {
               const brand = CARD_BRANDS[method.brand] || CARD_BRANDS.unknown;
-              const isExpiring = isExpiringSoon(method.exp_month, method.exp_year);
+              const isExpiring = isExpiringSoon(
+                method.exp_month,
+                method.exp_year
+              );
               const isDeleting = deletingIds.has(method.id);
 
               // Convert to PaymentMethod format for WalletNickname component
@@ -162,21 +171,21 @@ export function PaymentMethodList({
                 last4: method.last4,
                 brand: brand.name,
                 nickname: method.nickname,
-                isDefault: method.is_default
+                isDefault: method.is_default,
               };
 
               return (
                 <div key={method.id} role="listitem" className="relative">
                   {/* Add accessibility live region for status updates */}
-                  <div 
-                    aria-live="polite" 
-                    aria-atomic="true" 
+                  <div
+                    aria-live="polite"
+                    aria-atomic="true"
                     className="sr-only"
                     id={`status-${method.id}`}
                   >
                     {isDeleting ? 'Deleting payment method...' : ''}
                   </div>
-                  
+
                   <div className="grid gap-4 lg:grid-cols-2">
                     {/* Enhanced WalletNickname component with additional context */}
                     <div className="lg:col-span-1">
@@ -186,7 +195,7 @@ export function PaymentMethodList({
                         onSetDefault={onSetDefault}
                       />
                     </div>
-                    
+
                     {/* Additional payment method details and actions */}
                     <div className="lg:col-span-1 space-y-3">
                       {/* Expiry and status information */}
@@ -194,9 +203,14 @@ export function PaymentMethodList({
                         <div className="space-y-1">
                           <p className="text-sm font-medium">Card Details</p>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>Expires {formatExpiry(method.exp_month, method.exp_year)}</span>
+                            <span>
+                              Expires{' '}
+                              {formatExpiry(method.exp_month, method.exp_year)}
+                            </span>
                             {method.funding && (
-                              <span className="capitalize">• {method.funding}</span>
+                              <span className="capitalize">
+                                • {method.funding}
+                              </span>
                             )}
                           </div>
                           {isExpiring && (
@@ -205,7 +219,7 @@ export function PaymentMethodList({
                             </Badge>
                           )}
                         </div>
-                        
+
                         {/* Action buttons with proper accessibility */}
                         <div className="flex items-center gap-2">
                           <Button
@@ -218,15 +232,17 @@ export function PaymentMethodList({
                             className="min-h-[44px] min-w-[44px]" // Ensure touch target size
                           >
                             {isDeleting ? (
-                              <div 
-                                className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" 
+                              <div
+                                className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"
                                 aria-label="Deleting..."
                               />
                             ) : (
                               <Trash2 className="h-4 w-4" aria-hidden="true" />
                             )}
                             <span className="sr-only">
-                              {isDeleting ? 'Deleting payment method' : 'Delete payment method'}
+                              {isDeleting
+                                ? 'Deleting payment method'
+                                : 'Delete payment method'}
                             </span>
                           </Button>
                         </div>

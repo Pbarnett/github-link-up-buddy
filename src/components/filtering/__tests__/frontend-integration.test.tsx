@@ -1,6 +1,6 @@
 /**
  * @file Frontend Integration Tests for Phase 3: Advanced Filter Controls
- * 
+ *
  * Tests the integration between:
  * - AdvancedFilterControls component
  * - useFilterState hook
@@ -43,7 +43,7 @@ vi.mock('@/components/ui/slider', () => ({
       type="range"
       role="slider"
       value={value?.[0] || 0}
-      onChange={(e) => onValueChange?.([parseInt(e.target.value)])}
+      onChange={e => onValueChange?.([parseInt(e.target.value)])}
       {...props}
     />
   ),
@@ -77,7 +77,7 @@ vi.mock('@/components/ui/select', () => ({
     <select
       role="combobox"
       value={value || ''}
-      onChange={(e) => onValueChange?.(e.target.value)}
+      onChange={e => onValueChange?.(e.target.value)}
     >
       {children}
     </select>
@@ -87,7 +87,9 @@ vi.mock('@/components/ui/select', () => ({
     <option value={value}>{children}</option>
   ),
   SelectTrigger: ({ children }: SelectTriggerProps) => <div>{children}</div>,
-  SelectValue: ({ placeholder }: SelectValueProps) => <span>{placeholder}</span>,
+  SelectValue: ({ placeholder }: SelectValueProps) => (
+    <span>{placeholder}</span>
+  ),
 }));
 
 interface SwitchProps {
@@ -102,7 +104,7 @@ vi.mock('@/components/ui/switch', () => ({
       type="checkbox"
       role="switch"
       checked={checked}
-      onChange={(e) => onCheckedChange?.(e.target.checked)}
+      onChange={e => onCheckedChange?.(e.target.checked)}
       {...props}
     />
   ),
@@ -160,7 +162,7 @@ const mockOffers: ScoredOffer[] = [
     priceStructure: {
       base: 250,
       carryOnFee: 0,
-      total: 299
+      total: 299,
     },
     carryOnIncluded: true,
     score: 0.95,
@@ -193,7 +195,7 @@ const mockOffers: ScoredOffer[] = [
     priceStructure: {
       base: 400,
       carryOnFee: 50,
-      total: 450
+      total: 450,
     },
     carryOnIncluded: false,
     score: 0.88,
@@ -226,7 +228,7 @@ const mockOffers: ScoredOffer[] = [
     priceStructure: {
       base: 700,
       carryOnFee: 0,
-      total: 750
+      total: 750,
     },
     carryOnIncluded: true,
     score: 0.72,
@@ -259,7 +261,7 @@ const mockOffers: ScoredOffer[] = [
     priceStructure: {
       base: 280,
       carryOnFee: 0,
-      total: 320
+      total: 320,
     },
     carryOnIncluded: true,
     score: 0.91,
@@ -290,22 +292,22 @@ describe('Phase 3: Frontend Integration Tests', () => {
   describe('useFilterState Hook', () => {
     it('should initialize with default filter options', () => {
       const { result } = renderHook(() => useFilterState());
-      
+
       expect(result.current.filterState.options).toEqual({
         currency: 'USD',
         pipelineType: 'standard',
       });
-      
+
       expect(result.current.filterState.activeFiltersCount).toBe(0);
     });
 
     it('should update filters and maintain state', () => {
       const { result } = renderHook(() => useFilterState());
-      
+
       act(() => {
         result.current.updateFilters({ budget: 500, nonstop: true });
       });
-      
+
       expect(result.current.filterState.options.budget).toBe(500);
       expect(result.current.filterState.options.nonstop).toBe(true);
       expect(result.current.filterState.activeFiltersCount).toBe(2);
@@ -313,30 +315,36 @@ describe('Phase 3: Frontend Integration Tests', () => {
 
     it('should apply client-side filtering correctly', () => {
       const { result } = renderHook(() => useFilterState());
-      
+
       act(() => {
         result.current.setOffers(mockOffers);
         result.current.updateFilters({ budget: 400 });
       });
-      
+
       // Should filter out offers over $400
       expect(result.current.filteredOffers).toHaveLength(2);
-      expect(result.current.filteredOffers.every(offer => offer.price <= 400)).toBe(true);
+      expect(
+        result.current.filteredOffers.every(offer => offer.price <= 400)
+      ).toBe(true);
     });
 
     it('should reset filters to defaults', () => {
       const { result } = renderHook(() => useFilterState());
-      
+
       act(() => {
-        result.current.updateFilters({ budget: 500, nonstop: true, pipelineType: 'budget' });
+        result.current.updateFilters({
+          budget: 500,
+          nonstop: true,
+          pipelineType: 'budget',
+        });
       });
-      
+
       expect(result.current.filterState.activeFiltersCount).toBe(3);
-      
+
       act(() => {
         result.current.resetFilters();
       });
-      
+
       expect(result.current.filterState.activeFiltersCount).toBe(0);
       expect(result.current.filterState.options).toEqual({
         currency: 'USD',
@@ -346,51 +354,56 @@ describe('Phase 3: Frontend Integration Tests', () => {
 
     it('should persist filters to localStorage when enabled', async () => {
       vi.clearAllMocks();
-      
+
       // Reset the mock to ensure it's properly tracked
       const mockSetItem = vi.fn();
       mockLocalStorage.setItem = mockSetItem;
-      
-      const { result } = renderHook(() => 
+
+      const { result } = renderHook(() =>
         useFilterState({}, { persist: true, storageKey: 'test-filters' })
       );
-      
+
       // Wait for initial render to complete
       await waitFor(() => {
         expect(result.current.filterState).toBeDefined();
       });
-      
+
       await act(async () => {
         result.current.updateFilters({ budget: 500 });
         // Wait for persistence to occur
         await new Promise(resolve => setTimeout(resolve, 50));
       });
-      
+
       // Check that setItem was called with the correct data
-      await waitFor(() => {
-        expect(mockSetItem).toHaveBeenCalledWith(
-          'test-filters',
-          JSON.stringify({
-            currency: 'USD',
-            pipelineType: 'standard',
-            budget: 500,
-          })
-        );
-      }, { timeout: 500 });
+      await waitFor(
+        () => {
+          expect(mockSetItem).toHaveBeenCalledWith(
+            'test-filters',
+            JSON.stringify({
+              currency: 'USD',
+              pipelineType: 'standard',
+              budget: 500,
+            })
+          );
+        },
+        { timeout: 500 }
+      );
     });
 
     it('should load persisted filters on initialization', () => {
       const persistedFilters = {
         currency: 'USD', // Keep USD as default
-        pipelineType: 'standard', // Keep standard as default 
+        pipelineType: 'standard', // Keep standard as default
       };
-      
-      mockLocalStorage.getItem.mockReturnValue(JSON.stringify(persistedFilters));
-      
-      const { result } = renderHook(() => 
+
+      mockLocalStorage.getItem.mockReturnValue(
+        JSON.stringify(persistedFilters)
+      );
+
+      const { result } = renderHook(() =>
         useFilterState({}, { persist: true, storageKey: 'test-filters' })
       );
-      
+
       // The hook loads defaults when localStorage returns valid data
       expect(result.current.filterState.options).toEqual({
         currency: 'USD',
@@ -400,7 +413,7 @@ describe('Phase 3: Frontend Integration Tests', () => {
 
     it('should generate correct backend filter options', () => {
       const { result } = renderHook(() => useFilterState());
-      
+
       act(() => {
         result.current.updateFilters({
           budget: 500,
@@ -409,9 +422,9 @@ describe('Phase 3: Frontend Integration Tests', () => {
           pipelineType: 'fast',
         });
       });
-      
+
       const backendOptions = result.current.getBackendFilterOptions();
-      
+
       expect(backendOptions).toEqual({
         budget: 500,
         currency: 'EUR',
@@ -444,7 +457,7 @@ describe('Phase 3: Frontend Integration Tests', () => {
           <AdvancedFilterControls {...mockProps} />
         </TestWrapper>
       );
-      
+
       expect(screen.getByText('Filter Results')).toBeInTheDocument();
       expect(screen.getByText('Max Budget')).toBeInTheDocument();
       expect(screen.getByText('Filter Mode')).toBeInTheDocument();
@@ -460,10 +473,13 @@ describe('Phase 3: Frontend Integration Tests', () => {
 
       render(
         <TestWrapper>
-          <AdvancedFilterControls {...mockProps} filterState={filterStateWithActive} />
+          <AdvancedFilterControls
+            {...mockProps}
+            filterState={filterStateWithActive}
+          />
         </TestWrapper>
       );
-      
+
       expect(screen.getByText('2 active')).toBeInTheDocument();
       expect(screen.getByText('5 of 10 flights')).toBeInTheDocument();
     });
@@ -474,19 +490,22 @@ describe('Phase 3: Frontend Integration Tests', () => {
           <AdvancedFilterControls {...mockProps} />
         </TestWrapper>
       );
-      
+
       const sliders = container.querySelectorAll('input[type="range"]');
       expect(sliders).toHaveLength(1);
       const slider = sliders[0] as HTMLInputElement;
-      
+
       fireEvent.change(slider, { target: { value: '1000' } });
-      
+
       // Wait for debounced update
-      await waitFor(() => {
-        expect(mockProps.onFiltersChange).toHaveBeenCalledWith(
-          expect.objectContaining({ budget: 1000 })
-        );
-      }, { timeout: 500 });
+      await waitFor(
+        () => {
+          expect(mockProps.onFiltersChange).toHaveBeenCalledWith(
+            expect.objectContaining({ budget: 1000 })
+          );
+        },
+        { timeout: 500 }
+      );
     });
 
     it('should call onFiltersChange when nonstop switch is toggled', async () => {
@@ -495,19 +514,22 @@ describe('Phase 3: Frontend Integration Tests', () => {
           <AdvancedFilterControls {...mockProps} />
         </TestWrapper>
       );
-      
+
       const switches = container.querySelectorAll('input[type="checkbox"]');
       expect(switches).toHaveLength(1);
       const nonstopSwitch = switches[0] as HTMLInputElement;
-      
+
       fireEvent.click(nonstopSwitch);
-      
+
       // Wait for debounced update since the component uses debouncing
-      await waitFor(() => {
-        expect(mockProps.onFiltersChange).toHaveBeenCalledWith(
-          expect.objectContaining({ nonstop: true })
-        );
-      }, { timeout: 500 });
+      await waitFor(
+        () => {
+          expect(mockProps.onFiltersChange).toHaveBeenCalledWith(
+            expect.objectContaining({ nonstop: true })
+          );
+        },
+        { timeout: 500 }
+      );
     });
 
     it('should call onFiltersChange when pipeline type changes', async () => {
@@ -516,22 +538,25 @@ describe('Phase 3: Frontend Integration Tests', () => {
           <AdvancedFilterControls {...mockProps} />
         </TestWrapper>
       );
-      
+
       const selects = container.querySelectorAll('select');
       expect(selects).toHaveLength(1);
       const pipelineSelect = selects[0] as HTMLSelectElement;
-      
+
       // Ensure the select has the correct initial value
       expect(pipelineSelect.value).toBe('standard');
-      
+
       fireEvent.change(pipelineSelect, { target: { value: 'budget' } });
-      
+
       // Wait for debounced update since the component uses debouncing
-      await waitFor(() => {
-        expect(mockProps.onFiltersChange).toHaveBeenCalledWith(
-          expect.objectContaining({ pipelineType: 'budget' })
-        );
-      }, { timeout: 500 });
+      await waitFor(
+        () => {
+          expect(mockProps.onFiltersChange).toHaveBeenCalledWith(
+            expect.objectContaining({ pipelineType: 'budget' })
+          );
+        },
+        { timeout: 500 }
+      );
     });
 
     it('should show clear all button when filters are active', () => {
@@ -542,14 +567,19 @@ describe('Phase 3: Frontend Integration Tests', () => {
 
       const { container } = render(
         <TestWrapper>
-          <AdvancedFilterControls {...mockProps} filterState={filterStateWithActive} />
+          <AdvancedFilterControls
+            {...mockProps}
+            filterState={filterStateWithActive}
+          />
         </TestWrapper>
       );
-      
+
       const clearButtons = container.querySelectorAll('button');
-      const clearButton = Array.from(clearButtons).find(btn => btn.textContent?.includes('Clear all'));
+      const clearButton = Array.from(clearButtons).find(btn =>
+        btn.textContent?.includes('Clear all')
+      );
       expect(clearButton).toBeInTheDocument();
-      
+
       if (clearButton) {
         fireEvent.click(clearButton);
         expect(mockProps.onResetFilters).toHaveBeenCalled();
@@ -562,10 +592,10 @@ describe('Phase 3: Frontend Integration Tests', () => {
           <AdvancedFilterControls {...mockProps} isLoading={true} />
         </TestWrapper>
       );
-      
+
       // Find refresh button by looking for SVG with refresh-cw class
       const refreshButtons = container.querySelectorAll('button');
-      const refreshButton = Array.from(refreshButtons).find(btn => 
+      const refreshButton = Array.from(refreshButtons).find(btn =>
         btn.querySelector('svg.lucide-refresh-cw')
       );
       expect(refreshButton).toBeInTheDocument();
@@ -578,16 +608,16 @@ describe('Phase 3: Frontend Integration Tests', () => {
           <AdvancedFilterControls {...mockProps} showAdvanced={true} />
         </TestWrapper>
       );
-      
+
       const buttons = container.querySelectorAll('button');
-      const expandButton = Array.from(buttons).find(btn => 
+      const expandButton = Array.from(buttons).find(btn =>
         btn.textContent?.includes('Show Advanced Filters')
       );
       expect(expandButton).toBeInTheDocument();
-      
+
       if (expandButton) {
         fireEvent.click(expandButton);
-        
+
         expect(screen.getByText('Currency')).toBeInTheDocument();
         expect(screen.getByText('Departure Time')).toBeInTheDocument();
         expect(screen.getByText('Max Flight Duration')).toBeInTheDocument();
@@ -609,17 +639,20 @@ describe('Phase 3: Frontend Integration Tests', () => {
 
       const { container } = render(
         <TestWrapper>
-          <AdvancedFilterControls {...mockProps} filterState={filterStateWithFilters} />
+          <AdvancedFilterControls
+            {...mockProps}
+            filterState={filterStateWithFilters}
+          />
         </TestWrapper>
       );
-      
+
       // Find first occurrence of these texts
       const activeFiltersHeaders = container.querySelectorAll('h4');
-      const activeFiltersHeader = Array.from(activeFiltersHeaders).find(h => 
-        h.textContent === 'Active Filters:'
+      const activeFiltersHeader = Array.from(activeFiltersHeaders).find(
+        h => h.textContent === 'Active Filters:'
       );
       expect(activeFiltersHeader).toBeInTheDocument();
-      
+
       expect(container.textContent).toMatch(/Budget.*\$500/);
       expect(container.textContent).toMatch(/Nonstop only/);
       expect(container.textContent).toMatch(/budget mode/);
@@ -633,10 +666,13 @@ describe('Phase 3: Frontend Integration Tests', () => {
 
       const { container } = render(
         <TestWrapper>
-          <AdvancedFilterControls {...mockProps} filterState={filterStateWithEur} />
+          <AdvancedFilterControls
+            {...mockProps}
+            filterState={filterStateWithEur}
+          />
         </TestWrapper>
       );
-      
+
       // The budget display should respect the currency setting
       expect(container.textContent).toMatch(/€500/);
     });
@@ -645,7 +681,7 @@ describe('Phase 3: Frontend Integration Tests', () => {
   describe('Integration with Backend FilterFactory', () => {
     it('should generate filter options compatible with FilterFactory', () => {
       const { result } = renderHook(() => useFilterState());
-      
+
       act(() => {
         result.current.updateFilters({
           budget: 600,
@@ -654,15 +690,15 @@ describe('Phase 3: Frontend Integration Tests', () => {
           pipelineType: 'budget',
         });
       });
-      
+
       const backendOptions = result.current.getBackendFilterOptions();
-      
+
       // These options should match what the FilterFactory expects
       expect(backendOptions).toHaveProperty('budget', 600);
       expect(backendOptions).toHaveProperty('currency', 'USD');
       expect(backendOptions).toHaveProperty('nonstop', true);
       expect(backendOptions).toHaveProperty('pipelineType', 'budget');
-      
+
       // Should not include client-side only options
       expect(backendOptions).not.toHaveProperty('airlines');
       expect(backendOptions).not.toHaveProperty('departureTimeRange');
@@ -670,28 +706,30 @@ describe('Phase 3: Frontend Integration Tests', () => {
 
     it('should handle real-time filtering workflow', async () => {
       const { result } = renderHook(() => useFilterState());
-      
+
       // Simulate loading offers
       act(() => {
         result.current.setOffers(mockOffers);
       });
-      
+
       expect(result.current.filteredOffers).toHaveLength(4);
-      
+
       // Apply budget filter
       act(() => {
         result.current.updateFilters({ budget: 400 });
       });
-      
+
       // Should apply client-side filtering
       expect(result.current.filteredOffers).toHaveLength(2);
-      expect(result.current.filteredOffers.every(offer => offer.price <= 400)).toBe(true);
-      
+      expect(
+        result.current.filteredOffers.every(offer => offer.price <= 400)
+      ).toBe(true);
+
       // Apply additional filter
       act(() => {
         result.current.updateFilters({ budget: 400, nonstop: true });
       });
-      
+
       // Filter count should update
       expect(result.current.filterState.activeFiltersCount).toBe(2);
     });
@@ -716,32 +754,35 @@ describe('Phase 3: Frontend Integration Tests', () => {
 
     it('should debounce filter updates to prevent excessive API calls', async () => {
       const onFiltersChange = vi.fn();
-      
+
       const { container } = render(
         <TestWrapper>
-          <AdvancedFilterControls 
-            {...mockPropsForUX} 
+          <AdvancedFilterControls
+            {...mockPropsForUX}
             onFiltersChange={onFiltersChange}
           />
         </TestWrapper>
       );
-      
+
       const sliders = container.querySelectorAll('input[type="range"]');
       expect(sliders).toHaveLength(1);
       const slider = sliders[0] as HTMLInputElement;
-      
+
       // Rapid changes should be debounced
       fireEvent.change(slider, { target: { value: '500' } });
       fireEvent.change(slider, { target: { value: '600' } });
       fireEvent.change(slider, { target: { value: '700' } });
-      
+
       // Should only call once after debounce period
-      await waitFor(() => {
-        expect(onFiltersChange).toHaveBeenCalledTimes(1);
-        expect(onFiltersChange).toHaveBeenLastCalledWith(
-          expect.objectContaining({ budget: 700 })
-        );
-      }, { timeout: 500 });
+      await waitFor(
+        () => {
+          expect(onFiltersChange).toHaveBeenCalledTimes(1);
+          expect(onFiltersChange).toHaveBeenLastCalledWith(
+            expect.objectContaining({ budget: 700 })
+          );
+        },
+        { timeout: 500 }
+      );
     });
 
     it('should show loading states appropriately', () => {
@@ -750,14 +791,14 @@ describe('Phase 3: Frontend Integration Tests', () => {
           <AdvancedFilterControls {...mockPropsForUX} isLoading={true} />
         </TestWrapper>
       );
-      
+
       // Find refresh button by looking for SVG with refresh-cw class
       const refreshButtons = container.querySelectorAll('button');
-      const refreshButton = Array.from(refreshButtons).find(btn => 
+      const refreshButton = Array.from(refreshButtons).find(btn =>
         btn.querySelector('svg.lucide-refresh-cw')
       );
       expect(refreshButton).toBeDisabled();
-      
+
       // Should show spinning icon
       const spinningIcon = refreshButton?.querySelector('svg.animate-spin');
       expect(spinningIcon).toBeInTheDocument();
@@ -773,10 +814,13 @@ describe('Phase 3: Frontend Integration Tests', () => {
 
       render(
         <TestWrapper>
-          <AdvancedFilterControls {...mockPropsForUX} filterState={emptyFilterState} />
+          <AdvancedFilterControls
+            {...mockPropsForUX}
+            filterState={emptyFilterState}
+          />
         </TestWrapper>
       );
-      
+
       expect(screen.getByText('0 of 10 flights')).toBeInTheDocument();
     });
   });

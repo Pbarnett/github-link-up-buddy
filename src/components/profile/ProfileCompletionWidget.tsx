@@ -1,14 +1,20 @@
-import { 
-  User, 
-  Phone, 
-  FileText, 
-  Settings, 
-  Shield, 
+import {
+  User,
+  Phone,
+  FileText,
+  Settings,
+  Shield,
   AlertTriangle,
   TrendingUp,
-  Target
+  Target,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -57,19 +63,19 @@ const getProgressColor = (score: number) => {
   return 'bg-red-500';
 };
 
-export function ProfileCompletionWidget({ 
-  completeness, 
+export function ProfileCompletionWidget({
+  completeness,
   onCategoryClick,
-  className = ''
+  className = '',
 }: ProfileCompletionWidgetProps) {
   const { overall, categories, missing_fields, recommendations } = completeness;
-  
+
   const getScoreMessage = (score: number) => {
     if (score >= 95) return 'Excellent! Your profile is complete.';
     if (score >= 80) return 'Great! Your profile is almost complete.';
     if (score >= 60) return 'Good progress! Keep adding information.';
     if (score >= 40) return 'Getting started. Add more details to improve.';
-    return 'Let\'s build your profile together.';
+    return "Let's build your profile together.";
   };
 
   const topRecommendation = recommendations?.[0];
@@ -83,16 +89,17 @@ export function ProfileCompletionWidget({
               <Target className="h-5 w-5" />
               Profile Completion
             </CardTitle>
-            <CardDescription>
-              {getScoreMessage(overall)}
-            </CardDescription>
+            <CardDescription>{getScoreMessage(overall)}</CardDescription>
           </div>
-          <Badge variant={getScoreBadgeVariant(overall)} className="text-lg px-3 py-1">
+          <Badge
+            variant={getScoreBadgeVariant(overall)}
+            className="text-lg px-3 py-1"
+          >
             {overall}%
           </Badge>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {/* Overall Progress */}
         <div className="space-y-2">
@@ -104,7 +111,7 @@ export function ProfileCompletionWidget({
           </div>
           <div className="relative">
             <Progress value={overall} className="h-3" />
-            <div 
+            <div
               className={`absolute top-0 left-0 h-3 rounded-full transition-all duration-500 ${getProgressColor(overall)}`}
               style={{ width: `${overall}%` }}
             />
@@ -113,14 +120,18 @@ export function ProfileCompletionWidget({
 
         {/* Category Breakdown */}
         <div className="space-y-3">
-          <h4 className="font-medium text-sm text-muted-foreground">Category Breakdown</h4>
+          <h4 className="font-medium text-sm text-muted-foreground">
+            Category Breakdown
+          </h4>
           <div className="grid gap-3">
             {Object.entries(categories).map(([category, score]) => {
-              const Icon = categoryIcons[category as keyof typeof categoryIcons];
-              const label = categoryLabels[category as keyof typeof categoryLabels];
-              
+              const Icon =
+                categoryIcons[category as keyof typeof categoryIcons];
+              const label =
+                categoryLabels[category as keyof typeof categoryLabels];
+
               return (
-                <div 
+                <div
                   key={category}
                   className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
                     onCategoryClick ? 'cursor-pointer hover:bg-accent' : ''
@@ -133,7 +144,9 @@ export function ProfileCompletionWidget({
                   </div>
                   <div className="flex items-center gap-2">
                     <Progress value={score} className="w-16 h-2" />
-                    <span className={`text-sm font-semibold min-w-[3ch] ${getScoreColor(score)}`}>
+                    <span
+                      className={`text-sm font-semibold min-w-[3ch] ${getScoreColor(score)}`}
+                    >
                       {score}%
                     </span>
                   </div>
@@ -146,7 +159,9 @@ export function ProfileCompletionWidget({
         {/* Top Recommendation */}
         {topRecommendation && (
           <div className="space-y-3">
-            <h4 className="font-medium text-sm text-muted-foreground">Quick Win</h4>
+            <h4 className="font-medium text-sm text-muted-foreground">
+              Quick Win
+            </h4>
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0">
@@ -165,8 +180,8 @@ export function ProfileCompletionWidget({
                   </p>
                   {topRecommendation.points_value && (
                     <p className="text-xs text-blue-600 mt-2 flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
-                      +{topRecommendation.points_value} points
+                      <TrendingUp className="h-3 w-3" />+
+                      {topRecommendation.points_value} points
                     </p>
                   )}
                 </div>
@@ -182,7 +197,7 @@ export function ProfileCompletionWidget({
               Missing Information ({missing_fields.length})
             </h4>
             <div className="flex flex-wrap gap-1">
-              {missing_fields.slice(0, 5).map((field) => (
+              {missing_fields.slice(0, 5).map(field => (
                 <Badge key={field} variant="outline" className="text-xs">
                   {field.replace(/_/g, ' ')}
                 </Badge>
@@ -198,8 +213,8 @@ export function ProfileCompletionWidget({
 
         {/* Action Button */}
         {overall < 100 && (
-          <Button 
-            className="w-full" 
+          <Button
+            className="w-full"
             variant={overall < 50 ? 'default' : 'outline'}
             onClick={() => onCategoryClick?.('general')}
           >

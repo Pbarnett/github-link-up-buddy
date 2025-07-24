@@ -8,80 +8,78 @@ interface BreadcrumbItem {
 
 const Breadcrumbs = () => {
   const location = useLocation();
-  
+
   // Define breadcrumb mappings for different routes
   const getBreadcrumbs = (): BreadcrumbItem[] => {
     const path = location.pathname;
-    
+
     if (path === '/dashboard') {
-      return [
-        { label: 'Dashboard', isActive: true }
-      ];
+      return [{ label: 'Dashboard', isActive: true }];
     }
-    
+
     if (path === '/trip/new') {
       return [
         { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Search Flights', isActive: true }
+        { label: 'Search Flights', isActive: true },
       ];
     }
-    
+
     if (path === '/trip/offers') {
       return [
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Search Flights', href: '/trip/new' },
-        { label: 'Flight Results', isActive: true }
+        { label: 'Flight Results', isActive: true },
       ];
     }
-    
+
     if (path === '/trip/confirm') {
       return [
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Search Flights', href: '/trip/new' },
         { label: 'Flight Results', href: '/trip/offers' },
-        { label: 'Confirm Booking', isActive: true }
+        { label: 'Confirm Booking', isActive: true },
       ];
     }
-    
+
     if (path.startsWith('/trips/') && path.endsWith('/v2')) {
       return [
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Search Flights', href: '/trip/new' },
-        { label: 'Flight Results V2', isActive: true }
+        { label: 'Flight Results V2', isActive: true },
       ];
     }
-    
+
     if (path === '/profile') {
-      return [
-        { label: 'Profile', isActive: true }
-      ];
+      return [{ label: 'Profile', isActive: true }];
     }
-    
+
     if (path === '/wallet') {
       return [
         { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Wallet', isActive: true }
+        { label: 'Wallet', isActive: true },
       ];
     }
-    
+
     // Default fallback
     return [
       { label: 'Dashboard', href: '/dashboard' },
-      { label: 'Current Page', isActive: true }
+      { label: 'Current Page', isActive: true },
     ];
   };
 
   const breadcrumbs = getBreadcrumbs();
-  
+
   // Don't show breadcrumbs on login page, home page, or if only one item
-  if (location.pathname === '/login' || 
-      location.pathname === '/' || 
-      breadcrumbs.length <= 1) {
+  if (
+    location.pathname === '/login' ||
+    location.pathname === '/' ||
+    breadcrumbs.length <= 1
+  ) {
     return null;
   }
 
   return (
-    <nav 
+    <nav
       className="bg-background/50 border-b border-border/30 px-4 py-3"
       aria-label="Breadcrumb"
     >
@@ -97,13 +95,13 @@ const Breadcrumbs = () => {
               <span className="sr-only">Dashboard</span>
             </Link>
           </li>
-          
+
           {/* Breadcrumb items */}
           {breadcrumbs.map((item, index) => (
             <li key={index} className="flex items-center">
               <ChevronRight className="h-4 w-4 text-muted-foreground mx-2" />
               {item.isActive ? (
-                <span 
+                <span
                   className="font-medium text-foreground"
                   aria-current="page"
                 >
@@ -113,8 +111,8 @@ const Breadcrumbs = () => {
                 <Link
                   to={item.href!}
                   className={cn(
-                    "text-muted-foreground hover:text-foreground transition-colors",
-                    "hover:underline underline-offset-4"
+                    'text-muted-foreground hover:text-foreground transition-colors',
+                    'hover:underline underline-offset-4'
                   )}
                 >
                   {item.label}

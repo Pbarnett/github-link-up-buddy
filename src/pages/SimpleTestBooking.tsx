@@ -1,6 +1,6 @@
 /**
  * Simple Test Booking Page
- * 
+ *
  * A simplified version of the booking page that doesn't use AWS SDK
  * or other problematic dependencies. Used specifically for e2e testing.
  */
@@ -33,9 +33,12 @@ const SimpleTestBooking: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleInputChange = (field: keyof FlightSearchFormData, value: string | number) => {
+  const handleInputChange = (
+    field: keyof FlightSearchFormData,
+    value: string | number
+  ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear return date if switching to one-way
     if (field === 'tripType' && value === 'oneWay') {
       setFormData(prev => ({ ...prev, returnDate: '' }));
@@ -61,7 +64,7 @@ const SimpleTestBooking: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
@@ -74,11 +77,12 @@ const SimpleTestBooking: React.FC = () => {
     // Simulate flight search
     try {
       await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-      
+
       // Mock successful search - in real app this would show results
       console.log('Flight search completed:', formData);
-      alert(`Flight search completed for ${formData.origin} to ${formData.destination}`);
-      
+      alert(
+        `Flight search completed for ${formData.origin} to ${formData.destination}`
+      );
     } catch (err) {
       setError('Flight search failed. Please try again.');
     } finally {
@@ -94,13 +98,19 @@ const SimpleTestBooking: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Test Flight Booking</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Test Flight Booking
+          </h1>
           <p className="text-gray-600 mt-2">
-            This is a test-only page for E2E testing - authentication is bypassed
+            This is a test-only page for E2E testing - authentication is
+            bypassed
           </p>
         </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-md max-w-4xl">
+
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6 bg-white p-6 rounded-lg shadow-md max-w-4xl"
+        >
           {/* Trip type selection */}
           <div className="flex space-x-4">
             <label className="flex items-center">
@@ -108,7 +118,9 @@ const SimpleTestBooking: React.FC = () => {
                 type="radio"
                 value="roundTrip"
                 checked={formData.tripType === 'roundTrip'}
-                onChange={(e) => handleInputChange('tripType', e.target.value as 'roundTrip')}
+                onChange={e =>
+                  handleInputChange('tripType', e.target.value as 'roundTrip')
+                }
                 className="mr-2"
               />
               Round Trip
@@ -118,7 +130,9 @@ const SimpleTestBooking: React.FC = () => {
                 type="radio"
                 value="oneWay"
                 checked={formData.tripType === 'oneWay'}
-                onChange={(e) => handleInputChange('tripType', e.target.value as 'oneWay')}
+                onChange={e =>
+                  handleInputChange('tripType', e.target.value as 'oneWay')
+                }
                 className="mr-2"
               />
               One Way
@@ -135,7 +149,7 @@ const SimpleTestBooking: React.FC = () => {
                 type="text"
                 placeholder="LAX, New York, etc."
                 value={formData.origin}
-                onChange={(e) => handleInputChange('origin', e.target.value)}
+                onChange={e => handleInputChange('origin', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
@@ -148,7 +162,7 @@ const SimpleTestBooking: React.FC = () => {
                 type="text"
                 placeholder="JFK, London, etc."
                 value={formData.destination}
-                onChange={(e) => handleInputChange('destination', e.target.value)}
+                onChange={e => handleInputChange('destination', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
@@ -165,7 +179,9 @@ const SimpleTestBooking: React.FC = () => {
                 type="date"
                 value={formData.departureDate}
                 min={today}
-                onChange={(e) => handleInputChange('departureDate', e.target.value)}
+                onChange={e =>
+                  handleInputChange('departureDate', e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
@@ -179,7 +195,9 @@ const SimpleTestBooking: React.FC = () => {
                   type="date"
                   value={formData.returnDate || ''}
                   min={minReturnDate}
-                  onChange={(e) => handleInputChange('returnDate', e.target.value)}
+                  onChange={e =>
+                    handleInputChange('returnDate', e.target.value)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
@@ -195,11 +213,15 @@ const SimpleTestBooking: React.FC = () => {
               </label>
               <select
                 value={formData.adults}
-                onChange={(e) => handleInputChange('adults', parseInt(e.target.value))}
+                onChange={e =>
+                  handleInputChange('adults', parseInt(e.target.value))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                  <option key={num} value={num}>{num}</option>
+                  <option key={num} value={num}>
+                    {num}
+                  </option>
                 ))}
               </select>
             </div>
@@ -209,11 +231,15 @@ const SimpleTestBooking: React.FC = () => {
               </label>
               <select
                 value={formData.children}
-                onChange={(e) => handleInputChange('children', parseInt(e.target.value))}
+                onChange={e =>
+                  handleInputChange('children', parseInt(e.target.value))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {[0, 1, 2, 3, 4, 5].map(num => (
-                  <option key={num} value={num}>{num}</option>
+                  <option key={num} value={num}>
+                    {num}
+                  </option>
                 ))}
               </select>
             </div>
@@ -223,11 +249,15 @@ const SimpleTestBooking: React.FC = () => {
               </label>
               <select
                 value={formData.infants}
-                onChange={(e) => handleInputChange('infants', parseInt(e.target.value))}
+                onChange={e =>
+                  handleInputChange('infants', parseInt(e.target.value))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {[0, 1, 2].map(num => (
-                  <option key={num} value={num}>{num}</option>
+                  <option key={num} value={num}>
+                    {num}
+                  </option>
                 ))}
               </select>
             </div>
@@ -246,9 +276,7 @@ const SimpleTestBooking: React.FC = () => {
                   <h3 className="text-sm font-medium text-red-800">
                     Search Error
                   </h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    {error}
-                  </div>
+                  <div className="mt-2 text-sm text-red-700">{error}</div>
                 </div>
                 <div className="ml-auto pl-3">
                   <button

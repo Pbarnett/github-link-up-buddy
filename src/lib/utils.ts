@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -12,18 +12,18 @@ export function cn(...inputs: ClassValue[]) {
  * - Otherwise, return null to skip this offer.
  */
 export function decideSeatPreference(
-  _offer: {  
+  _offer: {
     price: number;
     hasAisleSeat?: boolean;
     hasWindowSeat?: boolean;
     hasMiddleSeat?: boolean;
   },
-  _trip: {  
+  _trip: {
     max_price: number;
     // We can add more fields later (e.g., nonstop_required, baggage_included_required),
     // but this stub is enough for Jules to call.
   }
-): "AISLE" | "WINDOW" | "MIDDLE" | null {
+): 'AISLE' | 'WINDOW' | 'MIDDLE' | null {
   // TODO: Jules will fill this in with actual logic that parses offer.seat_map or fare details.
   return null;
 }

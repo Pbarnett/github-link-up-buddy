@@ -3,11 +3,17 @@
  * React Query wrapper with intelligent caching, retry, and performance optimizations
  */
 
-import { useQuery, useQueryClient, QueryKey, UseQueryOptions } from '@tanstack/react-query';
+import {
+  useQuery,
+  useQueryClient,
+  QueryKey,
+  UseQueryOptions,
+} from '@tanstack/react-query';
 import { trackEvent } from '@/utils/monitoring';
 import { useNetworkStatus } from './useNetworkStatus';
 
-interface OptimizedQueryOptions<T> extends Omit<UseQueryOptions<T>, 'queryKey' | 'queryFn'> {
+interface OptimizedQueryOptions<T>
+  extends Omit<UseQueryOptions<T>, 'queryKey' | 'queryFn'> {
   // Custom options for optimization
   enableOfflineFirst?: boolean;
   skipNetworkOnCacheHit?: boolean;
@@ -36,9 +42,13 @@ export const useOptimizedQuery = <T>(
     queryKey,
     queryFn: async () => {
       const cacheHit = queryClient.getQueryData(queryKey);
-      
+
       // Skip network if we have cache and option enabled
-      if (cacheHit && skipNetworkOnCacheHit && !reactQueryOptions.refetchInterval) {
+      if (
+        cacheHit &&
+        skipNetworkOnCacheHit &&
+        !reactQueryOptions.refetchInterval
+      ) {
         if (trackPerformance) {
           trackEvent('query_cache_hit', {
             queryKey: JSON.stringify(queryKey),
@@ -50,7 +60,7 @@ export const useOptimizedQuery = <T>(
 
       try {
         const result = await queryFn()();
-        
+
         if (trackPerformance) {
           trackEvent('query_network_success', {
             queryKey: JSON.stringify(queryKey),
@@ -59,7 +69,7 @@ export const useOptimizedQuery = <T>(
             isSlowConnection,
           });
         }
-        
+
         return result;
       } catch (error) {
         if (trackPerformance) {
@@ -73,34 +83,44 @@ export const useOptimizedQuery = <T>(
         throw error;
       }
     },
-    
+
     // Adaptive caching based on connection
     staleTime: isSlowConnection ? 10 * 60 * 1000 : 5 * 60 * 1000, // 10min vs 5min
     gcTime: 15 * 60 * 1000, // 15 minutes (renamed from cacheTime in v5)
-    
+
     // Smart retry logic
     retry: (failureCount, error: unknown) => {
       // Don't retry on 404s
-      if (error && typeof error === 'object' && 'status' in error && error.status === 404) return false;
-      
+      if (
+        error &&
+        typeof error === 'object' &&
+        'status' in error &&
+        error.status === 404
+      )
+        return false;
+
       // Don't retry when offline (unless enableOfflineFirst)
       if (!isOnline && !enableOfflineFirst) return false;
-      
+
       // Retry up to 3 times with exponential backoff
       return failureCount < 3;
     },
-    
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    
+
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+
     // Network mode based on connection status
-    networkMode: isOnline ? 'online' : enableOfflineFirst ? 'offlineFirst' : 'online',
-    
+    networkMode: isOnline
+      ? 'online'
+      : enableOfflineFirst
+        ? 'offlineFirst'
+        : 'online',
+
     // Refetch on window focus only if online
     refetchOnWindowFocus: isOnline,
-    
+
     // Disable background refetch on slow connections
     refetchOnMount: !isSlowConnection,
-    
+
     // Merge with user options
     ...reactQueryOptions,
   });
@@ -117,7 +137,10 @@ export const useOptimizedQuery = <T>(
     };
 
     // Only track significant state changes to avoid spam
-    if (queryResult.status === 'error' || (queryResult.status === 'success' && !queryResult.isFetching)) {
+    if (
+      queryResult.status === 'error' ||
+      (queryResult.status === 'success' && !queryResult.isFetching)
+    ) {
       trackEvent('query_state_change', queryState);
     }
   }

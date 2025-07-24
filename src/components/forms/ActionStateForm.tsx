@@ -1,10 +1,10 @@
 type FormEvent = React.FormEvent;
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import * as React from 'react';
 
 interface FormState {
   success?: boolean;
@@ -20,56 +20,62 @@ interface SearchFormData {
 }
 
 // Form action that validates and processes search data
-async function searchFlights(prevState: FormState | null, formData: FormData): Promise<FormState> {
+async function searchFlights(
+  prevState: FormState | null,
+  formData: FormData
+): Promise<FormState> {
   // Simulate validation delay
   await new Promise(resolve => setTimeout(resolve, 1000));
-  
+
   const origin = formData.get('origin') as string;
   const destination = formData.get('destination') as string;
   const departureDate = formData.get('departureDate') as string;
-  
+
   // Basic validation
   if (!origin || origin.length < 3) {
     return {
       success: false,
-      error: 'Origin must be at least 3 characters long'
+      error: 'Origin must be at least 3 characters long',
     };
   }
-  
+
   if (!destination || destination.length < 3) {
     return {
       success: false,
-      error: 'Destination must be at least 3 characters long'
+      error: 'Destination must be at least 3 characters long',
     };
   }
-  
+
   if (!departureDate) {
     return {
       success: false,
-      error: 'Please select a departure date'
+      error: 'Please select a departure date',
     };
   }
-  
+
   // Simulate API call
   try {
     const searchData: SearchFormData = {
       origin,
       destination,
-      departureDate
+      departureDate,
     };
-    
+
     // Here you would make the actual API call
     // const results = await flightSearchAPI(searchData);
-    
+
     return {
       success: true,
       message: `Searching flights from ${origin} to ${destination} on ${departureDate}`,
-      data: searchData
+      data: searchData,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Search failed. Please try again.'
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Search failed. Please try again.',
     };
   }
 }
@@ -79,42 +85,52 @@ interface ActionStateFormProps {
   className?: string;
 }
 
-export function ActionStateForm({ onSearchComplete, className }: ActionStateFormProps) {
+export function ActionStateForm({
+  onSearchComplete,
+  className,
+}: ActionStateFormProps) {
   const [state, setState] = useState<FormState | null>(null);
   const [isPending, setIsPending] = useState(false);
-  
+
   // Handle form submission
-  const handleSubmit = useCallback(async (event: FormEvent) => {
-    event.preventDefault();
-    setIsPending(true);
-    
-    const formData = new FormData(event.currentTarget);
-    const result = await searchFlights(state, formData);
-    
-    setState(result);
-    setIsPending(false);
-  }, [state]);
-  
+  const handleSubmit = useCallback(
+    async (event: FormEvent) => {
+      event.preventDefault();
+      setIsPending(true);
+
+      const formData = new FormData(event.currentTarget);
+      const result = await searchFlights(state, formData);
+
+      setState(result);
+      setIsPending(false);
+    },
+    [state]
+  );
+
   // Handle successful search
   const handleSuccess = useCallback(() => {
     if (state?.success && state.data && onSearchComplete) {
       onSearchComplete(state.data);
     }
   }, [state, onSearchComplete]);
-  
+
   // Auto-trigger success callback when state changes
   useEffect(() => {
     if (state?.success) {
       handleSuccess();
     }
   }, [state?.success, handleSuccess]);
-  
+
   return (
     <Card className={className}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           ✈️ Flight Search
-          {isPending && <span className="text-sm text-muted-foreground">(Searching...)</span>}
+          {isPending && (
+            <span className="text-sm text-muted-foreground">
+              (Searching...)
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -141,7 +157,7 @@ export function ActionStateForm({ onSearchComplete, className }: ActionStateForm
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="departureDate">Departure Date</Label>
             <Input
@@ -153,16 +169,12 @@ export function ActionStateForm({ onSearchComplete, className }: ActionStateForm
               required
             />
           </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isPending}
-          >
+
+          <Button type="submit" className="w-full" disabled={isPending}>
             {isPending ? 'Searching Flights...' : 'Search Flights'}
           </Button>
         </form>
-        
+
         {/* Display state messages */}
         {state?.error && (
           <Alert variant="destructive" className="mt-4">
@@ -170,7 +182,7 @@ export function ActionStateForm({ onSearchComplete, className }: ActionStateForm
             <AlertDescription>{state.error}</AlertDescription>
           </Alert>
         )}
-        
+
         {state?.success && state?.message && (
           <Alert className="mt-4 border-green-200 bg-green-50">
             <CheckCircle className="h-4 w-4 text-green-600" />

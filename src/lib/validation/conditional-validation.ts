@@ -1,16 +1,22 @@
 /**
  * Conditional Validation System - Yup-like .when() for Zod
- * 
+ *
  * Implements conditional validation similar to Yup's .when() method
  * while maintaining Zod's performance and type safety.
  */
 
 import { z } from 'zod';
-import type { FormConfiguration, FieldConfiguration } from '@/types/dynamic-forms';
+import type {
+  FormConfiguration,
+  FieldConfiguration,
+} from '@/types/dynamic-forms';
 
 interface ConditionalRule<T> {
   field: string | string[];
-  is: boolean | ((value: any) => boolean) | ((values: Record<string, any>) => boolean);
+  is:
+    | boolean
+    | ((value: any) => boolean)
+    | ((values: Record<string, any>) => boolean);
   then: (schema: z.ZodTypeAny) => z.ZodTypeAny;
   otherwise?: (schema: z.ZodTypeAny) => z.ZodTypeAny;
 }
@@ -35,7 +41,10 @@ class ConditionalValidationBuilder {
   when<T>(
     field: string | string[],
     options: {
-      is: boolean | ((value: any) => boolean) | ((values: Record<string, any>) => boolean);
+      is:
+        | boolean
+        | ((value: any) => boolean)
+        | ((values: Record<string, any>) => boolean);
       then: (schema: z.ZodTypeAny) => z.ZodTypeAny;
       otherwise?: (schema: z.ZodTypeAny) => z.ZodTypeAny;
     }
@@ -44,9 +53,9 @@ class ConditionalValidationBuilder {
       field,
       is: options.is,
       then: options.then,
-      otherwise: options.otherwise
+      otherwise: options.otherwise,
     });
-    
+
     return this;
   }
 
@@ -62,11 +71,14 @@ class ConditionalValidationBuilder {
     return this.baseSchema.superRefine((value, ctx) => {
       // Get form data from context (requires custom parsing context)
       const formData = (ctx as any).formData || {};
-      
+
       this.conditionalRules.forEach(rule => {
         const shouldApplyThen = this.evaluateCondition(rule, formData, value);
-        const targetSchema = shouldApplyThen ? rule.then(this.baseSchema) : 
-                           rule.otherwise ? rule.otherwise(this.baseSchema) : this.baseSchema;
+        const targetSchema = shouldApplyThen
+          ? rule.then(this.baseSchema)
+          : rule.otherwise
+            ? rule.otherwise(this.baseSchema)
+            : this.baseSchema;
 
         // Apply the conditional schema
         const result = targetSchema.safeParse(value);
@@ -75,7 +87,7 @@ class ConditionalValidationBuilder {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: error.message,
-              path: error.path
+              path: error.path,
             });
           });
         }
@@ -92,11 +104,11 @@ class ConditionalValidationBuilder {
     currentValue: unknown
   ): boolean {
     const fieldNames = Array.isArray(rule.field) ? rule.field : [rule.field];
-    
+
     if (typeof rule.is === 'boolean') {
       return rule.is;
     }
-    
+
     if (typeof rule.is === 'function') {
       if (fieldNames.length === 1) {
         const fieldValue = formData[fieldNames[0]];
@@ -110,7 +122,7 @@ class ConditionalValidationBuilder {
         return rule.is(fieldValues);
       }
     }
-    
+
     return false;
   }
 }
@@ -143,21 +155,27 @@ class ConditionalSchemaFactory {
   /**
    * Create conditional array schema
    */
-  static conditionalArray<T>(itemSchema: z.ZodTypeAny): ConditionalValidationBuilder {
+  static conditionalArray<T>(
+    itemSchema: z.ZodTypeAny
+  ): ConditionalValidationBuilder {
     return new ConditionalValidationBuilder(z.array(itemSchema));
   }
 
   /**
    * Create conditional object schema
    */
-  static conditionalObject(shape: Record<string, z.ZodTypeAny>): ConditionalValidationBuilder {
+  static conditionalObject(
+    shape: Record<string, z.ZodTypeAny>
+  ): ConditionalValidationBuilder {
     return new ConditionalValidationBuilder(z.object(shape));
   }
 
   /**
    * Wrap existing schema with conditional logic
    */
-  static conditional<T extends z.ZodTypeAny>(schema: T): ConditionalValidationBuilder {
+  static conditional<T extends z.ZodTypeAny>(
+    schema: T
+  ): ConditionalValidationBuilder {
     return new ConditionalValidationBuilder(schema);
   }
 }
@@ -232,24 +250,24 @@ export class ConditionalFormSchemaGenerator {
       case 'password':
       case 'textarea':
         return z.string();
-      
+
       case 'number':
         return z.number();
-      
+
       case 'checkbox':
       case 'switch':
         return z.boolean();
-      
+
       case 'select':
         if (field.options) {
           const values = field.options.map(opt => opt.value);
           return z.enum(values as [string, ...string[]]);
         }
         return z.string();
-      
+
       case 'multi-select':
         return z.array(z.string());
-      
+
       default:
         return z.unknown();
     }
@@ -269,27 +287,30 @@ export class ConditionalFormSchemaGenerator {
     // Handle showWhen condition
     if (field.conditional.showWhen) {
       conditional.when(field.conditional.showWhen.field, {
-        is: (value) => this.evaluateConditionRule(field.conditional!.showWhen!, value),
-        then: (schema) => schema,
-        otherwise: (schema) => z.undefined()
+        is: value =>
+          this.evaluateConditionRule(field.conditional!.showWhen!, value),
+        then: schema => schema,
+        otherwise: schema => z.undefined(),
       });
     }
 
     // Handle hideWhen condition
     if (field.conditional.hideWhen) {
       conditional.when(field.conditional.hideWhen.field, {
-        is: (value) => this.evaluateConditionRule(field.conditional!.hideWhen!, value),
-        then: (schema) => z.undefined(),
-        otherwise: (schema) => schema
+        is: value =>
+          this.evaluateConditionRule(field.conditional!.hideWhen!, value),
+        then: schema => z.undefined(),
+        otherwise: schema => schema,
       });
     }
 
     // Handle enableWhen/disableWhen (affects validation, not visibility)
     if (field.conditional.enableWhen) {
       conditional.when(field.conditional.enableWhen.field, {
-        is: (value) => this.evaluateConditionRule(field.conditional!.enableWhen!, value),
-        then: (schema) => schema,
-        otherwise: (schema) => schema.optional()
+        is: value =>
+          this.evaluateConditionRule(field.conditional!.enableWhen!, value),
+        then: schema => schema,
+        otherwise: schema => schema.optional(),
       });
     }
 
@@ -329,10 +350,13 @@ export class ConditionalFormSchemaGenerator {
   /**
    * Apply validation rules to schema
    */
-  private applyValidationRules(schema: z.ZodTypeAny, validation: any): z.ZodTypeAny {
+  private applyValidationRules(
+    schema: z.ZodTypeAny,
+    validation: any
+  ): z.ZodTypeAny {
     if (schema instanceof z.ZodString) {
       let stringSchema = schema as z.ZodString;
-      
+
       if (validation.email) {
         stringSchema = stringSchema.email('Invalid email address');
       }
@@ -345,20 +369,20 @@ export class ConditionalFormSchemaGenerator {
       if (validation.pattern) {
         stringSchema = stringSchema.regex(new RegExp(validation.pattern));
       }
-      
+
       return stringSchema;
     }
 
     if (schema instanceof z.ZodNumber) {
       let numberSchema = schema as z.ZodNumber;
-      
+
       if (validation.min !== undefined) {
         numberSchema = numberSchema.min(validation.min);
       }
       if (validation.max !== undefined) {
         numberSchema = numberSchema.max(validation.max);
       }
-      
+
       return numberSchema;
     }
 
@@ -371,66 +395,67 @@ export const conditionalExamples = {
   // Employment form example
   employmentForm: () => {
     const employmentType = z.enum(['employed', 'self-employed', 'unemployed']);
-    
+
     const companyName = ConditionalSchemaFactory.conditionalString()
       .when('employmentType', {
         is: 'employed',
-        then: (schema) => schema.min(1, 'Company name is required for employed individuals'),
-        otherwise: (schema) => schema.optional()
+        then: schema =>
+          schema.min(1, 'Company name is required for employed individuals'),
+        otherwise: schema => schema.optional(),
       })
       .build();
 
     return z.object({
       employmentType,
-      companyName
+      companyName,
     });
   },
 
   // Address form with country-specific validation
   addressForm: () => {
     const country = z.string();
-    
+
     const zipCode = ConditionalSchemaFactory.conditionalString()
       .when(['country', 'state'], {
-        is: ({country, state}) => country === 'US' && state === 'CA',
-        then: (schema) => schema.regex(/^\d{5}$/, 'Must be 5 digits for US/CA'),
-        otherwise: (schema) => schema.optional()
+        is: ({ country, state }) => country === 'US' && state === 'CA',
+        then: schema => schema.regex(/^\d{5}$/, 'Must be 5 digits for US/CA'),
+        otherwise: schema => schema.optional(),
       })
       .build();
 
     return z.object({
       country,
       state: z.string(),
-      zipCode
+      zipCode,
     });
   },
 
   // Multi-step form validation
   multiStepForm: () => {
     const step = z.number();
-    
+
     const email = ConditionalSchemaFactory.conditionalString()
       .when('step', {
-        is: (step) => step >= 1,
-        then: (schema) => schema.email('Valid email required'),
-        otherwise: (schema) => schema.optional()
+        is: step => step >= 1,
+        then: schema => schema.email('Valid email required'),
+        otherwise: schema => schema.optional(),
       })
       .build();
 
     const password = ConditionalSchemaFactory.conditionalString()
       .when('step', {
-        is: (step) => step >= 2,
-        then: (schema) => schema.min(8, 'Password must be at least 8 characters'),
-        otherwise: (schema) => schema.optional()
+        is: step => step >= 2,
+        then: schema => schema.min(8, 'Password must be at least 8 characters'),
+        otherwise: schema => schema.optional(),
       })
       .build();
 
     return z.object({
       step,
       email,
-      password
+      password,
     });
-  }
+  },
 };
 
 export { ConditionalValidationBuilder, ConditionalSchemaFactory };

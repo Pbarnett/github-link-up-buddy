@@ -1,7 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
 
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -24,17 +30,19 @@ export function HealthCheck() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch('/api/health');
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(`Health check failed: ${response.status}`);
       }
-      
+
       setHealth(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch health status');
+      setError(
+        err instanceof Error ? err.message : 'Failed to fetch health status'
+      );
     } finally {
       setLoading(false);
     }
@@ -42,7 +50,7 @@ export function HealthCheck() {
 
   useEffect(() => {
     fetchHealthStatus();
-    
+
     // Auto-refresh every 30 seconds
     const interval = setInterval(fetchHealthStatus, 30000);
     return () => clearInterval(interval);
@@ -141,7 +149,12 @@ export function HealthCheck() {
             <Badge className={getStatusColor(health.status)}>
               {health.status.toUpperCase()}
             </Badge>
-            <Button onClick={fetchHealthStatus} variant="outline" size="sm" disabled={loading}>
+            <Button
+              onClick={fetchHealthStatus}
+              variant="outline"
+              size="sm"
+              disabled={loading}
+            >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -162,7 +175,10 @@ export function HealthCheck() {
                   <span>Database</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className={getStatusColor(health.services.database.status)}>
+                  <Badge
+                    variant="outline"
+                    className={getStatusColor(health.services.database.status)}
+                  >
                     {health.services.database.status}
                   </Badge>
                   {health.services.database.responseTime && (
@@ -178,7 +194,12 @@ export function HealthCheck() {
                   <span>LaunchDarkly</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className={getStatusColor(health.services.launchdarkly.status)}>
+                  <Badge
+                    variant="outline"
+                    className={getStatusColor(
+                      health.services.launchdarkly.status
+                    )}
+                  >
                     {health.services.launchdarkly.status}
                   </Badge>
                   {health.services.launchdarkly.responseTime && (
@@ -190,7 +211,7 @@ export function HealthCheck() {
               </div>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <h4 className="font-semibold">System Info</h4>
             <div className="space-y-1 text-sm">

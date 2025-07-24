@@ -1,15 +1,12 @@
-
-
 /**
  * Retry Queue for Offline Operations
  * Queues tasks for re-execution when network becomes available
  */
 
-
 import localforage from 'localforage';
+import * as React from 'react';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { trackEvent } from './monitoring';
-import * as React from 'react';
 
 const QUEUE_KEY = 'pf-retry-queue';
 
@@ -26,14 +23,21 @@ type OperationHandler = (data: unknown) => Promise<void>;
 const operationHandlers: Map<string, OperationHandler> = new Map();
 
 // Register operation handlers
-export function registerOperationHandler(type: string, handler: OperationHandler) {
+export function registerOperationHandler(
+  type: string,
+  handler: OperationHandler
+) {
   operationHandlers.set(type, handler);
 }
 
 // Enqueue operation for later retry
-export async function enqueueOperation(type: string, data: unknown): Promise<void> {
+export async function enqueueOperation(
+  type: string,
+  data: unknown
+): Promise<void> {
   try {
-    const operations: QueuedOperation[] = (await localforage.getItem(QUEUE_KEY)) || [];
+    const operations: QueuedOperation[] =
+      (await localforage.getItem(QUEUE_KEY)) || [];
     const task: QueuedOperation = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       type,
@@ -41,10 +45,10 @@ export async function enqueueOperation(type: string, data: unknown): Promise<voi
       timestamp: Date.now(),
       retryCount: 0,
     };
-    
+
     operations.push(task);
     await localforage.setItem(QUEUE_KEY, operations);
-    
+
     trackEvent('operation_queued', {
       operation_type: type,
       queue_size: operations.length,
@@ -67,7 +71,7 @@ export function useRetryQueue() {
 
   const processQueue = async () => {
     if (isProcessing) return;
-    
+
     setIsProcessing(true);
     try {
       await flushQueuedOperations();
@@ -82,7 +86,8 @@ export function useRetryQueue() {
 // Process queued operations
 async function flushQueuedOperations() {
   try {
-    const operations: QueuedOperation[] = (await localforage.getItem(QUEUE_KEY)) || [];
+    const operations: QueuedOperation[] =
+      (await localforage.getItem(QUEUE_KEY)) || [];
     if (operations.length === 0) return;
 
     const remaining: QueuedOperation[] = [];
@@ -91,16 +96,18 @@ async function flushQueuedOperations() {
 
     for (const operation of operations) {
       const handler = operationHandlers.get(operation.type);
-      
+
       if (!handler) {
-        console.warn(`No handler registered for operation type: ${operation.type}`);
+        console.warn(
+          `No handler registered for operation type: ${operation.type}`
+        );
         continue;
       }
 
       try {
         await handler(operation.data);
         successCount++;
-        
+
         trackEvent('queued_operation_success', {
           operation_type: operation.type,
           retry_count: operation.retryCount,
@@ -109,12 +116,12 @@ async function flushQueuedOperations() {
       } catch (error) {
         operation.retryCount++;
         failureCount++;
-        
+
         // Retry up to 3 times
         if (operation.retryCount < 3) {
           remaining.push(operation);
         }
-        
+
         trackEvent('queued_operation_failure', {
           operation_type: operation.type,
           retry_count: operation.retryCount,
@@ -124,7 +131,7 @@ async function flushQueuedOperations() {
     }
 
     await localforage.setItem(QUEUE_KEY, remaining);
-    
+
     if (successCount > 0 || failureCount > 0) {
       trackEvent('queue_processed', {
         success_count: successCount,

@@ -28,16 +28,22 @@ export interface PostgrestError {
 
 export interface PostgrestBuilder<T, R = any> {
   then<TResult1 = PostgrestResponse<T>, TResult2 = never>(
-    onfulfilled?: ((value: PostgrestResponse<T>) => TResult1 | PromiseLike<TResult1>) | undefined | null,
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
+    onfulfilled?:
+      | ((value: PostgrestResponse<T>) => TResult1 | PromiseLike<TResult1>)
+      | undefined
+      | null,
+    onrejected?:
+      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+      | undefined
+      | null
   ): Promise<TResult1 | TResult2>;
-  
+
   // Common PostgrestBuilder methods
   select(columns?: string): PostgrestBuilder<T[], R>;
   insert(value: Partial<T>): PostgrestBuilder<T[], R>;
   update(value: Partial<T>): PostgrestBuilder<T[], R>;
   delete(): PostgrestBuilder<T[], R>;
-  
+
   // Filters
   eq(column: string, value: any): PostgrestBuilder<T, R>;
   neq(column: string, value: any): PostgrestBuilder<T, R>;
@@ -57,10 +63,17 @@ export interface PostgrestBuilder<T, R = any> {
   rangeLte(column: string, value: any): PostgrestBuilder<T, R>;
   rangeAdjacent(column: string, value: any): PostgrestBuilder<T, R>;
   overlaps(column: string, value: any): PostgrestBuilder<T, R>;
-  textSearch(column: string, query: string, config?: string): PostgrestBuilder<T, R>;
-  
+  textSearch(
+    column: string,
+    query: string,
+    config?: string
+  ): PostgrestBuilder<T, R>;
+
   // Modifiers
-  order(column: string, options?: { ascending?: boolean; nullsFirst?: boolean }): PostgrestBuilder<T, R>;
+  order(
+    column: string,
+    options?: { ascending?: boolean; nullsFirst?: boolean }
+  ): PostgrestBuilder<T, R>;
   limit(count: number): PostgrestBuilder<T, R>;
   range(from: number, to: number): PostgrestBuilder<T, R>;
   single(): PostgrestBuilder<T, R>;

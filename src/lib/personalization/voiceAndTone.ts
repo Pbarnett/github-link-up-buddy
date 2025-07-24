@@ -46,7 +46,7 @@ export const VOICE_GUIDELINES = {
       'Use confusing terminology',
     ],
     examples: {
-      good: 'Safe travels to Paris tomorrow – we\'ve got your itinerary ready.',
+      good: "Safe travels to Paris tomorrow – we've got your itinerary ready.",
       bad: 'Yo John, we fixed ya flights',
     },
   },
@@ -56,7 +56,7 @@ export const VOICE_GUIDELINES = {
       'Use mild travel-related puns in low-stakes moments',
       'Add joyful exclamations when celebrating',
       'Use humor as seasoning, not the main course',
-      'Match user\'s likely emotional state',
+      "Match user's likely emotional state",
     ],
     dont: [
       'Force humor in serious contexts (errors, payments)',
@@ -78,28 +78,28 @@ export const GREETING_LIBRARY = {
     withFirstName: [
       'Good to see you again, {firstName}. Any place in mind?',
       'Hey {firstName}, looking for fresh flight ideas?',
-      'You\'re back, {firstName}. Let\'s browse a few options.',
+      "You're back, {firstName}. Let's browse a few options.",
     ],
     withFirstNameAndTrip: [
       'Good to see you again, {firstName}. Still thinking about {nextTripCity}?',
       'Hey {firstName}, ready to book that {nextTripCity} trip?',
-      'You\'re back, {firstName}. {nextTripCity} is waiting.',
+      "You're back, {firstName}. {nextTripCity} is waiting.",
     ],
     generic: [
       'Good to see you again. Any place in mind?',
       'Looking for fresh flight ideas?',
-      'Let\'s browse a few options.',
+      "Let's browse a few options.",
     ],
   },
   welcome: {
     withFirstName: [
       'Good to see you, {firstName}.',
-      'Glad you\'re here, {firstName}. Let\'s pick somewhere fun.',
+      "Glad you're here, {firstName}. Let's pick somewhere fun.",
       'Nice to see you, {firstName}. Ready to dream up a trip?',
     ],
     generic: [
       'Good to see you.',
-      'Glad you\'re here. Let\'s pick somewhere fun.',
+      "Glad you're here. Let's pick somewhere fun.",
       'Ready to dream up a trip?',
     ],
   },
@@ -111,7 +111,7 @@ export const GREETING_LIBRARY = {
     ],
     withFirstNameAndTrip: [
       'Booking complete. {nextTripCity} is going to be a blast.',
-      'All set, {firstName}. Can\'t wait for you to see {nextTripCity}.',
+      "All set, {firstName}. Can't wait for you to see {nextTripCity}.",
       'Done and dusted. {nextTripCity} is waiting for you.',
     ],
     generic: [
@@ -124,39 +124,39 @@ export const GREETING_LIBRARY = {
     withFirstName: [
       'Quick update for you, {firstName}. Your flight is on schedule.',
       'Just checked. No changes to your flight.',
-      'Everything\'s on track, {firstName}.',
+      "Everything's on track, {firstName}.",
     ],
     withFirstNameAndTrip: [
       'Quick update for you, {firstName}. Your {nextTripCity} flight is on schedule.',
       'Just checked. No changes to your {nextTripCity} flight.',
-      'Everything\'s on track. {nextTripCity} here you come.',
+      "Everything's on track. {nextTripCity} here you come.",
     ],
     generic: [
       'Quick update. Your flight is on schedule.',
       'Just checked. No changes to your flight.',
-      'Everything\'s on track.',
+      "Everything's on track.",
     ],
   },
   profile: {
     withFirstName: [
-      'Hi {firstName}! Let\'s keep your profile up to date.',
+      "Hi {firstName}! Let's keep your profile up to date.",
       'Hello {firstName}! Managing your travel preferences?',
       'Hey {firstName}! Your profile, your way.',
     ],
     generic: [
-      'Let\'s keep your profile up to date.',
+      "Let's keep your profile up to date.",
       'Managing your travel preferences?',
       'Your profile, your way.',
     ],
   },
   error: {
     withFirstName: [
-      'Looks like a hiccup, {firstName}. Let\'s refresh and try again.',
+      "Looks like a hiccup, {firstName}. Let's refresh and try again.",
       'Something glitched. Give it another go in a sec.',
       'Odd snag there. One more reload should sort it out.',
     ],
     generic: [
-      'Looks like a hiccup. Let\'s refresh and try again.',
+      "Looks like a hiccup. Let's refresh and try again.",
       'Something glitched. Give it another go in a sec.',
       'Odd snag there. One more reload should sort it out.',
     ],
@@ -169,7 +169,8 @@ export function getGreeting(
   personalizationData?: { firstName?: string; nextTripCity?: string } | null,
   variant?: string
 ): string {
-  const contextGreetings = GREETING_LIBRARY[context as keyof typeof GREETING_LIBRARY];
+  const contextGreetings =
+    GREETING_LIBRARY[context as keyof typeof GREETING_LIBRARY];
   if (!contextGreetings) {
     return 'Welcome back!'; // Fallback for unknown contexts
   }
@@ -192,7 +193,8 @@ export function getGreeting(
     selectedGreeting = greetingArray[parseInt(variant)];
   } else {
     // Use deterministic selection based on user data to ensure consistency
-    const seed = (firstName || 'anonymous').length + (nextTripCity || '').length;
+    const seed =
+      (firstName || 'anonymous').length + (nextTripCity || '').length;
     selectedGreeting = greetingArray[seed % greetingArray.length];
   }
 
@@ -203,7 +205,10 @@ export function getGreeting(
 }
 
 // Function to validate content against voice guidelines
-export function validateContent(content: string, context: GreetingContext): {
+export function validateContent(
+  content: string,
+  context: GreetingContext
+): {
   isValid: boolean;
   issues: string[];
   suggestions: string[];
@@ -218,8 +223,10 @@ export function validateContent(content: string, context: GreetingContext): {
   }
 
   // Check for inappropriate humor in serious contexts
-  if ((context === 'error' || context === 'bookingConfirmation') && 
-      (content.includes('😱') || content.includes('joke'))) {
+  if (
+    (context === 'error' || context === 'bookingConfirmation') &&
+    (content.includes('😱') || content.includes('joke'))
+  ) {
     issues.push('Humor may be inappropriate for this context');
     suggestions.push('Focus on clarity and helpfulness');
   }
@@ -238,4 +245,6 @@ export function validateContent(content: string, context: GreetingContext): {
 }
 
 // Export greeting categories for easy reference
-export const GREETING_CONTEXTS = Object.keys(GREETING_LIBRARY) as GreetingContext[];
+export const GREETING_CONTEXTS = Object.keys(
+  GREETING_LIBRARY
+) as GreetingContext[];

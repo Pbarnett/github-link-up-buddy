@@ -1,10 +1,9 @@
-
 /**
  * Radix Themes Demo Component
- * 
+ *
  * This component demonstrates the Radix Themes integration and showcases
  * various components and design patterns available in the design system.
- * 
+ *
  * Features:
  * - Demonstrates Radix Themes components
  * - Shows responsive design patterns
@@ -41,10 +40,10 @@ import {
   Spinner,
   AlertDialog,
 } from '@radix-ui/themes';
-import { 
-  InfoCircledIcon, 
-  CheckIcon, 
-  CrossCircledIcon, 
+import {
+  InfoCircledIcon,
+  CheckIcon,
+  CrossCircledIcon,
   ExclamationTriangleIcon,
   PersonIcon,
   GearIcon,
@@ -61,7 +60,9 @@ export const RadixThemeDemo: FC = () => {
   const [selectedTab, setSelectedTab] = useState('overview');
   const [progressValue, setProgressValue] = useState(0);
   const [switchValue, setSwitchValue] = useState(false);
-  const [checkboxValue, setCheckboxValue] = useState<boolean | "indeterminate">(false);
+  const [checkboxValue, setCheckboxValue] = useState<boolean | 'indeterminate'>(
+    false
+  );
   const [radioValue, setRadioValue] = useState('option-1');
   const [textValue, setTextValue] = useState('');
   const [selectValue, setSelectValue] = useState('option-1');
@@ -92,12 +93,14 @@ export const RadixThemeDemo: FC = () => {
           </Flex>
 
           {/* Status Cards */}
-          <Grid columns={{ initial: "1", sm: "2", md: "4" }} gap="4">
+          <Grid columns={{ initial: '1', sm: '2', md: '4' }} gap="4">
             <Card>
               <Flex direction="column" gap="2">
                 <Flex align="center" gap="2">
                   <CheckIcon color="green" />
-                  <Text size="2" weight="bold">Success</Text>
+                  <Text size="2" weight="bold">
+                    Success
+                  </Text>
                 </Flex>
                 <Text size="1" color="gray">
                   Theme integration complete
@@ -112,7 +115,9 @@ export const RadixThemeDemo: FC = () => {
               <Flex direction="column" gap="2">
                 <Flex align="center" gap="2">
                   <InfoCircledIcon color="blue" />
-                  <Text size="2" weight="bold">Info</Text>
+                  <Text size="2" weight="bold">
+                    Info
+                  </Text>
                 </Flex>
                 <Text size="1" color="gray">
                   Design tokens loaded
@@ -127,7 +132,9 @@ export const RadixThemeDemo: FC = () => {
               <Flex direction="column" gap="2">
                 <Flex align="center" gap="2">
                   <ExclamationTriangleIcon color="orange" />
-                  <Text size="2" weight="bold">Warning</Text>
+                  <Text size="2" weight="bold">
+                    Warning
+                  </Text>
                 </Flex>
                 <Text size="1" color="gray">
                   Some features pending
@@ -142,7 +149,9 @@ export const RadixThemeDemo: FC = () => {
               <Flex direction="column" gap="2">
                 <Flex align="center" gap="2">
                   <CrossCircledIcon color="red" />
-                  <Text size="2" weight="bold">Error</Text>
+                  <Text size="2" weight="bold">
+                    Error
+                  </Text>
                 </Flex>
                 <Text size="1" color="gray">
                   No errors detected
@@ -169,19 +178,20 @@ export const RadixThemeDemo: FC = () => {
                   <Flex direction="column" gap="4">
                     <Heading size="6">System Overview</Heading>
                     <Text>
-                      This demonstration showcases the integration of Radix Themes
-                      with the GitHub Link-Up Buddy application. The theme system
-                      provides consistent design tokens, responsive components,
-                      and accessibility features.
+                      This demonstration showcases the integration of Radix
+                      Themes with the GitHub Link-Up Buddy application. The
+                      theme system provides consistent design tokens, responsive
+                      components, and accessibility features.
                     </Text>
-                    
+
                     <Callout.Root>
                       <Callout.Icon>
                         <InfoCircledIcon />
                       </Callout.Icon>
                       <Callout.Text>
-                        The theme automatically adapts to light/dark mode preferences
-                        and provides a cohesive visual experience across all components.
+                        The theme automatically adapts to light/dark mode
+                        preferences and provides a cohesive visual experience
+                        across all components.
                       </Callout.Text>
                     </Callout.Root>
 
@@ -195,10 +205,12 @@ export const RadixThemeDemo: FC = () => {
                 <Tabs.Content value="components">
                   <Flex direction="column" gap="4">
                     <Heading size="6">Component Library</Heading>
-                    
-                    <Grid columns={{ initial: "1", sm: "2" }} gap="4">
+
+                    <Grid columns={{ initial: '1', sm: '2' }} gap="4">
                       <Box>
-                        <Heading size="4" mb="3">Typography</Heading>
+                        <Heading size="4" mb="3">
+                          Typography
+                        </Heading>
                         <Flex direction="column" gap="2">
                           <Heading size="6">Heading Large</Heading>
                           <Heading size="4">Heading Medium</Heading>
@@ -211,7 +223,9 @@ export const RadixThemeDemo: FC = () => {
                       </Box>
 
                       <Box>
-                        <Heading size="4" mb="3">Avatars & Indicators</Heading>
+                        <Heading size="4" mb="3">
+                          Avatars & Indicators
+                        </Heading>
                         <Flex direction="column" gap="3">
                           <Flex align="center" gap="2">
                             <Avatar
@@ -228,7 +242,7 @@ export const RadixThemeDemo: FC = () => {
                               </Text>
                             </Box>
                           </Flex>
-                          
+
                           <Flex align="center" gap="2">
                             <Spinner size="2" />
                             <Text size="2">Loading...</Text>
@@ -242,8 +256,8 @@ export const RadixThemeDemo: FC = () => {
                 <Tabs.Content value="forms">
                   <Flex direction="column" gap="4">
                     <Heading size="6">Form Components</Heading>
-                    
-                    <Grid columns={{ initial: "1", sm: "2" }} gap="4">
+
+                    <Grid columns={{ initial: '1', sm: '2' }} gap="4">
                       <Box>
                         <Flex direction="column" gap="3">
                           <Box>
@@ -252,7 +266,13 @@ export const RadixThemeDemo: FC = () => {
                             </Text>
                             <TextField.Root
                               value={textValue}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTextValue((e.target as HTMLInputElement).value)}
+                              onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>
+                              ) =>
+                                setTextValue(
+                                  (e.target as HTMLInputElement).value
+                                )
+                              }
                               placeholder="Enter text..."
                             >
                               <TextField.Slot>
@@ -265,15 +285,21 @@ export const RadixThemeDemo: FC = () => {
                             <Text size="2" weight="bold" mb="1">
                               Select
                             </Text>
-                            <Select.Root 
-                              value={selectValue} 
+                            <Select.Root
+                              value={selectValue}
                               onValueChange={setSelectValue}
                             >
                               <Select.Trigger />
                               <Select.Content>
-                                <Select.Item value="option-1">Option 1</Select.Item>
-                                <Select.Item value="option-2">Option 2</Select.Item>
-                                <Select.Item value="option-3">Option 3</Select.Item>
+                                <Select.Item value="option-1">
+                                  Option 1
+                                </Select.Item>
+                                <Select.Item value="option-2">
+                                  Option 2
+                                </Select.Item>
+                                <Select.Item value="option-3">
+                                  Option 3
+                                </Select.Item>
                               </Select.Content>
                             </Select.Root>
                           </Box>
@@ -296,7 +322,9 @@ export const RadixThemeDemo: FC = () => {
                             <Flex align="center" gap="2">
                               <Checkbox
                                 checked={checkboxValue}
-onCheckedChange={(checked: boolean) => setCheckboxValue(checked)}
+                                onCheckedChange={(checked: boolean) =>
+                                  setCheckboxValue(checked)
+                                }
                               />
                               <Text size="2">I agree to the terms</Text>
                             </Flex>
@@ -332,10 +360,12 @@ onCheckedChange={(checked: boolean) => setCheckboxValue(checked)}
                 <Tabs.Content value="actions">
                   <Flex direction="column" gap="4">
                     <Heading size="6">Interactive Actions</Heading>
-                    
-                    <Grid columns={{ initial: "1", sm: "3" }} gap="4">
+
+                    <Grid columns={{ initial: '1', sm: '3' }} gap="4">
                       <Box>
-                        <Heading size="4" mb="3">Buttons</Heading>
+                        <Heading size="4" mb="3">
+                          Buttons
+                        </Heading>
                         <Flex direction="column" gap="2">
                           <Button size="3" variant="solid">
                             Primary Button
@@ -350,9 +380,14 @@ onCheckedChange={(checked: boolean) => setCheckboxValue(checked)}
                       </Box>
 
                       <Box>
-                        <Heading size="4" mb="3">Dialogs</Heading>
+                        <Heading size="4" mb="3">
+                          Dialogs
+                        </Heading>
                         <Flex direction="column" gap="2">
-                          <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                          <Dialog.Root
+                            open={isDialogOpen}
+                            onOpenChange={setIsDialogOpen}
+                          >
                             <Dialog.Trigger>
                               <Button size="3" variant="outline">
                                 Open Dialog
@@ -361,7 +396,8 @@ onCheckedChange={(checked: boolean) => setCheckboxValue(checked)}
                             <Dialog.Content>
                               <Dialog.Title>Demo Dialog</Dialog.Title>
                               <Dialog.Description>
-                                This is a demonstration of the Radix Themes dialog component.
+                                This is a demonstration of the Radix Themes
+                                dialog component.
                               </Dialog.Description>
                               <Flex gap="3" mt="4" justify="end">
                                 <Dialog.Close>
@@ -383,9 +419,12 @@ onCheckedChange={(checked: boolean) => setCheckboxValue(checked)}
                               </Button>
                             </AlertDialog.Trigger>
                             <AlertDialog.Content>
-                              <AlertDialog.Title>Are you sure?</AlertDialog.Title>
+                              <AlertDialog.Title>
+                                Are you sure?
+                              </AlertDialog.Title>
                               <AlertDialog.Description>
-                                This action cannot be undone. This will permanently delete the item.
+                                This action cannot be undone. This will
+                                permanently delete the item.
                               </AlertDialog.Description>
                               <Flex gap="3" mt="4" justify="end">
                                 <AlertDialog.Cancel>
@@ -405,7 +444,9 @@ onCheckedChange={(checked: boolean) => setCheckboxValue(checked)}
                       </Box>
 
                       <Box>
-                        <Heading size="4" mb="3">Dropdown</Heading>
+                        <Heading size="4" mb="3">
+                          Dropdown
+                        </Heading>
                         <DropdownMenu.Root>
                           <DropdownMenu.Trigger>
                             <Button size="3" variant="outline">

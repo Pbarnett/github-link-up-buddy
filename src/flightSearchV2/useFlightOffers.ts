@@ -1,9 +1,7 @@
-
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getFlightOffers } from '@/serverActions/getFlightOffers';
 import { mapFlightOfferDbRowToV2 } from './utils/mapFlightOfferDbRowToV2';
 import type { FlightOfferV2, FlightOfferV2DbRow } from './types';
-import * as React from 'react';
 
 export interface UseFlightOffersOptions {
   // If false, the hook will not run the fetch operation.
@@ -45,7 +43,8 @@ export function useFlightOffers(
     setFetchTrigger(prev => prev + 1);
   };
 
-  const isValidTripRequestId = tripRequestId && typeof tripRequestId === 'string';
+  const isValidTripRequestId =
+    tripRequestId && typeof tripRequestId === 'string';
 
   useEffect(() => {
     // Only proceed if feature is enabled, hook is enabled via options, and tripRequestId is valid.
@@ -75,7 +74,7 @@ export function useFlightOffers(
         const dbRows: FlightOfferV2DbRow[] = await getFlightOffers({
           tripRequestId,
           refresh: shouldRefresh,
-          useCache: true
+          useCache: true,
         });
 
         if (abortController.signal.aborted) {
@@ -89,7 +88,9 @@ export function useFlightOffers(
           return;
         }
         console.error('Error fetching or processing flight offers v2:', e);
-        setError(e instanceof Error ? e : new Error('An unknown error occurred'));
+        setError(
+          e instanceof Error ? e : new Error('An unknown error occurred')
+        );
         setOffers([]);
       } finally {
         if (!abortController.signal.aborted) {
@@ -103,7 +104,13 @@ export function useFlightOffers(
     return () => {
       abortController.abort();
     };
-  }, [tripRequestId, optionEnabled, isFeatureFlagEnabled, isValidTripRequestId, fetchTrigger]);
+  }, [
+    tripRequestId,
+    optionEnabled,
+    isFeatureFlagEnabled,
+    isValidTripRequestId,
+    fetchTrigger,
+  ]);
 
   // If feature flag is not enabled, return the disabled state.
   // This check is now after the useEffect to comply with rules of hooks.
@@ -111,7 +118,7 @@ export function useFlightOffers(
     return {
       offers: [],
       isLoading: false, // Should be false as useEffect would have reset it or not run fetch.
-      error: null,      // Should be null for the same reason.
+      error: null, // Should be null for the same reason.
       isFeatureEnabled: false,
       refetch,
     };

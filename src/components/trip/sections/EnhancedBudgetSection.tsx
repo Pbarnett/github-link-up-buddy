@@ -1,13 +1,19 @@
-
-import { 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { HelpCircle } from 'lucide-react';
+import { Control } from 'react-hook-form';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // Budget form data interface
 interface BudgetFormData {
@@ -27,8 +33,8 @@ const EnhancedBudgetSection = ({ control }: EnhancedBudgetSectionProps) => {
       render={({ field }) => (
         <FormItem>
           <div className="flex items-center gap-2">
-            <FormLabel 
-              htmlFor="max_price_input" 
+            <FormLabel
+              htmlFor="max_price_input"
               className="text-base lg:text-lg font-semibold text-gray-900"
             >
               Top price you'll pay
@@ -39,14 +45,18 @@ const EnhancedBudgetSection = ({ control }: EnhancedBudgetSectionProps) => {
                   <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>We will not charge above this amount; lower is possible.</p>
+                  <p>
+                    We will not charge above this amount; lower is possible.
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
           <FormControl>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">$</span>
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                $
+              </span>
               <Input
                 id="max_price_input"
                 type="number"

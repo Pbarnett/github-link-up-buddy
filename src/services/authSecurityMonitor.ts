@@ -3,7 +3,12 @@
 
 interface SecurityEvent {
   id: string;
-  type: 'AUTH_SUCCESS' | 'AUTH_FAILURE' | 'SUSPICIOUS_ACTIVITY' | 'TOKEN_VALIDATION_FAILED' | 'PRIVACY_MODE_DETECTED';
+  type:
+    | 'AUTH_SUCCESS'
+    | 'AUTH_FAILURE'
+    | 'SUSPICIOUS_ACTIVITY'
+    | 'TOKEN_VALIDATION_FAILED'
+    | 'PRIVACY_MODE_DETECTED';
   timestamp: number;
   userId?: string;
   sessionId?: string;
@@ -78,7 +83,7 @@ class AuthSecurityMonitor {
 
     // Add to events array
     this.events.push(securityEvent);
-    
+
     // Maintain max events limit
     if (this.events.length > this.maxEvents) {
       this.events.shift();
@@ -110,7 +115,7 @@ class AuthSecurityMonitor {
     tokenClaims?: any;
   }): void {
     const browserInfo = this.getBrowserInfo();
-    
+
     this.logEvent({
       type: 'AUTH_SUCCESS',
       userId: data.userId,
@@ -141,7 +146,7 @@ class AuthSecurityMonitor {
     userId?: string;
   }): void {
     const browserInfo = this.getBrowserInfo();
-    
+
     this.logEvent({
       type: 'AUTH_FAILURE',
       userId: data.userId,
@@ -190,7 +195,7 @@ class AuthSecurityMonitor {
    */
   logPrivacyModeDetection(mode: 'standard' | 'fedcm' | 'redirect'): void {
     const browserInfo = this.getBrowserInfo();
-    
+
     this.logEvent({
       type: 'PRIVACY_MODE_DETECTED',
       metadata: {
@@ -217,16 +222,14 @@ class AuthSecurityMonitor {
    * Get recent security events
    */
   getRecentEvents(limit = 50): SecurityEvent[] {
-    return this.events
-      .slice(-limit)
-      .sort((a, b) => b.timestamp - a.timestamp);
+    return this.events.slice(-limit).sort((a, b) => b.timestamp - a.timestamp);
   }
 
   /**
    * Get events by type
    */
   getEventsByType(type: SecurityEvent['type'], hours = 24): SecurityEvent[] {
-    const cutoff = Date.now() - (hours * 60 * 60 * 1000);
+    const cutoff = Date.now() - hours * 60 * 60 * 1000;
     return this.events.filter(
       event => event.type === type && event.timestamp > cutoff
     );
@@ -244,17 +247,24 @@ class AuthSecurityMonitor {
     const recentEvents = this.events.filter(
       event => event.timestamp > now - oneHour
     );
-    const failures = recentEvents.filter(event => event.type === 'AUTH_FAILURE');
-    const failureRate = recentEvents.length > 0 ? failures.length / recentEvents.length : 0;
+    const failures = recentEvents.filter(
+      event => event.type === 'AUTH_FAILURE'
+    );
+    const failureRate =
+      recentEvents.length > 0 ? failures.length / recentEvents.length : 0;
 
     if (failureRate > this.alertThresholds.failureRate) {
-      alerts.push(`High authentication failure rate: ${(failureRate * 100).toFixed(1)}%`);
+      alerts.push(
+        `High authentication failure rate: ${(failureRate * 100).toFixed(1)}%`
+      );
     }
 
     // Check suspicious activities
     const suspiciousEvents = this.getEventsByType('SUSPICIOUS_ACTIVITY', 1);
     if (suspiciousEvents.length >= this.alertThresholds.suspiciousActivity) {
-      alerts.push(`Multiple suspicious activities detected: ${suspiciousEvents.length} in the last hour`);
+      alerts.push(
+        `Multiple suspicious activities detected: ${suspiciousEvents.length} in the last hour`
+      );
     }
 
     // Check high risk scores
@@ -262,7 +272,9 @@ class AuthSecurityMonitor {
       event => event.riskScore > this.alertThresholds.riskScoreThreshold
     );
     if (highRiskEvents.length > 0) {
-      alerts.push(`${highRiskEvents.length} high-risk authentication events detected`);
+      alerts.push(
+        `${highRiskEvents.length} high-risk authentication events detected`
+      );
     }
 
     return alerts;
@@ -272,8 +284,9 @@ class AuthSecurityMonitor {
    * Analyze authentication patterns
    */
   analyzePatterns(): AuthPattern[] {
-    return Array.from(this.patterns.values())
-      .sort((a, b) => b.frequency - a.frequency);
+    return Array.from(this.patterns.values()).sort(
+      (a, b) => b.frequency - a.frequency
+    );
   }
 
   private initializeMetrics(): SecurityMetrics {
@@ -294,27 +307,28 @@ class AuthSecurityMonitor {
       pattern: 'Multiple authentication failures from same source',
       frequency: 0,
       riskLevel: 'HIGH',
-      description: 'Multiple failed authentication attempts may indicate brute force attack'
+      description:
+        'Multiple failed authentication attempts may indicate brute force attack',
     });
 
     this.patterns.set('token_validation_failures', {
       pattern: 'Token validation failures',
       frequency: 0,
       riskLevel: 'HIGH',
-      description: 'Token validation failures may indicate token manipulation'
+      description: 'Token validation failures may indicate token manipulation',
     });
 
     this.patterns.set('privacy_mode_usage', {
       pattern: 'Privacy mode authentication',
       frequency: 0,
       riskLevel: 'LOW',
-      description: 'Users accessing with enhanced privacy settings'
+      description: 'Users accessing with enhanced privacy settings',
     });
   }
 
   private updateMetrics(event: SecurityEvent): void {
     this.metrics.totalAuthAttempts++;
-    
+
     switch (event.type) {
       case 'AUTH_SUCCESS':
         this.metrics.successfulAuths++;
@@ -343,7 +357,7 @@ class AuthSecurityMonitor {
       if (recentFailures.length >= 3) {
         const pattern = this.patterns.get('repeated_failures')!;
         pattern.frequency++;
-        
+
         this.logEvent({
           type: 'SUSPICIOUS_ACTIVITY',
           metadata: {
@@ -422,7 +436,7 @@ class AuthSecurityMonitor {
 
   private getBrowserInfo(): BrowserInfo {
     const userAgent = navigator.userAgent;
-    
+
     return {
       name: this.getBrowserName(userAgent),
       version: this.getBrowserVersion(userAgent),
@@ -471,24 +485,26 @@ class AuthSecurityMonitor {
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify(event)
       // });
-      
+
       console.warn('🚨 Critical Security Event:', event);
     }
   }
 
   private startPeriodicAnalysis(): void {
     // Run security analysis every 5 minutes
-    setInterval(() => {
-      const alerts = this.getSecurityAlerts();
-      if (alerts.length > 0) {
-        console.warn('🛡️ Security Alerts:', alerts);
-      }
-      
-      // Clean up old events (older than 24 hours)
-      const cutoff = Date.now() - (24 * 60 * 60 * 1000);
-      this.events = this.events.filter(event => event.timestamp > cutoff);
-      
-    }, 5 * 60 * 1000); // 5 minutes
+    setInterval(
+      () => {
+        const alerts = this.getSecurityAlerts();
+        if (alerts.length > 0) {
+          console.warn('🛡️ Security Alerts:', alerts);
+        }
+
+        // Clean up old events (older than 24 hours)
+        const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+        this.events = this.events.filter(event => event.timestamp > cutoff);
+      },
+      5 * 60 * 1000
+    ); // 5 minutes
   }
 }
 

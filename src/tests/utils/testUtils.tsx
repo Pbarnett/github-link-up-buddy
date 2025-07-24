@@ -13,17 +13,18 @@ export const renderWithProviders = (
   ui: ReactElement,
   options: CustomRenderOptions = {}
 ) => {
-  const { queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  }), ...renderOptions } = options;
+  const {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    }),
+    ...renderOptions
+  } = options;
 
   const Wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
   return render(ui, { wrapper: Wrapper, ...renderOptions });
@@ -34,9 +35,16 @@ export const renderWithProviders = (
 // ==============================================================================
 
 // Create mock component
-export const createMockComponent = (name: string, props?: Record<string, any>) => {
+export const createMockComponent = (
+  name: string,
+  props?: Record<string, any>
+) => {
   const MockComponent = (componentProps: any) => (
-    <div data-testid={`mock-${name.toLowerCase()}`} {...props} {...componentProps}>
+    <div
+      data-testid={`mock-${name.toLowerCase()}`}
+      {...props}
+      {...componentProps}
+    >
       Mock {name}
     </div>
   );
@@ -55,7 +63,9 @@ export const createMockHook = <T extends any>(name: string, returnValue: T) => {
 // CONFIG MOCK UTILITIES (for handling minPriceUSD errors)
 // ==============================================================================
 
-export const createMockBusinessConfig = (overrides: Record<string, any> = {}) => ({
+export const createMockBusinessConfig = (
+  overrides: Record<string, any> = {}
+) => ({
   version: '1.0.0',
   ui: {
     destination: true,
@@ -78,7 +88,9 @@ export const createMockBusinessConfig = (overrides: Record<string, any> = {}) =>
   ...overrides,
 });
 
-export const createMockBusinessRulesHook = (configOverrides: Record<string, any> = {}) => ({
+export const createMockBusinessRulesHook = (
+  configOverrides: Record<string, any> = {}
+) => ({
   config: createMockBusinessConfig(configOverrides),
   loading: false,
   error: null,
@@ -97,7 +109,9 @@ export const mockFormAnalytics = {
   trackFormError: vi.fn(),
 };
 
-export const createMockFormAnalyticsHook = (overrides: Record<string, any> = {}) => ({
+export const createMockFormAnalyticsHook = (
+  overrides: Record<string, any> = {}
+) => ({
   ...mockFormAnalytics,
   sessionId: 'test-session-123',
   ...overrides,
@@ -125,7 +139,7 @@ export const flushPromises = async () => {
 export const suppressConsoleError = (callback: () => void | Promise<void>) => {
   const originalError = console.error;
   console.error = vi.fn();
-  
+
   try {
     return callback();
   } finally {
@@ -134,7 +148,11 @@ export const suppressConsoleError = (callback: () => void | Promise<void>) => {
 };
 
 // Create mock error with proper structure
-export const createMockError = (message: string, code?: string, status?: number) => ({
+export const createMockError = (
+  message: string,
+  code?: string,
+  status?: number
+) => ({
   message,
   code,
   status,
@@ -222,7 +240,7 @@ export const cleanupTest = () => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
-  
+
   // Clear localStorage/sessionStorage
   if (typeof localStorage !== 'undefined') {
     localStorage.clear();
@@ -230,7 +248,7 @@ export const cleanupTest = () => {
   if (typeof sessionStorage !== 'undefined') {
     sessionStorage.clear();
   }
-  
+
   // Reset document body
   if (typeof document !== 'undefined') {
     document.body.innerHTML = '';

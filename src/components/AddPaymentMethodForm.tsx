@@ -1,23 +1,27 @@
-
-
 type FC<T = {}> = React.FC<T>;
 type FormEvent = React.FormEvent;
 type ChangeEvent<T = Element> = React.ChangeEvent<T>;
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import * as React from 'react';
 interface AddPaymentMethodFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({ 
-  onSuccess, 
-  onCancel 
+export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
+  onSuccess,
+  onCancel,
 }) => {
   const [formData, setFormData] = useState({
     card_number: '',
@@ -34,23 +38,23 @@ export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
   const formatCardNumber = (value: string) => {
     // Remove all non-digit characters
     const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    
+
     // Add spaces every 4 digits
     const matches = v.match(/\d{4,16}/g);
-    const match = matches && matches[0] || '';
+    const match = (matches && matches[0]) || '';
     const parts: string[] = [];
-    
+
     for (let i = 0, len = match.length; i < len; i += 4) {
       parts.push(match.substring(i, i + 4));
     }
-    
+
     if (parts.length) {
       return parts.join(' ');
     } else {
@@ -86,67 +90,67 @@ export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
 
   const validateForm = () => {
     const { card_number, cardholder_name, exp_month, exp_year, cvv } = formData;
-    
+
     if (!card_number || card_number.replace(/\s/g, '').length < 13) {
       toast({
-        title: "Invalid card number",
-        description: "Please enter a valid card number.",
-        variant: "destructive",
+        title: 'Invalid card number',
+        description: 'Please enter a valid card number.',
+        variant: 'destructive',
       });
       return false;
     }
-    
+
     if (!cardholder_name.trim()) {
       toast({
-        title: "Missing cardholder name",
+        title: 'Missing cardholder name',
         description: "Please enter the cardholder's name.",
-        variant: "destructive",
+        variant: 'destructive',
       });
       return false;
     }
-    
+
     const monthNum = parseInt(exp_month);
     if (!exp_month || monthNum < 1 || monthNum > 12) {
       toast({
-        title: "Invalid expiry month",
-        description: "Please enter a valid expiry month (1-12).",
-        variant: "destructive",
+        title: 'Invalid expiry month',
+        description: 'Please enter a valid expiry month (1-12).',
+        variant: 'destructive',
       });
       return false;
     }
-    
+
     const yearNum = parseInt(exp_year);
     const currentYear = new Date().getFullYear();
     if (!exp_year || yearNum < currentYear || yearNum > currentYear + 20) {
       toast({
-        title: "Invalid expiry year",
-        description: "Please enter a valid expiry year.",
-        variant: "destructive",
+        title: 'Invalid expiry year',
+        description: 'Please enter a valid expiry year.',
+        variant: 'destructive',
       });
       return false;
     }
-    
+
     if (!cvv || cvv.length < 3) {
       toast({
-        title: "Invalid CVV",
-        description: "Please enter a valid CVV.",
-        variant: "destructive",
+        title: 'Invalid CVV',
+        description: 'Please enter a valid CVV.',
+        variant: 'destructive',
       });
       return false;
     }
-    
+
     return true;
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       await addPaymentMethod({
         card_number: formData.card_number.replace(/\s/g, ''),
@@ -156,12 +160,12 @@ export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
         cvv: formData.cvv,
         is_default: formData.is_default,
       });
-      
+
       toast({
-        title: "Payment method added",
-        description: "Your payment method has been successfully added.",
+        title: 'Payment method added',
+        description: 'Your payment method has been successfully added.',
       });
-      
+
       // Reset form
       setFormData({
         card_number: '',
@@ -171,13 +175,16 @@ export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
         cvv: '',
         is_default: false,
       });
-      
+
       onSuccess?.();
     } catch (error: unknown) {
       toast({
-        title: "Error adding payment method",
-        description: error instanceof Error ? error.message : "Failed to add payment method. Please try again.",
-        variant: "destructive",
+        title: 'Error adding payment method',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to add payment method. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -207,7 +214,7 @@ export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="cardholder_name">Cardholder Name</Label>
             <Input
@@ -220,7 +227,7 @@ export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
               required
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="exp_month">Expiry Month</Label>
@@ -249,7 +256,7 @@ export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="cvv">CVV</Label>
             <Input
@@ -263,7 +270,7 @@ export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
               required
             />
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <input
               type="checkbox"
@@ -275,13 +282,9 @@ export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
             />
             <Label htmlFor="is_default">Set as default payment method</Label>
           </div>
-          
+
           <div className="flex space-x-2">
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1"
-            >
+            <Button type="submit" disabled={isSubmitting} className="flex-1">
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -291,7 +294,7 @@ export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
                 'Add Payment Method'
               )}
             </Button>
-            
+
             {onCancel && (
               <Button
                 type="button"

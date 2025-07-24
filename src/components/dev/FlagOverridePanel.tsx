@@ -1,16 +1,26 @@
 type FC<T = {}> = React.FC<T>;
+import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import LaunchDarklyService from '@/lib/featureFlags/launchDarklyService';
-import * as React from 'react';
 
 // Known flag definitions for development
 const KNOWN_FLAGS = {
@@ -18,49 +28,49 @@ const KNOWN_FLAGS = {
   personalization_greeting: {
     type: 'boolean',
     default: false,
-    description: 'Enable personalized greeting messages'
+    description: 'Enable personalized greeting messages',
   },
   show_opt_out_banner: {
     type: 'boolean',
     default: false,
-    description: 'Show opt-out banner for data collection'
+    description: 'Show opt-out banner for data collection',
   },
   profile_ui_revamp: {
     type: 'boolean',
     default: false,
-    description: 'Enable new profile UI design'
+    description: 'Enable new profile UI design',
   },
   wallet_ui: {
     type: 'boolean',
     default: false,
-    description: 'Enable wallet interface and functionality'
+    description: 'Enable wallet interface and functionality',
   },
   enhanced_launchdarkly_resilience: {
     type: 'boolean',
     default: false,
-    description: 'Enable enhanced LaunchDarkly resilience features'
+    description: 'Enable enhanced LaunchDarkly resilience features',
   },
   // Additional flags that may be added
   payment_methods_v2: {
     type: 'boolean',
     default: false,
-    description: 'Enable new payment methods interface'
+    description: 'Enable new payment methods interface',
   },
   ai_recommendations: {
     type: 'boolean',
     default: false,
-    description: 'Enable AI-powered travel recommendations'
+    description: 'Enable AI-powered travel recommendations',
   },
   dark_mode: {
     type: 'boolean',
     default: false,
-    description: 'Enable dark mode theme'
+    description: 'Enable dark mode theme',
   },
   beta_features: {
     type: 'boolean',
     default: false,
-    description: 'Enable beta features for testing'
-  }
+    description: 'Enable beta features for testing',
+  },
 };
 
 type FlagValue = boolean | string | number;
@@ -76,12 +86,16 @@ interface FlagOverridePanelProps {
   className?: string;
 }
 
-export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => {
+export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({
+  className,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [overrides, setOverrides] = useState<FlagOverride[]>([]);
   const [newFlagKey, setNewFlagKey] = useState('');
   const [newFlagValue, setNewFlagValue] = useState('');
-  const [newFlagType, setNewFlagType] = useState<'boolean' | 'string' | 'number'>('boolean');
+  const [newFlagType, setNewFlagType] = useState<
+    'boolean' | 'string' | 'number'
+  >('boolean');
   const [importData, setImportData] = useState('');
   const [showImport, setShowImport] = useState(false);
 
@@ -99,8 +113,11 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
               savedOverrides.push({
                 key: flagKey,
                 value: parsedValue,
-              type: (flagInfo?.type || inferType(parsedValue)) as "string" | "number" | "boolean",
-                description: flagInfo?.description
+                type: (flagInfo?.type || inferType(parsedValue)) as
+                  | 'string'
+                  | 'number'
+                  | 'boolean',
+                description: flagInfo?.description,
               });
             } catch (_e) {
               console.warn(`Invalid override value for ${flagKey}:`, value);
@@ -140,15 +157,18 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
 
     const flagInfo = KNOWN_FLAGS[newFlagKey as keyof typeof KNOWN_FLAGS];
     LaunchDarklyService.setDeveloperOverride(newFlagKey, processedValue);
-    
+
     const newOverride: FlagOverride = {
       key: newFlagKey,
       value: processedValue,
       type: newFlagType,
-      description: flagInfo?.description
+      description: flagInfo?.description,
     };
 
-    setOverrides(prev => [...prev.filter(o => o.key !== newFlagKey), newOverride]);
+    setOverrides(prev => [
+      ...prev.filter(o => o.key !== newFlagKey),
+      newOverride,
+    ]);
     setNewFlagKey('');
     setNewFlagValue('');
     setNewFlagType('boolean');
@@ -161,9 +181,7 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
 
   const updateOverride = (key: string, value: FlagValue) => {
     LaunchDarklyService.setDeveloperOverride(key, value);
-    setOverrides(prev => prev.map(o => 
-      o.key === key ? { ...o, value } : o
-    ));
+    setOverrides(prev => prev.map(o => (o.key === key ? { ...o, value } : o)));
   };
 
   const clearAllOverrides = () => {
@@ -172,12 +190,17 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
   };
 
   const exportOverrides = () => {
-    const exportData = overrides.reduce((acc, override) => {
-      acc[override.key] = override.value;
-      return acc;
-    }, {} as Record<string, FlagValue>);
-    
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const exportData = overrides.reduce(
+      (acc, override) => {
+        acc[override.key] = override.value;
+        return acc;
+      },
+      {} as Record<string, FlagValue>
+    );
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -223,8 +246,8 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
     <div className={`fixed bottom-4 right-4 z-50 ${className}`}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             className="mb-2 shadow-lg bg-background border-2 border-orange-500"
           >
@@ -237,7 +260,7 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
             )}
           </Button>
         </CollapsibleTrigger>
-        
+
         <CollapsibleContent>
           <Card className="w-96 shadow-lg border-2 border-orange-500">
             <CardHeader className="pb-3">
@@ -252,13 +275,15 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
                 </AlertDescription>
               </Alert>
             </CardHeader>
-            
+
             <CardContent className="space-y-4">
               {/* Current Overrides */}
               {overrides.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Active Overrides</Label>
+                    <Label className="text-sm font-medium">
+                      Active Overrides
+                    </Label>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -268,12 +293,17 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  
+
                   <div className="max-h-48 overflow-y-auto space-y-2">
-                    {overrides.map((override) => (
-                      <div key={override.key} className="p-3 bg-muted rounded border">
+                    {overrides.map(override => (
+                      <div
+                        key={override.key}
+                        className="p-3 bg-muted rounded border"
+                      >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-mono text-sm">{override.key}</span>
+                          <span className="font-mono text-sm">
+                            {override.key}
+                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -283,25 +313,37 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
-                        
+
                         {override.description && (
                           <p className="text-xs text-muted-foreground mb-2">
                             {override.description}
                           </p>
                         )}
-                        
+
                         <div className="flex items-center gap-2">
                           {override.type === 'boolean' ? (
                             <Switch
                               checked={override.value as boolean}
-                              onCheckedChange={(_checked) => toggleBooleanFlag(override.key, override.value as boolean)}
+                              onCheckedChange={_checked =>
+                                toggleBooleanFlag(
+                                  override.key,
+                                  override.value as boolean
+                                )
+                              }
                             />
                           ) : (
                             <Input
                               value={String(override.value)}
-                              onChange={(e) => updateOverride(override.key, 
-                                override.type === 'number' ? parseFloat((e.target as HTMLInputElement).value) || 0 : (e.target as HTMLInputElement).value
-                              )}
+                              onChange={e =>
+                                updateOverride(
+                                  override.key,
+                                  override.type === 'number'
+                                    ? parseFloat(
+                                        (e.target as HTMLInputElement).value
+                                      ) || 0
+                                    : (e.target as HTMLInputElement).value
+                                )
+                              }
                               className="h-8 text-sm"
                             />
                           )}
@@ -322,10 +364,17 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
                   <Input
                     placeholder="Flag key"
                     value={newFlagKey}
-                    onChange={(e) => setNewFlagKey((e.target as HTMLInputElement).value)}
+                    onChange={e =>
+                      setNewFlagKey((e.target as HTMLInputElement).value)
+                    }
                     className="flex-1"
                   />
-                  <Select value={newFlagType} onValueChange={(value: 'boolean' | 'string' | 'number') => setNewFlagType(value)}>
+                  <Select
+                    value={newFlagType}
+                    onValueChange={(value: 'boolean' | 'string' | 'number') =>
+                      setNewFlagType(value)
+                    }
+                  >
                     <SelectTrigger className="w-24">
                       <SelectValue />
                     </SelectTrigger>
@@ -336,12 +385,16 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="flex gap-2">
                   <Input
-                    placeholder={newFlagType === 'boolean' ? 'true/false' : 'Value'}
+                    placeholder={
+                      newFlagType === 'boolean' ? 'true/false' : 'Value'
+                    }
                     value={newFlagValue}
-                    onChange={(e) => setNewFlagValue((e.target as HTMLInputElement).value)}
+                    onChange={e =>
+                      setNewFlagValue((e.target as HTMLInputElement).value)
+                    }
                     className="flex-1"
                   />
                   <Button onClick={addOverride} size="sm">
@@ -357,9 +410,14 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
                   {Object.entries(KNOWN_FLAGS).map(([key, info]) => {
                     const isOverridden = overrides.some(o => o.key === key);
                     return (
-                      <div key={key} className="flex items-center justify-between p-2 bg-muted/50 rounded text-sm">
+                      <div
+                        key={key}
+                        className="flex items-center justify-between p-2 bg-muted/50 rounded text-sm"
+                      >
                         <div className="flex-1 min-w-0">
-                          <div className="font-mono text-xs truncate">{key}</div>
+                          <div className="font-mono text-xs truncate">
+                            {key}
+                          </div>
                           <div className="text-xs text-muted-foreground truncate">
                             {info.description}
                           </div>
@@ -382,9 +440,9 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
 
               {/* Import/Export */}
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={exportOverrides}
                   disabled={overrides.length === 0}
                   className="flex-1"
@@ -392,9 +450,9 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
                   <Download className="h-4 w-4 mr-1" />
                   Export
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setShowImport(!showImport)}
                   className="flex-1"
                 >
@@ -409,16 +467,22 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
                   <Textarea
                     placeholder='{"flag_key": true, "another_flag": "value"}'
                     value={importData}
-                    onChange={(e) => setImportData((e.target as HTMLInputElement).value)}
+                    onChange={e =>
+                      setImportData((e.target as HTMLInputElement).value)
+                    }
                     className="h-20 text-sm font-mono"
                   />
                   <div className="flex gap-2">
-                    <Button onClick={importOverrides} size="sm" className="flex-1">
+                    <Button
+                      onClick={importOverrides}
+                      size="sm"
+                      className="flex-1"
+                    >
                       Import
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => setShowImport(false)}
                       className="flex-1"
                     >
@@ -432,7 +496,8 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  Changes take effect immediately. Refresh page to clear all overrides.
+                  Changes take effect immediately. Refresh page to clear all
+                  overrides.
                 </AlertDescription>
               </Alert>
             </CardContent>

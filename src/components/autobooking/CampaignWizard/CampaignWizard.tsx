@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +10,6 @@ import { campaignService } from '@/services/campaignService';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { CriteriaFormData } from './StepCriteria';
 import { TravelerFormData } from './StepTraveler';
-import * as React from 'react';
 
 // Lazy load step components
 const StepCriteria = lazy(() => import('./StepCriteria'));
@@ -34,7 +34,7 @@ function CampaignWizard() {
   const navigate = useNavigate();
   const { userId } = useCurrentUser();
   const [isPending, startTransition] = useTransition();
-  
+
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [wizardState, setWizardState] = useState<WizardState>({
@@ -46,7 +46,7 @@ function CampaignWizard() {
   const handleNext = (data: CriteriaFormData | TravelerFormData | string) => {
     startTransition(() => {
       const newState = { ...wizardState };
-      
+
       switch (currentStep) {
         case 0:
           newState.criteria = data as CriteriaFormData;
@@ -70,15 +70,15 @@ function CampaignWizard() {
           });
           break;
       }
-      
+
       setWizardState(newState);
-      setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
+      setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
     });
   };
 
   const handleBack = () => {
     startTransition(() => {
-      setCurrentStep((prev) => Math.max(prev - 1, 0));
+      setCurrentStep(prev => Math.max(prev - 1, 0));
       trackCampaignEvent('wizard_step_back', 'temp-id', {
         step_number: currentStep,
       });
@@ -86,7 +86,12 @@ function CampaignWizard() {
   };
 
   const handleConfirm = async () => {
-    if (!userId || !wizardState.criteria || !wizardState.traveler || !wizardState.paymentMethodId) {
+    if (
+      !userId ||
+      !wizardState.criteria ||
+      !wizardState.traveler ||
+      !wizardState.paymentMethodId
+    ) {
       toast({
         title: 'Missing Information',
         description: 'Please complete all steps before creating the campaign.',
@@ -96,7 +101,7 @@ function CampaignWizard() {
     }
 
     setIsLoading(true);
-    
+
     try {
       // Combine all data for campaign creation
       const campaignData = {
@@ -105,7 +110,9 @@ function CampaignWizard() {
         departureDates: `${wizardState.criteria.departureStart} to ${wizardState.criteria.departureEnd}`,
         maxPrice: wizardState.criteria.maxPrice,
         directFlightsOnly: wizardState.criteria.directFlightsOnly,
-        departureAirports: wizardState.criteria.origin ? [wizardState.criteria.origin] : undefined,
+        departureAirports: wizardState.criteria.origin
+          ? [wizardState.criteria.origin]
+          : undefined,
         cabinClass: wizardState.criteria.cabinClass,
         minDuration: wizardState.criteria.minDuration,
         maxDuration: wizardState.criteria.maxDuration,
@@ -113,8 +120,11 @@ function CampaignWizard() {
         paymentMethodId: wizardState.paymentMethodId,
       };
 
-      const campaign = await campaignService.createCampaign(campaignData, userId);
-      
+      const campaign = await campaignService.createCampaign(
+        campaignData,
+        userId
+      );
+
       trackCampaignEvent('campaign_created', campaign.id, {
         destination: wizardState.criteria.destination,
         trip_type: wizardState.criteria.tripType,
@@ -124,21 +134,25 @@ function CampaignWizard() {
 
       toast({
         title: 'Campaign Created! 🎉',
-        description: 'Your auto-booking campaign is now active and monitoring flights.',
+        description:
+          'Your auto-booking campaign is now active and monitoring flights.',
       });
 
       // Navigate to dashboard
       navigate('/auto-booking');
     } catch (error) {
       console.error('Failed to create campaign:', error);
-      
+
       trackCampaignEvent('campaign_creation_failed', 'temp-id', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
 
       toast({
         title: 'Creation Failed',
-        description: error instanceof Error ? error.message : 'Failed to create campaign. Please try again.',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to create campaign. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -148,34 +162,41 @@ function CampaignWizard() {
 
   const renderProgressIndicator = () => {
     const progressPercentage = ((currentStep + 1) / STEPS.length) * 100;
-    
+
     return (
       <Card className="mb-8">
         <CardContent className="pt-6">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold">Create Auto-Booking Campaign</h2>
+              <h2 className="text-lg font-semibold">
+                Create Auto-Booking Campaign
+              </h2>
               <Badge variant="secondary">
                 Step {currentStep + 1} of {STEPS.length}
               </Badge>
             </div>
-            
+
             <Progress value={progressPercentage} className="h-2" />
-            
+
             <div className="flex justify-between">
               {STEPS.map((step, index) => {
                 const isCompleted = index < currentStep;
                 const isCurrent = index === currentStep;
-                
+
                 return (
-                  <div key={step.id} className="flex flex-col items-center space-y-2">
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                      isCompleted 
-                        ? 'bg-green-500 text-white' 
-                        : isCurrent 
-                        ? 'bg-blue-500 text-white' 
-                        : 'bg-gray-200 text-gray-500'
-                    }`}>
+                  <div
+                    key={step.id}
+                    className="flex flex-col items-center space-y-2"
+                  >
+                    <div
+                      className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                        isCompleted
+                          ? 'bg-green-500 text-white'
+                          : isCurrent
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-200 text-gray-500'
+                      }`}
+                    >
                       {isCompleted ? (
                         <CheckCircle className="w-4 h-4" />
                       ) : (
@@ -183,12 +204,16 @@ function CampaignWizard() {
                       )}
                     </div>
                     <div className="text-center">
-                      <p className={`text-sm font-medium ${
-                        isCurrent ? 'text-blue-600' : 'text-gray-500'
-                      }`}>
+                      <p
+                        className={`text-sm font-medium ${
+                          isCurrent ? 'text-blue-600' : 'text-gray-500'
+                        }`}
+                      >
                         {step.name}
                       </p>
-                      <p className="text-xs text-gray-400">{step.description}</p>
+                      <p className="text-xs text-gray-400">
+                        {step.description}
+                      </p>
                     </div>
                   </div>
                 );
@@ -204,25 +229,25 @@ function CampaignWizard() {
     switch (currentStep) {
       case 0:
         return (
-          <StepCriteria 
-            initialData={wizardState.criteria || undefined} 
+          <StepCriteria
+            initialData={wizardState.criteria || undefined}
             onNext={handleNext}
             isLoading={isLoading}
           />
         );
       case 1:
         return (
-          <StepTraveler 
-            initialData={wizardState.traveler || undefined} 
-            onNext={handleNext} 
+          <StepTraveler
+            initialData={wizardState.traveler || undefined}
+            onNext={handleNext}
             onBack={handleBack}
             isLoading={isLoading}
           />
         );
       case 2:
         return (
-          <StepPayment 
-            onNext={handleNext} 
+          <StepPayment
+            onNext={handleNext}
             onBack={handleBack}
             isLoading={isLoading}
           />
@@ -260,17 +285,16 @@ function CampaignWizard() {
   );
 
   return (
-    <div className={`container mx-auto py-8 space-y-6 max-w-6xl ${
-      isPending ? 'opacity-75 transition-opacity duration-200' : ''
-    }`}>
+    <div
+      className={`container mx-auto py-8 space-y-6 max-w-6xl ${
+        isPending ? 'opacity-75 transition-opacity duration-200' : ''
+      }`}
+    >
       {renderProgressIndicator()}
-      
-      <Suspense fallback={<LoadingSkeleton />}>
-        {renderStep()}
-      </Suspense>
+
+      <Suspense fallback={<LoadingSkeleton />}>{renderStep()}</Suspense>
     </div>
   );
 }
 
 export default withErrorBoundary(CampaignWizard, 'page');
-

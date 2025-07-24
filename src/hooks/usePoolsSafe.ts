@@ -1,12 +1,12 @@
-
-
-
 import { toast } from '@/hooks/use-toast';
 import logger from '@/lib/logger';
 import { ScoredOffer } from '@/types/offer';
 import { useTripOffers, UseTripOffersReturn } from './useTripOffersLegacy';
-import { useTripOffersPools, clearUnifiedCache, PoolsHookResult } from './useTripOffers';
-import * as React from 'react';
+import {
+  useTripOffersPools,
+  clearUnifiedCache,
+  PoolsHookResult,
+} from './useTripOffers';
 
 interface UsePoolsSafeParams {
   tripId: string | null;
@@ -18,44 +18,57 @@ export interface PoolsSafeResult extends PoolsHookResult {
 
 export function usePoolsSafe(params: UsePoolsSafeParams): PoolsSafeResult {
   const [isUsingFallback, setIsUsingFallback] = useState(false);
-  const [fallbackData, setFallbackData] = useState<UseTripOffersReturn | null>(null);
+  const [fallbackData, setFallbackData] = useState<UseTripOffersReturn | null>(
+    null
+  );
 
   // Always call the pools hook (hooks must be called unconditionally)
   // Note: We cannot wrap hooks in try-catch as it violates rules of hooks
   const poolsResult = useTripOffersPools(params);
 
   // Fallback to legacy hook if pools failed
-  const legacyResult = useTripOffers({ 
+  const legacyResult = useTripOffers({
     tripId: params.tripId,
-    initialTripDetails: undefined 
+    initialTripDetails: undefined,
   });
 
   useEffect(() => {
     // Check if pools result indicates an error state
     const hasPoolsError = poolsResult?.hasError || poolsResult?.errorMessage;
-    
+
     if (hasPoolsError && !isUsingFallback) {
       setIsUsingFallback(true);
       setFallbackData(legacyResult);
-      
+
       toast({
-        title: "Loading issue detected",
-        description: "Having trouble loading pools—showing full list instead.",
-        variant: "destructive"
+        title: 'Loading issue detected',
+        description: 'Having trouble loading pools—showing full list instead.',
+        variant: 'destructive',
       });
 
       // Aggressive cache recovery for suspected cache corruption
       const errorMsg = poolsResult?.errorMessage || '';
       if (errorMsg.includes('cache') || errorMsg.includes('stale')) {
         clearUnifiedCache();
-        logger.info("[usePoolsSafe] Cache cleared due to suspected corruption:", errorMsg);
+        logger.info(
+          '[usePoolsSafe] Cache cleared due to suspected corruption:',
+          errorMsg
+        );
       } else {
         // Clear cache for any pools error to prevent persistence
         clearUnifiedCache();
-        logger.info("[usePoolsSafe] Cache cleared due to pools error:", errorMsg);
+        logger.info(
+          '[usePoolsSafe] Cache cleared due to pools error:',
+          errorMsg
+        );
       }
     }
-  }, [poolsResult?.hasError, poolsResult?.errorMessage, isUsingFallback, legacyResult]);
+  }, [
+    poolsResult?.hasError,
+    poolsResult?.errorMessage,
+    isUsingFallback,
+    legacyResult,
+  ]);
 
   // If we're using fallback, return legacy data in pools format
   if (isUsingFallback && fallbackData) {
@@ -81,8 +94,8 @@ export function usePoolsSafe(params: UsePoolsSafeParams): PoolsSafeResult {
       budget: fallbackData.tripDetails?.budget || 1000,
       maxBudget: fallbackData.tripDetails?.max_price || 3000,
       dateRange: {
-        from: fallbackData.tripDetails?.earliest_departure || "",
-        to: fallbackData.tripDetails?.latest_departure || ""
+        from: fallbackData.tripDetails?.earliest_departure || '',
+        to: fallbackData.tripDetails?.latest_departure || '',
       },
       bumpsUsed: 0,
       bumpBudget: () => {},
@@ -93,7 +106,7 @@ export function usePoolsSafe(params: UsePoolsSafeParams): PoolsSafeResult {
       refreshPools: async () => {
         await fallbackData.refreshOffers();
       },
-      isUsingFallback: true
+      isUsingFallback: true,
     };
   }
 
@@ -101,7 +114,7 @@ export function usePoolsSafe(params: UsePoolsSafeParams): PoolsSafeResult {
   if (poolsResult) {
     return {
       ...poolsResult,
-      isUsingFallback: false
+      isUsingFallback: false,
     };
   }
 
@@ -112,14 +125,14 @@ export function usePoolsSafe(params: UsePoolsSafeParams): PoolsSafeResult {
     pool3: [],
     budget: 1000,
     maxBudget: 3000,
-    dateRange: { from: "", to: "" },
+    dateRange: { from: '', to: '' },
     bumpsUsed: 0,
     bumpBudget: () => {},
     mode: 'manual' as const,
     isLoading: true,
     hasError: false,
-    errorMessage: "",
+    errorMessage: '',
     refreshPools: async () => {},
-    isUsingFallback: false
+    isUsingFallback: false,
   };
 }

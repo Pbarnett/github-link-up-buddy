@@ -1,8 +1,8 @@
 type FC<T = {}> = React.FC<T>;
+import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast'; // Added useToast
-import * as React from 'react';
 // For now, using 'any'. Replace with a proper type for booking history items.
 // import { Tables } from '@/integrations/supabase/types'; // Example if you have this type
 
@@ -11,15 +11,17 @@ interface TripHistoryProps {
 }
 
 const TripHistory: FC<TripHistoryProps> = ({ userId }) => {
-  const [tripHistory, setTripHistory] = useState<Array<{
-    id: string;
-    trip_request_id: string;
-    pnr: string;
-    price: number;
-    selected_seat_number: string;
-    created_at: string;
-    status: string;
-  }>>([]);
+  const [tripHistory, setTripHistory] = useState<
+    Array<{
+      id: string;
+      trip_request_id: string;
+      pnr: string;
+      price: number;
+      selected_seat_number: string;
+      created_at: string;
+      status: string;
+    }>
+  >([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -28,27 +30,35 @@ const TripHistory: FC<TripHistoryProps> = ({ userId }) => {
   const fetchTripHistory = useCallback(async () => {
     if (!userId || !supabase) {
       setHistoryLoading(false);
-      if (!userId) console.warn("Trip History: User ID prop not available.");
-      if (!supabase) console.warn("Trip History: Supabase client not available.");
+      if (!userId) console.warn('Trip History: User ID prop not available.');
+      if (!supabase)
+        console.warn('Trip History: Supabase client not available.');
       return;
     }
     try {
       setHistoryLoading(true);
       const { data, error } = await (supabase
         .from('bookings')
-        .select('id, trip_request_id, pnr, price, selected_seat_number, created_at, status') // Added status
+        .select(
+          'id, trip_request_id, pnr, price, selected_seat_number, created_at, status'
+        ) // Added status
         .eq('user_id', userId)
         .order('created_at', { ascending: false }) as any);
 
       if (error) {
-        console.error("Error fetching trip history from bookings:", error);
+        console.error('Error fetching trip history from bookings:', error);
         setHistoryError(error.message);
       } else {
         setTripHistory(data || []);
       }
     } catch (err: unknown) {
-      console.error("Unexpected error fetching trip history from bookings:", err);
-      setHistoryError(err instanceof Error ? err.message : "An unexpected error occurred.");
+      console.error(
+        'Unexpected error fetching trip history from bookings:',
+        err
+      );
+      setHistoryError(
+        err instanceof Error ? err.message : 'An unexpected error occurred.'
+      );
     } finally {
       setHistoryLoading(false);
     }
@@ -64,9 +74,10 @@ const TripHistory: FC<TripHistoryProps> = ({ userId }) => {
     setIsCancelling(bookingId);
     try {
       // supabase.auth.getSession() is not needed if functions.invoke uses user's JWT by default
-      const { error: invokeError, data: invokeData } = await supabase.functions.invoke('cancel-booking', {
-        body: { booking_id: bookingId },
-      });
+      const { error: invokeError, data: invokeData } =
+        await supabase.functions.invoke('cancel-booking', {
+          body: { booking_id: bookingId },
+        });
 
       if (invokeError) {
         throw invokeError;
@@ -74,17 +85,29 @@ const TripHistory: FC<TripHistoryProps> = ({ userId }) => {
 
       toast({
         title: 'Booking Cancellation Initiated',
-        description: (invokeData && typeof invokeData === 'object' && 'message' in invokeData ? (invokeData as { message: string }).message : null) || 'Your booking cancellation is being processed.'
+        description:
+          (invokeData &&
+          typeof invokeData === 'object' &&
+          'message' in invokeData
+            ? (invokeData as { message: string }).message
+            : null) || 'Your booking cancellation is being processed.',
       });
 
       setTimeout(() => fetchTripHistory(), 1000); // Refresh after a delay
-
     } catch (err: unknown) {
-      console.error('[TripHistory] Cancel booking failed for ID', bookingId, ':', err instanceof Error ? err.message : err);
+      console.error(
+        '[TripHistory] Cancel booking failed for ID',
+        bookingId,
+        ':',
+        err instanceof Error ? err.message : err
+      );
       toast({
         title: 'Cancellation Failed',
-        description: err instanceof Error ? err.message : 'Could not cancel the booking at this time.',
-        variant: 'destructive'
+        description:
+          err instanceof Error
+            ? err.message
+            : 'Could not cancel the booking at this time.',
+        variant: 'destructive',
       });
     } finally {
       setIsCancelling(null);
@@ -96,7 +119,9 @@ const TripHistory: FC<TripHistoryProps> = ({ userId }) => {
   }
 
   if (historyError) {
-    return <p className="text-red-500">Error loading trip history: {historyError}</p>;
+    return (
+      <p className="text-red-500">Error loading trip history: {historyError}</p>
+    );
   }
 
   if (tripHistory.length === 0) {
@@ -105,7 +130,9 @@ const TripHistory: FC<TripHistoryProps> = ({ userId }) => {
 
   return (
     <section className="mt-8 pt-6 border-t">
-      <h2 className="text-xl md:text-2xl font-semibold mb-4 text-gray-800">My Past Bookings</h2>
+      <h2 className="text-xl md:text-2xl font-semibold mb-4 text-gray-800">
+        My Past Bookings
+      </h2>
       <div className="overflow-x-auto relative shadow-md sm:rounded-lg">
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
@@ -131,11 +158,13 @@ const TripHistory: FC<TripHistoryProps> = ({ userId }) => {
             </tr>
           </thead>
           <tbody>
-            {tripHistory.map((booking) => {
+            {tripHistory.map(booking => {
               const now = new Date();
               const bookedAt = new Date(booking.created_at);
-              const hoursSinceBooking = (now.getTime() - bookedAt.getTime()) / (1000 * 60 * 60);
-              const canCancel = booking.status === 'ticketed' && hoursSinceBooking < 24;
+              const hoursSinceBooking =
+                (now.getTime() - bookedAt.getTime()) / (1000 * 60 * 60);
+              const canCancel =
+                booking.status === 'ticketed' && hoursSinceBooking < 24;
 
               return (
                 <tr
@@ -146,7 +175,9 @@ const TripHistory: FC<TripHistoryProps> = ({ userId }) => {
                     {booking.pnr || 'N/A'}
                   </td>
                   <td className="px-6 py-4">
-                    {booking.price ? `$${Number(booking.price).toFixed(2)}` : 'N/A'}
+                    {booking.price
+                      ? `$${Number(booking.price).toFixed(2)}`
+                      : 'N/A'}
                   </td>
                   <td className="px-6 py-4">
                     {booking.selected_seat_number || 'Auto-assigned'}
@@ -156,8 +187,16 @@ const TripHistory: FC<TripHistoryProps> = ({ userId }) => {
                   </td>
                   <td className="px-6 py-4">
                     {booking.trip_request_id ? (
-                      <Button variant="link" asChild className="p-0 h-auto text-blue-600 hover:underline">
-                        <Link to={`/trip/confirm?tripId=${booking.trip_request_id}`}>View Details</Link>
+                      <Button
+                        variant="link"
+                        asChild
+                        className="p-0 h-auto text-blue-600 hover:underline"
+                      >
+                        <Link
+                          to={`/trip/confirm?tripId=${booking.trip_request_id}`}
+                        >
+                          View Details
+                        </Link>
                       </Button>
                     ) : (
                       <span>N/A</span>
@@ -175,13 +214,17 @@ const TripHistory: FC<TripHistoryProps> = ({ userId }) => {
                         {isCancelling === booking.id ? (
                           <Loader2 className="mr-1 h-3 w-3 animate-spin" />
                         ) : null}
-                        Cancel ({Math.max(0, Math.floor(24 - hoursSinceBooking))}h left)
+                        Cancel (
+                        {Math.max(0, Math.floor(24 - hoursSinceBooking))}h left)
                       </Button>
                     ) : (
                       <span className="text-sm text-gray-600 capitalize">
-                        {booking.status === 'ticketed' && hoursSinceBooking >= 24 ?
-                          'Confirmed (Window Closed)' :
-                          (booking.status ? booking.status.replace('_', ' ') : 'Unknown')}
+                        {booking.status === 'ticketed' &&
+                        hoursSinceBooking >= 24
+                          ? 'Confirmed (Window Closed)'
+                          : booking.status
+                            ? booking.status.replace('_', ' ')
+                            : 'Unknown'}
                       </span>
                     )}
                   </td>

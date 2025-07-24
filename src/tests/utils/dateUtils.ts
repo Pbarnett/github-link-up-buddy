@@ -6,26 +6,26 @@ import { format, parseISO, isValid, parse } from 'date-fns';
  */
 
 export const safeFormatDate = (
-  dateString: string | Date | null | undefined, 
+  dateString: string | Date | null | undefined,
   formatString: string = 'MMM dd, yyyy',
   fallback: string = 'Invalid Date'
 ): string => {
   if (!dateString) return fallback;
-  
+
   try {
     let date: Date;
-    
+
     if (dateString instanceof Date) {
       date = dateString;
     } else if (typeof dateString === 'string') {
       // Try to parse ISO string first
       date = parseISO(dateString);
-      
+
       // If that fails, try standard Date constructor
       if (!isValid(date)) {
         date = new Date(dateString);
       }
-      
+
       // If still invalid, try common date formats
       if (!isValid(date)) {
         // Try parsing common formats
@@ -34,9 +34,9 @@ export const safeFormatDate = (
           'MM/dd/yyyy',
           'dd/MM/yyyy',
           'yyyy-MM-dd HH:mm:ss',
-          'MM/dd/yyyy HH:mm:ss'
+          'MM/dd/yyyy HH:mm:ss',
         ];
-        
+
         for (const fmt of commonFormats) {
           try {
             date = parse(dateString, fmt, new Date());
@@ -49,11 +49,11 @@ export const safeFormatDate = (
     } else {
       return fallback;
     }
-    
+
     if (!isValid(date)) {
       return fallback;
     }
-    
+
     return format(date, formatString);
   } catch (error) {
     console.warn(`Date formatting error for "${dateString}":`, error);
@@ -61,9 +61,11 @@ export const safeFormatDate = (
   }
 };
 
-export const safeParseISO = (dateString: string | null | undefined): Date | null => {
+export const safeParseISO = (
+  dateString: string | null | undefined
+): Date | null => {
   if (!dateString) return null;
-  
+
   try {
     const date = parseISO(dateString);
     return isValid(date) ? date : null;
@@ -72,9 +74,11 @@ export const safeParseISO = (dateString: string | null | undefined): Date | null
   }
 };
 
-export const isValidDateString = (dateString: string | null | undefined): boolean => {
+export const isValidDateString = (
+  dateString: string | null | undefined
+): boolean => {
   if (!dateString) return false;
-  
+
   try {
     const date = parseISO(dateString);
     return isValid(date);
@@ -84,11 +88,19 @@ export const isValidDateString = (dateString: string | null | undefined): boolea
 };
 
 // Mock date utilities for testing
-export const createMockDate = (year: number = 2024, month: number = 1, day: number = 1): Date => {
+export const createMockDate = (
+  year: number = 2024,
+  month: number = 1,
+  day: number = 1
+): Date => {
   return new Date(year, month - 1, day); // month is 0-indexed in Date constructor
 };
 
-export const createMockISOString = (year: number = 2024, month: number = 1, day: number = 1): string => {
+export const createMockISOString = (
+  year: number = 2024,
+  month: number = 1,
+  day: number = 1
+): string => {
   return createMockDate(year, month, day).toISOString();
 };
 

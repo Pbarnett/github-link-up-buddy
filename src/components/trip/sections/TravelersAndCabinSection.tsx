@@ -1,10 +1,5 @@
-
-// Travelers and cabin form data interface
-interface TravelersAndCabinFormData {
-  travelers_count?: string;
-  cabin_class?: 'economy' | 'premium_economy' | 'business' | 'first';
-  [key: string]: unknown;
-}
+import { Users } from 'lucide-react';
+import { Control } from 'react-hook-form';
 import {
   FormControl,
   FormField,
@@ -20,11 +15,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+// Travelers and cabin form data interface
+interface TravelersAndCabinFormData {
+  travelers_count?: string;
+  cabin_class?: 'economy' | 'premium_economy' | 'business' | 'first';
+  [key: string]: unknown;
+}
+
 interface TravelersAndCabinSectionProps {
   control: Control<TravelersAndCabinFormData>;
 }
 
-const TravelersAndCabinSection = ({ control }: TravelersAndCabinSectionProps) => {
+const TravelersAndCabinSection = ({
+  control,
+}: TravelersAndCabinSectionProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Travelers Count */}
@@ -36,7 +40,10 @@ const TravelersAndCabinSection = ({ control }: TravelersAndCabinSectionProps) =>
             <FormLabel className="text-sm font-medium text-gray-700">
               Travelers
             </FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value || "1"}>
+            <Select
+              onValueChange={field.onChange}
+              defaultValue={field.value || '1'}
+            >
               <FormControl>
                 <SelectTrigger className="w-full h-12 border-gray-300">
                   <div className="flex items-center gap-2">
@@ -68,7 +75,10 @@ const TravelersAndCabinSection = ({ control }: TravelersAndCabinSectionProps) =>
             <FormLabel className="text-sm font-medium text-gray-700">
               Cabin Class
             </FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value || "economy"}>
+            <Select
+              onValueChange={field.onChange}
+              defaultValue={field.value || 'economy'}
+            >
               <FormControl>
                 <SelectTrigger className="w-full h-12 border-gray-300">
                   <SelectValue placeholder="Select cabin class" />

@@ -6,21 +6,23 @@ import { SecureFlightSearch } from '@/components/flights/SecureFlightSearch';
 // Mock the necessary APIs or components
 vi.mock('@/services/flightSearchSecure', () => ({
   flightSearchServiceSecure: {
-    searchFlights: vi.fn().mockResolvedValue({ data: [], meta: { count: 0 } })
-  }
+    searchFlights: vi.fn().mockResolvedValue({ data: [], meta: { count: 0 } }),
+  },
 }));
 
 // Mock Supabase Auth
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      getSession: vi
+        .fn()
+        .mockResolvedValue({ data: { session: null }, error: null }),
       onAuthStateChange: vi.fn(callback => ({
         data: { subscription: { unsubscribe: vi.fn() } },
         callback,
-      }))
-    }
-  }
+      })),
+    },
+  },
 }));
 
 // Component Test
@@ -31,15 +33,15 @@ it('renders flight search form correctly', () => {
   // Check for form fields
   expect(screen.getByPlaceholderText(/lax, new york, etc./i)).toBeVisible();
   expect(screen.getByPlaceholderText(/jfk, london, etc./i)).toBeVisible();
-  
+
   // Check for departure date input by looking for the date input with min attribute
   const departureInput = screen.getByDisplayValue('2025-07-24');
   expect(departureInput).toBeVisible();
   expect(departureInput.getAttribute('type')).toBe('date');
-  
+
   // Check for search button
   expect(screen.getByRole('button', { name: /search flights/i })).toBeVisible();
-  
+
   // Check for other key form elements
   expect(screen.getByText('Round Trip')).toBeVisible();
   expect(screen.getByText('One Way')).toBeVisible();

@@ -1,10 +1,9 @@
-
-
-type ReactNode = React.ReactNode;
-
+import * as React from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { configLoader } from '../lib/business-rules/ConfigLoader';
 import { BusinessRulesConfig } from '../lib/business-rules/schema';
-import * as React from 'react';
+
+type ReactNode = React.ReactNode;
 
 interface BusinessRulesContextType {
   config: BusinessRulesConfig | null;
@@ -13,7 +12,9 @@ interface BusinessRulesContextType {
   refetch: () => Promise<void>;
 }
 
-const BusinessRulesContext = createContext<BusinessRulesContextType | undefined>(undefined);
+const BusinessRulesContext = createContext<
+  BusinessRulesContextType | undefined
+>(undefined);
 
 export function BusinessRulesProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<BusinessRulesConfig | null>(null);
@@ -38,7 +39,9 @@ export function BusinessRulesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <BusinessRulesContext.Provider value={{ config, loading, error, refetch: loadConfig }}>
+    <BusinessRulesContext.Provider
+      value={{ config, loading, error, refetch: loadConfig }}
+    >
       {children}
     </BusinessRulesContext.Provider>
   );
@@ -47,7 +50,9 @@ export function BusinessRulesProvider({ children }: { children: ReactNode }) {
 export function useBusinessRules() {
   const context = useContext(BusinessRulesContext);
   if (context === undefined) {
-    throw new Error('useBusinessRules must be used within a BusinessRulesProvider');
+    throw new Error(
+      'useBusinessRules must be used within a BusinessRulesProvider'
+    );
   }
   return context;
 }

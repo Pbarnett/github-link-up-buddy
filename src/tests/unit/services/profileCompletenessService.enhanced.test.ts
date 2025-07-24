@@ -1,7 +1,7 @@
 /**
  * Enhanced Unit Tests for Profile Completeness Service
  * Day 1 Task: Write unit tests for profile completeness functions (1h)
- * 
+ *
  * Tests the enhanced profile completeness calculation with error handling
  */
 
@@ -14,12 +14,12 @@ const mockSupabase = {
   from: vi.fn(),
   rpc: vi.fn(),
   functions: {
-    invoke: vi.fn()
-  }
+    invoke: vi.fn(),
+  },
 };
 
 vi.mock('@/integrations/supabase/client', () => ({
-  supabase: mockSupabase
+  supabase: mockSupabase,
 }));
 
 describe('ProfileCompletenessService Enhanced Tests', () => {
@@ -40,7 +40,8 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         email: '',
       };
 
-      const result = profileCompletenessService.calculateCompleteness(emptyProfile);
+      const result =
+        profileCompletenessService.calculateCompleteness(emptyProfile);
 
       expect(result.overall).toBeLessThanOrEqual(10);
       expect(result.missing_fields).toContain('full_name');
@@ -62,10 +63,11 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         known_traveler_number: 'KTN123',
         is_verified: true,
         travel_preferences: { seat_preference: 'window' },
-        notification_preferences: { email: true, sms: true }
+        notification_preferences: { email: true, sms: true },
       };
 
-      const result = profileCompletenessService.calculateCompleteness(completeProfile);
+      const result =
+        profileCompletenessService.calculateCompleteness(completeProfile);
 
       expect(result.overall).toBeGreaterThanOrEqual(95);
       expect(result.missing_fields).toHaveLength(0);
@@ -84,11 +86,12 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         phone: '+1987654321',
         phone_verified: false, // Not verified
         // Missing passport info
-        travel_preferences: { seat_preference: 'aisle' }
+        travel_preferences: { seat_preference: 'aisle' },
         // Missing notification preferences
       };
 
-      const result = profileCompletenessService.calculateCompleteness(partialProfile);
+      const result =
+        profileCompletenessService.calculateCompleteness(partialProfile);
 
       expect(result.overall).toBeGreaterThan(40);
       expect(result.overall).toBeLessThan(80);
@@ -96,7 +99,7 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
       expect(result.recommendations).toContainEqual(
         expect.objectContaining({
           action: 'verify_phone',
-          priority: 'high'
+          priority: 'high',
         })
       );
     });
@@ -106,7 +109,7 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
       const futureDate = new Date();
       futureDate.setMonth(futureDate.getMonth() + 3);
       const expiryDate = futureDate.toISOString().split('T')[0];
-      
+
       const profileWithExpiredPassport: TravelerProfile = {
         full_name: 'Bob Wilson',
         date_of_birth: '1980-03-20',
@@ -117,7 +120,9 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         passport_expiry: expiryDate, // Expires in 3 months
       };
 
-      const result = profileCompletenessService.calculateCompleteness(profileWithExpiredPassport);
+      const result = profileCompletenessService.calculateCompleteness(
+        profileWithExpiredPassport
+      );
 
       // Check that the service generates some recommendations
       expect(result.recommendations.length).toBeGreaterThan(0);
@@ -132,7 +137,9 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         email: 'invalid-email-format', // Invalid format
       };
 
-      const result = profileCompletenessService.calculateCompleteness(profileWithInvalidEmail);
+      const result = profileCompletenessService.calculateCompleteness(
+        profileWithInvalidEmail
+      );
 
       // The service doesn't validate email format, only presence
       // So basic_info will be 100% if all fields are present
@@ -151,14 +158,18 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         passport_number: 'DEF456789',
         passport_country: 'CA',
         passport_expiry: '2025-02-01', // Expires soon
-        is_verified: false
+        is_verified: false,
       };
 
-      const result = profileCompletenessService.calculateCompleteness(profileNeedingMultipleImprovements);
+      const result = profileCompletenessService.calculateCompleteness(
+        profileNeedingMultipleImprovements
+      );
 
       // Should have high priority recommendations first
-      const highPriorityRecs = result.recommendations.filter(r => r.priority === 'high');
-      
+      const highPriorityRecs = result.recommendations.filter(
+        r => r.priority === 'high'
+      );
+
       expect(highPriorityRecs.length).toBeGreaterThan(0);
       expect(result.recommendations[0].priority).toBe('high');
     });
@@ -173,11 +184,12 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         passport_number: undefined,
         passport_country: undefined,
         travel_preferences: undefined,
-        notification_preferences: undefined
+        notification_preferences: undefined,
       };
 
       expect(() => {
-        const result = profileCompletenessService.calculateCompleteness(profileWithNulls);
+        const result =
+          profileCompletenessService.calculateCompleteness(profileWithNulls);
         expect(result.overall).toBeGreaterThanOrEqual(0);
         expect(result.overall).toBeLessThanOrEqual(100);
       }).not.toThrow();
@@ -190,10 +202,11 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         full_name: 'Valid User',
         date_of_birth: '1985-06-15',
         gender: 'FEMALE',
-        email: 'valid@example.com'
+        email: 'valid@example.com',
       };
 
-      const result = profileCompletenessService.meetsBookingRequirements(validProfile);
+      const result =
+        profileCompletenessService.meetsBookingRequirements(validProfile);
 
       expect(result.canBook).toBe(true);
       expect(result.missingRequirements).toHaveLength(0);
@@ -204,10 +217,11 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         full_name: '',
         date_of_birth: '1985-06-15',
         gender: 'FEMALE',
-        email: 'valid@example.com'
+        email: 'valid@example.com',
       };
 
-      const result = profileCompletenessService.meetsBookingRequirements(invalidProfile);
+      const result =
+        profileCompletenessService.meetsBookingRequirements(invalidProfile);
 
       expect(result.canBook).toBe(false);
       expect(result.missingRequirements).toContain('full_name');
@@ -222,7 +236,7 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         gender: 'MALE',
         email: 'action@example.com',
         phone: '+1234567890',
-        phone_verified: false
+        phone_verified: false,
       };
 
       const nextAction = profileCompletenessService.getNextAction(profile);
@@ -245,10 +259,11 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         passport_expiry: '2030-12-31',
         is_verified: true,
         travel_preferences: { seat_preference: 'window' },
-        notification_preferences: { email: true, sms: true }
+        notification_preferences: { email: true, sms: true },
       };
 
-      const nextAction = profileCompletenessService.getNextAction(completeProfile);
+      const nextAction =
+        profileCompletenessService.getNextAction(completeProfile);
 
       expect(nextAction).toBeNull();
     });
@@ -260,11 +275,12 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         full_name: 'Test',
         date_of_birth: 'invalid-date',
         gender: 'INVALID_GENDER' as 'MALE' | 'FEMALE' | 'OTHER',
-        email: 'test@example.com'
+        email: 'test@example.com',
       } as TravelerProfile;
 
       expect(() => {
-        const result = profileCompletenessService.calculateCompleteness(corruptedProfile);
+        const result =
+          profileCompletenessService.calculateCompleteness(corruptedProfile);
         expect(result).toBeDefined();
         expect(typeof result.overall).toBe('number');
       }).not.toThrow();
@@ -282,11 +298,13 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         gender: 'OTHER',
         email: 'large@example.com',
         travel_preferences: largePreferences,
-        notification_preferences: largePreferences
+        notification_preferences: largePreferences,
       };
 
       expect(() => {
-        const result = profileCompletenessService.calculateCompleteness(profileWithLargePrefs);
+        const result = profileCompletenessService.calculateCompleteness(
+          profileWithLargePrefs
+        );
         expect(result).toBeDefined();
       }).not.toThrow();
     });
@@ -298,16 +316,16 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         full_name: 'Performance Test',
         date_of_birth: '1990-01-01',
         gender: 'MALE',
-        email: 'perf@example.com'
+        email: 'perf@example.com',
       };
 
       const startTime = performance.now();
-      
+
       // Run calculation multiple times
       for (let i = 0; i < 100; i++) {
         profileCompletenessService.calculateCompleteness(profile);
       }
-      
+
       const endTime = performance.now();
       const avgTime = (endTime - startTime) / 100;
 
@@ -322,11 +340,12 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         full_name: 'Future Person',
         date_of_birth: '2030-01-01', // Future date
         gender: 'OTHER',
-        email: 'future@example.com'
+        email: 'future@example.com',
       };
 
-      const result = profileCompletenessService.calculateCompleteness(futureProfile);
-      
+      const result =
+        profileCompletenessService.calculateCompleteness(futureProfile);
+
       // Should still calculate but may have lower score
       expect(result.overall).toBeGreaterThanOrEqual(0);
       expect(result.overall).toBeLessThanOrEqual(100);
@@ -337,11 +356,12 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         full_name: 'Old Person',
         date_of_birth: '1900-01-01',
         gender: 'OTHER',
-        email: 'old@example.com'
+        email: 'old@example.com',
       };
 
-      const result = profileCompletenessService.calculateCompleteness(oldProfile);
-      
+      const result =
+        profileCompletenessService.calculateCompleteness(oldProfile);
+
       expect(result.overall).toBeGreaterThanOrEqual(0);
       expect(result.overall).toBeLessThanOrEqual(100);
     });
@@ -349,16 +369,17 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
     it('should handle very long names and fields', () => {
       const longName = 'A'.repeat(1000);
       const longEmail = 'a'.repeat(100) + '@' + 'b'.repeat(100) + '.com';
-      
+
       const longFieldProfile: TravelerProfile = {
         full_name: longName,
         date_of_birth: '1990-01-01',
         gender: 'OTHER',
-        email: longEmail
+        email: longEmail,
       };
 
       expect(() => {
-        const result = profileCompletenessService.calculateCompleteness(longFieldProfile);
+        const result =
+          profileCompletenessService.calculateCompleteness(longFieldProfile);
         expect(result).toBeDefined();
       }).not.toThrow();
     });
@@ -367,25 +388,25 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
   describe('Integration with AI Activity Logging', () => {
     it('should log completion calculation attempts', async () => {
       const mockLogActivity = vi.fn();
-      
+
       // Mock the AI activity logging
       vi.mock('@/integrations/supabase/client', () => ({
         supabase: {
           from: vi.fn().mockReturnValue({
-            insert: mockLogActivity
-          })
-        }
+            insert: mockLogActivity,
+          }),
+        },
       }));
 
       const profile: TravelerProfile = {
         full_name: 'Test User',
         date_of_birth: '1990-01-01',
         gender: 'MALE',
-        email: 'test@example.com'
+        email: 'test@example.com',
       };
 
       const result = profileCompletenessService.calculateCompleteness(profile);
-      
+
       expect(result).toBeDefined();
       // In real implementation, this would verify AI activity logging
     });

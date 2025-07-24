@@ -1,6 +1,6 @@
 /**
  * Schema Registry and Metadata System
- * 
+ *
  * Implements Zod v4-inspired schema registry and metadata management
  * for better schema organization and documentation
  */
@@ -15,7 +15,9 @@ export interface GlobalMeta {
   title?: string;
   description?: string;
   example?: unknown;
-  examples?: unknown[] | Record<string, { value: unknown; [k: string]: unknown }>;
+  examples?:
+    | unknown[]
+    | Record<string, { value: unknown; [k: string]: unknown }>;
   deprecated?: boolean;
   version?: string;
   category?: string;
@@ -37,7 +39,9 @@ export class SchemaRegistry<TMeta = GlobalMeta> {
     // Check for ID conflicts
     if (this.isGlobalMeta(metadata) && metadata.id) {
       if (this.idMap.has(metadata.id)) {
-        throw new Error(`Schema with id "${metadata.id}" already exists in registry`);
+        throw new Error(
+          `Schema with id "${metadata.id}" already exists in registry`
+        );
       }
       this.idMap.set(metadata.id, schema);
     }
@@ -92,16 +96,19 @@ export class SchemaRegistry<TMeta = GlobalMeta> {
   getAll(): Array<{ schema: ZodSchema; metadata: TMeta }> {
     return Array.from(this.schemas.entries()).map(([schema, metadata]) => ({
       schema,
-      metadata
+      metadata,
     }));
   }
 
   /**
    * Get schemas by category
    */
-  getByCategory(category: string): Array<{ schema: ZodSchema; metadata: TMeta }> {
-    return this.getAll().filter(({ metadata }) => 
-      this.isGlobalMeta(metadata) && metadata.category === category
+  getByCategory(
+    category: string
+  ): Array<{ schema: ZodSchema; metadata: TMeta }> {
+    return this.getAll().filter(
+      ({ metadata }) =>
+        this.isGlobalMeta(metadata) && metadata.category === category
     );
   }
 
@@ -109,8 +116,9 @@ export class SchemaRegistry<TMeta = GlobalMeta> {
    * Get schemas by tag
    */
   getByTag(tag: string): Array<{ schema: ZodSchema; metadata: TMeta }> {
-    return this.getAll().filter(({ metadata }) => 
-      this.isGlobalMeta(metadata) && metadata.tags?.includes(tag)
+    return this.getAll().filter(
+      ({ metadata }) =>
+        this.isGlobalMeta(metadata) && metadata.tags?.includes(tag)
     );
   }
 
@@ -185,14 +193,14 @@ export class EnhancedSchema<T extends ZodType> {
    */
   toJSONSchema(): any {
     const baseSchema = this.convertZodToJSONSchema(this.schema);
-    
+
     if (this.metadata) {
       return {
         ...baseSchema,
-        ...this.metadata
+        ...this.metadata,
       };
     }
-    
+
     return baseSchema;
   }
 
@@ -202,7 +210,7 @@ export class EnhancedSchema<T extends ZodType> {
    */
   private convertZodToJSONSchema(schema: ZodType): any {
     const def = (schema as any)._def;
-    
+
     switch (def.typeName) {
       case 'ZodString':
         return { type: 'string' };
@@ -215,42 +223,42 @@ export class EnhancedSchema<T extends ZodType> {
       case 'ZodArray':
         return {
           type: 'array',
-          items: this.convertZodToJSONSchema(def.type)
+          items: this.convertZodToJSONSchema(def.type),
         };
       case 'ZodObject':
         const properties: any = {};
         const required: string[] = [];
-        
+
         Object.entries(def.shape()).forEach(([key, value]: [string, any]) => {
           properties[key] = this.convertZodToJSONSchema(value);
           if (!value.isOptional()) {
             required.push(key);
           }
         });
-        
+
         return {
           type: 'object',
           properties,
           required: required.length > 0 ? required : undefined,
-          additionalProperties: false
+          additionalProperties: false,
         };
       case 'ZodUnion':
         return {
-          oneOf: def.options.map((option: ZodType) => 
+          oneOf: def.options.map((option: ZodType) =>
             this.convertZodToJSONSchema(option)
-          )
+          ),
         };
       case 'ZodEnum':
         return {
           type: 'string',
-          enum: def.values
+          enum: def.values,
         };
       case 'ZodOptional':
         return this.convertZodToJSONSchema(def.innerType);
       case 'ZodNullable':
         const innerSchema = this.convertZodToJSONSchema(def.innerType);
         return {
-          oneOf: [innerSchema, { type: 'null' }]
+          oneOf: [innerSchema, { type: 'null' }],
         };
       default:
         return { type: 'string' }; // fallback
@@ -271,22 +279,28 @@ export function createEnhancedSchema<T extends ZodType>(
 /**
  * Registry for form schemas specifically
  */
-export class FormSchemaRegistry extends SchemaRegistry<GlobalMeta & {
-  formType?: 'creation' | 'update' | 'search' | 'filter';
-  validationLevel?: 'strict' | 'lenient' | 'custom';
-}> {
+export class FormSchemaRegistry extends SchemaRegistry<
+  GlobalMeta & {
+    formType?: 'creation' | 'update' | 'search' | 'filter';
+    validationLevel?: 'strict' | 'lenient' | 'custom';
+  }
+> {
   /**
    * Get schemas by form type
    */
   getByFormType(formType: string) {
-    return this.getAll().filter(({ metadata }) => metadata.formType === formType);
+    return this.getAll().filter(
+      ({ metadata }) => metadata.formType === formType
+    );
   }
 
   /**
    * Get schemas by validation level
    */
   getByValidationLevel(level: string) {
-    return this.getAll().filter(({ metadata }) => metadata.validationLevel === level);
+    return this.getAll().filter(
+      ({ metadata }) => metadata.validationLevel === level
+    );
   }
 }
 
@@ -311,14 +325,19 @@ export class SchemaDocumentationGenerator {
     sections.push('# Schema Documentation\n');
 
     // Group by category
-    const categories = new Map<string, Array<{ schema: ZodSchema; metadata: GlobalMeta }>>();
-    
+    const categories = new Map<
+      string,
+      Array<{ schema: ZodSchema; metadata: GlobalMeta }>
+    >();
+
     schemas.forEach(({ schema, metadata }) => {
       const category = (metadata as GlobalMeta).category || 'Uncategorized';
       if (!categories.has(category)) {
         categories.set(category, []);
       }
-      categories.get(category)!.push({ schema, metadata: metadata as GlobalMeta });
+      categories
+        .get(category)!
+        .push({ schema, metadata: metadata as GlobalMeta });
     });
 
     // Generate documentation for each category
@@ -326,14 +345,18 @@ export class SchemaDocumentationGenerator {
       sections.push(`## ${category}\n`);
 
       schemas.forEach(({ schema, metadata }) => {
-        sections.push(`### ${metadata.title || metadata.id || 'Unnamed Schema'}\n`);
-        
+        sections.push(
+          `### ${metadata.title || metadata.id || 'Unnamed Schema'}\n`
+        );
+
         if (metadata.description) {
           sections.push(`${metadata.description}\n`);
         }
 
         if (metadata.deprecated) {
-          sections.push(`> **⚠️ Deprecated**: This schema is deprecated and may be removed in future versions.\n`);
+          sections.push(
+            `> **⚠️ Deprecated**: This schema is deprecated and may be removed in future versions.\n`
+          );
         }
 
         if (metadata.examples) {
@@ -347,7 +370,9 @@ export class SchemaDocumentationGenerator {
         }
 
         if (metadata.tags && metadata.tags.length > 0) {
-          sections.push(`**Tags:** ${metadata.tags.map(tag => `\`${tag}\``).join(', ')}\n`);
+          sections.push(
+            `**Tags:** ${metadata.tags.map(tag => `\`${tag}\``).join(', ')}\n`
+          );
         }
 
         sections.push('---\n');
@@ -365,8 +390,11 @@ export class SchemaDocumentationGenerator {
       schemas: this.registry.getAll().map(({ schema, metadata }) => ({
         id: (metadata as GlobalMeta).id,
         metadata: metadata as GlobalMeta,
-        jsonSchema: new EnhancedSchema(schema, metadata as GlobalMeta).toJSONSchema()
-      }))
+        jsonSchema: new EnhancedSchema(
+          schema,
+          metadata as GlobalMeta
+        ).toJSONSchema(),
+      })),
     };
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Offer Validation Service
- * 
+ *
  * Handles Duffel offer expiration validation, refresh logic,
  * and offer lifecycle management for reliable booking.
  */
@@ -28,26 +28,28 @@ export interface DuffelOfferSummary {
 const OFFER_VALIDATION_CONFIG = {
   // Safety buffer before expiration (2 minutes)
   SAFETY_BUFFER_MS: 2 * 60 * 1000,
-  
+
   // Refresh threshold - refresh if less than 5 minutes remaining
   REFRESH_THRESHOLD_MS: 5 * 60 * 1000,
-  
+
   // Warning threshold - warn user if less than 10 minutes remaining
   WARNING_THRESHOLD_MS: 10 * 60 * 1000,
-  
+
   // Maximum offer age before automatic refresh (15 minutes)
-  MAX_OFFER_AGE_MS: 15 * 60 * 1000
+  MAX_OFFER_AGE_MS: 15 * 60 * 1000,
 };
 
 /**
  * Validate a Duffel offer's expiration status
  */
-export function validateOfferExpiration(offer: DuffelOfferSummary): OfferValidationResult {
+export function validateOfferExpiration(
+  offer: DuffelOfferSummary
+): OfferValidationResult {
   try {
     const now = new Date();
     const expiresAt = new Date(offer.expires_at);
     const timeRemaining = expiresAt.getTime() - now.getTime();
-    
+
     // Check if offer has already expired
     if (timeRemaining <= 0) {
       return {
@@ -55,10 +57,11 @@ export function validateOfferExpiration(offer: DuffelOfferSummary): OfferValidat
         timeRemaining: 0,
         expiresAt,
         needsRefresh: true,
-        error: 'This flight offer has expired. Please search again for current availability.'
+        error:
+          'This flight offer has expired. Please search again for current availability.',
       };
     }
-    
+
     // Check if offer expires within safety buffer
     if (timeRemaining <= OFFER_VALIDATION_CONFIG.SAFETY_BUFFER_MS) {
       return {
@@ -66,26 +69,28 @@ export function validateOfferExpiration(offer: DuffelOfferSummary): OfferValidat
         timeRemaining,
         expiresAt,
         needsRefresh: true,
-        error: 'This flight offer is about to expire. Please search again for current availability.'
+        error:
+          'This flight offer is about to expire. Please search again for current availability.',
       };
     }
-    
+
     // Check if offer needs refresh (but is still technically valid)
-    const needsRefresh = timeRemaining <= OFFER_VALIDATION_CONFIG.REFRESH_THRESHOLD_MS;
-    
+    const needsRefresh =
+      timeRemaining <= OFFER_VALIDATION_CONFIG.REFRESH_THRESHOLD_MS;
+
     return {
       isValid: true,
       timeRemaining,
       expiresAt,
-      needsRefresh
+      needsRefresh,
     };
-  } catch (_error) {  
+  } catch (_error) {
     return {
       isValid: false,
       timeRemaining: 0,
       expiresAt: new Date(),
       needsRefresh: true,
-      error: 'Invalid offer expiration date format.'
+      error: 'Invalid offer expiration date format.',
     };
   }
 }
@@ -99,24 +104,26 @@ export function shouldWarnUserAboutExpiration(offer: DuffelOfferSummary): {
   timeRemaining?: number;
 } {
   const validation = validateOfferExpiration(offer);
-  
+
   if (!validation.isValid) {
     return {
       shouldWarn: true,
       message: validation.error,
-      timeRemaining: validation.timeRemaining
+      timeRemaining: validation.timeRemaining,
     };
   }
-  
-  if (validation.timeRemaining <= OFFER_VALIDATION_CONFIG.WARNING_THRESHOLD_MS) {
+
+  if (
+    validation.timeRemaining <= OFFER_VALIDATION_CONFIG.WARNING_THRESHOLD_MS
+  ) {
     const minutesRemaining = Math.floor(validation.timeRemaining / (60 * 1000));
     return {
       shouldWarn: true,
       message: `This offer expires in ${minutesRemaining} minutes. Please complete your booking soon.`,
-      timeRemaining: validation.timeRemaining
+      timeRemaining: validation.timeRemaining,
     };
   }
-  
+
   return { shouldWarn: false };
 }
 
@@ -131,30 +138,34 @@ export async function validateOfferForBooking(
     // Fetch current offer data
     const offer = await getDuffelOffer(offerId);
     const validation = validateOfferExpiration(offer);
-    
+
     if (!validation.isValid) {
       throw new DuffelAPIError({
-        errors: [{
-          type: 'offer_no_longer_available',
-          title: 'Offer Expired',
-          detail: validation.error || 'Offer has expired'
-        }]
+        errors: [
+          {
+            type: 'offer_no_longer_available',
+            title: 'Offer Expired',
+            detail: validation.error || 'Offer has expired',
+          },
+        ],
       });
     }
-    
+
     return validation;
   } catch (error) {
     if (error instanceof DuffelAPIError) {
       throw error;
     }
-    
+
     // Handle API errors (offer not found, network issues, etc.)
     throw new DuffelAPIError({
-      errors: [{
-        type: 'offer_not_found',
-        title: 'Offer Not Available',
-        detail: 'The selected flight offer is no longer available.'
-      }]
+      errors: [
+        {
+          type: 'offer_not_found',
+          title: 'Offer Not Available',
+          detail: 'The selected flight offer is no longer available.',
+        },
+      ],
     });
   }
 }
@@ -166,11 +177,11 @@ export function formatTimeRemaining(timeRemainingMs: number): string {
   if (timeRemainingMs <= 0) {
     return 'Expired';
   }
-  
+
   const totalMinutes = Math.floor(timeRemainingMs / (60 * 1000));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  
+
   if (hours > 0) {
     return `${hours}h ${minutes}m`;
   } else {
@@ -181,7 +192,9 @@ export function formatTimeRemaining(timeRemainingMs: number): string {
 /**
  * Get offer urgency level for UI styling
  */
-export function getOfferUrgencyLevel(timeRemainingMs: number): 'normal' | 'warning' | 'critical' | 'expired' {
+export function getOfferUrgencyLevel(
+  timeRemainingMs: number
+): 'normal' | 'warning' | 'critical' | 'expired' {
   if (timeRemainingMs <= 0) {
     return 'expired';
   } else if (timeRemainingMs <= OFFER_VALIDATION_CONFIG.SAFETY_BUFFER_MS) {
@@ -199,21 +212,27 @@ export function getOfferUrgencyLevel(timeRemainingMs: number): 'normal' | 'warni
 export function createOfferValidationMiddleware(
   getDuffelOffer: (id: string) => Promise<DuffelOfferSummary>
 ) {
-  return async function validateOfferMiddleware(offerId: string): Promise<void> {
+  return async function validateOfferMiddleware(
+    offerId: string
+  ): Promise<void> {
     const validation = await validateOfferForBooking(offerId, getDuffelOffer);
-    
+
     if (!validation.isValid) {
       throw new DuffelAPIError({
-        errors: [{
-          type: 'offer_no_longer_available',
-          title: 'Offer Expired',
-          detail: validation.error || 'Offer is no longer valid for booking'
-        }]
+        errors: [
+          {
+            type: 'offer_no_longer_available',
+            title: 'Offer Expired',
+            detail: validation.error || 'Offer is no longer valid for booking',
+          },
+        ],
       });
     }
-    
+
     // Log validation success for monitoring
-    console.log(`[OfferValidation] Offer ${offerId} validated successfully. Time remaining: ${formatTimeRemaining(validation.timeRemaining)}`);
+    console.log(
+      `[OfferValidation] Offer ${offerId} validated successfully. Time remaining: ${formatTimeRemaining(validation.timeRemaining)}`
+    );
   };
 }
 
@@ -233,14 +252,14 @@ export async function validateMultipleOffers(
   const valid: string[] = [];
   const expired: string[] = [];
   const needRefresh: string[] = [];
-  
+
   await Promise.allSettled(
-    offerIds.map(async (offerId) => {
+    offerIds.map(async offerId => {
       try {
         const offer = await getDuffelOffer(offerId);
         const validation = validateOfferExpiration(offer);
         results[offerId] = validation;
-        
+
         if (validation.isValid) {
           valid.push(offerId);
           if (validation.needsRefresh) {
@@ -249,18 +268,18 @@ export async function validateMultipleOffers(
         } else {
           expired.push(offerId);
         }
-      } catch (_error) {  
+      } catch (_error) {
         results[offerId] = {
           isValid: false,
           timeRemaining: 0,
           expiresAt: new Date(),
           needsRefresh: true,
-          error: 'Failed to validate offer'
+          error: 'Failed to validate offer',
         };
         expired.push(offerId);
       }
     })
   );
-  
+
   return { valid, expired, needRefresh, results };
 }

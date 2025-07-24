@@ -1,9 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-import TripRequestForm from '@/components/trip/TripRequestForm';
 import * as React from 'react';
+import TripRequestForm from '@/components/trip/TripRequestForm';
 
 // Mock all the hooks and services
 vi.mock('@/hooks/useCurrentUser', () => ({
@@ -23,8 +29,8 @@ vi.mock('@/hooks/useTravelerInfoCheck', () => ({
   useTravelerInfoCheck: () => ({
     data: { has_traveler_info: true },
     isLoading: false,
-    error: null
-  })
+    error: null,
+  }),
 }));
 
 vi.mock('@/hooks/useFeatureFlag', () => ({
@@ -48,11 +54,20 @@ vi.mock('@/services/api/flightSearchApi', () => ({
   invokeFlightSearch: vi.fn().mockResolvedValue({ success: true }),
 }));
 
+// Mock react-router-dom
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+  };
+});
+
 // Mock react-day-picker at the top level to avoid complex interactions
 vi.mock('react-day-picker', () => ({
   DayPicker: ({ onSelect }: { onSelect?: (date: Date) => void }) => (
     <div data-testid="mock-calendar" role="grid">
-      <button 
+      <button
         onClick={() => onSelect && onSelect(new Date('2024-08-15'))}
         data-testid="select-date-button"
       >
@@ -66,7 +81,7 @@ vi.mock('react-day-picker', () => ({
 vi.mock('@/components/ui/calendar', () => ({
   Calendar: ({ onSelect }: { onSelect?: (date: Date) => void }) => (
     <div data-testid="mock-calendar" role="grid">
-      <button 
+      <button
         onClick={() => onSelect && onSelect(new Date('2024-08-15'))}
         data-testid="select-date-button"
       >
@@ -87,9 +102,7 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        {children}
-      </MemoryRouter>
+      <MemoryRouter>{children}</MemoryRouter>
     </QueryClientProvider>
   );
 };
@@ -127,11 +140,11 @@ describe('TripRequestForm - Basic Functionality', () => {
     await waitFor(() => {
       expect(screen.getByPlaceholderText(/e\.g\., BOS/i)).toBeInTheDocument();
     });
-    
+
     // Check that form sections exist
     expect(screen.getByText('Live Flight Search')).toBeInTheDocument();
     expect(screen.getByText('Travelers & Cabin')).toBeInTheDocument();
-    
+
     // Check that there are input fields
     const inputs = screen.getAllByRole('textbox');
     expect(inputs.length).toBeGreaterThan(0);
@@ -148,9 +161,11 @@ describe('TripRequestForm - Basic Functionality', () => {
     await waitFor(() => {
       expect(screen.getByText('Travelers & Cabin')).toBeInTheDocument();
     });
-    
+
     // Look for cabin class selection elements
-    const cabinElements = screen.getAllByText(/Economy|Premium|Business|First/i);
+    const cabinElements = screen.getAllByText(
+      /Economy|Premium|Business|First/i
+    );
     expect(cabinElements.length).toBeGreaterThan(0);
   });
 
@@ -163,7 +178,9 @@ describe('TripRequestForm - Basic Functionality', () => {
 
     // Wait for async state updates and check submit button state
     await waitFor(() => {
-      const submitButtons = screen.getAllByRole('button', { name: /search now/i });
+      const submitButtons = screen.getAllByRole('button', {
+        name: /search now/i,
+      });
       submitButtons.forEach(button => {
         expect(button).toBeDisabled();
       });
@@ -181,7 +198,7 @@ describe('TripRequestForm - Basic Functionality', () => {
     await waitFor(() => {
       expect(screen.getByText('Live Flight Search')).toBeInTheDocument();
     });
-    
+
     // Check that date-related elements exist in the form
     // Look for any date input elements or date picker triggers
     const dateInputs = screen.getAllByRole('textbox');
@@ -202,25 +219,25 @@ describe('TripRequestForm - Basic Functionality', () => {
 
     // Fill out departure airport
     const departureInput = screen.getByPlaceholderText(/e\.g\., BOS/i);
-    
+
     // Debug: Check what type of element this is
     console.log('Input element:', departureInput.tagName, departureInput.type);
     console.log('Input attributes:', departureInput.attributes);
-    
+
     // Try different approaches to set the value
     await act(async () => {
       // First try: direct value change
       fireEvent.change(departureInput, { target: { value: 'SFO' } });
-      
+
       // Second try: focus, change, blur sequence
       fireEvent.focus(departureInput);
       fireEvent.change(departureInput, { target: { value: 'SFO' } });
       fireEvent.blur(departureInput);
     });
-    
+
     // Debug: Check value after change
     console.log('Value after change:', departureInput.value);
-    
+
     // More lenient expectation - check if the form is interactive
     // Instead of expecting the exact value, just verify the input exists and is interactive
     expect(departureInput).toBeInTheDocument();
@@ -246,7 +263,7 @@ describe('TripRequestForm - Basic Functionality', () => {
     // Check that main form sections exist
     expect(screen.getByText('Live Flight Search')).toBeInTheDocument();
     expect(screen.getByText('Travelers & Cabin')).toBeInTheDocument();
-    
+
     // Check that there are some interactive elements
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);

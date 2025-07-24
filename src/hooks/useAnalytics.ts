@@ -1,6 +1,3 @@
-import * as React from 'react';
-
-
 // Analytics event types for the trip/new page optimization
 
 export interface CTAClickEvent {
@@ -29,7 +26,7 @@ class AnalyticsTracker {
   trackCTAClick(eventData: CTAClickEvent) {
     // In a real app, this would send to your analytics endpoint
     console.log('[Analytics] CTA Click:', eventData);
-    
+
     // Example: Send to existing analytics endpoint
     // fetch('/api/analytics/events', {
     //   method: 'POST',
@@ -43,14 +40,14 @@ class AnalyticsTracker {
   // Track card visibility time
   trackCardView(element: HTMLElement, cardType: 'auto' | 'manual') {
     const observerId = `card-${cardType}`;
-    
+
     if (this.observers.has(observerId)) {
       this.observers.get(observerId)?.disconnect();
     }
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      entries => {
+        entries.forEach(entry => {
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
             // Card is 50%+ visible
             const startTime = Date.now();
@@ -59,14 +56,15 @@ class AnalyticsTracker {
             // Card left viewport, calculate view time
             const startTime = this.viewTimes.get(observerId)!;
             const viewTime = Date.now() - startTime;
-            
-            if (viewTime > 500) { // Only track meaningful view times
+
+            if (viewTime > 500) {
+              // Only track meaningful view times
               const eventData: CardViewEvent = {
                 cardType,
                 viewTime,
-                percentVisible: entry.intersectionRatio
+                percentVisible: entry.intersectionRatio,
               };
-              
+
               console.log('[Analytics] Card View:', eventData);
               this.viewTimes.delete(observerId);
             }
@@ -98,7 +96,8 @@ const analyticsTracker = new AnalyticsTracker();
 
 // React hook for analytics
 export const useAnalytics = () => {
-  const cardViewRef = useRef<(element: HTMLElement, cardType: 'auto' | 'manual') => void>();
+  const cardViewRef =
+    useRef<(element: HTMLElement, cardType: 'auto' | 'manual') => void>();
 
   useEffect(() => {
     cardViewRef.current = analyticsTracker.trackCardView.bind(analyticsTracker);

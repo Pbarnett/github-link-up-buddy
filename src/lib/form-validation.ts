@@ -1,6 +1,6 @@
 /**
  * Enhanced Form Validation Schema Generator
- * 
+ *
  * Generates Zod validation schemas from dynamic form configurations
  * with Zod v4-inspired features and optimizations
  */
@@ -10,25 +10,27 @@ import type {
   FormConfiguration,
   FormSection,
   FieldConfiguration,
-  ValidationRules
+  ValidationRules,
 } from '../types/dynamic-forms';
-import { 
-  treeifyError, 
-  flattenError, 
+import {
+  treeifyError,
+  flattenError,
   prettifyError,
   createLocalizedErrorMap,
-  commonErrorMessages 
+  commonErrorMessages,
 } from './validation/error-formatting';
-import { 
-  globalRegistry, 
+import {
+  globalRegistry,
   createEnhancedSchema,
-  type GlobalMeta 
+  type GlobalMeta,
 } from './validation/schema-registry';
 
 /**
  * Generate a Zod schema from a form configuration
  */
-export const generateZodSchema = (configuration: FormConfiguration): z.ZodSchema => {
+export const generateZodSchema = (
+  configuration: FormConfiguration
+): z.ZodSchema => {
   const schemaFields: Record<string, z.ZodTypeAny> = {};
 
   // Process all fields from all sections
@@ -47,7 +49,9 @@ export const generateZodSchema = (configuration: FormConfiguration): z.ZodSchema
 /**
  * Generate a Zod schema for a single field
  */
-export const generateFieldSchema = (field: FieldConfiguration): z.ZodTypeAny | null => {
+export const generateFieldSchema = (
+  field: FieldConfiguration
+): z.ZodTypeAny | null => {
   // Skip non-input field types
   if (['section-header', 'divider'].includes(field.type)) {
     return null;
@@ -99,7 +103,7 @@ export const generateFieldSchema = (field: FieldConfiguration): z.ZodTypeAny | n
 
     case 'date':
     case 'datetime':
-      schema = z.string().refine((val) => {
+      schema = z.string().refine(val => {
         if (!val) return false; // Empty values should fail validation for required fields
         return !isNaN(Date.parse(val));
       }, 'Please enter a valid date');
@@ -109,7 +113,7 @@ export const generateFieldSchema = (field: FieldConfiguration): z.ZodTypeAny | n
     case 'date-range-flexible':
       schema = z.object({
         from: z.string().optional(),
-        to: z.string().optional()
+        to: z.string().optional(),
       });
       break;
 
@@ -118,7 +122,7 @@ export const generateFieldSchema = (field: FieldConfiguration): z.ZodTypeAny | n
         code: z.string().min(1, 'Airport code is required'),
         name: z.string().min(1, 'Airport name is required'),
         city: z.string().optional(),
-        country: z.string().optional()
+        country: z.string().optional(),
       });
       break;
 
@@ -128,7 +132,7 @@ export const generateFieldSchema = (field: FieldConfiguration): z.ZodTypeAny | n
         city: z.string(),
         state: z.string(),
         zipCode: z.string(),
-        country: z.string()
+        country: z.string(),
       });
       break;
 
@@ -155,8 +159,10 @@ export const generateFieldSchema = (field: FieldConfiguration): z.ZodTypeAny | n
     // Use superRefine for consolidated required validation
     schema = schema.superRefine((val, ctx) => {
       let isValid = false;
-      
-      if (['text', 'textarea', 'password', 'email', 'phone'].includes(field.type)) {
+
+      if (
+        ['text', 'textarea', 'password', 'email', 'phone'].includes(field.type)
+      ) {
         isValid = typeof val === 'string' && val.length > 0;
       } else if (field.type === 'checkbox' || field.type === 'switch') {
         isValid = val === true;
@@ -165,16 +171,17 @@ export const generateFieldSchema = (field: FieldConfiguration): z.ZodTypeAny | n
       } else if (field.type === 'multi-select') {
         isValid = Array.isArray(val) && val.length > 0;
       } else if (field.type === 'date' || field.type === 'datetime') {
-        isValid = typeof val === 'string' && val.length > 0 && !isNaN(Date.parse(val));
+        isValid =
+          typeof val === 'string' && val.length > 0 && !isNaN(Date.parse(val));
       } else {
         // Generic validation - check for non-empty values
         isValid = val !== undefined && val !== null && val !== '';
       }
-      
+
       if (!isValid) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: field.validation?.message || `${field.label} is required`
+          message: field.validation?.message || `${field.label} is required`,
         });
       }
     });
@@ -199,15 +206,17 @@ const applyValidationRules = <T extends z.ZodTypeAny>(
   // String validations
   if (schema instanceof z.ZodString) {
     let stringSchema = schema as z.ZodString;
-    
+
     if (rules.minLength !== undefined) {
-      stringSchema = stringSchema.min(rules.minLength, 
+      stringSchema = stringSchema.min(
+        rules.minLength,
         rules.message || `Must be at least ${rules.minLength} characters`
       );
     }
 
     if (rules.maxLength !== undefined) {
-      stringSchema = stringSchema.max(rules.maxLength,
+      stringSchema = stringSchema.max(
+        rules.maxLength,
         rules.message || `Must be no more than ${rules.maxLength} characters`
       );
     }
@@ -215,7 +224,8 @@ const applyValidationRules = <T extends z.ZodTypeAny>(
     if (rules.pattern) {
       try {
         const regex = new RegExp(rules.pattern);
-        stringSchema = stringSchema.regex(regex, 
+        stringSchema = stringSchema.regex(
+          regex,
           rules.message || 'Invalid format'
         );
       } catch {
@@ -234,26 +244,28 @@ const applyValidationRules = <T extends z.ZodTypeAny>(
         rules.message || 'Please enter a valid URL'
       );
     }
-    
+
     updatedSchema = stringSchema;
   }
 
   // Number validations
   if (schema instanceof z.ZodNumber) {
     let numberSchema = schema as z.ZodNumber;
-    
+
     if (rules.min !== undefined) {
-      numberSchema = numberSchema.min(rules.min,
+      numberSchema = numberSchema.min(
+        rules.min,
         rules.message || `Must be at least ${rules.min}`
       );
     }
 
     if (rules.max !== undefined) {
-      numberSchema = numberSchema.max(rules.max,
+      numberSchema = numberSchema.max(
+        rules.max,
         rules.message || `Must be no more than ${rules.max}`
       );
     }
-    
+
     updatedSchema = numberSchema;
   }
 
@@ -262,17 +274,20 @@ const applyValidationRules = <T extends z.ZodTypeAny>(
     try {
       // Safely evaluate custom validation function
       const customValidation = new Function('value', 'field', rules.custom);
-      
-      updatedSchema = updatedSchema.refine((value) => {
-        try {
-          return customValidation(value, { type: fieldType });
-        } catch (error) {
-          console.error('Custom validation error:', error);
-          return false;
+
+      updatedSchema = updatedSchema.refine(
+        value => {
+          try {
+            return customValidation(value, { type: fieldType });
+          } catch (error) {
+            console.error('Custom validation error:', error);
+            return false;
+          }
+        },
+        {
+          message: rules.message || 'Custom validation failed',
         }
-      }, {
-        message: rules.message || 'Custom validation failed'
-      });
+      );
     } catch (error) {
       console.warn('Invalid custom validation function:', error);
     }
@@ -300,12 +315,12 @@ export const validateFieldValue = (
     if (error instanceof z.ZodError) {
       return {
         isValid: false,
-        error: error.errors[0]?.message || 'Validation failed'
+        error: error.errors[0]?.message || 'Validation failed',
       };
     }
     return {
       isValid: false,
-      error: 'Unknown validation error'
+      error: 'Unknown validation error',
     };
   }
 };
@@ -339,7 +354,9 @@ export const validateFormValues = (
 /**
  * Get default values from form configuration
  */
-export const getDefaultValues = (configuration: FormConfiguration): Record<string, unknown> => {
+export const getDefaultValues = (
+  configuration: FormConfiguration
+): Record<string, unknown> => {
   const defaults: Record<string, unknown> = {};
 
   configuration.sections.forEach((section: FormSection) => {
@@ -370,7 +387,7 @@ export const getDefaultValues = (configuration: FormConfiguration): Record<strin
               city: '',
               state: '',
               zipCode: '',
-              country: ''
+              country: '',
             };
             break;
           default:
@@ -408,13 +425,13 @@ export const validateFormValuesEnhanced = (
 } => {
   try {
     const schema = generateZodSchema(configuration);
-    
+
     // Apply localized error map if specified
     if (options?.locale) {
       const localizedErrorMap = createLocalizedErrorMap(options.locale);
       schema._def.errorMap = localizedErrorMap;
     }
-    
+
     schema.parse(values);
     return { isValid: true, errors: {} };
   } catch (error) {
@@ -426,20 +443,20 @@ export const validateFormValuesEnhanced = (
           errors[fieldPath] = err.message;
         }
       });
-      
+
       const result: any = { isValid: false, errors };
-      
+
       // Add enhanced error formatting if requested
       if (options?.prettify) {
         result.formattedError = prettifyError(error);
       }
-      
+
       if (options?.flatten) {
         result.flattenedErrors = flattenError(error);
       } else {
         result.errorTree = treeifyError(error);
       }
-      
+
       return result;
     }
     return { isValid: false, errors: { form: 'Validation failed' } };
@@ -454,17 +471,18 @@ export const createFormSchema = (
   metadata?: GlobalMeta
 ): any => {
   const baseSchema = generateZodSchema(configuration);
-  
+
   const schemaMetadata: GlobalMeta = {
     id: `form_${configuration.id || 'unnamed'}`,
     title: configuration.title || 'Form Schema',
-    description: configuration.description || 'Generated form validation schema',
+    description:
+      configuration.description || 'Generated form validation schema',
     category: 'form',
     tags: ['form', 'validation', 'dynamic'],
     version: '1.0.0',
-    ...metadata
+    ...metadata,
   };
-  
+
   return createEnhancedSchema(baseSchema, schemaMetadata);
 };
 
@@ -501,26 +519,26 @@ export const validateFieldValueEnhanced = (
     if (error instanceof z.ZodError) {
       const result: any = {
         isValid: false,
-        error: error.errors[0]?.message || 'Validation failed'
+        error: error.errors[0]?.message || 'Validation failed',
       };
-      
+
       if (options?.includeContext) {
         result.context = {
           field: {
             id: field.id,
             type: field.type,
-            label: field.label
+            label: field.label,
           },
           value,
-          issues: error.errors
+          issues: error.errors,
         };
       }
-      
+
       return result;
     }
     return {
       isValid: false,
-      error: 'Unknown validation error'
+      error: 'Unknown validation error',
     };
   }
 };
@@ -532,23 +550,22 @@ export const stringFormatValidators = {
   email: () => z.string().email(commonErrorMessages.email),
   url: () => z.string().url(commonErrorMessages.url),
   uuid: () => z.string().uuid(commonErrorMessages.uuid),
-  phone: () => z.string().regex(
-    /^[\+]?[1-9][\d]{0,15}$/,
-    commonErrorMessages.phone
-  ),
-  strongPassword: () => z.string().regex(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-    commonErrorMessages.strongPassword
-  ),
+  phone: () =>
+    z.string().regex(/^[\+]?[1-9][\d]{0,15}$/, commonErrorMessages.phone),
+  strongPassword: () =>
+    z
+      .string()
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+        commonErrorMessages.strongPassword
+      ),
   positiveNumber: () => z.number().positive(commonErrorMessages.positiveNumber),
-  dateInFuture: () => z.date().refine(
-    (date) => date > new Date(),
-    commonErrorMessages.dateInFuture
-  ),
-  dateInPast: () => z.date().refine(
-    (date) => date < new Date(),
-    commonErrorMessages.dateInPast
-  )
+  dateInFuture: () =>
+    z
+      .date()
+      .refine(date => date > new Date(), commonErrorMessages.dateInFuture),
+  dateInPast: () =>
+    z.date().refine(date => date < new Date(), commonErrorMessages.dateInPast),
 };
 
 /**
@@ -588,13 +605,12 @@ export const registerCommonSchemas = () => {
       id: `string_format_${name}`,
       title: `${name.charAt(0).toUpperCase() + name.slice(1)} Format`,
       category: 'string_formats',
-      tags: ['string', 'format', 'validation']
+      tags: ['string', 'format', 'validation'],
     });
   });
-  
+
   console.log('Registered common validation schemas in global registry');
 };
-
 
 /**
  * Alias for validateFormValues for backward compatibility

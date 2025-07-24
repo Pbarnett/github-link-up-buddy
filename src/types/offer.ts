@@ -8,7 +8,7 @@ export interface FlightPricing {
 }
 
 export interface ScoredOffer extends BaseOffer {
-  price: number;              // legacy for backward-compat
+  price: number; // legacy for backward-compat
   priceStructure: FlightPricing;
   carryOnIncluded: boolean;
   score: number;

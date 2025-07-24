@@ -1,7 +1,11 @@
 // Enhanced Stripe type definitions
 // Complementing @stripe/stripe-js and @stripe/react-stripe-js
 
-import type { Stripe, StripeElements, StripeCardElement } from '@stripe/stripe-js';
+import type {
+  Stripe,
+  StripeElements,
+  StripeCardElement,
+} from '@stripe/stripe-js';
 // Enhanced Stripe Hook Types
 export interface StripeHookResult {
   stripe: Stripe | null;
@@ -44,7 +48,13 @@ export interface SetupIntentResult {
   setupIntent?: {
     id: string;
     client_secret: string;
-    status: 'requires_payment_method' | 'requires_confirmation' | 'requires_action' | 'processing' | 'succeeded' | 'canceled';
+    status:
+      | 'requires_payment_method'
+      | 'requires_confirmation'
+      | 'requires_action'
+      | 'processing'
+      | 'succeeded'
+      | 'canceled';
     payment_method?: string;
   };
   error?: {
@@ -57,13 +67,19 @@ export interface SetupIntentResult {
   };
 }
 
-// Payment Intent Types  
+// Payment Intent Types
 export interface PaymentIntentResult {
   paymentIntent?: {
     id: string;
     amount: number;
     currency: string;
-    status: 'requires_payment_method' | 'requires_confirmation' | 'requires_action' | 'processing' | 'succeeded' | 'canceled';
+    status:
+      | 'requires_payment_method'
+      | 'requires_confirmation'
+      | 'requires_action'
+      | 'processing'
+      | 'succeeded'
+      | 'canceled';
     client_secret: string;
     payment_method?: string;
   };

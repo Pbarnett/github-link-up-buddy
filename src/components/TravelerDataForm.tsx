@@ -1,13 +1,25 @@
 type FormEvent = React.FormEvent;
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { travelerProfileServiceKMS, TravelerProfileKMS } from '@/services/travelerProfileServiceKMS';
-// Legacy import for fallback
-import { travelerProfileService, TravelerProfile as _TravelerProfile } from '@/services/travelerProfileService';
 import * as React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  travelerProfileServiceKMS,
+  TravelerProfileKMS,
+} from '@/services/travelerProfileServiceKMS';
+// Legacy import for fallback
+import {
+  travelerProfileService,
+  TravelerProfile as _TravelerProfile,
+} from '@/services/travelerProfileService';
 type TravelerData = TravelerProfileKMS;
 
 interface TravelerDataFormProps {
@@ -18,7 +30,13 @@ interface TravelerDataFormProps {
   useKMS?: boolean; // Option to use KMS encryption
 }
 
-const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode = 'create', useKMS = true }: TravelerDataFormProps) => {
+const TravelerDataForm = ({
+  onSubmit,
+  isLoading = false,
+  initialData = {},
+  mode = 'create',
+  useKMS = true,
+}: TravelerDataFormProps) => {
   const [formData, setFormData] = useState<TravelerData>({
     fullName: initialData.fullName || '',
     dateOfBirth: initialData.dateOfBirth || '',
@@ -82,51 +100,71 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
       const submitAction = async () => {
         try {
           let response;
-          
+
           if (useKMS) {
             // Use KMS-encrypted service
             console.log('Using KMS-encrypted traveler profile service');
             if (mode === 'edit' && initialData.id) {
-              response = await travelerProfileServiceKMS.updateProfile(initialData.id, formData);
-              alert('Profile updated successfully! 🔐 Your sensitive data is encrypted.');
+              response = await travelerProfileServiceKMS.updateProfile(
+                initialData.id,
+                formData
+              );
+              alert(
+                'Profile updated successfully! 🔐 Your sensitive data is encrypted.'
+              );
             } else {
-              response = await travelerProfileServiceKMS.createProfile(formData);
-              alert('Profile created successfully! 🔐 Your sensitive data is encrypted.');
+              response =
+                await travelerProfileServiceKMS.createProfile(formData);
+              alert(
+                'Profile created successfully! 🔐 Your sensitive data is encrypted.'
+              );
             }
           } else {
             // Fallback to legacy service
             console.log('Using legacy traveler profile service');
             if (mode === 'edit' && initialData.id) {
-              response = await travelerProfileService.updateProfile(initialData.id, formData);
+              response = await travelerProfileService.updateProfile(
+                initialData.id,
+                formData
+              );
               alert('Profile updated successfully!');
             } else {
               response = await travelerProfileService.createProfile(formData);
               alert('Profile created successfully!');
             }
           }
-          
+
           onSubmit(response);
         } catch (error) {
           console.error('Error saving traveler profile:', error);
-          
+
           // If KMS fails, try fallback to legacy service
-          if (useKMS && error instanceof Error && error.message.includes('KMS')) {
+          if (
+            useKMS &&
+            error instanceof Error &&
+            error.message.includes('KMS')
+          ) {
             console.warn('KMS service failed, falling back to legacy service');
             try {
               let response;
               if (mode === 'edit' && initialData.id) {
-                response = await travelerProfileService.updateProfile(initialData.id, formData);
+                response = await travelerProfileService.updateProfile(
+                  initialData.id,
+                  formData
+                );
               } else {
                 response = await travelerProfileService.createProfile(formData);
               }
               onSubmit(response);
-              alert('Profile saved successfully! (Note: encryption temporarily unavailable)');
+              alert(
+                'Profile saved successfully! (Note: encryption temporarily unavailable)'
+              );
               return;
             } catch (fallbackError) {
               console.error('Fallback service also failed:', fallbackError);
             }
           }
-          
+
           alert('Failed to save profile. Please try again.');
         }
       };
@@ -159,12 +197,19 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
               <Input
                 id="fullName"
                 value={formData.fullName}
-                onChange={(e) => handleInputChange('fullName', (e.target as HTMLInputElement).value)}
+                onChange={e =>
+                  handleInputChange(
+                    'fullName',
+                    (e.target as HTMLInputElement).value
+                  )
+                }
                 placeholder="Enter full name"
                 className={errors.fullName ? 'border-red-500' : ''}
                 disabled={isLoading}
               />
-              {errors.fullName && <p className="text-sm text-red-500 mt-1">{errors.fullName}</p>}
+              {errors.fullName && (
+                <p className="text-sm text-red-500 mt-1">{errors.fullName}</p>
+              )}
             </div>
 
             <div>
@@ -173,12 +218,19 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => handleInputChange('email', (e.target as HTMLInputElement).value)}
+                onChange={e =>
+                  handleInputChange(
+                    'email',
+                    (e.target as HTMLInputElement).value
+                  )
+                }
                 placeholder="Enter email address"
                 className={errors.email ? 'border-red-500' : ''}
                 disabled={isLoading}
               />
-              {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
+              {errors.email && (
+                <p className="text-sm text-red-500 mt-1">{errors.email}</p>
+              )}
             </div>
           </div>
 
@@ -191,22 +243,33 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
                   id="dateOfBirth"
                   type="date"
                   value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange('dateOfBirth', (e.target as HTMLInputElement).value)}
+                  onChange={e =>
+                    handleInputChange(
+                      'dateOfBirth',
+                      (e.target as HTMLInputElement).value
+                    )
+                  }
                   className={`pl-10 ${errors.dateOfBirth ? 'border-red-500' : ''}`}
                   disabled={isLoading}
                 />
               </div>
-              {errors.dateOfBirth && <p className="text-sm text-red-500 mt-1">{errors.dateOfBirth}</p>}
+              {errors.dateOfBirth && (
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.dateOfBirth}
+                </p>
+              )}
             </div>
 
             <div>
               <Label htmlFor="gender">Gender *</Label>
               <Select
                 value={formData.gender}
-                onValueChange={(value) => handleInputChange('gender', value)}
+                onValueChange={value => handleInputChange('gender', value)}
                 disabled={isLoading}
               >
-                <SelectTrigger className={errors.gender ? 'border-red-500' : ''}>
+                <SelectTrigger
+                  className={errors.gender ? 'border-red-500' : ''}
+                >
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
@@ -215,7 +278,9 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
                   <SelectItem value="OTHER">Other</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.gender && <p className="text-sm text-red-500 mt-1">{errors.gender}</p>}
+              {errors.gender && (
+                <p className="text-sm text-red-500 mt-1">{errors.gender}</p>
+              )}
             </div>
           </div>
 
@@ -226,7 +291,12 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
                 id="phone"
                 type="tel"
                 value={formData.phone || ''}
-                onChange={(e) => handleInputChange('phone', (e.target as HTMLInputElement).value)}
+                onChange={e =>
+                  handleInputChange(
+                    'phone',
+                    (e.target as HTMLInputElement).value
+                  )
+                }
                 placeholder="Enter phone number"
                 disabled={isLoading}
               />
@@ -237,7 +307,12 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
               <Input
                 id="knownTravelerNumber"
                 value={formData.knownTravelerNumber || ''}
-                onChange={(e) => handleInputChange('knownTravelerNumber', (e.target as HTMLInputElement).value)}
+                onChange={e =>
+                  handleInputChange(
+                    'knownTravelerNumber',
+                    (e.target as HTMLInputElement).value
+                  )
+                }
                 placeholder="TSA PreCheck/Global Entry"
                 disabled={isLoading}
               />
@@ -252,13 +327,22 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
                 <Input
                   id="passportNumber"
                   value={formData.passportNumber || ''}
-                  onChange={(e) => handleInputChange('passportNumber', (e.target as HTMLInputElement).value)}
+                  onChange={e =>
+                    handleInputChange(
+                      'passportNumber',
+                      (e.target as HTMLInputElement).value
+                    )
+                  }
                   placeholder="Enter passport number"
                   className={`pl-10 ${errors.passportNumber ? 'border-red-500' : ''}`}
                   disabled={isLoading}
                 />
               </div>
-              {errors.passportNumber && <p className="text-sm text-red-500 mt-1">{errors.passportNumber}</p>}
+              {errors.passportNumber && (
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.passportNumber}
+                </p>
+              )}
             </div>
 
             <div>
@@ -266,7 +350,12 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
               <Input
                 id="passportCountry"
                 value={formData.passportCountry || ''}
-                onChange={(e) => handleInputChange('passportCountry', (e.target as HTMLInputElement).value)}
+                onChange={e =>
+                  handleInputChange(
+                    'passportCountry',
+                    (e.target as HTMLInputElement).value
+                  )
+                }
                 placeholder="USA, CAN, etc."
                 disabled={isLoading}
               />
@@ -278,28 +367,42 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
                 id="passportExpiry"
                 type="date"
                 value={formData.passportExpiry || ''}
-                onChange={(e) => handleInputChange('passportExpiry', (e.target as HTMLInputElement).value)}
+                onChange={e =>
+                  handleInputChange(
+                    'passportExpiry',
+                    (e.target as HTMLInputElement).value
+                  )
+                }
                 className={errors.passportExpiry ? 'border-red-500' : ''}
                 disabled={isLoading}
               />
-              {errors.passportExpiry && <p className="text-sm text-red-500 mt-1">{errors.passportExpiry}</p>}
+              {errors.passportExpiry && (
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.passportExpiry}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="bg-blue-50 p-3 rounded-md">
             <p className="text-sm text-blue-700">
-              <strong>Important:</strong> Please ensure all information matches your travel documents exactly. 
-              Any discrepancies may result in boarding denial.
+              <strong>Important:</strong> Please ensure all information matches
+              your travel documents exactly. Any discrepancies may result in
+              boarding denial.
             </p>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={isLoading}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {isLoading ? 'Saving...' : mode === 'edit' ? 'Update Profile' : 'Save Profile'}
+              {isLoading
+                ? 'Saving...'
+                : mode === 'edit'
+                  ? 'Update Profile'
+                  : 'Save Profile'}
             </Button>
           </div>
         </form>

@@ -1,7 +1,3 @@
-import * as React from 'react';
-
-
-
 interface BehavioralState {
   mouseHoverTime: number;
   scrollDepth: number;
@@ -39,9 +35,10 @@ export const useBehavioralTriggers = () => {
     // Track scroll depth
     const handleScroll = () => {
       const scrollTop = window.pageYOffset;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const docHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
       const scrollDepth = (scrollTop / docHeight) * 100;
-      
+
       setState(prev => ({
         ...prev,
         scrollDepth,
@@ -76,7 +73,7 @@ export const useBehavioralTriggers = () => {
 
     // Attach listeners
     window.addEventListener('scroll', handleScroll);
-    
+
     // Attach to card elements
     const cards = document.querySelectorAll('[data-behavior="card"]');
     cards.forEach(card => {

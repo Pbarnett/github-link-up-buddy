@@ -1,12 +1,10 @@
-
-
 import * as React from 'react';
 type FC<T = {}> = React.FC<T>;
 
-import { Offer } from "@/services/tripOffersService";
-import TripOfferCard from "@/components/trip/TripOfferCard";
-import TripOffersLoading from "@/components/trip/TripOffersLoading";
-import { Card } from "@/components/ui/card";
+import { Offer } from '@/services/tripOffersService';
+import TripOfferCard from '@/components/trip/TripOfferCard';
+import TripOffersLoading from '@/components/trip/TripOffersLoading';
+import { Card } from '@/components/ui/card';
 
 interface TripOfferListProps {
   offers: Offer[];
@@ -31,7 +29,9 @@ const TripOfferList: FC<TripOfferListProps> = ({
   return (
     <div className="space-y-4">
       {sortedOffers.length > 0 ? (
-        sortedOffers.map((offer) => <TripOfferCard key={offer.id} offer={offer} />)
+        sortedOffers.map(offer => (
+          <TripOfferCard key={offer.id} offer={offer} />
+        ))
       ) : (
         <Card className="p-6 text-center">
           <p className="mb-4">No offers found that match your criteria.</p>
@@ -39,8 +39,8 @@ const TripOfferList: FC<TripOfferListProps> = ({
             {usedRelaxedCriteria
               ? "We tried with relaxed criteria but still couldn't find any offers. Try adjusting your destination or dates."
               : ignoreFilter
-              ? "Try adjusting your budget or destination, or click Refresh Offers."
-              : "Try one of the search options above or adjust your trip criteria."}
+                ? 'Try adjusting your budget or destination, or click Refresh Offers.'
+                : 'Try one of the search options above or adjust your trip criteria.'}
           </p>
         </Card>
       )}

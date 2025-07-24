@@ -7,7 +7,7 @@ export const signInTestUser = async () => {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: 'test@example.com',
-      password: 'testpassword123' // This matches the encrypted password we created
+      password: 'testpassword123', // This matches the encrypted password we created
     });
 
     if (error) {

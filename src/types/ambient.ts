@@ -1,4 +1,3 @@
-
 // Global ambient module declarations
 // For libraries without proper TypeScript support
 
@@ -12,8 +11,8 @@ declare module 'murmurhash-js' {
 }
 
 declare module 'input-otp' {
-
-  export interface OTPInputProps extends Omit<ComponentProps<'input'>, 'onChange' | 'value'> {
+  export interface OTPInputProps
+    extends Omit<ComponentProps<'input'>, 'onChange' | 'value'> {
     value: string;
     onChange: (value: string) => void;
     numInputs?: number;
@@ -29,7 +28,7 @@ declare module 'input-otp' {
     errorStyle?: CSSProperties;
     shouldAutoFocus?: boolean;
   }
-  
+
   export const OTPInput: FC<OTPInputProps>;
 }
 

@@ -1,6 +1,6 @@
 /**
  * Performance Optimizer for Large-Scale Dynamic Form Validation
- * 
+ *
  * Handles optimization for forms with hundreds of fields:
  * 1. Lazy schema compilation
  * 2. Incremental validation
@@ -9,7 +9,10 @@
  */
 
 import { z } from 'zod';
-import type { FormConfiguration, FieldConfiguration } from '@/types/dynamic-forms';
+import type {
+  FormConfiguration,
+  FieldConfiguration,
+} from '@/types/dynamic-forms';
 import { zodSchemaCache } from './schema-cache';
 
 interface ValidationTask {
@@ -52,19 +55,19 @@ class FormPerformanceOptimizer {
    */
   private initializeFieldGroups(): void {
     const groups: FieldGroup[] = [];
-    
+
     // Group fields by section and dependencies
     this.config.sections.forEach(section => {
       const sectionGroup: FieldGroup = {
         id: section.id,
         fields: [],
         schema: null,
-        dependencies: []
+        dependencies: [],
       };
 
       section.fields.forEach(field => {
         sectionGroup.fields.push(field);
-        
+
         // Track dependencies for conditional validation
         if (field.conditional) {
           // Extract dependency fields from conditional logic
@@ -91,18 +94,18 @@ class FormPerformanceOptimizer {
    */
   private splitLargeGroup(group: FieldGroup): void {
     const batches = Math.ceil(group.fields.length / this.batchSize);
-    
+
     for (let i = 0; i < batches; i++) {
       const start = i * this.batchSize;
       const end = Math.min(start + this.batchSize, group.fields.length);
-      
+
       const batchGroup: FieldGroup = {
         id: `${group.id}_batch_${i}`,
         fields: group.fields.slice(start, end),
         schema: null,
-        dependencies: group.dependencies
+        dependencies: group.dependencies,
       };
-      
+
       this.fieldGroups.set(batchGroup.id, batchGroup);
     }
   }
@@ -112,7 +115,7 @@ class FormPerformanceOptimizer {
    */
   private extractDependencies(conditional: any): string[] {
     const deps: string[] = [];
-    
+
     if (conditional.showWhen?.field) {
       deps.push(conditional.showWhen.field);
     }
@@ -125,7 +128,7 @@ class FormPerformanceOptimizer {
     if (conditional.disableWhen?.field) {
       deps.push(conditional.disableWhen.field);
     }
-    
+
     return deps;
   }
 
@@ -138,21 +141,24 @@ class FormPerformanceOptimizer {
     priority: 'high' | 'medium' | 'low' = 'medium'
   ): void {
     // Remove existing validation for same field
-    this.validationQueue = this.validationQueue.filter(task => task.fieldId !== fieldId);
-    
+    this.validationQueue = this.validationQueue.filter(
+      task => task.fieldId !== fieldId
+    );
+
     // Add new validation task
     this.validationQueue.push({
       fieldId,
       value,
       priority,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Sort by priority and timestamp
     this.validationQueue.sort((a, b) => {
       const priorityWeight = { high: 3, medium: 2, low: 1 };
-      const priorityDiff = priorityWeight[b.priority] - priorityWeight[a.priority];
-      
+      const priorityDiff =
+        priorityWeight[b.priority] - priorityWeight[a.priority];
+
       if (priorityDiff !== 0) return priorityDiff;
       return a.timestamp - b.timestamp;
     });
@@ -161,7 +167,7 @@ class FormPerformanceOptimizer {
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
     }
-    
+
     this.debounceTimer = setTimeout(() => {
       this.processValidationQueue();
     }, this.debounceMs);
@@ -174,16 +180,16 @@ class FormPerformanceOptimizer {
     if (this.isProcessing || this.validationQueue.length === 0) return;
 
     this.isProcessing = true;
-    
+
     try {
       const batch = this.validationQueue.splice(0, this.batchSize);
       const results = await this.processBatch(batch);
-      
+
       // Emit results
       results.forEach(result => {
         this.emitValidationResult(result);
       });
-      
+
       // Process remaining queue
       if (this.validationQueue.length > 0) {
         setTimeout(() => this.processValidationQueue(), 0);
@@ -196,12 +202,14 @@ class FormPerformanceOptimizer {
   /**
    * Process a batch of validation tasks
    */
-  private async processBatch(batch: ValidationTask[]): Promise<ValidationResult[]> {
+  private async processBatch(
+    batch: ValidationTask[]
+  ): Promise<ValidationResult[]> {
     const results: ValidationResult[] = [];
-    
+
     // Group tasks by field group for efficient processing
     const tasksByGroup = new Map<string, ValidationTask[]>();
-    
+
     batch.forEach(task => {
       const groupId = this.findFieldGroup(task.fieldId);
       if (!tasksByGroup.has(groupId)) {
@@ -230,14 +238,14 @@ class FormPerformanceOptimizer {
     if (!group) return [];
 
     const results: ValidationResult[] = [];
-    
+
     // Get or create group schema
     const groupSchema = await this.getGroupSchema(group);
-    
+
     // Process tasks in parallel where possible
     const validationPromises = tasks.map(async task => {
       const startTime = performance.now();
-      
+
       try {
         const field = group.fields.find(f => f.id === task.fieldId);
         if (!field) {
@@ -246,25 +254,25 @@ class FormPerformanceOptimizer {
 
         const fieldSchema = zodSchemaCache.getFieldSchema(field);
         const result = fieldSchema.safeParse(task.value);
-        
+
         const endTime = performance.now();
-        
+
         return {
           fieldId: task.fieldId,
           isValid: result.success,
           errors: result.success ? [] : result.error.errors.map(e => e.message),
           warnings: [],
-          executionTime: endTime - startTime
+          executionTime: endTime - startTime,
         };
       } catch (error) {
         const endTime = performance.now();
-        
+
         return {
           fieldId: task.fieldId,
           isValid: false,
           errors: [error instanceof Error ? error.message : 'Unknown error'],
           warnings: [],
-          executionTime: endTime - startTime
+          executionTime: endTime - startTime,
         };
       }
     });
@@ -282,7 +290,7 @@ class FormPerformanceOptimizer {
     if (group.schema) return group.schema;
 
     const schemaFields: Record<string, z.ZodTypeAny> = {};
-    
+
     group.fields.forEach(field => {
       const fieldSchema = zodSchemaCache.getFieldSchema(field);
       schemaFields[field.id] = fieldSchema;
@@ -301,7 +309,7 @@ class FormPerformanceOptimizer {
         return groupId;
       }
     }
-    
+
     // Default to first group if not found
     return this.fieldGroups.keys().next().value || 'default';
   }
@@ -328,16 +336,16 @@ class FormPerformanceOptimizer {
     };
   }> {
     const startTime = performance.now();
-    
+
     const errors: Record<string, string[]> = {};
     const warnings: Record<string, string[]> = {};
-    
+
     // Process groups in parallel
     const groupPromises = Array.from(this.fieldGroups.entries()).map(
       async ([groupId, group]) => {
         const groupSchema = await this.getGroupSchema(group);
         const groupData: Record<string, unknown> = {};
-        
+
         // Extract data for this group
         group.fields.forEach(field => {
           if (field.id in formData) {
@@ -346,7 +354,7 @@ class FormPerformanceOptimizer {
         });
 
         const result = groupSchema.safeParse(groupData);
-        
+
         if (!result.success) {
           result.error.errors.forEach(error => {
             const fieldPath = error.path.join('.');
@@ -360,18 +368,21 @@ class FormPerformanceOptimizer {
     );
 
     await Promise.all(groupPromises);
-    
+
     const endTime = performance.now();
-    
+
     return {
       isValid: Object.keys(errors).length === 0,
       errors,
       warnings,
       performance: {
         totalTime: endTime - startTime,
-        fieldCount: this.config.sections.reduce((sum, section) => sum + section.fields.length, 0),
-        groupCount: this.fieldGroups.size
-      }
+        fieldCount: this.config.sections.reduce(
+          (sum, section) => sum + section.fields.length,
+          0
+        ),
+        groupCount: this.fieldGroups.size,
+      },
     };
   }
 
@@ -383,8 +394,11 @@ class FormPerformanceOptimizer {
       queueLength: this.validationQueue.length,
       groupCount: this.fieldGroups.size,
       isProcessing: this.isProcessing,
-      averageGroupSize: Array.from(this.fieldGroups.values())
-        .reduce((sum, group) => sum + group.fields.length, 0) / this.fieldGroups.size
+      averageGroupSize:
+        Array.from(this.fieldGroups.values()).reduce(
+          (sum, group) => sum + group.fields.length,
+          0
+        ) / this.fieldGroups.size,
     };
   }
 
@@ -422,11 +436,11 @@ export const createOptimizedValidator = (config: FormConfiguration) => {
 // Hook for React components
 export const useOptimizedFormValidation = (config: FormConfiguration) => {
   const optimizer = new FormPerformanceOptimizer(config);
-  
+
   return {
     queueValidation: optimizer.queueValidation.bind(optimizer),
     validateForm: optimizer.validateForm.bind(optimizer),
     getStats: optimizer.getPerformanceStats.bind(optimizer),
-    clearQueue: optimizer.clearQueue.bind(optimizer)
+    clearQueue: optimizer.clearQueue.bind(optimizer),
   };
 };

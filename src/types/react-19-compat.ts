@@ -1,13 +1,13 @@
 import * as React from 'react';
 /**
  * React 19 Compatibility Types
- * 
+ *
  * This file provides compatibility types and utilities for React 19
  * that may be missing or changed from previous versions
  */
 
 // Export missing types for React 19 compatibility
-export type { 
+export type {
   ComponentType,
   HTMLAttributes,
   ButtonHTMLAttributesProps,
@@ -23,11 +23,11 @@ export interface BadgeProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 // Event handler types - import from our compatibility layer
-export type { 
-  ChangeEventHandler, 
-  FormEventHandler, 
-  MouseEventHandler, 
-  KeyboardEventHandler 
+export type {
+  ChangeEventHandler,
+  FormEventHandler,
+  MouseEventHandler,
+  KeyboardEventHandler,
 } from '@/lib/react-compat';
 
 // Ref types
@@ -51,7 +51,7 @@ export const useId = React.useId;
 // Default export for convenience
 const ReactCompat = {
   memo,
-  forwardRef, 
+  forwardRef,
   createElement,
   Fragment,
   createContext,

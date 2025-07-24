@@ -1,8 +1,4 @@
-import * as React from 'react';
-
-
 // Hook for useTravelerInfoCheck
-
 
 export interface UseTravelerInfoCheckReturn {
   hasTravelerInfo: boolean;

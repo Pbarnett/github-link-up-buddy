@@ -26,7 +26,7 @@ export const initMonitoring = () => {
   onTTFB(reportWebVital);
 
   // Global error handlers
-  window.addEventListener('error', (event) => {
+  window.addEventListener('error', event => {
     reportError(event.error, {
       message: event.message,
       filename: event.filename,
@@ -35,7 +35,7 @@ export const initMonitoring = () => {
     });
   });
 
-  window.addEventListener('unhandledrejection', (event) => {
+  window.addEventListener('unhandledrejection', event => {
     reportError(event.reason, {
       type: 'unhandledrejection',
       promise: event.promise,
@@ -71,7 +71,10 @@ const reportWebVital = (metric: {
 };
 
 // Error reporting
-export const reportError = (error: Error, context?: Record<string, unknown>) => {
+export const reportError = (
+  error: Error,
+  context?: Record<string, unknown>
+) => {
   const errorData = {
     message: error.message,
     stack: error.stack,
@@ -98,7 +101,10 @@ export const reportError = (error: Error, context?: Record<string, unknown>) => 
 };
 
 // Analytics event tracking
-export const trackEvent = (eventName: string, properties: Record<string, unknown> = {}) => {
+export const trackEvent = (
+  eventName: string,
+  properties: Record<string, unknown> = {}
+) => {
   const event: AnalyticsEvent = {
     name: eventName,
     properties: {
@@ -121,9 +127,14 @@ export const trackEvent = (eventName: string, properties: Record<string, unknown
 
   // Store in local queue for offline scenarios
   try {
-    const queue = JSON.parse(localStorage.getItem('pf_analytics_queue') || '[]');
+    const queue = JSON.parse(
+      localStorage.getItem('pf_analytics_queue') || '[]'
+    );
     queue.push(event);
-    localStorage.setItem('pf_analytics_queue', JSON.stringify(queue.slice(-50))); // Keep last 50 events
+    localStorage.setItem(
+      'pf_analytics_queue',
+      JSON.stringify(queue.slice(-50))
+    ); // Keep last 50 events
   } catch (error) {
     console.warn('Failed to queue analytics event:', error);
   }
@@ -134,7 +145,7 @@ export const observePerformance = () => {
   if (!window.PerformanceObserver) return;
 
   // Observe layout shifts
-  const observer = new PerformanceObserver((list) => {
+  const observer = new PerformanceObserver(list => {
     for (const entry of list.getEntries()) {
       if (entry.entryType === 'layout-shift') {
         const layoutShiftEntry = entry as PerformanceEntry & {
@@ -186,7 +197,10 @@ declare global {
       track: (event: string, properties: Record<string, unknown>) => void;
     };
     Sentry?: {
-      captureException: (error: Error, options?: { extra?: Record<string, unknown> }) => void;
+      captureException: (
+        error: Error,
+        options?: { extra?: Record<string, unknown> }
+      ) => void;
     };
   }
 }

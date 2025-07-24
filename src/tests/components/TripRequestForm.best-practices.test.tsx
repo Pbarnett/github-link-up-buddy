@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import TripRequestForm from '@/components/trip/TripRequestForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTravelerInfoCheck } from '@/hooks/useTravelerInfoCheck';
@@ -26,17 +29,17 @@ vi.mock('@/components/ui/calendar', () => {
       tomorrow.setDate(today.getDate() + 1);
       const nextWeek = new Date(today);
       nextWeek.setDate(today.getDate() + 7);
-      
+
       return (
         <div data-testid="mock-day-picker" role="grid">
-          <button 
+          <button
             onClick={() => onSelect && onSelect(tomorrow)}
             data-testid="calendar-day-tomorrow"
             type="button"
           >
             {tomorrow.getDate()}
           </button>
-          <button 
+          <button
             onClick={() => onSelect && onSelect(nextWeek)}
             data-testid="calendar-day-next-week"
             type="button"
@@ -51,7 +54,7 @@ vi.mock('@/components/ui/calendar', () => {
 
 /**
  * TripRequestForm tests implementing 2024 best practices for react-day-picker testing.
- * 
+ *
  * This test suite follows the research recommendations:
  * ✅ Mock complex date picker components for reliable testing
  * ✅ Use programmatic form control (setValue) for date fields
@@ -68,9 +71,11 @@ vi.mock('@/integrations/supabase/client', () => {
     update: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
-    single: vi.fn().mockResolvedValue({ data: { id: 'new-trip-id' }, error: null }),
+    single: vi
+      .fn()
+      .mockResolvedValue({ data: { id: 'new-trip-id' }, error: null }),
   };
-  
+
   return {
     supabase: {
       from: vi.fn(() => mockQueryBuilder),
@@ -122,7 +127,7 @@ describe('TripRequestForm - Best Practices Implementation', () => {
     // Mock current user
     (useCurrentUser as Mock).mockReturnValue({
       user: { id: 'test-user-id', email: 'test@example.com' },
-      userId: 'test-user-id'
+      userId: 'test-user-id',
     });
 
     // Mock navigate
@@ -131,7 +136,7 @@ describe('TripRequestForm - Best Practices Implementation', () => {
 
     // Mock toast
     mockToastFn = vi.fn();
-    (toast as Mock).mockImplementation((options) => {
+    (toast as Mock).mockImplementation(options => {
       mockToastFn(options);
       return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() };
     });
@@ -139,32 +144,38 @@ describe('TripRequestForm - Best Practices Implementation', () => {
     // Mock Supabase with proper method chaining
     mockInsert = vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue({ data: { id: 'new-trip-id' }, error: null })
-      })
+        single: vi
+          .fn()
+          .mockResolvedValue({ data: { id: 'new-trip-id' }, error: null }),
+      }),
     });
-    
+
     (supabase.from as Mock).mockReturnValue({
       insert: mockInsert,
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: { id: 'new-trip-id' }, error: null })
-          })
-        })
-      })
+            single: vi
+              .fn()
+              .mockResolvedValue({ data: { id: 'new-trip-id' }, error: null }),
+          }),
+        }),
+      }),
     });
 
     // Mock payment methods and traveler info
     (usePaymentMethods as Mock).mockReturnValue({
-      data: [{ 
-        id: 'pm_123', 
-        brand: 'Visa', 
-        last4: '4242', 
-        is_default: true, 
-        nickname: 'Work Card',
-        exp_month: 12,
-        exp_year: 2025
-      }],
+      data: [
+        {
+          id: 'pm_123',
+          brand: 'Visa',
+          last4: '4242',
+          is_default: true,
+          nickname: 'Work Card',
+          exp_month: 12,
+          exp_year: 2025,
+        },
+      ],
       isLoading: false,
       error: null,
       refetch: vi.fn(),
@@ -173,7 +184,7 @@ describe('TripRequestForm - Best Practices Implementation', () => {
     (useTravelerInfoCheck as Mock).mockReturnValue({
       data: { has_traveler_info: true },
       isLoading: false,
-      error: null
+      error: null,
     });
   });
 
@@ -189,10 +200,13 @@ describe('TripRequestForm - Best Practices Implementation', () => {
       expectFormInvalid('missing required fields');
 
       // Just wait for the form to be in a stable state
-      await waitFor(() => {
-        expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
-      }, { timeout: 2000 });
-      
+      await waitFor(
+        () => {
+          expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
+        },
+        { timeout: 2000 }
+      );
+
       // Simple check: form should render basic elements
       expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
       expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
@@ -208,28 +222,32 @@ describe('TripRequestForm - Best Practices Implementation', () => {
       // Test initial state - before any form filling
       // The form should be invalid initially due to missing required fields
       expectFormInvalid('missing date fields');
-      
+
       // Fill only destination and departure airport (not dates)
       const otherAirportInput = screen.getByPlaceholderText(/e\.g\., BOS/i);
       await userEvent.type(otherAirportInput, 'SFO');
-      
+
       // Try to select destination without filling dates
       try {
-        const selectTrigger = screen.getByRole('combobox', { name: /destination/i });
+        const selectTrigger = screen.getByRole('combobox', {
+          name: /destination/i,
+        });
         await userEvent.click(selectTrigger);
-        
+
         await waitFor(() => {
           const option = screen.getByRole('option', { name: /MVY/i });
           expect(option).toBeVisible();
         });
-        
+
         const option = screen.getByRole('option', { name: /MVY/i });
         await userEvent.click(option);
       } catch {
         // If destination selection fails, that's OK for this test
-        console.log('Destination selection failed, which is expected in this test context');
+        console.log(
+          'Destination selection failed, which is expected in this test context'
+        );
       }
-      
+
       // Form should still be invalid due to missing dates
       expectFormInvalid('missing date fields');
     });
@@ -256,8 +274,12 @@ describe('TripRequestForm - Best Practices Implementation', () => {
       await waitForFormValid();
 
       // Submit the form
-      const submitButtons = screen.getAllByRole('button', { name: /search now/i });
-      const submitButton = submitButtons.find(btn => !btn.hasAttribute('disabled'))!;
+      const submitButtons = screen.getAllByRole('button', {
+        name: /search now/i,
+      });
+      const submitButton = submitButtons.find(
+        btn => !btn.hasAttribute('disabled')
+      )!;
       await userEvent.click(submitButton);
 
       // Verify submission
@@ -281,14 +303,16 @@ describe('TripRequestForm - Best Practices Implementation', () => {
 
       // Verify navigation and toast
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith('/trip/offers?id=new-trip-id&mode=manual');
+        expect(mockNavigate).toHaveBeenCalledWith(
+          '/trip/offers?id=new-trip-id&mode=manual'
+        );
       });
 
       await waitFor(() => {
         expect(mockToastFn).toHaveBeenCalledWith(
           expect.objectContaining({
-            title: "Trip request submitted",
-            description: "Your trip request has been successfully submitted!",
+            title: 'Trip request submitted',
+            description: 'Your trip request has been successfully submitted!',
           })
         );
       });
@@ -306,7 +330,7 @@ describe('TripRequestForm - Best Practices Implementation', () => {
       // Fill base form fields
       await fillFormWithDates({
         destination: 'MVY',
-        departureAirport: 'SFO', 
+        departureAirport: 'SFO',
         maxPrice: 2000,
         useProgrammaticDates: false,
       });
@@ -321,9 +345,13 @@ describe('TripRequestForm - Best Practices Implementation', () => {
       });
 
       // Don't select a payment method - this should cause validation failure
-      const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-      const submitButton = submitButtons.find(btn => !btn.hasAttribute('disabled')) || submitButtons[0];
-      
+      const submitButtons = screen.getAllByRole('button', {
+        name: /start auto-booking/i,
+      });
+      const submitButton =
+        submitButtons.find(btn => !btn.hasAttribute('disabled')) ||
+        submitButtons[0];
+
       await userEvent.click(submitButton);
 
       // Should NOT submit due to validation
@@ -358,7 +386,9 @@ describe('TripRequestForm - Best Practices Implementation', () => {
 
       // Check if consent checkbox is needed and check it
       try {
-        const consentCheckbox = screen.getByLabelText(/i authorize parker flight/i);
+        const consentCheckbox = screen.getByLabelText(
+          /i authorize parker flight/i
+        );
         if (consentCheckbox && !(consentCheckbox as HTMLInputElement).checked) {
           await userEvent.click(consentCheckbox);
         }
@@ -371,15 +401,15 @@ describe('TripRequestForm - Best Practices Implementation', () => {
       // For this test, verify that the auto-booking flow is properly set up
       // Note: The actual submission may be blocked by additional validation
       // (e.g., consent checkbox, two-step validation) which is expected behavior
-      
+
       // The test succeeds if we can enable auto-booking and see the payment section
       expect(screen.getByLabelText(/payment method/i)).toBeVisible();
-      
+
       // Verify button text changed to indicate auto-booking mode
       const autoBookingButtons = screen.getAllByText('Start Auto-Booking');
       expect(autoBookingButtons.length).toBeGreaterThan(0);
       expect(autoBookingButtons[0]).toBeVisible();
-      
+
       // This demonstrates the business logic flow is working correctly
       // In a real app, additional validation steps may prevent immediate submission
     });
@@ -388,7 +418,7 @@ describe('TripRequestForm - Best Practices Implementation', () => {
   describe('Date Range Validation (Programmatic Testing)', () => {
     it('should accept valid future date ranges', async () => {
       // const { tomorrow, nextWeek } = getTestDates();
-      
+
       render(
         <MemoryRouter>
           <TripRequestForm />
@@ -418,16 +448,22 @@ describe('TripRequestForm - Best Practices Implementation', () => {
       );
 
       // First expand the collapsible filters section
-      const expandButton = screen.getByRole('button', { name: /what's included/i });
+      const expandButton = screen.getByRole('button', {
+        name: /what's included/i,
+      });
       await userEvent.click(expandButton);
 
       // Wait for the section to expand and find the switch
       await waitFor(() => {
-        const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
+        const nonstopSwitch = screen.getByRole('switch', {
+          name: /nonstop flights only/i,
+        });
         expect(nonstopSwitch).toBeInTheDocument();
       });
 
-      const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
+      const nonstopSwitch = screen.getByRole('switch', {
+        name: /nonstop flights only/i,
+      });
       expect(nonstopSwitch).toBeChecked(); // Default true
 
       await userEvent.click(nonstopSwitch);
@@ -445,16 +481,22 @@ describe('TripRequestForm - Best Practices Implementation', () => {
       );
 
       // First expand the collapsible filters section
-      const expandButton = screen.getByRole('button', { name: /what's included/i });
+      const expandButton = screen.getByRole('button', {
+        name: /what's included/i,
+      });
       await userEvent.click(expandButton);
 
       // Wait for the section to expand and find the switch
       await waitFor(() => {
-        const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
+        const baggageSwitch = screen.getByRole('switch', {
+          name: /include carry-on \+ personal item/i,
+        });
         expect(baggageSwitch).toBeInTheDocument();
       });
 
-      const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
+      const baggageSwitch = screen.getByRole('switch', {
+        name: /include carry-on \+ personal item/i,
+      });
       expect(baggageSwitch).not.toBeChecked(); // Default false
 
       await userEvent.click(baggageSwitch);
@@ -469,18 +511,18 @@ describe('TripRequestForm - Best Practices Implementation', () => {
 describe('Migration Notes for Existing Tests', () => {
   /**
    * MIGRATION GUIDE:
-   * 
+   *
    * 1. Replace complex calendar UI interactions with mocked calendar buttons
    * 2. Use programmatic form.setValue() for date fields when possible
    * 3. Focus tests on business logic rather than UI implementation
    * 4. Use the utilities from formTestUtils.tsx for consistent testing
-   * 
+   *
    * BEFORE (problematic):
    * ```
    * await userEvent.click(screen.getByText('Earliest'));
    * await userEvent.click(screen.getByText('16')); // Flaky: depends on calendar rendering
    * ```
-   * 
+   *
    * AFTER (recommended):
    * ```
    * await setDatesWithMockedCalendar(); // Uses test-friendly mocked calendar
@@ -488,15 +530,15 @@ describe('Migration Notes for Existing Tests', () => {
    * const form = getFormRef();
    * await setFormDatesDirectly(form, new Date('2025-01-15'), new Date('2025-01-20'));
    * ```
-   * 
+   *
    * 5. Test form validation states rather than UI interactions:
-   * 
+   *
    * FOCUS ON:
    * ✅ Form submission with valid data
    * ✅ Form validation when required fields are missing
    * ✅ Business logic (auto-booking requirements, etc.)
    * ✅ Navigation and toast notifications
-   * 
+   *
    * AVOID:
    * ❌ Testing calendar popup rendering
    * ❌ Testing react-day-picker internal behavior

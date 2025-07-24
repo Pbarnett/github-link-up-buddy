@@ -1,24 +1,38 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { CampaignFormData } from "@/types/campaign";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { CampaignFormData } from '@/types/campaign';
 // import { ConfigDrivenCampaignForm } from "./CampaignForm.config-driven";
 
 const campaignFormSchema = z.object({
-  name: z.string().min(1, "Campaign name is required"),
-  destination: z.string().min(1, "Destination is required"),
-  departureDates: z.string().min(1, "Departure dates are required"),
-  maxPrice: z.number().min(1, "Maximum price must be greater than 0"),
+  name: z.string().min(1, 'Campaign name is required'),
+  destination: z.string().min(1, 'Destination is required'),
+  departureDates: z.string().min(1, 'Departure dates are required'),
+  maxPrice: z.number().min(1, 'Maximum price must be greater than 0'),
   directFlightsOnly: z.boolean(),
   minDuration: z.number().min(1).max(365).optional(),
   maxDuration: z.number().min(1).max(365).optional(),
-  cabinClass: z.enum(['economy', 'premium_economy', 'business', 'first']).optional(),
+  cabinClass: z
+    .enum(['economy', 'premium_economy', 'business', 'first'])
+    .optional(),
 });
 
 interface CampaignFormProps {
@@ -30,8 +44,18 @@ interface CampaignFormProps {
 }
 
 // Legacy implementation (preserved for fallback)
-const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, initialData }: CampaignFormProps) => {
-  const { handleSubmit, control, formState: { errors } } = useForm<CampaignFormData>({
+const LegacyCampaignForm = ({
+  onSubmit,
+  onCancel,
+  isSubmitting,
+  submitLabel,
+  initialData,
+}: CampaignFormProps) => {
+  const {
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<CampaignFormData>({
     resolver: zodResolver(campaignFormSchema),
     defaultValues: {
       name: initialData?.name || '',
@@ -66,16 +90,18 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
                 name="name"
                 control={control}
                 render={({ field }) => (
-                  <Input 
-                    {...field} 
-                    id="name" 
-                    placeholder="e.g., Summer Vacation to Paris" 
-                    className={errors.name ? "border-red-500" : ""}
+                  <Input
+                    {...field}
+                    id="name"
+                    placeholder="e.g., Summer Vacation to Paris"
+                    className={errors.name ? 'border-red-500' : ''}
                   />
                 )}
               />
               {errors.name && (
-                <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.name.message}
+                </p>
               )}
             </div>
 
@@ -88,16 +114,18 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
                 name="destination"
                 control={control}
                 render={({ field }) => (
-                  <Input 
-                    {...field} 
-                    id="destination" 
-                    placeholder="e.g., NYC, JFK, or New York" 
-                    className={errors.destination ? "border-red-500" : ""}
+                  <Input
+                    {...field}
+                    id="destination"
+                    placeholder="e.g., NYC, JFK, or New York"
+                    className={errors.destination ? 'border-red-500' : ''}
                   />
                 )}
               />
               {errors.destination && (
-                <p className="text-sm text-red-500 mt-1">{errors.destination.message}</p>
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.destination.message}
+                </p>
               )}
             </div>
           </div>
@@ -111,16 +139,18 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
               name="departureDates"
               control={control}
               render={({ field }) => (
-                <Input 
-                  {...field} 
-                  id="departureDates" 
-                  placeholder="e.g., June 2025 or 2025-06-01 to 2025-06-15" 
-                  className={errors.departureDates ? "border-red-500" : ""}
+                <Input
+                  {...field}
+                  id="departureDates"
+                  placeholder="e.g., June 2025 or 2025-06-01 to 2025-06-15"
+                  className={errors.departureDates ? 'border-red-500' : ''}
                 />
               )}
             />
             {errors.departureDates && (
-              <p className="text-sm text-red-500 mt-1">{errors.departureDates.message}</p>
+              <p className="text-sm text-red-500 mt-1">
+                {errors.departureDates.message}
+              </p>
             )}
             <p className="text-sm text-muted-foreground mt-1">
               We'll monitor flights within this timeframe
@@ -145,13 +175,17 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
                 name="minDuration"
                 control={control}
                 render={({ field }) => (
-                  <Input 
-                    {...field} 
-                    type="number" 
-                    id="minDuration" 
-                    min="1" 
+                  <Input
+                    {...field}
+                    type="number"
+                    id="minDuration"
+                    min="1"
                     max="365"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt((e.target as HTMLInputElement).value) || 0)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      field.onChange(
+                        parseInt((e.target as HTMLInputElement).value) || 0
+                      )
+                    }
                   />
                 )}
               />
@@ -163,13 +197,17 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
                 name="maxDuration"
                 control={control}
                 render={({ field }) => (
-                  <Input 
-                    {...field} 
-                    type="number" 
-                    id="maxDuration" 
-                    min="1" 
+                  <Input
+                    {...field}
+                    type="number"
+                    id="maxDuration"
+                    min="1"
                     max="365"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt((e.target as HTMLInputElement).value) || 0)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      field.onChange(
+                        parseInt((e.target as HTMLInputElement).value) || 0
+                      )
+                    }
                   />
                 )}
               />
@@ -181,13 +219,18 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
                 name="cabinClass"
                 control={control}
                 render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select cabin class" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="economy">Economy</SelectItem>
-                      <SelectItem value="premium_economy">Premium Economy</SelectItem>
+                      <SelectItem value="premium_economy">
+                        Premium Economy
+                      </SelectItem>
                       <SelectItem value="business">Business</SelectItem>
                       <SelectItem value="first">First Class</SelectItem>
                     </SelectContent>
@@ -202,14 +245,16 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
               name="directFlightsOnly"
               control={control}
               render={({ field }) => (
-                <Checkbox 
-                  id="directFlightsOnly" 
+                <Checkbox
+                  id="directFlightsOnly"
                   checked={field.value}
                   onCheckedChange={field.onChange}
                 />
               )}
             />
-            <Label htmlFor="directFlightsOnly">Direct flights only (no layovers)</Label>
+            <Label htmlFor="directFlightsOnly">
+              Direct flights only (no layovers)
+            </Label>
           </div>
         </CardContent>
       </Card>
@@ -222,7 +267,8 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
             Budget & Auto-booking
           </CardTitle>
           <CardDescription>
-            Set your maximum budget - we'll automatically book flights within this limit
+            Set your maximum budget - we'll automatically book flights within
+            this limit
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -232,24 +278,31 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
               name="maxPrice"
               control={control}
               render={({ field }) => (
-                <Input 
-                  {...field} 
-                  type="number" 
-                  id="maxPrice" 
-                  min="50" 
+                <Input
+                  {...field}
+                  type="number"
+                  id="maxPrice"
+                  min="50"
                   max="10000"
                   step="50"
                   placeholder="e.g., 500"
-                  className={errors.maxPrice ? "border-red-500" : ""}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt((e.target as HTMLInputElement).value) || 0)}
+                  className={errors.maxPrice ? 'border-red-500' : ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    field.onChange(
+                      parseInt((e.target as HTMLInputElement).value) || 0
+                    )
+                  }
                 />
               )}
             />
             {errors.maxPrice && (
-              <p className="text-sm text-red-500 mt-1">{errors.maxPrice.message}</p>
+              <p className="text-sm text-red-500 mt-1">
+                {errors.maxPrice.message}
+              </p>
             )}
             <p className="text-sm text-muted-foreground mt-1">
-              We'll automatically book any flight under this amount that matches your criteria
+              We'll automatically book any flight under this amount that matches
+              your criteria
             </p>
           </div>
         </CardContent>
@@ -262,7 +315,7 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Creating..." : submitLabel}
+          {isSubmitting ? 'Creating...' : submitLabel}
         </Button>
       </div>
     </form>
@@ -270,15 +323,20 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
 };
 
 // Progressive migration wrapper component
-export const CampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, initialData }: CampaignFormProps) => {
+export const CampaignForm = ({
+  onSubmit,
+  onCancel,
+  isSubmitting,
+  submitLabel,
+  initialData,
+}: CampaignFormProps) => {
   return (
-    <LegacyCampaignForm 
-      onSubmit={onSubmit} 
-      onCancel={onCancel} 
-      isSubmitting={isSubmitting} 
-      submitLabel={submitLabel} 
-      initialData={initialData} 
+    <LegacyCampaignForm
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+      isSubmitting={isSubmitting}
+      submitLabel={submitLabel}
+      initialData={initialData}
     />
   );
 };
-

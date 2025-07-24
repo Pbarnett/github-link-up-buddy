@@ -1,4 +1,4 @@
-@import "@radix-ui/themes/styles.css";
+@import '@radix-ui/themes/styles.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -42,25 +42,28 @@
     --brand-green-light: 142 76% 90%;
     --brand-orange: 31 91% 60%;
     --brand-orange-light: 31 91% 90%;
-    
+
     /* Enhanced status colors */
     --status-success: 142 71% 45%;
     --status-warning: 38 92% 50%;
     --status-error: 0 84% 60%;
     --status-info: 217 91% 60%;
     --status-processing: 219 78% 55%;
-    
+
     /* Enhanced shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    
+    --shadow-md:
+      0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg:
+      0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl:
+      0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
     /* Primary button tokens */
-    --c-btn-primary: #0052FF;
+    --c-btn-primary: #0052ff;
     --c-btn-secondary: transparent;
     --c-btn-secondary-border: rgba(0, 82, 255, 0.5);
-    
+
     /* Card scaling token */
     --card-primary-scale: 1.08;
   }
@@ -168,11 +171,19 @@
   }
 
   .card-gradient-blue {
-    background: linear-gradient(135deg, hsl(var(--brand-blue-light)) 0%, hsl(var(--brand-blue) / 0.05) 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(var(--brand-blue-light)) 0%,
+      hsl(var(--brand-blue) / 0.05) 100%
+    );
   }
 
   .card-gradient-green {
-    background: linear-gradient(135deg, hsl(var(--brand-green-light)) 0%, hsl(var(--brand-green) / 0.05) 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(var(--brand-green-light)) 0%,
+      hsl(var(--brand-green) / 0.05) 100%
+    );
   }
 
   /* Enhanced focus states & accessibility */
@@ -190,11 +201,11 @@
     .mobile-stack {
       @apply flex-col space-y-4 space-x-0;
     }
-    
+
     .mobile-full-width {
       @apply w-full;
     }
-    
+
     .mobile-text-center {
       @apply text-center;
     }
@@ -204,17 +215,17 @@
   .nav-link {
     @apply px-3 py-2 inline-flex items-center gap-1 text-sm font-medium;
   }
-  
+
   .nav-link.active {
     @apply text-primary border-b-2 border-primary;
   }
-  
+
   .nav-link svg {
     @apply w-4 h-4;
   }
-  
+
   /* Blue CTA loading state */
-  .btn-primary[aria-busy="true"] {
+  .btn-primary[aria-busy='true'] {
     @apply cursor-wait opacity-70;
   }
 
@@ -248,7 +259,7 @@
 
   /* Auto-booking pulse animation with accessibility guard */
   @media (prefers-reduced-motion: no-preference) {
-    .btn-primary[id*="auto"] {
+    .btn-primary[id*='auto'] {
       animation: pulse 1.2s ease-out 2s alternate 2;
     }
   }
@@ -271,34 +282,34 @@
   }
 
   @keyframes popIn {
-    from { 
-      transform: scale(0.93); 
-      opacity: 0; 
+    from {
+      transform: scale(0.93);
+      opacity: 0;
     }
-    to { 
-      transform: scale(1); 
-      opacity: 1; 
+    to {
+      transform: scale(1);
+      opacity: 1;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .card-primary { 
-      animation: none; 
+    .card-primary {
+      animation: none;
     }
   }
 
   /* Hero section styling */
   .hero-section {
-    background: #F9FBFF;
+    background: #f9fbff;
     padding: 3.5rem 1rem 2rem;
     text-align: center;
   }
-  
+
   .hero-title {
     max-width: 28ch;
     margin: 0 auto;
   }
-  
+
   .hero-lead {
     font-size: 1.125rem;
     color: #334155;
@@ -307,7 +318,7 @@
     margin-left: auto;
     margin-right: auto;
   }
-  
+
   .hero-sub {
     font-size: 0.875rem;
     color: #64748b;
@@ -322,12 +333,12 @@
     gap: 1.5rem;
     align-items: stretch;
   }
-  
+
   .card-primary-enhanced {
     max-width: 440px;
     margin: 0 auto;
   }
-  
+
   .card-secondary-enhanced {
     max-width: 400px;
     margin: 0 auto;
@@ -336,15 +347,15 @@
   /* Enhanced hover states */
   .card-enhanced:hover {
     border-opacity: 0.4;
-    background-color: #FAFCFF;
+    background-color: #fafcff;
   }
-  
+
   .card-enhanced:focus-within {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.5);
   }
-  
+
   .btn-secondary-enhanced:hover {
-    background-color: #F8FAFF;
+    background-color: #f8faff;
   }
 
   /* Auto-booking CTA pulse animation */
@@ -352,19 +363,23 @@
     .btn-primary#auto-booking-primary {
       animation: ctaPulse 1.5s ease-out 1.5s 2 alternate;
     }
-    
+
     @keyframes ctaPulse {
-      from { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.45); }
-      to { box-shadow: 0 0 0 12px rgba(29, 78, 216, 0); }
+      from {
+        box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.45);
+      }
+      to {
+        box-shadow: 0 0 0 12px rgba(29, 78, 216, 0);
+      }
     }
   }
 
   /* Stat banner styling */
   .stat-banner {
-    background-color: #EEF4FF;
+    background-color: #eef4ff;
     padding: 0.75rem 1rem;
     border-radius: 0 0 0.5rem 0.5rem;
-    border-top: 1px solid #E0E7FF;
+    border-top: 1px solid #e0e7ff;
   }
 
   /* Partner logos */
@@ -372,18 +387,18 @@
     opacity: 0.6;
     transition: opacity 0.2s ease;
   }
-  
+
   .partner-logos:hover {
     opacity: 1;
   }
 
   /* Redesigned hero section */
   .hero-redesigned {
-    background: #F9FBFF;
+    background: #f9fbff;
     padding: 2.5rem 1rem 1.5rem;
     text-align: center;
   }
-  
+
   .hero-title-redesigned {
     font-size: 2.25rem;
     font-weight: 700;
@@ -391,7 +406,7 @@
     margin-bottom: 0.75rem;
     color: #0f172a;
   }
-  
+
   .hero-lead-redesigned {
     font-size: 1.125rem;
     color: #374151;
@@ -400,7 +415,7 @@
     margin-left: auto;
     margin-right: auto;
   }
-  
+
   .hero-sub-redesigned {
     font-size: 0.875rem;
     color: #6b7280;
@@ -411,37 +426,37 @@
 
   /* 3-step explainer */
   .steps-container {
-    background: #EEF4FF;
+    background: #eef4ff;
     border-radius: 0.75rem;
     padding: 1.25rem 1rem;
     margin: 2rem auto;
     max-width: 700px;
   }
-  
+
   .step-item {
     text-align: center;
     flex: 1;
   }
-  
+
   .step-icon {
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
     display: block;
   }
-  
+
   .step-title {
     font-size: 1rem;
     font-weight: 600;
     margin: 0.25rem 0;
     color: #1f2937;
   }
-  
+
   .step-detail {
     font-size: 0.875rem;
     color: #475569;
     line-height: 1.4;
   }
-  
+
   .step-arrow {
     color: #3b82f6;
     font-weight: 600;
@@ -449,7 +464,7 @@
     align-self: center;
     margin: 0 1rem;
   }
-  
+
   /* Enhanced card styling for redesign */
   .card-redesigned {
     border-radius: 0.75rem;
@@ -457,22 +472,22 @@
     transition: all 0.2s ease;
     background: white;
   }
-  
+
   .card-redesigned:hover {
     border-color: #d1d5db;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
-  
+
   .card-primary-redesigned {
     border-color: #3b82f6;
     background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
   }
-  
+
   .card-primary-redesigned:hover {
     border-color: #2563eb;
     background: linear-gradient(135deg, #dbeafe 0%, #ffffff 100%);
   }
-  
+
   /* Simplified social proof */
   .social-proof-redesigned {
     font-size: 0.875rem;
@@ -481,11 +496,11 @@
     margin-top: 1.5rem;
     padding: 0 1rem;
   }
-  
+
   .social-proof-redesigned strong {
     color: #374151;
   }
-  
+
   .live-indicator {
     color: #10b981;
     margin-left: 0.5rem;
@@ -496,7 +511,7 @@
   .btn-redesigned {
     width: 100%;
   }
-  
+
   @media (min-width: 768px) {
     .btn-redesigned {
       width: 240px;
@@ -509,18 +524,18 @@
     .steps-container {
       padding: 1rem;
     }
-    
+
     .step-mobile {
       display: flex;
       align-items: center;
       text-align: left;
       margin-bottom: 1rem;
     }
-    
+
     .step-mobile:last-child {
       margin-bottom: 0;
     }
-    
+
     .step-number {
       background: #3b82f6;
       color: white;
@@ -673,12 +688,12 @@
   [data-theme='dark'] .hero-section {
     background: #0f172a;
   }
-  
+
   [data-theme='dark'] .card {
     background: #1e293b;
     border-color: #334155;
   }
-  
+
   [data-theme='dark'] .text-muted {
     color: #94a3b8;
   }

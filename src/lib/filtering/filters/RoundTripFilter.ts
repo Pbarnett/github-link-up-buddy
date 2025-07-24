@@ -1,6 +1,6 @@
 /**
  * Round-Trip Filter Implementation
- * 
+ *
  * This is a CORE APPLICATION FILTER that ensures flight offers match the search type.
  * - For round-trip searches: Only returns offers with exactly 2 itineraries (outbound + return)
  * - For one-way searches: Only returns offers with exactly 1 itinerary
@@ -11,7 +11,7 @@ import {
   FlightOffer,
   FlightFilter,
   FilterContext,
-  ValidationResult
+  ValidationResult,
 } from '../core/types';
 
 export class RoundTripFilter implements FlightFilter {
@@ -20,23 +20,30 @@ export class RoundTripFilter implements FlightFilter {
 
   apply(offers: FlightOffer[], context: FilterContext): FlightOffer[] {
     console.log(`[${this.name}] Starting round-trip filtering`);
-    
+
     // Determine if this is a round-trip search
     const isRoundTripSearch = this.isRoundTripSearch(context);
-    
-    console.log(`[${this.name}] Search type: ${isRoundTripSearch ? 'round-trip' : 'one-way'}`);
-    
+
+    console.log(
+      `[${this.name}] Search type: ${isRoundTripSearch ? 'round-trip' : 'one-way'}`
+    );
+
     if (!isRoundTripSearch) {
       // For one-way searches, filter to ensure offers have only 1 itinerary
       const oneWayOffers = offers.filter(offer => {
-        const hasOneItinerary = offer.itineraries && offer.itineraries.length === 1;
+        const hasOneItinerary =
+          offer.itineraries && offer.itineraries.length === 1;
         if (!hasOneItinerary) {
-          console.log(`[${this.name}] Filtered out multi-itinerary offer for one-way search: ${offer.id}`);
+          console.log(
+            `[${this.name}] Filtered out multi-itinerary offer for one-way search: ${offer.id}`
+          );
         }
         return hasOneItinerary;
       });
-      
-      console.log(`[${this.name}] One-way filtering: ${offers.length} → ${oneWayOffers.length} offers`);
+
+      console.log(
+        `[${this.name}] One-way filtering: ${offers.length} → ${oneWayOffers.length} offers`
+      );
       return oneWayOffers;
     }
 
@@ -46,31 +53,42 @@ export class RoundTripFilter implements FlightFilter {
 
     // Layer 1: Ensure offers have exactly 2 itineraries (outbound + return)
     filteredOffers = filteredOffers.filter(offer => {
-      const hasTwoItineraries = offer.itineraries && offer.itineraries.length === 2;
+      const hasTwoItineraries =
+        offer.itineraries && offer.itineraries.length === 2;
       if (!hasTwoItineraries) {
-        console.log(`[${this.name}] Filtered out offer without 2 itineraries: ${offer.id} (has ${offer.itineraries?.length || 0})`);
+        console.log(
+          `[${this.name}] Filtered out offer without 2 itineraries: ${offer.id} (has ${offer.itineraries?.length || 0})`
+        );
       }
       return hasTwoItineraries;
     });
 
-    console.log(`[${this.name}] After itinerary count filter: ${beforeCount} → ${filteredOffers.length} offers`);
+    console.log(
+      `[${this.name}] After itinerary count filter: ${beforeCount} → ${filteredOffers.length} offers`
+    );
 
     // Layer 2: Verify proper routing for round-trip
     const routingFilteredOffers = filteredOffers.filter(offer => {
       return this.validateRoundTripRouting(offer, context);
     });
 
-    console.log(`[${this.name}] After routing validation: ${filteredOffers.length} → ${routingFilteredOffers.length} offers`);
+    console.log(
+      `[${this.name}] After routing validation: ${filteredOffers.length} → ${routingFilteredOffers.length} offers`
+    );
 
     // Layer 3: Provider-specific validation
     const providerFilteredOffers = routingFilteredOffers.filter(offer => {
       return this.validateProviderSpecificRoundTrip(offer, context);
     });
 
-    console.log(`[${this.name}] After provider-specific validation: ${routingFilteredOffers.length} → ${providerFilteredOffers.length} offers`);
+    console.log(
+      `[${this.name}] After provider-specific validation: ${routingFilteredOffers.length} → ${providerFilteredOffers.length} offers`
+    );
 
     const removedCount = beforeCount - providerFilteredOffers.length;
-    console.log(`[${this.name}] Round-trip filtering complete: ${beforeCount} → ${providerFilteredOffers.length} offers (removed ${removedCount})`);
+    console.log(
+      `[${this.name}] Round-trip filtering complete: ${beforeCount} → ${providerFilteredOffers.length} offers (removed ${removedCount})`
+    );
 
     return providerFilteredOffers;
   }
@@ -81,7 +99,9 @@ export class RoundTripFilter implements FlightFilter {
 
     // Validate search parameters
     if (!context.originCode && !context.destinationCode) {
-      errors.push('Origin and destination codes are required for round-trip filtering');
+      errors.push(
+        'Origin and destination codes are required for round-trip filtering'
+      );
     }
 
     if (context.returnDate && !context.departureDate) {
@@ -92,7 +112,7 @@ export class RoundTripFilter implements FlightFilter {
     if (context.returnDate && context.departureDate) {
       const departureDate = new Date(context.departureDate);
       const returnDate = new Date(context.returnDate);
-      
+
       if (returnDate <= departureDate) {
         errors.push('Return date must be after departure date');
       }
@@ -101,7 +121,7 @@ export class RoundTripFilter implements FlightFilter {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -110,13 +130,16 @@ export class RoundTripFilter implements FlightFilter {
    */
   private isRoundTripSearch(context: FilterContext): boolean {
     // Check if return date is provided
-    return !!(context.returnDate);
+    return !!context.returnDate;
   }
 
   /**
    * Validate that the offer has proper round-trip routing
    */
-  private validateRoundTripRouting(offer: FlightOffer, context: FilterContext): boolean {
+  private validateRoundTripRouting(
+    offer: FlightOffer,
+    context: FilterContext
+  ): boolean {
     if (!offer.itineraries || offer.itineraries.length !== 2) {
       return false;
     }
@@ -124,32 +147,41 @@ export class RoundTripFilter implements FlightFilter {
     const outbound = offer.itineraries[0];
     const inbound = offer.itineraries[1];
 
-    if (!outbound.segments || !inbound.segments || 
-        outbound.segments.length === 0 || inbound.segments.length === 0) {
-      console.log(`[${this.name}] Offer ${offer.id}: Missing segments in itineraries`);
+    if (
+      !outbound.segments ||
+      !inbound.segments ||
+      outbound.segments.length === 0 ||
+      inbound.segments.length === 0
+    ) {
+      console.log(
+        `[${this.name}] Offer ${offer.id}: Missing segments in itineraries`
+      );
       return false;
     }
 
     // Get origin and destination from segments
     const outboundOrigin = outbound.segments[0]?.departure?.iataCode;
-    const outboundDestination = outbound.segments[outbound.segments.length - 1]?.arrival?.iataCode;
-    
+    const outboundDestination =
+      outbound.segments[outbound.segments.length - 1]?.arrival?.iataCode;
+
     const inboundOrigin = inbound.segments[0]?.departure?.iataCode;
-    const inboundDestination = inbound.segments[inbound.segments.length - 1]?.arrival?.iataCode;
+    const inboundDestination =
+      inbound.segments[inbound.segments.length - 1]?.arrival?.iataCode;
 
     const expectedOrigin = context.originCode;
     const expectedDestination = context.destinationCode;
 
     // Verify round-trip routing: A→B then B→A
-    const validRouting = (
+    const validRouting =
       outboundOrigin === expectedOrigin &&
       outboundDestination === expectedDestination &&
       inboundOrigin === expectedDestination &&
-      inboundDestination === expectedOrigin
-    );
+      inboundDestination === expectedOrigin;
 
     if (!validRouting) {
-      console.log(`[${this.name}] Offer ${offer.id}: Invalid routing - expected ${expectedOrigin}→${expectedDestination}→${expectedOrigin}, got ${outboundOrigin}→${outboundDestination}→${inboundDestination}`);
+      console.log(
+        `[${this.name}] Offer ${offer.id}: Invalid routing - expected ${expectedOrigin}→${expectedDestination}→${expectedOrigin}, got ${outboundOrigin}→${outboundDestination}→${inboundDestination}`
+      );
     }
 
     return validRouting;
@@ -158,13 +190,16 @@ export class RoundTripFilter implements FlightFilter {
   /**
    * Provider-specific round-trip validation
    */
-  private validateProviderSpecificRoundTrip(offer: FlightOffer, context: FilterContext): boolean {
+  private validateProviderSpecificRoundTrip(
+    offer: FlightOffer,
+    context: FilterContext
+  ): boolean {
     if (offer.provider === 'Amadeus') {
       return this.validateAmadeusRoundTrip(offer, context);
     } else if (offer.provider === 'Duffel') {
       return this.validateDuffelRoundTrip(offer, context);
     }
-    
+
     // For unknown providers, assume valid if basic validation passed
     return true;
   }
@@ -172,11 +207,16 @@ export class RoundTripFilter implements FlightFilter {
   /**
    * Amadeus-specific round-trip validation
    */
-  private validateAmadeusRoundTrip(offer: FlightOffer, _context: FilterContext): boolean {  
+  private validateAmadeusRoundTrip(
+    offer: FlightOffer,
+    _context: FilterContext
+  ): boolean {
     // Check if the raw data indicates this is a one-way offer
     const rawData = offer.rawData;
     if (rawData?.oneWay === true) {
-      console.log(`[${this.name}] Amadeus offer ${offer.id}: Marked as one-way in raw data`);
+      console.log(
+        `[${this.name}] Amadeus offer ${offer.id}: Marked as one-way in raw data`
+      );
       return false;
     }
 
@@ -190,13 +230,22 @@ export class RoundTripFilter implements FlightFilter {
   }
 
   /**
-   * Duffel-specific round-trip validation  
+   * Duffel-specific round-trip validation
    */
-  private validateDuffelRoundTrip(offer: FlightOffer, _context: FilterContext): boolean {  
+  private validateDuffelRoundTrip(
+    offer: FlightOffer,
+    _context: FilterContext
+  ): boolean {
     // Duffel uses "slices" - should have exactly 2 for round-trip
     const rawData = offer.rawData;
-    if (rawData?.slices && Array.isArray(rawData.slices) && rawData.slices.length !== 2) {
-      console.log(`[${this.name}] Duffel offer ${offer.id}: Expected 2 slices, got ${rawData.slices.length}`);
+    if (
+      rawData?.slices &&
+      Array.isArray(rawData.slices) &&
+      rawData.slices.length !== 2
+    ) {
+      console.log(
+        `[${this.name}] Duffel offer ${offer.id}: Expected 2 slices, got ${rawData.slices.length}`
+      );
       return false;
     }
 
@@ -221,7 +270,7 @@ export class RoundTripFilter implements FlightFilter {
     };
   } {
     const removedCount = originalOffers.length - filteredOffers.length;
-    
+
     // This is a simplified version - in a real implementation,
     // you'd track these statistics during filtering
     return {
@@ -229,9 +278,9 @@ export class RoundTripFilter implements FlightFilter {
       filterType: isRoundTripSearch ? 'round-trip' : 'one-way',
       validationFailures: {
         itineraryCount: 0, // Would be tracked during filtering
-        routingValidation: 0, // Would be tracked during filtering  
-        providerSpecific: 0 // Would be tracked during filtering
-      }
+        routingValidation: 0, // Would be tracked during filtering
+        providerSpecific: 0, // Would be tracked during filtering
+      },
     };
   }
 
@@ -252,37 +301,40 @@ export class RoundTripFilter implements FlightFilter {
     isRoundTripSearch: boolean;
   } {
     const errors: string[] = [];
-    
-    const hasReturnDate = !!(searchParams.returnDate || searchParams.return_date);
+
+    const hasReturnDate = !!(
+      searchParams.returnDate || searchParams.return_date
+    );
     const isRoundTrip = searchParams.isRoundTrip;
     const isRoundTripSearch = hasReturnDate || !!isRoundTrip;
-    
+
     // If explicitly marked as round-trip but no return date provided
     if (isRoundTrip && !hasReturnDate) {
       errors.push('Round-trip search requires a return date');
     }
-    
+
     // If return date provided but not marked as round-trip (warning case)
     if (hasReturnDate && isRoundTrip === false) {
       errors.push('Return date provided but search marked as one-way');
     }
-    
+
     // Validate required fields for any search
     const origin = searchParams.originLocationCode || searchParams.origin;
-    const destination = searchParams.destinationLocationCode || searchParams.destination;
-    
+    const destination =
+      searchParams.destinationLocationCode || searchParams.destination;
+
     if (!origin) {
       errors.push('Origin location is required');
     }
-    
+
     if (!destination) {
       errors.push('Destination location is required');
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors,
-      isRoundTripSearch
+      isRoundTripSearch,
     };
   }
 }

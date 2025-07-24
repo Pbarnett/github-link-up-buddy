@@ -1,6 +1,6 @@
 /**
  * AWS Secrets Manager Usage Examples
- * 
+ *
  * Comprehensive examples showing how to use the AWS Secrets Manager integration
  * in various real-world scenarios following AWS SDK v3 best practices.
  */
@@ -11,13 +11,15 @@ import { getSecretValue } from '../secrets-manager';
  * Example 1: Retrieve Stripe API Keys
  * Common pattern for payment processing applications
  */
-export async function getStripeKeys(environment: 'dev' | 'staging' | 'prod' = 'prod') {
+export async function getStripeKeys(
+  environment: 'dev' | 'staging' | 'prod' = 'prod'
+) {
   try {
     // Retrieve different Stripe keys based on environment
     const secretNames = {
       dev: 'dev/payments/stripe-secret-key',
-      staging: 'staging/payments/stripe-secret-key', 
-      prod: 'prod/payments/stripe-secret-key'
+      staging: 'staging/payments/stripe-secret-key',
+      prod: 'prod/payments/stripe-secret-key',
     };
 
     const stripeSecretKey = await getSecretValue(
@@ -26,7 +28,9 @@ export async function getStripeKeys(environment: 'dev' | 'staging' | 'prod' = 'p
     );
 
     if (!stripeSecretKey) {
-      throw new Error(`Stripe secret key not found for environment: ${environment}`);
+      throw new Error(
+        `Stripe secret key not found for environment: ${environment}`
+      );
     }
 
     return {
@@ -71,10 +75,12 @@ export async function getDatabaseCredentials(region: string = 'us-west-2') {
  * Example 3: OAuth Client Secrets
  * Secure OAuth integration with third-party services
  */
-export async function getOAuthCredentials(provider: 'google' | 'github' | 'discord') {
+export async function getOAuthCredentials(
+  provider: 'google' | 'github' | 'discord'
+) {
   try {
     const region = process.env.AWS_REGION || 'us-west-2';
-    
+
     // Retrieve OAuth credentials for different providers
     const secretIds = {
       google: 'prod/oauth/google-client-secret',
@@ -83,7 +89,7 @@ export async function getOAuthCredentials(provider: 'google' | 'github' | 'disco
     };
 
     const clientSecret = await getSecretValue(secretIds[provider], region);
-    
+
     if (!clientSecret) {
       throw new Error(`OAuth secret not found for provider: ${provider}`);
     }
@@ -105,7 +111,10 @@ export async function getOAuthCredentials(provider: 'google' | 'github' | 'disco
       };
     }
   } catch (error) {
-    console.error(`Failed to retrieve OAuth credentials for ${provider}:`, error);
+    console.error(
+      `Failed to retrieve OAuth credentials for ${provider}:`,
+      error
+    );
     throw new Error(`Unable to configure ${provider} OAuth`);
   }
 }
@@ -118,7 +127,11 @@ class SecretCache {
   private cache = new Map<string, { value: string; expiry: number }>();
   private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
 
-  async getSecret(secretId: string, region: string, ttlMs?: number): Promise<string | undefined> {
+  async getSecret(
+    secretId: string,
+    region: string,
+    ttlMs?: number
+  ): Promise<string | undefined> {
     const cacheKey = `${secretId}-${region}`;
     const cached = this.cache.get(cacheKey);
 
@@ -132,7 +145,7 @@ class SecretCache {
     try {
       console.log(`Fetching secret from AWS: ${secretId}`);
       const value = await getSecretValue(secretId, region);
-      
+
       if (value) {
         // Cache the result
         this.cache.set(cacheKey, {
@@ -177,7 +190,9 @@ export async function getSecretWithRegionalFallback(
 ) {
   // Try primary region first
   try {
-    console.log(`Attempting to retrieve secret from primary region: ${primaryRegion}`);
+    console.log(
+      `Attempting to retrieve secret from primary region: ${primaryRegion}`
+    );
     const secret = await getSecretValue(secretId, primaryRegion);
     if (secret) {
       return { secret, region: primaryRegion };
@@ -211,22 +226,24 @@ export async function getBatchSecrets(
   defaultRegion: string = 'us-west-2'
 ) {
   try {
-    const secretPromises = secrets.map(async ({ id, region = defaultRegion }) => {
-      try {
-        const value = await getSecretValue(id, region);
-        return { id, value, success: true, error: null };
-      } catch (error) {
-        return { 
-          id, 
-          value: null, 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Unknown error'
-        };
+    const secretPromises = secrets.map(
+      async ({ id, region = defaultRegion }) => {
+        try {
+          const value = await getSecretValue(id, region);
+          return { id, value, success: true, error: null };
+        } catch (error) {
+          return {
+            id,
+            value: null,
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          };
+        }
       }
-    });
+    );
 
     const results = await Promise.all(secretPromises);
-    
+
     // Separate successful and failed retrievals
     const successful = results.filter(r => r.success);
     const failed = results.filter(r => !r.success);
@@ -254,20 +271,24 @@ export async function loadApplicationConfig(environment: string = 'prod') {
     const region = process.env.AWS_REGION || 'us-west-2';
 
     const configJson = await getSecretValue(configSecretId, region);
-    
+
     if (!configJson) {
-      throw new Error(`Application configuration not found for environment: ${environment}`);
+      throw new Error(
+        `Application configuration not found for environment: ${environment}`
+      );
     }
 
     // Parse and validate configuration
     const config = JSON.parse(configJson);
-    
+
     // Validate required configuration keys
     const requiredKeys = ['database_url', 'api_keys', 'feature_flags'];
     const missingKeys = requiredKeys.filter(key => !(key in config));
-    
+
     if (missingKeys.length > 0) {
-      throw new Error(`Missing required configuration keys: ${missingKeys.join(', ')}`);
+      throw new Error(
+        `Missing required configuration keys: ${missingKeys.join(', ')}`
+      );
     }
 
     return {
@@ -277,7 +298,7 @@ export async function loadApplicationConfig(environment: string = 'prod') {
     };
   } catch (error) {
     console.error('Failed to load application configuration:', error);
-    
+
     // Return default configuration for development
     if (environment === 'development') {
       console.warn('Using default development configuration');
@@ -289,7 +310,7 @@ export async function loadApplicationConfig(environment: string = 'prod') {
         loadedAt: new Date().toISOString(),
       };
     }
-    
+
     throw error;
   }
 }
@@ -299,43 +320,53 @@ export async function loadApplicationConfig(environment: string = 'prod') {
  * Handle secrets that may be in the process of rotation
  */
 export async function getSecretWithRotationSupport(
-  secretId: string, 
+  secretId: string,
   region: string,
   maxRetries: number = 3
 ) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const secret = await getSecretValue(secretId, region);
-      
+
       if (secret) {
         return secret;
       }
-      
+
       // If secret is null/undefined, it might be rotating
       if (attempt < maxRetries) {
-        console.warn(`Secret ${secretId} not available, attempt ${attempt}/${maxRetries}. Retrying...`);
+        console.warn(
+          `Secret ${secretId} not available, attempt ${attempt}/${maxRetries}. Retrying...`
+        );
         // Wait before retrying (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        await new Promise(resolve =>
+          setTimeout(resolve, Math.pow(2, attempt) * 1000)
+        );
       }
     } catch (error) {
       console.warn(`Attempt ${attempt} failed for secret ${secretId}:`, error);
-      
+
       if (attempt === maxRetries) {
         throw error;
       }
-      
+
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      await new Promise(resolve =>
+        setTimeout(resolve, Math.pow(2, attempt) * 1000)
+      );
     }
   }
 
-  throw new Error(`Failed to retrieve secret ${secretId} after ${maxRetries} attempts`);
+  throw new Error(
+    `Failed to retrieve secret ${secretId} after ${maxRetries} attempts`
+  );
 }
 
 // Export utility functions for common patterns
 export const SecretPatterns = {
   stripe: (env: string) => `${env}/payments/stripe-secret-key`,
   database: (env: string) => `${env}/database/connection-string`,
-  oauth: (provider: string, env: string = 'prod') => `${env}/oauth/${provider}-client-secret`,
-  apiKey: (service: string, env: string = 'prod') => `${env}/api/${service}-key`,
+  oauth: (provider: string, env: string = 'prod') =>
+    `${env}/oauth/${provider}-client-secret`,
+  apiKey: (service: string, env: string = 'prod') =>
+    `${env}/api/${service}-key`,
 };

@@ -2,7 +2,15 @@
  * @vitest-environment jsdom
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, beforeAll } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  beforeAll,
+} from 'vitest';
 import { modernGoogleAuth } from '@/services/modernGoogleAuthService';
 import { setupAdvancedOAuthTesting } from '../utils/advancedOAuthMocks';
 
@@ -34,7 +42,7 @@ vi.mock('@/integrations/supabase/client', () => ({
       getSession: vi.fn(),
       getUser: vi.fn(),
       onAuthStateChange: vi.fn(() => ({
-        data: { subscription: { unsubscribe: vi.fn() } }
+        data: { subscription: { unsubscribe: vi.fn() } },
       })),
     },
   },
@@ -72,7 +80,7 @@ beforeAll(() => {
   if (!global.fetch) {
     global.fetch = vi.fn();
   }
-  
+
   // Ensure DOM globals are available
   if (!window.document.head) {
     Object.defineProperty(window.document, 'head', {
@@ -89,7 +97,7 @@ describe('ModernGoogleAuthService', () => {
     // Reset all mocks and modules as recommended by Vitest docs
     vi.clearAllMocks();
     vi.resetModules();
-    
+
     // Mock window object with all OAuth-related properties
     vi.stubGlobal('window', {
       ...globalThis.window,
@@ -120,10 +128,10 @@ describe('ModernGoogleAuthService', () => {
       dispatchEvent: vi.fn().mockReturnValue(true),
       IdentityCredential: undefined, // Will be set per test
     });
-    
+
     // Set up Google as a stubbed global
     vi.stubGlobal('google', { accounts: mockGoogleAccounts });
-    
+
     // Mock document methods
     const mockScript = {
       onload: null as (() => void) | null,
@@ -132,7 +140,7 @@ describe('ModernGoogleAuthService', () => {
       async: false,
       defer: false,
     };
-    
+
     vi.spyOn(document, 'createElement').mockReturnValue(mockScript as any);
     vi.spyOn(document, 'querySelector').mockReturnValue(null);
     vi.spyOn(document.head, 'appendChild').mockImplementation(() => {
@@ -142,7 +150,7 @@ describe('ModernGoogleAuthService', () => {
       }, 0);
       return mockScript as any;
     });
-    
+
     // Mock localStorage
     const localStorageMock = {
       getItem: vi.fn(),
@@ -162,7 +170,7 @@ describe('ModernGoogleAuthService', () => {
   describe('initialization', () => {
     it('should initialize Google Identity Services', async () => {
       await modernGoogleAuth.initialize();
-      
+
       expect(mockGoogleAccounts.id.initialize).toHaveBeenCalledWith({
         client_id: expect.any(String),
         callback: expect.any(Function),
@@ -177,13 +185,13 @@ describe('ModernGoogleAuthService', () => {
       // Clear all existing module state first
       vi.resetModules();
       vi.unstubAllGlobals();
-      
+
       // Setup a completely fresh environment without Google accounts
       const cleanWindow = { ...globalThis.window };
       delete (cleanWindow as any).google;
       vi.stubGlobal('window', cleanWindow);
       vi.stubGlobal('google', undefined);
-      
+
       // Mock script element and document methods properly
       const mockScript = {
         onload: null as (() => void) | null,
@@ -192,15 +200,15 @@ describe('ModernGoogleAuthService', () => {
         async: false,
         defer: false,
       };
-      
+
       // Override the createElement mock for this test
       vi.spyOn(document, 'createElement').mockReturnValue(mockScript as any);
-      
+
       // Mock querySelector to return null (no existing script)
       vi.spyOn(document, 'querySelector').mockReturnValue(null);
-      
+
       // Mock appendChild to simulate script loading
-      vi.spyOn(document.head, 'appendChild').mockImplementation((script) => {
+      vi.spyOn(document.head, 'appendChild').mockImplementation(script => {
         // Make google available immediately for this test
         vi.stubGlobal('google', { accounts: mockGoogleAccounts });
         cleanWindow.google = { accounts: mockGoogleAccounts };
@@ -210,12 +218,14 @@ describe('ModernGoogleAuthService', () => {
         }
         return script;
       });
-      
+
       // Import fresh service after clearing modules
-      const { modernGoogleAuth: freshService } = await import('@/services/modernGoogleAuthService');
-      
+      const { modernGoogleAuth: freshService } = await import(
+        '@/services/modernGoogleAuthService'
+      );
+
       await freshService.initialize();
-      
+
       expect(document.createElement).toHaveBeenCalledWith('script');
       expect(document.head.appendChild).toHaveBeenCalled();
     });
@@ -225,21 +235,23 @@ describe('ModernGoogleAuthService', () => {
       await modernGoogleAuth.initialize();
       // Clear mock to test second call doesn't call initialize again
       vi.clearAllMocks();
-      
+
       // Second initialization should not call initialize again
       await modernGoogleAuth.initialize();
-      
+
       expect(mockGoogleAccounts.id.initialize).toHaveBeenCalledTimes(0);
     });
 
     it('should throw error in non-browser environment', async () => {
       // Mock environment check properly by stubbing window as undefined
       vi.stubGlobal('window', undefined);
-      
+
       // Reset modules to get fresh instance
       vi.resetModules();
-      const { modernGoogleAuth: freshService } = await import('@/services/modernGoogleAuthService');
-      
+      const { modernGoogleAuth: freshService } = await import(
+        '@/services/modernGoogleAuthService'
+      );
+
       await expect(freshService.initialize()).rejects.toThrow(
         'Google Auth can only be initialized in browser environment'
       );
@@ -259,7 +271,9 @@ describe('ModernGoogleAuthService', () => {
 
       // Create a mock JWT parser
       vi.doMock('../../../services/modernGoogleAuthService', async () => {
-        const actual = await vi.importActual('../../../services/modernGoogleAuthService');
+        const actual = await vi.importActual(
+          '../../../services/modernGoogleAuthService'
+        );
         return {
           ...actual,
           parseJWT: vi.fn().mockReturnValue(validClaims),
@@ -313,7 +327,7 @@ describe('ModernGoogleAuthService', () => {
     it('should display One Tap prompt', async () => {
       await modernGoogleAuth.initialize();
       await modernGoogleAuth.displayOneTap();
-      
+
       expect(mockGoogleAccounts.id.prompt).toHaveBeenCalledWith(
         expect.any(Function)
       );
@@ -322,17 +336,19 @@ describe('ModernGoogleAuthService', () => {
     it('should not display One Tap twice', async () => {
       // Reset service state for proper testing
       vi.resetModules();
-      const { modernGoogleAuth: freshService } = await import('@/services/modernGoogleAuthService');
-      
+      const { modernGoogleAuth: freshService } = await import(
+        '@/services/modernGoogleAuthService'
+      );
+
       await freshService.initialize();
       await freshService.displayOneTap();
-      
+
       // Clear mocks to isolate the second call
       vi.clearAllMocks();
-      
+
       // Second call should not trigger prompt since oneTapDisplayed = true
       await freshService.displayOneTap();
-      
+
       expect(mockGoogleAccounts.id.prompt).toHaveBeenCalledTimes(0);
     });
 
@@ -342,7 +358,7 @@ describe('ModernGoogleAuthService', () => {
       });
 
       await modernGoogleAuth.initialize();
-      
+
       // Should not throw
       await expect(modernGoogleAuth.displayOneTap()).resolves.toBeUndefined();
     });
@@ -355,7 +371,7 @@ describe('ModernGoogleAuthService', () => {
     it('should detect popup blockers', async () => {
       // Override the default mock for this test - window.open returns null
       const mockOpen = vi.fn().mockReturnValue(null);
-      
+
       // Clear existing mock and create new one
       vi.unstubAllGlobals();
       vi.stubGlobal('window', {
@@ -368,10 +384,10 @@ describe('ModernGoogleAuthService', () => {
         dispatchEvent: vi.fn().mockReturnValue(true),
       });
       vi.stubGlobal('google', { accounts: mockGoogleAccounts });
-      
+
       await modernGoogleAuth.initialize();
       const result = await modernGoogleAuth.signInWithPopup();
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toContain('Popup blocked');
       // Should not have called initTokenClient since popup was blocked
@@ -385,7 +401,7 @@ describe('ModernGoogleAuthService', () => {
         closed: true, // Already closed (blocked)
       };
       const mockOpen = vi.fn().mockReturnValue(mockClosedPopup);
-      
+
       // Clear existing mock and create new one
       vi.unstubAllGlobals();
       vi.stubGlobal('window', {
@@ -398,10 +414,10 @@ describe('ModernGoogleAuthService', () => {
         dispatchEvent: vi.fn().mockReturnValue(true),
       });
       vi.stubGlobal('google', { accounts: mockGoogleAccounts });
-      
+
       await modernGoogleAuth.initialize();
       const result = await modernGoogleAuth.signInWithPopup();
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toContain('Popup blocked');
       // Should not have called initTokenClient since popup was blocked
@@ -413,24 +429,24 @@ describe('ModernGoogleAuthService', () => {
       const mockTokenClient = {
         requestAccessToken: vi.fn(),
       };
-      
-      mockGoogleAccounts.oauth2.initTokenClient.mockImplementation((config) => {
+
+      mockGoogleAccounts.oauth2.initTokenClient.mockImplementation(config => {
         // Immediately call error callback to simulate user cancellation
         setTimeout(() => {
           if (config.error_callback) {
             // Pass the error object that the service expects
-            config.error_callback({ 
+            config.error_callback({
               error: 'popup_closed_by_user',
-              message: 'popup_closed_by_user' 
+              message: 'popup_closed_by_user',
             });
           }
         }, 50); // Small delay to simulate async behavior
         return mockTokenClient;
       });
-      
+
       await modernGoogleAuth.initialize();
       const result = await modernGoogleAuth.signInWithPopup();
-      
+
       expect(result.success).toBe(false);
       // The service returns error.message || 'Authentication cancelled'
       expect(result.error).toContain('popup_closed_by_user');
@@ -441,7 +457,7 @@ describe('ModernGoogleAuthService', () => {
         requestAccessToken: vi.fn(),
       };
 
-      mockGoogleAccounts.oauth2.initTokenClient.mockImplementation((config) => {
+      mockGoogleAccounts.oauth2.initTokenClient.mockImplementation(config => {
         // Simulate successful callback immediately
         setTimeout(() => {
           if (config.callback) {
@@ -452,24 +468,25 @@ describe('ModernGoogleAuthService', () => {
         }, 100); // Small delay to simulate async behavior
         return mockTokenClient;
       });
-      
+
       // Mock fetch for getUserInfo
       global.fetch = vi.fn().mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
-          id: '123',
-          email: 'test@gmail.com',
-          name: 'Test User',
-          given_name: 'Test',
-          family_name: 'User',
-          picture: 'https://example.com/photo.jpg',
-          email_verified: true,
-        }),
+        json: () =>
+          Promise.resolve({
+            id: '123',
+            email: 'test@gmail.com',
+            name: 'Test User',
+            given_name: 'Test',
+            family_name: 'User',
+            picture: 'https://example.com/photo.jpg',
+            email_verified: true,
+          }),
       });
 
       await modernGoogleAuth.initialize();
       const result = await modernGoogleAuth.signInWithPopup();
-      
+
       expect(result.success).toBe(true);
       expect(result.user?.email).toBe('test@gmail.com');
     }, 5000); // Reduced timeout
@@ -479,7 +496,7 @@ describe('ModernGoogleAuthService', () => {
         requestAccessToken: vi.fn(),
       };
 
-      mockGoogleAccounts.oauth2.initTokenClient.mockImplementation((config) => {
+      mockGoogleAccounts.oauth2.initTokenClient.mockImplementation(config => {
         // Immediately call error callback
         setTimeout(() => {
           config.error_callback({
@@ -491,7 +508,7 @@ describe('ModernGoogleAuthService', () => {
 
       await modernGoogleAuth.initialize();
       const result = await modernGoogleAuth.signInWithPopup();
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toContain('User cancelled authentication');
     }, 5000); // Reduced timeout
@@ -501,7 +518,7 @@ describe('ModernGoogleAuthService', () => {
     it('should detect FedCM availability', async () => {
       // Mock FedCM support properly by stubbing IdentityCredential
       vi.stubGlobal('IdentityCredential', class MockIdentityCredential {});
-      
+
       const privacyMode = await modernGoogleAuth.handlePrivacySettings();
       expect(privacyMode).toBe('fedcm');
     });
@@ -510,7 +527,7 @@ describe('ModernGoogleAuthService', () => {
       // Reset modules to get fresh service instance
       vi.resetModules();
       vi.unstubAllGlobals();
-      
+
       // Set up clean environment without FedCM and with localStorage throwing
       const cleanWindow = {
         ...globalThis.window,
@@ -519,7 +536,7 @@ describe('ModernGoogleAuthService', () => {
       };
       delete (cleanWindow as any).IdentityCredential;
       vi.stubGlobal('window', cleanWindow);
-      
+
       // Mock localStorage to throw when setting items (third-party cookie blocking)
       const throwingLocalStorage = {
         getItem: vi.fn(),
@@ -530,8 +547,10 @@ describe('ModernGoogleAuthService', () => {
         clear: vi.fn(),
       };
       vi.stubGlobal('localStorage', throwingLocalStorage);
-      
-      const { modernGoogleAuth: freshService } = await import('@/services/modernGoogleAuthService');
+
+      const { modernGoogleAuth: freshService } = await import(
+        '@/services/modernGoogleAuthService'
+      );
       const privacyMode = await freshService.handlePrivacySettings();
       expect(privacyMode).toBe('redirect');
     });
@@ -540,7 +559,7 @@ describe('ModernGoogleAuthService', () => {
       // Reset modules to get fresh service instance
       vi.resetModules();
       vi.unstubAllGlobals();
-      
+
       // Set up clean environment without FedCM but with working localStorage
       const cleanWindow = {
         ...globalThis.window,
@@ -549,7 +568,7 @@ describe('ModernGoogleAuthService', () => {
       };
       delete (cleanWindow as any).IdentityCredential;
       vi.stubGlobal('window', cleanWindow);
-      
+
       // Mock working localStorage
       const workingLocalStorage = {
         getItem: vi.fn(),
@@ -558,8 +577,10 @@ describe('ModernGoogleAuthService', () => {
         clear: vi.fn(),
       };
       vi.stubGlobal('localStorage', workingLocalStorage);
-      
-      const { modernGoogleAuth: freshService } = await import('@/services/modernGoogleAuthService');
+
+      const { modernGoogleAuth: freshService } = await import(
+        '@/services/modernGoogleAuthService'
+      );
       const privacyMode = await freshService.handlePrivacySettings();
       expect(privacyMode).toBe('standard');
     });
@@ -572,18 +593,22 @@ describe('ModernGoogleAuthService', () => {
 
       await modernGoogleAuth.initialize();
       await modernGoogleAuth.signOut();
-      
+
       expect(supabase.auth.signOut).toHaveBeenCalled();
       expect(mockGoogleAccounts.id.disableAutoSelect).toHaveBeenCalled();
     });
 
     it('should handle sign out errors', async () => {
       const { supabase } = await import('@/integrations/supabase/client');
-      supabase.auth.signOut = vi.fn().mockRejectedValue(new Error('Sign out failed'));
+      supabase.auth.signOut = vi
+        .fn()
+        .mockRejectedValue(new Error('Sign out failed'));
 
       await modernGoogleAuth.initialize();
-      
-      await expect(modernGoogleAuth.signOut()).rejects.toThrow('Sign out failed');
+
+      await expect(modernGoogleAuth.signOut()).rejects.toThrow(
+        'Sign out failed'
+      );
     });
   });
 
@@ -624,12 +649,12 @@ describe('ModernGoogleAuthService', () => {
     it('should render sign in button', async () => {
       const mockContainer = document.createElement('div');
       mockContainer.id = 'google-signin-button';
-      
+
       vi.spyOn(document, 'getElementById').mockReturnValue(mockContainer);
-      
+
       await modernGoogleAuth.initialize();
       modernGoogleAuth.renderSignInButton('google-signin-button');
-      
+
       expect(mockGoogleAccounts.id.renderButton).toHaveBeenCalledWith(
         mockContainer,
         expect.objectContaining({
@@ -644,9 +669,9 @@ describe('ModernGoogleAuthService', () => {
     it('should handle custom button options', async () => {
       const mockContainer = document.createElement('div');
       mockContainer.id = 'custom-button';
-      
+
       vi.spyOn(document, 'getElementById').mockReturnValue(mockContainer);
-      
+
       await modernGoogleAuth.initialize();
       modernGoogleAuth.renderSignInButton('custom-button', {
         theme: 'filled_blue',
@@ -654,7 +679,7 @@ describe('ModernGoogleAuthService', () => {
         text: 'signup_with',
         width: 300,
       });
-      
+
       expect(mockGoogleAccounts.id.renderButton).toHaveBeenCalledWith(
         mockContainer,
         expect.objectContaining({
@@ -668,20 +693,22 @@ describe('ModernGoogleAuthService', () => {
 
     it('should handle missing container', async () => {
       vi.spyOn(document, 'getElementById').mockReturnValue(null);
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       await modernGoogleAuth.initialize();
-      
+
       // The service calls google.accounts.id.renderButton with null element
       // This should trigger an error in the Google API, but we need to simulate it
-      mockGoogleAccounts.id.renderButton.mockImplementation((element) => {
+      mockGoogleAccounts.id.renderButton.mockImplementation(element => {
         if (!element) {
           console.error('Google Auth Service not initialized');
         }
       });
-      
+
       modernGoogleAuth.renderSignInButton('non-existent');
-      
+
       // Should log error about missing element or service not initialized
       expect(consoleSpy).toHaveBeenCalled();
     });

@@ -1,20 +1,25 @@
 type ReactNode = React.ReactNode;
 
 import { LDContext } from 'launchdarkly-js-client-sdk';
-import { LaunchDarklyContextManager } from './context-manager';
 import * as React from 'react';
+import { LaunchDarklyContextManager } from './context-manager';
 
 interface LaunchDarklyProviderProps {
   children: ReactNode;
   initialContext?: LDContext;
 }
 
-export function LaunchDarklyProvider({ children, initialContext }: LaunchDarklyProviderProps) {
+export function LaunchDarklyProvider({
+  children,
+  initialContext,
+}: LaunchDarklyProviderProps) {
   // Read client-side ID from Vite environment variables
   const clientSideID = import.meta.env.VITE_LD_CLIENT_ID;
 
   if (!clientSideID) {
-    console.error('LaunchDarkly client-side ID is missing. Please set VITE_LD_CLIENT_ID in your environment variables.');
+    console.error(
+      'LaunchDarkly client-side ID is missing. Please set VITE_LD_CLIENT_ID in your environment variables.'
+    );
     // Return children without LaunchDarkly wrapper in dev mode for debugging
     if (import.meta.env.DEV) {
       return <>{children}</>;
@@ -24,11 +29,14 @@ export function LaunchDarklyProvider({ children, initialContext }: LaunchDarklyP
 
   // Validate client-side ID format
   if (!clientSideID.match(/^[a-f0-9]{24}$/)) {
-    console.warn('LaunchDarkly client-side ID format looks incorrect. Expected 24 hex characters.');
+    console.warn(
+      'LaunchDarkly client-side ID format looks incorrect. Expected 24 hex characters.'
+    );
   }
 
   // Create initial context (anonymous user by default)
-  const defaultContext = initialContext || LaunchDarklyContextManager.createAnonymousContext();
+  const defaultContext =
+    initialContext || LaunchDarklyContextManager.createAnonymousContext();
 
   // Validate the context
   if (!LaunchDarklyContextManager.validateContext(defaultContext)) {
@@ -37,34 +45,35 @@ export function LaunchDarklyProvider({ children, initialContext }: LaunchDarklyP
   }
 
   // Sanitize context to remove any sensitive information
-  const sanitizedContext = LaunchDarklyContextManager.sanitizeContext(defaultContext);
+  const sanitizedContext =
+    LaunchDarklyContextManager.sanitizeContext(defaultContext);
 
   // LaunchDarkly client configuration
   const ldOptions = {
     // Enable streaming for real-time updates
     streaming: true,
-    
+
     // Enable bootstrap from localStorage for faster initialization
     bootstrap: 'localStorage' as const,
-    
+
     // Enable debug mode in development
     debug: import.meta.env.DEV,
-    
+
     // Set evaluation reasons for debugging
     evaluationReasons: import.meta.env.DEV,
-    
+
     // Configure event handling
     sendEvents: true,
-    
+
     // Set custom event capacity for high-traffic scenarios
     eventCapacity: import.meta.env.DEV ? 100 : 1000,
-    
+
     // Flush events more frequently in development
     flushInterval: import.meta.env.DEV ? 5000 : 30000,
-    
+
     // Enable offline support
     offline: false,
-    
+
     // Configure request timeout
     requestHeaderTransform: (headers: Map<string, string>) => {
       // Add custom headers if needed
@@ -72,7 +81,7 @@ export function LaunchDarklyProvider({ children, initialContext }: LaunchDarklyP
         headers.set('X-LaunchDarkly-Environment', 'development');
       }
       return headers;
-    }
+    },
   };
 
   // Log initialization in development
@@ -91,9 +100,9 @@ export function LaunchDarklyProvider({ children, initialContext }: LaunchDarklyP
       reactOptions={{
         // Use suspense for better React 18 compatibility
         useCamelCaseFlagKeys: true,
-        
+
         // Send events on flag evaluation
-        sendEventsOnFlagRead: true
+        sendEventsOnFlagRead: true,
       }}
     >
       {children}

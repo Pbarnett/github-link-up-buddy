@@ -20,7 +20,7 @@ describe('Database Integration Tests', () => {
 
   it('should connect to PostgreSQL container', async () => {
     const config = testEnvironment.getPostgresConfig();
-    
+
     // Test direct PostgreSQL connection
     expect(config.host).toBe('localhost');
     expect(config.port).toBeGreaterThan(0);
@@ -30,11 +30,11 @@ describe('Database Integration Tests', () => {
 
   it('should perform database operations', async () => {
     const config = testEnvironment.getPostgresConfig();
-    
+
     // Example: Create a simple Supabase client for testing
     // Note: You might need to set up a proper Supabase instance
     // This is just an example of how you might structure the test
-    
+
     const testData = {
       user_id: 'test-user-123',
       email: 'test@example.com',

@@ -1,6 +1,6 @@
 /**
  * Error Handling System Exports
- * 
+ *
  * Centralized exports for all error handling functionality
  */
 
@@ -19,7 +19,7 @@ export {
   DatabaseError,
   BusinessLogicError,
   RateLimitError,
-  CircuitBreakerError
+  CircuitBreakerError,
 } from './types';
 
 export {
@@ -30,5 +30,5 @@ export {
   mapDuffelError,
   mapStripeError,
   type ErrorResponse,
-  type Logger
+  type Logger,
 } from './handler';

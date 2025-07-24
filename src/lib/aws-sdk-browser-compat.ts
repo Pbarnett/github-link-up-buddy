@@ -1,6 +1,6 @@
 /**
  * Browser-compatible AWS SDK stubs
- * 
+ *
  * This file provides browser-compatible stubs for AWS SDK functionality
  * that would normally only work in server environments. Used for development
  * and testing environments where AWS SDK browser compatibility is needed.
@@ -14,8 +14,8 @@ export class MockSecretsManagerClient {
       return {
         SecretString: JSON.stringify({
           mock: true,
-          environment: 'development'
-        })
+          environment: 'development',
+        }),
       };
     }
     throw new Error('Mock SecretsManager operation not implemented');
@@ -57,7 +57,7 @@ export const fromEnv = () => {
   return {
     accessKeyId: 'mock-access-key',
     secretAccessKey: 'mock-secret-key',
-    sessionToken: 'mock-session-token'
+    sessionToken: 'mock-session-token',
   };
 };
 
@@ -111,6 +111,6 @@ export const IS_MOCK_MODE = isBrowserEnvironment();
 if (IS_MOCK_MODE && process.env.NODE_ENV === 'development') {
   console.warn(
     '🚧 AWS SDK Browser Compatibility Mode: Using mock AWS services for development/testing. ' +
-    'Real AWS operations should be performed through your backend API.'
+      'Real AWS operations should be performed through your backend API.'
   );
 }

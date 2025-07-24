@@ -6,17 +6,23 @@ interface TestWrapperProps {
   queryClient?: QueryClient;
 }
 
-export function TestWrapper({ children, initialEntries = ['/'], queryClient }: TestWrapperProps) {
-  const testQueryClient = queryClient || new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
+export function TestWrapper({
+  children,
+  initialEntries = ['/'],
+  queryClient,
+}: TestWrapperProps) {
+  const testQueryClient =
+    queryClient ||
+    new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+        mutations: {
+          retry: false,
+        },
       },
-      mutations: {
-        retry: false,
-      },
-    },
-  });
+    });
 
   const mockBusinessRulesConfig = {
     environment: 'test' as const,
@@ -37,15 +43,15 @@ export function TestWrapper({ children, initialEntries = ['/'], queryClient }: T
   return (
     <QueryClientProvider client={testQueryClient}>
       <MemoryRouter initialEntries={initialEntries}>
-        <BusinessRulesProvider>
-          {children}
-        </BusinessRulesProvider>
+        <BusinessRulesProvider>{children}</BusinessRulesProvider>
       </MemoryRouter>
     </QueryClientProvider>
   );
 }
 
-export function createTestWrapper(props: Omit<TestWrapperProps, 'children'> = {}) {
+export function createTestWrapper(
+  props: Omit<TestWrapperProps, 'children'> = {}
+) {
   return function Wrapper({ children }: { children: ReactNode }) {
     return <TestWrapper {...props}>{children}</TestWrapper>;
   };

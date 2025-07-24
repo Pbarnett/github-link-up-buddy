@@ -1,6 +1,6 @@
 /**
  * AWS CLI Compatible Parameter Validator
- * 
+ *
  * Provides validation for KMS parameters that matches AWS CLI standards
  * and ensures compliance with AWS KMS API requirements.
  */
@@ -21,19 +21,19 @@ export class AWSCLIParameterValidator {
   private static readonly KEY_ID_PATTERNS = {
     UUID: /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i,
     ALIAS: /^alias\/[a-zA-Z0-9\/_-]+$/,
-    ARN: /^arn:aws:kms:[a-z0-9-]+:[0-9]{12}:(key\/[a-f0-9-]+|alias\/[a-zA-Z0-9\/_-]+)$/
+    ARN: /^arn:aws:kms:[a-z0-9-]+:[0-9]{12}:(key\/[a-f0-9-]+|alias\/[a-zA-Z0-9\/_-]+)$/,
   };
 
   private static readonly ENCRYPTION_ALGORITHMS = [
     'SYMMETRIC_DEFAULT',
-    'RSAES_OAEP_SHA_1', 
+    'RSAES_OAEP_SHA_1',
     'RSAES_OAEP_SHA_256',
-    'SM2PKE'
+    'SM2PKE',
   ];
 
   private static readonly SIGNING_ALGORITHMS = [
     'RSASSA_PSS_SHA_256',
-    'RSASSA_PSS_SHA_384', 
+    'RSASSA_PSS_SHA_384',
     'RSASSA_PSS_SHA_512',
     'RSASSA_PKCS1_V1_5_SHA_256',
     'RSASSA_PKCS1_V1_5_SHA_384',
@@ -41,7 +41,7 @@ export class AWSCLIParameterValidator {
     'ECDSA_SHA_256',
     'ECDSA_SHA_384',
     'ECDSA_SHA_512',
-    'SM2DSA'
+    'SM2DSA',
   ];
 
   /**
@@ -49,11 +49,11 @@ export class AWSCLIParameterValidator {
    */
   static validateKeyId(keyId: string): KeyIdValidationResult {
     if (!keyId || typeof keyId !== 'string' || keyId.trim() === '') {
-      return { 
-        valid: false, 
-        type: 'uuid', 
+      return {
+        valid: false,
+        type: 'uuid',
         error: 'Key ID cannot be empty',
-        keyIdentifier: ''
+        keyIdentifier: '',
       };
     }
 
@@ -63,13 +63,13 @@ export class AWSCLIParameterValidator {
     if (this.KEY_ID_PATTERNS.ARN.test(trimmed)) {
       const arnParts = trimmed.split(':');
       const _resourcePart = arnParts[5];
-      
+
       return {
         valid: true,
         type: 'arn',
         region: arnParts[3],
         accountId: arnParts[4],
-        keyIdentifier: trimmed
+        keyIdentifier: trimmed,
       };
     }
 
@@ -78,7 +78,7 @@ export class AWSCLIParameterValidator {
       return {
         valid: true,
         type: 'alias',
-        keyIdentifier: trimmed
+        keyIdentifier: trimmed,
       };
     }
 
@@ -87,22 +87,25 @@ export class AWSCLIParameterValidator {
       return {
         valid: true,
         type: 'uuid',
-        keyIdentifier: trimmed
+        keyIdentifier: trimmed,
       };
     }
 
     return {
       valid: false,
       type: 'uuid',
-      error: 'Key ID must be a valid UUID, alias (alias/name), or ARN (arn:aws:kms:region:account:key/id)',
-      keyIdentifier: trimmed
+      error:
+        'Key ID must be a valid UUID, alias (alias/name), or ARN (arn:aws:kms:region:account:key/id)',
+      keyIdentifier: trimmed,
     };
   }
 
   /**
    * Validates encryption context according to AWS KMS limits and security best practices
    */
-  static validateEncryptionContext(context?: Record<string, string>): ValidationResult {
+  static validateEncryptionContext(
+    context?: Record<string, string>
+  ): ValidationResult {
     if (!context) return { valid: true };
 
     // Check context size limits
@@ -110,7 +113,7 @@ export class AWSCLIParameterValidator {
     if (contextEntries.length > 64) {
       return {
         valid: false,
-        error: 'Encryption context cannot contain more than 64 key-value pairs'
+        error: 'Encryption context cannot contain more than 64 key-value pairs',
       };
     }
 
@@ -125,7 +128,7 @@ export class AWSCLIParameterValidator {
       /credit.*card/i,
       /card.*number/i,
       /api.*key/i,
-      /access.*key/i
+      /access.*key/i,
     ];
 
     for (const [key, value] of contextEntries) {
@@ -133,7 +136,7 @@ export class AWSCLIParameterValidator {
       if (key.length > 256) {
         return {
           valid: false,
-          error: `Encryption context key '${key}' exceeds 256 characters`
+          error: `Encryption context key '${key}' exceeds 256 characters`,
         };
       }
 
@@ -141,7 +144,7 @@ export class AWSCLIParameterValidator {
       if (value.length > 256) {
         return {
           valid: false,
-          error: `Encryption context value for key '${key}' exceeds 256 characters`
+          error: `Encryption context value for key '${key}' exceeds 256 characters`,
         };
       }
 
@@ -150,13 +153,13 @@ export class AWSCLIParameterValidator {
         if (pattern.test(key)) {
           return {
             valid: false,
-            error: `Encryption context key '${key}' appears to contain sensitive data. Encryption context is not encrypted and should not contain sensitive information.`
+            error: `Encryption context key '${key}' appears to contain sensitive data. Encryption context is not encrypted and should not contain sensitive information.`,
           };
         }
         if (pattern.test(value)) {
           return {
             valid: false,
-            error: `Encryption context value for key '${key}' appears to contain sensitive data. Encryption context is not encrypted and should not contain sensitive information.`
+            error: `Encryption context value for key '${key}' appears to contain sensitive data. Encryption context is not encrypted and should not contain sensitive information.`,
           };
         }
       }
@@ -165,17 +168,17 @@ export class AWSCLIParameterValidator {
       // AWS KMS supports UTF-8 encoded strings, so we allow Unicode characters
       // but exclude control characters and other non-printable characters
       const hasControlChars = (str: string) => /[\x00-\x1F\x7F-\x9F]/.test(str);
-      
+
       if (hasControlChars(key)) {
         return {
           valid: false,
-          error: `Encryption context key '${key}' contains control characters`
+          error: `Encryption context key '${key}' contains control characters`,
         };
       }
       if (hasControlChars(value)) {
         return {
           valid: false,
-          error: `Encryption context value for key '${key}' contains control characters`
+          error: `Encryption context value for key '${key}' contains control characters`,
         };
       }
     }
@@ -192,7 +195,7 @@ export class AWSCLIParameterValidator {
     if (!this.ENCRYPTION_ALGORITHMS.includes(algorithm)) {
       return {
         valid: false,
-        error: `Invalid encryption algorithm '${algorithm}'. Valid algorithms: ${this.ENCRYPTION_ALGORITHMS.join(', ')}`
+        error: `Invalid encryption algorithm '${algorithm}'. Valid algorithms: ${this.ENCRYPTION_ALGORITHMS.join(', ')}`,
       };
     }
 
@@ -208,7 +211,7 @@ export class AWSCLIParameterValidator {
     if (!this.SIGNING_ALGORITHMS.includes(algorithm)) {
       return {
         valid: false,
-        error: `Invalid signing algorithm '${algorithm}'. Valid algorithms: ${this.SIGNING_ALGORITHMS.join(', ')}`
+        error: `Invalid signing algorithm '${algorithm}'. Valid algorithms: ${this.SIGNING_ALGORITHMS.join(', ')}`,
       };
     }
 
@@ -218,9 +221,12 @@ export class AWSCLIParameterValidator {
   /**
    * Validates plaintext size limits
    */
-  static validatePlaintextSize(plaintext: string | Uint8Array, operation: 'encrypt' | 'sign' = 'encrypt'): ValidationResult {
+  static validatePlaintextSize(
+    plaintext: string | Uint8Array,
+    operation: 'encrypt' | 'sign' = 'encrypt'
+  ): ValidationResult {
     let size: number;
-    
+
     if (typeof plaintext === 'string') {
       size = new TextEncoder().encode(plaintext).length;
     } else {
@@ -232,14 +238,14 @@ export class AWSCLIParameterValidator {
     if (size > maxSize) {
       return {
         valid: false,
-        error: `Plaintext size (${size} bytes) exceeds maximum allowed size (${maxSize} bytes) for ${operation} operation. Consider using envelope encryption for larger data.`
+        error: `Plaintext size (${size} bytes) exceeds maximum allowed size (${maxSize} bytes) for ${operation} operation. Consider using envelope encryption for larger data.`,
       };
     }
 
     if (size === 0) {
       return {
         valid: false,
-        error: 'Plaintext cannot be empty'
+        error: 'Plaintext cannot be empty',
       };
     }
 
@@ -255,7 +261,7 @@ export class AWSCLIParameterValidator {
     if (grantTokens.length > 10) {
       return {
         valid: false,
-        error: 'Cannot specify more than 10 grant tokens'
+        error: 'Cannot specify more than 10 grant tokens',
       };
     }
 
@@ -263,14 +269,14 @@ export class AWSCLIParameterValidator {
       if (!token || token.length === 0) {
         return {
           valid: false,
-          error: 'Grant tokens cannot be empty'
+          error: 'Grant tokens cannot be empty',
         };
       }
 
       if (token.length > 8192) {
         return {
           valid: false,
-          error: 'Grant token cannot exceed 8192 characters'
+          error: 'Grant token cannot exceed 8192 characters',
         };
       }
     }
@@ -287,23 +293,23 @@ export class AWSCLIParameterValidator {
     const validKeySpecs = [
       'SYMMETRIC_DEFAULT',
       'RSA_2048',
-      'RSA_3072', 
+      'RSA_3072',
       'RSA_4096',
       'ECC_NIST_P256',
       'ECC_NIST_P384',
       'ECC_NIST_P521',
       'ECC_SECG_P256K1',
       'HMAC_224',
-      'HMAC_256', 
+      'HMAC_256',
       'HMAC_384',
       'HMAC_512',
-      'SM2'
+      'SM2',
     ];
 
     if (!validKeySpecs.includes(keySpec)) {
       return {
         valid: false,
-        error: `Invalid key spec '${keySpec}'. Valid key specs: ${validKeySpecs.join(', ')}`
+        error: `Invalid key spec '${keySpec}'. Valid key specs: ${validKeySpecs.join(', ')}`,
       };
     }
 
@@ -320,13 +326,13 @@ export class AWSCLIParameterValidator {
       'ENCRYPT_DECRYPT',
       'SIGN_VERIFY',
       'GENERATE_VERIFY_MAC',
-      'KEY_AGREEMENT'
+      'KEY_AGREEMENT',
     ];
 
     if (!validKeyUsages.includes(keyUsage)) {
       return {
         valid: false,
-        error: `Invalid key usage '${keyUsage}'. Valid key usages: ${validKeyUsages.join(', ')}`
+        error: `Invalid key usage '${keyUsage}'. Valid key usages: ${validKeyUsages.join(', ')}`,
       };
     }
 
@@ -350,19 +356,26 @@ export class AWSCLIParameterValidator {
     }
 
     // Validate plaintext size
-    const plaintextValidation = this.validatePlaintextSize(params.plaintext, 'encrypt');
+    const plaintextValidation = this.validatePlaintextSize(
+      params.plaintext,
+      'encrypt'
+    );
     if (!plaintextValidation.valid) {
       return plaintextValidation;
     }
 
     // Validate encryption context
-    const contextValidation = this.validateEncryptionContext(params.encryptionContext);
+    const contextValidation = this.validateEncryptionContext(
+      params.encryptionContext
+    );
     if (!contextValidation.valid) {
       return contextValidation;
     }
 
     // Validate encryption algorithm
-    const algorithmValidation = this.validateEncryptionAlgorithm(params.encryptionAlgorithm);
+    const algorithmValidation = this.validateEncryptionAlgorithm(
+      params.encryptionAlgorithm
+    );
     if (!algorithmValidation.valid) {
       return algorithmValidation;
     }
@@ -390,7 +403,7 @@ export class AWSCLIParameterValidator {
     if (!params.ciphertextBlob) {
       return {
         valid: false,
-        error: 'Ciphertext blob cannot be empty'
+        error: 'Ciphertext blob cannot be empty',
       };
     }
 
@@ -401,10 +414,11 @@ export class AWSCLIParameterValidator {
       ciphertextSize = params.ciphertextBlob.length;
     }
 
-    if (ciphertextSize > 6144) { // 6KB limit for ciphertext
+    if (ciphertextSize > 6144) {
+      // 6KB limit for ciphertext
       return {
         valid: false,
-        error: `Ciphertext blob size (${ciphertextSize} bytes) exceeds maximum allowed size (6144 bytes)`
+        error: `Ciphertext blob size (${ciphertextSize} bytes) exceeds maximum allowed size (6144 bytes)`,
       };
     }
 
@@ -417,13 +431,17 @@ export class AWSCLIParameterValidator {
     }
 
     // Validate encryption context
-    const contextValidation = this.validateEncryptionContext(params.encryptionContext);
+    const contextValidation = this.validateEncryptionContext(
+      params.encryptionContext
+    );
     if (!contextValidation.valid) {
       return contextValidation;
     }
 
     // Validate encryption algorithm
-    const algorithmValidation = this.validateEncryptionAlgorithm(params.encryptionAlgorithm);
+    const algorithmValidation = this.validateEncryptionAlgorithm(
+      params.encryptionAlgorithm
+    );
     if (!algorithmValidation.valid) {
       return algorithmValidation;
     }

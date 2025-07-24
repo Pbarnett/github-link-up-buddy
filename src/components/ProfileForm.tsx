@@ -1,11 +1,17 @@
 type FormEvent = React.FormEvent;
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useProfile } from "@/hooks/useProfile";
-import { useProfileKMS } from "@/hooks/useProfileKMS";
 import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { useProfile } from '@/hooks/useProfile';
+import { useProfileKMS } from '@/hooks/useProfileKMS';
 interface ProfileFormProps {
   useKMS?: boolean;
 }
@@ -13,26 +19,34 @@ interface ProfileFormProps {
 export function ProfileForm({ useKMS = false }: ProfileFormProps = {}) {
   const legacyProfile = useProfile();
   const kmsProfile = useProfileKMS();
-  
+
   // Choose which profile service to use
-  const { profile, isLoading, updateProfile, isUpdating, error: _error } = useKMS ? kmsProfile : legacyProfile;
+  const {
+    profile,
+    isLoading,
+    updateProfile,
+    isUpdating,
+    error: _error,
+  } = useKMS ? kmsProfile : legacyProfile;
   const [encryptionEnabled] = reactUseState(useKMS);
-  
-  console.log(`ProfileForm: Using ${useKMS ? 'KMS-encrypted' : 'legacy'} profile service`);
-  
+
+  console.log(
+    `ProfileForm: Using ${useKMS ? 'KMS-encrypted' : 'legacy'} profile service`
+  );
+
   const [formData, setFormData] = useState({
-    first_name: profile?.first_name || "",
-    last_name: profile?.last_name || "",
-    phone: profile?.phone || "",
+    first_name: profile?.first_name || '',
+    last_name: profile?.last_name || '',
+    phone: profile?.phone || '',
   });
 
   // Update form data when profile loads
   useEffect(() => {
     if (profile) {
       setFormData({
-        first_name: profile.first_name || "",
-        last_name: profile.last_name || "",
-        phone: profile.phone || "",
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        phone: profile.phone || '',
       });
     }
   }, [profile]);
@@ -68,10 +82,12 @@ export function ProfileForm({ useKMS = false }: ProfileFormProps = {}) {
           )}
         </CardTitle>
         <CardDescription>
-          Manage your personal information. Your phone number is required for SMS notifications about your flight bookings.
+          Manage your personal information. Your phone number is required for
+          SMS notifications about your flight bookings.
           {encryptionEnabled && (
             <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
-              <strong>🔐 Enhanced Security:</strong> Your sensitive data is encrypted using AWS KMS.
+              <strong>🔐 Enhanced Security:</strong> Your sensitive data is
+              encrypted using AWS KMS.
             </div>
           )}
         </CardDescription>
@@ -85,7 +101,12 @@ export function ProfileForm({ useKMS = false }: ProfileFormProps = {}) {
                 id="first_name"
                 type="text"
                 value={formData.first_name}
-                onChange={(e) => handleChange("first_name", (e.target as HTMLInputElement).value)}
+                onChange={e =>
+                  handleChange(
+                    'first_name',
+                    (e.target as HTMLInputElement).value
+                  )
+                }
                 placeholder="Enter your first name"
               />
             </div>
@@ -95,32 +116,40 @@ export function ProfileForm({ useKMS = false }: ProfileFormProps = {}) {
                 id="last_name"
                 type="text"
                 value={formData.last_name}
-                onChange={(e) => handleChange("last_name", (e.target as HTMLInputElement).value)}
+                onChange={e =>
+                  handleChange(
+                    'last_name',
+                    (e.target as HTMLInputElement).value
+                  )
+                }
                 placeholder="Enter your last name"
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="phone">Phone Number</Label>
             <Input
               id="phone"
               type="tel"
               value={formData.phone}
-              onChange={(e) => handleChange("phone", (e.target as HTMLInputElement).value)}
+              onChange={e =>
+                handleChange('phone', (e.target as HTMLInputElement).value)
+              }
               placeholder="Enter your phone number (e.g., +1234567890)"
             />
             <p className="text-sm text-muted-foreground">
-              Include country code (e.g., +1 for US). Required for SMS flight reminders.
+              Include country code (e.g., +1 for US). Required for SMS flight
+              reminders.
             </p>
           </div>
 
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={isUpdating}
             className="w-full md:w-auto"
           >
-            {isUpdating ? "Updating..." : "Update Profile"}
+            {isUpdating ? 'Updating...' : 'Update Profile'}
           </Button>
         </form>
       </CardContent>

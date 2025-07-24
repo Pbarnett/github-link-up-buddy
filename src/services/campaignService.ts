@@ -1,6 +1,11 @@
-import { supabase } from "@/integrations/supabase/client";
-import { Campaign, CampaignFormData, CreateCampaignRequest, UpdateCampaignRequest } from "@/types/campaign";
-import { Tables } from "@/integrations/supabase/types";
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Campaign,
+  CampaignFormData,
+  CreateCampaignRequest,
+  UpdateCampaignRequest,
+} from '@/types/campaign';
+import { Tables } from '@/integrations/supabase/types';
 
 type AutoBookingRequestRow = Tables<'auto_booking_requests'>;
 
@@ -19,10 +24,13 @@ class CampaignService {
     return this.mapToCampaigns(data || []);
   }
 
-  async createCampaign(formData: CampaignFormData, userId: string): Promise<Campaign> {
+  async createCampaign(
+    formData: CampaignFormData,
+    userId: string
+  ): Promise<Campaign> {
     // First, create a trip request
     const tripRequest = await this.createTripRequest(formData, userId);
-    
+
     // Then create the auto-booking request
     const campaignData: CreateCampaignRequest = {
       trip_request_id: tripRequest.id,
@@ -39,7 +47,7 @@ class CampaignService {
         cabin_class: formData.cabinClass,
         traveler_profile_id: formData.travelerProfileId,
         payment_method_id: formData.paymentMethodId,
-      }
+      },
     };
 
     const { data, error } = await supabase
@@ -55,7 +63,10 @@ class CampaignService {
     return this.mapToCampaign(data);
   }
 
-  async updateCampaign(id: string, updates: UpdateCampaignRequest): Promise<Campaign> {
+  async updateCampaign(
+    id: string,
+    updates: UpdateCampaignRequest
+  ): Promise<Campaign> {
     const { data, error } = await supabase
       .from('auto_booking_requests')
       .update(updates as any)
@@ -97,9 +108,13 @@ class CampaignService {
       destination_location_code: formData.destination,
       departure_airports: formData.departureAirports || [],
       earliest_departure: new Date().toISOString(),
-      latest_departure: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
+      latest_departure: new Date(
+        Date.now() + 365 * 24 * 60 * 60 * 1000
+      ).toISOString(), // 1 year from now
       departure_date: new Date().toISOString().split('T')[0],
-      return_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 week from now
+      return_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0], // 1 week from now
       min_duration: formData.minDuration || 3,
       max_duration: formData.maxDuration || 14,
       budget: formData.maxPrice,
@@ -133,7 +148,8 @@ class CampaignService {
       trip_request_id: row.trip_request_id,
       status: row.status as Campaign['status'],
       criteria: row.criteria as any as Campaign['criteria'], // Type assertion since it's stored as JSONB
-      price_history: (row.price_history as any as Campaign['price_history']) || [],
+      price_history:
+        (row.price_history as any as Campaign['price_history']) || [],
       latest_booking_request_id: row.latest_booking_request_id || undefined,
       created_at: row.created_at || '',
       updated_at: row.updated_at || '',

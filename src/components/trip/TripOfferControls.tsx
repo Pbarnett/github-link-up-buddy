@@ -1,10 +1,8 @@
-
-
 type FC<T = {}> = React.FC<T>;
 
-import { Button } from "@/components/ui/button";
-import { Offer } from "@/services/tripOffersService"; // Assuming Offer type is needed for offers.length
 import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import { Offer } from '@/services/tripOffersService'; // Assuming Offer type is needed for offers.length
 
 interface TripOfferControlsProps {
   onRefreshOffers: () => void;
@@ -61,7 +59,7 @@ const TripOfferControls: FC<TripOfferControlsProps> = ({
           <div className="flex items-center space-x-2 mt-2 sm:mt-0">
             <span className="text-gray-300 text-base hidden sm:inline">•</span>
             <span className="text-sm text-gray-700">
-              {offers.length} flight offer{offers.length !== 1 ? "s" : ""} found
+              {offers.length} flight offer{offers.length !== 1 ? 's' : ''} found
             </span>
           </div>
         )}
@@ -92,7 +90,7 @@ const TripOfferControls: FC<TripOfferControlsProps> = ({
             onClick={onRefreshOffers}
             disabled={isRefreshing || isLoading}
           >
-            {isRefreshing ? "Refreshing..." : "Refresh Offers"}
+            {isRefreshing ? 'Refreshing...' : 'Refresh Offers'}
           </Button>
         </div>
       )}

@@ -1,10 +1,10 @@
 import { initialize, LDClient, LDContext } from 'launchdarkly-js-client-sdk';
-import { 
-  LaunchDarklyConfig, 
-  LaunchDarklyMetrics, 
-  LaunchDarklyServiceState, 
+import {
+  LaunchDarklyConfig,
+  LaunchDarklyMetrics,
+  LaunchDarklyServiceState,
   RetryResult,
-  DEFAULT_LAUNCHDARKLY_CONFIG 
+  DEFAULT_LAUNCHDARKLY_CONFIG,
 } from '../../types/launchDarkly';
 
 // Import metrics for monitoring (only in browser environment)
@@ -39,9 +39,13 @@ class LaunchDarklyService {
     };
   }
 
-  private async withRetry<T>(operation: () => Promise<T>, operationName: string): Promise<RetryResult<T>> {
-    const { maxRetries, backoffMultiplier, initialDelay, maxDelay } = this.state.config.retryConfig;
-    
+  private async withRetry<T>(
+    operation: () => Promise<T>,
+    operationName: string
+  ): Promise<RetryResult<T>> {
+    const { maxRetries, backoffMultiplier, initialDelay, maxDelay } =
+      this.state.config.retryConfig;
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const result = await operation();
@@ -49,19 +53,32 @@ class LaunchDarklyService {
         return { success: true, data: result, attempts: attempt };
       } catch (error) {
         this.recordFailure();
-        
+
         if (attempt === maxRetries) {
-          console.error(`${operationName} failed after ${maxRetries} attempts:`, error);
+          console.error(
+            `${operationName} failed after ${maxRetries} attempts:`,
+            error
+          );
           return { success: false, error: error as Error, attempts: attempt };
         }
-        
-        const delay = Math.min(initialDelay * Math.pow(backoffMultiplier, attempt - 1), maxDelay);
-        console.warn(`${operationName} attempt ${attempt} failed, retrying in ${delay}ms:`, error);
+
+        const delay = Math.min(
+          initialDelay * Math.pow(backoffMultiplier, attempt - 1),
+          maxDelay
+        );
+        console.warn(
+          `${operationName} attempt ${attempt} failed, retrying in ${delay}ms:`,
+          error
+        );
         await this.sleep(delay);
       }
     }
-    
-    return { success: false, error: new Error('Maximum retries exceeded'), attempts: maxRetries };
+
+    return {
+      success: false,
+      error: new Error('Maximum retries exceeded'),
+      attempts: maxRetries,
+    };
   }
 
   private sleep(ms: number): Promise<void> {
@@ -71,7 +88,7 @@ class LaunchDarklyService {
   private recordSuccess(): void {
     this.state.metrics.successCount++;
     this.state.metrics.lastSuccessTime = Date.now();
-    
+
     // Reset circuit breaker if it was open
     if (this.state.metrics.isCircuitBreakerOpen) {
       this.state.metrics.isCircuitBreakerOpen = false;
@@ -83,10 +100,13 @@ class LaunchDarklyService {
   private recordFailure(): void {
     this.state.metrics.failureCount++;
     this.state.metrics.lastErrorTime = Date.now();
-    
+
     // Check if circuit breaker should be opened
-    if (this.state.config.resilience.circuitBreakerEnabled && 
-        this.state.metrics.failureCount >= this.state.config.resilience.circuitBreakerThreshold) {
+    if (
+      this.state.config.resilience.circuitBreakerEnabled &&
+      this.state.metrics.failureCount >=
+        this.state.config.resilience.circuitBreakerThreshold
+    ) {
       this.state.metrics.isCircuitBreakerOpen = true;
       this.circuitBreakerOpenTime = Date.now();
       console.warn('Circuit breaker opened due to excessive failures');
@@ -94,29 +114,42 @@ class LaunchDarklyService {
   }
 
   private isCircuitBreakerOpen(): boolean {
-    if (!this.state.config.resilience.circuitBreakerEnabled || !this.state.metrics.isCircuitBreakerOpen) {
+    if (
+      !this.state.config.resilience.circuitBreakerEnabled ||
+      !this.state.metrics.isCircuitBreakerOpen
+    ) {
       return false;
     }
-    
+
     if (this.circuitBreakerOpenTime) {
       const timeSinceOpen = Date.now() - this.circuitBreakerOpenTime;
-      if (timeSinceOpen > this.state.config.resilience.circuitBreakerResetTimeout) {
+      if (
+        timeSinceOpen > this.state.config.resilience.circuitBreakerResetTimeout
+      ) {
         this.state.metrics.isCircuitBreakerOpen = false;
         this.circuitBreakerOpenTime = null;
         console.log('Circuit breaker automatically reset after timeout');
         return false;
       }
     }
-    
+
     return true;
   }
 
-  private withTimeout<T>(promise: Promise<T>, timeoutMs: number, operationName: string): Promise<T> {
+  private withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    operationName: string
+  ): Promise<T> {
     return Promise.race([
       promise,
-      new Promise<T>((_, reject) => 
-        setTimeout(() => reject(new Error(`${operationName} timeout after ${timeoutMs}ms`)), timeoutMs)
-      )
+      new Promise<T>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(new Error(`${operationName} timeout after ${timeoutMs}ms`)),
+          timeoutMs
+        )
+      ),
     ]);
   }
 
@@ -131,13 +164,18 @@ class LaunchDarklyService {
     }
 
     // Check if resilience features are enabled
-    const resilienceEnabled = this._variationRaw('enhanced_launchdarkly_resilience', false);
+    const resilienceEnabled = this._variationRaw(
+      'enhanced_launchdarkly_resilience',
+      false
+    );
     if (!resilienceEnabled) {
       return this.initializeClientLegacy(context);
     }
 
     if (this.isCircuitBreakerOpen()) {
-      console.warn('Circuit breaker is open, skipping LaunchDarkly initialization');
+      console.warn(
+        'Circuit breaker is open, skipping LaunchDarkly initialization'
+      );
       this.state.isOffline = true;
       return;
     }
@@ -148,7 +186,9 @@ class LaunchDarklyService {
     try {
       const clientSideId = import.meta.env.VITE_LD_CLIENT_ID;
       if (!clientSideId) {
-        throw new Error('LaunchDarkly client ID not found in environment variables');
+        throw new Error(
+          'LaunchDarkly client ID not found in environment variables'
+        );
       }
 
       const initResult = await this.withRetry(async () => {
@@ -166,7 +206,9 @@ class LaunchDarklyService {
         this.state.isInitialized = true;
         this.state.isOffline = false;
         this.state.metrics.initializationTime = performance.now() - startTime;
-        console.log(`LaunchDarkly client initialized successfully in ${this.state.metrics.initializationTime}ms`);
+        console.log(
+          `LaunchDarkly client initialized successfully in ${this.state.metrics.initializationTime}ms`
+        );
       } else {
         this.handleInitializationFailure(initResult.error);
       }
@@ -181,7 +223,9 @@ class LaunchDarklyService {
     try {
       const clientSideId = import.meta.env.VITE_LD_CLIENT_ID;
       if (!clientSideId) {
-        console.error('LaunchDarkly client ID not found in environment variables');
+        console.error(
+          'LaunchDarkly client ID not found in environment variables'
+        );
         return;
       }
 
@@ -190,7 +234,10 @@ class LaunchDarklyService {
       this.state.isInitialized = true;
       console.log('LaunchDarkly client initialized successfully (legacy mode)');
     } catch (error) {
-      console.error('Failed to initialize LaunchDarkly client (legacy mode):', error);
+      console.error(
+        'Failed to initialize LaunchDarkly client (legacy mode):',
+        error
+      );
       this.state.isInitialized = false;
     }
   }
@@ -200,14 +247,17 @@ class LaunchDarklyService {
     this.state.isInitialized = false;
     this.state.isOffline = true;
     this.state.lastError = error;
-    
+
     if (this.state.config.offlineMode.enabled) {
       console.log('Falling back to offline mode with default flag values');
     }
   }
 
   isPersonalizationEnabled(defaultValue: boolean = false): boolean {
-    return this.getVariationWithResilience('personalization_greeting', defaultValue);
+    return this.getVariationWithResilience(
+      'personalization_greeting',
+      defaultValue
+    );
   }
 
   shouldShowOptOutBanner(defaultValue: boolean = false): boolean {
@@ -241,14 +291,17 @@ class LaunchDarklyService {
     try {
       return this.client?.variation?.(flagKey, defaultValue) ?? defaultValue;
     } catch (error) {
-      console.error(`Error in raw variation helper for flag ${flagKey}:`, error);
+      console.error(
+        `Error in raw variation helper for flag ${flagKey}:`,
+        error
+      );
       return defaultValue;
     }
   }
 
   private getVariationWithResilience<T>(flagKey: string, defaultValue: T): T {
     const startTime = performance.now();
-    
+
     try {
       // Check if resilience features are enabled
       const resilienceEnabled = this.state.config.resilience.enabled;
@@ -258,29 +311,35 @@ class LaunchDarklyService {
 
       // Check circuit breaker
       if (this.isCircuitBreakerOpen()) {
-        console.warn(`Circuit breaker is open, returning fallback value for flag: ${flagKey}`);
+        console.warn(
+          `Circuit breaker is open, returning fallback value for flag: ${flagKey}`
+        );
         return this.getFallbackValue(flagKey, defaultValue);
       }
 
       // Check if client is available
       if (!this.client || !this.state.isInitialized) {
-        console.warn(`LaunchDarkly client not initialized, returning fallback value for flag: ${flagKey}`);
+        console.warn(
+          `LaunchDarkly client not initialized, returning fallback value for flag: ${flagKey}`
+        );
         return this.getFallbackValue(flagKey, defaultValue);
       }
 
       // Check offline mode
       if (this.state.isOffline) {
-        console.warn(`LaunchDarkly is offline, returning fallback value for flag: ${flagKey}`);
+        console.warn(
+          `LaunchDarkly is offline, returning fallback value for flag: ${flagKey}`
+        );
         return this.getFallbackValue(flagKey, defaultValue);
       }
 
       // Get the variation with timeout
       const variation = this.client.variation(flagKey, defaultValue);
-      
+
       // Record metrics
       this.state.metrics.flagEvaluationTime = performance.now() - startTime;
       this.recordSuccess();
-      
+
       return variation;
     } catch (error) {
       console.error(`Error getting variation for flag ${flagKey}:`, error);
@@ -304,7 +363,8 @@ class LaunchDarklyService {
 
   private getFallbackValue<T>(flagKey: string, defaultValue: T): T {
     if (this.state.config.offlineMode.enabled) {
-      const fallbackValue = this.state.config.offlineMode.fallbackFlags[flagKey];
+      const fallbackValue =
+        this.state.config.offlineMode.fallbackFlags[flagKey];
       if (fallbackValue !== undefined) {
         return fallbackValue as T;
       }
@@ -314,7 +374,9 @@ class LaunchDarklyService {
 
   async updateContext(context: LDContext): Promise<void> {
     if (!this.client || !this.state.isInitialized) {
-      console.warn('LaunchDarkly client not initialized, cannot update context');
+      console.warn(
+        'LaunchDarkly client not initialized, cannot update context'
+      );
       return;
     }
 
@@ -327,7 +389,9 @@ class LaunchDarklyService {
 
   onFlagChange<T>(flagKey: string, callback: (value: T) => void): void {
     if (!this.client || !this.state.isInitialized) {
-      console.warn('LaunchDarkly client not initialized, cannot listen for flag changes');
+      console.warn(
+        'LaunchDarkly client not initialized, cannot listen for flag changes'
+      );
       return;
     }
 
@@ -406,9 +470,15 @@ class LaunchDarklyService {
   }
 
   // Set localStorage override for development
-  setDeveloperOverride(flagKey: string, value: boolean | string | number): void {
+  setDeveloperOverride(
+    flagKey: string,
+    value: boolean | string | number
+  ): void {
     if (typeof window !== 'undefined' && window.localStorage) {
-      localStorage.setItem(`launchDarkly_override_${flagKey}`, JSON.stringify(value));
+      localStorage.setItem(
+        `launchDarkly_override_${flagKey}`,
+        JSON.stringify(value)
+      );
       console.log(`Developer override set for ${flagKey}:`, value);
     }
   }

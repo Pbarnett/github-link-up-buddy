@@ -1,6 +1,6 @@
 /**
  * Secure OAuth Service with AWS Secrets Manager Integration
- * 
+ *
  * Handles OAuth authentication for multiple providers with secure credential management.
  * Supports Google, GitHub, Discord, and other OAuth providers.
  */
@@ -26,7 +26,7 @@ export interface OAuthProvider {
 // Secret naming patterns for OAuth providers
 const OAUTH_SECRET_PATTERNS = {
   google: `${ENVIRONMENT}/oauth/google-credentials`,
-  github: `${ENVIRONMENT}/oauth/github-credentials`, 
+  github: `${ENVIRONMENT}/oauth/github-credentials`,
   discord: `${ENVIRONMENT}/oauth/discord-credentials`,
   microsoft: `${ENVIRONMENT}/oauth/microsoft-credentials`,
   apple: `${ENVIRONMENT}/oauth/apple-credentials`,
@@ -36,13 +36,18 @@ const OAUTH_SECRET_PATTERNS = {
  * Secure OAuth Configuration Manager
  */
 export class OAuthSecureConfig {
-  private static configCache = new Map<string, { config: OAuthProvider; expiry: number }>();
+  private static configCache = new Map<
+    string,
+    { config: OAuthProvider; expiry: number }
+  >();
   private static readonly CACHE_TTL = 10 * 60 * 1000; // 10 minutes for OAuth configs
 
   /**
    * Get OAuth provider configuration securely
    */
-  static async getProviderConfig(provider: keyof typeof OAUTH_SECRET_PATTERNS): Promise<OAuthProvider> {
+  static async getProviderConfig(
+    provider: keyof typeof OAUTH_SECRET_PATTERNS
+  ): Promise<OAuthProvider> {
     const cacheKey = `oauth-${provider}`;
     const cached = this.configCache.get(cacheKey);
 
@@ -59,7 +64,9 @@ export class OAuthSecureConfig {
       );
 
       if (!credentialsJson) {
-        throw new Error(`OAuth credentials not found for provider: ${provider}`);
+        throw new Error(
+          `OAuth credentials not found for provider: ${provider}`
+        );
       }
 
       const credentials = JSON.parse(credentialsJson);
@@ -68,7 +75,7 @@ export class OAuthSecureConfig {
       // Cache the configuration
       this.configCache.set(cacheKey, {
         config,
-        expiry: Date.now() + this.CACHE_TTL
+        expiry: Date.now() + this.CACHE_TTL,
       });
 
       return config;
@@ -131,8 +138,10 @@ export class OAuthSecureConfig {
           clientSecret: credentials.client_secret,
           redirectUri: `${baseRedirectUri}/microsoft`,
           scopes: ['openid', 'profile', 'email'],
-          authUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
-          tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+          authUrl:
+            'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+          tokenUrl:
+            'https://login.microsoftonline.com/common/oauth2/v2.0/token',
           userInfoUrl: 'https://graph.microsoft.com/v1.0/me',
         };
 
@@ -175,10 +184,10 @@ export class OAuthServiceSecure {
   }> {
     try {
       const config = await OAuthSecureConfig.getProviderConfig(provider);
-      
+
       // Generate secure state parameter
       const secureState = state || this.generateSecureState();
-      
+
       // Generate PKCE code verifier and challenge for enhanced security
       const { codeVerifier, codeChallenge } = await this.generatePKCE();
 
@@ -205,7 +214,10 @@ export class OAuthServiceSecure {
         codeVerifier,
       };
     } catch (error) {
-      console.error(`Failed to generate authorization URL for ${provider}:`, error);
+      console.error(
+        `Failed to generate authorization URL for ${provider}:`,
+        error
+      );
       throw error;
     }
   }
@@ -244,20 +256,24 @@ export class OAuthServiceSecure {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         body: tokenParams.toString(),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Token exchange failed: ${response.status} - ${errorText}`);
+        throw new Error(
+          `Token exchange failed: ${response.status} - ${errorText}`
+        );
       }
 
       const tokenData = await response.json();
 
       if (tokenData.error) {
-        throw new Error(`OAuth error: ${tokenData.error_description || tokenData.error}`);
+        throw new Error(
+          `OAuth error: ${tokenData.error_description || tokenData.error}`
+        );
       }
 
       return {
@@ -290,8 +306,8 @@ export class OAuthServiceSecure {
 
       const response = await fetch(config.userInfoUrl, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/json',
         },
       });
 
@@ -327,7 +343,7 @@ export class OAuthServiceSecure {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         body: new URLSearchParams({
           client_id: config.clientId,
@@ -430,7 +446,7 @@ export class OAuthServiceSecure {
           id: userData.id,
           email: userData.email,
           name: userData.username,
-          avatar: userData.avatar 
+          avatar: userData.avatar
             ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
             : undefined,
           provider: 'discord',
@@ -446,7 +462,9 @@ export class OAuthServiceSecure {
         };
 
       default:
-        throw new Error(`Unsupported provider for user data mapping: ${provider}`);
+        throw new Error(
+          `Unsupported provider for user data mapping: ${provider}`
+        );
     }
   }
 }
@@ -467,7 +485,7 @@ export const OAuthUtils = {
    */
   isTokenExpired: (expiresIn: number, issuedAt: number): boolean => {
     const now = Math.floor(Date.now() / 1000);
-    return now >= (issuedAt + expiresIn);
+    return now >= issuedAt + expiresIn;
   },
 
   /**

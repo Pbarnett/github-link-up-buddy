@@ -1,13 +1,9 @@
-
-
 /**
  * Network Status Hook
  * Monitors online/offline state and connection quality
  */
 
-
 import { trackEvent } from '@/utils/monitoring';
-import * as React from 'react';
 
 interface NetworkStatus {
   isOnline: boolean;
@@ -27,7 +23,7 @@ export const useNetworkStatus = (): NetworkStatus => {
   useEffect(() => {
     const updateOnlineStatus = () => {
       const isOnline = navigator.onLine;
-      
+
       setNetworkStatus(prev => ({
         ...prev,
         isOnline,
@@ -43,7 +39,7 @@ export const useNetworkStatus = (): NetworkStatus => {
 
     const updateConnectionType = () => {
       const connection = getConnectionInfo();
-      const isSlowConnection = connection?.effectiveType 
+      const isSlowConnection = connection?.effectiveType
         ? ['slow-2g', '2g'].includes(connection.effectiveType)
         : false;
 
@@ -70,7 +66,7 @@ export const useNetworkStatus = (): NetworkStatus => {
     return () => {
       window.removeEventListener('online', updateOnlineStatus);
       window.removeEventListener('offline', updateOnlineStatus);
-      
+
       if (connection && connection.removeEventListener) {
         connection.removeEventListener('change', updateConnectionType);
       }
@@ -100,13 +96,13 @@ const getConnectionInfo = (): ConnectionInfo | undefined => {
 // Helper to determine connection type
 const getConnectionType = (): NetworkStatus['connectionType'] => {
   const connection = getConnectionInfo();
-  
+
   if (!connection) return 'unknown';
-  
+
   // Map connection types
   if (connection.type === 'wifi') return 'wifi';
   if (connection.type === 'cellular') return 'cellular';
   if (connection.type === 'ethernet') return 'ethernet';
-  
+
   return 'unknown';
 };

@@ -1,4 +1,3 @@
-
 import { LDFlagValue } from 'launchdarkly-js-client-sdk';
 import * as React from 'react';
 
@@ -16,7 +15,7 @@ export class DevFlagOverrides {
    */
   static getOverrides(): FlagOverrides {
     if (!import.meta.env.DEV) return {};
-    
+
     try {
       const stored = localStorage.getItem(OVERRIDE_KEY);
       return stored ? JSON.parse(stored) : {};
@@ -39,14 +38,16 @@ export class DevFlagOverrides {
       const overrides = this.getOverrides();
       overrides[flagKey] = value;
       localStorage.setItem(OVERRIDE_KEY, JSON.stringify(overrides));
-      
+
       // Dispatch storage event for cross-tab updates
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: OVERRIDE_KEY,
-        newValue: JSON.stringify(overrides),
-        oldValue: localStorage.getItem(OVERRIDE_KEY)
-      }));
-      
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: OVERRIDE_KEY,
+          newValue: JSON.stringify(overrides),
+          oldValue: localStorage.getItem(OVERRIDE_KEY),
+        })
+      );
+
       console.log(`🚩 Override set: ${flagKey} = ${value}`);
     } catch (error) {
       console.error('Failed to set flag override:', error);
@@ -63,7 +64,7 @@ export class DevFlagOverrides {
       const overrides = this.getOverrides();
       delete overrides[flagKey];
       localStorage.setItem(OVERRIDE_KEY, JSON.stringify(overrides));
-      
+
       console.log(`🚩 Override removed: ${flagKey}`);
     } catch (error) {
       console.error('Failed to remove flag override:', error);
@@ -92,7 +93,7 @@ export class DevFlagOverrides {
 
     const overrides = this.getOverrides();
     const entries = Object.entries(overrides);
-    
+
     if (entries.length === 0) {
       console.log('🚩 No active flag overrides');
       return;
@@ -146,7 +147,10 @@ export function useDevFlags(): Record<string, LDFlagValue> {
 /**
  | * Hook that wraps flag evaluation with localStorage overrides
  | */
-export function useDevFlag<T extends LDFlagValue>(flagKey: string, defaultValue?: T): T {
+export function useDevFlag<T extends LDFlagValue>(
+  flagKey: string,
+  defaultValue?: T
+): T {
   const ldClient = useLDClient();
   const [override, setOverride] = useState<T | null>(null);
   const [ldValue, setLdValue] = useState<T | undefined>(defaultValue);
@@ -191,7 +195,7 @@ export function useDevFlag<T extends LDFlagValue>(flagKey: string, defaultValue?
     return override;
   }
 
-  return ldValue ?? defaultValue as T;
+  return ldValue ?? (defaultValue as T);
 }
 
 /**
@@ -222,11 +226,11 @@ export function DevFlagOverrideStatus() {
   if (!import.meta.env.DEV) return null;
 
   const overrideEntries = Object.entries(overrides);
-  
+
   if (overrideEntries.length === 0) return null;
 
   return (
-    <div 
+    <div
       style={{
         position: 'fixed',
         bottom: '20px',
@@ -239,7 +243,7 @@ export function DevFlagOverrideStatus() {
         fontFamily: 'monospace',
         zIndex: 9999,
         border: '1px solid #ffd700',
-        maxWidth: '300px'
+        maxWidth: '300px',
       }}
     >
       <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
@@ -259,7 +263,7 @@ export function DevFlagOverrideStatus() {
           padding: '4px 8px',
           fontSize: '10px',
           cursor: 'pointer',
-          marginTop: '8px'
+          marginTop: '8px',
         }}
       >
         Clear All
@@ -275,7 +279,7 @@ if (import.meta.env.DEV) {
     set: DevFlagOverrides.setOverride,
     remove: DevFlagOverrides.removeOverride,
     clear: DevFlagOverrides.clearAllOverrides,
-    list: DevFlagOverrides.listOverrides
+    list: DevFlagOverrides.listOverrides,
   };
 
   // Log available commands

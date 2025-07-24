@@ -1,14 +1,14 @@
-
-
 /**
  * @file Hook for managing Duffel flight search state
  * Battle-tested pattern following existing useTripOffers approach
  */
 
-
-import { fetchDuffelFlights, DuffelSearchResponse } from '@/services/api/duffelSearchApi';
-import logger from '@/lib/logger';
 import * as React from 'react';
+import {
+  fetchDuffelFlights,
+  DuffelSearchResponse,
+} from '@/services/api/duffelSearchApi';
+import logger from '@/lib/logger';
 
 export interface DuffelSearchOptions {
   maxPrice?: number;
@@ -39,17 +39,17 @@ export interface UseDuffelFlightsReturn {
   // Data
   offers: DuffelFlightOffer[];
   searchResponse: DuffelSearchResponse | null;
-  
+
   // State
   isLoading: boolean;
   isSearching: boolean;
   error: string | null;
-  
+
   // Actions
   searchFlights: (options?: DuffelSearchOptions) => Promise<void>;
   clearResults: () => void;
   retry: () => void;
-  
+
   // Metadata
   lastSearchTime: Date | null;
   offersCount: number;
@@ -66,12 +66,14 @@ export const useDuffelFlights = (
 ): UseDuffelFlightsReturn => {
   // State
   const [offers, setOffers] = useState<DuffelFlightOffer[]>([]);
-  const [searchResponse, setSearchResponse] = useState<DuffelSearchResponse | null>(null);
+  const [searchResponse, setSearchResponse] =
+    useState<DuffelSearchResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastSearchTime, setLastSearchTime] = useState<Date | null>(null);
-  const [lastSearchOptions, setLastSearchOptions] = useState<DuffelSearchOptions>(initialOptions);
+  const [lastSearchOptions, setLastSearchOptions] =
+    useState<DuffelSearchOptions>(initialOptions);
 
   // Clear all state
   const clearResults = useCallback(() => {
@@ -82,60 +84,67 @@ export const useDuffelFlights = (
   }, []);
 
   // Search flights function
-  const searchFlights = useCallback(async (options: DuffelSearchOptions = {}) => {
-    if (!tripRequestId) {
-      logger.warn('[useDuffelFlights] No tripRequestId provided, skipping search');
-      return;
-    }
+  const searchFlights = useCallback(
+    async (options: DuffelSearchOptions = {}) => {
+      if (!tripRequestId) {
+        logger.warn(
+          '[useDuffelFlights] No tripRequestId provided, skipping search'
+        );
+        return;
+      }
 
-    setIsSearching(true);
-    setIsLoading(true);
-    setError(null);
-    
-    const searchOptions = { ...initialOptions, ...options };
-    setLastSearchOptions(searchOptions);
+      setIsSearching(true);
+      setIsLoading(true);
+      setError(null);
 
-    logger.info('[useDuffelFlights] Starting Duffel search:', {
-      tripRequestId,
-      options: searchOptions
-    });
+      const searchOptions = { ...initialOptions, ...options };
+      setLastSearchOptions(searchOptions);
 
-    try {
-      const response = await fetchDuffelFlights(tripRequestId, {
+      logger.info('[useDuffelFlights] Starting Duffel search:', {
         tripRequestId,
-        ...searchOptions
+        options: searchOptions,
       });
-      
-      setSearchResponse(response);
-      setLastSearchTime(new Date());
 
-      if (response.success) {
-        logger.info('[useDuffelFlights] Search successful:', {
-          offersFound: response.offersFound,
-          inserted: response.inserted
+      try {
+        const response = await fetchDuffelFlights(tripRequestId, {
+          tripRequestId,
+          ...searchOptions,
         });
 
-        // Current architecture: Search API inserts offers to database, then we fetch them
-        // This allows for better caching, persistence, and data integrity
-        // NOTE: Could optimize by returning offers directly from search API in future
-        await fetchOffersFromDatabase();
-      } else {
-        const errorMessage = response.error?.message || 'Search failed without specific error';
-        logger.error('[useDuffelFlights] Search failed:', errorMessage);
+        setSearchResponse(response);
+        setLastSearchTime(new Date());
+
+        if (response.success) {
+          logger.info('[useDuffelFlights] Search successful:', {
+            offersFound: response.offersFound,
+            inserted: response.inserted,
+          });
+
+          // Current architecture: Search API inserts offers to database, then we fetch them
+          // This allows for better caching, persistence, and data integrity
+          // NOTE: Could optimize by returning offers directly from search API in future
+          await fetchOffersFromDatabase();
+        } else {
+          const errorMessage =
+            response.error?.message || 'Search failed without specific error';
+          logger.error('[useDuffelFlights] Search failed:', errorMessage);
+          setError(errorMessage);
+          setOffers([]);
+        }
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Network error during search';
+        logger.error('[useDuffelFlights] Search exception:', err);
         setError(errorMessage);
         setOffers([]);
+        setSearchResponse(null);
+      } finally {
+        setIsSearching(false);
+        setIsLoading(false);
       }
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Network error during search';
-      logger.error('[useDuffelFlights] Search exception:', err);
-      setError(errorMessage);
-      setOffers([]);
-      setSearchResponse(null);
-    } finally {
-      setIsSearching(false);
-      setIsLoading(false);
-    }
-  }, [tripRequestId, initialOptions]);
+    },
+    [tripRequestId, initialOptions]
+  );
 
   // Helper function to fetch offers from database after search
   const fetchOffersFromDatabase = useCallback(async () => {
@@ -144,16 +153,18 @@ export const useDuffelFlights = (
     try {
       // Import here to avoid circular dependencies
       const { supabase } = await import('@/integrations/supabase/client');
-      
+
       // Debug: Check current user
       const userResult = await supabase.auth.getUser();
-      const { data: { user } } = userResult;
+      const {
+        data: { user },
+      } = userResult;
       logger.info('[useDuffelFlights] Current user for database query:', {
         userId: user?.id,
         email: user?.email,
-        tripRequestId
+        tripRequestId,
       });
-      
+
       const query = supabase
         .from('flight_offers_v2')
         .select('*')
@@ -161,43 +172,64 @@ export const useDuffelFlights = (
         .eq('mode', 'AUTO') // Duffel offers use AUTO mode
         .order('price_total', { ascending: true })
         .limit(50);
-      
-      const result = await (query as unknown as Promise<{ data: any; error: any }>);
+
+      const result = await (query as unknown as Promise<{
+        data: any;
+        error: any;
+      }>);
       const { data: offersData, error: fetchError } = result;
 
       if (fetchError) {
-        logger.error('[useDuffelFlights] Error fetching offers from database:', fetchError);
+        logger.error(
+          '[useDuffelFlights] Error fetching offers from database:',
+          fetchError
+        );
         throw new Error(`Database fetch failed: ${fetchError.message}`);
       }
 
       if (offersData && offersData.length > 0) {
         // Transform database offers to our hook format
-        const transformedOffers: DuffelFlightOffer[] = offersData.map((offer: any) => ({
-          id: offer.id,
-          price: offer.price_total,
-          currency: offer.price_currency || 'USD',
-          airline_code: offer.raw_offer_payload?.slices?.[0]?.segments?.[0]?.operating_carrier?.iata_code || 'XX',
-          flight_number: offer.raw_offer_payload?.slices?.[0]?.segments?.[0]?.operating_carrier_flight_number || 'XXXX',
-          origin_airport: offer.origin_iata,
-          destination_airport: offer.destination_iata,
-          departure_date: offer.depart_dt?.split('T')[0] || '',
-          departure_time: offer.depart_dt?.split('T')[1]?.substring(0, 5) || '',
-          return_date: offer.return_dt?.split('T')[0] || undefined,
-          return_time: offer.return_dt?.split('T')[1]?.substring(0, 5) || undefined,
-          duration: offer.raw_offer_payload?.slices?.[0]?.duration || 'Unknown',
-          expires_at: offer.raw_offer_payload?.expires_at,
-          cabin_class: offer.cabin_class,
-          provider: 'duffel'
-        }));
+        const transformedOffers: DuffelFlightOffer[] = offersData.map(
+          (offer: any) => ({
+            id: offer.id,
+            price: offer.price_total,
+            currency: offer.price_currency || 'USD',
+            airline_code:
+              offer.raw_offer_payload?.slices?.[0]?.segments?.[0]
+                ?.operating_carrier?.iata_code || 'XX',
+            flight_number:
+              offer.raw_offer_payload?.slices?.[0]?.segments?.[0]
+                ?.operating_carrier_flight_number || 'XXXX',
+            origin_airport: offer.origin_iata,
+            destination_airport: offer.destination_iata,
+            departure_date: offer.depart_dt?.split('T')[0] || '',
+            departure_time:
+              offer.depart_dt?.split('T')[1]?.substring(0, 5) || '',
+            return_date: offer.return_dt?.split('T')[0] || undefined,
+            return_time:
+              offer.return_dt?.split('T')[1]?.substring(0, 5) || undefined,
+            duration:
+              offer.raw_offer_payload?.slices?.[0]?.duration || 'Unknown',
+            expires_at: offer.raw_offer_payload?.expires_at,
+            cabin_class: offer.cabin_class,
+            provider: 'duffel',
+          })
+        );
 
         setOffers(transformedOffers);
-        logger.info('[useDuffelFlights] Loaded offers from database:', transformedOffers.length);
+        logger.info(
+          '[useDuffelFlights] Loaded offers from database:',
+          transformedOffers.length
+        );
       } else {
         setOffers([]);
         logger.info('[useDuffelFlights] No offers found in database');
       }
     } catch (err: unknown) {
-      logger.error('[useDuffelFlights] Exception fetching offers from database:', err);
+      logger.error(
+        '[useDuffelFlights] Exception fetching offers from database:',
+        err
+      );
       // Don't set error state here since the search itself might have been successful
       // Just log the issue and leave offers empty
     }
@@ -211,7 +243,10 @@ export const useDuffelFlights = (
   // Auto-search effect
   useEffect(() => {
     if (tripRequestId && initialOptions.autoSearch !== false) {
-      logger.info('[useDuffelFlights] Auto-searching for tripRequestId:', tripRequestId);
+      logger.info(
+        '[useDuffelFlights] Auto-searching for tripRequestId:',
+        tripRequestId
+      );
       searchFlights(initialOptions);
     }
   }, [tripRequestId, searchFlights]); // Only depend on tripRequestId changes
@@ -228,21 +263,21 @@ export const useDuffelFlights = (
     // Data
     offers,
     searchResponse,
-    
+
     // State
     isLoading,
     isSearching,
     error,
-    
+
     // Actions
     searchFlights,
     clearResults,
     retry,
-    
+
     // Metadata
     lastSearchTime,
     offersCount: offers.length,
-    searchSuccess: searchResponse?.success ?? false
+    searchSuccess: searchResponse?.success ?? false,
   };
 };
 

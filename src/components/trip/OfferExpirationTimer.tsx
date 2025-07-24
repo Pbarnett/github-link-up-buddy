@@ -1,4 +1,3 @@
-
 /**
  * @file Offer expiration countdown timer component
  * Handles the 5-20 minute validity window for Duffel flight offers
@@ -6,8 +5,8 @@
 
 type FC<T = {}> = React.FC<T>;
 
-import { Badge } from '@/components/ui/badge';
 import * as React from 'react';
+import { Badge } from '@/components/ui/badge';
 
 interface OfferExpirationTimerProps {
   expiresAt?: string;
@@ -18,7 +17,7 @@ interface OfferExpirationTimerProps {
 export const OfferExpirationTimer: FC<OfferExpirationTimerProps> = ({
   expiresAt,
   onExpired,
-  className
+  className,
 }) => {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [isExpired, setIsExpired] = useState(false);
@@ -62,7 +61,7 @@ export const OfferExpirationTimer: FC<OfferExpirationTimerProps> = ({
     const totalSeconds = Math.floor(milliseconds / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
-    
+
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
@@ -86,8 +85,8 @@ export const OfferExpirationTimer: FC<OfferExpirationTimerProps> = ({
   };
 
   return (
-    <Badge 
-      variant={getVariant()} 
+    <Badge
+      variant={getVariant()}
       className={`flex items-center gap-1 ${className}`}
     >
       {getIcon()}

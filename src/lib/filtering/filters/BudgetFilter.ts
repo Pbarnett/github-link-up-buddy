@@ -1,6 +1,6 @@
 /**
  * Budget Filter Implementation
- * 
+ *
  * This filter removes flight offers that exceed the user's budget,
  * with support for currency conversion and configurable tolerance.
  */
@@ -10,7 +10,7 @@ import {
   FlightFilter,
   FilterContext,
   _ValidationResult,
-  CurrencyConverter
+  CurrencyConverter,
 } from '../core/types';
 
 export class BudgetFilter implements FlightFilter {
@@ -23,59 +23,87 @@ export class BudgetFilter implements FlightFilter {
     this.currencyConverter = currencyConverter;
   }
 
-  async apply(offers: FlightOffer[], context: FilterContext): Promise<FlightOffer[]> {
-    console.log(`[${this.name}] Starting budget filtering with budget: ${context.budget} ${context.currency}`);
-    
+  async apply(
+    offers: FlightOffer[],
+    context: FilterContext
+  ): Promise<FlightOffer[]> {
+    console.log(
+      `[${this.name}] Starting budget filtering with budget: ${context.budget} ${context.currency}`
+    );
+
     if (!context.budget || context.budget <= 0) {
-      console.warn(`[${this.name}] No valid budget specified, returning all offers`);
+      console.warn(
+        `[${this.name}] No valid budget specified, returning all offers`
+      );
       return offers;
     }
 
     const tolerance = context.config?.budgetTolerance || 0;
     const effectiveBudget = context.budget + tolerance;
-    
-    console.log(`[${this.name}] Effective budget (with tolerance): ${effectiveBudget} ${context.currency}`);
+
+    console.log(
+      `[${this.name}] Effective budget (with tolerance): ${effectiveBudget} ${context.currency}`
+    );
 
     const filteredOffers: FlightOffer[] = [];
     let currencyConversions = 0;
 
     for (const offer of offers) {
       try {
-        const offerPrice = await this.getOfferPriceInTargetCurrency(offer, context.currency, context);
-        
+        const offerPrice = await this.getOfferPriceInTargetCurrency(
+          offer,
+          context.currency,
+          context
+        );
+
         if (offerPrice <= effectiveBudget) {
           filteredOffers.push({
             ...offer,
             // Optionally update the offer with converted price for consistency
-            totalBasePrice: context.currency === offer.currency ? offer.totalBasePrice : offerPrice,
-            totalPriceWithCarryOn: context.currency === offer.currency ? 
-              offer.totalPriceWithCarryOn : 
-              offerPrice + (offer.carryOnFee || 0),
-            currency: context.currency
+            totalBasePrice:
+              context.currency === offer.currency
+                ? offer.totalBasePrice
+                : offerPrice,
+            totalPriceWithCarryOn:
+              context.currency === offer.currency
+                ? offer.totalPriceWithCarryOn
+                : offerPrice + (offer.carryOnFee || 0),
+            currency: context.currency,
           });
         } else {
-          console.log(`[${this.name}] Filtered out offer ${offer.id}: ${offerPrice} ${context.currency} > ${effectiveBudget} ${context.currency}`);
+          console.log(
+            `[${this.name}] Filtered out offer ${offer.id}: ${offerPrice} ${context.currency} > ${effectiveBudget} ${context.currency}`
+          );
         }
-        
+
         if (offer.currency !== context.currency) {
           currencyConversions++;
         }
-        
       } catch (error) {
-        console.error(`[${this.name}] Error processing offer ${offer.id}:`, error);
+        console.error(
+          `[${this.name}] Error processing offer ${offer.id}:`,
+          error
+        );
         // In case of error, include the offer if it's in the same currency and within budget
-        if (offer.currency === context.currency && offer.totalBasePrice <= effectiveBudget) {
+        if (
+          offer.currency === context.currency &&
+          offer.totalBasePrice <= effectiveBudget
+        ) {
           filteredOffers.push(offer);
         }
       }
     }
 
     if (currencyConversions > 0) {
-      console.log(`[${this.name}] Performed ${currencyConversions} currency conversions`);
+      console.log(
+        `[${this.name}] Performed ${currencyConversions} currency conversions`
+      );
     }
 
-    console.log(`[${this.name}] Budget filtering complete: ${offers.length} → ${filteredOffers.length} offers`);
-    
+    console.log(
+      `[${this.name}] Budget filtering complete: ${offers.length} → ${filteredOffers.length} offers`
+    );
+
     return filteredOffers;
   }
 
@@ -103,7 +131,7 @@ export class BudgetFilter implements FlightFilter {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -111,8 +139,8 @@ export class BudgetFilter implements FlightFilter {
    * Get the offer price converted to the target currency if needed
    */
   private async getOfferPriceInTargetCurrency(
-    offer: FlightOffer, 
-    targetCurrency: string, 
+    offer: FlightOffer,
+    targetCurrency: string,
     context: FilterContext
   ): Promise<number> {
     // If currencies match, no conversion needed
@@ -122,7 +150,9 @@ export class BudgetFilter implements FlightFilter {
 
     // If no currency converter available, use base price as-is with warning
     if (!this.currencyConverter) {
-      console.warn(`[${this.name}] No currency converter available for ${offer.currency} → ${targetCurrency}, using base price`);
+      console.warn(
+        `[${this.name}] No currency converter available for ${offer.currency} → ${targetCurrency}, using base price`
+      );
       return offer.totalBasePrice;
     }
 
@@ -138,15 +168,21 @@ export class BudgetFilter implements FlightFilter {
       const buffer = context.config?.exchangeRateBuffer || 0;
       const bufferedPrice = convertedPrice * (1 + buffer);
 
-      console.log(`[${this.name}] Currency conversion: ${offer.totalBasePrice} ${offer.currency} → ${bufferedPrice.toFixed(2)} ${targetCurrency} (with ${buffer * 100}% buffer)`);
-      
+      console.log(
+        `[${this.name}] Currency conversion: ${offer.totalBasePrice} ${offer.currency} → ${bufferedPrice.toFixed(2)} ${targetCurrency} (with ${buffer * 100}% buffer)`
+      );
+
       return bufferedPrice;
-      
     } catch (error) {
-      console.error(`[${this.name}] Currency conversion failed for ${offer.currency} → ${targetCurrency}:`, error);
-      
+      console.error(
+        `[${this.name}] Currency conversion failed for ${offer.currency} → ${targetCurrency}:`,
+        error
+      );
+
       // Fallback: use base price but log the issue
-      console.warn(`[${this.name}] Using original price due to conversion failure`);
+      console.warn(
+        `[${this.name}] Using original price due to conversion failure`
+      );
       return offer.totalBasePrice;
     }
   }
@@ -175,22 +211,23 @@ export class BudgetFilter implements FlightFilter {
     budgetUtilization: number;
   } {
     const removedCount = originalOffers.length - filteredOffers.length;
-    
+
     if (filteredOffers.length === 0) {
       return {
         removedCount,
         averagePrice: 0,
         minPrice: 0,
         maxPrice: 0,
-        budgetUtilization: 0
+        budgetUtilization: 0,
       };
     }
 
     const prices = filteredOffers
       .filter(offer => offer.currency === currency)
       .map(offer => offer.totalBasePrice);
-      
-    const averagePrice = prices.reduce((sum, price) => sum + price, 0) / prices.length;
+
+    const averagePrice =
+      prices.reduce((sum, price) => sum + price, 0) / prices.length;
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
     const budgetUtilization = (averagePrice / budget) * 100;
@@ -200,7 +237,7 @@ export class BudgetFilter implements FlightFilter {
       averagePrice: Math.round(averagePrice * 100) / 100,
       minPrice: Math.round(minPrice * 100) / 100,
       maxPrice: Math.round(maxPrice * 100) / 100,
-      budgetUtilization: Math.round(budgetUtilization * 100) / 100
+      budgetUtilization: Math.round(budgetUtilization * 100) / 100,
     };
   }
 }
@@ -210,35 +247,51 @@ export class BudgetFilter implements FlightFilter {
  * In production, this should use a real-time currency service
  */
 export class SimpleCurrencyConverter implements CurrencyConverter {
-  private static readonly EXCHANGE_RATES: Record<string, Record<string, number>> = {
-    'USD': { 'EUR': 0.85, 'GBP': 0.73, 'CAD': 1.25, 'JPY': 110 },
-    'EUR': { 'USD': 1.18, 'GBP': 0.86, 'CAD': 1.47, 'JPY': 130 },
-    'GBP': { 'USD': 1.37, 'EUR': 1.16, 'CAD': 1.71, 'JPY': 151 },
-    'CAD': { 'USD': 0.80, 'EUR': 0.68, 'GBP': 0.58, 'JPY': 88 },
-    'JPY': { 'USD': 0.0091, 'EUR': 0.0077, 'GBP': 0.0066, 'CAD': 0.011 }
+  private static readonly EXCHANGE_RATES: Record<
+    string,
+    Record<string, number>
+  > = {
+    USD: { EUR: 0.85, GBP: 0.73, CAD: 1.25, JPY: 110 },
+    EUR: { USD: 1.18, GBP: 0.86, CAD: 1.47, JPY: 130 },
+    GBP: { USD: 1.37, EUR: 1.16, CAD: 1.71, JPY: 151 },
+    CAD: { USD: 0.8, EUR: 0.68, GBP: 0.58, JPY: 88 },
+    JPY: { USD: 0.0091, EUR: 0.0077, GBP: 0.0066, CAD: 0.011 },
   };
 
-  async convert(amount: number, fromCurrency: string, toCurrency: string): Promise<number> {
+  async convert(
+    amount: number,
+    fromCurrency: string,
+    toCurrency: string
+  ): Promise<number> {
     if (fromCurrency === toCurrency) {
       return amount;
     }
 
-    const rate = SimpleCurrencyConverter.EXCHANGE_RATES[fromCurrency]?.[toCurrency];
+    const rate =
+      SimpleCurrencyConverter.EXCHANGE_RATES[fromCurrency]?.[toCurrency];
     if (!rate) {
-      throw new Error(`Exchange rate not available for ${fromCurrency} → ${toCurrency}`);
+      throw new Error(
+        `Exchange rate not available for ${fromCurrency} → ${toCurrency}`
+      );
     }
 
     return amount * rate;
   }
 
-  async getExchangeRate(fromCurrency: string, toCurrency: string): Promise<number> {
+  async getExchangeRate(
+    fromCurrency: string,
+    toCurrency: string
+  ): Promise<number> {
     if (fromCurrency === toCurrency) {
       return 1;
     }
 
-    const rate = SimpleCurrencyConverter.EXCHANGE_RATES[fromCurrency]?.[toCurrency];
+    const rate =
+      SimpleCurrencyConverter.EXCHANGE_RATES[fromCurrency]?.[toCurrency];
     if (!rate) {
-      throw new Error(`Exchange rate not available for ${fromCurrency} → ${toCurrency}`);
+      throw new Error(
+        `Exchange rate not available for ${fromCurrency} → ${toCurrency}`
+      );
     }
 
     return rate;

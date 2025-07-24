@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FlightRuleForm } from './FlightRuleForm';
 import { UnifiedFlightRuleForm } from './FlightRuleForm';
-
 
 describe('FlightRuleForm', () => {
   const mockOnSubmit = vi.fn();
@@ -19,7 +24,7 @@ describe('FlightRuleForm', () => {
   it('renders all form fields', () => {
     // Use minimal defaultValues to avoid date validation issues
     render(<FlightRuleForm onSubmit={mockOnSubmit} />);
-    
+
     // Check all form fields are rendered
     expect(screen.getByLabelText(/origin airports/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/destination/i)).toBeInTheDocument();
@@ -37,11 +42,11 @@ describe('FlightRuleForm', () => {
     // Get inputs
     const originInput = screen.getByLabelText(/origin airports/i);
     const destinationInput = screen.getByLabelText(/destination/i);
-    
+
     // For onChange mode, we need to actually type and delete to trigger validation
     await user.type(originInput, 'JFK');
     await user.clear(originInput); // This should trigger validation for empty array
-    
+
     await user.type(destinationInput, 'LAX');
     await user.clear(destinationInput); // This should trigger validation for empty string
 
@@ -49,8 +54,10 @@ describe('FlightRuleForm', () => {
     expect(
       await screen.findByText('At least one departure airport must be selected')
     ).toBeInTheDocument();
-    
-    expect(await screen.findByText('Please provide a destination')).toBeInTheDocument();
+
+    expect(
+      await screen.findByText('Please provide a destination')
+    ).toBeInTheDocument();
 
     // Form submission should be blocked
     await user.click(screen.getByRole('button', { name: /submit/i }));
@@ -62,7 +69,7 @@ describe('FlightRuleForm', () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
-    
+
     const defaultValues: Partial<UnifiedFlightRuleForm> = {
       origin: ['JFK'],
       destination: 'LAX',
@@ -72,7 +79,9 @@ describe('FlightRuleForm', () => {
       budget: 800,
     };
 
-    render(<FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues} />);
+    render(
+      <FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues} />
+    );
 
     // submit using fireEvent.submit directly on the form
     const form = screen.getByRole('form');
@@ -80,7 +89,7 @@ describe('FlightRuleForm', () => {
 
     // wait for form submission
     await waitFor(() => expect(mockOnSubmit).toHaveBeenCalled());
-    
+
     expect(mockOnSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         origin: ['JFK'],
@@ -95,28 +104,34 @@ describe('FlightRuleForm', () => {
   });
 
   it('validates return date is after outbound date', async () => {
-    const user = userEvent.setup();           // real timers
-    
+    const user = userEvent.setup(); // real timers
+
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const today = new Date();
-    
+
     const defaultValues = {
       origin: ['JFK'],
       destination: 'LAX',
-      earliestOutbound: tomorrow,  // outbound after return
-      latestReturn: today,         // return before outbound (invalid)
+      earliestOutbound: tomorrow, // outbound after return
+      latestReturn: today, // return before outbound (invalid)
       cabinClass: 'economy' as const,
       budget: 800,
     };
-    
-    render(<FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues} />);
-    
+
+    render(
+      <FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues} />
+    );
+
     // submit
     await user.click(screen.getByRole('button', { name: /submit/i }));
 
     // wait for validation error - using exact text from Zod schema
-    expect(await screen.findByText('Latest return date must be after earliest outbound date')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Latest return date must be after earliest outbound date'
+      )
+    ).toBeInTheDocument();
 
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
@@ -126,7 +141,7 @@ describe('FlightRuleForm', () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
-    
+
     const defaultValues = {
       origin: ['JFK'],
       destination: 'LAX',
@@ -135,13 +150,15 @@ describe('FlightRuleForm', () => {
       cabinClass: 'economy' as const,
       budget: 800,
     };
-    
-    render(<FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues}/>);
-    
+
+    render(
+      <FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues} />
+    );
+
     // Check if we can find the cabin class selection
     const cabinSelect = screen.getByLabelText(/cabin class/i);
     expect(cabinSelect).toBeInTheDocument();
-    
+
     // Check that the default value is displayed
     await waitFor(() => {
       expect(screen.getByDisplayValue(/economy/i)).toBeInTheDocument();
@@ -150,30 +167,37 @@ describe('FlightRuleForm', () => {
 
   it('validates budget is within acceptable range', async () => {
     const user = userEvent.setup();
-    
+
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
-    
-    render(<FlightRuleForm onSubmit={mockOnSubmit} defaultValues={{ earliestOutbound: tomorrow, latestReturn: nextWeek }}/>);
-    
+
+    render(
+      <FlightRuleForm
+        onSubmit={mockOnSubmit}
+        defaultValues={{ earliestOutbound: tomorrow, latestReturn: nextWeek }}
+      />
+    );
+
     // Fill required fields
     const originInput = screen.getByLabelText(/origin airports/i);
     const destinationInput = screen.getByLabelText(/destination/i);
     const budgetInput = screen.getByLabelText(/budget/i);
-    
+
     await user.clear(originInput);
     await user.type(originInput, 'JFK');
     await user.clear(destinationInput);
     await user.type(destinationInput, 'LAX');
-    
+
     // Test minimum budget validation with onChange mode
     // Use fireEvent.change to directly set the value
     fireEvent.change(budgetInput, { target: { value: '50' } });
 
     // With onChange mode, error should appear immediately after typing
-    expect(await screen.findByText('Budget must be at least $100')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Budget must be at least $100')
+    ).toBeInTheDocument();
 
     // Form submission should be blocked
     await user.click(screen.getByRole('button', { name: /submit/i }));
@@ -185,7 +209,7 @@ describe('FlightRuleForm', () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
-    
+
     const defaultValues: Partial<UnifiedFlightRuleForm> = {
       origin: ['JFK', 'LGA'],
       destination: 'SFO',
@@ -196,7 +220,9 @@ describe('FlightRuleForm', () => {
       autoBookEnabled: true,
     };
 
-    render(<FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues} />);
+    render(
+      <FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues} />
+    );
 
     expect(screen.getByDisplayValue(/SFO/i)).toBeInTheDocument();
     expect(screen.getByDisplayValue(/2000/i)).toBeInTheDocument();
@@ -207,7 +233,7 @@ describe('FlightRuleForm', () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
-    
+
     const defaultValues: Partial<UnifiedFlightRuleForm> = {
       autoBookEnabled: true,
       paymentMethodId: 'pm_test_123',
@@ -215,7 +241,9 @@ describe('FlightRuleForm', () => {
       latestReturn: nextWeek,
     };
 
-    render(<FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues} />);
+    render(
+      <FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues} />
+    );
 
     // When auto-booking is enabled, form should show this state
     // (This test would be expanded based on how auto-booking UI is implemented)
@@ -224,32 +252,39 @@ describe('FlightRuleForm', () => {
 
   it('prevents submission with dates in the past', async () => {
     const user = userEvent.setup();
-    
+
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
-    
-    render(<FlightRuleForm onSubmit={mockOnSubmit} defaultValues={{ earliestOutbound: tomorrow, latestReturn: nextWeek }}/>);
-    
+
+    render(
+      <FlightRuleForm
+        onSubmit={mockOnSubmit}
+        defaultValues={{ earliestOutbound: tomorrow, latestReturn: nextWeek }}
+      />
+    );
+
     // Fill required fields
     const originInput = screen.getByLabelText(/origin airports/i);
     const destinationInput = screen.getByLabelText(/destination/i);
     const outboundInput = screen.getByLabelText(/earliest outbound/i);
-    
+
     await user.clear(originInput);
     await user.type(originInput, 'JFK');
     await user.clear(destinationInput);
     await user.type(destinationInput, 'LAX');
-    
+
     // Set a past date (invalid)
     fireEvent.change(outboundInput, { target: { value: '2020-01-01' } });
 
     const submitButton = screen.getByRole('button', { name: /submit/i });
-    
+
     await user.click(submitButton);
 
-    expect(await screen.findByText('Earliest outbound date must be in the future')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Earliest outbound date must be in the future')
+    ).toBeInTheDocument();
 
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });

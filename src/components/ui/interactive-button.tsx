@@ -1,7 +1,3 @@
-
-
-
-
 import { cn } from '@/lib/utils';
 
 export interface InteractiveButtonProps
@@ -14,9 +10,22 @@ export interface InteractiveButtonProps
 }
 
 const InteractiveButton = forwardRef<HTMLButtonElement, InteractiveButtonProps>(
-  ({ className, variant = 'default', size = 'default', asChild = false, loading = false, interactive = true, children, disabled, ...props }, ref) => {
+  (
+    {
+      className,
+      variant = 'default',
+      size = 'default',
+      asChild = false,
+      loading = false,
+      interactive = true,
+      children,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const Comp = asChild ? Slot : 'button';
-    
+
     return (
       <Comp
         className={cn(
@@ -29,7 +38,7 @@ const InteractiveButton = forwardRef<HTMLButtonElement, InteractiveButtonProps>(
             'will-change-transform cursor-pointer',
             'hover:-translate-y-0.5 hover:shadow-medium',
             'active:translate-y-0 active:shadow-sm',
-            'disabled:transform-none disabled:shadow-none disabled:cursor-not-allowed'
+            'disabled:transform-none disabled:shadow-none disabled:cursor-not-allowed',
           ],
           // Size variants
           size === 'default' && 'h-10 px-4 py-2 min-w-[44px]',
@@ -40,31 +49,31 @@ const InteractiveButton = forwardRef<HTMLButtonElement, InteractiveButtonProps>(
           variant === 'default' && [
             'bg-primary text-primary-foreground shadow-sm',
             'hover:bg-primary/90',
-            interactive && 'hover:shadow-medium'
+            interactive && 'hover:shadow-medium',
           ],
           variant === 'secondary' && [
             'bg-secondary text-secondary-foreground shadow-sm',
             'hover:bg-secondary/80',
-            interactive && 'hover:shadow-soft'
+            interactive && 'hover:shadow-soft',
           ],
           variant === 'ghost' && [
             'hover:bg-accent hover:text-accent-foreground',
-            interactive && 'hover:shadow-soft'
+            interactive && 'hover:shadow-soft',
           ],
           variant === 'link' && [
             'text-primary underline-offset-4 hover:underline',
-            'shadow-none p-0 h-auto'
+            'shadow-none p-0 h-auto',
           ],
           variant === 'destructive' && [
             'bg-destructive text-destructive-foreground shadow-sm',
             'hover:bg-destructive/90',
-            interactive && 'hover:shadow-medium'
+            interactive && 'hover:shadow-medium',
           ],
           // Loading state
           loading && [
             'cursor-wait opacity-70',
             'hover:transform-none hover:shadow-none',
-            'active:transform-none active:shadow-none'
+            'active:transform-none active:shadow-none',
           ],
           className
         )}

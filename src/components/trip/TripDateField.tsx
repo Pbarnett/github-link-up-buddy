@@ -1,8 +1,9 @@
-
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { format } from 'date-fns';
+import { Control } from 'react-hook-form';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   FormControl,
   FormDescription,
@@ -10,12 +11,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from '@/components/ui/popover';
 
 // Form data interface for trip date fields
 interface TripDateFormData {
@@ -25,32 +26,39 @@ interface TripDateFormData {
 }
 
 interface TripDateFieldProps {
-  name: "earliestDeparture" | "latestDeparture";
+  name: 'earliestDeparture' | 'latestDeparture';
   label: string;
   description: string;
   control: Control<TripDateFormData>;
 }
 
-const TripDateField = ({ name, label, description, control }: TripDateFieldProps) => {
+const TripDateField = ({
+  name,
+  label,
+  description,
+  control,
+}: TripDateFieldProps) => {
   return (
     <FormField
       control={control}
       name={name}
       render={({ field }) => (
         <FormItem className="flex flex-col">
-          <FormLabel className="text-sm font-medium text-gray-900">{label}</FormLabel>
+          <FormLabel className="text-sm font-medium text-gray-900">
+            {label}
+          </FormLabel>
           <Popover>
             <PopoverTrigger asChild>
               <FormControl>
                 <Button
-                  variant={"outline"}
+                  variant={'outline'}
                   className={cn(
-                    "w-full pl-3 text-left font-normal border-gray-300 hover:bg-gray-50",
-                    !field.value && "text-muted-foreground"
+                    'w-full pl-3 text-left font-normal border-gray-300 hover:bg-gray-50',
+                    !field.value && 'text-muted-foreground'
                   )}
                 >
                   {field.value ? (
-                    format(field.value, "PPP")
+                    format(field.value, 'PPP')
                   ) : (
                     <span>Select date</span>
                   )}
@@ -63,7 +71,7 @@ const TripDateField = ({ name, label, description, control }: TripDateFieldProps
                 mode="single"
                 selected={field.value}
                 onSelect={field.onChange}
-                disabled={(date) =>
+                disabled={date =>
                   date < new Date(new Date().setHours(0, 0, 0, 0))
                 }
                 initialFocus

@@ -1,5 +1,3 @@
-
-
 // AddCardModal.tsx - Modal for adding a new card via Stripe Elements
 // Day 4: Payments & Wallet System
 
@@ -10,10 +8,9 @@ import {
   Elements,
   CardElement,
   useStripe,
-  useElements
+  useElements,
 } from '@stripe/react-stripe-js';
 import { useWallet } from '@/contexts/WalletContext';
-
 import { Button } from '@/components/ui/button';
 
 type FC<T = {}> = React.FC<T>;
@@ -59,28 +56,36 @@ const AddCardForm: FC<AddCardFormProps> = ({ onSuccess, onCancel }) => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <CardElement options={{
-        style: {
-          base: {
-            fontSize: '16px',
-            color: '#424770',
-            '::placeholder': {
-              color: '#aab7c4',
+      <CardElement
+        options={{
+          style: {
+            base: {
+              fontSize: '16px',
+              color: '#424770',
+              '::placeholder': {
+                color: '#aab7c4',
+              },
+            },
+            invalid: {
+              color: '#9e2146',
             },
           },
-          invalid: {
-            color: '#9e2146',
-          },
-        },
-      }}/>
+        }}
+      />
       {errorMessage && <div className="text-red-500">{errorMessage}</div>}
-      <Button type="submit" disabled={!stripe || !elements}>Add Card</Button>
-      <Button type="button" onClick={onCancel}>Cancel</Button>
+      <Button type="submit" disabled={!stripe || !elements}>
+        Add Card
+      </Button>
+      <Button type="button" onClick={onCancel}>
+        Cancel
+      </Button>
     </form>
   );
 };
 
-export const AddCardModal: FC<{ closeModal: () => void }> = ({ closeModal }) => {
+export const AddCardModal: FC<{ closeModal: () => void }> = ({
+  closeModal,
+}) => {
   return (
     <Elements stripe={stripePromise}>
       <div className="bg-white shadow-lg rounded p-6">
@@ -90,4 +95,3 @@ export const AddCardModal: FC<{ closeModal: () => void }> = ({ closeModal }) => 
     </Elements>
   );
 };
-

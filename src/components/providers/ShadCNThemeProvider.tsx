@@ -2,11 +2,11 @@ import * as React from 'react';
 
 /**
  * ShadCN Theme Provider Component
- * 
+ *
  * This component provides a modern theme provider following latest ShadCN UI documentation patterns.
  * It integrates with next-themes for seamless dark mode support and provides consistent theming
  * across all ShadCN components.
- * 
+ *
  * Features:
  * - Modern theme provider pattern from ShadCN docs
  * - Seamless integration with next-themes
@@ -19,25 +19,25 @@ type ReactNode = React.ReactNode;
 type FC<T = {}> = React.FC<T>;
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-type Theme = 'dark' | 'light' | 'system'
+type Theme = 'dark' | 'light' | 'system';
 
 type ThemeProviderProps = {
-  children: ReactNode
-  defaultTheme?: Theme
-  storageKey?: string
-}
+  children: ReactNode;
+  defaultTheme?: Theme;
+  storageKey?: string;
+};
 
 type ThemeProviderState = {
-  theme: Theme
-  setTheme: (theme: Theme) => void
-}
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+};
 
 const initialState: ThemeProviderState = {
   theme: 'system',
   setTheme: () => null,
-}
+};
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
+const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ShadCNThemeProvider({
   children,
@@ -47,70 +47,70 @@ export function ShadCNThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+  );
 
   useEffect(() => {
-    const root = window.document.documentElement
+    const root = window.document.documentElement;
 
-    root.classList.remove('light', 'dark')
+    root.classList.remove('light', 'dark');
 
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
         .matches
         ? 'dark'
-        : 'light'
+        : 'light';
 
-      root.classList.add(systemTheme)
-      return
+      root.classList.add(systemTheme);
+      return;
     }
 
-    root.classList.add(theme)
-  }, [theme])
+    root.classList.add(theme);
+  }, [theme]);
 
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
+      localStorage.setItem(storageKey, theme);
+      setTheme(theme);
     },
-  }
+  };
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
       {children}
     </ThemeProviderContext.Provider>
-  )
+  );
 }
 
 export const useShadCNTheme = () => {
-  const context = useContext(ThemeProviderContext)
+  const context = useContext(ThemeProviderContext);
 
   if (context === undefined)
-    throw new Error('useShadCNTheme must be used within a ShadCNThemeProvider')
+    throw new Error('useShadCNTheme must be used within a ShadCNThemeProvider');
 
-  return context
-}
+  return context;
+};
 
 /**
  * Mode Toggle Component
  * A clean toggle component for switching between light/dark/system modes
  */
 interface ModeToggleProps {
-  className?: string
+  className?: string;
 }
 
 export const ModeToggle: FC<ModeToggleProps> = ({ className }) => {
-  const { theme, setTheme } = useShadCNTheme()
+  const { theme, setTheme } = useShadCNTheme();
 
   const toggleTheme = () => {
     if (theme === 'light') {
-      setTheme('dark')
+      setTheme('dark');
     } else if (theme === 'dark') {
-      setTheme('system')
+      setTheme('system');
     } else {
-      setTheme('light')
+      setTheme('light');
     }
-  }
+  };
 
   return (
     <button
@@ -119,7 +119,12 @@ export const ModeToggle: FC<ModeToggleProps> = ({ className }) => {
       aria-label="Toggle theme"
     >
       {theme === 'light' && (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -129,7 +134,12 @@ export const ModeToggle: FC<ModeToggleProps> = ({ className }) => {
         </svg>
       )}
       {theme === 'dark' && (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -139,7 +149,12 @@ export const ModeToggle: FC<ModeToggleProps> = ({ className }) => {
         </svg>
       )}
       {theme === 'system' && (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -149,7 +164,7 @@ export const ModeToggle: FC<ModeToggleProps> = ({ className }) => {
         </svg>
       )}
     </button>
-  )
-}
+  );
+};
 
-export default ShadCNThemeProvider
+export default ShadCNThemeProvider;

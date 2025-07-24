@@ -1,8 +1,8 @@
 import { format } from 'date-fns';
 import { useWatch, Control } from 'react-hook-form';
+import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
 
 // Trip form data interface
 interface TripFormData {
@@ -37,12 +37,18 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
   const chips: Array<{ label: string; value: string; field?: string }> = [];
 
   // Destination chip
-  const destination = watchedFields.destination_airport || watchedFields.destination_other;
+  const destination =
+    watchedFields.destination_airport || watchedFields.destination_other;
   if (destination) {
     chips.push({
-      label: destination.length === 3 ? destination : destination.slice(0, 20) + (destination.length > 20 ? '...' : ''),
+      label:
+        destination.length === 3
+          ? destination
+          : destination.slice(0, 20) + (destination.length > 20 ? '...' : ''),
       value: 'destination',
-      field: watchedFields.destination_airport ? 'destination_airport' : 'destination_other'
+      field: watchedFields.destination_airport
+        ? 'destination_airport'
+        : 'destination_other',
     });
   }
 
@@ -58,7 +64,7 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
     chips.push({
       label: origins.join(', '),
       value: 'origin',
-      field: 'departure'
+      field: 'departure',
     });
   }
 
@@ -67,35 +73,38 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
     chips.push({
       label: `${format(watchedFields.flexible_dates.from, 'MMM d')} - ${format(watchedFields.flexible_dates.to, 'MMM d')} (flexible)`,
       value: 'dates_flexible',
-      field: 'flexible_dates'
+      field: 'flexible_dates',
     });
   } else if (watchedFields.earliestDeparture && watchedFields.latestDeparture) {
-    const sameDate = watchedFields.earliestDeparture.getTime() === watchedFields.latestDeparture.getTime();
+    const sameDate =
+      watchedFields.earliestDeparture.getTime() ===
+      watchedFields.latestDeparture.getTime();
     if (sameDate) {
       chips.push({
         label: format(watchedFields.earliestDeparture, 'MMM d, yyyy'),
         value: 'dates_specific',
-        field: 'earliestDeparture'
+        field: 'earliestDeparture',
       });
     } else {
       chips.push({
         label: `${format(watchedFields.earliestDeparture, 'MMM d')} - ${format(watchedFields.latestDeparture, 'MMM d')}`,
         value: 'dates_range',
-        field: 'earliestDeparture'
+        field: 'earliestDeparture',
       });
     }
   }
 
   // Trip length chip
   if (watchedFields.min_duration && watchedFields.max_duration) {
-    const sameLength = watchedFields.min_duration === watchedFields.max_duration;
-    const label = sameLength 
+    const sameLength =
+      watchedFields.min_duration === watchedFields.max_duration;
+    const label = sameLength
       ? `${watchedFields.min_duration} ${watchedFields.min_duration === 1 ? 'night' : 'nights'}`
       : `${watchedFields.min_duration}-${watchedFields.max_duration} nights`;
     chips.push({
       label,
       value: 'duration',
-      field: 'min_duration'
+      field: 'min_duration',
     });
   }
 
@@ -104,7 +113,7 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
     chips.push({
       label: `≤ $${watchedFields.max_price}`,
       value: 'price',
-      field: 'max_price'
+      field: 'max_price',
     });
   }
 
@@ -113,7 +122,7 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
     chips.push({
       label: 'Non-stop',
       value: 'nonstop',
-      field: 'nonstop_required'
+      field: 'nonstop_required',
     });
   }
 
@@ -121,7 +130,7 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
     chips.push({
       label: 'Bag included',
       value: 'baggage',
-      field: 'baggage_included_required'
+      field: 'baggage_included_required',
     });
   }
 
@@ -132,21 +141,23 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
     chips.push({
       label,
       value: 'travelers',
-      field: 'travelers_count'
+      field: 'travelers_count',
     });
   }
 
   // Cabin class chip
   if (watchedFields.cabin_class && watchedFields.cabin_class !== 'economy') {
     const cabinLabels = {
-      'premium_economy': 'Premium Economy',
-      'business': 'Business',
-      'first': 'First Class'
+      premium_economy: 'Premium Economy',
+      business: 'Business',
+      first: 'First Class',
     };
     chips.push({
-      label: cabinLabels[watchedFields.cabin_class as keyof typeof cabinLabels] || watchedFields.cabin_class,
+      label:
+        cabinLabels[watchedFields.cabin_class as keyof typeof cabinLabels] ||
+        watchedFields.cabin_class,
       value: 'cabin',
-      field: 'cabin_class'
+      field: 'cabin_class',
     });
   }
 
@@ -159,14 +170,27 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-gray-700">Your Trip</h3>
         {chips.length > 0 && (
-          <button 
+          <button
             type="button"
             onClick={() => {
               // Clear all relevant fields
-              const fieldsToReset = ['destination_airport', 'destination_other', 'nyc_airports', 'other_departure_airport', 
-                     'earliestDeparture', 'latestDeparture', 'flexible_dates', 'min_duration', 'max_duration', 
-                     'max_price', 'nonstop_required', 'baggage_included_required', 'travelers_count', 'cabin_class'];
-              
+              const fieldsToReset = [
+                'destination_airport',
+                'destination_other',
+                'nyc_airports',
+                'other_departure_airport',
+                'earliestDeparture',
+                'latestDeparture',
+                'flexible_dates',
+                'min_duration',
+                'max_duration',
+                'max_price',
+                'nonstop_required',
+                'baggage_included_required',
+                'travelers_count',
+                'cabin_class',
+              ];
+
               fieldsToReset.forEach(field => {
                 onClearField?.(field);
               });
@@ -177,12 +201,12 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
           </button>
         )}
       </div>
-      
+
       <div className="flex flex-wrap gap-2">
         {chips.map((chip, index) => (
-          <Badge 
+          <Badge
             key={`${chip.value}-${index}`}
-            variant="secondary" 
+            variant="secondary"
             className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-1 px-3 py-1"
           >
             <span className="text-sm">{chip.label}</span>
@@ -191,7 +215,7 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   onClearField(chip.field!);
                 }}

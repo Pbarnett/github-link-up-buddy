@@ -1,5 +1,3 @@
-
-
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -13,7 +11,7 @@ import {
   Menu,
   ChevronDown,
   Loader2,
-  Search
+  Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -57,15 +55,19 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
   useEffect(() => {
     // Get initial user
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
       setIsLoading(false);
     };
-    
+
     getUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       setIsLoading(false);
     });
@@ -101,20 +103,23 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
       name: 'Search Available Flights',
       href: '/search',
       icon: Search,
-    }
+    },
   ];
 
   const isActive = (path: string) => {
     if (path === '/auto-booking') {
-      return location.pathname === '/auto-booking' || 
-             location.pathname === '/dashboard';
+      return (
+        location.pathname === '/auto-booking' ||
+        location.pathname === '/dashboard'
+      );
     }
     if (path === '/auto-booking/new') {
       return location.pathname === '/auto-booking/new';
     }
     if (path === '/search') {
-      return location.pathname === '/search' || 
-             location.pathname === '/trip/new';
+      return (
+        location.pathname === '/search' || location.pathname === '/trip/new'
+      );
     }
     return location.pathname === path;
   };
@@ -140,8 +145,8 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
     <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 max-w-screen-2xl items-center">
         {/* Logo */}
-        <Link 
-          to="/auto-booking" 
+        <Link
+          to="/auto-booking"
           className="flex items-center space-x-2 mr-8 hover:opacity-80 transition-opacity"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -154,7 +159,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
 
         {/* Primary Navigation (left side) - Desktop */}
         <div className="hidden md:flex items-center space-x-6 flex-1">
-          {primaryNavItems.map((item) => {
+          {primaryNavItems.map(item => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (
@@ -162,10 +167,10 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  "nav-link px-3 py-2 inline-flex items-center gap-2 text-sm font-medium transition-all duration-200 relative",
+                  'nav-link px-3 py-2 inline-flex items-center gap-2 text-sm font-medium transition-all duration-200 relative',
                   active
-                    ? "text-primary border-b-2 border-primary"
-                    : "text-muted-foreground hover:text-foreground hover:border-b-2 hover:border-primary"
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:border-b-2 hover:border-primary'
                 )}
               >
                 <Icon className="w-4 h-4" />
@@ -199,11 +204,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
           {/* Mobile menu button */}
           <Popover open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-              >
+              <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-5 w-5" />
               </Button>
             </PopoverTrigger>
@@ -211,7 +212,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
               <div className="space-y-4">
                 {/* Mobile navigation items */}
                 <div className="space-y-2">
-                  {primaryNavItems.map((item) => {
+                  {primaryNavItems.map(item => {
                     const Icon = item.icon;
                     const active = isActive(item.href);
                     return (
@@ -220,10 +221,10 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
                         to={item.href}
                         onClick={() => setIsMobileMenuOpen(false)}
                         className={cn(
-                          "flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full",
+                          'flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full',
                           active
-                            ? "bg-primary/10 text-primary border border-primary/20"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                            ? 'bg-primary/10 text-primary border border-primary/20'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                         )}
                       >
                         <Icon className="h-5 w-5" />
@@ -232,7 +233,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
                     );
                   })}
                 </div>
-                
+
                 {/* Mobile Find Flights CTA */}
                 <Button
                   onClick={() => {
@@ -259,11 +260,16 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
           {user && !isLoading ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                <Button
+                  variant="ghost"
+                  className="relative h-9 w-9 rounded-full"
+                >
                   <Avatar className="h-9 w-9">
-                    <AvatarImage 
-                      src={user.user_metadata?.avatar_url} 
-                      alt={user.user_metadata?.full_name || user.email || 'User'} 
+                    <AvatarImage
+                      src={user.user_metadata?.avatar_url}
+                      alt={
+                        user.user_metadata?.full_name || user.email || 'User'
+                      }
                     />
                     <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                       {getUserInitials()}
@@ -300,7 +306,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
                   onClick={handleSignOut}
                 >

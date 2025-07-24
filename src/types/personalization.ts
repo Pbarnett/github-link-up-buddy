@@ -11,10 +11,10 @@ export interface PersonalizationData {
 export type AllowedPersonalizationKey = keyof PersonalizationData;
 
 // Context types for personalization greetings
-export type GreetingContext = 
-  | 'dashboard' 
-  | 'bookingConfirmation' 
-  | 'flightStatus' 
+export type GreetingContext =
+  | 'dashboard'
+  | 'bookingConfirmation'
+  | 'flightStatus'
   | 'error'
   | 'profile'
   | 'welcome';

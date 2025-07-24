@@ -1,5 +1,3 @@
-
-
 // Modern Google OAuth Service using Google Identity Services (GIS)
 // Replaces deprecated gapi.auth2 library
 
@@ -43,10 +41,15 @@ function parseJWT(token: string): any {
   try {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join('')
+    );
+
     return JSON.parse(jsonPayload);
   } catch (error) {
     console.error('Error parsing JWT:', error);
@@ -61,13 +64,14 @@ class ModernGoogleAuthService {
 
   constructor(config?: Partial<GoogleAuthConfig>) {
     this.config = {
-      clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || 
-                process.env.SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID || 
-                '209526864602-b7g6tlsftft5srildqrv7ulb4ll2v3smk.apps.googleusercontent.com',
+      clientId:
+        import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+        process.env.SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID ||
+        '209526864602-b7g6tlsftft5srildqrv7ulb4ll2v3smk.apps.googleusercontent.com',
       scopes: ['openid', 'email', 'profile'],
       autoSelect: false,
       cancelOnTapOutside: true,
-      ...config
+      ...config,
     };
   }
 
@@ -79,7 +83,9 @@ class ModernGoogleAuthService {
 
     // Check if running in browser
     if (typeof window === 'undefined') {
-      throw new Error('Google Auth can only be initialized in browser environment');
+      throw new Error(
+        'Google Auth can only be initialized in browser environment'
+      );
     }
 
     // Load Google Identity Services script if not already loaded
@@ -107,7 +113,9 @@ class ModernGoogleAuthService {
    */
   private loadGoogleIdentityScript(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
+      if (
+        document.querySelector('script[src*="accounts.google.com/gsi/client"]')
+      ) {
         resolve();
         return;
       }
@@ -116,10 +124,11 @@ class ModernGoogleAuthService {
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.defer = true;
-      
+
       script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load Google Identity Services'));
-      
+      script.onerror = () =>
+        reject(new Error('Failed to load Google Identity Services'));
+
       document.head.appendChild(script);
     });
   }
@@ -127,10 +136,12 @@ class ModernGoogleAuthService {
   /**
    * Handle credential response from Google One Tap or popup
    */
-  private async handleCredentialResponse(response: GoogleCredentialResponse): Promise<void> {
+  private async handleCredentialResponse(
+    response: GoogleCredentialResponse
+  ): Promise<void> {
     try {
       const userProfile = parseJWT(response.credential);
-      
+
       if (!userProfile) {
         authSecurityMonitor.logTokenValidationFailure({
           reason: 'Invalid credential response - failed to parse JWT',
@@ -166,7 +177,7 @@ class ModernGoogleAuthService {
       }
 
       console.log('✅ Successfully signed in with Google:', data.user?.email);
-      
+
       // Log successful authentication
       const privacyMode = await this.handlePrivacySettings();
       authSecurityMonitor.logAuthSuccess({
@@ -176,20 +187,26 @@ class ModernGoogleAuthService {
         privacyMode: privacyMode,
         tokenClaims: userProfile,
       });
-      
-      // Trigger custom event for components to listen to
-      window.dispatchEvent(new CustomEvent('googleAuthSuccess', {
-        detail: {
-          user: data.user,
-          session: data.session
-        }
-      }));
 
+      // Trigger custom event for components to listen to
+      window.dispatchEvent(
+        new CustomEvent('googleAuthSuccess', {
+          detail: {
+            user: data.user,
+            session: data.session,
+          },
+        })
+      );
     } catch (error) {
       console.error('❌ Google auth error:', error);
-      window.dispatchEvent(new CustomEvent('googleAuthError', {
-        detail: { error: error instanceof Error ? error.message : 'Authentication failed' }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('googleAuthError', {
+          detail: {
+            error:
+              error instanceof Error ? error.message : 'Authentication failed',
+          },
+        })
+      );
     }
   }
 
@@ -239,14 +256,17 @@ class ModernGoogleAuthService {
     }
 
     try {
-      window.google.accounts.id.prompt((notification) => {
+      window.google.accounts.id.prompt(notification => {
         if (notification.isNotDisplayed()) {
-          console.log('One Tap not displayed:', notification.getNotDisplayedReason());
+          console.log(
+            'One Tap not displayed:',
+            notification.getNotDisplayedReason()
+          );
         } else if (notification.isSkippedMoment()) {
           console.log('One Tap skipped:', notification.getSkippedReason());
         }
       });
-      
+
       this.oneTapDisplayed = true;
     } catch (error) {
       console.error('❌ Failed to display One Tap:', error);
@@ -267,7 +287,8 @@ class ModernGoogleAuthService {
       if (!popupTest || popupTest.closed) {
         resolve({
           success: false,
-          error: 'Popup blocked. Please allow popups for this site and try again.'
+          error:
+            'Popup blocked. Please allow popups for this site and try again.',
         });
         return;
       }
@@ -282,32 +303,35 @@ class ModernGoogleAuthService {
             if (response.error) {
               resolve({
                 success: false,
-                error: response.error
+                error: response.error,
               });
               return;
             }
 
             // Exchange access token for user info
             const userInfo = await this.getUserInfo(response.access_token);
-            
+
             resolve({
               success: true,
               user: userInfo,
-              token: response.access_token
+              token: response.access_token,
             });
           } catch (error) {
             resolve({
               success: false,
-              error: error instanceof Error ? error.message : 'Authentication failed'
+              error:
+                error instanceof Error
+                  ? error.message
+                  : 'Authentication failed',
             });
           }
         },
         error_callback: (error: any) => {
           resolve({
             success: false,
-            error: error.message || 'Authentication cancelled'
+            error: error.message || 'Authentication cancelled',
           });
-        }
+        },
       });
 
       // Request access token
@@ -321,8 +345,10 @@ class ModernGoogleAuthService {
    * Get user information using access token
    */
   private async getUserInfo(accessToken: string): Promise<GoogleUser> {
-    const response = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`);
-    
+    const response = await fetch(
+      `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`
+    );
+
     if (!response.ok) {
       throw new Error('Failed to fetch user information');
     }
@@ -347,10 +373,9 @@ class ModernGoogleAuthService {
       this.oneTapDisplayed = false;
 
       console.log('✅ Successfully signed out');
-      
+
       // Trigger sign out event
       window.dispatchEvent(new CustomEvent('googleAuthSignOut'));
-      
     } catch (error) {
       console.error('❌ Sign out error:', error);
       throw error;
@@ -407,21 +432,24 @@ class ModernGoogleAuthService {
 
     // Log privacy mode detection
     authSecurityMonitor.logPrivacyModeDetection(detectedMode);
-    
+
     return detectedMode;
   }
 
   /**
    * Render Google Sign In button with modern styling
    */
-  renderSignInButton(containerId: string, options?: {
-    theme?: 'outline' | 'filled_blue' | 'filled_black';
-    size?: 'large' | 'medium' | 'small';
-    text?: 'signin_with' | 'signup_with' | 'continue_with';
-    shape?: 'rectangular' | 'pill' | 'circle' | 'square';
-    width?: number;
-    locale?: string;
-  }): void {
+  renderSignInButton(
+    containerId: string,
+    options?: {
+      theme?: 'outline' | 'filled_blue' | 'filled_black';
+      size?: 'large' | 'medium' | 'small';
+      text?: 'signin_with' | 'signup_with' | 'continue_with';
+      shape?: 'rectangular' | 'pill' | 'circle' | 'square';
+      width?: number;
+      locale?: string;
+    }
+  ): void {
     if (!this.isInitialized) {
       console.error('Google Auth Service not initialized');
       return;
@@ -451,8 +479,9 @@ export type { GoogleUser, AuthResult, GoogleAuthConfig };
 
 // Utility function to check if Google Identity Services is loaded
 export function isGoogleIdentityLoaded(): boolean {
-  return typeof window !== 'undefined' && 
-         window.google?.accounts?.id !== undefined;
+  return (
+    typeof window !== 'undefined' && window.google?.accounts?.id !== undefined
+  );
 }
 
 // Type declarations for Google Identity Services

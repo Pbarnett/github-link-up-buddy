@@ -5,9 +5,13 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('Missing Supabase environment variables. Please check your .env file.');
+  console.error(
+    'Missing Supabase environment variables. Please check your .env file.'
+  );
   console.error('You can run this script with:');
-  console.error('VITE_SUPABASE_URL=your_url VITE_SUPABASE_ANON_KEY=your_key ts-node src/debug/checkFlightOffers.ts your-trip-id');
+  console.error(
+    'VITE_SUPABASE_URL=your_url VITE_SUPABASE_ANON_KEY=your_key ts-node src/debug/checkFlightOffers.ts your-trip-id'
+  );
   process.exit(1);
 }
 
@@ -32,7 +36,11 @@ async function checkFlightOffers(tripId: string) {
     console.log('Found trip:', trip);
 
     // Now check for offers
-    const { data: offers, error: offersError, count } = await supabase
+    const {
+      data: offers,
+      error: offersError,
+      count,
+    } = await supabase
       .from('flight_offers')
       .select('*', { count: 'exact' })
       .eq('trip_request_id', tripId);
@@ -45,7 +53,7 @@ async function checkFlightOffers(tripId: string) {
     console.log('Offers found:', {
       count,
       offersCount: offers?.length || 0,
-      firstOffer: offers?.[0]
+      firstOffer: offers?.[0],
     });
   } catch (err) {
     console.error('Unexpected error:', err);

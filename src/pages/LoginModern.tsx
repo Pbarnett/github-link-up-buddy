@@ -1,15 +1,23 @@
-
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserInitializationService } from '@/services/userInitialization';
-import { modernGoogleAuth, type AuthResult } from '@/services/modernGoogleAuthService';
-import * as React from 'react';
+import {
+  modernGoogleAuth,
+  type AuthResult,
+} from '@/services/modernGoogleAuthService';
 
 /**
  * MODERN LOGIN COMPONENT - Uses Google Identity Services (GIS)
- * 
+ *
  * This replaces the deprecated gapi.auth2 library with modern Google Identity Services
  * Features:
  * - FedCM support for enhanced privacy
@@ -22,7 +30,9 @@ import * as React from 'react';
 const LoginModern = () => {
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authMode, setAuthMode] = useState<'standard' | 'fedcm' | 'redirect'>('standard');
+  const [authMode, setAuthMode] = useState<'standard' | 'fedcm' | 'redirect'>(
+    'standard'
+  );
   const [oneTapAttempted, setOneTapAttempted] = useState(false);
 
   useEffect(() => {
@@ -33,13 +43,13 @@ const LoginModern = () => {
     try {
       // Check current session
       const { data, error } = await supabase.auth.getSession();
-      
+
       if (error) {
         console.error('❌ Session check error:', error);
         setIsAuthenticated(false);
       } else {
         setIsAuthenticated(!!data.session);
-        
+
         if (data.session) {
           console.log('✅ User already authenticated');
           return;
@@ -48,30 +58,31 @@ const LoginModern = () => {
 
       // Initialize modern Google Auth
       await modernGoogleAuth.initialize();
-      
+
       // Determine best auth mode based on browser capabilities
       const privacyMode = await modernGoogleAuth.handlePrivacySettings();
       setAuthMode(privacyMode);
-      
+
       // Attempt One Tap if not already tried and user not authenticated
       if (!oneTapAttempted && !data.session && privacyMode !== 'redirect') {
         attemptOneTap();
       }
-
     } catch (error) {
       console.error('❌ Auth initialization error:', error);
       setIsAuthenticated(false);
     }
 
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('🔍 Auth state changed:', event, !!session);
       setIsAuthenticated(!!session);
 
       if (event === 'SIGNED_IN' && session) {
         UserInitializationService.handlePostSignin(session.user.id);
         toast({
-          title: "Welcome!",
+          title: 'Welcome!',
           description: `Successfully signed in as ${session.user.email}`,
         });
       }
@@ -90,7 +101,7 @@ const LoginModern = () => {
 
   const attemptOneTap = async () => {
     if (oneTapAttempted) return;
-    
+
     try {
       setOneTapAttempted(true);
       await modernGoogleAuth.displayOneTap();
@@ -108,23 +119,28 @@ const LoginModern = () => {
     console.error('❌ Google auth error:', event.detail);
     setLoading(false);
     toast({
-      title: "Sign In Failed",
-      description: event.detail.error || "Failed to sign in with Google",
-      variant: "destructive",
+      title: 'Sign In Failed',
+      description: event.detail.error || 'Failed to sign in with Google',
+      variant: 'destructive',
     });
   };
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
-    
+
     try {
       // Check for popup blockers first
-      const popupTest = window.open('about:blank', '_blank', 'width=1,height=1');
+      const popupTest = window.open(
+        'about:blank',
+        '_blank',
+        'width=1,height=1'
+      );
       if (!popupTest) {
         toast({
-          title: "Popup Blocked",
-          description: "Please enable popups for this site to use Google sign-in",
-          variant: "destructive",
+          title: 'Popup Blocked',
+          description:
+            'Please enable popups for this site to use Google sign-in',
+          variant: 'destructive',
         });
         setLoading(false);
         return;
@@ -133,21 +149,23 @@ const LoginModern = () => {
 
       // Use popup flow if One Tap wasn't successful
       const result: AuthResult = await modernGoogleAuth.signInWithPopup();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Sign in failed');
       }
 
       // The auth state change listener will handle the success case
-      
     } catch (error) {
       console.error('❌ Google sign in error:', error);
       setLoading(false);
-      
+
       toast({
-        title: "Sign In Failed",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
+        title: 'Sign In Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
+        variant: 'destructive',
       });
     }
   };
@@ -155,7 +173,7 @@ const LoginModern = () => {
   const handleFallbackAuth = async () => {
     // Fallback to Supabase OAuth redirect for cases where modern methods fail
     setLoading(true);
-    
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -169,30 +187,32 @@ const LoginModern = () => {
       });
 
       if (error) throw error;
-      
     } catch (error) {
       setLoading(false);
       toast({
-        title: "Authentication Failed",
-        description: error instanceof Error ? error.message : "Failed to initiate authentication",
-        variant: "destructive",
+        title: 'Authentication Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to initiate authentication',
+        variant: 'destructive',
       });
     }
   };
 
   const clearAuthData = () => {
     // Emergency reset function
-    Object.keys(localStorage).forEach((key) => {
+    Object.keys(localStorage).forEach(key => {
       if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
         localStorage.removeItem(key);
       }
     });
-    
-    toast({ 
-      title: "Auth Reset", 
-      description: "Authentication data cleared. Page will reload." 
+
+    toast({
+      title: 'Auth Reset',
+      description: 'Authentication data cleared. Page will reload.',
     });
-    
+
     setTimeout(() => window.location.reload(), 1000);
   };
 
@@ -210,7 +230,7 @@ const LoginModern = () => {
           <CardDescription className="text-gray-600">
             Sign in with Google to access your dashboard
           </CardDescription>
-          
+
           {/* Privacy & Security Indicator */}
           <div className="flex items-center justify-center gap-2 mt-2 text-xs text-gray-500">
             <Shield size={14} />
@@ -221,11 +241,11 @@ const LoginModern = () => {
             </span>
           </div>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           {/* Primary Sign In Button */}
-          <Button 
-            className="w-full relative bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors" 
+          <Button
+            className="w-full relative bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
             onClick={handleGoogleSignIn}
             disabled={loading}
           >
@@ -259,12 +279,14 @@ const LoginModern = () => {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
                 <AlertTriangle size={14} />
-                <span>Using compatibility mode for enhanced privacy browsers</span>
+                <span>
+                  Using compatibility mode for enhanced privacy browsers
+                </span>
               </div>
-              
-              <Button 
+
+              <Button
                 variant="outline"
-                className="w-full" 
+                className="w-full"
                 onClick={handleFallbackAuth}
                 disabled={loading}
               >
@@ -285,9 +307,9 @@ const LoginModern = () => {
 
           {/* Emergency Reset */}
           <div className="pt-4 border-t border-gray-200">
-            <Button 
+            <Button
               type="button"
-              variant="destructive" 
+              variant="destructive"
               size="sm"
               className="w-full text-xs"
               onClick={clearAuthData}

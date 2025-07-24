@@ -1,46 +1,79 @@
 // Enhanced profile component with React 19 features
 type FC<T = {}> = React.FC<T>;
 type _Component<P = {}, S = {}> = React.Component<P, S>;
+import * as React from 'react';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import * as React from 'react';
 // Mock user activities for demo
 const mockActivities = [
-  { id: '1', type: 'flight', title: 'Flight to NYC', date: '2024-03-15', status: 'completed' },
-  { id: '2', type: 'booking', title: 'Hotel Reservation', date: '2024-03-10', status: 'pending' },
-  { id: '3', type: 'campaign', title: 'Auto-booking Campaign', date: '2024-03-08', status: 'active' },
-  { id: '4', type: 'flight', title: 'Return from LAX', date: '2024-03-05', status: 'completed' },
-  { id: '5', type: 'search', title: 'Flight Search', date: '2024-03-01', status: 'completed' },
+  {
+    id: '1',
+    type: 'flight',
+    title: 'Flight to NYC',
+    date: '2024-03-15',
+    status: 'completed',
+  },
+  {
+    id: '2',
+    type: 'booking',
+    title: 'Hotel Reservation',
+    date: '2024-03-10',
+    status: 'pending',
+  },
+  {
+    id: '3',
+    type: 'campaign',
+    title: 'Auto-booking Campaign',
+    date: '2024-03-08',
+    status: 'active',
+  },
+  {
+    id: '4',
+    type: 'flight',
+    title: 'Return from LAX',
+    date: '2024-03-05',
+    status: 'completed',
+  },
+  {
+    id: '5',
+    type: 'search',
+    title: 'Flight Search',
+    date: '2024-03-01',
+    status: 'completed',
+  },
 ];
 
 const ProfileRevamp: FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeView, setActiveView] = useState<'overview' | 'activity'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'activity'>(
+    'overview'
+  );
   const deferredQuery = useDeferredValue(searchQuery);
   const [_isPending, startTransition] = useTransition();
-  
+
   // Filter activities with deferred value for better performance
   const filteredActivities = useMemo(() => {
     if (!deferredQuery) return mockActivities;
-    
-    return mockActivities.filter(activity => 
-      activity.title.toLowerCase().includes(deferredQuery.toLowerCase()) ||
-      activity.type.toLowerCase().includes(deferredQuery.toLowerCase())
+
+    return mockActivities.filter(
+      activity =>
+        activity.title.toLowerCase().includes(deferredQuery.toLowerCase()) ||
+        activity.type.toLowerCase().includes(deferredQuery.toLowerCase())
     );
   }, [deferredQuery]);
-  
+
   const isSearchStale = searchQuery !== deferredQuery;
-  
+
   const handleViewChange = (view: 'overview' | 'activity') => {
     startTransition(() => {
       setActiveView(view);
     });
   };
-  
+
   return (
     <div className="space-y-6">
       {/* Profile Header */}
@@ -76,7 +109,7 @@ const ProfileRevamp: FC = () => {
               <p className="text-sm text-muted-foreground">Active Campaigns</p>
             </div>
           </div>
-          
+
           {/* View Toggle Buttons with useTransition */}
           <div className="flex gap-2 mb-4">
             <Button
@@ -96,7 +129,7 @@ const ProfileRevamp: FC = () => {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Overview Content */}
       {activeView === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -107,21 +140,31 @@ const ProfileRevamp: FC = () => {
             <CardContent>
               <ul className="space-y-2">
                 <li className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">NEW</Badge>
-                  <span className="text-sm">useTransition for smooth view changes</span>
+                  <Badge variant="secondary" className="text-xs">
+                    NEW
+                  </Badge>
+                  <span className="text-sm">
+                    useTransition for smooth view changes
+                  </span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">NEW</Badge>
-                  <span className="text-sm">useDeferredValue for search optimization</span>
+                  <Badge variant="secondary" className="text-xs">
+                    NEW
+                  </Badge>
+                  <span className="text-sm">
+                    useDeferredValue for search optimization
+                  </span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">NEW</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    NEW
+                  </Badge>
                   <span className="text-sm">Enhanced Suspense patterns</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Quick Actions</CardTitle>
@@ -145,7 +188,7 @@ const ProfileRevamp: FC = () => {
           </Card>
         </div>
       )}
-      
+
       {/* Activity Content with useDeferredValue search */}
       {activeView === 'activity' && (
         <Card>
@@ -167,52 +210,79 @@ const ProfileRevamp: FC = () => {
                 type="text"
                 placeholder="Search activities..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery((e.target as HTMLInputElement).value)}
+                onChange={e =>
+                  setSearchQuery((e.target as HTMLInputElement).value)
+                }
                 className="pl-10"
               />
             </div>
-            
+
             {/* Activity List */}
-            <div className={`space-y-3 transition-opacity duration-200 ${
-              isSearchStale ? 'opacity-60' : 'opacity-100'
-            }`}>
-              {filteredActivities.map((activity) => (
-                <div key={activity.id} className="flex items-center justify-between p-3 border rounded-lg">
+            <div
+              className={`space-y-3 transition-opacity duration-200 ${
+                isSearchStale ? 'opacity-60' : 'opacity-100'
+              }`}
+            >
+              {filteredActivities.map(activity => (
+                <div
+                  key={activity.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      {activity.type === 'flight' && <Plane className="w-4 h-4 text-blue-600" />}
-                      {activity.type === 'booking' && <Settings className="w-4 h-4 text-green-600" />}
-                      {activity.type === 'campaign' && <Bell className="w-4 h-4 text-purple-600" />}
-                      {activity.type === 'search' && <Search className="w-4 h-4 text-orange-600" />}
+                      {activity.type === 'flight' && (
+                        <Plane className="w-4 h-4 text-blue-600" />
+                      )}
+                      {activity.type === 'booking' && (
+                        <Settings className="w-4 h-4 text-green-600" />
+                      )}
+                      {activity.type === 'campaign' && (
+                        <Bell className="w-4 h-4 text-purple-600" />
+                      )}
+                      {activity.type === 'search' && (
+                        <Search className="w-4 h-4 text-orange-600" />
+                      )}
                     </div>
                     <div>
                       <h4 className="font-medium">{activity.title}</h4>
-                      <p className="text-sm text-muted-foreground">{activity.date}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {activity.date}
+                      </p>
                     </div>
                   </div>
-                  <Badge 
-                    variant={activity.status === 'completed' ? 'default' : 
-                            activity.status === 'active' ? 'secondary' : 'outline'}
+                  <Badge
+                    variant={
+                      activity.status === 'completed'
+                        ? 'default'
+                        : activity.status === 'active'
+                          ? 'secondary'
+                          : 'outline'
+                    }
                   >
                     {activity.status}
                   </Badge>
                 </div>
               ))}
             </div>
-            
+
             {filteredActivities.length === 0 && searchQuery && (
               <div className="text-center py-8">
                 <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">No activities found</h3>
-                <p className="text-muted-foreground">Try searching with different keywords.</p>
+                <h3 className="text-lg font-semibold mb-2">
+                  No activities found
+                </h3>
+                <p className="text-muted-foreground">
+                  Try searching with different keywords.
+                </p>
               </div>
             )}
-            
+
             <div className="mt-4 text-xs text-muted-foreground text-center">
               <p>
                 <strong>Performance Note:</strong> Search uses{' '}
-                <code className="bg-muted px-1 rounded">useDeferredValue</code> to defer filtering while keeping input responsive.
-                Current: "{searchQuery}" | Deferred: "{deferredQuery}"
+                <code className="bg-muted px-1 rounded">useDeferredValue</code>{' '}
+                to defer filtering while keeping input responsive. Current: "
+                {searchQuery}" | Deferred: "{deferredQuery}"
               </p>
             </div>
           </CardContent>
@@ -262,7 +332,10 @@ const ProfileSkeleton: FC = () => {
 
 // Main Profile component with feature flag
 const Profile: FC = () => {
-  const { data: showNewUI, isLoading } = useFeatureFlag('profile_ui_revamp', false);
+  const { data: showNewUI, isLoading } = useFeatureFlag(
+    'profile_ui_revamp',
+    false
+  );
 
   // Show loading state
   if (isLoading) {

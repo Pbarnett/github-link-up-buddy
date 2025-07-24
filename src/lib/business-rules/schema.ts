@@ -1,6 +1,6 @@
 /**
  * Business Rules Configuration Schema
- * 
+ *
  * Production-ready schema with versioning, validation, and type safety
  * Based on enterprise patterns from Spotify, Airbnb, and Netflix
  */
@@ -36,16 +36,18 @@ const FlightSearchConfigSchema = z.object({
   defaultNonstopRequired: z.boolean().default(true),
   maxAdvanceBookingDays: z.number().min(1).max(365).default(365),
   minAdvanceBookingDays: z.number().min(0).max(30).default(1),
-  
+
   // Allowed values
-  allowedCabinClasses: z.array(z.enum(['economy', 'premium_economy', 'business', 'first'])).default(['economy']),
+  allowedCabinClasses: z
+    .array(z.enum(['economy', 'premium_economy', 'business', 'first']))
+    .default(['economy']),
   allowedAirlines: z.array(z.string()).optional(),
   blockedAirlines: z.array(z.string()).optional(),
-  
+
   // Price constraints
   maxPriceUSD: z.number().min(50).max(50000).default(5000),
   minPriceUSD: z.number().min(0).max(1000).default(50),
-  
+
   // Geographic restrictions
   allowedOriginCountries: z.array(z.string()).optional(),
   allowedDestinationCountries: z.array(z.string()).optional(),
@@ -76,19 +78,19 @@ export const BusinessRulesConfigSchema = z.object({
   environment: z.enum(['development', 'staging', 'production', 'test']),
   lastUpdated: z.string().datetime(),
   updatedBy: z.string(),
-  
+
   // Feature context
   context: z.enum(['flight-search', 'auto-booking', 'manual-search']),
-  
+
   // Configuration sections
   ui: UISectionConfigSchema,
   flightSearch: FlightSearchConfigSchema,
   autoBooking: AutoBookingConfigSchema,
   filters: z.array(FilterConfigSchema),
-  
+
   // A/B testing (optional)
   abTest: ABTestConfigSchema.optional(),
-  
+
   // Emergency overrides
   emergencyDisable: z.boolean().default(false),
   emergencyMessage: z.string().optional(),
@@ -126,7 +128,7 @@ export const DEFAULT_CONFIGS: Record<string, Partial<BusinessRulesConfig>> = {
       maxMonthlySpend: 1000,
     },
   },
-  
+
   development: {
     environment: 'development',
     flightSearch: {
@@ -148,7 +150,7 @@ export const DEFAULT_CONFIGS: Record<string, Partial<BusinessRulesConfig>> = {
       travelerInfo: true,
     },
   },
-  
+
   staging: {
     environment: 'staging',
     flightSearch: {
@@ -161,7 +163,7 @@ export const DEFAULT_CONFIGS: Record<string, Partial<BusinessRulesConfig>> = {
       minPriceUSD: 50,
     },
   },
-  
+
   production: {
     environment: 'production',
     flightSearch: {
@@ -193,18 +195,20 @@ export const DEFAULT_CONFIGS: Record<string, Partial<BusinessRulesConfig>> = {
 };
 
 // Configuration validation helper with optimized error reporting
-export function validateBusinessRulesConfig(config: unknown): BusinessRulesConfig {
+export function validateBusinessRulesConfig(
+  config: unknown
+): BusinessRulesConfig {
   const result = BusinessRulesConfigSchema.safeParse(config);
-  
+
   if (!result.success) {
     // Create more detailed error message
-    const errorDetails = result.error.errors.map(err => 
-      `${err.path.join('.')}: ${err.message}`
-    ).join('; ');
-    
+    const errorDetails = result.error.errors
+      .map(err => `${err.path.join('.')}: ${err.message}`)
+      .join('; ');
+
     throw new Error(`Invalid business rules configuration: ${errorDetails}`);
   }
-  
+
   return result.data;
 }
 
@@ -221,7 +225,7 @@ export function mergeConfigs(
     autoBooking: { ...base.autoBooking, ...override.autoBooking },
     filters: override.filters || base.filters || [],
   };
-  
+
   return validateBusinessRulesConfig(merged);
 }
 

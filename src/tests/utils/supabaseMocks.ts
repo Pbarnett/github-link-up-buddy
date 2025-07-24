@@ -1,7 +1,10 @@
 import { vi } from 'vitest';
 
 // Comprehensive Supabase Mock Factory
-export function createSupabaseStub(defaultData: unknown = null, defaultError: unknown = null) {
+export function createSupabaseStub(
+  defaultData: unknown = null,
+  defaultError: unknown = null
+) {
   const mockData = vi.fn().mockReturnValue(defaultData);
   const mockError = vi.fn().mockReturnValue(defaultError);
 
@@ -37,55 +40,67 @@ export function createSupabaseStub(defaultData: unknown = null, defaultError: un
     limit: vi.fn().mockReturnThis(),
     range: vi.fn().mockReturnThis(),
     abortSignal: vi.fn().mockReturnThis(),
-    single: vi.fn().mockImplementation(() => 
-      Promise.resolve({ data: mockData(), error: mockError() })
-    ),
-    maybeSingle: vi.fn().mockImplementation(() => 
-      Promise.resolve({ data: mockData(), error: mockError() })
-    ),
-    then: vi.fn().mockImplementation((callback) => 
-      callback({ data: mockData(), error: mockError() })
-    ),
+    single: vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve({ data: mockData(), error: mockError() })
+      ),
+    maybeSingle: vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve({ data: mockData(), error: mockError() })
+      ),
+    then: vi
+      .fn()
+      .mockImplementation(callback =>
+        callback({ data: mockData(), error: mockError() })
+      ),
   };
-
 
   // Create the base mock object
   const baseMock = {
     ...chainableMethods,
     // Auth methods
     auth: {
-      getUser: vi.fn().mockResolvedValue({ 
-        data: { user: { id: 'test-user-id', email: 'test@example.com' } }, 
-        error: null 
+      getUser: vi.fn().mockResolvedValue({
+        data: { user: { id: 'test-user-id', email: 'test@example.com' } },
+        error: null,
       }),
-      signInWithPassword: vi.fn().mockResolvedValue({ 
-        data: { user: { id: 'test-user-id' }, session: { access_token: 'test-token' } }, 
-        error: null 
+      signInWithPassword: vi.fn().mockResolvedValue({
+        data: {
+          user: { id: 'test-user-id' },
+          session: { access_token: 'test-token' },
+        },
+        error: null,
       }),
-      signUp: vi.fn().mockResolvedValue({ 
-        data: { user: { id: 'test-user-id' } }, 
-        error: null 
+      signUp: vi.fn().mockResolvedValue({
+        data: { user: { id: 'test-user-id' } },
+        error: null,
       }),
       signOut: vi.fn().mockResolvedValue({ error: null }),
       onAuthStateChange: vi.fn().mockReturnValue({
-        data: { subscription: { unsubscribe: vi.fn() } }
+        data: { subscription: { unsubscribe: vi.fn() } },
       }),
     },
     // Functions methods
     functions: {
-      invoke: vi.fn().mockResolvedValue({ 
-        data: mockData(), 
-        error: mockError() 
+      invoke: vi.fn().mockResolvedValue({
+        data: mockData(),
+        error: mockError(),
       }),
     },
     // Storage methods
     storage: {
       from: vi.fn().mockReturnValue({
-        upload: vi.fn().mockResolvedValue({ data: { path: 'test-path' }, error: null }),
+        upload: vi
+          .fn()
+          .mockResolvedValue({ data: { path: 'test-path' }, error: null }),
         download: vi.fn().mockResolvedValue({ data: new Blob(), error: null }),
         remove: vi.fn().mockResolvedValue({ data: [], error: null }),
         list: vi.fn().mockResolvedValue({ data: [], error: null }),
-        getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'test-url' } }),
+        getPublicUrl: vi
+          .fn()
+          .mockReturnValue({ data: { publicUrl: 'test-url' } }),
       }),
     },
     // Realtime methods
@@ -114,7 +129,9 @@ export function createSupabaseStub(defaultData: unknown = null, defaultError: un
 }
 
 // Edge Function environment stub for Deno
-export function createDenoEnvironmentStub(envVars: Record<string, string> = {}) {
+export function createDenoEnvironmentStub(
+  envVars: Record<string, string> = {}
+) {
   const defaultEnvVars = {
     SUPABASE_URL: 'http://localhost:54321',
     SUPABASE_ANON_KEY: 'test-anon-key',
@@ -130,7 +147,9 @@ export function createDenoEnvironmentStub(envVars: Record<string, string> = {}) 
 
   vi.stubGlobal('Deno', {
     env: {
-      get: vi.fn((key: string) => (defaultEnvVars as any)[key] || process.env[key]),
+      get: vi.fn(
+        (key: string) => (defaultEnvVars as any)[key] || process.env[key]
+      ),
       set: vi.fn(),
       delete: vi.fn(),
       has: vi.fn((key: string) => key in defaultEnvVars || key in process.env),
@@ -149,40 +168,43 @@ export function createDenoEnvironmentStub(envVars: Record<string, string> = {}) 
 export const TestScenarios = {
   // Successful database operations
   success: (data: unknown) => createSupabaseStub(data, null),
-  
+
   // Database error scenarios
-  dbError: (errorMessage: string = 'Database error') => 
+  dbError: (errorMessage: string = 'Database error') =>
     createSupabaseStub(null, { message: errorMessage, code: 'DB_ERROR' }),
-  
+
   // Network error scenarios
-  networkError: () => 
-    createSupabaseStub(null, { message: 'Network error', code: 'NETWORK_ERROR' }),
-  
+  networkError: () =>
+    createSupabaseStub(null, {
+      message: 'Network error',
+      code: 'NETWORK_ERROR',
+    }),
+
   // Empty data scenarios
   empty: () => createSupabaseStub([], null),
-  
+
   // Flight offers data
   flightOffers: (offers: unknown[] = []) => createSupabaseStub(offers, null),
-  
+
   // User authentication scenarios
   authenticatedUser: (userId: string = 'test-user-id') => {
     const stub = createSupabaseStub();
     stub.auth.getUser.mockResolvedValue({
-      data: { 
-        user: { 
-          id: userId, 
+      data: {
+        user: {
+          id: userId,
           email: 'test@example.com',
           app_metadata: {},
           user_metadata: {},
           aud: 'authenticated',
           created_at: '2024-01-01T00:00:00Z',
-        } 
+        },
       },
       error: null,
     });
     return stub;
   },
-  
+
   // Unauthenticated scenarios
   unauthenticated: () => {
     const stub = createSupabaseStub();

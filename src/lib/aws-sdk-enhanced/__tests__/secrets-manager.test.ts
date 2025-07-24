@@ -2,7 +2,10 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { _SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import {
+  _SecretsManagerClient,
+  GetSecretValueCommand,
+} from '@aws-sdk/client-secrets-manager';
 
 // Mock modules at the top level
 const mockSecretsManagerClient = {
@@ -38,8 +41,12 @@ const { getSecretValue } = await import('../secrets-manager');
 describe('AWS Secrets Manager Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockClientFactory.createSecretsManagerClient.mockReturnValue(mockSecretsManagerClient);
-    mockErrorHandler.executeWithRetry.mockImplementation((operation) => operation());
+    mockClientFactory.createSecretsManagerClient.mockReturnValue(
+      mockSecretsManagerClient
+    );
+    mockErrorHandler.executeWithRetry.mockImplementation(operation =>
+      operation()
+    );
   });
 
   afterEach(() => {
@@ -64,10 +71,12 @@ describe('AWS Secrets Manager Integration', () => {
 
       // Assert
       expect(result).toBe(expectedSecretValue);
-      expect(mockClientFactory.createSecretsManagerClient).toHaveBeenCalledWith({
-        region,
-        environment: 'test', // NODE_ENV during testing
-      });
+      expect(mockClientFactory.createSecretsManagerClient).toHaveBeenCalledWith(
+        {
+          region,
+          environment: 'test', // NODE_ENV during testing
+        }
+      );
       expect(mockSecretsManagerClient.send).toHaveBeenCalledWith(
         expect.any(GetSecretValueCommand)
       );
@@ -124,7 +133,9 @@ describe('AWS Secrets Manager Integration', () => {
       mockErrorHandler.executeWithRetry.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(getSecretValue(secretId, region)).rejects.toThrow('Secret not found');
+      await expect(getSecretValue(secretId, region)).rejects.toThrow(
+        'Secret not found'
+      );
     });
 
     it('should use the correct environment from NODE_ENV', async () => {
@@ -144,7 +155,9 @@ describe('AWS Secrets Manager Integration', () => {
         await getSecretValue(secretId, region);
 
         // Assert
-        expect(mockClientFactory.createSecretsManagerClient).toHaveBeenCalledWith({
+        expect(
+          mockClientFactory.createSecretsManagerClient
+        ).toHaveBeenCalledWith({
           region,
           environment: 'production',
         });
@@ -171,7 +184,9 @@ describe('AWS Secrets Manager Integration', () => {
         await getSecretValue(secretId, region);
 
         // Assert
-        expect(mockClientFactory.createSecretsManagerClient).toHaveBeenCalledWith({
+        expect(
+          mockClientFactory.createSecretsManagerClient
+        ).toHaveBeenCalledWith({
           region,
           environment: 'development',
         });
@@ -196,7 +211,9 @@ describe('AWS Secrets Manager Integration', () => {
       mockClientFactory.createSecretsManagerClient(config);
 
       // Assert
-      expect(mockClientFactory.createSecretsManagerClient).toHaveBeenCalledWith(config);
+      expect(mockClientFactory.createSecretsManagerClient).toHaveBeenCalledWith(
+        config
+      );
     });
   });
 
@@ -230,9 +247,9 @@ describe('AWS Secrets Manager Integration', () => {
       mockErrorHandler.executeWithRetry.mockRejectedValue(authError);
 
       // Act & Assert
-      await expect(getSecretValue('protected-secret', 'us-west-2')).rejects.toThrow(
-        'Access denied'
-      );
+      await expect(
+        getSecretValue('protected-secret', 'us-west-2')
+      ).rejects.toThrow('Access denied');
     });
   });
 
@@ -268,7 +285,9 @@ describe('AWS Secrets Manager Integration', () => {
 
         const result = await getSecretValue('test-secret', region);
         expect(result).toBe(`secret-in-${region}`);
-        expect(mockClientFactory.createSecretsManagerClient).toHaveBeenCalledWith({
+        expect(
+          mockClientFactory.createSecretsManagerClient
+        ).toHaveBeenCalledWith({
           region,
           environment: 'test',
         });

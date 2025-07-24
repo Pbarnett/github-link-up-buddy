@@ -41,17 +41,20 @@ export async function invokeFlightSearch(
 ): Promise<FlightSearchResponse> {
   try {
     logger.info('[FlightSearchApi] Invoking flight search', payload);
-    
+
     // Call the flight search edge function
-    const { data, error } = await supabase.functions.invoke('flight-search-v2', {
-      body: payload
-    });
-    
+    const { data, error } = await supabase.functions.invoke(
+      'flight-search-v2',
+      {
+        body: payload,
+      }
+    );
+
     if (error) {
       logger.error('[FlightSearchApi] Error from edge function:', error);
       throw new Error(`Flight search failed: ${error.message}`);
     }
-    
+
     logger.info('[FlightSearchApi] Flight search completed successfully');
     return data as FlightSearchResponse;
   } catch (error) {
@@ -76,33 +79,33 @@ export async function fetchFlightSearch(
     logger.info('[FlightSearchApi] Fetching flight search results', {
       tripId,
       relaxedCriteria,
-      filterOptions
+      filterOptions,
     });
 
     // For now, we'll use the existing edge function approach
     // In the future, this could be enhanced with more sophisticated filtering
     const payload: FlightSearchRequestBody = {
       tripRequestId: tripId,
-      relaxedCriteria
+      relaxedCriteria,
     };
 
     const response = await invokeFlightSearch(payload);
-    
+
     // Apply any additional filtering based on filterOptions
     if (filterOptions.budget) {
       // Filter pools by budget
-      const filterByBudget = (offers: ScoredOffer[]) => 
+      const filterByBudget = (offers: ScoredOffer[]) =>
         offers.filter(offer => offer.price <= filterOptions.budget!);
-      
+
       response.pool1 = filterByBudget(response.pool1);
       response.pool2 = filterByBudget(response.pool2);
       response.pool3 = filterByBudget(response.pool3);
     }
-    
+
     return response;
   } catch (error) {
     logger.error('[FlightSearchApi] fetchFlightSearch error:', error);
-    
+
     // Return a default response structure on error
     return {
       requestsProcessed: 0,
@@ -116,7 +119,7 @@ export async function fetchFlightSearch(
       pool1: [],
       pool2: [],
       pool3: [],
-      inserted: 0
+      inserted: 0,
     };
   }
 }

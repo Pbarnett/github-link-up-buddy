@@ -1,12 +1,17 @@
 /**
  * Base Repository Pattern Implementation
- * 
+ *
  * Provides a standardized interface for database operations with
  * error handling, logging, and retry logic.
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Database, Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import {
+  Database,
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+} from '@/integrations/supabase/types';
 import { DatabaseError, type ErrorContext } from '../errors';
 import { retry, RetryDecorators } from '../resilience/retry';
 
@@ -31,20 +36,20 @@ export interface RepositoryConfig {
 export interface QueryOptions {
   /** Columns to select (default: '*') */
   select?: string;
-  
+
   /** Ordering */
   orderBy?: { column: string; ascending?: boolean }[];
-  
+
   /** Pagination */
   limit?: number;
   offset?: number;
-  
+
   /** Range selection */
   range?: { from: number; to: number };
-  
+
   /** Whether to throw on empty results */
   throwOnEmpty?: boolean;
-  
+
   /** Additional context for error handling */
   context?: ErrorContext;
 }
@@ -54,7 +59,18 @@ export interface QueryOptions {
  */
 export interface FilterCondition {
   column: string;
-  operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'in' | 'is' | 'not';
+  operator:
+    | 'eq'
+    | 'neq'
+    | 'gt'
+    | 'gte'
+    | 'lt'
+    | 'lte'
+    | 'like'
+    | 'ilike'
+    | 'in'
+    | 'is'
+    | 'not';
   value: unknown;
 }
 
@@ -65,7 +81,7 @@ export abstract class BaseRepository<
   TTable extends keyof Database['public']['Tables'],
   TRow = Tables<TTable>,
   TInsert = TablesInsert<TTable>,
-  TUpdate = TablesUpdate<TTable>
+  TUpdate = TablesUpdate<TTable>,
 > {
   protected client: SupabaseClient<Database>;
   protected tableName: TTable;
@@ -94,18 +110,27 @@ export abstract class BaseRepository<
       const { data, error } = await operation()();
 
       if (error) {
-        const errorMessage = error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Unknown error';
-        const errorCode = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
-        const errorDetails = error && typeof error === 'object' && 'details' in error ? error.details : undefined;
-        
+        const errorMessage =
+          error && typeof error === 'object' && 'message' in error
+            ? String(error.message)
+            : 'Unknown error';
+        const errorCode =
+          error && typeof error === 'object' && 'code' in error
+            ? error.code
+            : undefined;
+        const errorDetails =
+          error && typeof error === 'object' && 'details' in error
+            ? error.details
+            : undefined;
+
         throw new DatabaseError(
           `${String(this.tableName)} operation failed: ${errorMessage}`,
-          { 
-            ...context, 
+          {
+            ...context,
             table: String(this.tableName),
             supabaseError: error,
             errorCode,
-            errorDetails
+            errorDetails,
           }
         );
       }
@@ -114,14 +139,17 @@ export abstract class BaseRepository<
     };
 
     if (this.enableRetry) {
-      return retry(executeOperation, RetryDecorators.database({
-        onRetry: (error, attempt, delay) => {
-          console.warn(
-            `[${String(this.tableName)}] Database operation failed (attempt ${attempt}), retrying in ${delay}ms`,
-            { error: error instanceof Error ? error.message : error, context }
-          );
-        }
-      })) as Promise<T>;
+      return retry(
+        executeOperation,
+        RetryDecorators.database({
+          onRetry: (error, attempt, delay) => {
+            console.warn(
+              `[${String(this.tableName)}] Database operation failed (attempt ${attempt}), retrying in ${delay}ms`,
+              { error: error instanceof Error ? error.message : error, context }
+            );
+          },
+        })
+      ) as Promise<T>;
     } else {
       return executeOperation() as Promise<T>;
     }
@@ -157,7 +185,11 @@ export abstract class BaseRepository<
         case 'is':
           return q.is(filter.column, filter.value) as SupabaseQuery;
         case 'not':
-          return q.not(filter.column, filter.operator, filter.value) as SupabaseQuery;
+          return q.not(
+            filter.column,
+            filter.operator,
+            filter.value
+          ) as SupabaseQuery;
         default:
           return q;
       }
@@ -181,7 +213,9 @@ export abstract class BaseRepository<
     // Apply ordering
     if (options.orderBy) {
       options.orderBy.forEach(order => {
-        q = q.order(order.column, { ascending: order.ascending ?? true }) as SupabaseQuery;
+        q = q.order(order.column, {
+          ascending: order.ascending ?? true,
+        }) as SupabaseQuery;
       });
     }
 
@@ -191,7 +225,10 @@ export abstract class BaseRepository<
     }
 
     if (options.offset) {
-      q = q.range(options.offset, options.offset + (options.limit || 1000) - 1) as SupabaseQuery;
+      q = q.range(
+        options.offset,
+        options.offset + (options.limit || 1000) - 1
+      ) as SupabaseQuery;
     } else if (options.range) {
       q = q.range(options.range.from, options.range.to) as SupabaseQuery;
     }
@@ -207,11 +244,11 @@ export abstract class BaseRepository<
     options: QueryOptions = {}
   ): Promise<TRow | null> {
     try {
-    const query = (this.client as any)
-      .from(this.tableName as string)
-      .select(options.select || '*')
-      .eq('id', id)
-      .maybeSingle();
+      const query = (this.client as any)
+        .from(this.tableName as string)
+        .select(options.select || '*')
+        .eq('id', id)
+        .maybeSingle();
 
       const result = await this.executeQuery(
         () => query as unknown as Promise<DatabaseResult>,
@@ -235,10 +272,10 @@ export abstract class BaseRepository<
     options: QueryOptions = {}
   ): Promise<TRow[]> {
     let query = (this.client as any).from(this.tableName as string);
-    
+
     // Apply filters
     query = this.applyFilters(query, filters);
-    
+
     // Apply query options
     query = this.applyQueryOptions(query, options);
 
@@ -280,10 +317,11 @@ export abstract class BaseRepository<
     );
 
     if (!result) {
-      throw new DatabaseError(
-        `Failed to create record in ${this.tableName}`,
-        { operation: 'create', data, ...options.context }
-      );
+      throw new DatabaseError(`Failed to create record in ${this.tableName}`, {
+        operation: 'create',
+        data,
+        ...options.context,
+      });
     }
 
     return result as TRow;
@@ -312,7 +350,7 @@ export abstract class BaseRepository<
   /**
    * Update a record by ID
    */
-public async updateById(
+  public async updateById(
     id: string,
     data: TUpdate,
     options: QueryOptions = {}
@@ -342,7 +380,7 @@ public async updateById(
   /**
    * Update multiple records with filters
    */
-public async updateMany(
+  public async updateMany(
     filters: FilterCondition[],
     data: TUpdate,
     options: QueryOptions = {}
@@ -366,7 +404,7 @@ public async updateMany(
   /**
    * Delete a record by ID
    */
-public async deleteById(
+  public async deleteById(
     id: string,
     options: QueryOptions = {}
   ): Promise<void> {
@@ -435,13 +473,17 @@ public async deleteById(
   /**
    * Execute a raw RPC function
    */
-public async rpc<T = unknown>(
+  public async rpc<T = unknown>(
     functionName: string,
     parameters: Record<string, unknown> = {},
     options: QueryOptions = {}
   ): Promise<T> {
     const result = await this.executeQuery<T>(
-      () => this.client.rpc(functionName as any, parameters) as unknown as Promise<DatabaseResult>,
+      () =>
+        this.client.rpc(
+          functionName as any,
+          parameters
+        ) as unknown as Promise<DatabaseResult>,
       { operation: 'rpc', functionName, parameters, ...options.context }
     );
 

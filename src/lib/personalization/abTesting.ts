@@ -44,7 +44,8 @@ export interface ABTestEvent {
 export const PERSONALIZATION_AB_TESTS: Record<string, ABTestConfig> = {
   personalizedGreetings: {
     name: 'Personalized Greetings Impact',
-    description: 'Test impact of personalized greetings vs generic on engagement',
+    description:
+      'Test impact of personalized greetings vs generic on engagement',
     variants: [
       {
         id: 'control',
@@ -73,7 +74,7 @@ export const PERSONALIZATION_AB_TESTS: Record<string, ABTestConfig> = {
     targetSampleSize: 1000, // Minimum sample size per variant
     significance: 0.05,
   },
-  
+
   greetingVariants: {
     name: 'Greeting Tone Variants',
     description: 'Test different tones in personalized greetings',
@@ -84,7 +85,11 @@ export const PERSONALIZATION_AB_TESTS: Record<string, ABTestConfig> = {
         description: 'Very friendly, enthusiastic tone',
         weight: 0.33,
         config: {
-          voiceConfig: { warmth: 'high', competence: 'friendly', humor: 'light' },
+          voiceConfig: {
+            warmth: 'high',
+            competence: 'friendly',
+            humor: 'light',
+          },
         },
       },
       {
@@ -93,7 +98,11 @@ export const PERSONALIZATION_AB_TESTS: Record<string, ABTestConfig> = {
         description: 'Professional, trustworthy tone',
         weight: 0.33,
         config: {
-          voiceConfig: { warmth: 'medium', competence: 'expert', humor: 'none' },
+          voiceConfig: {
+            warmth: 'medium',
+            competence: 'expert',
+            humor: 'none',
+          },
         },
       },
       {
@@ -102,7 +111,11 @@ export const PERSONALIZATION_AB_TESTS: Record<string, ABTestConfig> = {
         description: 'Balanced warmth and competence',
         weight: 0.34,
         config: {
-          voiceConfig: { warmth: 'medium', competence: 'friendly', humor: 'light' },
+          voiceConfig: {
+            warmth: 'medium',
+            competence: 'friendly',
+            humor: 'light',
+          },
         },
       },
     ],
@@ -115,7 +128,10 @@ export const PERSONALIZATION_AB_TESTS: Record<string, ABTestConfig> = {
 };
 
 // Hash-based consistent user assignment (ensures user stays in same variant)
-export function getUserVariant(userId: string, experimentId: string): string | null {
+export function getUserVariant(
+  userId: string,
+  experimentId: string
+): string | null {
   const experiment = PERSONALIZATION_AB_TESTS[experimentId];
   if (!experiment || !experiment.isActive) {
     return null;
@@ -149,7 +165,7 @@ function simpleHash(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
   return Math.abs(hash);
@@ -175,30 +191,39 @@ export async function trackABTestEvent(event: ABTestEvent): Promise<void> {
 }
 
 // Get user's current AB test assignments
-export function getUserABTestAssignments(userId: string): Record<string, string> {
+export function getUserABTestAssignments(
+  userId: string
+): Record<string, string> {
   const assignments: Record<string, string> = {};
-  
+
   Object.keys(PERSONALIZATION_AB_TESTS).forEach(experimentId => {
     const variant = getUserVariant(userId, experimentId);
     if (variant) {
       assignments[experimentId] = variant;
     }
   });
-  
+
   return assignments;
 }
 
 // Helper to check if user is in specific experiment variant
-export function isUserInVariant(userId: string, experimentId: string, variantId: string): boolean {
+export function isUserInVariant(
+  userId: string,
+  experimentId: string,
+  variantId: string
+): boolean {
   const userVariant = getUserVariant(userId, experimentId);
   return userVariant === variantId;
 }
 
 // Get experiment configuration for a user
-export function getExperimentConfig(userId: string, experimentId: string): Record<string, unknown> | null {
+export function getExperimentConfig(
+  userId: string,
+  experimentId: string
+): Record<string, unknown> | null {
   const experiment = PERSONALIZATION_AB_TESTS[experimentId];
   const userVariant = getUserVariant(userId, experimentId);
-  
+
   if (!experiment || !userVariant) {
     return null;
   }
@@ -224,10 +249,13 @@ export interface ABTestResults {
   recommendation: string;
 }
 
-export async function analyzeABTestResults(experimentId: string): Promise<ABTestResults> {
+export async function analyzeABTestResults(
+  experimentId: string
+): Promise<ABTestResults> {
   // In a real implementation, this would query the analytics database
-  const events = JSON.parse(localStorage.getItem('ab_test_events') || '[]')
-    .filter((event: ABTestEvent) => event.experimentId === experimentId);
+  const events = JSON.parse(
+    localStorage.getItem('ab_test_events') || '[]'
+  ).filter((event: ABTestEvent) => event.experimentId === experimentId);
 
   const experiment = PERSONALIZATION_AB_TESTS[experimentId];
   if (!experiment) {
@@ -237,15 +265,24 @@ export async function analyzeABTestResults(experimentId: string): Promise<ABTest
   const results: ABTestResults = {
     experimentId,
     variants: experiment.variants.map(variant => {
-      const variantEvents = events.filter((e: ABTestEvent) => e.variantId === variant.id);
-      const exposureEvents = variantEvents.filter((e: ABTestEvent) => e.eventType === 'exposure');
-      const conversionEvents = variantEvents.filter((e: ABTestEvent) => e.eventType === 'conversion');
-      
+      const variantEvents = events.filter(
+        (e: ABTestEvent) => e.variantId === variant.id
+      );
+      const exposureEvents = variantEvents.filter(
+        (e: ABTestEvent) => e.eventType === 'exposure'
+      );
+      const conversionEvents = variantEvents.filter(
+        (e: ABTestEvent) => e.eventType === 'conversion'
+      );
+
       return {
         id: variant.id,
         name: variant.name,
         sampleSize: exposureEvents.length,
-        conversionRate: exposureEvents.length > 0 ? conversionEvents.length / exposureEvents.length : 0,
+        conversionRate:
+          exposureEvents.length > 0
+            ? conversionEvents.length / exposureEvents.length
+            : 0,
         sessionLength: calculateAvgSessionLength(variantEvents),
         events: variantEvents,
       };
@@ -257,21 +294,29 @@ export async function analyzeABTestResults(experimentId: string): Promise<ABTest
   };
 
   // Simple statistical significance check (in production, use proper statistical tests)
-  if (results.variants.every(v => v.sampleSize >= experiment.targetSampleSize)) {
+  if (
+    results.variants.every(v => v.sampleSize >= experiment.targetSampleSize)
+  ) {
     const controlVariant = results.variants.find(v => v.id === 'control');
     const treatmentVariant = results.variants.find(v => v.id === 'treatment');
-    
+
     if (controlVariant && treatmentVariant) {
-      const improvementRate = (treatmentVariant.conversionRate - controlVariant.conversionRate) / controlVariant.conversionRate;
-      
+      const improvementRate =
+        (treatmentVariant.conversionRate - controlVariant.conversionRate) /
+        controlVariant.conversionRate;
+
       // Basic significance check (in production, use proper chi-square test)
-      if (Math.abs(improvementRate) > 0.05 && Math.min(controlVariant.sampleSize, treatmentVariant.sampleSize) >= 100) {
+      if (
+        Math.abs(improvementRate) > 0.05 &&
+        Math.min(controlVariant.sampleSize, treatmentVariant.sampleSize) >= 100
+      ) {
         results.isSignificant = true;
         results.confidence = 0.95; // Simplified
         results.winner = improvementRate > 0 ? 'treatment' : 'control';
-        results.recommendation = improvementRate > 0 
-          ? 'Personalization shows positive impact. Recommend full rollout.'
-          : 'Personalization shows negative impact. Recommend keeping current approach.';
+        results.recommendation =
+          improvementRate > 0
+            ? 'Personalization shows positive impact. Recommend full rollout.'
+            : 'Personalization shows negative impact. Recommend keeping current approach.';
       }
     }
   }
@@ -293,18 +338,28 @@ export function getABTestDashboardMetrics(experimentId: string): {
   averageSessionLength: number;
   status: 'active' | 'paused' | 'complete';
 } {
-  const events = JSON.parse(localStorage.getItem('ab_test_events') || '[]')
-    .filter((event: ABTestEvent) => event.experimentId === experimentId);
+  const events = JSON.parse(
+    localStorage.getItem('ab_test_events') || '[]'
+  ).filter((event: ABTestEvent) => event.experimentId === experimentId);
 
   const uniqueUsers = new Set(events.map((e: ABTestEvent) => e.userId));
-  const conversionEvents = events.filter((e: ABTestEvent) => e.eventType === 'conversion');
-  const exposureEvents = events.filter((e: ABTestEvent) => e.eventType === 'exposure');
+  const conversionEvents = events.filter(
+    (e: ABTestEvent) => e.eventType === 'conversion'
+  );
+  const exposureEvents = events.filter(
+    (e: ABTestEvent) => e.eventType === 'exposure'
+  );
 
   return {
     totalUsers: uniqueUsers.size,
     activeUsers: uniqueUsers.size, // Simplified
-    conversionRate: exposureEvents.length > 0 ? conversionEvents.length / exposureEvents.length : 0,
+    conversionRate:
+      exposureEvents.length > 0
+        ? conversionEvents.length / exposureEvents.length
+        : 0,
     averageSessionLength: calculateAvgSessionLength(events),
-    status: PERSONALIZATION_AB_TESTS[experimentId]?.isActive ? 'active' : 'paused',
+    status: PERSONALIZATION_AB_TESTS[experimentId]?.isActive
+      ? 'active'
+      : 'paused',
   };
 }

@@ -28,40 +28,40 @@ export class FeatureFlagManager {
   }
 
   async getBooleanFlag(
-    flagKey: string, 
-    user: User, 
+    flagKey: string,
+    user: User,
     fallback: boolean
   ): Promise<boolean> {
     if (!this.initialized) {
       return fallback;
     }
-    
+
     // Mock implementation - always return fallback for tests
     return fallback;
   }
 
   async getStringFlag(
-    flagKey: string, 
-    user: User, 
+    flagKey: string,
+    user: User,
     fallback: string
   ): Promise<string> {
     if (!this.initialized) {
       return fallback;
     }
-    
+
     // Mock implementation - always return fallback for tests
     return fallback;
   }
 
   async getNumberFlag(
-    flagKey: string, 
-    user: User, 
+    flagKey: string,
+    user: User,
     fallback: number
   ): Promise<number> {
     if (!this.initialized) {
       return fallback;
     }
-    
+
     // Mock implementation - always return fallback for tests
     return fallback;
   }
@@ -70,7 +70,7 @@ export class FeatureFlagManager {
     if (!this.initialized) {
       return {};
     }
-    
+
     // Mock implementation - return empty flags
     return {};
   }

@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import Wallet from '@/pages/Wallet';
 import { vi } from 'vitest';
+import Wallet from '@/pages/Wallet';
 
 // Mocking WalletContext and CurrentUser context
 vi.mock('@/contexts/WalletContext', () => ({
@@ -14,7 +14,7 @@ vi.mock('@/contexts/WalletContext', () => ({
         last4: '4242',
         exp_month: '12',
         exp_year: '2025',
-        is_default: true
+        is_default: true,
       },
       {
         id: 'card_2',
@@ -22,40 +22,46 @@ vi.mock('@/contexts/WalletContext', () => ({
         last4: '1111',
         exp_month: '06',
         exp_year: '2026',
-        is_default: false
-      }
+        is_default: false,
+      },
     ],
     loading: false,
     error: null,
     refreshPaymentMethods: vi.fn(),
     setDefaultPaymentMethod: vi.fn(),
-    deletePaymentMethod: vi.fn()
-  })
+    deletePaymentMethod: vi.fn(),
+  }),
 }));
 
 vi.mock('@/hooks/useCurrentUser', () => ({
   useCurrentUser: () => ({
-    user: { id: 'user_123' }
-  })
+    user: { id: 'user_123' },
+  }),
 }));
 
 vi.mock('@/components/ui/use-toast', () => ({
-  toast: vi.fn()
+  toast: vi.fn(),
 }));
 
 vi.mock('@/components/AuthGuard', () => ({
-  default: ({ children }: { children: React.ReactNode }) => children
+  default: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock('@/components/wallet/AddCardModal', () => ({
-  AddCardModal: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  AddCardModal: ({
+    isOpen,
+    onClose,
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+  }) => {
     return isOpen ? (
       <div data-testid="add-card-modal">
         <button onClick={onClose}>Close Modal</button>
         <div>Add Card Form</div>
       </div>
     ) : null;
-  }
+  },
 }));
 
 // Integration test
@@ -77,7 +83,7 @@ describe('Wallet Page Integration Test', () => {
     // Default payment method should show "Default" badge
     const defaultBadge = screen.getByText('Default');
     expect(defaultBadge).toBeInTheDocument();
-    
+
     // Non-default card should have "Make default" button
     const makeDefaultButton = screen.getByText('Make default');
     expect(makeDefaultButton).toBeInTheDocument();
@@ -101,4 +107,3 @@ describe('Wallet Page Integration Test', () => {
     expect(screen.getByText('Add New Card')).toBeInTheDocument();
   });
 });
-

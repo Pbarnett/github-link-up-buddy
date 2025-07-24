@@ -1,6 +1,6 @@
 /**
  * Trip Request Repository
- * 
+ *
  * Handles all database operations for trip requests with
  * proper error handling and business logic encapsulation.
  */
@@ -11,8 +11,10 @@ import { BusinessLogicError, ErrorCode } from '../errors/types';
 import { BaseRepository, FilterCondition, QueryOptions } from './base';
 
 export type TripRequest = Tables<'trip_requests'>;
-export type TripRequestInsert = Database['public']['Tables']['trip_requests']['Insert'];
-export type TripRequestUpdate = Database['public']['Tables']['trip_requests']['Update'];
+export type TripRequestInsert =
+  Database['public']['Tables']['trip_requests']['Insert'];
+export type TripRequestUpdate =
+  Database['public']['Tables']['trip_requests']['Update'];
 
 /**
  * Business-specific filter types for trip requests
@@ -33,42 +35,72 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
       client,
       tableName: 'trip_requests',
       enableRetry: true,
-      logQueries: import.meta.env.MODE === 'development'
+      logQueries: import.meta.env.MODE === 'development',
     });
   }
 
   /**
    * Convert business filters to database filter conditions
    */
-  private businessFiltersToConditions(filters: TripRequestFilters): FilterCondition[] {
+  private businessFiltersToConditions(
+    filters: TripRequestFilters
+  ): FilterCondition[] {
     const conditions: FilterCondition[] = [];
 
     if (filters.userId) {
-      conditions.push({ column: 'user_id', operator: 'eq', value: filters.userId });
+      conditions.push({
+        column: 'user_id',
+        operator: 'eq',
+        value: filters.userId,
+      });
     }
 
     if (filters.autoBookEnabled !== undefined) {
-      conditions.push({ column: 'auto_book_enabled', operator: 'eq', value: filters.autoBookEnabled });
+      conditions.push({
+        column: 'auto_book_enabled',
+        operator: 'eq',
+        value: filters.autoBookEnabled,
+      });
     }
 
     if (filters.createdAfter) {
-      conditions.push({ column: 'created_at', operator: 'gte', value: filters.createdAfter.toISOString() });
+      conditions.push({
+        column: 'created_at',
+        operator: 'gte',
+        value: filters.createdAfter.toISOString(),
+      });
     }
 
     if (filters.createdBefore) {
-      conditions.push({ column: 'created_at', operator: 'lte', value: filters.createdBefore.toISOString() });
+      conditions.push({
+        column: 'created_at',
+        operator: 'lte',
+        value: filters.createdBefore.toISOString(),
+      });
     }
 
     if (filters.destinationAirport) {
-      conditions.push({ column: 'destination_airport', operator: 'eq', value: filters.destinationAirport });
+      conditions.push({
+        column: 'destination_airport',
+        operator: 'eq',
+        value: filters.destinationAirport,
+      });
     }
 
     if (filters.maxPrice !== undefined) {
-      conditions.push({ column: 'max_price', operator: 'lte', value: filters.maxPrice });
+      conditions.push({
+        column: 'max_price',
+        operator: 'lte',
+        value: filters.maxPrice,
+      });
     }
 
     if (filters.minPrice !== undefined) {
-      conditions.push({ column: 'max_price', operator: 'gte', value: filters.minPrice });
+      conditions.push({
+        column: 'max_price',
+        operator: 'gte',
+        value: filters.minPrice,
+      });
     }
 
     return conditions;
@@ -86,7 +118,7 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
       {
         ...options,
         orderBy: [{ column: 'created_at', ascending: false }],
-        context: { operation: 'findByUserId', userId, ...options.context }
+        context: { operation: 'findByUserId', userId, ...options.context },
       }
     );
   }
@@ -100,12 +132,19 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
     return this.findMany(
       [
         { column: 'auto_book_enabled', operator: 'eq', value: true },
-        { column: 'latest_departure', operator: 'gte', value: new Date().toISOString() }
+        {
+          column: 'latest_departure',
+          operator: 'gte',
+          value: new Date().toISOString(),
+        },
       ],
       {
         ...options,
         orderBy: [{ column: 'created_at', ascending: false }],
-        context: { operation: 'findActiveAutoBookingRequests', ...options.context }
+        context: {
+          operation: 'findActiveAutoBookingRequests',
+          ...options.context,
+        },
       }
     );
   }
@@ -118,11 +157,11 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
     options: QueryOptions = {}
   ): Promise<TripRequest[]> {
     const conditions = this.businessFiltersToConditions(filters);
-    
+
     return this.findMany(conditions, {
       ...options,
       orderBy: options.orderBy || [{ column: 'created_at', ascending: false }],
-      context: { operation: 'findWithFilters', filters, ...options.context }
+      context: { operation: 'findWithFilters', filters, ...options.context },
     });
   }
 
@@ -140,15 +179,23 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
     const tripRequestData: TripRequestInsert = {
       ...data,
       created_at: new Date().toISOString(),
-      destination_location_code: data.destination_location_code || data.destination_airport || '',
+      destination_location_code:
+        data.destination_location_code || data.destination_airport || '',
       // Calculate departure and return dates if not provided
-      departure_date: data.departure_date || new Date(data.earliest_departure).toISOString().split('T')[0],
-      return_date: data.return_date || this.calculateReturnDate(data.earliest_departure, data.min_duration || 3),
+      departure_date:
+        data.departure_date ||
+        new Date(data.earliest_departure).toISOString().split('T')[0],
+      return_date:
+        data.return_date ||
+        this.calculateReturnDate(
+          data.earliest_departure,
+          data.min_duration || 3
+        ),
     };
 
     return this.create(tripRequestData, {
       ...options,
-      context: { operation: 'createTripRequest', ...options.context }
+      context: { operation: 'createTripRequest', ...options.context },
     });
   }
 
@@ -161,16 +208,26 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
     options: QueryOptions = {}
   ): Promise<TripRequest> {
     // Business validation if updating critical fields
-    if (data.earliest_departure || data.latest_departure || data.min_duration || data.max_duration) {
+    if (
+      data.earliest_departure ||
+      data.latest_departure ||
+      data.min_duration ||
+      data.max_duration
+    ) {
       this.validateTripRequestData(data);
     }
 
     // Update calculated fields if necessary
     const updateData: TripRequestUpdate = { ...data };
-    
+
     if (data.earliest_departure && data.min_duration) {
-      updateData.departure_date = new Date(data.earliest_departure).toISOString().split('T')[0];
-      updateData.return_date = this.calculateReturnDate(data.earliest_departure, data.min_duration);
+      updateData.departure_date = new Date(data.earliest_departure)
+        .toISOString()
+        .split('T')[0];
+      updateData.return_date = this.calculateReturnDate(
+        data.earliest_departure,
+        data.min_duration
+      );
     }
 
     if (data.destination_airport && !data.destination_location_code) {
@@ -179,7 +236,7 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
 
     return this.updateById(id, updateData, {
       ...options,
-      context: { operation: 'updateTripRequest', id, ...options.context }
+      context: { operation: 'updateTripRequest', id, ...options.context },
     });
   }
 
@@ -195,17 +252,21 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
     return this.findMany(
       [
         { column: 'auto_book_enabled', operator: 'eq', value: true },
-        { column: 'latest_departure', operator: 'gte', value: new Date().toISOString() },
-        { 
-          column: 'last_checked_at', 
-          operator: 'lt', 
-          value: oneDayAgo.toISOString() 
-        }
+        {
+          column: 'latest_departure',
+          operator: 'gte',
+          value: new Date().toISOString(),
+        },
+        {
+          column: 'last_checked_at',
+          operator: 'lt',
+          value: oneDayAgo.toISOString(),
+        },
       ],
       {
         ...options,
         orderBy: [{ column: 'last_checked_at', ascending: true }],
-        context: { operation: 'findRequestsNeedingUpdate', ...options.context }
+        context: { operation: 'findRequestsNeedingUpdate', ...options.context },
       }
     );
   }
@@ -222,7 +283,7 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
       { last_checked_at: new Date().toISOString() },
       {
         ...options,
-        context: { operation: 'updateLastCheckedAt', id, ...options.context }
+        context: { operation: 'updateLastCheckedAt', id, ...options.context },
       }
     );
   }
@@ -242,39 +303,57 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
     const [total, autoBookingEnabled, recentRequests] = await Promise.all([
-      this.count([{ column: 'user_id', operator: 'eq', value: userId }], options),
-      this.count([
-        { column: 'user_id', operator: 'eq', value: userId },
-        { column: 'auto_book_enabled', operator: 'eq', value: true }
-      ], options),
-      this.count([
-        { column: 'user_id', operator: 'eq', value: userId },
-        { column: 'created_at', operator: 'gte', value: oneWeekAgo.toISOString() }
-      ], options)
+      this.count(
+        [{ column: 'user_id', operator: 'eq', value: userId }],
+        options
+      ),
+      this.count(
+        [
+          { column: 'user_id', operator: 'eq', value: userId },
+          { column: 'auto_book_enabled', operator: 'eq', value: true },
+        ],
+        options
+      ),
+      this.count(
+        [
+          { column: 'user_id', operator: 'eq', value: userId },
+          {
+            column: 'created_at',
+            operator: 'gte',
+            value: oneWeekAgo.toISOString(),
+          },
+        ],
+        options
+      ),
     ]);
 
     return {
       total,
       autoBookingEnabled,
-      recentRequests
+      recentRequests,
     };
   }
 
   /**
    * Business validation for trip request data
    */
-  private validateTripRequestData(data: Partial<TripRequestInsert | TripRequestUpdate>): void {
+  private validateTripRequestData(
+    data: Partial<TripRequestInsert | TripRequestUpdate>
+  ): void {
     // Validate date ranges
     if (data.earliest_departure && data.latest_departure) {
       const earliest = new Date(data.earliest_departure);
       const latest = new Date(data.latest_departure);
-      
+
       if (latest <= earliest) {
         throw new BusinessLogicError(
           ErrorCode.VALIDATION_ERROR,
           'Latest departure must be after earliest departure',
           'Please check your travel dates and try again.',
-          { earliest_departure: data.earliest_departure, latest_departure: data.latest_departure }
+          {
+            earliest_departure: data.earliest_departure,
+            latest_departure: data.latest_departure,
+          }
         );
       }
 
@@ -337,9 +416,14 @@ export class TripRequestRepository extends BaseRepository<'trip_requests'> {
   /**
    * Calculate return date based on departure and duration
    */
-  private calculateReturnDate(earliestDeparture: string, minDuration: number): string {
+  private calculateReturnDate(
+    earliestDeparture: string,
+    minDuration: number
+  ): string {
     const departureDate = new Date(earliestDeparture);
-    const returnDate = new Date(departureDate.getTime() + (minDuration * 24 * 60 * 60 * 1000));
+    const returnDate = new Date(
+      departureDate.getTime() + minDuration * 24 * 60 * 60 * 1000
+    );
     return returnDate.toISOString().split('T')[0];
   }
 }

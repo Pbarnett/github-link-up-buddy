@@ -1,6 +1,6 @@
 /**
  * Travel Validation Utilities
- * 
+ *
  * Provides validation logic for international travel requirements,
  * passport validation, and traveler data completeness.
  */
@@ -37,7 +37,16 @@ export interface TravelValidationContext {
  * Country codes that require stricter documentation
  */
 const ENHANCED_SECURITY_COUNTRIES = [
-  'US', 'CA', 'GB', 'AU', 'NZ', 'JP', 'KR', 'IL', 'AE', 'SA'
+  'US',
+  'CA',
+  'GB',
+  'AU',
+  'NZ',
+  'JP',
+  'KR',
+  'IL',
+  'AE',
+  'SA',
 ];
 
 /**
@@ -51,19 +60,23 @@ export function getCountryFromLocationCode(locationCode: string): string {
  * Determine if travel is international based on origin and destination
  */
 export function isInternationalTravel(
-  originLocationCode: string, 
+  originLocationCode: string,
   destinationLocationCode: string
 ): boolean {
   const originCountry = getCountryFromLocationCode(originLocationCode);
   const destCountry = getCountryFromLocationCode(destinationLocationCode);
-  
-  return originCountry !== '' && destCountry !== '' && originCountry !== destCountry;
+
+  return (
+    originCountry !== '' && destCountry !== '' && originCountry !== destCountry
+  );
 }
 
 /**
  * Check if destination requires enhanced security documentation
  */
-export function requiresEnhancedSecurity(destinationLocationCode: string): boolean {
+export function requiresEnhancedSecurity(
+  destinationLocationCode: string
+): boolean {
   const destCountry = getCountryFromLocationCode(destinationLocationCode);
   return ENHANCED_SECURITY_COUNTRIES.includes(destCountry);
 }
@@ -80,51 +93,64 @@ export function validatePassportExpiry(
     const expiryDate = new Date(passportExpiry);
     const travelDate = new Date(departureDate);
     const today = new Date();
-    
+
     // Check if passport is already expired
     if (expiryDate <= today) {
       return {
         isValid: false,
-        error: 'Passport has expired. Please renew your passport before traveling.'
+        error:
+          'Passport has expired. Please renew your passport before traveling.',
       };
     }
-    
+
     // Check if passport expires before travel date
     if (expiryDate <= travelDate) {
       return {
         isValid: false,
-        error: 'Passport expires before your travel date. Please renew your passport.'
+        error:
+          'Passport expires before your travel date. Please renew your passport.',
       };
     }
-    
+
     // Check 6-month rule for many destinations
     const sixMonthsFromTravel = new Date(travelDate);
     sixMonthsFromTravel.setMonth(sixMonthsFromTravel.getMonth() + 6);
-    
+
     if (expiryDate < sixMonthsFromTravel) {
       const destCountry = getCountryFromLocationCode(destinationLocationCode);
-      
+
       // Countries that strictly enforce 6-month rule
-      const strictSixMonthCountries = ['US', 'TH', 'MY', 'SG', 'PH', 'ID', 'VN'];
-      
+      const strictSixMonthCountries = [
+        'US',
+        'TH',
+        'MY',
+        'SG',
+        'PH',
+        'ID',
+        'VN',
+      ];
+
       if (strictSixMonthCountries.includes(destCountry)) {
         return {
           isValid: false,
-          error: 'Your destination requires your passport to be valid for at least 6 months from your travel date.'
+          error:
+            'Your destination requires your passport to be valid for at least 6 months from your travel date.',
         };
       } else {
         return {
           isValid: true,
-          warning: 'Your passport expires within 6 months of travel. Some destinations may require longer validity.'
+          warning:
+            'Your passport expires within 6 months of travel. Some destinations may require longer validity.',
         };
       }
     }
-    
+
     return { isValid: true };
   } catch {
     return {
       isValid: false,
-      error: 'Invalid passport expiry date format. Please use YYYY-MM-DD format.'
+      error:
+        'Invalid passport expiry date format. Please use YYYY-MM-DD format.',
     };
   }
 }
@@ -139,22 +165,22 @@ export function validateTravelerData(
   const missingFields: string[] = [];
   const errors: string[] = [];
   const warnings: string[] = [];
-  
+
   // Basic required fields for all travel
   if (!traveler.firstName?.trim()) {
     missingFields.push('firstName');
   }
-  
+
   if (!traveler.lastName?.trim()) {
     missingFields.push('lastName');
   }
-  
+
   if (!traveler.email?.trim()) {
     missingFields.push('email');
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(traveler.email)) {
     errors.push('Please enter a valid email address.');
   }
-  
+
   // Date of birth validation
   if (!traveler.dateOfBirth?.trim()) {
     missingFields.push('dateOfBirth');
@@ -163,31 +189,33 @@ export function validateTravelerData(
       const birthDate = new Date(traveler.dateOfBirth);
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
-      
+
       if (age < 0 || age > 120) {
         errors.push('Please enter a valid date of birth.');
       }
-      
+
       if (age < 18) {
-        warnings.push('Travelers under 18 may require additional documentation.');
+        warnings.push(
+          'Travelers under 18 may require additional documentation.'
+        );
       }
     } catch {
       errors.push('Please enter a valid date of birth in YYYY-MM-DD format.');
     }
   }
-  
+
   // International travel requirements
   const isInternational = isInternationalTravel(
     context.originLocationCode,
     context.destinationLocationCode
   );
-  
+
   if (isInternational) {
     // Passport required for international travel
     if (!traveler.passportNumber?.trim()) {
       missingFields.push('passportNumber');
     }
-    
+
     if (!traveler.passportExpiry?.trim()) {
       missingFields.push('passportExpiry');
     } else if (traveler.passportExpiry) {
@@ -196,42 +224,44 @@ export function validateTravelerData(
         context.departureDate,
         context.destinationLocationCode
       );
-      
+
       if (!passportValidation.isValid && passportValidation.error) {
         errors.push(passportValidation.error);
       }
-      
+
       if (passportValidation.warning) {
         warnings.push(passportValidation.warning);
       }
     }
-    
+
     if (!traveler.nationality?.trim()) {
       missingFields.push('nationality');
     }
-    
+
     // Enhanced security destinations
     if (requiresEnhancedSecurity(context.destinationLocationCode)) {
       if (!traveler.issuanceCountry?.trim()) {
         missingFields.push('issuanceCountry');
       }
-      
-      warnings.push('This destination may require additional security screening. Please arrive at the airport early.');
+
+      warnings.push(
+        'This destination may require additional security screening. Please arrive at the airport early.'
+      );
     }
   }
-  
+
   // Phone number validation (recommended for all travel)
   if (!traveler.phone?.trim()) {
     warnings.push('A phone number is recommended for travel notifications.');
   } else if (!/^\+?[\d\s\-()]+$/.test(traveler.phone)) {
     warnings.push('Please verify your phone number format is correct.');
   }
-  
+
   return {
     isValid: missingFields.length === 0 && errors.length === 0,
     missingFields,
     errors,
-    warnings
+    warnings,
   };
 }
 
@@ -249,9 +279,9 @@ export function getFieldDisplayName(fieldName: string): string {
     passportExpiry: 'Passport Expiry Date',
     nationality: 'Nationality',
     issuanceCountry: 'Passport Issuing Country',
-    gender: 'Gender'
+    gender: 'Gender',
   };
-  
+
   return displayNames[fieldName] || fieldName;
 }
 
@@ -267,33 +297,34 @@ export function formatValidationMessage(result: ValidationResult): {
     return {
       primaryMessage: 'All traveler information is complete.',
       details: result.warnings,
-      actionRequired: false
+      actionRequired: false,
     };
   }
-  
+
   const details: string[] = [];
-  
+
   if (result.missingFields.length > 0) {
     const fieldNames = result.missingFields.map(getFieldDisplayName);
     details.push(`Missing required information: ${fieldNames.join(', ')}`);
   }
-  
+
   if (result.errors.length > 0) {
     details.push(...result.errors);
   }
-  
+
   if (result.warnings.length > 0) {
     details.push(...result.warnings);
   }
-  
-  const primaryMessage = result.missingFields.length > 0
-    ? 'Please complete all required traveler information.'
-    : 'Please correct the traveler information issues.';
-  
+
+  const primaryMessage =
+    result.missingFields.length > 0
+      ? 'Please complete all required traveler information.'
+      : 'Please correct the traveler information issues.';
+
   return {
     primaryMessage,
     details,
-    actionRequired: true
+    actionRequired: true,
   };
 }
 
@@ -311,7 +342,9 @@ export function hasMinimumBookingRequirements(
 /**
  * Get travel requirements summary for user
  */
-export function getTravelRequirementsSummary(context: TravelValidationContext): {
+export function getTravelRequirementsSummary(
+  context: TravelValidationContext
+): {
   isInternational: boolean;
   requiresPassport: boolean;
   requiresEnhancedSecurity: boolean;
@@ -321,30 +354,36 @@ export function getTravelRequirementsSummary(context: TravelValidationContext): 
     context.originLocationCode,
     context.destinationLocationCode
   );
-  
+
   const requiresPassport = isInternational;
-  const enhancedSecurity = requiresEnhancedSecurity(context.destinationLocationCode);
-  
+  const enhancedSecurity = requiresEnhancedSecurity(
+    context.destinationLocationCode
+  );
+
   const recommendations: string[] = [];
-  
+
   if (requiresPassport) {
     recommendations.push('Valid passport required for international travel');
-    recommendations.push('Ensure passport is valid for at least 6 months from travel date');
+    recommendations.push(
+      'Ensure passport is valid for at least 6 months from travel date'
+    );
   }
-  
+
   if (enhancedSecurity) {
-    recommendations.push('Enhanced security screening may apply - arrive early at airport');
+    recommendations.push(
+      'Enhanced security screening may apply - arrive early at airport'
+    );
   }
-  
+
   if (isInternational) {
     recommendations.push('Check visa requirements for your destination');
     recommendations.push('Verify any COVID-19 or health requirements');
   }
-  
+
   return {
     isInternational,
     requiresPassport,
     requiresEnhancedSecurity: enhancedSecurity,
-    recommendations
+    recommendations,
   };
 }

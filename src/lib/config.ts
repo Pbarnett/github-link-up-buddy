@@ -1,6 +1,6 @@
 /**
  * Application configuration
- * 
+ *
  * Centralized configuration for API settings, retry policies,
  * and other application-wide settings.
  */
@@ -29,7 +29,7 @@ const DEFAULT_API_CONFIG: ApiConfig = {
   retryAttempts: 3,
   retryDelay: 1000,
   timeout: 15000,
-  baseUrl: import.meta.env.VITE_API_BASE_URL
+  baseUrl: import.meta.env.VITE_API_BASE_URL,
 };
 
 /**
@@ -40,9 +40,11 @@ const DEFAULT_APP_CONFIG: AppConfig = {
   features: {
     duffelEnabled: import.meta.env.VITE_DUFFEL_ENABLED === 'true',
     amadeusEnabled: import.meta.env.VITE_AMADEUS_ENABLED === 'true',
-    autoBookingEnabled: import.meta.env.VITE_AUTO_BOOKING_ENABLED === 'true'
+    autoBookingEnabled: import.meta.env.VITE_AUTO_BOOKING_ENABLED === 'true',
   },
-  environment: (import.meta.env.MODE as 'development' | 'staging' | 'production') || 'development'
+  environment:
+    (import.meta.env.MODE as 'development' | 'staging' | 'production') ||
+    'development',
 };
 
 /**
@@ -62,7 +64,9 @@ export function getAppConfig(): AppConfig {
 /**
  * Check if a feature is enabled
  */
-export function isFeatureEnabled(feature: keyof AppConfig['features']): boolean {
+export function isFeatureEnabled(
+  feature: keyof AppConfig['features']
+): boolean {
   return DEFAULT_APP_CONFIG.features[feature];
 }
 

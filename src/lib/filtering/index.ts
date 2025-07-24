@@ -1,6 +1,6 @@
 /**
  * Flight Filtering System - Main Export
- * 
+ *
  * This module exports all the components of the comprehensive flight filtering
  * system, providing a clean API for use throughout the application.
  */
@@ -12,9 +12,9 @@ import FilterFactoryClass from './FilterFactory';
 export { default as FilterFactory, LegacyFilterAdapter } from './FilterFactory';
 
 // Core filtering infrastructure
-export { 
-  DefaultFilterPipeline, 
-  ConsolePerformanceLogger 
+export {
+  DefaultFilterPipeline,
+  ConsolePerformanceLogger,
 } from './core/FilterPipeline';
 
 // Individual filter implementations
@@ -23,11 +23,11 @@ export { RoundTripFilter } from './filters/RoundTripFilter';
 export { NonstopFilter } from './filters/NonstopFilter';
 
 // Provider adapters for normalizing API responses
-export { 
-  AmadeusAdapter, 
-  DuffelAdapter, 
-  getProviderAdapter, 
-  normalizeOffers 
+export {
+  AmadeusAdapter,
+  DuffelAdapter,
+  getProviderAdapter,
+  normalizeOffers,
 } from './adapters/ProviderAdapters';
 
 // Type definitions
@@ -47,12 +47,17 @@ export type {
   Itinerary,
   Segment,
   Airport,
-  SearchParams
+  SearchParams,
 } from './core/types';
 
 // Convenience functions for common use cases
-export const createStandardFilterPipeline = () => FilterFactoryClass.createPipeline('standard');
-export const createBudgetFilterPipeline = () => FilterFactoryClass.createPipeline('budget');
-export const createFastFilterPipeline = () => FilterFactoryClass.createPipeline('fast');
-export const createFilterContext = FilterFactoryClass.createFilterContext.bind(FilterFactoryClass);
-export const validateSearchParams = FilterFactoryClass.validateSearchParams.bind(FilterFactoryClass);
+export const createStandardFilterPipeline = () =>
+  FilterFactoryClass.createPipeline('standard');
+export const createBudgetFilterPipeline = () =>
+  FilterFactoryClass.createPipeline('budget');
+export const createFastFilterPipeline = () =>
+  FilterFactoryClass.createPipeline('fast');
+export const createFilterContext =
+  FilterFactoryClass.createFilterContext.bind(FilterFactoryClass);
+export const validateSearchParams =
+  FilterFactoryClass.validateSearchParams.bind(FilterFactoryClass);

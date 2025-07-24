@@ -1,7 +1,6 @@
-
 /**
  * Form Section Component
- * 
+ *
  * Renders a section of form fields with optional conditional logic
  */
 
@@ -9,13 +8,19 @@ import * as React from 'react';
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import type {
   FormSection as FormSectionType,
   FieldConfiguration,
-  FormState
+  FormState,
 } from '@/types/dynamic-forms';
 import { FieldRenderer } from './FieldRenderer';
 
@@ -36,7 +41,7 @@ export const FormSection: FC<FormSectionProps> = ({
   onFieldChange,
   isFieldVisible,
   isFieldEnabled,
-  disabled = false
+  disabled = false,
 }) => {
   // Get visible fields for this section
   const visibleFields = section.fields.filter(field => isFieldVisible(field));
@@ -47,17 +52,22 @@ export const FormSection: FC<FormSectionProps> = ({
   }
 
   // Determine section layout based on field types and count
-  const hasMultipleColumns = visibleFields.length > 2 && 
-    visibleFields.every(field => 
-      ['text', 'email', 'phone', 'number', 'select', 'date'].includes(field.type)
+  const hasMultipleColumns =
+    visibleFields.length > 2 &&
+    visibleFields.every(field =>
+      ['text', 'email', 'phone', 'number', 'select', 'date'].includes(
+        field.type
+      )
     );
 
   return (
-    <Card className={cn(
-      "form-section",
-      section.className,
-      disabled && "opacity-60"
-    )}>
+    <Card
+      className={cn(
+        'form-section',
+        section.className,
+        disabled && 'opacity-60'
+      )}
+    >
       {/* Section Header */}
       {(section.title || section.description) && (
         <CardHeader className="pb-4">
@@ -76,11 +86,13 @@ export const FormSection: FC<FormSectionProps> = ({
 
       <CardContent className="space-y-4">
         {/* Section Fields */}
-        <div className={cn(
-          "form-section-fields",
-          hasMultipleColumns && "grid grid-cols-1 md:grid-cols-2 gap-4",
-          !hasMultipleColumns && "space-y-4"
-        )}>
+        <div
+          className={cn(
+            'form-section-fields',
+            hasMultipleColumns && 'grid grid-cols-1 md:grid-cols-2 gap-4',
+            !hasMultipleColumns && 'space-y-4'
+          )}
+        >
           {visibleFields.map((field, fieldIndex) => (
             <FieldRenderer
               key={field.id}
@@ -90,7 +102,7 @@ export const FormSection: FC<FormSectionProps> = ({
               value={formState.values[field.id]}
               error={formState.errors[field.id]}
               touched={formState.touched[field.id]}
-              onChange={(value) => onFieldChange(field.id, value)}
+              onChange={value => onFieldChange(field.id, value)}
               disabled={disabled || !isFieldEnabled(field)}
               isValid={formState.isValid}
             />

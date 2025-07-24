@@ -22,12 +22,12 @@ export class LaunchDarklyContextManager {
    */
   static createContext(userAttributes: UserAttributes): LDContext {
     const { userId, customAttributes, ...standardAttributes } = userAttributes;
-    
+
     return {
       kind: 'user',
       key: userId || 'anonymous',
       ...standardAttributes,
-      ...customAttributes
+      ...customAttributes,
     };
   }
 
@@ -37,8 +37,10 @@ export class LaunchDarklyContextManager {
   static createAnonymousContext(sessionId?: string): LDContext {
     return {
       kind: 'user',
-      key: sessionId || `anonymous-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      anonymous: true
+      key:
+        sessionId ||
+        `anonymous-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      anonymous: true,
     };
   }
 
@@ -50,12 +52,12 @@ export class LaunchDarklyContextManager {
     userAttributes: UserAttributes
   ): LDContext {
     const newContext = this.createContext(userAttributes);
-    
+
     // Preserve any existing attributes that aren't being updated
     return {
       ...currentContext,
       ...newContext,
-      anonymous: false
+      anonymous: false,
     };
   }
 
@@ -68,7 +70,7 @@ export class LaunchDarklyContextManager {
   ): LDContext {
     return {
       ...currentContext,
-      subscription
+      subscription,
     };
   }
 
@@ -82,15 +84,17 @@ export class LaunchDarklyContextManager {
     used: boolean = true
   ): LDContext {
     const currentFeatures = (currentContext as any).customFeatures || [];
-    const updatedFeatures = used 
+    const updatedFeatures = used
       ? [...new Set([...currentFeatures, featureKey])]
       : currentFeatures.filter((f: string) => f !== featureKey);
 
     return {
       ...currentContext,
       customFeatures: updatedFeatures,
-      lastFeatureUsed: used ? featureKey : (currentContext as any).lastFeatureUsed,
-      lastActivity: new Date().toISOString()
+      lastFeatureUsed: used
+        ? featureKey
+        : (currentContext as any).lastFeatureUsed,
+      lastActivity: new Date().toISOString(),
     };
   }
 
@@ -105,7 +109,7 @@ export class LaunchDarklyContextManager {
     return {
       ...currentContext,
       ...(country && { country }),
-      ...(timezone && { timezone })
+      ...(timezone && { timezone }),
     };
   }
 
@@ -119,7 +123,7 @@ export class LaunchDarklyContextManager {
     return {
       ...this.createContext(userAttributes),
       experimentGroup,
-      experimentStarted: new Date().toISOString()
+      experimentStarted: new Date().toISOString(),
     };
   }
 
@@ -142,8 +146,13 @@ export class LaunchDarklyContextManager {
     // Kind should be 'user' or other valid types
     // Note: kind property may not exist on all LDContext types, so we check if it exists as a custom property
     const contextKind = (context as any).kind;
-    if (contextKind && !['user', 'organization', 'device'].includes(contextKind as string)) {
-      console.warn('LaunchDarkly context kind should be user, organization, or device');
+    if (
+      contextKind &&
+      !['user', 'organization', 'device'].includes(contextKind as string)
+    ) {
+      console.warn(
+        'LaunchDarkly context kind should be user, organization, or device'
+      );
       return false;
     }
 
@@ -154,14 +163,14 @@ export class LaunchDarklyContextManager {
    * Sanitizes context to remove sensitive information
    */
   static sanitizeContext(context: LDContext): LDContext {
-    const { 
-      password, 
-      token, 
-      secret, 
-      apiKey, 
-      creditCard, 
-      ssn, 
-      ...sanitizedContext 
+    const {
+      password,
+      token,
+      secret,
+      apiKey,
+      creditCard,
+      ssn,
+      ...sanitizedContext
     } = context as any;
 
     return sanitizedContext;

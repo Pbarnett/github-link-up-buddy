@@ -1,14 +1,24 @@
 import * as React from 'react';
-import { useState, useEffect, useMemo, useContext, useCallback, createContext } from 'react';
-import { PersonalizationData, PersonalizationError } from '@/types/personalization';
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useContext,
+  useCallback,
+  createContext,
+} from 'react';
+import {
+  PersonalizationData,
+  PersonalizationError,
+} from '@/types/personalization';
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { enablePersonalizationForTesting } from '@/lib/personalization/featureFlags';
 import {
-  getUserVariant, 
+  getUserVariant,
   getExperimentConfig,
   trackABTestEvent,
-  ABTestEvent 
+  ABTestEvent,
 } from '@/lib/personalization/abTesting';
 
 type ReactNode = React.ReactNode;
@@ -22,57 +32,72 @@ interface PersonalizationContextType {
   isPersonalizationEnabled: boolean;
   abTestVariant: string | null;
   experimentConfig: Record<string, unknown> | null;
-  trackPersonalizationEvent: (eventType: 'exposure' | 'conversion' | 'engagement', eventName: string, metadata?: Record<string, unknown>) => Promise<void>;
+  trackPersonalizationEvent: (
+    eventType: 'exposure' | 'conversion' | 'engagement',
+    eventName: string,
+    metadata?: Record<string, unknown>
+  ) => Promise<void>;
 }
 
-const PersonalizationContext = createContext<PersonalizationContextType | undefined | null>(null);
+const PersonalizationContext = createContext<
+  PersonalizationContextType | undefined | null
+>(null);
 
 interface PersonalizationProviderProps {
   children: ReactNode;
   userId?: string;
 }
 
-export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({ 
-  children, 
-  userId 
+export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
+  children,
+  userId,
 }) => {
-  const [personalizationData, setPersonalizationData] = useState<PersonalizationData | null>(null);
+  const [personalizationData, setPersonalizationData] =
+    useState<PersonalizationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<PersonalizationError | null>(null);
-  
+
   // A/B testing integration
-  const abTestVariant = userId ? getUserVariant(userId, 'personalizedGreetings') : null;
-  const experimentConfig = userId ? getExperimentConfig(userId, 'personalizedGreetings') : null;
-  
+  const abTestVariant = userId
+    ? getUserVariant(userId, 'personalizedGreetings')
+    : null;
+  const experimentConfig = userId
+    ? getExperimentConfig(userId, 'personalizedGreetings')
+    : null;
+
   // Feature flag check for controlled rollout (Alpha/Beta phases)
   // Now enhanced with A/B testing
   const featureFlagResult = useFeatureFlag('personalization_greeting');
   const featureFlagEnabled = (featureFlagResult?.data ?? false) as boolean;
   const temporaryFlagEnabled = enablePersonalizationForTesting();
-  const abTestPersonalizationEnabled = (experimentConfig?.enablePersonalization ?? false) as boolean;
+  const abTestPersonalizationEnabled =
+    (experimentConfig?.enablePersonalization ?? false) as boolean;
   // TEMPORARILY FORCE ENABLE FOR TESTING YOUR FRIEND-TEST GREETINGS
   const isPersonalizationEnabled: boolean = true; // featureFlagEnabled || temporaryFlagEnabled || abTestPersonalizationEnabled;
 
   // A/B testing event tracking function (memoized to prevent infinite loops)
-  const trackPersonalizationEvent = useCallback(async (
-    eventType: 'exposure' | 'conversion' | 'engagement',
-    eventName: string,
-    metadata?: Record<string, unknown>
-  ) => {
-    if (!userId || !abTestVariant) return;
+  const trackPersonalizationEvent = useCallback(
+    async (
+      eventType: 'exposure' | 'conversion' | 'engagement',
+      eventName: string,
+      metadata?: Record<string, unknown>
+    ) => {
+      if (!userId || !abTestVariant) return;
 
-    const event: ABTestEvent = {
-      experimentId: 'personalizedGreetings',
-      variantId: abTestVariant,
-      userId,
-      eventType,
-      eventName,
-      timestamp: new Date(),
-      metadata,
-    };
+      const event: ABTestEvent = {
+        experimentId: 'personalizedGreetings',
+        variantId: abTestVariant,
+        userId,
+        eventType,
+        eventName,
+        timestamp: new Date(),
+        metadata,
+      };
 
-    await trackABTestEvent(event);
-  }, [userId, abTestVariant]);
+      await trackABTestEvent(event);
+    },
+    [userId, abTestVariant]
+  );
 
   const fetchPersonalizationData = useCallback(async (): Promise<void> => {
     if (!userId || !isPersonalizationEnabled) {
@@ -96,7 +121,9 @@ export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
 
       // Defensive check for response structure
       if (!response || response.error) {
-        throw new Error(`Edge function failed: ${response?.error?.message || 'Unknown error'}`);
+        throw new Error(
+          `Edge function failed: ${response?.error?.message || 'Unknown error'}`
+        );
       }
 
       const { data: personalizationResult } = response;
@@ -112,7 +139,7 @@ export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
       };
 
       setPersonalizationData(personalizationData);
-      
+
       // Log analytics event (without exposing personal data)
       console.log('🎯 Personalization data loaded from edge function:', {
         hasFirstName: !!personalizationData.firstName,
@@ -129,7 +156,6 @@ export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
         hasNextTrip: !!personalizationData.nextTripCity,
         source: 'edge_function',
       });
-
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       const personalizationError: PersonalizationError = {
@@ -138,12 +164,12 @@ export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
         context: 'PersonalizationProvider.fetchPersonalizationData',
         fallbackUsed: true,
       };
-      
+
       setError(personalizationError);
       setPersonalizationData(null);
-      
+
       console.error('❌ Personalization fetch failed:', personalizationError);
-      
+
       // Track error event
       await trackPersonalizationEvent('exposure', 'data_fetch_failed', {
         error: errorMessage,
@@ -155,16 +181,28 @@ export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
   }, [userId, isPersonalizationEnabled, trackPersonalizationEvent]);
 
   // Memoized value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    personalizationData,
-    loading,
-    error,
-    refreshPersonalizationData: fetchPersonalizationData,
-    isPersonalizationEnabled,
-    abTestVariant,
-    experimentConfig,
-    trackPersonalizationEvent,
-  }), [personalizationData, loading, error, fetchPersonalizationData, isPersonalizationEnabled, abTestVariant, experimentConfig, trackPersonalizationEvent]);
+  const contextValue = useMemo(
+    () => ({
+      personalizationData,
+      loading,
+      error,
+      refreshPersonalizationData: fetchPersonalizationData,
+      isPersonalizationEnabled,
+      abTestVariant,
+      experimentConfig,
+      trackPersonalizationEvent,
+    }),
+    [
+      personalizationData,
+      loading,
+      error,
+      fetchPersonalizationData,
+      isPersonalizationEnabled,
+      abTestVariant,
+      experimentConfig,
+      trackPersonalizationEvent,
+    ]
+  );
 
   // Fetch data when userId changes or feature is enabled
   useEffect(() => {
@@ -188,13 +226,16 @@ export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
 export const usePersonalization = (): PersonalizationContextType => {
   const context = useContext(PersonalizationContext);
   if (context === undefined) {
-    throw new Error('usePersonalization must be used within a PersonalizationProvider');
+    throw new Error(
+      'usePersonalization must be used within a PersonalizationProvider'
+    );
   }
   return context;
 };
 
 // Helper hook for easy access to personalization data
 export const usePersonalizationData = (): PersonalizationData | null => {
-  const { personalizationData, isPersonalizationEnabled } = usePersonalization();
+  const { personalizationData, isPersonalizationEnabled } =
+    usePersonalization();
   return isPersonalizationEnabled ? personalizationData : null;
 };

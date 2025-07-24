@@ -1,6 +1,6 @@
 /**
  * Secure Stripe Service with AWS Secrets Manager Integration
- * 
+ *
  * This service integrates Stripe payments with secure credential management
  * using AWS Secrets Manager following production security best practices.
  */
@@ -25,7 +25,7 @@ const SECRET_PATTERNS = {
     url: `${ENVIRONMENT}/database/supabase-url`,
     anonKey: `${ENVIRONMENT}/database/supabase-anon-key`,
     serviceKey: `${ENVIRONMENT}/database/supabase-service-key`,
-  }
+  },
 };
 
 /**
@@ -46,7 +46,7 @@ class SecureConfigCache {
 
   async getConfig<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
     const cached = this.configCache.get(key);
-    
+
     if (cached && cached.expiry > Date.now()) {
       return cached.value as T;
     }
@@ -54,7 +54,7 @@ class SecureConfigCache {
     const value = await fetcher();
     this.configCache.set(key, {
       value,
-      expiry: Date.now() + this.CACHE_TTL
+      expiry: Date.now() + this.CACHE_TTL,
     });
 
     return value;
@@ -82,16 +82,18 @@ export class StripeSecureConfig {
         AWS_REGION,
         10 * 60 * 1000 // 10 minute cache for client-side keys
       );
-      
+
       if (!key) {
-        throw new Error(`Stripe publishable key not found for environment: ${ENVIRONMENT}`);
+        throw new Error(
+          `Stripe publishable key not found for environment: ${ENVIRONMENT}`
+        );
       }
-      
+
       // Validate key format
       if (!key.startsWith('pk_')) {
         throw new Error('Invalid Stripe publishable key format');
       }
-      
+
       return key;
     });
   }
@@ -106,16 +108,18 @@ export class StripeSecureConfig {
         AWS_REGION,
         5 * 60 * 1000 // 5 minute cache for secret keys
       );
-      
+
       if (!key) {
-        throw new Error(`Stripe secret key not found for environment: ${ENVIRONMENT}`);
+        throw new Error(
+          `Stripe secret key not found for environment: ${ENVIRONMENT}`
+        );
       }
-      
+
       // Validate key format
       if (!key.startsWith('sk_')) {
         throw new Error('Invalid Stripe secret key format');
       }
-      
+
       return key;
     });
   }
@@ -130,16 +134,18 @@ export class StripeSecureConfig {
         AWS_REGION,
         5 * 60 * 1000
       );
-      
+
       if (!secret) {
-        throw new Error(`Stripe webhook secret not found for environment: ${ENVIRONMENT}`);
+        throw new Error(
+          `Stripe webhook secret not found for environment: ${ENVIRONMENT}`
+        );
       }
-      
+
       // Validate webhook secret format
       if (!secret.startsWith('whsec_')) {
         throw new Error('Invalid Stripe webhook secret format');
       }
-      
+
       return secret;
     });
   }
@@ -164,11 +170,13 @@ export class SupabaseSecureConfig {
       const [url, anonKey, serviceKey] = await Promise.all([
         secretCache.getSecret(SECRET_PATTERNS.supabase.url, AWS_REGION),
         secretCache.getSecret(SECRET_PATTERNS.supabase.anonKey, AWS_REGION),
-        secretCache.getSecret(SECRET_PATTERNS.supabase.serviceKey, AWS_REGION)
+        secretCache.getSecret(SECRET_PATTERNS.supabase.serviceKey, AWS_REGION),
       ]);
 
       if (!url || !anonKey) {
-        throw new Error(`Supabase configuration not found for environment: ${ENVIRONMENT}`);
+        throw new Error(
+          `Supabase configuration not found for environment: ${ENVIRONMENT}`
+        );
       }
 
       return { url, anonKey, serviceKey };
@@ -181,11 +189,13 @@ export class SupabaseSecureConfig {
   static async getClient(useServiceKey = false) {
     if (!this.supabaseClient) {
       const config = await this.getConfig();
-      const key = useServiceKey ? config.serviceKey || config.anonKey : config.anonKey;
-      
+      const key = useServiceKey
+        ? config.serviceKey || config.anonKey
+        : config.anonKey;
+
       this.supabaseClient = createClient(config.url, key);
     }
-    
+
     return this.supabaseClient;
   }
 }
@@ -241,17 +251,20 @@ export class StripeServiceSecure {
   }) {
     try {
       const supabase = await SupabaseSecureConfig.getClient();
-      
+
       // Call secure edge function that uses AWS Secrets Manager
-      const { data, error } = await supabase.functions.invoke('create-secure-payment-session', {
-        body: {
-          amount: Math.round(params.amount * 100), // Convert to cents
-          currency: params.currency.toLowerCase(),
-          metadata: params.metadata || {},
-          customer_id: params.customerId,
-          payment_method_id: params.paymentMethodId,
+      const { data, error } = await supabase.functions.invoke(
+        'create-secure-payment-session',
+        {
+          body: {
+            amount: Math.round(params.amount * 100), // Convert to cents
+            currency: params.currency.toLowerCase(),
+            metadata: params.metadata || {},
+            customer_id: params.customerId,
+            payment_method_id: params.paymentMethodId,
+          },
         }
-      });
+      );
 
       if (error) {
         throw new Error(error.message || 'Failed to create payment intent');
@@ -262,7 +275,7 @@ export class StripeServiceSecure {
         id: data.id,
         amount: data.amount,
         currency: data.currency,
-        status: data.status
+        status: data.status,
       };
     } catch (error) {
       console.error('Error creating secure payment intent:', error);
@@ -275,7 +288,7 @@ export class StripeServiceSecure {
    */
   async confirmPayment(clientSecret: string, paymentMethod: any) {
     const stripe = await this.getStripe();
-    
+
     if (!stripe) {
       throw new Error('Stripe not initialized');
     }
@@ -302,10 +315,13 @@ export class StripeServiceSecure {
   async createSetupIntent(customerId: string) {
     try {
       const supabase = await SupabaseSecureConfig.getClient();
-      
-      const { data, error } = await supabase.functions.invoke('create-secure-setup-intent', {
-        body: { customer_id: customerId }
-      });
+
+      const { data, error } = await supabase.functions.invoke(
+        'create-secure-setup-intent',
+        {
+          body: { customer_id: customerId },
+        }
+      );
 
       if (error) {
         throw new Error(error.message || 'Failed to create setup intent');
@@ -324,10 +340,13 @@ export class StripeServiceSecure {
   async getPaymentMethods(customerId: string) {
     try {
       const supabase = await SupabaseSecureConfig.getClient();
-      
-      const { data, error } = await supabase.functions.invoke('get-payment-methods', {
-        body: { customer_id: customerId }
-      });
+
+      const { data, error } = await supabase.functions.invoke(
+        'get-payment-methods',
+        {
+          body: { customer_id: customerId },
+        }
+      );
 
       if (error) {
         throw new Error(error.message || 'Failed to retrieve payment methods');
@@ -343,10 +362,13 @@ export class StripeServiceSecure {
   /**
    * Webhook signature verification with secure secrets
    */
-  static async verifyWebhookSignature(payload: string, signature: string): Promise<boolean> {
+  static async verifyWebhookSignature(
+    payload: string,
+    signature: string
+  ): Promise<boolean> {
     try {
       const webhookSecret = await StripeSecureConfig.getWebhookSecret();
-      
+
       // This would typically be done in an edge function
       // For now, return true if we have the secret (actual verification in edge function)
       return !!webhookSecret;
@@ -383,14 +405,15 @@ export const SecurePaymentUtils = {
   validateAmount: (amount: number, currency: string = 'usd'): boolean => {
     // Minimum charge amounts per currency (Stripe requirements)
     const minimums = {
-      usd: 0.50,
-      eur: 0.50,
-      gbp: 0.30,
-      cad: 0.50,
-      aud: 0.50,
+      usd: 0.5,
+      eur: 0.5,
+      gbp: 0.3,
+      cad: 0.5,
+      aud: 0.5,
     };
 
-    const minimum = minimums[currency.toLowerCase() as keyof typeof minimums] || 0.50;
+    const minimum =
+      minimums[currency.toLowerCase() as keyof typeof minimums] || 0.5;
     return amount >= minimum && amount <= 999999.99; // Stripe maximum
   },
 

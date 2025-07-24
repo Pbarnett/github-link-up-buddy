@@ -1,6 +1,6 @@
 /**
  * Type-safe Supabase service layer
- * 
+ *
  * This service provides type-safe operations for Supabase tables with JSON columns,
  * using the schemas defined in supabase-json-schemas.ts.
  */
@@ -22,7 +22,6 @@ import {
   type FlightDetails,
 } from '@/types/supabase-json-schemas';
 
-
 /**
  * Service for type-safe booking request operations
  */
@@ -42,12 +41,12 @@ export class BookingRequestService {
 
     // Validate and parse JSON columns
     const offerData = parseJsonColumn(
-      offerDataSchema, 
-      data.offer_data, 
+      offerDataSchema,
+      data.offer_data,
       'offer_data'
     );
 
-    const travelerData = data.traveler_data 
+    const travelerData = data.traveler_data
       ? parseJsonColumn(travelerDataSchema, data.traveler_data, 'traveler_data')
       : null;
 
@@ -77,7 +76,11 @@ export class BookingRequestService {
     );
 
     const validatedTravelerData = params.traveler_data
-      ? parseJsonColumn(travelerDataSchema, params.traveler_data, 'traveler_data')
+      ? parseJsonColumn(
+          travelerDataSchema,
+          params.traveler_data,
+          'traveler_data'
+        )
       : null;
 
     const { data, error } = await supabase
@@ -85,8 +88,10 @@ export class BookingRequestService {
       .insert({
         user_id: params.user_id,
         offer_id: params.offer_id,
-        offer_data: validatedOfferData as unknown as Database['public']['Tables']['booking_requests']['Insert']['offer_data'],
-        traveler_data: validatedTravelerData as unknown as Database['public']['Tables']['booking_requests']['Insert']['traveler_data'],
+        offer_data:
+          validatedOfferData as unknown as Database['public']['Tables']['booking_requests']['Insert']['offer_data'],
+        traveler_data:
+          validatedTravelerData as unknown as Database['public']['Tables']['booking_requests']['Insert']['traveler_data'],
         trip_request_id: params.trip_request_id,
         auto: params.auto ?? false,
       })
@@ -110,7 +115,8 @@ export class BookingRequestService {
     const { data, error } = await supabase
       .from('booking_requests')
       .update({
-        traveler_data: validatedData as unknown as Database['public']['Tables']['booking_requests']['Update']['traveler_data'],
+        traveler_data:
+          validatedData as unknown as Database['public']['Tables']['booking_requests']['Update']['traveler_data'],
       })
       .eq('id', id)
       .select()
@@ -140,7 +146,11 @@ export class BookingService {
 
     // Validate and parse JSON columns
     const flightDetails = data.flight_details
-      ? parseJsonColumn(flightDetailsSchema, data.flight_details, 'flight_details')
+      ? parseJsonColumn(
+          flightDetailsSchema,
+          data.flight_details,
+          'flight_details'
+        )
       : null;
 
     return {
@@ -162,7 +172,8 @@ export class BookingService {
     const { data, error } = await supabase
       .from('bookings')
       .update({
-        flight_details: validatedDetails as unknown as Database['public']['Tables']['bookings']['Update']['flight_details'],
+        flight_details:
+          validatedDetails as unknown as Database['public']['Tables']['bookings']['Update']['flight_details'],
       })
       .eq('id', id)
       .select()
@@ -228,7 +239,8 @@ export class AutoBookingRequestService {
       .insert({
         user_id: params.user_id,
         trip_request_id: params.trip_request_id,
-        criteria: validatedCriteria as unknown as Database['public']['Tables']['auto_booking_requests']['Insert']['criteria'],
+        criteria:
+          validatedCriteria as unknown as Database['public']['Tables']['auto_booking_requests']['Insert']['criteria'],
         status: params.status ?? 'active',
       })
       .select()
@@ -251,7 +263,8 @@ export class AutoBookingRequestService {
     const { data, error } = await supabase
       .from('auto_booking_requests')
       .update({
-        price_history: validatedHistory as unknown as Database['public']['Tables']['auto_booking_requests']['Update']['price_history'],
+        price_history:
+          validatedHistory as unknown as Database['public']['Tables']['auto_booking_requests']['Update']['price_history'],
       })
       .eq('id', id)
       .select()
@@ -312,16 +325,20 @@ export class MigrationService {
 
     const results = data.map((row: any) => {
       const offerValidation = this.validateOfferData(row.offer_data);
-      const travelerValidation = row.traveler_data 
+      const travelerValidation = row.traveler_data
         ? this.validateTravelerData(row.traveler_data)
         : { success: true, data: null };
 
       return {
         id: row.id,
         offer_data_valid: offerValidation.success,
-        offer_data_error: offerValidation.success ? null : (offerValidation as { success: false; error: string }).error,
+        offer_data_error: offerValidation.success
+          ? null
+          : (offerValidation as { success: false; error: string }).error,
         traveler_data_valid: travelerValidation.success,
-        traveler_data_error: travelerValidation.success ? null : (travelerValidation as { success: false; error: string }).error,
+        traveler_data_error: travelerValidation.success
+          ? null
+          : (travelerValidation as { success: false; error: string }).error,
       };
     });
 

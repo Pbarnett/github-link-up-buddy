@@ -1,5 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-import { generateIdempotencyKey, exponentialBackoff, rateLimiter } from '../../packages/shared/stripe';
+import {
+  generateIdempotencyKey,
+  exponentialBackoff,
+  rateLimiter,
+} from '../../packages/shared/stripe';
 import { buildPaymentMetadata } from './stripeService';
 
 const supabase = createClient(
@@ -40,7 +44,10 @@ export interface SubscriptionParams {
   trial_end?: number;
   coupon?: string;
   metadata?: Record<string, string>;
-  payment_behavior?: 'default_incomplete' | 'error_if_incomplete' | 'allow_incomplete';
+  payment_behavior?:
+    | 'default_incomplete'
+    | 'error_if_incomplete'
+    | 'allow_incomplete';
   collection_method?: 'charge_automatically' | 'send_invoice';
 }
 
@@ -81,23 +88,27 @@ export class StripeSubscriptionService {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('create-subscription', {
-        body: {
-          customer_id: params.customerId,
-          price_id: params.planId,
-          payment_method_id: params.paymentMethodId,
-          proration_behavior: params.prorationBehavior || 'create_prorations',
-          trial_end: params.trial_end,
-          coupon: params.coupon,
-          payment_behavior: params.payment_behavior || 'default_incomplete',
-          collection_method: params.collection_method || 'charge_automatically',
-          metadata: buildPaymentMetadata({
-            userId: params.customerId,
-            bookingType: 'subscription',
-            additionalData: params.metadata || {}
-          }),
+      const { data, error } = await supabase.functions.invoke(
+        'create-subscription',
+        {
+          body: {
+            customer_id: params.customerId,
+            price_id: params.planId,
+            payment_method_id: params.paymentMethodId,
+            proration_behavior: params.prorationBehavior || 'create_prorations',
+            trial_end: params.trial_end,
+            coupon: params.coupon,
+            payment_behavior: params.payment_behavior || 'default_incomplete',
+            collection_method:
+              params.collection_method || 'charge_automatically',
+            metadata: buildPaymentMetadata({
+              userId: params.customerId,
+              bookingType: 'subscription',
+              additionalData: params.metadata || {},
+            }),
+          },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -124,16 +135,20 @@ export class StripeSubscriptionService {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('update-subscription', {
-        body: {
-          subscription_id: subscriptionId,
-          price_id: updates.planId,
-          quantity: updates.quantity,
-          proration_behavior: updates.proration_behavior || 'create_prorations',
-          billing_cycle_anchor: updates.billing_cycle_anchor,
-          metadata: updates.metadata,
+      const { data, error } = await supabase.functions.invoke(
+        'update-subscription',
+        {
+          body: {
+            subscription_id: subscriptionId,
+            price_id: updates.planId,
+            quantity: updates.quantity,
+            proration_behavior:
+              updates.proration_behavior || 'create_prorations',
+            billing_cycle_anchor: updates.billing_cycle_anchor,
+            metadata: updates.metadata,
+          },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -156,23 +171,34 @@ export class StripeSubscriptionService {
       prorate?: boolean;
       cancellation_details?: {
         comment?: string;
-        feedback?: 'too_expensive' | 'missing_features' | 'switched_service' | 'unused' | 'customer_service' | 'too_complex' | 'low_quality' | 'other';
+        feedback?:
+          | 'too_expensive'
+          | 'missing_features'
+          | 'switched_service'
+          | 'unused'
+          | 'customer_service'
+          | 'too_complex'
+          | 'low_quality'
+          | 'other';
       };
     } = {}
   ): Promise<any> {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('cancel-subscription', {
-        body: {
-          subscription_id: subscriptionId,
-          cancel_at_period_end: options.cancel_at_period_end ?? true,
-          cancel_at: options.cancel_at,
-          invoice_now: options.invoice_now,
-          prorate: options.prorate,
-          cancellation_details: options.cancellation_details,
+      const { data, error } = await supabase.functions.invoke(
+        'cancel-subscription',
+        {
+          body: {
+            subscription_id: subscriptionId,
+            cancel_at_period_end: options.cancel_at_period_end ?? true,
+            cancel_at: options.cancel_at,
+            invoice_now: options.invoice_now,
+            prorate: options.prorate,
+            cancellation_details: options.cancellation_details,
+          },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -199,18 +225,21 @@ export class StripeSubscriptionService {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('create-usage-subscription', {
-        body: {
-          customer_id: params.customerId,
-          meter_id: params.meterId,
-          payment_method_id: params.paymentMethodId,
-          default_price_data: params.default_price_data,
-          metadata: buildPaymentMetadata({
-            userId: params.customerId,
-            bookingType: 'usage_based',
-          }),
+      const { data, error } = await supabase.functions.invoke(
+        'create-usage-subscription',
+        {
+          body: {
+            customer_id: params.customerId,
+            meter_id: params.meterId,
+            payment_method_id: params.paymentMethodId,
+            default_price_data: params.default_price_data,
+            metadata: buildPaymentMetadata({
+              userId: params.customerId,
+              bookingType: 'usage_based',
+            }),
+          },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -231,7 +260,8 @@ export class StripeSubscriptionService {
     action?: 'increment' | 'set';
     idempotencyKey?: string;
   }): Promise<any> {
-    const idempotencyKey = params.idempotencyKey || 
+    const idempotencyKey =
+      params.idempotencyKey ||
       generateIdempotencyKey(params.subscriptionItemId, 'usage_report');
 
     await rateLimiter.waitForSlot();
@@ -244,7 +274,7 @@ export class StripeSubscriptionService {
           timestamp: params.timestamp || Math.floor(Date.now() / 1000),
           action: params.action || 'increment',
           idempotency_key: idempotencyKey,
-        }
+        },
       });
 
       if (error) {
@@ -274,10 +304,13 @@ export class StripeSubscriptionService {
       1: { stage: 'soft' as const, delay_days: 3 },
       2: { stage: 'soft' as const, delay_days: 7 },
       3: { stage: 'hard' as const, delay_days: 14 },
-      4: { stage: 'final' as const, delay_days: 0 }
+      4: { stage: 'final' as const, delay_days: 0 },
     };
 
-    const currentStage = dunningStages[Math.min(params.retryAttempt, 4) as keyof typeof dunningStages];
+    const currentStage =
+      dunningStages[
+        Math.min(params.retryAttempt, 4) as keyof typeof dunningStages
+      ];
 
     if (params.retryAttempt >= params.maxRetries) {
       // Final attempt - pause or cancel subscription
@@ -289,24 +322,28 @@ export class StripeSubscriptionService {
           cancel_at_period_end: false,
           cancellation_details: {
             comment: 'Cancelled due to failed payment',
-            feedback: 'customer_service'
-          }
+            feedback: 'customer_service',
+          },
         });
         return { action: 'cancel', dunning_stage: currentStage.stage };
       }
     }
 
     // Schedule next retry
-    const next_retry_at = Date.now() + (currentStage.delay_days * 24 * 60 * 60 * 1000);
-    
+    const next_retry_at =
+      Date.now() + currentStage.delay_days * 24 * 60 * 60 * 1000;
+
     if (params.notifyCustomer) {
-      await this.sendDunningNotification(params.subscriptionId, currentStage.stage);
+      await this.sendDunningNotification(
+        params.subscriptionId,
+        currentStage.stage
+      );
     }
 
-    return { 
-      action: 'retry', 
+    return {
+      action: 'retry',
       next_retry_at,
-      dunning_stage: currentStage.stage 
+      dunning_stage: currentStage.stage,
     };
   }
 
@@ -314,23 +351,29 @@ export class StripeSubscriptionService {
    * Pause subscription
    * Implements subscription pausing per API reference
    */
-  async pauseSubscription(subscriptionId: string, options: {
-    pause_collection?: {
-      behavior: 'keep_as_draft' | 'mark_uncollectible' | 'void';
-      resumes_at?: number;
-    };
-  } = {}): Promise<any> {
+  async pauseSubscription(
+    subscriptionId: string,
+    options: {
+      pause_collection?: {
+        behavior: 'keep_as_draft' | 'mark_uncollectible' | 'void';
+        resumes_at?: number;
+      };
+    } = {}
+  ): Promise<any> {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('pause-subscription', {
-        body: {
-          subscription_id: subscriptionId,
-          pause_collection: options.pause_collection || {
-            behavior: 'keep_as_draft'
+      const { data, error } = await supabase.functions.invoke(
+        'pause-subscription',
+        {
+          body: {
+            subscription_id: subscriptionId,
+            pause_collection: options.pause_collection || {
+              behavior: 'keep_as_draft',
+            },
           },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -347,11 +390,14 @@ export class StripeSubscriptionService {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('resume-subscription', {
-        body: {
-          subscription_id: subscriptionId,
+      const { data, error } = await supabase.functions.invoke(
+        'resume-subscription',
+        {
+          body: {
+            subscription_id: subscriptionId,
+          },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -366,16 +412,19 @@ export class StripeSubscriptionService {
    * Integrated with notification system
    */
   private async sendDunningNotification(
-    subscriptionId: string, 
+    subscriptionId: string,
     stage: 'soft' | 'hard' | 'final'
   ): Promise<void> {
-    const { data, error } = await supabase.functions.invoke('send-dunning-notification', {
-      body: {
-        subscription_id: subscriptionId,
-        dunning_stage: stage,
-        template: `dunning_${stage}`,
+    const { data, error } = await supabase.functions.invoke(
+      'send-dunning-notification',
+      {
+        body: {
+          subscription_id: subscriptionId,
+          dunning_stage: stage,
+          template: `dunning_${stage}`,
+        },
       }
-    });
+    );
 
     if (error) {
       console.error('Failed to send dunning notification:', error);
@@ -395,12 +444,15 @@ export class StripeSubscriptionService {
     display_amount: string;
     exchange_rate?: number;
   }> {
-    const { data, error } = await supabase.functions.invoke('get-currency-pricing', {
-      body: {
-        plan_id: planId,
-        target_currency: targetCurrency,
+    const { data, error } = await supabase.functions.invoke(
+      'get-currency-pricing',
+      {
+        body: {
+          plan_id: planId,
+          target_currency: targetCurrency,
+        },
       }
-    });
+    );
 
     if (error) {
       throw error;
@@ -430,7 +482,7 @@ export class StripeSubscriptionService {
     await rateLimiter.waitForSlot();
 
     const { data, error } = await supabase.functions.invoke('create-coupon', {
-      body: params
+      body: params,
     });
 
     if (error) {
@@ -457,9 +509,12 @@ export class StripeSubscriptionService {
     arr: number;
     breakdown: Record<string, any>;
   }> {
-    const { data, error } = await supabase.functions.invoke('get-subscription-analytics', {
-      body: params
-    });
+    const { data, error } = await supabase.functions.invoke(
+      'get-subscription-analytics',
+      {
+        body: params,
+      }
+    );
 
     if (error) {
       throw error;
@@ -473,7 +528,10 @@ export class StripeSubscriptionService {
 export const subscriptionService = StripeSubscriptionService.getInstance();
 
 // Export utility functions
-export const formatSubscriptionAmount = (amount: number, currency: string): string => {
+export const formatSubscriptionAmount = (
+  amount: number,
+  currency: string
+): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency.toUpperCase(),
@@ -489,7 +547,7 @@ export const calculateProration = (
   const dailyOldAmount = oldAmount / totalDays;
   const dailyNewAmount = newAmount / totalDays;
   const dailyDifference = dailyNewAmount - dailyOldAmount;
-  
+
   return Math.round(dailyDifference * daysRemaining);
 };
 

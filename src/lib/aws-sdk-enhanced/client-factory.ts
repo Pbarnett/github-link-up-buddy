@@ -1,23 +1,33 @@
 /**
  * Enhanced AWS SDK Client Factory
- * 
+ *
  * Production-grade client factory implementation following AWS SDK v3 best practices
  * from AWS SDK Developer Guide and Tools Reference Guide.
  */
 
 import https from 'https';
-import { 
-  IS_MOCK_MODE, 
-  MockKMSClient, 
-  MockSecretsManagerClient, 
-  MockS3Client, 
-  MockDynamoDBClient, 
-  MockSTSClient, 
-  MockCloudWatchClient 
+import {
+  IS_MOCK_MODE,
+  MockKMSClient,
+  MockSecretsManagerClient,
+  MockS3Client,
+  MockDynamoDBClient,
+  MockSTSClient,
+  MockCloudWatchClient,
 } from '../aws-sdk-browser-compat';
 
-let KMSClient: any, SecretsManagerClient: any, S3Client: any, DynamoDBClient: any, STSClient: any, CloudWatchClient: any;
-let KMSClientConfig: any, SecretsManagerClientConfig: any, S3ClientConfig: any, DynamoDBClientConfig: any, STSClientConfig: any, CloudWatchClientConfig: any;
+let KMSClient: any,
+  SecretsManagerClient: any,
+  S3Client: any,
+  DynamoDBClient: any,
+  STSClient: any,
+  CloudWatchClient: any;
+let KMSClientConfig: any,
+  SecretsManagerClientConfig: any,
+  S3ClientConfig: any,
+  DynamoDBClientConfig: any,
+  STSClientConfig: any,
+  CloudWatchClientConfig: any;
 
 if (IS_MOCK_MODE) {
   KMSClient = MockKMSClient;
@@ -51,7 +61,11 @@ export interface EnhancedClientConfig {
   socketTimeout?: number;
   maxSockets?: number;
   keepAlive?: boolean;
-  credentialSource?: 'environment' | 'instance-metadata' | 'container-metadata' | 'auto';
+  credentialSource?:
+    | 'environment'
+    | 'instance-metadata'
+    | 'container-metadata'
+    | 'auto';
 }
 
 // Default configurations optimized per environment
@@ -88,7 +102,7 @@ const DEFAULT_CONFIGS: Record<Environment, Partial<EnhancedClientConfig>> = {
 
 /**
  * Enhanced AWS Client Factory following AWS SDK v3 best practices
- * 
+ *
  * Features:
  * - Environment-optimized configurations
  * - Proper credential provider chain
@@ -108,7 +122,7 @@ export class EnhancedAWSClientFactory {
     if (IS_MOCK_MODE) {
       return undefined;
     }
-    
+
     return new https.Agent({
       keepAlive: config.keepAlive ?? true,
       keepAliveMsecs: 1000,
@@ -177,7 +191,7 @@ export class EnhancedAWSClientFactory {
    */
   static createKMSClient(config: EnhancedClientConfig): KMSClient {
     const cacheKey = `kms-${config.region}-${config.environment}`;
-    
+
     if (this.clientInstances.has(cacheKey)) {
       return this.clientInstances.get(cacheKey);
     }
@@ -201,7 +215,7 @@ export class EnhancedAWSClientFactory {
    */
   static createS3Client(config: EnhancedClientConfig): S3Client {
     const cacheKey = `s3-${config.region}-${config.environment}`;
-    
+
     if (this.clientInstances.has(cacheKey)) {
       return this.clientInstances.get(cacheKey);
     }
@@ -227,7 +241,7 @@ export class EnhancedAWSClientFactory {
    */
   static createDynamoDBClient(config: EnhancedClientConfig): DynamoDBClient {
     const cacheKey = `dynamodb-${config.region}-${config.environment}`;
-    
+
     if (this.clientInstances.has(cacheKey)) {
       return this.clientInstances.get(cacheKey);
     }
@@ -251,7 +265,7 @@ export class EnhancedAWSClientFactory {
    */
   static createSTSClient(config: EnhancedClientConfig): STSClient {
     const cacheKey = `sts-${config.region}-${config.environment}`;
-    
+
     if (this.clientInstances.has(cacheKey)) {
       return this.clientInstances.get(cacheKey);
     }
@@ -273,9 +287,11 @@ export class EnhancedAWSClientFactory {
   /**
    * Creates or retrieves cached CloudWatch client
    */
-  static createCloudWatchClient(config: EnhancedClientConfig): CloudWatchClient {
+  static createCloudWatchClient(
+    config: EnhancedClientConfig
+  ): CloudWatchClient {
     const cacheKey = `cloudwatch-${config.region}-${config.environment}`;
-    
+
     if (this.clientInstances.has(cacheKey)) {
       return this.clientInstances.get(cacheKey);
     }
@@ -295,9 +311,11 @@ export class EnhancedAWSClientFactory {
   /**
    * Creates or retrieves cached Secrets Manager client
    */
-  static createSecretsManagerClient(config: EnhancedClientConfig): SecretsManagerClient {
+  static createSecretsManagerClient(
+    config: EnhancedClientConfig
+  ): SecretsManagerClient {
     const cacheKey = `secretsmanager-${config.region}-${config.environment}`;
-    
+
     if (this.clientInstances.has(cacheKey)) {
       return this.clientInstances.get(cacheKey);
     }
@@ -391,15 +409,17 @@ export class EnhancedAWSClientFactory {
     try {
       const stsClient = this.createSTSClient(config);
       const startTime = Date.now();
-      
+
       if (!IS_MOCK_MODE) {
-        const { GetCallerIdentityCommand } = await import('@aws-sdk/client-sts');
+        const { GetCallerIdentityCommand } = await import(
+          '@aws-sdk/client-sts'
+        );
         await stsClient.send(new GetCallerIdentityCommand({}));
       } else {
         // Mock successful health check for browser environments
         await new Promise(resolve => setTimeout(resolve, 100));
       }
-      
+
       results.services.sts = true;
       results.latency.sts = Date.now() - startTime;
     } catch (error) {
@@ -416,7 +436,7 @@ export class EnhancedAWSClientFactory {
 export { DEFAULT_CONFIGS };
 
 // Convenience factory functions for common patterns
-export const createProductionKMSClient = (region: string) => 
+export const createProductionKMSClient = (region: string) =>
   EnhancedAWSClientFactory.createKMSClient({
     region,
     environment: 'production',
@@ -424,7 +444,7 @@ export const createProductionKMSClient = (region: string) =>
     credentialSource: 'auto',
   });
 
-export const createDevelopmentKMSClient = (region: string) => 
+export const createDevelopmentKMSClient = (region: string) =>
   EnhancedAWSClientFactory.createKMSClient({
     region,
     environment: 'development',
@@ -433,5 +453,12 @@ export const createDevelopmentKMSClient = (region: string) =>
   });
 
 // Multi-region helper
-export const createMultiRegionKMSClients = (regions: string[], environment: Environment) =>
-  EnhancedAWSClientFactory.createMultiRegionClients<KMSClient>('kms', regions, environment);
+export const createMultiRegionKMSClients = (
+  regions: string[],
+  environment: Environment
+) =>
+  EnhancedAWSClientFactory.createMultiRegionClients<KMSClient>(
+    'kms',
+    regions,
+    environment
+  );

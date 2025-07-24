@@ -12,7 +12,7 @@ import type {
   _ValidationResult,
   ValidationError,
   ApiResponse,
-  AsyncState
+  AsyncState,
 } from '../types';
 
 // ============================================================================
@@ -89,7 +89,9 @@ export const isObject = (value: unknown): value is Record<string, unknown> => {
 /**
  * Check if value is a function
  */
-export const isFunction = (value: unknown): value is (...args: any[]) => any => {
+export const isFunction = (
+  value: unknown
+): value is (...args: any[]) => any => {
   return typeof value === 'function';
 };
 
@@ -116,7 +118,7 @@ export const isDate = (value: unknown): value is Date => {
  */
 export const isEmailAddress = (value: unknown): value is EmailAddress => {
   if (!isString(value)) return false;
-  
+
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return emailRegex.test(value);
 };
@@ -126,10 +128,10 @@ export const isEmailAddress = (value: unknown): value is EmailAddress => {
  */
 export const isISODateString = (value: unknown): value is ISODateString => {
   if (!isString(value)) return false;
-  
+
   const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/;
   if (!isoDateRegex.test(value)) return false;
-  
+
   const date = new Date(value);
   return isDate(date) && date.toISOString() === value;
 };
@@ -172,18 +174,20 @@ export const validateAndBrand = <T, B>(
   if (!validator(value)) {
     return {
       success: false,
-      error: [{
-        path: [],
-        message: errorMessage,
-        code: 'INVALID_TYPE',
-        value
-      }]
+      error: [
+        {
+          path: [],
+          message: errorMessage,
+          code: 'INVALID_TYPE',
+          value,
+        },
+      ],
     };
   }
-  
+
   return {
     success: true,
-    data: value as Brand<T, B>
+    data: value as Brand<T, B>,
   };
 };
 
@@ -209,7 +213,7 @@ export const hasRequiredProperties = <K extends string>(
   keys: readonly K[]
 ): obj is Record<K, unknown> => {
   if (!isObject(obj)) return false;
-  
+
   return keys.every(key => key in obj);
 };
 
@@ -221,13 +225,13 @@ export const matchesShape = <T extends Record<string, unknown>>(
   shape: { [K in keyof T]: (value: unknown) => value is T[K] }
 ): obj is T => {
   if (!isObject(obj)) return false;
-  
+
   for (const [key, validator] of Object.entries(shape)) {
     if (!(key in obj) || !validator(obj[key])) {
       return false;
     }
   }
-  
+
   return true;
 };
 
@@ -252,7 +256,9 @@ export const isSuccessApiResponse = <T>(
 /**
  * Check if response is an error API response
  */
-export const isErrorApiResponse = (response: unknown): response is ApiResponse<never> => {
+export const isErrorApiResponse = (
+  response: unknown
+): response is ApiResponse<never> => {
   return (
     isObject(response) &&
     hasProperty(response, 'success') &&
@@ -272,7 +278,9 @@ export const isErrorApiResponse = (response: unknown): response is ApiResponse<n
 export const isIdleState = <T, E>(
   state: AsyncState<T, E>
 ): state is Extract<AsyncState<T, E>, { status: 'idle' }> => {
-  return isObject(state) && hasProperty(state, 'status') && state.status === 'idle';
+  return (
+    isObject(state) && hasProperty(state, 'status') && state.status === 'idle'
+  );
 };
 
 /**
@@ -281,7 +289,11 @@ export const isIdleState = <T, E>(
 export const isLoadingState = <T, E>(
   state: AsyncState<T, E>
 ): state is Extract<AsyncState<T, E>, { status: 'loading' }> => {
-  return isObject(state) && hasProperty(state, 'status') && state.status === 'loading';
+  return (
+    isObject(state) &&
+    hasProperty(state, 'status') &&
+    state.status === 'loading'
+  );
 };
 
 /**
@@ -322,7 +334,11 @@ export const isErrorState = <T, E>(
 export const isSuccessResult = <T, E>(
   result: Result<T, E>
 ): result is Extract<Result<T, E>, { success: true }> => {
-  return isObject(result) && hasProperty(result, 'success') && result.success === true;
+  return (
+    isObject(result) &&
+    hasProperty(result, 'success') &&
+    result.success === true
+  );
 };
 
 /**
@@ -331,7 +347,11 @@ export const isSuccessResult = <T, E>(
 export const isErrorResult = <T, E>(
   result: Result<T, E>
 ): result is Extract<Result<T, E>, { success: false }> => {
-  return isObject(result) && hasProperty(result, 'success') && result.success === false;
+  return (
+    isObject(result) &&
+    hasProperty(result, 'success') &&
+    result.success === false
+  );
 };
 
 // ============================================================================
@@ -344,7 +364,9 @@ export const isErrorResult = <T, E>(
 export const isValidResult = <T>(
   result: ValidationResult<T>
 ): result is Extract<ValidationResult<T>, { valid: true }> => {
-  return isObject(result) && hasProperty(result, 'valid') && result.valid === true;
+  return (
+    isObject(result) && hasProperty(result, 'valid') && result.valid === true
+  );
 };
 
 /**
@@ -353,7 +375,9 @@ export const isValidResult = <T>(
 export const isInvalidResult = <T>(
   result: ValidationResult<T>
 ): result is Extract<ValidationResult<T>, { valid: false }> => {
-  return isObject(result) && hasProperty(result, 'valid') && result.valid === false;
+  return (
+    isObject(result) && hasProperty(result, 'valid') && result.valid === false
+  );
 };
 
 // ============================================================================
@@ -388,7 +412,9 @@ export const assert = (
  * Exhaustive switch case check
  */
 export const exhaustiveCheck = (value: never, message?: string): never => {
-  throw new Error(message ?? `Unhandled discriminated union member: ${JSON.stringify(value)}`);
+  throw new Error(
+    message ?? `Unhandled discriminated union member: ${JSON.stringify(value)}`
+  );
 };
 
 // ============================================================================
@@ -406,85 +432,89 @@ export const validateAll = <T>(
   }>
 ): ValidationResult<T> => {
   const errors: ValidationError[] = [];
-  
+
   for (const validator of validators) {
     if (!validator.check(value)) {
       errors.push(validator.error);
     }
   }
-  
+
   if (errors.length > 0) {
     return { valid: false, errors };
   }
-  
+
   return { valid: true, data: value as T };
 };
 
 /**
  * Create a schema validator
  */
-export const createSchema = <T>(
-  shape: { [K in keyof T]: (value: unknown) => value is T[K] }
-) => {
+export const createSchema = <T>(shape: {
+  [K in keyof T]: (value: unknown) => value is T[K];
+}) => {
   const schema = {
     validate(input: unknown): ValidationResult<T> {
       if (!isObject(input)) {
         return {
           valid: false,
-          errors: [{
-            path: [],
-            message: 'Expected object',
-            code: 'INVALID_TYPE',
-            value: input
-          }]
+          errors: [
+            {
+              path: [],
+              message: 'Expected object',
+              code: 'INVALID_TYPE',
+              value: input,
+            },
+          ],
         };
       }
-      
+
       const errors: ValidationError[] = [];
       const result: Partial<T> = {};
-      
+
       for (const [key, validator] of Object.entries(shape as any)) {
         const value = input[key];
-        
+
         if (!(validator as Function)(value)) {
           errors.push({
             path: [key],
             message: `Invalid value for field ${key}`,
             code: 'INVALID_FIELD',
-            value
+            value,
           });
         } else {
           (result as any)[key] = value;
         }
       }
-      
+
       if (errors.length > 0) {
         return { valid: false, errors };
       }
-      
+
       return { valid: true, data: result as T };
     },
-    
+
     safeParse(input: unknown): Result<T, ValidationError[]> {
       const validation = this.validate(input);
-      
+
       if (isValidResult(validation)) {
         return { success: true, data: validation.data as T };
       }
-      
+
       return { success: false, error: validation.errors };
     },
-    
+
     parse(input: unknown): T {
       const result = this.safeParse(input);
-      
+
       if (isSuccessResult(result)) {
         return result.data as T;
       }
-      
-      throw new Error(`Validation failed: ${result.error.map(e => e.message).join(', ')}`);
-    }
+
+      throw new Error(
+        `Validation failed: ${result.error.map(e => e.message).join(', ')}`
+      );
+    },
   };
-  
+
   return schema;
 };

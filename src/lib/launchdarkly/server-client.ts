@@ -3,7 +3,12 @@
  * Based on comprehensive documentation analysis recommendations
  */
 
-import { LDClient, init, LDContext, LDLogger } from '@launchdarkly/node-server-sdk';
+import {
+  LDClient,
+  init,
+  LDContext,
+  LDLogger,
+} from '@launchdarkly/node-server-sdk';
 import { FlagErrorHandler } from './error-handler';
 import { FlagAnalytics } from './analytics';
 
@@ -20,7 +25,7 @@ export class LaunchDarklyServerClient {
 
   constructor() {
     const sdkKey = process.env.LAUNCHDARKLY_SDK_KEY;
-    
+
     if (!sdkKey) {
       throw new Error('LAUNCHDARKLY_SDK_KEY environment variable is required');
     }
@@ -38,7 +43,7 @@ export class LaunchDarklyServerClient {
       pollInterval: 30000, // Polling fallback interval
       streamInitialReconnectDelay: 1000,
       useReport: false, // Use GET for flag requests
-      withReasons: true // Include evaluation reasons for debugging
+      withReasons: true, // Include evaluation reasons for debugging
     });
 
     this.logger = this.createLogger();
@@ -53,7 +58,7 @@ export class LaunchDarklyServerClient {
       },
       info: (message: string) => console.info(`[LaunchDarkly] ${message}`),
       warn: (message: string) => console.warn(`[LaunchDarkly] ${message}`),
-      error: (message: string) => console.error(`[LaunchDarkly] ${message}`)
+      error: (message: string) => console.error(`[LaunchDarkly] ${message}`),
     };
   }
 
@@ -84,36 +89,48 @@ export class LaunchDarklyServerClient {
 
     try {
       if (!this.initialized) {
-        this.logger.warn(`SDK not initialized, using fallback value for flag: ${flagKey}`);
+        this.logger.warn(
+          `SDK not initialized, using fallback value for flag: ${flagKey}`
+        );
         return defaultValue;
       }
 
-      const result = await this.client.variation(flagKey, context, defaultValue);
-      
+      const result = await this.client.variation(
+        flagKey,
+        context,
+        defaultValue
+      );
+
       const evaluationTime = performance.now() - startTime;
-      
+
       // Track analytics if enabled
       if (options.trackEvents !== false) {
         FlagAnalytics.trackFlagEvaluation(flagKey, result, context);
         FlagAnalytics.trackFlagPerformance(flagKey, {
           evaluationTime,
-          success: true
+          success: true,
         });
       }
 
-      this.logger.debug(`Flag ${flagKey} evaluated to: ${result} (${evaluationTime.toFixed(2)}ms)`);
-      
+      this.logger.debug(
+        `Flag ${flagKey} evaluated to: ${result} (${evaluationTime.toFixed(2)}ms)`
+      );
+
       return result;
     } catch (error) {
       const evaluationTime = performance.now() - startTime;
-      
+
       FlagAnalytics.trackFlagPerformance(flagKey, {
         evaluationTime,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
 
-      return FlagErrorHandler.handleEvaluationError(error as Error, flagKey, defaultValue);
+      return FlagErrorHandler.handleEvaluationError(
+        error as Error,
+        flagKey,
+        defaultValue
+      );
     }
   }
 
@@ -133,15 +150,23 @@ export class LaunchDarklyServerClient {
         return defaultValue;
       }
 
-      const result = await this.client.variation(flagKey, context, defaultValue);
-      
+      const result = await this.client.variation(
+        flagKey,
+        context,
+        defaultValue
+      );
+
       if (options.trackEvents !== false) {
         FlagAnalytics.trackFlagEvaluation(flagKey, result, context);
       }
 
       return result;
     } catch (error) {
-      return FlagErrorHandler.handleEvaluationError(error as Error, flagKey, defaultValue);
+      return FlagErrorHandler.handleEvaluationError(
+        error as Error,
+        flagKey,
+        defaultValue
+      );
     }
   }
 
@@ -159,15 +184,23 @@ export class LaunchDarklyServerClient {
         return defaultValue;
       }
 
-      const result = await this.client.variation(flagKey, context, defaultValue);
-      
+      const result = await this.client.variation(
+        flagKey,
+        context,
+        defaultValue
+      );
+
       if (options.trackEvents !== false) {
         FlagAnalytics.trackFlagEvaluation(flagKey, result, context);
       }
 
       return result;
     } catch (error) {
-      return FlagErrorHandler.handleEvaluationError(error as Error, flagKey, defaultValue);
+      return FlagErrorHandler.handleEvaluationError(
+        error as Error,
+        flagKey,
+        defaultValue
+      );
     }
   }
 
@@ -185,15 +218,23 @@ export class LaunchDarklyServerClient {
         return defaultValue;
       }
 
-      const result = await this.client.variation(flagKey, context, defaultValue);
-      
+      const result = await this.client.variation(
+        flagKey,
+        context,
+        defaultValue
+      );
+
       if (options.trackEvents !== false) {
         FlagAnalytics.trackFlagEvaluation(flagKey, result, context);
       }
 
       return result;
     } catch (error) {
-      return FlagErrorHandler.handleEvaluationError(error as Error, flagKey, defaultValue);
+      return FlagErrorHandler.handleEvaluationError(
+        error as Error,
+        flagKey,
+        defaultValue
+      );
     }
   }
 
@@ -210,15 +251,23 @@ export class LaunchDarklyServerClient {
         return { value: defaultValue };
       }
 
-      const detail = await this.client.variationDetail(flagKey, context, defaultValue);
-      
+      const detail = await this.client.variationDetail(
+        flagKey,
+        context,
+        defaultValue
+      );
+
       return {
         value: detail.value,
         reason: detail.reason,
-        variationIndex: detail.variationIndex
+        variationIndex: detail.variationIndex,
       };
     } catch (error) {
-      const fallbackValue = FlagErrorHandler.handleEvaluationError(error as Error, flagKey, defaultValue);
+      const fallbackValue = FlagErrorHandler.handleEvaluationError(
+        error as Error,
+        flagKey,
+        defaultValue
+      );
       return { value: fallbackValue };
     }
   }
@@ -236,7 +285,7 @@ export class LaunchDarklyServerClient {
       return await this.client.allFlagsState(context, {
         withReasons: process.env.NODE_ENV === 'development',
         detailsOnlyForTrackedFlags: true,
-        clientSideOnly: false
+        clientSideOnly: false,
       });
     } catch (error) {
       this.logger.error(`Batch flag evaluation failed: ${error}`);
@@ -255,7 +304,9 @@ export class LaunchDarklyServerClient {
   ): Promise<void> {
     try {
       if (!this.initialized) {
-        this.logger.warn(`Cannot track event ${eventName}: SDK not initialized`);
+        this.logger.warn(
+          `Cannot track event ${eventName}: SDK not initialized`
+        );
         return;
       }
 
@@ -313,13 +364,13 @@ export class LaunchDarklyServerClient {
   async shutdown(): Promise<void> {
     try {
       this.logger.info('Shutting down LaunchDarkly client...');
-      
+
       // Flush any pending events
       await this.flush();
-      
+
       // Close the client
       await this.client.close();
-      
+
       this.initialized = false;
       this.logger.info('LaunchDarkly client shut down successfully');
     } catch (error) {

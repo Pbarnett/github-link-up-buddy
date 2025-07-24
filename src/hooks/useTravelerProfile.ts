@@ -1,8 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { profileCompletenessService } from "@/services/profileCompletenessService";
-import { useCurrentUser } from "./useCurrentUser";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { profileCompletenessService } from '@/services/profileCompletenessService';
+import { useCurrentUser } from './useCurrentUser';
 
 export interface TravelerProfile {
   id?: string;
@@ -41,17 +41,17 @@ export function useTravelerProfile() {
 
   // Get traveler profile
   const profileQuery = useQuery<TravelerProfile | null>({
-    queryKey: ["traveler-profile", userId],
+    queryKey: ['traveler-profile', userId],
     queryFn: async () => {
       if (!userId) return null;
-      
+
       const { data, error } = await supabase
-        .from("traveler_profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("is_primary", true)
+        .from('traveler_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_primary', true)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data;
     },
@@ -60,16 +60,16 @@ export function useTravelerProfile() {
 
   // Get profile completion data
   const completionQuery = useQuery<ProfileCompletionData | null>({
-    queryKey: ["profile-completion", userId],
+    queryKey: ['profile-completion', userId],
     queryFn: async () => {
       if (!userId) return null;
-      
+
       const { data, error } = await supabase
-        .from("profile_completion_tracking")
-        .select("*")
-        .eq("user_id", userId)
+        .from('profile_completion_tracking')
+        .select('*')
+        .eq('user_id', userId)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data;
     },
@@ -78,13 +78,15 @@ export function useTravelerProfile() {
 
   // Get recommendations
   const recommendationsQuery = useQuery({
-    queryKey: ["profile-recommendations", userId],
+    queryKey: ['profile-recommendations', userId],
     queryFn: async () => async () => {
       if (!userId) return [];
-      
-      const { data, error } = await supabase
-        .rpc("get_profile_recommendations", { profile_user_id: userId });
-      
+
+      const { data, error } = await supabase.rpc(
+        'get_profile_recommendations',
+        { profile_user_id: userId }
+      );
+
       if (error) throw error;
       return data || [];
     },
@@ -94,30 +96,30 @@ export function useTravelerProfile() {
   // Create or update traveler profile
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<TravelerProfile>) => {
-      if (!userId) throw new Error("User not authenticated");
-      
+      if (!userId) throw new Error('User not authenticated');
+
       const { data: existingProfile } = await supabase
-        .from("traveler_profiles")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("is_primary", true)
+        .from('traveler_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_primary', true)
         .maybeSingle();
 
       if (existingProfile) {
         // Update existing profile
         const { data, error } = await supabase
-          .from("traveler_profiles")
+          .from('traveler_profiles')
           .update(updates)
-          .eq("id", existingProfile.id)
+          .eq('id', existingProfile.id)
           .select()
           .single();
-        
+
         if (error) throw error;
         return data;
       } else {
         // Create new profile
         const { data, error } = await supabase
-          .from("traveler_profiles")
+          .from('traveler_profiles')
           .insert({
             ...updates,
             user_id: userId,
@@ -125,26 +127,30 @@ export function useTravelerProfile() {
           })
           .select()
           .single();
-        
+
         if (error) throw error;
         return data;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["traveler-profile", userId] });
-      queryClient.invalidateQueries({ queryKey: ["profile-completion", userId] });
-      queryClient.invalidateQueries({ queryKey: ["profile-recommendations", userId] });
+      queryClient.invalidateQueries({ queryKey: ['traveler-profile', userId] });
+      queryClient.invalidateQueries({
+        queryKey: ['profile-completion', userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['profile-recommendations', userId],
+      });
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+        title: 'Profile updated',
+        description: 'Your profile has been updated successfully.',
       });
     },
-    onError: (error) => {
-      console.error("Error updating profile:", error);
+    onError: error => {
+      console.error('Error updating profile:', error);
       toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to update profile. Please try again.',
+        variant: 'destructive',
       });
     },
   });
@@ -152,35 +158,35 @@ export function useTravelerProfile() {
   // Phone verification mutation
   const verifyPhoneMutation = useMutation({
     mutationFn: async (phoneNumber: string) => {
-      if (!userId) throw new Error("User not authenticated");
-      
+      if (!userId) throw new Error('User not authenticated');
+
       // Call SMS verification endpoint
-      const response = await fetch()("/api/send-verification-sms", {
-        method: "POST",
+      const response = await fetch()('/api/send-verification-sms', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ phoneNumber }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to send verification SMS");
+        throw new Error('Failed to send verification SMS');
       }
 
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Verification SMS sent",
-        description: "Please check your phone for the verification code.",
+        title: 'Verification SMS sent',
+        description: 'Please check your phone for the verification code.',
       });
     },
-    onError: (error) => {
-      console.error("Error sending verification SMS:", error);
+    onError: error => {
+      console.error('Error sending verification SMS:', error);
       toast({
-        title: "Error",
-        description: "Failed to send verification SMS. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to send verification SMS. Please try again.',
+        variant: 'destructive',
       });
     },
   });
@@ -195,10 +201,10 @@ export function useTravelerProfile() {
           contact_info: 0,
           travel_documents: 0,
           preferences: 0,
-          verification: 0
+          verification: 0,
         },
         missing_fields: [],
-        recommendations: []
+        recommendations: [],
       };
     }
     return profileCompletenessService.calculateCompleteness(profile);

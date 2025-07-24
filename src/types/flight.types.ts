@@ -1,4 +1,11 @@
-import { Brand, ISODateString, Url, EmailAddress, GitHubUsername, UserId } from './index';
+import {
+  Brand,
+  ISODateString,
+  Url,
+  EmailAddress,
+  GitHubUsername,
+  UserId,
+} from './index';
 export interface GitHubRepository {
   id: string;
   githubId: number;

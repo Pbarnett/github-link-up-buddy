@@ -1,16 +1,16 @@
-
-
 /**
  * Enhanced Real-time Service for Supabase
  * Implements targeted subscriptions and optimized connection management
  * Based on Supabase real-time documentation best practices
  */
 
-
-import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import {
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+} from '@supabase/supabase-js';
+import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/types/database';
-import * as React from 'react';
 
 type Tables = Database['public']['Tables'];
 type TableName = keyof Tables;
@@ -46,13 +46,17 @@ class RealtimeService {
    */
   subscribe<T extends TableName>(
     config: SubscriptionConfig & { table: T },
-    callback: (payload: RealtimePostgresChangesPayload<Tables[T]['Row']>) => void
+    callback: (
+      payload: RealtimePostgresChangesPayload<Tables[T]['Row']>
+    ) => void
   ): string {
     const subscriptionId = this.generateSubscriptionId(config);
-    
+
     // Check if subscription already exists
     if (this.subscriptions.has(subscriptionId)) {
-      console.warn(`Subscription ${subscriptionId} already exists. Returning existing subscription.`);
+      console.warn(
+        `Subscription ${subscriptionId} already exists. Returning existing subscription.`
+      );
       return subscriptionId;
     }
 
@@ -79,11 +83,14 @@ class RealtimeService {
 
     // Set up the subscription
     channel
-      .on('postgres_changes', changesConfig, (payload) => {
-        console.log(`📡 Real-time update received for ${config.table}:`, payload);
+      .on('postgres_changes', changesConfig, payload => {
+        console.log(
+          `📡 Real-time update received for ${config.table}:`,
+          payload
+        );
         callback(payload);
       })
-      .on('system', {}, (payload) => {
+      .on('system', {}, payload => {
         console.log('🔌 Real-time system event:', payload);
         if (payload.status === 'CONNECTED') {
           this.connectionStatus = 'OPEN';
@@ -115,7 +122,7 @@ class RealtimeService {
     };
 
     this.subscriptions.set(subscriptionId, subscription);
-    
+
     console.log(`📡 Created real-time subscription: ${subscriptionId}`);
     return subscriptionId;
   }
@@ -125,7 +132,7 @@ class RealtimeService {
    */
   unsubscribe(subscriptionId: string): boolean {
     const subscription = this.subscriptions.get(subscriptionId);
-    
+
     if (!subscription) {
       console.warn(`Subscription ${subscriptionId} not found`);
       return false;
@@ -134,10 +141,10 @@ class RealtimeService {
     // Unsubscribe from the channel
     supabase.removeChannel(subscription.channel);
     subscription.isActive = false;
-    
+
     // Remove from tracking
     this.subscriptions.delete(subscriptionId);
-    
+
     console.log(`📡 Unsubscribed from: ${subscriptionId}`);
     return true;
   }
@@ -147,24 +154,28 @@ class RealtimeService {
    */
   unsubscribeAll(): void {
     const subscriptionIds = Array.from(this.subscriptions.keys());
-    
+
     subscriptionIds.forEach(id => {
       this.unsubscribe(id);
     });
 
-    console.log(`📡 Unsubscribed from all ${subscriptionIds.length} subscriptions`);
+    console.log(
+      `📡 Unsubscribed from all ${subscriptionIds.length} subscriptions`
+    );
   }
 
   /**
    * Get subscription status
    */
-  getSubscriptionStatus(subscriptionId: string): 'active' | 'inactive' | 'not_found' {
+  getSubscriptionStatus(
+    subscriptionId: string
+  ): 'active' | 'inactive' | 'not_found' {
     const subscription = this.subscriptions.get(subscriptionId);
-    
+
     if (!subscription) {
       return 'not_found';
     }
-    
+
     return subscription.isActive ? 'active' : 'inactive';
   }
 
@@ -187,11 +198,13 @@ class RealtimeService {
   /**
    * Specialized subscription methods for common use cases
    */
-  
+
   // Subscribe to user's booking updates
   subscribeToUserBookings(
     userId: string,
-    callback: (payload: RealtimePostgresChangesPayload<Tables['bookings']['Row']>) => void
+    callback: (
+      payload: RealtimePostgresChangesPayload<Tables['bookings']['Row']>
+    ) => void
   ): string {
     return this.subscribe(
       {
@@ -206,7 +219,9 @@ class RealtimeService {
   // Subscribe to user's trip requests
   subscribeToUserTripRequests(
     userId: string,
-    callback: (payload: RealtimePostgresChangesPayload<Tables['trip_requests']['Row']>) => void
+    callback: (
+      payload: RealtimePostgresChangesPayload<Tables['trip_requests']['Row']>
+    ) => void
   ): string {
     return this.subscribe(
       {
@@ -221,7 +236,9 @@ class RealtimeService {
   // Subscribe to user's notifications
   subscribeToUserNotifications(
     userId: string,
-    callback: (payload: RealtimePostgresChangesPayload<Tables['notifications']['Row']>) => void
+    callback: (
+      payload: RealtimePostgresChangesPayload<Tables['notifications']['Row']>
+    ) => void
   ): string {
     return this.subscribe(
       {
@@ -236,7 +253,9 @@ class RealtimeService {
   // Subscribe to flight offers for a specific trip request
   subscribeToFlightOffers(
     tripRequestId: string,
-    callback: (payload: RealtimePostgresChangesPayload<Tables['flight_offers_v2']['Row']>) => void
+    callback: (
+      payload: RealtimePostgresChangesPayload<Tables['flight_offers_v2']['Row']>
+    ) => void
   ): string {
     return this.subscribe(
       {
@@ -251,7 +270,9 @@ class RealtimeService {
   // Subscribe to booking request status changes
   subscribeToBookingRequestStatus(
     bookingRequestId: string,
-    callback: (payload: RealtimePostgresChangesPayload<Tables['booking_requests']['Row']>) => void
+    callback: (
+      payload: RealtimePostgresChangesPayload<Tables['booking_requests']['Row']>
+    ) => void
   ): string {
     return this.subscribe(
       {
@@ -267,7 +288,9 @@ class RealtimeService {
    * Private helper methods
    */
   private generateSubscriptionId(config: SubscriptionConfig): string {
-    const filterPart = config.filter ? `_${config.filter.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+    const filterPart = config.filter
+      ? `_${config.filter.replace(/[^a-zA-Z0-9]/g, '_')}`
+      : '';
     return `${config.table}_${config.event}${filterPart}_${Date.now()}`;
   }
 
@@ -282,29 +305,37 @@ class RealtimeService {
 
   private async handleConnectionLoss(): Promise<void> {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('❌ Max reconnection attempts reached. Manual intervention required.');
+      console.error(
+        '❌ Max reconnection attempts reached. Manual intervention required.'
+      );
       return;
     }
 
     this.reconnectAttempts++;
-    const _delay = this.baseReconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-    
-    console.log(`🔄 Attempting to reconnect... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-    
+    const _delay =
+      this.baseReconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+
+    console.log(
+      `🔄 Attempting to reconnect... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+    );
+
     setTimeout(() => {
       this.reconnectAllSubscriptions();
     }, delay);
   }
 
   private async reconnectAllSubscriptions(): Promise<void> {
-    const activeSubscriptions = Array.from(this.subscriptions.values())
-      .filter(sub => sub.isActive);
+    const activeSubscriptions = Array.from(this.subscriptions.values()).filter(
+      sub => sub.isActive
+    );
 
     if (activeSubscriptions.length === 0) {
       return;
     }
 
-    console.log(`🔄 Reconnecting ${activeSubscriptions.length} subscriptions...`);
+    console.log(
+      `🔄 Reconnecting ${activeSubscriptions.length} subscriptions...`
+    );
 
     // Recreate all active subscriptions
     for (const subscription of activeSubscriptions) {
@@ -316,7 +347,10 @@ class RealtimeService {
         // Create new subscription
         this.subscribe(subscription.config, subscription.callback);
       } catch (error) {
-        console.error(`❌ Failed to reconnect subscription ${subscription.id}:`, error);
+        console.error(
+          `❌ Failed to reconnect subscription ${subscription.id}:`,
+          error
+        );
       }
     }
   }

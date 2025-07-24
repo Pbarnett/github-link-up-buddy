@@ -1,7 +1,6 @@
-
 /**
  * React Hook Form Test Helpers - Fixed Version
- * 
+ *
  * Following React Hook Form best practices for testing:
  * - Proper async validation handling
  * - Correct error state assertions
@@ -24,23 +23,25 @@ export const FormTestWrapper: FC<{
   defaultValues?: Record<string, unknown>;
   validationSchema?: z.ZodSchema;
   onSubmit?: (data: any) => void;
-}> = ({ 
-  children, 
+}> = ({
+  children,
   defaultValues = {},
   validationSchema,
-  onSubmit = () => {}
+  onSubmit = () => {},
 }) => {
   const form = useForm({
     defaultValues,
     resolver: validationSchema ? zodResolver(validationSchema) : undefined,
-    mode: 'onChange' // Enable real-time validation for testing
+    mode: 'onChange', // Enable real-time validation for testing
   });
 
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} data-testid="test-form">
         {children}
-        <button type="submit" data-testid="submit-button">Submit</button>
+        <button type="submit" data-testid="submit-button">
+          Submit
+        </button>
       </form>
     </FormProvider>
   );
@@ -53,8 +54,13 @@ export const testFormValidation = async (options: {
   expectedErrors: string[];
   submitShouldSucceed?: boolean;
 }) => {
-  const { component, fillFields, expectedErrors, submitShouldSucceed = false } = options;
-  
+  const {
+    component,
+    fillFields,
+    expectedErrors,
+    submitShouldSucceed = false,
+  } = options;
+
   render(component);
 
   // Fill fields
@@ -66,17 +72,27 @@ export const testFormValidation = async (options: {
 
   if (submitShouldSucceed) {
     // Wait for successful submission (no errors)
-    await waitFor(() => {
-      expectedErrors.forEach(errorText => {
-        expect(screen.queryByRole('alert')).not.toHaveTextContent(errorText);
-      });
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        expectedErrors.forEach(errorText => {
+          expect(screen.queryByRole('alert')).not.toHaveTextContent(errorText);
+        });
+      },
+      { timeout: 5000 }
+    );
   } else {
     // Wait for validation errors to appear - check each error individually
     for (const errorText of expectedErrors) {
-      await waitFor(() => {
-        expect(screen.getByText(errorText, { selector: '[role="alert"], .text-destructive' })).toBeInTheDocument();
-      }, { timeout: 5000 });
+      await waitFor(
+        () => {
+          expect(
+            screen.getByText(errorText, {
+              selector: '[role="alert"], .text-destructive',
+            })
+          ).toBeInTheDocument();
+        },
+        { timeout: 5000 }
+      );
     }
   }
 };
@@ -88,15 +104,16 @@ export const testFieldInteraction = async (options: {
   expectedBehavior: 'valid' | 'invalid';
   expectedErrorMessage?: string;
 }) => {
-  const { fieldLabel, inputValue, expectedBehavior, expectedErrorMessage } = options;
+  const { fieldLabel, inputValue, expectedBehavior, expectedErrorMessage } =
+    options;
 
   // Find field by label (accessible approach)
   const field = screen.getByLabelText(fieldLabel);
-  
+
   // Simulate user typing
   await userEvent.clear(field);
   await userEvent.type(field, inputValue);
-  
+
   // Simulate blur to trigger onBlur validation if configured
   await userEvent.tab();
 
@@ -105,7 +122,7 @@ export const testFieldInteraction = async (options: {
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent(expectedErrorMessage);
     });
-    
+
     // Check aria-invalid attribute
     expect(field).toHaveAttribute('aria-invalid', 'true');
   } else {
@@ -124,13 +141,19 @@ export const testAsyncValidation = async (options: {
   expectedResult: 'valid' | 'invalid';
   expectedErrorMessage?: string;
 }) => {
-  const { fieldLabel, inputValue, mockAsyncValidator, expectedResult, expectedErrorMessage } = options;
+  const {
+    fieldLabel,
+    inputValue,
+    mockAsyncValidator,
+    expectedResult,
+    expectedErrorMessage,
+  } = options;
 
   const field = screen.getByLabelText(fieldLabel);
-  
+
   await userEvent.clear(field);
   await userEvent.type(field, inputValue);
-  
+
   // Wait for async validation to complete
   await waitFor(() => {
     expect(mockAsyncValidator).toHaveBeenCalledWith(inputValue);
@@ -154,7 +177,7 @@ export const TestControllerWrapper: FC<{
 }> = ({ children, defaultValues = {} }) => {
   const form = useForm({
     defaultValues,
-    mode: 'onChange'
+    mode: 'onChange',
   });
 
   return (
@@ -173,8 +196,9 @@ export const testFormSubmission = async (options: {
   mockSubmit: Mock;
   expectedSubmissionData: Record<string, unknown>;
 }) => {
-  const { component, fillValidData, mockSubmit, expectedSubmissionData } = options;
-  
+  const { component, fillValidData, mockSubmit, expectedSubmissionData } =
+    options;
+
   render(component);
 
   // Fill form with valid data
@@ -207,7 +231,9 @@ export const testFormAccessibility = async (component: React.ReactElement) => {
   });
 
   // Test that required fields are properly marked
-  const requiredFields = screen.queryAllByRole('textbox').filter(field => field.hasAttribute('required'));
+  const requiredFields = screen
+    .queryAllByRole('textbox')
+    .filter(field => field.hasAttribute('required'));
   requiredFields.forEach(field => {
     expect(field).toBeRequired();
   });
@@ -224,7 +250,7 @@ export const testFormStateChange = async (options: {
   };
 }) => {
   const { component, action, expectedFormState } = options;
-  
+
   render(component);
 
   // Perform action that should change form state
@@ -235,7 +261,10 @@ export const testFormStateChange = async (options: {
     if (expectedFormState.isDirty !== undefined) {
       // Test dirty state by checking if reset button is enabled
       const form = screen.getByTestId('test-form');
-      expect(form).toHaveAttribute('data-dirty', expectedFormState.isDirty.toString());
+      expect(form).toHaveAttribute(
+        'data-dirty',
+        expectedFormState.isDirty.toString()
+      );
     }
 
     if (expectedFormState.isValid !== undefined) {
@@ -253,7 +282,7 @@ export const testFormStateChange = async (options: {
 // ✅ CORRECT: Example of a complete form test
 export const exampleFormTest = () => {
   const mockSubmit = vi.fn();
-  
+
   const TestForm: FC = () => {
     const validationSchema = z.object({
       email: z.string().email('Invalid email format'),
@@ -261,25 +290,20 @@ export const exampleFormTest = () => {
     });
 
     return (
-      <FormTestWrapper 
+      <FormTestWrapper
         defaultValues={{ email: '', password: '' }}
         validationSchema={validationSchema}
         onSubmit={mockSubmit}
       >
         <div>
           <label htmlFor="email">Email</label>
-          <input 
-            id="email" 
-            name="email" 
-            type="email"
-            aria-invalid="false"
-          />
+          <input id="email" name="email" type="email" aria-invalid="false" />
         </div>
         <div>
           <label htmlFor="password">Password</label>
-          <input 
-            id="password" 
-            name="password" 
+          <input
+            id="password"
+            name="password"
             type="password"
             aria-invalid="false"
           />
@@ -290,7 +314,7 @@ export const exampleFormTest = () => {
 
   it('should validate and submit form correctly', async () => {
     render(<TestForm />);
-    
+
     // Test validation failure
     await testFormValidation({
       component: <TestForm />,
@@ -298,8 +322,11 @@ export const exampleFormTest = () => {
         await userEvent.type(screen.getByLabelText(/email/i), 'invalid-email');
         await userEvent.type(screen.getByLabelText(/password/i), '123');
       },
-      expectedErrors: ['Invalid email format', 'Password must be at least 5 characters'],
-      submitShouldSucceed: false
+      expectedErrors: [
+        'Invalid email format',
+        'Password must be at least 5 characters',
+      ],
+      submitShouldSucceed: false,
     });
 
     // Test successful submission
@@ -308,19 +335,22 @@ export const exampleFormTest = () => {
       fillValidData: async () => {
         await userEvent.clear(screen.getByLabelText(/email/i));
         await userEvent.clear(screen.getByLabelText(/password/i));
-        await userEvent.type(screen.getByLabelText(/email/i), 'test@example.com');
+        await userEvent.type(
+          screen.getByLabelText(/email/i),
+          'test@example.com'
+        );
         await userEvent.type(screen.getByLabelText(/password/i), 'password123');
       },
       mockSubmit,
       expectedSubmissionData: {
         email: 'test@example.com',
-        password: 'password123'
-      }
+        password: 'password123',
+      },
     });
 
     expect(mockSubmit).toHaveBeenCalledWith({
       email: 'test@example.com',
-      password: 'password123'
+      password: 'password123',
     });
   });
 };

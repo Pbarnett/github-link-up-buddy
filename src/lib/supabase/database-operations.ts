@@ -12,7 +12,7 @@ class ConnectionMonitor {
 
   async checkHealth(): Promise<boolean> {
     const now = Date.now();
-    
+
     // Skip if we checked recently
     if (now - this.lastHealthCheck < this.healthCheckInterval) {
       return this.isHealthy;
@@ -27,13 +27,13 @@ class ConnectionMonitor {
         .select('id')
         .limit(1)
         .abortSignal(AbortSignal.timeout(5000));
-      
+
       this.isHealthy = !error;
-      
+
       if (!this.isHealthy) {
         console.warn('🔗 Database connection health check failed:', error);
       }
-      
+
       return this.isHealthy;
     } catch (error) {
       console.error('🔗 Database health check error:', error);
@@ -45,7 +45,7 @@ class ConnectionMonitor {
   getStatus(): { healthy: boolean; lastCheck: number } {
     return {
       healthy: this.isHealthy,
-      lastCheck: this.lastHealthCheck
+      lastCheck: this.lastHealthCheck,
     };
   }
 }
@@ -74,7 +74,11 @@ export class DatabaseOperations {
       timeout?: number;
     } = {}
   ) {
-    const { withRetry: enableRetry = false, maxRetries = 3, timeout = 30000 } = options;
+    const {
+      withRetry: enableRetry = false,
+      maxRetries = 3,
+      timeout = 30000,
+    } = options;
 
     const operation = async () => {
       const controller = new AbortController();
@@ -82,14 +86,14 @@ export class DatabaseOperations {
 
       try {
         let queryBuilder = supabase.from(table).abortSignal(controller.signal);
-        
+
         if (query) {
           queryBuilder = query(queryBuilder);
         }
 
         const result = await queryBuilder;
         clearTimeout(timeoutId);
-        
+
         if (result.error) {
           throw result.error;
         }
@@ -102,10 +106,10 @@ export class DatabaseOperations {
     };
 
     try {
-      const result = enableRetry ? 
-        await withRetry(operation, maxRetries) : 
-        await operation();
-        
+      const result = enableRetry
+        ? await withRetry(operation, maxRetries)
+        : await operation();
+
       return await performanceMonitor.timeOperation(
         `select_${table}`,
         Promise.resolve(result),
@@ -133,14 +137,21 @@ export class DatabaseOperations {
       maxRetries?: number;
     } = {}
   ) {
-    const { onConflict, returning = '*', withRetry: enableRetry = false, maxRetries = 3 } = options;
+    const {
+      onConflict,
+      returning = '*',
+      withRetry: enableRetry = false,
+      maxRetries = 3,
+    } = options;
 
     const operation = async () => {
       let queryBuilder = supabase.from(table).insert(data).select(returning);
 
       if (onConflict) {
         // Handle upsert scenarios
-        queryBuilder = queryBuilder.upsert(data, { onConflict }).select(returning);
+        queryBuilder = queryBuilder
+          .upsert(data, { onConflict })
+          .select(returning);
       }
 
       const result = await queryBuilder;
@@ -166,7 +177,7 @@ export class DatabaseOperations {
 
   /**
    * Safely update data in a table
-   * @param table - Table name 
+   * @param table - Table name
    * @param data - Data to update
    * @param filters - Filter conditions
    * @param options - Configuration options
@@ -181,7 +192,11 @@ export class DatabaseOperations {
       maxRetries?: number;
     } = {}
   ) {
-    const { returning = '*', withRetry: enableRetry = false, maxRetries = 3 } = options;
+    const {
+      returning = '*',
+      withRetry: enableRetry = false,
+      maxRetries = 3,
+    } = options;
 
     const operation = async () => {
       let queryBuilder = supabase.from(table).update(data);
@@ -192,7 +207,7 @@ export class DatabaseOperations {
       });
 
       const result = await queryBuilder.select(returning);
-      
+
       if (result.error) {
         throw result.error;
       }
@@ -215,7 +230,7 @@ export class DatabaseOperations {
   /**
    * Safely delete data from a table
    * @param table - Table name
-   * @param filters - Filter conditions  
+   * @param filters - Filter conditions
    * @param options - Configuration options
    */
   static async delete<T extends keyof Database['public']['Tables']>(
@@ -227,7 +242,11 @@ export class DatabaseOperations {
       maxRetries?: number;
     } = {}
   ) {
-    const { returning = '*', withRetry: enableRetry = false, maxRetries = 3 } = options;
+    const {
+      returning = '*',
+      withRetry: enableRetry = false,
+      maxRetries = 3,
+    } = options;
 
     const operation = async () => {
       let queryBuilder = supabase.from(table).delete();
@@ -238,7 +257,7 @@ export class DatabaseOperations {
       });
 
       const result = await queryBuilder.select(returning);
-      
+
       if (result.error) {
         throw result.error;
       }
@@ -274,20 +293,25 @@ export class DatabaseOperations {
       get?: boolean; // For read replicas
     } = {}
   ) {
-    const { withRetry: enableRetry = false, maxRetries = 3, timeout = 30000, get = false } = options;
+    const {
+      withRetry: enableRetry = false,
+      maxRetries = 3,
+      timeout = 30000,
+      get = false,
+    } = options;
 
     const operation = async () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       try {
-        const result = await supabase.rpc(functionName, args || {}, { 
+        const result = await supabase.rpc(functionName, args || {}, {
           get,
-          signal: controller.signal 
+          signal: controller.signal,
         } as any);
-        
+
         clearTimeout(timeoutId);
-        
+
         if (result.error) {
           throw result.error;
         }
@@ -317,13 +341,19 @@ export class DatabaseOperations {
   static async getProfileCompleteness(
     userId: string,
     options: { withRetry?: boolean } = {}
-  ): Promise<QueryResult<{
-    completionPercentage: number;
-    completedFields: number;
-    totalFields: number;
-    missingFields: string[];
-  }>> {
-    return this.rpc('calculate_profile_completeness', { user_id: userId }, options);
+  ): Promise<
+    QueryResult<{
+      completionPercentage: number;
+      completedFields: number;
+      totalFields: number;
+      missingFields: string[];
+    }>
+  > {
+    return this.rpc(
+      'calculate_profile_completeness',
+      { user_id: userId },
+      options
+    );
   }
 
   /**
@@ -334,19 +364,23 @@ export class DatabaseOperations {
     options: { includeInactive?: boolean; withRetry?: boolean } = {}
   ) {
     const { includeInactive = false, withRetry: enableRetry = false } = options;
-    
-    return this.select('traveler_profiles', (builder) => {
-      let query = builder
-        .eq('user_id', userId)
-        .order('is_default', { ascending: false })
-        .order('created_at', { ascending: true });
-      
-      if (!includeInactive) {
-        query = query.eq('is_active', true);
-      }
-      
-      return query;
-    }, { withRetry: enableRetry });
+
+    return this.select(
+      'traveler_profiles',
+      builder => {
+        let query = builder
+          .eq('user_id', userId)
+          .order('is_default', { ascending: false })
+          .order('created_at', { ascending: true });
+
+        if (!includeInactive) {
+          query = query.eq('is_active', true);
+        }
+
+        return query;
+      },
+      { withRetry: enableRetry }
+    );
   }
 
   static async createTravelerProfile(
@@ -376,7 +410,7 @@ export class DatabaseOperations {
       {
         ...profile,
         user_id: userId,
-        is_active: true
+        is_active: true,
       },
       options
     );
@@ -390,10 +424,14 @@ export class DatabaseOperations {
     userId?: string,
     options: { withRetry?: boolean } = {}
   ) {
-    return this.rpc('get_feature_flag_value', {
-      flag_name: flagName,
-      user_id: userId
-    }, options);
+    return this.rpc(
+      'get_feature_flag_value',
+      {
+        flag_name: flagName,
+        user_id: userId,
+      },
+      options
+    );
   }
 
   /**
@@ -403,13 +441,16 @@ export class DatabaseOperations {
     userId: string,
     options: { withRetry?: boolean } = {}
   ) {
-    return this.select('payment_methods', (builder) => 
-      builder
-        .eq('user_id', userId)
-        .eq('is_active', true)
-        .order('is_default', { ascending: false })
-        .order('created_at', { ascending: true })
-    , options);
+    return this.select(
+      'payment_methods',
+      builder =>
+        builder
+          .eq('user_id', userId)
+          .eq('is_active', true)
+          .order('is_default', { ascending: false })
+          .order('created_at', { ascending: true }),
+      options
+    );
   }
 
   /**
@@ -422,16 +463,16 @@ export class DatabaseOperations {
     timestamp: number;
   }> {
     const startTime = Date.now();
-    
+
     try {
       const { error } = await supabase
         .from('feature_flags')
         .select('id')
         .limit(1)
         .abortSignal(AbortSignal.timeout(5000));
-      
+
       const latency = Date.now() - startTime;
-      
+
       return {
         healthy: !error,
         latency,
@@ -469,11 +510,11 @@ export class DatabaseOperations {
 
     const operation = async () => {
       const results: any[] = [];
-      
+
       // Note: Supabase doesn't support explicit transactions in the client
       // This is a simplified version that executes operations sequentially
       // For true transactions, use PostgreSQL functions or stored procedures
-      
+
       for (const op of operations) {
         const result = await op();
         if (result.error) {
@@ -523,7 +564,7 @@ export const queryHelpers = {
     id: string | number,
     idColumn: string = 'id'
   ): Promise<QueryResult<Tables<T>>> {
-    return DatabaseOperations.select(table, (builder) => 
+    return DatabaseOperations.select(table, builder =>
       builder.eq(idColumn, id).single()
     );
   },
@@ -540,15 +581,15 @@ export const queryHelpers = {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    return DatabaseOperations.select(table, (builder) => {
+    return DatabaseOperations.select(table, builder => {
       let query = builder.range(from, to);
-      
+
       if (filters) {
         Object.entries(filters).forEach(([column, value]) => {
           query = query.eq(column, value);
         });
       }
-      
+
       return query;
     });
   },
@@ -560,22 +601,27 @@ export const queryHelpers = {
     table: T,
     filters?: Record<string, any>
   ): Promise<QueryResult<number>> {
-    return DatabaseOperations.select(table, (builder) => {
+    return DatabaseOperations.select(table, builder => {
       let query = builder.select('*', { count: 'exact', head: true });
-      
+
       if (filters) {
         Object.entries(filters).forEach(([column, value]) => {
           query = query.eq(column, value);
         });
       }
-      
+
       return query;
     }).then(result => ({
       data: result.count || 0,
-      error: result.error
+      error: result.error,
     }));
-  }
+  },
 };
 
 // Export commonly used types for convenience
-export type { Database, Tables, TablesInsert, TablesUpdate } from '@/types/database';
+export type {
+  Database,
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+} from '@/types/database';

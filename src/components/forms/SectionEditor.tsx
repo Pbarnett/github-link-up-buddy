@@ -1,7 +1,6 @@
-
 /**
  * Section Editor Component
- * 
+ *
  * Provides editing interface for form sections and their fields
  */
 
@@ -15,11 +14,15 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import type {
   FormSection,
   FieldConfiguration,
-  ValidationRules
+  ValidationRules,
 } from '@/types/dynamic-forms';
 
 type FC<T = {}> = React.FC<T>;
@@ -27,7 +30,10 @@ type FC<T = {}> = React.FC<T>;
 interface SectionEditorProps {
   section: FormSection;
   onUpdate: (updates: Partial<FormSection>) => void;
-  onUpdateField: (fieldId: string, updates: Partial<FieldConfiguration>) => void;
+  onUpdateField: (
+    fieldId: string,
+    updates: Partial<FieldConfiguration>
+  ) => void;
   onDeleteField: (fieldId: string) => void;
   readonly?: boolean;
 }
@@ -37,7 +43,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
   onUpdate,
   onUpdateField,
   onDeleteField,
-  readonly = false
+  readonly = false,
 }) => {
   const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set());
 
@@ -51,11 +57,14 @@ export const SectionEditor: FC<SectionEditorProps> = ({
     setExpandedFields(newExpanded);
   };
 
-  const updateFieldValidation = (fieldId: string, validation: Partial<ValidationRules>) => {
+  const updateFieldValidation = (
+    fieldId: string,
+    validation: Partial<ValidationRules>
+  ) => {
     const field = section.fields.find(f => f.id === fieldId);
     if (field) {
       onUpdateField(fieldId, {
-        validation: { ...field.validation, ...validation }
+        validation: { ...field.validation, ...validation },
       });
     }
   };
@@ -77,7 +86,9 @@ export const SectionEditor: FC<SectionEditorProps> = ({
             <Input
               id="section-title"
               value={section.title}
-              onChange={(e) => onUpdate({ title: (e.target as HTMLInputElement).value })}
+              onChange={e =>
+                onUpdate({ title: (e.target as HTMLInputElement).value })
+              }
               placeholder="Enter section title"
               disabled={readonly}
             />
@@ -88,7 +99,9 @@ export const SectionEditor: FC<SectionEditorProps> = ({
             <Textarea
               id="section-description"
               value={section.description || ''}
-              onChange={(e) => onUpdate({ description: (e.target as HTMLInputElement).value })}
+              onChange={e =>
+                onUpdate({ description: (e.target as HTMLInputElement).value })
+              }
               placeholder="Enter section description"
               disabled={readonly}
               rows={2}
@@ -100,7 +113,9 @@ export const SectionEditor: FC<SectionEditorProps> = ({
             <Input
               id="section-class"
               value={section.className || ''}
-              onChange={(e) => onUpdate({ className: (e.target as HTMLInputElement).value })}
+              onChange={e =>
+                onUpdate({ className: (e.target as HTMLInputElement).value })
+              }
               placeholder="Custom CSS classes"
               disabled={readonly}
             />
@@ -121,7 +136,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
             </div>
           ) : (
             <div className="space-y-2">
-              {section.fields.map((field) => (
+              {section.fields.map(field => (
                 <Collapsible
                   key={field.id}
                   open={expandedFields.has(field.id)}
@@ -136,17 +151,19 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                           ) : (
                             <ChevronRight className="h-4 w-4" />
                           )}
-                          <span className="font-medium text-sm">{field.label}</span>
+                          <span className="font-medium text-sm">
+                            {field.label}
+                          </span>
                           <Badge variant="outline" className="text-xs">
                             {field.type}
                           </Badge>
                         </div>
-                        
+
                         {!readonly && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={(e) => {
+                            onClick={e => {
                               e.stopPropagation();
                               onDeleteField(field.id);
                             }}
@@ -165,17 +182,26 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                             <Label className="text-xs">Label</Label>
                             <Input
                               value={field.label}
-                              onChange={(e) => onUpdateField(field.id, { label: (e.target as HTMLInputElement).value })}
+                              onChange={e =>
+                                onUpdateField(field.id, {
+                                  label: (e.target as HTMLInputElement).value,
+                                })
+                              }
                               className="h-8 text-sm"
                               disabled={readonly}
                             />
                           </div>
-                          
+
                           <div className="space-y-1">
                             <Label className="text-xs">Placeholder</Label>
                             <Input
                               value={field.placeholder || ''}
-                              onChange={(e) => onUpdateField(field.id, { placeholder: (e.target as HTMLInputElement).value })}
+                              onChange={e =>
+                                onUpdateField(field.id, {
+                                  placeholder: (e.target as HTMLInputElement)
+                                    .value,
+                                })
+                              }
                               className="h-8 text-sm"
                               disabled={readonly}
                             />
@@ -187,7 +213,12 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                           <Label className="text-xs">Description</Label>
                           <Textarea
                             value={field.description || ''}
-                            onChange={(e) => onUpdateField(field.id, { description: (e.target as HTMLInputElement).value })}
+                            onChange={e =>
+                              onUpdateField(field.id, {
+                                description: (e.target as HTMLInputElement)
+                                  .value,
+                              })
+                            }
                             className="text-sm"
                             rows={2}
                             disabled={readonly}
@@ -196,48 +227,71 @@ export const SectionEditor: FC<SectionEditorProps> = ({
 
                         {/* Validation */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium">Validation</Label>
-                          
+                          <Label className="text-xs font-medium">
+                            Validation
+                          </Label>
+
                           <div className="space-y-2">
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id={`${field.id}-required`}
                                 checked={field.validation?.required || false}
-                                onCheckedChange={(checked) => 
-                                  updateFieldValidation(field.id, { required: checked as boolean })
+                                onCheckedChange={checked =>
+                                  updateFieldValidation(field.id, {
+                                    required: checked as boolean,
+                                  })
                                 }
                                 disabled={readonly}
                               />
-                              <Label htmlFor={`${field.id}-required`} className="text-xs">
+                              <Label
+                                htmlFor={`${field.id}-required`}
+                                className="text-xs"
+                              >
                                 Required
                               </Label>
                             </div>
 
-                            {(field.type === 'text' || field.type === 'textarea' || field.type === 'password') && (
+                            {(field.type === 'text' ||
+                              field.type === 'textarea' ||
+                              field.type === 'password') && (
                               <div className="grid grid-cols-2 gap-2">
                                 <div className="space-y-1">
                                   <Label className="text-xs">Min Length</Label>
                                   <Input
                                     type="number"
                                     value={field.validation?.minLength || ''}
-                                    onChange={(e) => 
-                                      updateFieldValidation(field.id, { 
-                                        minLength: (e.target as HTMLInputElement).value ? parseInt((e.target as HTMLInputElement).value) : undefined 
+                                    onChange={e =>
+                                      updateFieldValidation(field.id, {
+                                        minLength: (
+                                          e.target as HTMLInputElement
+                                        ).value
+                                          ? parseInt(
+                                              (e.target as HTMLInputElement)
+                                                .value
+                                            )
+                                          : undefined,
                                       })
                                     }
                                     className="h-7 text-sm"
                                     disabled={readonly}
                                   />
                                 </div>
-                                
+
                                 <div className="space-y-1">
                                   <Label className="text-xs">Max Length</Label>
                                   <Input
                                     type="number"
                                     value={field.validation?.maxLength || ''}
-                                    onChange={(e) => 
-                                      updateFieldValidation(field.id, { 
-                                        maxLength: (e.target as HTMLInputElement).value ? parseInt((e.target as HTMLInputElement).value) : undefined 
+                                    onChange={e =>
+                                      updateFieldValidation(field.id, {
+                                        maxLength: (
+                                          e.target as HTMLInputElement
+                                        ).value
+                                          ? parseInt(
+                                              (e.target as HTMLInputElement)
+                                                .value
+                                            )
+                                          : undefined,
                                       })
                                     }
                                     className="h-7 text-sm"
@@ -247,31 +301,44 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                               </div>
                             )}
 
-                            {(field.type === 'number' || field.type === 'slider') && (
+                            {(field.type === 'number' ||
+                              field.type === 'slider') && (
                               <div className="grid grid-cols-2 gap-2">
                                 <div className="space-y-1">
                                   <Label className="text-xs">Min Value</Label>
                                   <Input
                                     type="number"
                                     value={field.validation?.min || ''}
-                                    onChange={(e) => 
-                                      updateFieldValidation(field.id, { 
-                                        min: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined 
+                                    onChange={e =>
+                                      updateFieldValidation(field.id, {
+                                        min: (e.target as HTMLInputElement)
+                                          .value
+                                          ? parseFloat(
+                                              (e.target as HTMLInputElement)
+                                                .value
+                                            )
+                                          : undefined,
                                       })
                                     }
                                     className="h-7 text-sm"
                                     disabled={readonly}
                                   />
                                 </div>
-                                
+
                                 <div className="space-y-1">
                                   <Label className="text-xs">Max Value</Label>
                                   <Input
                                     type="number"
                                     value={field.validation?.max || ''}
-                                    onChange={(e) => 
-                                      updateFieldValidation(field.id, { 
-                                        max: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined 
+                                    onChange={e =>
+                                      updateFieldValidation(field.id, {
+                                        max: (e.target as HTMLInputElement)
+                                          .value
+                                          ? parseFloat(
+                                              (e.target as HTMLInputElement)
+                                                .value
+                                            )
+                                          : undefined,
                                       })
                                     }
                                     className="h-7 text-sm"
@@ -283,11 +350,16 @@ export const SectionEditor: FC<SectionEditorProps> = ({
 
                             {field.type === 'text' && (
                               <div className="space-y-1">
-                                <Label className="text-xs">Pattern (Regex)</Label>
+                                <Label className="text-xs">
+                                  Pattern (Regex)
+                                </Label>
                                 <Input
                                   value={field.validation?.pattern || ''}
-                                  onChange={(e) => 
-                                    updateFieldValidation(field.id, { pattern: (e.target as HTMLInputElement).value })
+                                  onChange={e =>
+                                    updateFieldValidation(field.id, {
+                                      pattern: (e.target as HTMLInputElement)
+                                        .value,
+                                    })
                                   }
                                   placeholder="Regular expression"
                                   className="h-7 text-sm"
@@ -297,11 +369,16 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                             )}
 
                             <div className="space-y-1">
-                              <Label className="text-xs">Custom Error Message</Label>
+                              <Label className="text-xs">
+                                Custom Error Message
+                              </Label>
                               <Input
                                 value={field.validation?.message || ''}
-                                onChange={(e) => 
-                                  updateFieldValidation(field.id, { message: (e.target as HTMLInputElement).value })
+                                onChange={e =>
+                                  updateFieldValidation(field.id, {
+                                    message: (e.target as HTMLInputElement)
+                                      .value,
+                                  })
                                 }
                                 placeholder="Custom error message"
                                 className="h-7 text-sm"
@@ -312,76 +389,106 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                         </div>
 
                         {/* Options for select fields */}
-                        {(field.type === 'select' || field.type === 'multi-select') && field.options && (
-                          <div className="space-y-2">
-                            <Label className="text-xs font-medium">Options</Label>
-                            <div className="space-y-1">
-                              {field.options.map((option, optIndex) => (
-                                <div key={optIndex} className="flex gap-2">
-                                  <Input
-                                    value={option.label}
-                                    onChange={(e) => {
-                                      const newOptions = [...field.options!];
-                                      newOptions[optIndex] = { ...option, label: (e.target as HTMLInputElement).value };
-                                      onUpdateField(field.id, { options: newOptions });
-                                    }}
-                                    placeholder="Label"
-                                    className="h-7 text-sm"
-                                    disabled={readonly}
-                                  />
-                                  <Input
-                                    value={option.value.toString()}
-                                    onChange={(e) => {
-                                      const newOptions = [...field.options!];
-                                      newOptions[optIndex] = { ...option, value: (e.target as HTMLInputElement).value };
-                                      onUpdateField(field.id, { options: newOptions });
-                                    }}
-                                    placeholder="Value"
-                                    className="h-7 text-sm"
-                                    disabled={readonly}
-                                  />
-                                  {!readonly && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        const newOptions = field.options!.filter((_, i) => i !== optIndex);
-                                        onUpdateField(field.id, { options: newOptions });
+                        {(field.type === 'select' ||
+                          field.type === 'multi-select') &&
+                          field.options && (
+                            <div className="space-y-2">
+                              <Label className="text-xs font-medium">
+                                Options
+                              </Label>
+                              <div className="space-y-1">
+                                {field.options.map((option, optIndex) => (
+                                  <div key={optIndex} className="flex gap-2">
+                                    <Input
+                                      value={option.label}
+                                      onChange={e => {
+                                        const newOptions = [...field.options!];
+                                        newOptions[optIndex] = {
+                                          ...option,
+                                          label: (e.target as HTMLInputElement)
+                                            .value,
+                                        };
+                                        onUpdateField(field.id, {
+                                          options: newOptions,
+                                        });
                                       }}
-                                      className="h-7 w-7 p-0"
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                  )}
-                                </div>
-                              ))}
-                              
-                              {!readonly && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    const newOptions = [
-                                      ...field.options!,
-                                      { label: 'New Option', value: `option${field.options!.length + 1}` }
-                                    ];
-                                    onUpdateField(field.id, { options: newOptions });
-                                  }}
-                                  className="h-7 text-xs"
-                                >
-                                  Add Option
-                                </Button>
-                              )}
+                                      placeholder="Label"
+                                      className="h-7 text-sm"
+                                      disabled={readonly}
+                                    />
+                                    <Input
+                                      value={option.value.toString()}
+                                      onChange={e => {
+                                        const newOptions = [...field.options!];
+                                        newOptions[optIndex] = {
+                                          ...option,
+                                          value: (e.target as HTMLInputElement)
+                                            .value,
+                                        };
+                                        onUpdateField(field.id, {
+                                          options: newOptions,
+                                        });
+                                      }}
+                                      placeholder="Value"
+                                      className="h-7 text-sm"
+                                      disabled={readonly}
+                                    />
+                                    {!readonly && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          const newOptions =
+                                            field.options!.filter(
+                                              (_, i) => i !== optIndex
+                                            );
+                                          onUpdateField(field.id, {
+                                            options: newOptions,
+                                          });
+                                        }}
+                                        className="h-7 w-7 p-0"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                ))}
+
+                                {!readonly && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const newOptions = [
+                                        ...field.options!,
+                                        {
+                                          label: 'New Option',
+                                          value: `option${field.options!.length + 1}`,
+                                        },
+                                      ];
+                                      onUpdateField(field.id, {
+                                        options: newOptions,
+                                      });
+                                    }}
+                                    className="h-7 text-xs"
+                                  >
+                                    Add Option
+                                  </Button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
                         {/* CSS Class */}
                         <div className="space-y-1">
                           <Label className="text-xs">CSS Class</Label>
                           <Input
                             value={field.className || ''}
-                            onChange={(e) => onUpdateField(field.id, { className: (e.target as HTMLInputElement).value })}
+                            onChange={e =>
+                              onUpdateField(field.id, {
+                                className: (e.target as HTMLInputElement).value,
+                              })
+                            }
                             placeholder="Custom CSS classes"
                             className="h-7 text-sm"
                             disabled={readonly}

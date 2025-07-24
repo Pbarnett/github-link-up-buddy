@@ -23,17 +23,39 @@ describe('ConfigLoader', () => {
       context: 'flight-search',
       lastUpdated: '2025-01-01T00:00:00Z',
       updatedBy: 'test@example.com',
-      ui: { destination: true, departure: true, dates: true, budget: true, advancedFilters: false, paymentMethod: true, travelerInfo: true },
-      flightSearch: { forceRoundTrip: true, defaultNonstopRequired: true, maxAdvanceBookingDays: 365, minAdvanceBookingDays: 1, allowedCabinClasses: ['economy'], maxPriceUSD: 1000, minPriceUSD: 50 },
-      autoBooking: { enabled: true, maxConcurrentCampaigns: 3, cooldownPeriodHours: 24, requiresPaymentMethodVerification: true, maxMonthlySpend: 2000 },
+      ui: {
+        destination: true,
+        departure: true,
+        dates: true,
+        budget: true,
+        advancedFilters: false,
+        paymentMethod: true,
+        travelerInfo: true,
+      },
+      flightSearch: {
+        forceRoundTrip: true,
+        defaultNonstopRequired: true,
+        maxAdvanceBookingDays: 365,
+        minAdvanceBookingDays: 1,
+        allowedCabinClasses: ['economy'],
+        maxPriceUSD: 1000,
+        minPriceUSD: 50,
+      },
+      autoBooking: {
+        enabled: true,
+        maxConcurrentCampaigns: 3,
+        cooldownPeriodHours: 24,
+        requiresPaymentMethodVerification: true,
+        maxMonthlySpend: 2000,
+      },
       filters: [],
       emergencyDisable: false,
-      emergencyMessage: undefined
+      emergencyMessage: undefined,
     };
 
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: vi.fn().mockResolvedValue(mockConfig)
+      json: vi.fn().mockResolvedValue(mockConfig),
     });
 
     const config = await configLoader.loadConfig('test');
@@ -43,7 +65,7 @@ describe('ConfigLoader', () => {
 
   it('should return fallback config on fetch failure', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
-    
+
     const config = await configLoader.loadConfig('test');
     expect(config.updatedBy).toBe('system@fallback.com');
     expect(BusinessRulesConfigSchema.parse(config)).toBeTruthy();
@@ -56,22 +78,44 @@ describe('ConfigLoader', () => {
       context: 'flight-search',
       lastUpdated: '2025-01-01T00:00:00Z',
       updatedBy: 'test@example.com',
-      ui: { destination: true, departure: true, dates: true, budget: true, advancedFilters: false, paymentMethod: true, travelerInfo: true },
-      flightSearch: { forceRoundTrip: true, defaultNonstopRequired: true, maxAdvanceBookingDays: 365, minAdvanceBookingDays: 1, allowedCabinClasses: ['economy'], maxPriceUSD: 1000, minPriceUSD: 50 },
-      autoBooking: { enabled: true, maxConcurrentCampaigns: 3, cooldownPeriodHours: 24, requiresPaymentMethodVerification: true, maxMonthlySpend: 2000 },
+      ui: {
+        destination: true,
+        departure: true,
+        dates: true,
+        budget: true,
+        advancedFilters: false,
+        paymentMethod: true,
+        travelerInfo: true,
+      },
+      flightSearch: {
+        forceRoundTrip: true,
+        defaultNonstopRequired: true,
+        maxAdvanceBookingDays: 365,
+        minAdvanceBookingDays: 1,
+        allowedCabinClasses: ['economy'],
+        maxPriceUSD: 1000,
+        minPriceUSD: 50,
+      },
+      autoBooking: {
+        enabled: true,
+        maxConcurrentCampaigns: 3,
+        cooldownPeriodHours: 24,
+        requiresPaymentMethodVerification: true,
+        maxMonthlySpend: 2000,
+      },
       filters: [],
       emergencyDisable: false,
-      emergencyMessage: undefined
+      emergencyMessage: undefined,
     };
-    
+
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: vi.fn().mockResolvedValue(mockConfig)
+      json: vi.fn().mockResolvedValue(mockConfig),
     });
 
     const config1 = await configLoader.loadConfig('test');
     const config2 = await configLoader.loadConfig('test');
-    
+
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(config1).toBe(config2);
   });

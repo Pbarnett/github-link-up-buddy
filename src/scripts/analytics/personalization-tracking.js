@@ -1,4 +1,3 @@
-import * as React from 'react';
 /**
  * Personalization Feature Analytics Tracking
  * Tracks user interactions, engagement metrics, and performance indicators
@@ -11,7 +10,7 @@ export const trackPersonalizationEvent = (eventName, properties = {}) => {
     timestamp: new Date().toISOString(),
     session_id: getSessionId(),
     user_id: getUserId(),
-    ...properties
+    ...properties,
   };
 
   // Send to analytics service (replace with actual implementation)
@@ -26,7 +25,7 @@ export const trackGreetingDisplay = (greetingType, personalizationData) => {
     greeting_type: greetingType,
     has_personal_data: !!personalizationData.name,
     time_of_day: getTimeOfDay(),
-    display_context: 'header'
+    display_context: 'header',
   });
 };
 
@@ -35,25 +34,25 @@ export const trackPersonalizationEngagement = (action, element) => {
   trackPersonalizationEvent('personalization_engagement', {
     action: action,
     element: element,
-    engagement_type: 'click'
+    engagement_type: 'click',
   });
 };
 
 // Track opt-out banner interactions
-export const trackOptOutBanner = (action) => {
+export const trackOptOutBanner = action => {
   trackPersonalizationEvent('opt_out_banner', {
     action: action, // 'displayed', 'dismissed', 'opted_out'
-    banner_type: 'gdpr_compliance'
+    banner_type: 'gdpr_compliance',
   });
 };
 
 // Performance monitoring for personalization feature
-export const trackPersonalizationPerformance = (metrics) => {
+export const trackPersonalizationPerformance = metrics => {
   trackPersonalizationEvent('personalization_performance', {
     load_time: metrics.loadTime,
     api_response_time: metrics.apiResponseTime,
     render_time: metrics.renderTime,
-    bundle_size_impact: metrics.bundleSizeImpact
+    bundle_size_impact: metrics.bundleSizeImpact,
   });
 };
 

@@ -1,10 +1,11 @@
-
 /**
  * Common TypeScript event handler types for consistent typing across components
  */
 // Input element event handlers
 export type InputChangeHandler = (e: ChangeEvent<HTMLInputElement>) => void;
-export type TextAreaChangeHandler = (e: ChangeEvent<HTMLTextAreaElement>) => void;
+export type TextAreaChangeHandler = (
+  e: ChangeEvent<HTMLTextAreaElement>
+) => void;
 export type SelectChangeHandler = (e: ChangeEvent<HTMLSelectElement>) => void;
 
 // Generic form event handlers

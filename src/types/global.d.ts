@@ -15,11 +15,11 @@ declare module '@aws-sdk/node-http-handler' {
 
 declare module '@aws-sdk/client-kms' {
   export * from '@aws-sdk/types';
-  
+
   export class DecryptionFailedException extends Error {
     readonly name = 'DecryptionFailedException';
   }
-  
+
   export class EncryptionContextNotValidException extends Error {
     readonly name = 'EncryptionContextNotValidException';
   }
@@ -27,27 +27,27 @@ declare module '@aws-sdk/client-kms' {
 
 declare module '@aws-sdk/client-s3' {
   export * from '@aws-sdk/types';
-  
+
   export class NoSuchBucketException extends Error {
     readonly name = 'NoSuchBucketException';
   }
-  
+
   export class NoSuchKeyException extends Error {
     readonly name = 'NoSuchKeyException';
   }
-  
+
   export class InvalidBucketNameException extends Error {
     readonly name = 'InvalidBucketNameException';
   }
-  
+
   export class BucketAlreadyExistsException extends Error {
     readonly name = 'BucketAlreadyExistsException';
   }
-  
+
   export class BucketAlreadyOwnedByYouException extends Error {
     readonly name = 'BucketAlreadyOwnedByYouException';
   }
-  
+
   export class ObjectNotInActiveTierErrorException extends Error {
     readonly name = 'ObjectNotInActiveTierErrorException';
   }
@@ -55,7 +55,7 @@ declare module '@aws-sdk/client-s3' {
 
 declare module '@aws-sdk/client-dynamodb' {
   export * from '@aws-sdk/types';
-  
+
   export class ValidationException extends Error {
     readonly name = 'ValidationException';
   }
@@ -66,7 +66,7 @@ declare module 'react' {
   export function useActionState<State, Payload>(
     action: (state: Awaited<State>, payload: Payload) => State | Promise<State>,
     initialState: Awaited<State>,
-    permalink?: string,
+    permalink?: string
   ): [Awaited<State>, (payload: Payload) => void, boolean];
 }
 
@@ -79,7 +79,7 @@ declare module 'next/navigation' {
     forward: () => void;
     refresh: () => void;
   };
-  
+
   export function useSearchParams(): URLSearchParams;
   export function usePathname(): string;
 }

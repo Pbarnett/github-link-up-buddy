@@ -13,15 +13,15 @@ const mockAuthData = {
     id: 'test-user-id',
     email: 'test@example.com',
     user_metadata: {
-      full_name: 'Test User'
-    }
+      full_name: 'Test User',
+    },
   },
   session: {
     access_token: 'mock-access-token',
-    refresh_token: 'mock-refresh-token'
+    refresh_token: 'mock-refresh-token',
   },
   loading: false,
-  error: null
+  error: null,
 };
 
 const TestBooking: React.FC = () => {
@@ -34,7 +34,7 @@ const TestBooking: React.FC = () => {
   useEffect(() => {
     // Override the useSecureOAuth hook globally for this component tree
     (window as any).__TEST_AUTH_OVERRIDE__ = mockAuthData;
-    
+
     return () => {
       delete (window as any).__TEST_AUTH_OVERRIDE__;
     };
@@ -44,17 +44,20 @@ const TestBooking: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Test Flight Booking</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Test Flight Booking
+          </h1>
           <p className="text-gray-600 mt-2">
-            This is a test-only page for E2E testing - authentication is bypassed
+            This is a test-only page for E2E testing - authentication is
+            bypassed
           </p>
         </div>
-        
+
         <SecureFlightBooking
           onBookingComplete={(bookingRef, flight) => {
             console.log('Test booking completed:', bookingRef, flight);
           }}
-          onError={(error) => {
+          onError={error => {
             console.error('Test booking error:', error);
           }}
         />

@@ -1,25 +1,40 @@
-
-import { 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { POPULAR_DESTINATIONS } from "@/data/airports";
+import { HelpCircle } from 'lucide-react';
+import { Control, UseFormWatch } from 'react-hook-form';
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { POPULAR_DESTINATIONS } from '@/data/airports';
 
 interface EnhancedDestinationSectionProps {
   control: Control<Record<string, unknown>>;
   watch: UseFormWatch<Record<string, unknown>>;
 }
 
-const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSectionProps) => {
-  const selectedDestination = watch("destination_airport");
-  
+const EnhancedDestinationSection = ({
+  control,
+  watch,
+}: EnhancedDestinationSectionProps) => {
+  const selectedDestination = watch('destination_airport');
+
   return (
     <div className="bg-blue-50/30 rounded-lg p-4 border border-blue-100">
       <div className="space-y-4">
@@ -38,14 +53,17 @@ const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSecti
                       <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Pick a popular airport or enter a custom three-letter code below</p>
+                      <p>
+                        Pick a popular airport or enter a custom three-letter
+                        code below
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <Select 
-                onValueChange={field.onChange} 
-                value={(field.value as string) || ""}
+              <Select
+                onValueChange={field.onChange}
+                value={(field.value as string) || ''}
               >
                 <FormControl>
                   <SelectTrigger className="h-12 bg-white border-gray-300 text-base font-medium hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
@@ -53,7 +71,7 @@ const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSecti
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent className="max-h-64 overflow-auto bg-white z-50">
-                  {POPULAR_DESTINATIONS.map((airport) => (
+                  {POPULAR_DESTINATIONS.map(airport => (
                     <SelectItem key={airport.id} value={airport.id}>
                       {airport.label}
                     </SelectItem>
@@ -64,19 +82,21 @@ const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSecti
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={control}
           name="destination_other"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm font-medium text-gray-700">Custom Destination</FormLabel>
+              <FormLabel className="text-sm font-medium text-gray-700">
+                Custom Destination
+              </FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Enter airport code (e.g., LAX)" 
+                <Input
+                  placeholder="Enter airport code (e.g., LAX)"
                   className="h-11 bg-white border-gray-300"
                   {...field}
-                  value={(field.value as string) || ""}
+                  value={(field.value as string) || ''}
                   disabled={!!selectedDestination}
                 />
               </FormControl>

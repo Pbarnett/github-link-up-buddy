@@ -1,9 +1,5 @@
-
-
-
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import * as React from 'react';
 
 interface CurrentUserState {
   user: User | null;
@@ -24,11 +20,11 @@ export const useCurrentUser = (): CurrentUserState => {
     const getCurrentUser = async () => {
       try {
         const { data, error } = await supabase.auth.getUser();
-        
+
         if (error) {
           throw error;
         }
-        
+
         setState({
           user: data.user,
           userId: data.user?.id || null,
@@ -36,7 +32,7 @@ export const useCurrentUser = (): CurrentUserState => {
           error: null,
         });
       } catch (error) {
-        console.error("Error getting user:", error);
+        console.error('Error getting user:', error);
         setState({
           user: null,
           userId: null,
@@ -45,26 +41,26 @@ export const useCurrentUser = (): CurrentUserState => {
         });
       }
     };
-    
+
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setState(prev => ({
-          ...prev,
-          user: session?.user || null,
-          userId: session?.user?.id || null,
-        }));
-      }
-    );
-    
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setState(prev => ({
+        ...prev,
+        user: session?.user || null,
+        userId: session?.user?.id || null,
+      }));
+    });
+
     // Initial user check
     getCurrentUser();
-    
+
     // Clean up subscription
     return () => {
       subscription.unsubscribe();
     };
   }, []);
-  
+
   return state;
 };

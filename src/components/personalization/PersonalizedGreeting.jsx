@@ -16,23 +16,22 @@ const PersonalizedGreeting = ({ userId, isPersonalizationEnabled = true }) => {
 
     const fetchPersonalizedGreeting = async () => {
       try {
-        const response = await fetch(`/api/personalization/greeting?userId=${userId}`);
+        const response = await fetch(
+          `/api/personalization/greeting?userId=${userId}`
+        );
         const data = await response.json();
-        
+
         setPersonalData(data);
-        
+
         const timeBasedGreeting = getTimeBasedGreeting();
-        const personalizedGreeting = data.name 
+        const personalizedGreeting = data.name
           ? `${timeBasedGreeting}, ${data.name}!`
           : timeBasedGreeting;
-        
+
         setGreeting(personalizedGreeting);
-        
+
         // Track greeting display
-        trackGreetingDisplay(
-          data.name ? 'personalized' : 'generic',
-          data
-        );
+        trackGreetingDisplay(data.name ? 'personalized' : 'generic', data);
       } catch (error) {
         console.error('Failed to fetch personalized greeting:', error);
         setGreeting('Welcome!');
@@ -52,14 +51,23 @@ const PersonalizedGreeting = ({ userId, isPersonalizationEnabled = true }) => {
   };
 
   if (loading) {
-    return React.createElement('div', { className: 'greeting-placeholder' }, 'Loading...');
+    return React.createElement(
+      'div',
+      { className: 'greeting-placeholder' },
+      'Loading...'
+    );
   }
 
-  return React.createElement('div', { className: 'personalized-greeting' },
+  return React.createElement(
+    'div',
+    { className: 'personalized-greeting' },
     React.createElement('h2', null, greeting),
-    personalData.lastVisit && React.createElement('p', { className: 'last-visit' },
-      `Last visit: ${new Date(personalData.lastVisit).toLocaleDateString()}`
-    )
+    personalData.lastVisit &&
+      React.createElement(
+        'p',
+        { className: 'last-visit' },
+        `Last visit: ${new Date(personalData.lastVisit).toLocaleDateString()}`
+      )
   );
 };
 

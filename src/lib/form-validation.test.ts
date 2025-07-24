@@ -1,25 +1,28 @@
 /**
  * Form Validation Tests
- * 
+ *
  * Unit tests for the form validation utilities and Zod schema generation
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockFormConfiguration, createMockFieldConfiguration } from '@/tests/setup-dynamic-forms';
 import {
   generateZodSchema,
   generateFieldSchema,
   validateFieldValue,
   validateFormValues,
-  getDefaultValues
+  getDefaultValues,
 } from './form-validation';
+import {
+  createMockFormConfiguration,
+  createMockFieldConfiguration,
+} from '@/tests/setup-dynamic-forms';
 
 describe('Form Validation', () => {
   describe('generateFieldSchema', () => {
     it('should generate text field schema', () => {
       const field = createMockFieldConfiguration({
         type: 'text',
-        validation: { required: true, minLength: 3, maxLength: 10 }
+        validation: { required: true, minLength: 3, maxLength: 10 },
       });
 
       const schema = generateFieldSchema(field);
@@ -37,7 +40,7 @@ describe('Form Validation', () => {
     it('should generate email field schema', () => {
       const field = createMockFieldConfiguration({
         type: 'email',
-        validation: { required: true }
+        validation: { required: true },
       });
 
       const schema = generateFieldSchema(field);
@@ -54,7 +57,7 @@ describe('Form Validation', () => {
     it('should generate number field schema', () => {
       const field = createMockFieldConfiguration({
         type: 'number',
-        validation: { required: true, min: 1, max: 100 }
+        validation: { required: true, min: 1, max: 100 },
       });
 
       const schema = generateFieldSchema(field);
@@ -73,7 +76,7 @@ describe('Form Validation', () => {
     it('should generate checkbox field schema', () => {
       const field = createMockFieldConfiguration({
         type: 'checkbox',
-        validation: { required: true }
+        validation: { required: true },
       });
 
       const schema = generateFieldSchema(field);
@@ -91,9 +94,9 @@ describe('Form Validation', () => {
         type: 'select',
         options: [
           { label: 'Option 1', value: 'opt1' },
-          { label: 'Option 2', value: 'opt2' }
+          { label: 'Option 2', value: 'opt2' },
         ],
-        validation: { required: true }
+        validation: { required: true },
       });
 
       const schema = generateFieldSchema(field);
@@ -110,7 +113,7 @@ describe('Form Validation', () => {
     it('should generate date field schema', () => {
       const field = createMockFieldConfiguration({
         type: 'date',
-        validation: { required: true }
+        validation: { required: true },
       });
 
       const schema = generateFieldSchema(field);
@@ -128,31 +131,35 @@ describe('Form Validation', () => {
     it('should generate airport autocomplete schema', () => {
       const field = createMockFieldConfiguration({
         type: 'airport-autocomplete',
-        validation: { required: true }
+        validation: { required: true },
       });
 
       const schema = generateFieldSchema(field);
       expect(schema).toBeDefined();
 
       // Test valid airport object
-      expect(() => schema!.parse({
-        code: 'LAX',
-        name: 'Los Angeles International Airport',
-        city: 'Los Angeles',
-        country: 'US'
-      })).not.toThrow();
+      expect(() =>
+        schema!.parse({
+          code: 'LAX',
+          name: 'Los Angeles International Airport',
+          city: 'Los Angeles',
+          country: 'US',
+        })
+      ).not.toThrow();
 
       // Test invalid airport object
-      expect(() => schema!.parse({
-        code: '',
-        name: ''
-      })).toThrow();
+      expect(() =>
+        schema!.parse({
+          code: '',
+          name: '',
+        })
+      ).toThrow();
     });
 
     it('should handle optional fields', () => {
       const field = createMockFieldConfiguration({
         type: 'text',
-        validation: { required: false }
+        validation: { required: false },
       });
 
       const schema = generateFieldSchema(field);
@@ -165,11 +172,11 @@ describe('Form Validation', () => {
 
     it('should return null for non-input field types', () => {
       const headerField = createMockFieldConfiguration({
-        type: 'section-header'
+        type: 'section-header',
       });
 
       const dividerField = createMockFieldConfiguration({
-        type: 'divider'
+        type: 'divider',
       });
 
       expect(generateFieldSchema(headerField)).toBeNull();
@@ -182,8 +189,8 @@ describe('Form Validation', () => {
         validation: {
           required: true,
           custom: 'return value.includes("test");',
-          message: 'Value must contain "test"'
-        }
+          message: 'Value must contain "test"',
+        },
       });
 
       const schema = generateFieldSchema(field);
@@ -207,23 +214,23 @@ describe('Form Validation', () => {
                 id: 'firstName',
                 type: 'text',
                 label: 'First Name',
-                validation: { required: true }
+                validation: { required: true },
               },
               {
                 id: 'email',
                 type: 'email',
                 label: 'Email',
-                validation: { required: true }
+                validation: { required: true },
               },
               {
                 id: 'age',
                 type: 'number',
                 label: 'Age',
-                validation: { required: false, min: 18 }
-              }
-            ]
-          }
-        ]
+                validation: { required: false, min: 18 },
+              },
+            ],
+          },
+        ],
       });
 
       const schema = generateZodSchema(configuration);
@@ -233,7 +240,7 @@ describe('Form Validation', () => {
       const validData = {
         firstName: 'John',
         email: 'john@example.com',
-        age: 25
+        age: 25,
       };
       expect(() => schema.parse(validData)).not.toThrow();
 
@@ -241,7 +248,7 @@ describe('Form Validation', () => {
       const invalidData = {
         firstName: '',
         email: 'invalid-email',
-        age: 15
+        age: 15,
       };
       expect(() => schema.parse(invalidData)).toThrow();
     });
@@ -257,9 +264,9 @@ describe('Form Validation', () => {
                 id: 'firstName',
                 type: 'text',
                 label: 'First Name',
-                validation: { required: true }
-              }
-            ]
+                validation: { required: true },
+              },
+            ],
           },
           {
             id: 'contact',
@@ -269,18 +276,18 @@ describe('Form Validation', () => {
                 id: 'email',
                 type: 'email',
                 label: 'Email',
-                validation: { required: true }
-              }
-            ]
-          }
-        ]
+                validation: { required: true },
+              },
+            ],
+          },
+        ],
       });
 
       const schema = generateZodSchema(configuration);
-      
+
       const validData = {
         firstName: 'John',
-        email: 'john@example.com'
+        email: 'john@example.com',
       };
       expect(() => schema.parse(validData)).not.toThrow();
     });
@@ -290,7 +297,7 @@ describe('Form Validation', () => {
     it('should validate individual field values', () => {
       const field = createMockFieldConfiguration({
         type: 'email',
-        validation: { required: true }
+        validation: { required: true },
       });
 
       // Valid email
@@ -307,7 +314,7 @@ describe('Form Validation', () => {
     it('should handle validation errors gracefully', () => {
       const field = createMockFieldConfiguration({
         type: 'text',
-        validation: { required: true }
+        validation: { required: true },
       });
 
       const result = validateFieldValue(field, '');
@@ -328,23 +335,23 @@ describe('Form Validation', () => {
                 id: 'name',
                 type: 'text',
                 label: 'Name',
-                validation: { required: true }
+                validation: { required: true },
               },
               {
                 id: 'email',
                 type: 'email',
                 label: 'Email',
-                validation: { required: true }
-              }
-            ]
-          }
-        ]
+                validation: { required: true },
+              },
+            ],
+          },
+        ],
       });
 
       // Valid data
       const validData = {
         name: 'John Doe',
-        email: 'john@example.com'
+        email: 'john@example.com',
       };
       const validResult = validateFormValues(configuration, validData);
       expect(validResult.isValid).toBe(true);
@@ -353,7 +360,7 @@ describe('Form Validation', () => {
       // Invalid data
       const invalidData = {
         name: '',
-        email: 'invalid-email'
+        email: 'invalid-email',
       };
       const invalidResult = validateFormValues(configuration, invalidData);
       expect(invalidResult.isValid).toBe(false);
@@ -373,27 +380,27 @@ describe('Form Validation', () => {
                 id: 'name',
                 type: 'text',
                 label: 'Name',
-                defaultValue: 'John Doe'
+                defaultValue: 'John Doe',
               },
               {
                 id: 'subscribe',
                 type: 'checkbox',
-                label: 'Subscribe'
+                label: 'Subscribe',
                 // No default value - should use type default
               },
               {
                 id: 'country',
                 type: 'select',
                 label: 'Country',
-                defaultValue: 'US'
-              }
-            ]
-          }
-        ]
+                defaultValue: 'US',
+              },
+            ],
+          },
+        ],
       });
 
       const defaults = getDefaultValues(configuration);
-      
+
       expect(defaults.name).toBe('John Doe');
       expect(defaults.subscribe).toBe(false); // checkbox default
       expect(defaults.country).toBe('US');
@@ -409,15 +416,19 @@ describe('Form Validation', () => {
               { id: 'text', type: 'text', label: 'Text' },
               { id: 'checkbox', type: 'checkbox', label: 'Checkbox' },
               { id: 'number', type: 'number', label: 'Number' },
-              { id: 'multiSelect', type: 'multi-select', label: 'Multi Select' },
-              { id: 'dateRange', type: 'date-range', label: 'Date Range' }
-            ]
-          }
-        ]
+              {
+                id: 'multiSelect',
+                type: 'multi-select',
+                label: 'Multi Select',
+              },
+              { id: 'dateRange', type: 'date-range', label: 'Date Range' },
+            ],
+          },
+        ],
       });
 
       const defaults = getDefaultValues(configuration);
-      
+
       expect(defaults.text).toBe('');
       expect(defaults.checkbox).toBe(false);
       expect(defaults.number).toBe(0);

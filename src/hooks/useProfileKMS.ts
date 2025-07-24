@@ -1,7 +1,6 @@
 // Hook for useProfile with KMS encryption
 
 import { profileServiceKMS, UserProfile } from '@/services/api/profileApiKMS';
-import * as React from 'react';
 
 export interface UseProfileKMSReturn {
   profile: UserProfile | null;
@@ -21,30 +20,37 @@ export const useProfileKMS = (): UseProfileKMSReturn => {
     try {
       setIsLoading(true);
       setError(undefined);
-      
+
       const userProfile = await profileServiceKMS.getProfile();
       setProfile(userProfile);
     } catch (err) {
       console.error('Error fetching profile:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch profile'));
+      setError(
+        err instanceof Error ? err : new Error('Failed to fetch profile')
+      );
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const updateProfile = useCallback(async (profileData: Partial<UserProfile>): Promise<UserProfile> => {
-    try {
-      setError(undefined);
-      const updatedProfile = await profileServiceKMS.updateProfile(profileData);
-      setProfile(updatedProfile);
-      return updatedProfile;
-    } catch (err) {
-      console.error('Error updating profile:', err);
-      const error = err instanceof Error ? err : new Error('Failed to update profile');
-      setError(error);
-      throw error;
-    }
-  }, []);
+  const updateProfile = useCallback(
+    async (profileData: Partial<UserProfile>): Promise<UserProfile> => {
+      try {
+        setError(undefined);
+        const updatedProfile =
+          await profileServiceKMS.updateProfile(profileData);
+        setProfile(updatedProfile);
+        return updatedProfile;
+      } catch (err) {
+        console.error('Error updating profile:', err);
+        const error =
+          err instanceof Error ? err : new Error('Failed to update profile');
+        setError(error);
+        throw error;
+      }
+    },
+    []
+  );
 
   const refetch = useCallback(async () => {
     await fetchProfile();
@@ -58,12 +64,12 @@ export const useProfileKMS = (): UseProfileKMSReturn => {
     fetchProfile();
   }, [fetchProfile]);
 
-  return { 
-    profile, 
-    isLoading, 
-    error, 
+  return {
+    profile,
+    isLoading,
+    error,
     refetch,
     updateProfile,
-    clearError
+    clearError,
   };
 };

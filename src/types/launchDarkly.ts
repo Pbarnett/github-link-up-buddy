@@ -6,19 +6,19 @@ export interface LaunchDarklyConfig {
     initialDelay: number;
     maxDelay: number;
   };
-  
+
   // Timeout configuration
   timeoutConfig: {
     initializationTimeout: number;
     flagEvaluationTimeout: number;
   };
-  
+
   // Offline mode configuration
   offlineMode: {
     enabled: boolean;
     fallbackFlags: Record<string, boolean | string | number>;
   };
-  
+
   // Resilience enhancements
   resilience: {
     enabled: boolean;

@@ -13,11 +13,47 @@ vi.mock('@/serverActions/getFlightOffers');
 const mockTripRequestId = 'test-trip-123';
 
 const mockDbRows: FlightOfferV2DbRow[] = [
-  { id: 'offer-db-1', trip_request_id: mockTripRequestId, mode: 'AUTO', price_total: 100, price_currency: 'USD', price_carry_on: null, bags_included: true, cabin_class: 'ECONOMY', nonstop: true, origin_iata: 'JFK', destination_iata: 'LAX', depart_dt: '2024-09-01T10:00:00Z', return_dt: null, seat_pref: null, created_at: '2024-08-01T12:00:00Z', booking_url: null },
-  { id: 'offer-db-2', trip_request_id: mockTripRequestId, mode: 'MANUAL', price_total: 150, price_currency: 'USD', price_carry_on: 25, bags_included: false, cabin_class: 'BUSINESS', nonstop: false, origin_iata: 'JFK', destination_iata: 'LAX', depart_dt: '2024-09-02T10:00:00Z', return_dt: null, seat_pref: 'AISLE', created_at: '2024-08-01T13:00:00Z', booking_url: null },
+  {
+    id: 'offer-db-1',
+    trip_request_id: mockTripRequestId,
+    mode: 'AUTO',
+    price_total: 100,
+    price_currency: 'USD',
+    price_carry_on: null,
+    bags_included: true,
+    cabin_class: 'ECONOMY',
+    nonstop: true,
+    origin_iata: 'JFK',
+    destination_iata: 'LAX',
+    depart_dt: '2024-09-01T10:00:00Z',
+    return_dt: null,
+    seat_pref: null,
+    created_at: '2024-08-01T12:00:00Z',
+    booking_url: null,
+  },
+  {
+    id: 'offer-db-2',
+    trip_request_id: mockTripRequestId,
+    mode: 'MANUAL',
+    price_total: 150,
+    price_currency: 'USD',
+    price_carry_on: 25,
+    bags_included: false,
+    cabin_class: 'BUSINESS',
+    nonstop: false,
+    origin_iata: 'JFK',
+    destination_iata: 'LAX',
+    depart_dt: '2024-09-02T10:00:00Z',
+    return_dt: null,
+    seat_pref: 'AISLE',
+    created_at: '2024-08-01T13:00:00Z',
+    booking_url: null,
+  },
 ];
 
-const expectedMappedOffers: FlightOfferV2[] = mockDbRows.map(mapFlightOfferDbRowToV2);
+const expectedMappedOffers: FlightOfferV2[] = mockDbRows.map(
+  mapFlightOfferDbRowToV2
+);
 
 describe('useFlightOffers Hook', () => {
   let mockUseFeatureFlag: MockInstance;
@@ -26,12 +62,26 @@ describe('useFlightOffers Hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Setup default mocks
-    mockUseFeatureFlag = vi.spyOn(featureFlagHook, 'useFeatureFlag').mockReturnValue({ data: true, isLoading: false, isError: false, error: null });
-    mockGetFlightOffers = vi.spyOn(serverActions, 'getFlightOffers').mockResolvedValue([]);
+    mockUseFeatureFlag = vi
+      .spyOn(featureFlagHook, 'useFeatureFlag')
+      .mockReturnValue({
+        data: true,
+        isLoading: false,
+        isError: false,
+        error: null,
+      });
+    mockGetFlightOffers = vi
+      .spyOn(serverActions, 'getFlightOffers')
+      .mockResolvedValue([]);
   });
 
   it('should return initial state and featureEnabled: false if feature flag is off', () => {
-    mockUseFeatureFlag.mockReturnValue({ data: false, isLoading: false, isError: false, error: null });
+    mockUseFeatureFlag.mockReturnValue({
+      data: false,
+      isLoading: false,
+      isError: false,
+      error: null,
+    });
     const { result } = renderHook(() => useFlightOffers(mockTripRequestId));
 
     expect(result.current.offers).toEqual([]);
@@ -46,13 +96,17 @@ describe('useFlightOffers Hook', () => {
 
     expect(result.current.offers).toEqual([]);
     expect(result.current.isLoading).toBe(false);
-    expect(result.current.error).toEqual(new Error('Invalid tripRequestId provided.'));
+    expect(result.current.error).toEqual(
+      new Error('Invalid tripRequestId provided.')
+    );
     expect(result.current.isFeatureEnabled).toBe(true);
     expect(mockGetFlightOffers).not.toHaveBeenCalled();
   });
 
   it('should not fetch if opts.enabled is false, even if feature is enabled', () => {
-    const { result } = renderHook(() => useFlightOffers(mockTripRequestId, { enabled: false }));
+    const { result } = renderHook(() =>
+      useFlightOffers(mockTripRequestId, { enabled: false })
+    );
 
     expect(result.current.offers).toEqual([]);
     expect(result.current.isLoading).toBe(false);
@@ -77,7 +131,7 @@ describe('useFlightOffers Hook', () => {
     expect(mockGetFlightOffers).toHaveBeenCalledWith({
       tripRequestId: mockTripRequestId,
       refresh: false,
-      useCache: true
+      useCache: true,
     });
   });
 
@@ -97,9 +151,13 @@ describe('useFlightOffers Hook', () => {
 
   it('should handle AbortController signal on unmount', async () => {
     const abortSpy = vi.spyOn(AbortController.prototype, 'abort');
-    mockGetFlightOffers.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve(mockDbRows), 50)));
+    mockGetFlightOffers.mockImplementation(
+      () => new Promise(resolve => setTimeout(() => resolve(mockDbRows), 50))
+    );
 
-    const { unmount, result } = renderHook(() => useFlightOffers(mockTripRequestId));
+    const { unmount, result } = renderHook(() =>
+      useFlightOffers(mockTripRequestId)
+    );
     expect(result.current.isLoading).toBe(true);
 
     unmount();
@@ -136,31 +194,39 @@ describe('useFlightOffers Hook', () => {
     expect(mockGetFlightOffers).toHaveBeenNthCalledWith(2, {
       tripRequestId: mockTripRequestId,
       refresh: true,
-      useCache: true
+      useCache: true,
     });
     // Check if the offers updated based on the second mock call
-    const expectedRefetchedOffer = mapFlightOfferDbRowToV2({ ...mockDbRows[0], id: 'refetched-offer' });
+    const expectedRefetchedOffer = mapFlightOfferDbRowToV2({
+      ...mockDbRows[0],
+      id: 'refetched-offer',
+    });
     expect(result.current.offers).toEqual([expectedRefetchedOffer]);
   });
 
-   it('should return new data if tripRequestId changes', async () => {
+  it('should return new data if tripRequestId changes', async () => {
     const initialId = 'trip-id-1';
     const newId = 'trip-id-2';
-    const initialData = [{ ...mockDbRows[0], id: 'initial-offer', trip_request_id: initialId }];
-    const newData = [{ ...mockDbRows[1], id: 'new-offer', trip_request_id: newId }];
+    const initialData = [
+      { ...mockDbRows[0], id: 'initial-offer', trip_request_id: initialId },
+    ];
+    const newData = [
+      { ...mockDbRows[1], id: 'new-offer', trip_request_id: newId },
+    ];
 
     mockGetFlightOffers.mockResolvedValueOnce(initialData);
-    const { result, rerender } = renderHook(
-      ({ id }) => useFlightOffers(id),
-      { initialProps: { id: initialId } }
-    );
+    const { result, rerender } = renderHook(({ id }) => useFlightOffers(id), {
+      initialProps: { id: initialId },
+    });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.offers).toEqual(initialData.map(mapFlightOfferDbRowToV2));
+    expect(result.current.offers).toEqual(
+      initialData.map(mapFlightOfferDbRowToV2)
+    );
     expect(mockGetFlightOffers).toHaveBeenCalledWith({
       tripRequestId: initialId,
       refresh: false,
-      useCache: true
+      useCache: true,
     });
 
     mockGetFlightOffers.mockResolvedValueOnce(newData); // For the new ID
@@ -172,7 +238,7 @@ describe('useFlightOffers Hook', () => {
     expect(mockGetFlightOffers).toHaveBeenCalledWith({
       tripRequestId: newId,
       refresh: false,
-      useCache: true
+      useCache: true,
     });
     expect(mockGetFlightOffers).toHaveBeenCalledTimes(2);
   });

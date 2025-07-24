@@ -1,7 +1,7 @@
 // Enhanced React Hook Form type definitions
 // Based on React Hook Form v7+ TypeScript patterns
 
-import type { 
+import type {
   UseFormReturn,
   FieldPath,
   FieldValues,
@@ -9,19 +9,22 @@ import type {
   RegisterOptions,
   FieldError,
   DeepRequired,
-  FieldErrorsImpl
+  FieldErrorsImpl,
 } from 'react-hook-form';
 
 // Enhanced form hook return type with better error handling
-export interface EnhancedUseFormReturn<TFieldValues extends FieldValues = FieldValues> 
-  extends UseFormReturn<TFieldValues> {
+export interface EnhancedUseFormReturn<
+  TFieldValues extends FieldValues = FieldValues,
+> extends UseFormReturn<TFieldValues> {
   // Add custom methods or properties if needed
   isDirtyField: (name: FieldPath<TFieldValues>) => boolean;
   touchedFields: Partial<Record<FieldPath<TFieldValues>, boolean>>;
 }
 
 // Form field configuration
-export interface FormFieldConfig<TFieldValues extends FieldValues = FieldValues> {
+export interface FormFieldConfig<
+  TFieldValues extends FieldValues = FieldValues,
+> {
   name: FieldPath<TFieldValues>;
   label?: string;
   placeholder?: string;
@@ -32,7 +35,9 @@ export interface FormFieldConfig<TFieldValues extends FieldValues = FieldValues>
 }
 
 // Generic form component props
-export interface FormComponentProps<TFieldValues extends FieldValues = FieldValues> {
+export interface FormComponentProps<
+  TFieldValues extends FieldValues = FieldValues,
+> {
   control: Control<TFieldValues>;
   name: FieldPath<TFieldValues>;
   label?: string;
@@ -81,8 +86,9 @@ export interface FormSchema<TFieldValues extends FieldValues = FieldValues> {
 }
 
 // Controller component enhanced props
-export interface ControlledFieldProps<TFieldValues extends FieldValues = FieldValues>
-  extends FormComponentProps<TFieldValues> {
+export interface ControlledFieldProps<
+  TFieldValues extends FieldValues = FieldValues,
+> extends FormComponentProps<TFieldValues> {
   render: ({ field, fieldState, formState }: any) => React.ReactElement;
 }
 
@@ -93,5 +99,5 @@ export type {
   RegisterOptions,
   FieldError,
   FieldValues,
-  FieldPath
+  FieldPath,
 } from 'react-hook-form';

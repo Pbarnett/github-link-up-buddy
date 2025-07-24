@@ -20,70 +20,79 @@ export interface FallbackState {
 export class LaunchDarklyFallbackManager {
   private static fallbackConfig: FallbackConfig = {
     // Critical business flags
-    'wallet_ui': {
+    wallet_ui: {
       defaultValue: false,
-      fallbackReason: 'Safety first - disable new wallet UI if connectivity issues',
+      fallbackReason:
+        'Safety first - disable new wallet UI if connectivity issues',
       criticalFlag: true,
-      description: 'Controls new wallet UI rollout'
+      description: 'Controls new wallet UI rollout',
     },
-    'personalization_greeting': {
+    personalization_greeting: {
       defaultValue: false,
       fallbackReason: 'Graceful degradation - show standard greeting',
       criticalFlag: false,
-      description: 'Personalizes user greeting messages'
+      description: 'Personalizes user greeting messages',
     },
-    'profile_ui_revamp': {
+    profile_ui_revamp: {
       defaultValue: false,
       fallbackReason: 'Conservative fallback - use existing profile UI',
       criticalFlag: true,
-      description: 'Controls profile UI redesign'
+      description: 'Controls profile UI redesign',
     },
-    'show_opt_out_banner': {
+    show_opt_out_banner: {
       defaultValue: false,
-      fallbackReason: 'Privacy-friendly default - no banner unless explicitly enabled',
+      fallbackReason:
+        'Privacy-friendly default - no banner unless explicitly enabled',
       criticalFlag: false,
-      description: 'Controls opt-out banner visibility'
+      description: 'Controls opt-out banner visibility',
     },
     // Default fallbacks for unknown flags
-    'default_boolean': {
+    default_boolean: {
       defaultValue: false,
       fallbackReason: 'Conservative default for unknown boolean flags',
-      criticalFlag: false
+      criticalFlag: false,
     },
-    'default_string': {
+    default_string: {
       defaultValue: '',
       fallbackReason: 'Safe default for unknown string flags',
-      criticalFlag: false
+      criticalFlag: false,
     },
-    'default_number': {
+    default_number: {
       defaultValue: 0,
       fallbackReason: 'Safe default for unknown number flags',
-      criticalFlag: false
-    }
+      criticalFlag: false,
+    },
   };
 
   private static state: FallbackState = {
     isOffline: false,
     failedAttempts: 0,
     fallbacksActive: [],
-    errors: []
+    errors: [],
   };
 
   /**
    * Gets fallback value for a flag
    */
-  static getFallbackValue(flagKey: string, requestedType?: 'boolean' | 'string' | 'number'): LDFlagValue {
+  static getFallbackValue(
+    flagKey: string,
+    requestedType?: 'boolean' | 'string' | 'number'
+  ): LDFlagValue {
     const config = this.fallbackConfig[flagKey];
-    
+
     if (config) {
-      console.warn(`[LaunchDarkly Fallback] Using fallback for ${flagKey}: ${config.fallbackReason}`);
+      console.warn(
+        `[LaunchDarkly Fallback] Using fallback for ${flagKey}: ${config.fallbackReason}`
+      );
       this.trackFallbackUsage(flagKey);
       return config.defaultValue;
     }
 
     // Use type-specific defaults for unknown flags
     const typeDefault = this.getTypeDefaultValue(requestedType);
-    console.warn(`[LaunchDarkly Fallback] Using type default for unknown flag ${flagKey}: ${typeDefault}`);
+    console.warn(
+      `[LaunchDarkly Fallback] Using type default for unknown flag ${flagKey}: ${typeDefault}`
+    );
     this.trackFallbackUsage(flagKey);
     return typeDefault;
   }
@@ -91,7 +100,9 @@ export class LaunchDarklyFallbackManager {
   /**
    * Gets type-specific default value
    */
-  private static getTypeDefaultValue(type?: 'boolean' | 'string' | 'number'): LDFlagValue {
+  private static getTypeDefaultValue(
+    type?: 'boolean' | 'string' | 'number'
+  ): LDFlagValue {
     switch (type) {
       case 'boolean':
         return this.fallbackConfig['default_boolean'].defaultValue;
@@ -120,9 +131,12 @@ export class LaunchDarklyFallbackManager {
     this.state.isOffline = true;
     this.state.failedAttempts++;
     this.state.errors.push(`${new Date().toISOString()}: ${error.message}`);
-    
-    console.error(`[LaunchDarkly Fallback] Connection failed (attempt ${this.state.failedAttempts}):`, error.message);
-    
+
+    console.error(
+      `[LaunchDarkly Fallback] Connection failed (attempt ${this.state.failedAttempts}):`,
+      error.message
+    );
+
     // Keep only last 10 errors
     if (this.state.errors.length > 10) {
       this.state.errors = this.state.errors.slice(-10);
@@ -134,14 +148,16 @@ export class LaunchDarklyFallbackManager {
    */
   static handleConnectionSuccess(): void {
     const wasOffline = this.state.isOffline;
-    
+
     this.state.isOffline = false;
     this.state.lastConnectionTime = new Date();
     this.state.failedAttempts = 0;
     this.state.fallbacksActive = [];
-    
+
     if (wasOffline) {
-      console.info('[LaunchDarkly Fallback] Connection restored, fallbacks deactivated');
+      console.info(
+        '[LaunchDarkly Fallback] Connection restored, fallbacks deactivated'
+      );
     }
   }
 
@@ -162,7 +178,10 @@ export class LaunchDarklyFallbackManager {
   /**
    * Registers custom fallback config
    */
-  static registerFallbackConfig(flagKey: string, config: FallbackConfig[string]): void {
+  static registerFallbackConfig(
+    flagKey: string,
+    config: FallbackConfig[string]
+  ): void {
     this.fallbackConfig[flagKey] = config;
     console.info(`[LaunchDarkly Fallback] Registered fallback for ${flagKey}`);
   }
@@ -178,12 +197,12 @@ export class LaunchDarklyFallbackManager {
     return async (): Promise<T> => {
       try {
         const result = await sdkEvaluator()();
-        
+
         // If we got a result, connection is working
         if (!this.state.isOffline && this.state.failedAttempts > 0) {
           this.handleConnectionSuccess();
         }
-        
+
         return result;
       } catch (error) {
         this.handleConnectionFailure(error as Error);
@@ -208,7 +227,7 @@ export class LaunchDarklyFallbackManager {
       '',
       'Recent Errors:',
       ...this.state.errors.map(error => `  - ${error}`),
-      '================================='
+      '=================================',
     ].join('\n');
 
     return report;
@@ -222,7 +241,7 @@ export class LaunchDarklyFallbackManager {
       isOffline: false,
       failedAttempts: 0,
       fallbacksActive: [],
-      errors: []
+      errors: [],
     };
   }
 }

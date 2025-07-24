@@ -1,5 +1,12 @@
-
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  type Mock,
+} from 'vitest';
 import userEvent from '@testing-library/user-event';
 import TripRequestForm from '@/components/trip/TripRequestForm';
 import { TestWrapper, renderWithProviders } from '@/tests/utils/TestWrapper';
@@ -10,7 +17,11 @@ import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTravelerInfoCheck } from '@/hooks/useTravelerInfoCheck';
 
 // Import our new testing utilities
-import { fillBaseFormFieldsWithDates, getFormErrors, waitForButtonEnabledAndClick } from '@/tests/utils/formTestHelpers';
+import {
+  fillBaseFormFieldsWithDates,
+  getFormErrors,
+  waitForButtonEnabledAndClick,
+} from '@/tests/utils/formTestHelpers';
 import { TripRequestRepository } from '@/lib/repositories';
 
 // Mock the Calendar component to provide test-friendly date selection
@@ -22,17 +33,17 @@ vi.mock('@/components/ui/calendar', () => {
       tomorrow.setDate(today.getDate() + 1);
       const nextWeek = new Date(today);
       nextWeek.setDate(today.getDate() + 7);
-      
+
       return (
         <div data-testid="mock-day-picker" role="grid">
-          <button 
+          <button
             onClick={() => onSelect && onSelect(tomorrow)}
             data-testid="calendar-day-tomorrow"
             type="button"
           >
             {tomorrow.getDate()}
           </button>
-          <button 
+          <button
             onClick={() => onSelect && onSelect(nextWeek)}
             data-testid="calendar-day-next-week"
             type="button"
@@ -48,18 +59,22 @@ vi.mock('@/components/ui/calendar', () => {
 // Mock dependencies
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    from: vi.fn().mockImplementation((table) => {
+    from: vi.fn().mockImplementation(table => {
       const mockQuery = {
         insert: vi.fn().mockReturnThis(),
         update: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: { id: 'new-trip-id' }, error: null }),
+        single: vi
+          .fn()
+          .mockResolvedValue({ data: { id: 'new-trip-id' }, error: null }),
       };
       return mockQuery;
     }),
     functions: {
-      invoke: vi.fn().mockResolvedValue({ data: { success: true }, error: null }),
+      invoke: vi
+        .fn()
+        .mockResolvedValue({ data: { success: true }, error: null }),
     },
   },
 }));
@@ -125,12 +140,12 @@ vi.mock('@/lib/repositories', () => {
     constructor(client: any) {
       // Mock constructor - accept any client
     }
-    
+
     createTripRequest = mockCreateTripRequest;
     updateTripRequest = mockUpdateTripRequest;
     findById = mockFindById;
   }
-  
+
   return {
     TripRequestRepository: MockTripRequestRepository,
   };
@@ -148,7 +163,7 @@ vi.mock('@/lib/logger', () => ({
 
 // Mock error handlers
 vi.mock('@/lib/errors', () => ({
-  handleError: vi.fn((error) => ({
+  handleError: vi.fn(error => ({
     code: 'GENERIC_ERROR',
     message: error.message || 'An error occurred',
     userMessage: 'Something went wrong. Please try again.',
@@ -169,8 +184,16 @@ vi.mock('@/hooks/useFeatureFlag', () => ({
     isError: false,
     error: null,
   })),
-  useFeatureFlagLegacy: vi.fn((flagName: string, defaultValue: boolean = false) => defaultValue),
-  useClientFeatureFlag: vi.fn((flagName: string, rolloutPercentage: number, defaultValue: boolean = false) => defaultValue),
+  useFeatureFlagLegacy: vi.fn(
+    (flagName: string, defaultValue: boolean = false) => defaultValue
+  ),
+  useClientFeatureFlag: vi.fn(
+    (
+      flagName: string,
+      rolloutPercentage: number,
+      defaultValue: boolean = false
+    ) => defaultValue
+  ),
 }));
 
 // Mock useMobile hook to prevent addEventListener errors
@@ -182,32 +205,34 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
   beforeEach(() => {
     // Reset mocks before each test in this suite
     vi.clearAllMocks();
-    
+
     // Setup default mock implementations for this suite if needed
     (useCurrentUser as Mock).mockReturnValue({ user: { id: 'test-user-id' } });
     (useNavigate as Mock).mockReturnValue(vi.fn());
-    
+
     // Mock usePaymentMethods to return expected structure
     (usePaymentMethods as Mock).mockReturnValue({
-      data: [{ 
-        id: 'pm_123', 
-        brand: 'Visa', 
-        last4: '4242', 
-        is_default: true, 
-        nickname: 'Work Card' 
-      }],
+      data: [
+        {
+          id: 'pm_123',
+          brand: 'Visa',
+          last4: '4242',
+          is_default: true,
+          nickname: 'Work Card',
+        },
+      ],
       isLoading: false,
-      error: null
+      error: null,
     });
-    
+
     // Mock useTravelerInfoCheck to return expected structure
     (useTravelerInfoCheck as Mock).mockReturnValue({
       data: { has_traveler_info: true },
       isLoading: false,
-      error: null
+      error: null,
     });
   });
-  
+
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -216,13 +241,21 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
   it('should render "Nonstop flights only" switch checked by default', async () => {
     const { wrapper } = renderWithProviders(<TripRequestForm />);
     render(<TripRequestForm />, { wrapper });
-    
+
     // First expand the collapsible filters section
-    const expandButton = await screen.findByText("What's Included", {}, { timeout: 5000 });
+    const expandButton = await screen.findByText(
+      "What's Included",
+      {},
+      { timeout: 5000 }
+    );
     await userEvent.click(expandButton);
-    
+
     // Wait for the switch to appear
-    const nonstopSwitch = await screen.findByRole('switch', { name: /nonstop flights only/i }, { timeout: 5000 });
+    const nonstopSwitch = await screen.findByRole(
+      'switch',
+      { name: /nonstop flights only/i },
+      { timeout: 5000 }
+    );
     expect(nonstopSwitch).toBeInTheDocument();
     expect(nonstopSwitch).toBeChecked();
   }, 8000);
@@ -230,13 +263,21 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
   it('should render "Include carry-on + personal item" switch unchecked by default', async () => {
     const { wrapper } = renderWithProviders(<TripRequestForm />);
     render(<TripRequestForm />, { wrapper });
-    
+
     // First expand the collapsible filters section
-    const expandButton = await screen.findByText("What's Included", {}, { timeout: 5000 });
+    const expandButton = await screen.findByText(
+      "What's Included",
+      {},
+      { timeout: 5000 }
+    );
     await userEvent.click(expandButton);
-    
+
     // Wait for the switch to appear
-    const baggageSwitch = await screen.findByRole('switch', { name: /include carry-on \+ personal item/i }, { timeout: 5000 });
+    const baggageSwitch = await screen.findByRole(
+      'switch',
+      { name: /include carry-on \+ personal item/i },
+      { timeout: 5000 }
+    );
     expect(baggageSwitch).toBeInTheDocument();
     expect(baggageSwitch).not.toBeChecked();
   }, 8000);
@@ -244,13 +285,21 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
   it('should update switch state when "Include carry-on + personal item" switch is toggled', async () => {
     const { wrapper } = renderWithProviders(<TripRequestForm />);
     render(<TripRequestForm />, { wrapper });
-    
+
     // First expand the collapsible filters section
-    const expandButton = await screen.findByText("What's Included", {}, { timeout: 5000 });
+    const expandButton = await screen.findByText(
+      "What's Included",
+      {},
+      { timeout: 5000 }
+    );
     await userEvent.click(expandButton);
-    
+
     // Wait for the switch to appear
-    const baggageSwitch = await screen.findByRole('switch', { name: /include carry-on \+ personal item/i }, { timeout: 5000 });
+    const baggageSwitch = await screen.findByRole(
+      'switch',
+      { name: /include carry-on \+ personal item/i },
+      { timeout: 5000 }
+    );
     expect(baggageSwitch).not.toBeChecked(); // Initial state
 
     await userEvent.click(baggageSwitch);
@@ -269,12 +318,24 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
     render(<TripRequestForm />, { wrapper });
 
     // First expand the collapsible filters section
-    const expandButton = await screen.findByText("What's Included", {}, { timeout: 5000 });
+    const expandButton = await screen.findByText(
+      "What's Included",
+      {},
+      { timeout: 5000 }
+    );
     await userEvent.click(expandButton);
-    
+
     // Wait for the switches to appear
-    const nonstopSwitch = await screen.findByRole('switch', { name: /nonstop flights only/i }, { timeout: 5000 });
-    const baggageSwitch = await screen.findByRole('switch', { name: /include carry-on \+ personal item/i }, { timeout: 5000 });
+    const nonstopSwitch = await screen.findByRole(
+      'switch',
+      { name: /nonstop flights only/i },
+      { timeout: 5000 }
+    );
+    const baggageSwitch = await screen.findByRole(
+      'switch',
+      { name: /include carry-on \+ personal item/i },
+      { timeout: 5000 }
+    );
 
     expect(nonstopSwitch).toBeChecked();
     expect(baggageSwitch).not.toBeChecked();
@@ -289,36 +350,38 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
 describe('TripRequestForm - Submission Logic', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock current user
     (useCurrentUser as Mock).mockReturnValue({
       user: { id: 'test-user-id', email: 'test@example.com' },
-      userId: 'test-user-id'
+      userId: 'test-user-id',
     });
 
     // Mock navigate
     (useNavigate as Mock).mockReturnValue(vi.fn());
-    
+
     // Mock usePaymentMethods and useTravelerInfoCheck
     (usePaymentMethods as Mock).mockReturnValue({
-      data: [{ 
-        id: 'pm_123', 
-        brand: 'Visa', 
-        last4: '4242', 
-        is_default: true, 
-        nickname: 'Work Card' 
-      }],
+      data: [
+        {
+          id: 'pm_123',
+          brand: 'Visa',
+          last4: '4242',
+          is_default: true,
+          nickname: 'Work Card',
+        },
+      ],
       isLoading: false,
-      error: null
+      error: null,
     });
-    
+
     (useTravelerInfoCheck as Mock).mockReturnValue({
       data: { has_traveler_info: true },
       isLoading: false,
-      error: null
+      error: null,
     });
   });
-  
+
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -335,11 +398,11 @@ describe('TripRequestForm - Submission Logic', () => {
       auto_book_enabled: false,
       created_at: new Date().toISOString(),
     });
-    
+
     // Mock Supabase functions
     vi.mocked(supabase.functions.invoke).mockResolvedValue({
       data: null,
-      error: null
+      error: null,
     });
 
     const user = userEvent.setup();
@@ -348,51 +411,60 @@ describe('TripRequestForm - Submission Logic', () => {
 
     // RESEARCH FIX: Use enhanced form filling with validation timing
     console.log('TEST: Setting form values using research-based approach');
-    
+
     // Fill form using our enhanced helper
     await fillBaseFormFieldsWithDates({
       destination: 'LAX',
       departureAirport: 'SFO',
       maxPrice: 1200,
       minDuration: 5,
-      maxDuration: 10
+      maxDuration: 10,
     });
-    
+
     console.log('TEST: Form values set using enhanced helper');
-    
+
     // RESEARCH FIX: Wait for form validation to complete using waitFor
     // This addresses the "formState.isValid updates on the next render" issue
-    await waitFor(() => {
-      const submitButton = screen.getByTestId('primary-submit-button');
-      expect(submitButton).toBeEnabled();
-    }, { timeout: 5000 });
-    
+    await waitFor(
+      () => {
+        const submitButton = screen.getByTestId('primary-submit-button');
+        expect(submitButton).toBeEnabled();
+      },
+      { timeout: 5000 }
+    );
+
     console.log('TEST: Submit button is enabled after validation');
-    
+
     // RESEARCH FIX: Blur all form fields to ensure validation completes
     // This addresses "onBlur validation might not run" issue
     await user.click(document.body);
     await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Get the submit button 
+
+    // Get the submit button
     const submitButton = screen.getByTestId('primary-submit-button');
     console.log('TEST: Submit button found:', submitButton.textContent);
-    
+
     // RESEARCH FIX: Use act() to ensure React flushes all state updates
     console.log('TEST: Clicking submit button with proper async handling');
-    
+
     await act(async () => {
       await user.click(submitButton);
     });
-    
+
     console.log('TEST: After click, waiting for async validation to complete');
-    
+
     // RESEARCH FIX: Wait for async validation to complete before checking mocks
     // This addresses "all validation methods in RHF are treated as async" issue
-    await waitFor(() => {
-      console.log('TEST: Checking mock calls:', mockCreateTripRequest.mock.calls.length);
-      expect(mockCreateTripRequest).toHaveBeenCalled();
-    }, { timeout: 10000 }); // Increased timeout for async validation
+    await waitFor(
+      () => {
+        console.log(
+          'TEST: Checking mock calls:',
+          mockCreateTripRequest.mock.calls.length
+        );
+        expect(mockCreateTripRequest).toHaveBeenCalled();
+      },
+      { timeout: 10000 }
+    ); // Increased timeout for async validation
 
     // 3) Success - the mock was called, no need to wait for specific UI text
     expect(mockCreateTripRequest).toHaveBeenCalledTimes(1);
@@ -404,22 +476,30 @@ describe('TripRequestForm - Submission Logic', () => {
 const selectDestination = async (destinationCode: string) => {
   try {
     // Find the Select trigger button by its label
-    const selectTrigger = screen.getByRole('combobox', { name: /destination/i });
-    
+    const selectTrigger = screen.getByRole('combobox', {
+      name: /destination/i,
+    });
+
     // Open the select dropdown
     await userEvent.click(selectTrigger);
-    
+
     // Wait for options to appear and select the desired option
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: new RegExp(destinationCode, 'i') })).toBeVisible();
+      expect(
+        screen.getByRole('option', { name: new RegExp(destinationCode, 'i') })
+      ).toBeVisible();
     });
-    
-    const option = screen.getByRole('option', { name: new RegExp(destinationCode, 'i') });
+
+    const option = screen.getByRole('option', {
+      name: new RegExp(destinationCode, 'i'),
+    });
     await userEvent.click(option);
-    
+
     // Wait for select to close
     await waitFor(() => {
-      expect(screen.queryByRole('option', { name: new RegExp(destinationCode, 'i') })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('option', { name: new RegExp(destinationCode, 'i') })
+      ).not.toBeInTheDocument();
     });
   } catch {
     console.warn('Destination selection failed, using fallback approach');
@@ -440,7 +520,7 @@ const fillBaseFormFields = async () => {
     departureAirport: 'SFO',
     maxPrice: 1200,
     minDuration: 5,
-    maxDuration: 10
+    maxDuration: 10,
   });
 };
 
@@ -452,10 +532,9 @@ const fillBaseFormFieldsNoAutoBooking = async () => {
     departureAirport: 'SFO',
     minDuration: 5,
     maxDuration: 10,
-    skipValidation: true // Skip validation since we're not setting all fields
+    skipValidation: true, // Skip validation since we're not setting all fields
   });
 };
-
 
 describe('TripRequestForm - Auto-Booking Logic', () => {
   let mockNavigate: Mock;
@@ -465,53 +544,63 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
   const mockUsePaymentMethods = vi.mocked(usePaymentMethods);
   const mockUseTravelerInfoCheck = vi.mocked(useTravelerInfoCheck);
 
-
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Set a consistent date for testing
     vi.setSystemTime(new Date('2024-01-15T10:00:00.000Z'));
 
     (useCurrentUser as Mock).mockReturnValue({
       user: { id: 'test-user-id', email: 'test@example.com' },
-      userId: 'test-user-id'
+      userId: 'test-user-id',
     });
 
     mockNavigate = vi.fn();
     (useNavigate as Mock).mockReturnValue(mockNavigate);
 
     mockToastFn = vi.fn();
-    (toast as Mock).mockImplementation((options) => {
+    (toast as Mock).mockImplementation(options => {
       mockToastFn(options);
       return { id: 'test-toast-id', dismiss: vi.fn(), update: vi.fn() };
     });
 
     // Set up comprehensive Supabase mocks
-    const mockSingle = vi.fn().mockResolvedValue({ 
-      data: { id: 'new-trip-id', auto_book_enabled: true }, 
-      error: null 
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: { id: 'new-trip-id', auto_book_enabled: true },
+      error: null,
     });
     const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
     mockInsert = vi.fn().mockReturnValue({ select: mockSelect });
     const mockUpdate = vi.fn().mockReturnValue({ select: mockSelect });
     const mockEq = vi.fn().mockReturnValue({ select: mockSelect });
-    
+
     (supabase.from as Mock).mockReturnValue({
       insert: mockInsert,
       update: mockUpdate,
       select: mockSelect,
       eq: mockEq,
     });
-    
+
     // Mock Supabase functions for flight search
     (supabase.functions.invoke as Mock).mockResolvedValue({
       data: null,
-      error: null
+      error: null,
     });
 
     // Default mocks for auto-booking prerequisites
     mockUsePaymentMethods.mockReturnValue({
-      data: [{ id: 'pm_123', brand: 'Visa', last4: '4242', is_default: true, nickname: 'Work Card', exp_month: 12, exp_year: 2025, created_at: '2024-01-01T00:00:00.000Z' }],
+      data: [
+        {
+          id: 'pm_123',
+          brand: 'Visa',
+          last4: '4242',
+          is_default: true,
+          nickname: 'Work Card',
+          exp_month: 12,
+          exp_year: 2025,
+          created_at: '2024-01-01T00:00:00.000Z',
+        },
+      ],
       isLoading: false,
       refetch: vi.fn(),
       addPaymentMethod: vi.fn(),
@@ -524,7 +613,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
       isLoading: false,
     });
   });
-  
+
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -549,14 +638,18 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     // Select a payment method
     const paymentMethodSelect = screen.getByLabelText(/payment method/i);
     await userEvent.click(paymentMethodSelect); // Open select
-    
+
     // Handle multiple "Visa" elements by specifically selecting the option element
     await waitFor(() => {
-      const visaOption = screen.getByRole('option', { name: /Visa.*4242.*Default.*Work Card/i });
+      const visaOption = screen.getByRole('option', {
+        name: /Visa.*4242.*Default.*Work Card/i,
+      });
       expect(visaOption).toBeVisible();
     });
-    
-    const visaOption = screen.getByRole('option', { name: /Visa.*4242.*Default.*Work Card/i });
+
+    const visaOption = screen.getByRole('option', {
+      name: /Visa.*4242.*Default.*Work Card/i,
+    });
     await userEvent.click(visaOption);
 
     // Check if the value is set (indirectly, by checking if it's part of submission later or form state if possible)
@@ -573,11 +666,11 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     await waitFor(() => {
       expect(screen.getByLabelText(/enable auto-booking/i)).toBeInTheDocument();
     });
-    
+
     const autoBookSwitch = screen.getByLabelText(/enable auto-booking/i);
     await userEvent.click(autoBookSwitch);
 
-    // Note: AutoBookingSection doesn't have a max price input, 
+    // Note: AutoBookingSection doesn't have a max price input,
     // it just shows the max_price value from the main budget section
     // The payment method selection should be visible
     await waitFor(() => {
@@ -587,8 +680,12 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     // Do NOT select a payment method
 
     // When auto-booking is enabled, the button text changes to "Start Auto-Booking"
-    const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-    const submitButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) || submitButtons[0];
+    const submitButtons = screen.getAllByRole('button', {
+      name: /start auto-booking/i,
+    });
+    const submitButton =
+      submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) ||
+      submitButtons[0];
     await userEvent.click(submitButton);
 
     await waitFor(() => {
@@ -602,7 +699,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     await waitFor(() => {
       expect(mockCreateTripRequest).not.toHaveBeenCalled();
     });
-    
+
     // The form should show validation errors when submission is attempted
     // This could be through FormMessage components or form field errors
     // The actual Zod error might be tricky to assert directly on a field without inspecting RHF's error state.
@@ -628,23 +725,27 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     await waitFor(() => {
       expect(screen.getByLabelText(/enable auto-booking/i)).toBeInTheDocument();
     });
-    
+
     const autoBookSwitch = screen.getByLabelText(/enable auto-booking/i);
     await userEvent.click(autoBookSwitch);
 
     await waitFor(() => {
-       expect(screen.getByLabelText(/payment method/i)).toBeVisible();
+      expect(screen.getByLabelText(/payment method/i)).toBeVisible();
     });
     const paymentMethodSelect = screen.getByLabelText(/payment method/i);
     await userEvent.click(paymentMethodSelect);
-    
+
     // Wait for options to appear and select the correct one
     await waitFor(() => {
-      const visaOption = screen.getByRole('option', { name: /Visa.*4242.*Default.*Work Card/i });
+      const visaOption = screen.getByRole('option', {
+        name: /Visa.*4242.*Default.*Work Card/i,
+      });
       expect(visaOption).toBeVisible();
     });
-    
-    const visaOption = screen.getByRole('option', { name: /Visa.*4242.*Default.*Work Card/i });
+
+    const visaOption = screen.getByRole('option', {
+      name: /Visa.*4242.*Default.*Work Card/i,
+    });
     await userEvent.click(visaOption);
 
     // Clear max_price from the main budget section using fireEvent
@@ -652,8 +753,12 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     fireEvent.change(maxPriceInput, { target: { value: '' } });
 
     // When auto-booking is enabled, the button text changes to "Start Auto-Booking"
-    const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-    const submitButton = submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) || submitButtons[0];
+    const submitButtons = screen.getAllByRole('button', {
+      name: /start auto-booking/i,
+    });
+    const submitButton =
+      submitButtons.find(btn => !(btn as HTMLButtonElement).disabled) ||
+      submitButtons[0];
     await userEvent.click(submitButton);
 
     await waitFor(() => {
@@ -672,21 +777,24 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     // And this should be rendered by the Field component. TripNumberField should show error.
     // Let's check if the submit button is re-enabled, or if a toast appears from the catch.
     // Supabase is not called, so the error is client side.
-     await waitFor(() => {
+    await waitFor(
+      () => {
         // The form validation should prevent submission, which we've already verified
         // Let's check for any validation-related error messages or form state
         const formErrors = getFormErrors();
         console.log('Form validation errors found:', formErrors);
-        
+
         // The test is mainly that mockCreateTripRequest was not called, indicating validation worked
         // Additional validation message checking could include:
         // 1. Form field error messages
-        // 2. Toast notifications 
+        // 2. Toast notifications
         // 3. Alert components
-        
+
         // For now, the key assertion is that form submission was prevented
         expect(mockCreateTripRequest).not.toHaveBeenCalled();
-     }, { timeout: 3000 });
+      },
+      { timeout: 3000 }
+    );
   });
 
   // Test 3: Successful Submission with Auto-Booking ON
@@ -704,65 +812,87 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
       preferred_payment_method_id: 'pm_123',
       created_at: new Date().toISOString(),
     });
-    
+
     // Mock Supabase functions
     vi.mocked(supabase.functions.invoke).mockResolvedValue({
       data: null,
-      error: null
+      error: null,
     });
-    
+
     const user = userEvent.setup();
     const { wrapper } = renderWithProviders(<TripRequestForm />);
     render(<TripRequestForm />, { wrapper });
-    
+
     // Fill form with auto-booking fields
     await fillBaseFormFieldsWithDates({
       destination: 'MVY',
       departureAirport: 'SFO',
       maxPrice: 2000,
       minDuration: 5,
-      maxDuration: 10
+      maxDuration: 10,
     });
 
     // Enable auto-booking
-    await waitFor(() => {
-      expect(screen.getByLabelText(/enable auto-booking/i)).toBeInTheDocument();
-    }, { timeout: 5000 });
-    
+    await waitFor(
+      () => {
+        expect(
+          screen.getByLabelText(/enable auto-booking/i)
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+
     const autoBookSwitch = screen.getByLabelText(/enable auto-booking/i);
     await user.click(autoBookSwitch);
 
     // Select payment method
-    await waitFor(() => {
-      expect(screen.getByLabelText(/payment method/i)).toBeVisible();
-    }, { timeout: 3000 });
-    
+    await waitFor(
+      () => {
+        expect(screen.getByLabelText(/payment method/i)).toBeVisible();
+      },
+      { timeout: 3000 }
+    );
+
     const paymentMethodSelect = screen.getByLabelText(/payment method/i);
     await user.click(paymentMethodSelect);
-    
-    await waitFor(() => {
-      const visaOption = screen.getByRole('option', { name: /Visa.*4242.*Default.*Work Card/i });
-      expect(visaOption).toBeVisible();
-    }, { timeout: 3000 });
-    
-    const visaOption = screen.getByRole('option', { name: /Visa.*4242.*Default.*Work Card/i });
+
+    await waitFor(
+      () => {
+        const visaOption = screen.getByRole('option', {
+          name: /Visa.*4242.*Default.*Work Card/i,
+        });
+        expect(visaOption).toBeVisible();
+      },
+      { timeout: 3000 }
+    );
+
+    const visaOption = screen.getByRole('option', {
+      name: /Visa.*4242.*Default.*Work Card/i,
+    });
     await user.click(visaOption);
-    
+
     // RESEARCH FIX: Wait for form validation to complete after all changes
-    await waitFor(() => {
-      const submitButton = screen.getByTestId('primary-submit-button');
-      expect(submitButton).toBeEnabled();
-    }, { timeout: 5000 });
-    
+    await waitFor(
+      () => {
+        const submitButton = screen.getByTestId('primary-submit-button');
+        expect(submitButton).toBeEnabled();
+      },
+      { timeout: 5000 }
+    );
+
     // RESEARCH FIX: Blur to ensure all validation completes
     await user.click(document.body);
     await new Promise(resolve => setTimeout(resolve, 200));
-    
+
     // Try to find enabled auto-booking button, or fallback to primary button
     let submitButton;
     try {
-      const autoBookingButtons = screen.getAllByRole('button', { name: /start auto-booking/i });
-      submitButton = autoBookingButtons.find(btn => !(btn as HTMLButtonElement).disabled) || screen.getByTestId('primary-submit-button');
+      const autoBookingButtons = screen.getAllByRole('button', {
+        name: /start auto-booking/i,
+      });
+      submitButton =
+        autoBookingButtons.find(btn => !(btn as HTMLButtonElement).disabled) ||
+        screen.getByTestId('primary-submit-button');
     } catch {
       submitButton = screen.getByTestId('primary-submit-button');
     }
@@ -773,9 +903,12 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
     });
 
     // RESEARCH FIX: Increased timeout for async validation
-    await waitFor(() => {
-      expect(mockCreateTripRequest).toHaveBeenCalled();
-    }, { timeout: 10000 });
+    await waitFor(
+      () => {
+        expect(mockCreateTripRequest).toHaveBeenCalled();
+      },
+      { timeout: 10000 }
+    );
 
     // 3) Success - the mock was called, no need to wait for specific UI text
     expect(mockCreateTripRequest).toHaveBeenCalledTimes(1);
@@ -783,15 +916,17 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
 
   // Test 4: Successful Submission with Auto-Booking OFF
   it('should submit successfully with auto-booking OFF', async () => {
-    const mockTripSingle = vi.fn().mockResolvedValue({ data: { id: 'new-trip-id' }, error: null });
+    const mockTripSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { id: 'new-trip-id' }, error: null });
     const mockTripSelect = vi.fn().mockReturnValue({ single: mockTripSingle });
     const mockTripInsert = vi.fn().mockResolvedValue({ data: [], error: null });
-    
+
     const mockAirportsSelect = vi.fn().mockResolvedValue({
       data: [{ code: 'MVY', city: 'Marthas Vineyard' }],
-      error: null
+      error: null,
     });
-    
+
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       switch (table) {
         case 'trip_requests':
@@ -802,20 +937,23 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
           throw new Error(`Unexpected table in test mock: ${table}`);
       }
     });
-    
+
     const user = userEvent.setup();
     const { wrapper } = renderWithProviders(<TripRequestForm />);
     render(<TripRequestForm />, { wrapper });
-    
+
     // Fill form WITHOUT auto-booking fields
     await fillBaseFormFieldsNoAutoBooking();
 
     // Use the primary submit button with testid
-    await waitFor(() => {
-      const submitButton = screen.getByTestId('primary-submit-button');
-      expect(submitButton).toBeInTheDocument();
-    }, { timeout: 5000 });
-    
+    await waitFor(
+      () => {
+        const submitButton = screen.getByTestId('primary-submit-button');
+        expect(submitButton).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+
     // 1) click inside act so React flushes all state
     await act(async () => {
       await user.click(screen.getByTestId('primary-submit-button'));

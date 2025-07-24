@@ -1,10 +1,24 @@
-import { formatDistanceToNow } from "date-fns";
-import { MoreVertical, Edit, Pause, Play, Trash2, MapPin, Calendar, DollarSign } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Campaign } from "@/types/campaign";
+import { formatDistanceToNow } from 'date-fns';
+import {
+  MoreVertical,
+  Edit,
+  Pause,
+  Play,
+  Trash2,
+  MapPin,
+  Calendar,
+  DollarSign,
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Campaign } from '@/types/campaign';
 
 interface CampaignCardProps {
   campaign: Campaign;
@@ -14,7 +28,13 @@ interface CampaignCardProps {
   onDelete: () => void;
 }
 
-export const CampaignCard = ({ campaign, onEdit, onPause, onResume, onDelete }: CampaignCardProps) => {
+export const CampaignCard = ({
+  campaign,
+  onEdit,
+  onPause,
+  onResume,
+  onDelete,
+}: CampaignCardProps) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -31,22 +51,28 @@ export const CampaignCard = ({ campaign, onEdit, onPause, onResume, onDelete }: 
   };
 
   const isPaused = campaign.status === 'paused';
-  const isCompleted = campaign.status === 'booked' || campaign.status === 'completed';
+  const isCompleted =
+    campaign.status === 'booked' || campaign.status === 'completed';
 
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-lg">{campaign.name || 'Unnamed Campaign'}</CardTitle>
+            <CardTitle className="text-lg">
+              {campaign.name || 'Unnamed Campaign'}
+            </CardTitle>
             <div className="flex items-center gap-2">
               {getStatusBadge(campaign.status)}
               <span className="text-sm text-muted-foreground">
-                Created {formatDistanceToNow(new Date(campaign.created_at), { addSuffix: true })}
+                Created{' '}
+                {formatDistanceToNow(new Date(campaign.created_at), {
+                  addSuffix: true,
+                })}
               </span>
             </div>
           </div>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -81,19 +107,21 @@ export const CampaignCard = ({ campaign, onEdit, onPause, onResume, onDelete }: 
           </DropdownMenu>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-3">
         <div className="grid grid-cols-1 gap-3 text-sm">
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground" />
-            <span>{campaign.criteria?.destination || 'No destination set'}</span>
+            <span>
+              {campaign.criteria?.destination || 'No destination set'}
+            </span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span>{campaign.criteria?.departure_dates || 'No dates set'}</span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-muted-foreground" />
             <span>Budget: ${campaign.criteria?.max_price || 'Not set'}</span>

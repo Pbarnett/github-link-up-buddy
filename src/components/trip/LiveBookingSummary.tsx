@@ -1,25 +1,27 @@
-
 import { format } from 'date-fns';
+import * as React from 'react';
 import { FormValues } from '@/types/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import * as React from 'react';
 
 interface LiveBookingSummaryProps {
   control: Control<FormValues>;
   isVisible: boolean;
 }
 
-const LiveBookingSummary = ({ control, isVisible }: LiveBookingSummaryProps) => {
+const LiveBookingSummary = ({
+  control,
+  isVisible,
+}: LiveBookingSummaryProps) => {
   const { data: paymentMethods = [] } = usePaymentMethods();
-  
+
   // Watch all relevant fields
   const watchedData = useWatch({
     control,
     name: [
       'nyc_airports',
-      'other_departure_airport', 
+      'other_departure_airport',
       'destination_airport',
       'destination_other',
       'earliestDeparture',
@@ -27,8 +29,8 @@ const LiveBookingSummary = ({ control, isVisible }: LiveBookingSummaryProps) => 
       'min_duration',
       'max_duration',
       'max_price',
-      'preferred_payment_method_id'
-    ]
+      'preferred_payment_method_id',
+    ],
   });
 
   const [
@@ -41,7 +43,7 @@ const LiveBookingSummary = ({ control, isVisible }: LiveBookingSummaryProps) => 
     minDuration,
     maxDuration,
     maxPrice,
-    preferredPaymentMethodId
+    preferredPaymentMethodId,
   ] = watchedData;
 
   const summaryText = useMemo(() => {
@@ -57,10 +59,11 @@ const LiveBookingSummary = ({ control, isVisible }: LiveBookingSummaryProps) => 
     if (otherDepartureAirport) {
       departureAirports.push(otherDepartureAirport);
     }
-    
-    const departure = departureAirports.length > 0 ? departureAirports.join(' or ') : '—';
+
+    const departure =
+      departureAirports.length > 0 ? departureAirports.join(' or ') : '—';
     const destination = destinationAirport || destinationOther || '—';
-    
+
     // Format duration
     let duration = '—';
     if (minDuration && maxDuration) {
@@ -70,7 +73,7 @@ const LiveBookingSummary = ({ control, isVisible }: LiveBookingSummaryProps) => 
         duration = `${minDuration}–${maxDuration} days`;
       }
     }
-    
+
     // Format date range
     let dateRange = '—';
     if (earliestDeparture && latestDeparture) {
@@ -82,7 +85,9 @@ const LiveBookingSummary = ({ control, isVisible }: LiveBookingSummaryProps) => 
     // Find selected payment method
     let paymentInfo = '—';
     if (preferredPaymentMethodId) {
-      const method = paymentMethods.find(m => m.id === preferredPaymentMethodId);
+      const method = paymentMethods.find(
+        m => m.id === preferredPaymentMethodId
+      );
       if (method) {
         paymentInfo = `${method.brand} ••${method.last4}`;
       }
@@ -94,7 +99,7 @@ const LiveBookingSummary = ({ control, isVisible }: LiveBookingSummaryProps) => 
       duration,
       dateRange,
       maxPrice: maxPrice || '—',
-      paymentInfo
+      paymentInfo,
     };
   }, [
     nycAirports,
@@ -107,7 +112,7 @@ const LiveBookingSummary = ({ control, isVisible }: LiveBookingSummaryProps) => 
     maxDuration,
     maxPrice,
     preferredPaymentMethodId,
-    paymentMethods
+    paymentMethods,
   ]);
 
   if (!isVisible) return null;
@@ -131,33 +136,30 @@ const LiveBookingSummary = ({ control, isVisible }: LiveBookingSummaryProps) => 
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-start gap-3">
           <Calendar className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
           <div>
-            <div className="text-blue-800">
-              Any {summaryText.duration} trip
-            </div>
+            <div className="text-blue-800">Any {summaryText.duration} trip</div>
             <div className="text-blue-600 text-xs">
               between {summaryText.dateRange}
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-start gap-3">
           <DollarSign className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
           <div className="text-blue-800">
-            Price ≤ <span className="font-semibold">${summaryText.maxPrice}</span>
+            Price ≤{' '}
+            <span className="font-semibold">${summaryText.maxPrice}</span>
           </div>
         </div>
-        
+
         <div className="flex items-start gap-3">
           <CreditCard className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-          <div className="text-blue-800">
-            Card: {summaryText.paymentInfo}
-          </div>
+          <div className="text-blue-800">Card: {summaryText.paymentInfo}</div>
         </div>
-        
+
         <div className="pt-2 border-t border-blue-200">
           <p className="text-xs text-blue-700">
             We'll only buy if the fare meets all your criteria.

@@ -1,11 +1,10 @@
-
 /**
  * Radix Theme Provider Component
- * 
+ *
  * This component provides the Radix Themes integration for the GitHub Link-Up Buddy project.
  * It works seamlessly with next-themes for dark mode support and provides a consistent
  * design system across all components.
- * 
+ *
  * Features:
  * - Integrates with next-themes for automatic light/dark mode switching
  * - Provides consistent theme tokens and design system
@@ -45,11 +44,12 @@ export const RadixThemeProvider: FC<RadixThemeProviderProps> = ({
   forceAppearance,
 }) => {
   const { theme: nextTheme, systemTheme } = useTheme();
-  
+
   // Determine the current theme
   const currentTheme = nextTheme === 'system' ? systemTheme : nextTheme;
-  const appearance = forceAppearance || (currentTheme === 'dark' ? 'dark' : 'light');
-  
+  const appearance =
+    forceAppearance || (currentTheme === 'dark' ? 'dark' : 'light');
+
   // Merge theme configuration with any overrides
   const finalThemeConfig = {
     ...themeConfig,
@@ -57,7 +57,7 @@ export const RadixThemeProvider: FC<RadixThemeProviderProps> = ({
     // Set appearance based on next-themes
     appearance,
   };
-  
+
   return (
     <Theme
       {...finalThemeConfig}
@@ -76,13 +76,14 @@ export const RadixThemeProvider: FC<RadixThemeProviderProps> = ({
  */
 export const useRadixTheme = () => {
   const { theme, setTheme, systemTheme } = useTheme();
-  
+
   return {
     theme,
     setTheme,
     systemTheme,
     isDark: theme === 'dark' || (theme === 'system' && systemTheme === 'dark'),
-    isLight: theme === 'light' || (theme === 'system' && systemTheme === 'light'),
+    isLight:
+      theme === 'light' || (theme === 'system' && systemTheme === 'light'),
     isSystem: theme === 'system',
   };
 };
@@ -94,7 +95,7 @@ export const ThemeToggle: FC<{
   className?: string;
 }> = ({ className }) => {
   const { theme, setTheme } = useTheme();
-  
+
   const toggleTheme = () => {
     if (theme === 'light') {
       setTheme('dark');
@@ -104,7 +105,7 @@ export const ThemeToggle: FC<{
       setTheme('light');
     }
   };
-  
+
   return (
     <button
       onClick={toggleTheme}
@@ -118,7 +119,12 @@ export const ThemeToggle: FC<{
       aria-label="Toggle theme"
     >
       {theme === 'light' && (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -128,7 +134,12 @@ export const ThemeToggle: FC<{
         </svg>
       )}
       {theme === 'dark' && (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -138,7 +149,12 @@ export const ThemeToggle: FC<{
         </svg>
       )}
       {theme === 'system' && (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

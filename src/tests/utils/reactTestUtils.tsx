@@ -1,11 +1,9 @@
-
-
 type ReactNode = React.ReactNode;
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 import { vi } from 'vitest';
-import { createSupabaseStub } from './supabaseMocks';
 import * as React from 'react';
+import { createSupabaseStub } from './supabaseMocks';
 
 // Mock toast notifications
 export const mockToast = {
@@ -20,13 +18,17 @@ export const mockToast = {
 // Setup toast mocking
 vi.mock('sonner', () => ({
   toast: mockToast,
-  Toaster: ({ children }: { children?: ReactNode }) => <div data-testid="toaster">{children}</div>,
+  Toaster: ({ children }: { children?: ReactNode }) => (
+    <div data-testid="toaster">{children}</div>
+  ),
 }));
 
 // Mock react-hot-toast if used
 vi.mock('react-hot-toast', () => ({
   toast: mockToast,
-  Toaster: ({ children }: { children?: ReactNode }) => <div data-testid="toaster">{children}</div>,
+  Toaster: ({ children }: { children?: ReactNode }) => (
+    <div data-testid="toaster">{children}</div>
+  ),
 }));
 
 // Mock Supabase context/hooks if they exist
@@ -41,14 +43,14 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   // Router options
   initialEntries?: string[];
   route?: string;
-  
+
   // Auth options
   user?: Record<string, unknown> | null;
   session?: Record<string, unknown> | null;
-  
+
   // Query client options
   queryClient?: QueryClient;
-  
+
   // Custom wrapper
   wrapper?: ComponentType<{ children: ReactNode }>;
 }
@@ -105,8 +107,10 @@ export async function waitForAsyncOperations() {
 export async function submitForm(form: HTMLFormElement) {
   const { userEvent } = await import('@testing-library/user-event');
   const user = userEvent.setup();
-  
-  const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+  const submitButton = form.querySelector(
+    'button[type="submit"]'
+  ) as HTMLButtonElement;
   if (submitButton) {
     await user.click(submitButton);
   } else {
@@ -120,7 +124,7 @@ export async function fillFormField(labelText: string | RegExp, value: string) {
   const { screen } = await import('@testing-library/react');
   const { userEvent } = await import('@testing-library/user-event');
   const user = userEvent.setup();
-  
+
   const field = screen.getByLabelText(labelText);
   await user.clear(field);
   await user.type(field, value);
@@ -164,7 +168,7 @@ export const TestData = {
     created_at: '2024-01-01T00:00:00Z',
     ...overrides,
   }),
-  
+
   flightOffer: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 'offer-1',
     airline: 'Test Airlines',
@@ -179,7 +183,7 @@ export const TestData = {
     cabin_class: 'ECONOMY',
     ...overrides,
   }),
-  
+
   tripRequest: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 'trip-1',
     user_id: 'test-user-id',
@@ -192,7 +196,7 @@ export const TestData = {
     created_at: '2024-01-01T00:00:00Z',
     ...overrides,
   }),
-  
+
   booking: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 'booking-1',
     user_id: 'test-user-id',
@@ -211,22 +215,22 @@ export const QueryHelpers = {
   getButton: (name: string | RegExp) => {
     return screen.getByRole('button', { name });
   },
-  
+
   // Get form elements
   getTextInput: (labelText: string | RegExp) => {
     return screen.getByLabelText(labelText);
   },
-  
+
   // Get by test id with prefix
   getByTestId: (testId: string) => {
     return screen.getByTestId(testId);
   },
-  
+
   // Find async elements
   findText: async (text: string | RegExp) => {
     return screen.findByText(text);
   },
-  
+
   // Query for optional elements
   queryText: (text: string | RegExp) => {
     return screen.queryByText(text);
@@ -243,15 +247,17 @@ export const ComponentHelpers = {
       const tab = screen.getByRole('tab', { name: /trip history/i });
       await user.click(tab);
     },
-    
+
     async switchToCurrentRequests() {
       const { userEvent } = await import('@testing-library/user-event');
       const user = userEvent.setup();
-      const tab = screen.getByRole('tab', { name: /current booking requests/i });
+      const tab = screen.getByRole('tab', {
+        name: /current booking requests/i,
+      });
       await user.click(tab);
     },
   },
-  
+
   // Form helpers
   form: {
     async fillTripRequest(data: {
@@ -262,12 +268,14 @@ export const ComponentHelpers = {
       maxPrice?: string;
     }) {
       if (data.origin) await fillFormField(/origin/i, data.origin);
-      if (data.destination) await fillFormField(/destination/i, data.destination);
-      if (data.departureDate) await fillFormField(/departure date/i, data.departureDate);
+      if (data.destination)
+        await fillFormField(/destination/i, data.destination);
+      if (data.departureDate)
+        await fillFormField(/departure date/i, data.departureDate);
       if (data.returnDate) await fillFormField(/return date/i, data.returnDate);
       if (data.maxPrice) await fillFormField(/max price/i, data.maxPrice);
     },
-    
+
     async submitForm() {
       const userEvent = await import('@testing-library/user-event');
       const user = userEvent.default.setup();

@@ -1,5 +1,3 @@
-
-
 type ReactNode = React.ReactNode;
 type FC<T = {}> = React.FC<T>;
 
@@ -7,18 +5,19 @@ import { vi } from 'vitest';
 import * as React from 'react';
 
 // Create a test-specific query client
-const createTestQueryClient = () => new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-      gcTime: 0,
-      staleTime: 0,
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: 0,
+        staleTime: 0,
+      },
+      mutations: {
+        retry: false,
+      },
     },
-    mutations: {
-      retry: false,
-    },
-  },
-});
+  });
 
 interface TestWrapperProps {
   children: ReactNode;
@@ -62,9 +61,7 @@ export const TestWrapper: FC<TestWrapperProps> = ({
 // Helper function to create a wrapper with specific route
 export const createTestWrapper = (initialEntries: string[] = ['/']) => {
   return ({ children }: { children: ReactNode }) => (
-    <TestWrapper initialEntries={initialEntries}>
-      {children}
-    </TestWrapper>
+    <TestWrapper initialEntries={initialEntries}>{children}</TestWrapper>
   );
 };
 

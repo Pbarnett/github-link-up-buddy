@@ -1,18 +1,26 @@
-
 /**
  * AirlineSelector Component - Phase 4.1
- * 
+ *
  * Multi-select component for choosing preferred airlines in flight filtering.
  * Displays airline logos, names, and allows easy selection/deselection.
  */
 
 type FC<T = {}> = React.FC<T>;
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
-import * as React from 'react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from '@/components/ui/command';
 
 interface Airline {
   code: string;
@@ -62,7 +70,7 @@ const AirlineSelector: FC<AirlineSelectorProps> = ({
   onSelectionChange,
   availableAirlines = COMMON_AIRLINES,
   maxSelections = 10,
-  placeholder = "Select preferred airlines..."
+  placeholder = 'Select preferred airlines...',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,27 +78,28 @@ const AirlineSelector: FC<AirlineSelectorProps> = ({
   // Filter airlines based on search query
   const filteredAirlines = useMemo(() => {
     if (!searchQuery) return availableAirlines;
-    
+
     const query = searchQuery.toLowerCase();
-    return availableAirlines.filter(airline => 
-      airline.name.toLowerCase().includes(query) ||
-      airline.code.toLowerCase().includes(query) ||
-      airline.country?.toLowerCase().includes(query)
+    return availableAirlines.filter(
+      airline =>
+        airline.name.toLowerCase().includes(query) ||
+        airline.code.toLowerCase().includes(query) ||
+        airline.country?.toLowerCase().includes(query)
     );
   }, [availableAirlines, searchQuery]);
 
   // Get selected airline objects
   const selectedAirlineObjects = useMemo(() => {
-    return selectedAirlines.map(code => 
-      availableAirlines.find(airline => airline.code === code)
-    ).filter(Boolean) as Airline[];
+    return selectedAirlines
+      .map(code => availableAirlines.find(airline => airline.code === code))
+      .filter(Boolean) as Airline[];
   }, [selectedAirlines, availableAirlines]);
 
   const handleAirlineToggle = (airlineCode: string) => {
     const newSelection = selectedAirlines.includes(airlineCode)
       ? selectedAirlines.filter(code => code !== airlineCode)
       : [...selectedAirlines, airlineCode];
-    
+
     // Respect max selections
     if (newSelection.length <= maxSelections) {
       onSelectionChange(newSelection);
@@ -111,12 +120,14 @@ const AirlineSelector: FC<AirlineSelectorProps> = ({
     if (selectedAirlines.length === 0) {
       return placeholder;
     }
-    
+
     if (selectedAirlines.length === 1) {
       const airline = selectedAirlineObjects[0];
-      return airline ? `${airline.code} - ${airline.name}` : selectedAirlines[0];
+      return airline
+        ? `${airline.code} - ${airline.name}`
+        : selectedAirlines[0];
     }
-    
+
     return `${selectedAirlines.length} airlines selected`;
   };
 
@@ -142,14 +153,16 @@ const AirlineSelector: FC<AirlineSelectorProps> = ({
               <input
                 placeholder="Search airlines..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery((e.target as HTMLInputElement).value)}
+                onChange={e =>
+                  setSearchQuery((e.target as HTMLInputElement).value)
+                }
                 className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
             <div className="max-h-[300px] overflow-y-auto">
               {filteredAirlines.length > 0 ? (
                 <CommandGroup>
-                  {filteredAirlines.map((airline) => (
+                  {filteredAirlines.map(airline => (
                     <CommandItem
                       key={airline.code}
                       value={airline.code}
@@ -199,14 +212,16 @@ const AirlineSelector: FC<AirlineSelectorProps> = ({
       {/* Selected Airlines Display */}
       {selectedAirlines.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-2">
-          {selectedAirlineObjects.map((airline) => (
+          {selectedAirlineObjects.map(airline => (
             <Badge
               key={airline.code}
               variant="secondary"
               className="text-xs px-2 py-1 flex items-center gap-2"
             >
               <Plane className="h-3 w-3" />
-              <span>{airline.code} - {airline.name}</span>
+              <span>
+                {airline.code} - {airline.name}
+              </span>
               <button
                 onClick={() => handleRemoveAirline(airline.code)}
                 className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
@@ -222,14 +237,16 @@ const AirlineSelector: FC<AirlineSelectorProps> = ({
       {/* Selection Limit Warning */}
       {selectedAirlines.length >= maxSelections && (
         <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border">
-          Maximum {maxSelections} airlines can be selected. Remove some to select others.
+          Maximum {maxSelections} airlines can be selected. Remove some to
+          select others.
         </div>
       )}
 
       {/* Help Text */}
       {selectedAirlines.length === 0 && (
         <div className="text-xs text-gray-500">
-          Select airlines to filter flight results. Only flights operated by selected airlines will be shown.
+          Select airlines to filter flight results. Only flights operated by
+          selected airlines will be shown.
         </div>
       )}
     </div>

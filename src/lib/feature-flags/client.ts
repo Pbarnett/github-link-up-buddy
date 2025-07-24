@@ -12,7 +12,7 @@ export class FeatureFlagClient {
     // Mock initialization
     this.initialized = true;
     console.log('FeatureFlagClient initialized (mock)');
-    
+
     // Return a mock client
     return {
       waitForInitialization: () => Promise.resolve(),
@@ -25,7 +25,7 @@ export class FeatureFlagClient {
     if (!this.initialized) {
       return fallback;
     }
-    
+
     // Mock implementation - always return fallback for tests
     return fallback;
   }
@@ -34,7 +34,7 @@ export class FeatureFlagClient {
     if (!this.initialized) {
       return fallback;
     }
-    
+
     // Mock implementation - always return fallback for tests
     return fallback;
   }
@@ -43,7 +43,7 @@ export class FeatureFlagClient {
     if (!this.initialized) {
       return fallback;
     }
-    
+
     // Mock implementation - always return fallback for tests
     return fallback;
   }
@@ -52,7 +52,7 @@ export class FeatureFlagClient {
     if (!this.initialized) {
       return fallback;
     }
-    
+
     // Mock implementation - always return fallback for tests
     return fallback;
   }

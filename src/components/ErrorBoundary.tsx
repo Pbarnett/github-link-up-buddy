@@ -1,14 +1,19 @@
-
 /**
  * Smart Error Boundary
  * Global error boundary with retry mechanisms and graceful degradation
  */
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type ReactNode = React.ReactNode;
 type ErrorInfo = React.ErrorInfo;
@@ -56,7 +61,7 @@ export class SmartErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo });
-    
+
     // Report error with context
     const safeProps = {
       level: this.props.level || 'component',
@@ -64,7 +69,7 @@ export class SmartErrorBoundary extends React.Component<Props, State> {
       hasChildren: !!this.props.children,
       hasFallback: !!this.props.fallback,
     };
-    
+
     reportError(error, {
       componentStack: errorInfo.componentStack,
       level: this.props.level || 'component',
@@ -81,17 +86,17 @@ export class SmartErrorBoundary extends React.Component<Props, State> {
 
   private handleRetry = () => {
     const { retryCount } = this.state;
-    
+
     // Don't allow more than 3 retries
     if (retryCount >= 3) {
       return;
     }
 
     this.setState({ isRetrying: true });
-    
+
     // Retry with exponential backoff
     const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-    
+
     this.retryTimeoutId = window.setTimeout(() => {
       this.setState({
         hasError: false,
@@ -110,7 +115,7 @@ export class SmartErrorBoundary extends React.Component<Props, State> {
   private renderErrorFallback() {
     const { error, retryCount, isRetrying } = this.state;
     const { level = 'component' } = this.props;
-    
+
     const canRetry = retryCount < 3;
     const isGlobalError = level === 'global' || level === 'page';
 
@@ -135,11 +140,11 @@ export class SmartErrorBoundary extends React.Component<Props, State> {
                   </AlertDescription>
                 </Alert>
               )}
-              
+
               <div className="flex flex-col gap-2">
                 {canRetry && (
-                  <Button 
-                    onClick={this.handleRetry} 
+                  <Button
+                    onClick={this.handleRetry}
                     disabled={isRetrying}
                     className="w-full"
                   >
@@ -156,9 +161,9 @@ export class SmartErrorBoundary extends React.Component<Props, State> {
                     )}
                   </Button>
                 )}
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   onClick={this.handleGoHome}
                   className="w-full"
                 >

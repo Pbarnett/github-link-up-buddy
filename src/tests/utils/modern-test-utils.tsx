@@ -1,6 +1,5 @@
 import * as React from 'react';
 
-
 /**
  * React-specific testing utilities
  */
@@ -9,8 +8,8 @@ import * as React from 'react';
 type ReactNode = React.ReactNode;
 
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
-  initialEntries?: string[]
-  queryClient?: QueryClient
+  initialEntries?: string[];
+  queryClient?: QueryClient;
 }
 
 export const renderWithProviders = (
@@ -28,17 +27,15 @@ export const renderWithProviders = (
       },
     }),
     ...renderOptions
-  } = options
+  } = options;
 
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={initialEntries}>
-        {children}
-      </MemoryRouter>
+      <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
     </QueryClientProvider>
-  )
+  );
 
-  return render(ui, { wrapper: Wrapper, ...renderOptions })
-}
+  return render(ui, { wrapper: Wrapper, ...renderOptions });
+};
 
-export default { renderWithProviders }
+export default { renderWithProviders };

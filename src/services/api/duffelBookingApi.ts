@@ -55,16 +55,19 @@ export async function createDuffelBooking(
   try {
     logger.info('[DuffelBookingApi] Creating Duffel booking', {
       offerId: request.offerId,
-      travelersCount: request.travelers.length
+      travelersCount: request.travelers.length,
     });
-    
+
     // Call the auto-book-duffel edge function
-    const { data, error } = await supabase.functions.invoke('auto-book-duffel', {
-      body: {
-        offer_id: request.offerId,
-        travelers: request.travelers
+    const { data, error } = await supabase.functions.invoke(
+      'auto-book-duffel',
+      {
+        body: {
+          offer_id: request.offerId,
+          travelers: request.travelers,
+        },
       }
-    });
+    );
 
     if (error) {
       logger.error('[DuffelBookingApi] Error from edge function:', error);
@@ -73,25 +76,28 @@ export async function createDuffelBooking(
         error: {
           message: error.message || 'Booking failed',
           type: 'api_error',
-          details: error
-        }
+          details: error,
+        },
       };
     }
 
     logger.info('[DuffelBookingApi] Booking completed successfully');
     return {
       success: true,
-      order: data as DuffelOrder
+      order: data as DuffelOrder,
     };
   } catch (error: unknown) {
     logger.error('[DuffelBookingApi] createDuffelBooking error:', error);
     return {
       success: false,
       error: {
-        message: error instanceof Error ? error.message : 'Network error during booking',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Network error during booking',
         type: 'network_error',
-        details: error
-      }
+        details: error,
+      },
     };
   }
 }
@@ -99,15 +105,17 @@ export async function createDuffelBooking(
 /**
  * Get a Duffel order by ID
  */
-export async function getDuffelOrder(orderId: string): Promise<DuffelOrder | null> {
+export async function getDuffelOrder(
+  orderId: string
+): Promise<DuffelOrder | null> {
   try {
     logger.info('[DuffelBookingApi] Fetching Duffel order:', orderId);
-    
+
     const { data, error } = await supabase.functions.invoke('duffel-order', {
       body: {
         action: 'get',
-        orderId
-      }
+        orderId,
+      },
     });
 
     if (error) {
@@ -128,12 +136,12 @@ export async function getDuffelOrder(orderId: string): Promise<DuffelOrder | nul
 export async function cancelDuffelOrder(orderId: string): Promise<boolean> {
   try {
     logger.info('[DuffelBookingApi] Cancelling Duffel order:', orderId);
-    
+
     const { data, error } = await supabase.functions.invoke('duffel-order', {
       body: {
         action: 'cancel',
-        orderId
-      }
+        orderId,
+      },
     });
 
     if (error) {

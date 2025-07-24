@@ -11,7 +11,7 @@ export enum ConnectionState {
   CONNECTING = 'connecting',
   CONNECTED = 'connected',
   RECONNECTING = 'reconnecting',
-  FAILED = 'failed'
+  FAILED = 'failed',
 }
 
 export interface ConnectionHealth {
@@ -45,7 +45,8 @@ export class ConnectionMonitor {
   private client: LDClient | null = null;
   private monitoringInterval: NodeJS.Timeout | null = null;
   private retryTimeout: NodeJS.Timeout | null = null;
-  private listeners: Map<string, (health: ConnectionHealth) => void> = new Map();
+  private listeners: Map<string, (health: ConnectionHealth) => void> =
+    new Map();
 
   private constructor() {
     this.health = {
@@ -58,7 +59,7 @@ export class ConnectionMonitor {
       averageLatency: 0,
       uptime: 0,
       downtime: 0,
-      lastHealthCheck: Date.now()
+      lastHealthCheck: Date.now(),
     };
 
     this.retryConfig = {
@@ -66,7 +67,7 @@ export class ConnectionMonitor {
       initialDelay: parseInt(process.env.LD_INITIAL_RETRY_DELAY || '1000'),
       maxDelay: parseInt(process.env.LD_MAX_RETRY_DELAY || '30000'),
       backoffMultiplier: parseFloat(process.env.LD_BACKOFF_MULTIPLIER || '2'),
-      jitter: process.env.LD_RETRY_JITTER !== 'false'
+      jitter: process.env.LD_RETRY_JITTER !== 'false',
     };
   }
 
@@ -134,7 +135,7 @@ export class ConnectionMonitor {
     if (this.monitoringInterval) return;
 
     const interval = parseInt(process.env.LD_HEALTH_CHECK_INTERVAL || '30000');
-    
+
     this.monitoringInterval = setInterval(() => {
       this.performHealthCheck();
     }, interval);
@@ -155,7 +156,7 @@ export class ConnectionMonitor {
     try {
       // Check if client is initialized
       const isInitialized = this.client.initialized?.();
-      
+
       if (!isInitialized) {
         this.updateConnectionState(ConnectionState.CONNECTING);
         await this.client.waitForInitialization(5000);
@@ -171,7 +172,6 @@ export class ConnectionMonitor {
         this.updateConnectionState(ConnectionState.CONNECTED);
         this.notifyListeners();
       }
-
     } catch (error) {
       this.updateConnectionState(ConnectionState.FAILED);
       this.health.failedConnections++;
@@ -188,10 +188,10 @@ export class ConnectionMonitor {
     if (!this.client) throw new Error('Client not available');
 
     const startTime = performance.now();
-    
+
     // Use allFlagsState as a lightweight test
     await this.client.allFlagsState({ key: 'health-check', kind: 'user' });
-    
+
     const latency = performance.now() - startTime;
     this.updateLatencyMetrics(latency);
   }
@@ -214,7 +214,8 @@ export class ConnectionMonitor {
     if (count === 0) {
       this.health.averageLatency = latency;
     } else {
-      this.health.averageLatency = (this.health.averageLatency * count + latency) / (count + 1);
+      this.health.averageLatency =
+        (this.health.averageLatency * count + latency) / (count + 1);
     }
   }
 
@@ -224,11 +225,15 @@ export class ConnectionMonitor {
   private updateUptimeMetrics(now: number): void {
     if (this.health.state === ConnectionState.CONNECTED) {
       if (this.health.lastConnected) {
-        this.health.uptime += now - Math.max(this.health.lastConnected, this.health.lastHealthCheck);
+        this.health.uptime +=
+          now -
+          Math.max(this.health.lastConnected, this.health.lastHealthCheck);
       }
     } else {
       if (this.health.lastDisconnected) {
-        this.health.downtime += now - Math.max(this.health.lastDisconnected, this.health.lastHealthCheck);
+        this.health.downtime +=
+          now -
+          Math.max(this.health.lastDisconnected, this.health.lastHealthCheck);
       }
     }
   }
@@ -238,15 +243,17 @@ export class ConnectionMonitor {
    */
   private updateConnectionState(state: ConnectionState): void {
     this.health.state = state;
-    
+
     // Log state changes
     console.log(`[LaunchDarkly] Connection state changed to: ${state}`);
-    
+
     // Emit custom events for monitoring systems
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('launchdarkly:connection:state', {
-        detail: { state, health: this.health }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('launchdarkly:connection:state', {
+          detail: { state, health: this.health },
+        })
+      );
     }
   }
 
@@ -265,11 +272,13 @@ export class ConnectionMonitor {
     }
 
     this.health.connectionAttempts++;
-    
+
     const _delay = this.calculateRetryDelay();
-    
-    console.log(`[LaunchDarkly] Scheduling reconnection attempt ${this.health.connectionAttempts} in ${delay}ms`);
-    
+
+    console.log(
+      `[LaunchDarkly] Scheduling reconnection attempt ${this.health.connectionAttempts} in ${delay}ms`
+    );
+
     this.retryTimeout = setTimeout(() => {
       this.attemptReconnection();
     }, delay);
@@ -280,7 +289,11 @@ export class ConnectionMonitor {
    */
   private calculateRetryDelay(): number {
     const exponentialDelay = Math.min(
-      this.retryConfig.initialDelay * Math.pow(this.retryConfig.backoffMultiplier, this.health.connectionAttempts - 1),
+      this.retryConfig.initialDelay *
+        Math.pow(
+          this.retryConfig.backoffMultiplier,
+          this.health.connectionAttempts - 1
+        ),
       this.retryConfig.maxDelay
     );
 
@@ -305,13 +318,12 @@ export class ConnectionMonitor {
     try {
       // For server-side SDK, we might need to reinitialize
       await this.client.waitForInitialization(10000);
-      
+
       this.health.connectionAttempts = 0; // Reset on successful connection
       this.updateConnectionState(ConnectionState.CONNECTED);
       this.health.successfulConnections++;
       this.health.lastConnected = Date.now();
       this.notifyListeners();
-
     } catch (error) {
       this.health.failedConnections++;
       FlagErrorHandler.handleNetworkError(error as Error, 'reconnection');
@@ -358,12 +370,15 @@ export class ConnectionMonitor {
    */
   isHealthy(): boolean {
     const now = Date.now();
-    const maxTimeSinceLastCheck = parseInt(process.env.LD_MAX_TIME_SINCE_CHECK || '60000');
-    
+    const maxTimeSinceLastCheck = parseInt(
+      process.env.LD_MAX_TIME_SINCE_CHECK || '60000'
+    );
+
     return (
       this.health.state === ConnectionState.CONNECTED &&
-      (now - this.health.lastHealthCheck) < maxTimeSinceLastCheck &&
-      this.health.averageLatency < parseInt(process.env.LD_MAX_LATENCY || '1000')
+      now - this.health.lastHealthCheck < maxTimeSinceLastCheck &&
+      this.health.averageLatency <
+        parseInt(process.env.LD_MAX_LATENCY || '1000')
     );
   }
 
@@ -424,11 +439,11 @@ export async function performLaunchDarklyHealthCheck(): Promise<{
 }> {
   const monitor = ConnectionMonitor.getInstance();
   const status = await monitor.checkHealth();
-  
+
   return {
     healthy: monitor.isHealthy(),
     status,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
 }
 
@@ -439,18 +454,22 @@ export function useLaunchDarklyHealth() {
   if (typeof window === 'undefined') {
     return {
       health: ConnectionMonitor.getInstance().getHealth(),
-      isHealthy: ConnectionMonitor.getInstance().isHealthy()
+      isHealthy: ConnectionMonitor.getInstance().isHealthy(),
     };
   }
 
-  const [health, setHealth] = React.useState(ConnectionMonitor.getInstance().getHealth());
-  const [isHealthy, setIsHealthy] = React.useState(ConnectionMonitor.getInstance().isHealthy());
+  const [health, setHealth] = React.useState(
+    ConnectionMonitor.getInstance().getHealth()
+  );
+  const [isHealthy, setIsHealthy] = React.useState(
+    ConnectionMonitor.getInstance().isHealthy()
+  );
 
   React.useEffect(() => {
     const monitor = ConnectionMonitor.getInstance();
     const listenerId = `react-hook-${Date.now()}`;
 
-    monitor.addListener(listenerId, (newHealth) => {
+    monitor.addListener(listenerId, newHealth => {
       setHealth(newHealth);
       setIsHealthy(monitor.isHealthy());
     });

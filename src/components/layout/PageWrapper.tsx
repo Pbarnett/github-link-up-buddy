@@ -1,5 +1,3 @@
-
-
 import * as React from 'react';
 type ReactNode = React.ReactNode;
 type FC<T = {}> = React.FC<T>;
@@ -19,15 +17,17 @@ const PageWrapper: FC<PageWrapperProps> = ({
   className,
   title,
   description,
-  fullWidth = false
+  fullWidth = false,
 }) => {
   return (
-    <div className={cn(
-      "min-h-screen bg-background",
-      "animate-in fade-in-0 duration-300", // 2025 page transition
-      fullWidth ? "w-full" : "container max-w-screen-2xl mx-auto px-4 py-6",
-      className
-    )}>
+    <div
+      className={cn(
+        'min-h-screen bg-background',
+        'animate-in fade-in-0 duration-300', // 2025 page transition
+        fullWidth ? 'w-full' : 'container max-w-screen-2xl mx-auto px-4 py-6',
+        className
+      )}
+    >
       {(title || description) && (
         <div className="mb-8">
           {title && (
@@ -36,9 +36,7 @@ const PageWrapper: FC<PageWrapperProps> = ({
             </h1>
           )}
           {description && (
-            <p className="text-muted-foreground text-lg">
-              {description}
-            </p>
+            <p className="text-muted-foreground text-lg">{description}</p>
           )}
         </div>
       )}

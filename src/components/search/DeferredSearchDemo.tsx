@@ -1,9 +1,8 @@
-
+import * as React from 'react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import * as React from 'react';
 
 interface FlightResult {
   id: string;
@@ -28,7 +27,7 @@ const mockFlights: FlightResult[] = [
     departure: '08:00',
     arrival: '11:30',
     duration: '5h 30m',
-    price: 299
+    price: 299,
   },
   {
     id: '2',
@@ -39,7 +38,7 @@ const mockFlights: FlightResult[] = [
     departure: '14:30',
     arrival: '17:45',
     duration: '6h 15m',
-    price: 389
+    price: 389,
   },
   {
     id: '3',
@@ -50,7 +49,7 @@ const mockFlights: FlightResult[] = [
     departure: '10:15',
     arrival: '14:20',
     duration: '3h 5m',
-    price: 245
+    price: 245,
   },
   {
     id: '4',
@@ -61,7 +60,7 @@ const mockFlights: FlightResult[] = [
     departure: '16:00',
     arrival: '17:30',
     duration: '1h 30m',
-    price: 149
+    price: 149,
   },
   {
     id: '5',
@@ -72,8 +71,8 @@ const mockFlights: FlightResult[] = [
     departure: '09:45',
     arrival: '13:15',
     duration: '3h 30m',
-    price: 199
-  }
+    price: 199,
+  },
 ];
 
 // Memoized flight card to prevent unnecessary re-renders
@@ -84,14 +83,16 @@ const FlightCard = memo(({ flight }: { flight: FlightResult }) => {
         <div className="flex justify-between items-start mb-3">
           <div>
             <h3 className="font-semibold text-lg">{flight.airline}</h3>
-            <p className="text-sm text-muted-foreground">{flight.flightNumber}</p>
+            <p className="text-sm text-muted-foreground">
+              {flight.flightNumber}
+            </p>
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold text-green-600">${flight.price}</p>
             <p className="text-xs text-muted-foreground">per person</p>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-3 gap-4 items-center">
           <div className="text-center">
             <p className="font-semibold">{flight.departure}</p>
@@ -100,7 +101,7 @@ const FlightCard = memo(({ flight }: { flight: FlightResult }) => {
               {flight.origin}
             </p>
           </div>
-          
+
           <div className="text-center">
             <Plane className="w-4 h-4 mx-auto mb-1 text-blue-500" />
             <p className="text-xs text-muted-foreground flex items-center gap-1 justify-center">
@@ -108,7 +109,7 @@ const FlightCard = memo(({ flight }: { flight: FlightResult }) => {
               {flight.duration}
             </p>
           </div>
-          
+
           <div className="text-center">
             <p className="font-semibold">{flight.arrival}</p>
             <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -125,37 +126,41 @@ const FlightCard = memo(({ flight }: { flight: FlightResult }) => {
 FlightCard.displayName = 'FlightCard';
 
 // Simulate expensive search operation
-const performExpensiveSearch = (flights: FlightResult[], query: string): FlightResult[] => {
+const performExpensiveSearch = (
+  flights: FlightResult[],
+  query: string
+): FlightResult[] => {
   if (!query) return flights;
-  
+
   // Simulate processing time
   const start = Date.now();
   while (Date.now() - start < 100) {
     // Intentional delay to simulate expensive computation
   }
-  
+
   const searchTerm = query.toLowerCase();
-  return flights.filter(flight => 
-    flight.airline.toLowerCase().includes(searchTerm) ||
-    flight.flightNumber.toLowerCase().includes(searchTerm) ||
-    flight.origin.toLowerCase().includes(searchTerm) ||
-    flight.destination.toLowerCase().includes(searchTerm)
+  return flights.filter(
+    flight =>
+      flight.airline.toLowerCase().includes(searchTerm) ||
+      flight.flightNumber.toLowerCase().includes(searchTerm) ||
+      flight.origin.toLowerCase().includes(searchTerm) ||
+      flight.destination.toLowerCase().includes(searchTerm)
   );
 };
 
 export function DeferredSearchDemo() {
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query);
-  
+
   // Check if search results are stale (user is still typing)
   const isStale = query !== deferredQuery;
-  
+
   // Perform expensive search with deferred query
-  const filteredFlights = useMemo(() => 
-    performExpensiveSearch(mockFlights, deferredQuery),
+  const filteredFlights = useMemo(
+    () => performExpensiveSearch(mockFlights, deferredQuery),
     [deferredQuery]
   );
-  
+
   return (
     <div className="space-y-6">
       <Card>
@@ -177,29 +182,32 @@ export function DeferredSearchDemo() {
               type="text"
               placeholder="Search flights by airline, flight number, or airport code..."
               value={query}
-              onChange={(e) => setQuery((e.target as HTMLInputElement).value)}
+              onChange={e => setQuery((e.target as HTMLInputElement).value)}
               className="pl-10"
             />
           </div>
-          
+
           <div className="mt-4 text-sm text-muted-foreground">
             <p>
               <strong>React 19 Performance Demo:</strong> This search uses{' '}
-              <code className="bg-muted px-1 rounded">useDeferredValue</code> to defer expensive 
-              search operations while keeping the input responsive.
+              <code className="bg-muted px-1 rounded">useDeferredValue</code> to
+              defer expensive search operations while keeping the input
+              responsive.
             </p>
             {query && (
               <p className="mt-2">
-                Current query: <strong>"{query}"</strong> | 
-                Search query: <strong>"{deferredQuery}"</strong>
-                {isStale && <span className="text-amber-600"> (Update pending...)</span>}
+                Current query: <strong>"{query}"</strong> | Search query:{' '}
+                <strong>"{deferredQuery}"</strong>
+                {isStale && (
+                  <span className="text-amber-600"> (Update pending...)</span>
+                )}
               </p>
             )}
           </div>
         </CardContent>
       </Card>
-      
-      <div 
+
+      <div
         className={`grid gap-4 transition-opacity duration-200 ${
           isStale ? 'opacity-60' : 'opacity-100'
         }`}
@@ -207,15 +215,14 @@ export function DeferredSearchDemo() {
         {/* Results header */}
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold">
-            {filteredFlights.length} flight{filteredFlights.length !== 1 ? 's' : ''} found
+            {filteredFlights.length} flight
+            {filteredFlights.length !== 1 ? 's' : ''} found
           </h3>
           {query && (
-            <Badge variant="outline">
-              Searching for: "{deferredQuery}"
-            </Badge>
+            <Badge variant="outline">Searching for: "{deferredQuery}"</Badge>
           )}
         </div>
-        
+
         {/* Flight results */}
         {filteredFlights.length > 0 ? (
           filteredFlights.map(flight => (
@@ -227,7 +234,8 @@ export function DeferredSearchDemo() {
               <Plane className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-semibold mb-2">No flights found</h3>
               <p className="text-muted-foreground">
-                Try searching with different keywords like airline names or airport codes.
+                Try searching with different keywords like airline names or
+                airport codes.
               </p>
             </CardContent>
           </Card>
@@ -240,7 +248,7 @@ export function DeferredSearchDemo() {
             </CardContent>
           </Card>
         )}
-        
+
         {/* Loading skeleton when search is stale */}
         {isStale && (
           <div className="space-y-4">

@@ -1,10 +1,8 @@
-
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import PersonalizedGreeting from '@/components/personalization/PersonalizedGreeting';
 import * as React from 'react';
+import PersonalizedGreeting from '@/components/personalization/PersonalizedGreeting';
 
 // Mock the analytics tracking
 vi.mock('@/scripts/analytics/personalization-tracking', () => ({
@@ -27,8 +25,10 @@ describe('PersonalizedGreeting', () => {
   });
 
   it('renders generic greeting when personalization is disabled', async () => {
-    render(<PersonalizedGreeting userId="123" isPersonalizationEnabled={false} />);
-    
+    render(
+      <PersonalizedGreeting userId="123" isPersonalizationEnabled={false} />
+    );
+
     await waitFor(() => {
       expect(screen.getByText('Welcome!')).toBeInTheDocument();
     });
@@ -37,7 +37,7 @@ describe('PersonalizedGreeting', () => {
   it('renders personalized greeting with name', async () => {
     const mockResponse = {
       name: 'John Doe',
-      lastVisit: '2024-12-07T10:00:00Z'
+      lastVisit: '2024-12-07T10:00:00Z',
     };
 
     mockFetch.mockResolvedValueOnce({
@@ -57,7 +57,7 @@ describe('PersonalizedGreeting', () => {
   it('renders time-based greeting without name', async () => {
     const mockResponse = {
       name: null,
-      lastVisit: '2024-12-07T10:00:00Z'
+      lastVisit: '2024-12-07T10:00:00Z',
     };
 
     mockFetch.mockResolvedValueOnce({
@@ -68,7 +68,9 @@ describe('PersonalizedGreeting', () => {
     render(<PersonalizedGreeting userId="123" />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Good (morning|afternoon|evening)/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Good (morning|afternoon|evening)/)
+      ).toBeInTheDocument();
     });
   });
 
@@ -85,7 +87,7 @@ describe('PersonalizedGreeting', () => {
   it('calls correct API endpoint', async () => {
     const mockResponse = {
       name: 'Jane Smith',
-      greeting: 'Good afternoon, Jane Smith!'
+      greeting: 'Good afternoon, Jane Smith!',
     };
 
     mockFetch.mockResolvedValueOnce({
@@ -96,16 +98,20 @@ describe('PersonalizedGreeting', () => {
     render(<PersonalizedGreeting userId="user123" />);
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('/api/personalization/greeting?userId=user123');
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/personalization/greeting?userId=user123'
+      );
     });
   });
 
   it('tracks greeting display correctly', async () => {
-    const { trackGreetingDisplay } = await import('@/scripts/analytics/personalization-tracking');
-    
+    const { trackGreetingDisplay } = await import(
+      '@/scripts/analytics/personalization-tracking'
+    );
+
     const mockResponse = {
       name: 'Alice Johnson',
-      greeting: 'Good evening, Alice Johnson!'
+      greeting: 'Good evening, Alice Johnson!',
     };
 
     mockFetch.mockResolvedValueOnce({
@@ -116,16 +122,21 @@ describe('PersonalizedGreeting', () => {
     render(<PersonalizedGreeting userId="123" />);
 
     await waitFor(() => {
-      expect(trackGreetingDisplay).toHaveBeenCalledWith('personalized', mockResponse);
+      expect(trackGreetingDisplay).toHaveBeenCalledWith(
+        'personalized',
+        mockResponse
+      );
     });
   });
 
   it('tracks generic greeting display', async () => {
-    const { trackGreetingDisplay } = await import('@/scripts/analytics/personalization-tracking');
-    
+    const { trackGreetingDisplay } = await import(
+      '@/scripts/analytics/personalization-tracking'
+    );
+
     const mockResponse = {
       name: null,
-      greeting: 'Good morning'
+      greeting: 'Good morning',
     };
 
     mockFetch.mockResolvedValueOnce({
@@ -136,7 +147,10 @@ describe('PersonalizedGreeting', () => {
     render(<PersonalizedGreeting userId="123" />);
 
     await waitFor(() => {
-      expect(trackGreetingDisplay).toHaveBeenCalledWith('generic', mockResponse);
+      expect(trackGreetingDisplay).toHaveBeenCalledWith(
+        'generic',
+        mockResponse
+      );
     });
   });
 });

@@ -1,10 +1,11 @@
-
-
-
-import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import DepartureAirportsSection from "./sections/DepartureAirportsSection";
 import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import DepartureAirportsSection from './sections/DepartureAirportsSection';
 
 interface AdvancedOptionsPanelProps {
   control: Control<Record<string, unknown>>;

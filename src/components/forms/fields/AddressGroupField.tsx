@@ -1,18 +1,17 @@
-
 /**
  * Address Group Field Component
- * 
+ *
  * Renders a grouped address input with multiple fields
  */
 
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
 
+import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CountrySelectField } from './CountrySelectField';
-import * as React from 'react';
 
 interface AddressValue {
   street: string;
@@ -36,22 +35,22 @@ export const AddressGroupField: FC<AddressGroupFieldProps> = ({
     city: '',
     state: '',
     zipCode: '',
-    country: ''
+    country: '',
   },
   onChange,
   disabled = false,
   error,
-  className
+  className,
 }) => {
   const handleFieldChange = (field: keyof AddressValue, fieldValue: string) => {
     onChange({
       ...value,
-      [field]: fieldValue
+      [field]: fieldValue,
     });
   };
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       {/* Header */}
       <div className="flex items-center gap-2">
         <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -66,10 +65,12 @@ export const AddressGroupField: FC<AddressGroupFieldProps> = ({
         <Input
           id="street"
           value={value.street}
-          onChange={(e) => handleFieldChange('street', (e.target as HTMLInputElement).value)}
+          onChange={e =>
+            handleFieldChange('street', (e.target as HTMLInputElement).value)
+          }
           placeholder="Enter street address"
           disabled={disabled}
-          className={cn(error && "border-destructive")}
+          className={cn(error && 'border-destructive')}
         />
       </div>
 
@@ -82,10 +83,12 @@ export const AddressGroupField: FC<AddressGroupFieldProps> = ({
           <Input
             id="city"
             value={value.city}
-            onChange={(e) => handleFieldChange('city', (e.target as HTMLInputElement).value)}
+            onChange={e =>
+              handleFieldChange('city', (e.target as HTMLInputElement).value)
+            }
             placeholder="Enter city"
             disabled={disabled}
-            className={cn(error && "border-destructive")}
+            className={cn(error && 'border-destructive')}
           />
         </div>
 
@@ -96,10 +99,12 @@ export const AddressGroupField: FC<AddressGroupFieldProps> = ({
           <Input
             id="state"
             value={value.state}
-            onChange={(e) => handleFieldChange('state', (e.target as HTMLInputElement).value)}
+            onChange={e =>
+              handleFieldChange('state', (e.target as HTMLInputElement).value)
+            }
             placeholder="Enter state or province"
             disabled={disabled}
-            className={cn(error && "border-destructive")}
+            className={cn(error && 'border-destructive')}
           />
         </div>
       </div>
@@ -113,10 +118,12 @@ export const AddressGroupField: FC<AddressGroupFieldProps> = ({
           <Input
             id="zipCode"
             value={value.zipCode}
-            onChange={(e) => handleFieldChange('zipCode', (e.target as HTMLInputElement).value)}
+            onChange={e =>
+              handleFieldChange('zipCode', (e.target as HTMLInputElement).value)
+            }
             placeholder="Enter ZIP or postal code"
             disabled={disabled}
-            className={cn(error && "border-destructive")}
+            className={cn(error && 'border-destructive')}
           />
         </div>
 
@@ -126,7 +133,7 @@ export const AddressGroupField: FC<AddressGroupFieldProps> = ({
           </Label>
           <CountrySelectField
             value={value.country}
-            onChange={(countryCode) => handleFieldChange('country', countryCode)}
+            onChange={countryCode => handleFieldChange('country', countryCode)}
             placeholder="Select country"
             disabled={disabled}
             error={error}

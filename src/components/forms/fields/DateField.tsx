@@ -1,7 +1,6 @@
-
 /**
  * Date Field Component
- * 
+ *
  * Renders a date picker input for forms
  */
 
@@ -32,13 +31,13 @@ interface DateFieldProps {
 export const DateField: FC<DateFieldProps> = ({
   value,
   onChange,
-  placeholder = "Select a date",
+  placeholder = 'Select a date',
   disabled = false,
   error,
-  className
+  className,
 }) => {
   const [open, setOpen] = useState(false);
-  
+
   // Parse the date value
   const selectedDate = value ? new Date(value) : undefined;
 
@@ -57,19 +56,15 @@ export const DateField: FC<DateFieldProps> = ({
         <Button
           variant="outline"
           className={cn(
-            "w-full justify-start text-left font-normal",
-            !selectedDate && "text-muted-foreground",
-            error && "border-destructive",
+            'w-full justify-start text-left font-normal',
+            !selectedDate && 'text-muted-foreground',
+            error && 'border-destructive',
             className
           )}
           disabled={disabled}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {selectedDate ? (
-            format(selectedDate, "PPP")
-          ) : (
-            placeholder
-          )}
+          {selectedDate ? format(selectedDate, 'PPP') : placeholder}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

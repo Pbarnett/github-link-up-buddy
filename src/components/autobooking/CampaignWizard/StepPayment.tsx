@@ -6,7 +6,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { loadStripe } from '@stripe/stripe-js';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -15,7 +21,9 @@ import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { trackCampaignEvent } from '@/utils/monitoring';
 
 // Initialize Stripe.js with your publishable key
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = loadStripe(
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ''
+);
 
 // Validation schema for payment step
 const paymentSchema = z.object({
@@ -34,7 +42,12 @@ interface StepPaymentProps {
 }
 
 function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
-  const { control, handleSubmit, formState: { errors }, watch } = useForm<PaymentFormData>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    watch,
+  } = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       saveCard: true,
@@ -89,10 +102,11 @@ function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
           Payment Information
         </CardTitle>
         <CardDescription>
-          Safely enter your payment information. Your card details are encrypted and processed by Stripe.
+          Safely enter your payment information. Your card details are encrypted
+          and processed by Stripe.
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           {/* Credit Card Details */}
@@ -135,23 +149,39 @@ function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
                     id="agreeToPaymentTerms"
                     checked={field.value}
                     onCheckedChange={field.onChange}
-                    className={errors.agreeToPaymentTerms ? 'border-red-500' : ''}
+                    className={
+                      errors.agreeToPaymentTerms ? 'border-red-500' : ''
+                    }
                   />
                 )}
               />
               <Label htmlFor="agreeToPaymentTerms" className="text-sm">
-                I agree to the <a href="/payment-terms" className="text-blue-600 hover:underline">Payment Terms</a> and <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a> *
+                I agree to the{' '}
+                <a
+                  href="/payment-terms"
+                  className="text-blue-600 hover:underline"
+                >
+                  Payment Terms
+                </a>{' '}
+                and{' '}
+                <a href="/privacy" className="text-blue-600 hover:underline">
+                  Privacy Policy
+                </a>{' '}
+                *
               </Label>
             </div>
             {errors.agreeToPaymentTerms && (
-              <p className="text-sm text-red-500">{errors.agreeToPaymentTerms.message}</p>
+              <p className="text-sm text-red-500">
+                {errors.agreeToPaymentTerms.message}
+              </p>
             )}
           </div>
 
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Your payment method is handled securely by Stripe. Parker Flight never stores your card details.
+              Your payment method is handled securely by Stripe. Parker Flight
+              never stores your card details.
             </AlertDescription>
           </Alert>
 
@@ -165,11 +195,8 @@ function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
             >
               Back
             </Button>
-            
-            <Button
-              type="submit"
-              disabled={isLoading || !stripe || !elements}
-            >
+
+            <Button type="submit" disabled={isLoading || !stripe || !elements}>
               {isLoading ? 'Processing...' : 'Next: Review & Confirm'}
             </Button>
           </div>
@@ -188,4 +215,3 @@ export default function StepPaymentWrapper(props: StepPaymentProps) {
     </Elements>
   );
 }
-

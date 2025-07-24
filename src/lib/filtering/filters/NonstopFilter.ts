@@ -1,6 +1,6 @@
 /**
  * Nonstop Filter Implementation
- * 
+ *
  * This is a CORE APPLICATION FILTER that ensures ALL flights are non-stop.
  * This is NOT a user preference - it's a business requirement of the app.
  */
@@ -9,7 +9,7 @@ import {
   FlightOffer,
   FlightFilter,
   FilterContext,
-  ValidationResult
+  ValidationResult,
 } from '../core/types';
 
 export class NonstopFilter implements FlightFilter {
@@ -18,21 +18,25 @@ export class NonstopFilter implements FlightFilter {
 
   apply(offers: FlightOffer[], context: FilterContext): FlightOffer[] {
     console.log(`[${this.name}] Starting nonstop filtering`);
-    
+
     // Check if nonstop is required in this context
     if (!context.nonstop && !context.userPrefs.nonstopRequired) {
       console.log(`[${this.name}] Nonstop not required, skipping filter`);
       return offers;
     }
-    
-    console.log(`[${this.name}] Filtering for nonstop flights only (app requirement)`);
+
+    console.log(
+      `[${this.name}] Filtering for nonstop flights only (app requirement)`
+    );
 
     const nonstopOffers = offers.filter(offer => {
       return this.isNonstopOffer(offer);
     });
 
     const removedCount = offers.length - nonstopOffers.length;
-    console.log(`[${this.name}] Nonstop filtering complete: ${offers.length} → ${nonstopOffers.length} offers (removed ${removedCount} with stops)`);
+    console.log(
+      `[${this.name}] Nonstop filtering complete: ${offers.length} → ${nonstopOffers.length} offers (removed ${removedCount} with stops)`
+    );
 
     return nonstopOffers;
   }
@@ -48,22 +52,29 @@ export class NonstopFilter implements FlightFilter {
         errors.push('Maximum layover time cannot be negative');
       }
       if (maxLayoverMinutes < 30 && maxLayoverMinutes > 0) {
-        warnings.push('Very short layover time may result in unrealistic connections');
+        warnings.push(
+          'Very short layover time may result in unrealistic connections'
+        );
       }
-      if (maxLayoverMinutes > 1440) { // 24 hours
-        warnings.push('Very long layover time may include overnight connections');
+      if (maxLayoverMinutes > 1440) {
+        // 24 hours
+        warnings.push(
+          'Very long layover time may include overnight connections'
+        );
       }
     }
 
     // Validate consistency
     if (context.userPrefs.nonstopRequired && maxLayoverMinutes !== undefined) {
-      warnings.push('Maximum layover time setting is ignored when nonstop is required');
+      warnings.push(
+        'Maximum layover time setting is ignored when nonstop is required'
+      );
     }
 
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -85,7 +96,9 @@ export class NonstopFilter implements FlightFilter {
     // Check each itinerary for stops
     for (const itinerary of offer.itineraries) {
       if (!this.isNonstopItinerary(itinerary)) {
-        console.log(`[${this.name}] Offer ${offer.id}: Contains itinerary with stops`);
+        console.log(
+          `[${this.name}] Offer ${offer.id}: Contains itinerary with stops`
+        );
         return false;
       }
     }
@@ -96,7 +109,9 @@ export class NonstopFilter implements FlightFilter {
   /**
    * Check if an individual itinerary is nonstop
    */
-private isNonstopItinerary(itinerary: { segments: { numberOfStops: number }[] }): boolean {
+  private isNonstopItinerary(itinerary: {
+    segments: { numberOfStops: number }[];
+  }): boolean {
     if (!itinerary.segments || itinerary.segments.length === 0) {
       return false;
     }
@@ -115,9 +130,12 @@ private isNonstopItinerary(itinerary: { segments: { numberOfStops: number }[] })
   /**
    * Alternative filtering method that considers layover time limits
    */
-  applyWithLayoverLimits(offers: FlightOffer[], context: FilterContext): FlightOffer[] {
+  applyWithLayoverLimits(
+    offers: FlightOffer[],
+    context: FilterContext
+  ): FlightOffer[] {
     console.log(`[${this.name}] Starting layover-aware filtering`);
-    
+
     const userPrefs = context.userPrefs;
     const maxLayoverMinutes = userPrefs.maxLayoverMinutes;
 
@@ -128,18 +146,24 @@ private isNonstopItinerary(itinerary: { segments: { numberOfStops: number }[] })
 
     // If no layover limit specified, return all offers
     if (maxLayoverMinutes === undefined) {
-      console.log(`[${this.name}] No layover limits specified, returning all offers`);
+      console.log(
+        `[${this.name}] No layover limits specified, returning all offers`
+      );
       return offers;
     }
 
-    console.log(`[${this.name}] Filtering for flights with layovers ≤ ${maxLayoverMinutes} minutes`);
+    console.log(
+      `[${this.name}] Filtering for flights with layovers ≤ ${maxLayoverMinutes} minutes`
+    );
 
     const filteredOffers = offers.filter(offer => {
       return this.meetsLayoverRequirements(offer, maxLayoverMinutes);
     });
 
     const removedCount = offers.length - filteredOffers.length;
-    console.log(`[${this.name}] Layover filtering complete: ${offers.length} → ${filteredOffers.length} offers (removed ${removedCount} with long layovers)`);
+    console.log(
+      `[${this.name}] Layover filtering complete: ${offers.length} → ${filteredOffers.length} offers (removed ${removedCount} with long layovers)`
+    );
 
     return filteredOffers;
   }
@@ -147,14 +171,19 @@ private isNonstopItinerary(itinerary: { segments: { numberOfStops: number }[] })
   /**
    * Check if an offer meets layover time requirements
    */
-  private meetsLayoverRequirements(offer: FlightOffer, maxLayoverMinutes: number): boolean {
+  private meetsLayoverRequirements(
+    offer: FlightOffer,
+    maxLayoverMinutes: number
+  ): boolean {
     if (!offer.itineraries) {
       return true; // No itinerary data to analyze
     }
 
     for (const itinerary of offer.itineraries) {
       if (!this.itineraryMeetsLayoverLimit(itinerary, maxLayoverMinutes)) {
-        console.log(`[${this.name}] Offer ${offer.id}: Contains itinerary exceeding layover limit`);
+        console.log(
+          `[${this.name}] Offer ${offer.id}: Contains itinerary exceeding layover limit`
+        );
         return false;
       }
     }
@@ -165,7 +194,12 @@ private isNonstopItinerary(itinerary: { segments: { numberOfStops: number }[] })
   /**
    * Check if an itinerary meets layover time limits
    */
-private itineraryMeetsLayoverLimit(itinerary: { segments: { arrival: { at: string }, departure: { at: string } }[] }, maxLayoverMinutes: number): boolean {
+  private itineraryMeetsLayoverLimit(
+    itinerary: {
+      segments: { arrival: { at: string }; departure: { at: string } }[];
+    },
+    maxLayoverMinutes: number
+  ): boolean {
     if (!itinerary.segments || itinerary.segments.length <= 1) {
       return true; // No connections, so no layover concerns
     }
@@ -178,16 +212,21 @@ private itineraryMeetsLayoverLimit(itinerary: { segments: { arrival: { at: strin
       const arrivalTime = new Date(currentSegment.arrival.at);
       const departureTime = new Date(nextSegment.departure.at);
 
-      const layoverMinutes = (departureTime.getTime() - arrivalTime.getTime()) / (1000 * 60);
+      const layoverMinutes =
+        (departureTime.getTime() - arrivalTime.getTime()) / (1000 * 60);
 
       if (layoverMinutes > maxLayoverMinutes) {
-        console.log(`[${this.name}] Layover exceeds limit: ${layoverMinutes} > ${maxLayoverMinutes} minutes`);
+        console.log(
+          `[${this.name}] Layover exceeds limit: ${layoverMinutes} > ${maxLayoverMinutes} minutes`
+        );
         return false;
       }
 
       // Also check for unrealistically short layovers
       if (layoverMinutes < 30) {
-        console.log(`[${this.name}] Warning: Very short layover detected: ${layoverMinutes} minutes`);
+        console.log(
+          `[${this.name}] Warning: Very short layover detected: ${layoverMinutes} minutes`
+        );
       }
     }
 
@@ -212,7 +251,7 @@ private itineraryMeetsLayoverLimit(itinerary: { segments: { arrival: { at: strin
     };
   } {
     const removedCount = originalOffers.length - filteredOffers.length;
-    
+
     let filterType: 'nonstop-only' | 'layover-limit' | 'none';
     if (nonstopRequired) {
       filterType = 'nonstop-only';
@@ -226,7 +265,7 @@ private itineraryMeetsLayoverLimit(itinerary: { segments: { arrival: { at: strin
     const stopDistribution = {
       nonstop: 0,
       oneStop: 0,
-      twoPlus: 0
+      twoPlus: 0,
     };
 
     filteredOffers.forEach(offer => {
@@ -243,8 +282,7 @@ private itineraryMeetsLayoverLimit(itinerary: { segments: { arrival: { at: strin
     return {
       removedCount,
       filterType,
-      stopDistribution
+      stopDistribution,
     };
   }
-
 }

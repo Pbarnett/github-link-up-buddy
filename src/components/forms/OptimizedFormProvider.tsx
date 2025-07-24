@@ -2,7 +2,7 @@ import * as React from 'react';
 
 /**
  * Optimized FormProvider Component
- * 
+ *
  * Wraps React Hook Form's FormProvider with performance optimizations
  * to prevent unnecessary re-renders in complex form applications.
  */
@@ -10,7 +10,6 @@ import * as React from 'react';
 type ReactNode = React.ReactNode;
 type FC<T = {}> = React.FC<T>;
 type _Component<P = {}, S = {}> = React.Component<P, S>;
-
 
 interface OptimizedFormProviderProps {
   children: ReactNode;
@@ -25,17 +24,18 @@ interface OptimizedFormProviderProps {
 export const OptimizedFormProvider: FC<OptimizedFormProviderProps> = memo(
   ({ children, form, className }) => {
     // Memoize form methods to prevent recreation on each render
-    const memoizedFormMethods = useMemo(() => ({
-      ...form,
-      // Extract commonly used form state to optimize subscriptions
-      formState: form.formState
-    }), [form]);
+    const memoizedFormMethods = useMemo(
+      () => ({
+        ...form,
+        // Extract commonly used form state to optimize subscriptions
+        formState: form.formState,
+      }),
+      [form]
+    );
 
     return (
       <FormProvider {...memoizedFormMethods}>
-        <div className={className}>
-          {children}
-        </div>
+        <div className={className}>{children}</div>
       </FormProvider>
     );
   },
@@ -44,14 +44,14 @@ export const OptimizedFormProvider: FC<OptimizedFormProviderProps> = memo(
     // Only re-render if form state has actually changed
     const prevFormState = prevProps.form.formState;
     const nextFormState = nextProps.form.formState;
-    
+
     // Compare key form state properties
-    const hasFormStateChanged = (
+    const hasFormStateChanged =
       prevFormState.isDirty !== nextFormState.isDirty ||
       prevFormState.isValid !== nextFormState.isValid ||
       prevFormState.isSubmitting !== nextFormState.isSubmitting ||
-      JSON.stringify(prevFormState.errors) !== JSON.stringify(nextFormState.errors)
-    );
+      JSON.stringify(prevFormState.errors) !==
+        JSON.stringify(nextFormState.errors);
 
     // Re-render if form state changed or children changed
     return !hasFormStateChanged && prevProps.children === nextProps.children;
@@ -81,7 +81,7 @@ export const OptimizedFormSection: FC<OptimizedFormSectionProps> = memo(
     const { isDirty, isValid, isSubmitting, errors } = formState;
 
     return (
-      <div 
+      <div
         className={className}
         data-form-dirty={isDirty}
         data-form-valid={isValid}
@@ -103,7 +103,8 @@ export const OptimizedFormSection: FC<OptimizedFormSectionProps> = memo(
       prevProps.formState.isDirty === nextProps.formState.isDirty &&
       prevProps.formState.isValid === nextProps.formState.isValid &&
       prevProps.formState.isSubmitting === nextProps.formState.isSubmitting &&
-      JSON.stringify(prevProps.formState.errors) === JSON.stringify(nextProps.formState.errors) &&
+      JSON.stringify(prevProps.formState.errors) ===
+        JSON.stringify(nextProps.formState.errors) &&
       prevProps.children === nextProps.children
     );
   }

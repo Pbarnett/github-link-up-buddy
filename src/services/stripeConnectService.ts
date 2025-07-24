@@ -1,5 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-import { generateIdempotencyKey, exponentialBackoff, rateLimiter } from '../../packages/shared/stripe';
+import {
+  generateIdempotencyKey,
+  exponentialBackoff,
+  rateLimiter,
+} from '../../packages/shared/stripe';
 import { buildPaymentMetadata } from './stripeService';
 
 const supabase = createClient(
@@ -114,24 +118,27 @@ export class StripeConnectService {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('create-connect-account', {
-        body: {
-          type: params.type,
-          country: params.country,
-          email: params.email,
-          business_type: params.business_type || 'company',
-          capabilities: params.capabilities || {
-            card_payments: { requested: true },
-            transfers: { requested: true }
-          },
-          business_profile: params.business_profile,
-          metadata: {
-            created_via: 'parker_flight_marketplace',
-            account_type: params.type,
-            ...params.metadata
+      const { data, error } = await supabase.functions.invoke(
+        'create-connect-account',
+        {
+          body: {
+            type: params.type,
+            country: params.country,
+            email: params.email,
+            business_type: params.business_type || 'company',
+            capabilities: params.capabilities || {
+              card_payments: { requested: true },
+              transfers: { requested: true },
+            },
+            business_profile: params.business_profile,
+            metadata: {
+              created_via: 'parker_flight_marketplace',
+              account_type: params.type,
+              ...params.metadata,
+            },
           },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -152,12 +159,15 @@ export class StripeConnectService {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('update-connect-account', {
-        body: {
-          account_id: accountId,
-          ...updates,
+      const { data, error } = await supabase.functions.invoke(
+        'update-connect-account',
+        {
+          body: {
+            account_id: accountId,
+            ...updates,
+          },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -185,14 +195,17 @@ export class StripeConnectService {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('create-account-link', {
-        body: {
-          account: accountId,
-          refresh_url: options.refresh_url,
-          return_url: options.return_url,
-          type: options.type || 'account_onboarding',
+      const { data, error } = await supabase.functions.invoke(
+        'create-account-link',
+        {
+          body: {
+            account: accountId,
+            refresh_url: options.refresh_url,
+            return_url: options.return_url,
+            type: options.type || 'account_onboarding',
+          },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -213,11 +226,14 @@ export class StripeConnectService {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('create-login-link', {
-        body: {
-          account: accountId,
+      const { data, error } = await supabase.functions.invoke(
+        'create-login-link',
+        {
+          body: {
+            account: accountId,
+          },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -242,31 +258,38 @@ export class StripeConnectService {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('create-marketplace-payment', {
-        body: {
-          amount: Math.round(params.amount * 100), // Convert to cents
-          currency: params.currency.toLowerCase(),
-          customer: params.customer,
-          payment_method: params.payment_method,
-          application_fee_amount: params.application_fee_amount ? 
-            Math.round(params.application_fee_amount * 100) : undefined,
-          on_behalf_of: params.on_behalf_of,
-          transfer_data: params.transfer_data ? {
-            destination: params.transfer_data.destination,
-            amount: params.transfer_data.amount ? 
-              Math.round(params.transfer_data.amount * 100) : undefined
-          } : undefined,
-          metadata: buildPaymentMetadata({
-            userId: params.customer || 'marketplace',
-            bookingType: 'marketplace',
-            additionalData: {
-              marketplace_payment: 'true',
-              destination_account: params.transfer_data?.destination || '',
-              ...params.metadata
-            }
-          }),
+      const { data, error } = await supabase.functions.invoke(
+        'create-marketplace-payment',
+        {
+          body: {
+            amount: Math.round(params.amount * 100), // Convert to cents
+            currency: params.currency.toLowerCase(),
+            customer: params.customer,
+            payment_method: params.payment_method,
+            application_fee_amount: params.application_fee_amount
+              ? Math.round(params.application_fee_amount * 100)
+              : undefined,
+            on_behalf_of: params.on_behalf_of,
+            transfer_data: params.transfer_data
+              ? {
+                  destination: params.transfer_data.destination,
+                  amount: params.transfer_data.amount
+                    ? Math.round(params.transfer_data.amount * 100)
+                    : undefined,
+                }
+              : undefined,
+            metadata: buildPaymentMetadata({
+              userId: params.customer || 'marketplace',
+              bookingType: 'marketplace',
+              additionalData: {
+                marketplace_payment: 'true',
+                destination_account: params.transfer_data?.destination || '',
+                ...params.metadata,
+              },
+            }),
+          },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -291,21 +314,24 @@ export class StripeConnectService {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('create-transfer', {
-        body: {
-          amount: Math.round(params.amount * 100), // Convert to cents
-          currency: params.currency.toLowerCase(),
-          destination: params.destination,
-          transfer_group: params.transfer_group,
-          description: params.description,
-          source_transaction: params.source_transaction,
-          metadata: {
-            transfer_type: 'marketplace_payout',
-            destination_account: params.destination,
-            ...params.metadata
+      const { data, error } = await supabase.functions.invoke(
+        'create-transfer',
+        {
+          body: {
+            amount: Math.round(params.amount * 100), // Convert to cents
+            currency: params.currency.toLowerCase(),
+            destination: params.destination,
+            transfer_group: params.transfer_group,
+            description: params.description,
+            source_transaction: params.source_transaction,
+            metadata: {
+              transfer_type: 'marketplace_payout',
+              destination_account: params.destination,
+              ...params.metadata,
+            },
           },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -330,17 +356,22 @@ export class StripeConnectService {
     await rateLimiter.waitForSlot();
 
     return exponentialBackoff(async () => {
-      const { data, error } = await supabase.functions.invoke('reverse-transfer', {
-        body: {
-          transfer_id: transferId,
-          amount: options.amount ? Math.round(options.amount * 100) : undefined,
-          description: options.description,
-          metadata: {
-            reversal_reason: 'marketplace_dispute',
-            ...options.metadata
+      const { data, error } = await supabase.functions.invoke(
+        'reverse-transfer',
+        {
+          body: {
+            transfer_id: transferId,
+            amount: options.amount
+              ? Math.round(options.amount * 100)
+              : undefined,
+            description: options.description,
+            metadata: {
+              reversal_reason: 'marketplace_dispute',
+              ...options.metadata,
+            },
           },
         }
-      });
+      );
 
       if (error) {
         throw error;
@@ -368,11 +399,14 @@ export class StripeConnectService {
   }> {
     await rateLimiter.waitForSlot();
 
-    const { data, error } = await supabase.functions.invoke('get-account-balance', {
-      body: {
-        account_id: accountId,
+    const { data, error } = await supabase.functions.invoke(
+      'get-account-balance',
+      {
+        body: {
+          account_id: accountId,
+        },
       }
-    });
+    );
 
     if (error) {
       throw error;
@@ -413,7 +447,7 @@ export class StripeConnectService {
         starting_after: options.starting_after,
         ending_before: options.ending_before,
         status: options.status,
-      }
+      },
     });
 
     if (error) {
@@ -438,27 +472,27 @@ export class StripeConnectService {
       case 'account.updated':
         await this.handleAccountUpdated(event.data.object, event.account);
         break;
-      
+
       case 'account.application.deauthorized':
         await this.handleAccountDeauthorized(event.data.object);
         break;
-      
+
       case 'transfer.created':
         await this.handleTransferCreated(event.data.object, event.account);
         break;
-      
+
       case 'transfer.reversed':
         await this.handleTransferReversed(event.data.object, event.account);
         break;
-      
+
       case 'payout.paid':
         await this.handlePayoutPaid(event.data.object, event.account);
         break;
-      
+
       case 'payout.failed':
         await this.handlePayoutFailed(event.data.object, event.account);
         break;
-      
+
       default:
         console.log(`Unhandled Connect webhook: ${event.type}`);
     }
@@ -467,17 +501,18 @@ export class StripeConnectService {
   /**
    * Handle Account Updated Webhook
    */
-  private async handleAccountUpdated(account: any, accountId?: string): Promise<void> {
-    const { error } = await supabase
-      .from('connect_accounts')
-      .upsert({
-        stripe_account_id: account.id,
-        charges_enabled: account.charges_enabled,
-        payouts_enabled: account.payouts_enabled,
-        details_submitted: account.details_submitted,
-        requirements: account.requirements,
-        updated_at: new Date().toISOString()
-      });
+  private async handleAccountUpdated(
+    account: any,
+    accountId?: string
+  ): Promise<void> {
+    const { error } = await supabase.from('connect_accounts').upsert({
+      stripe_account_id: account.id,
+      charges_enabled: account.charges_enabled,
+      payouts_enabled: account.payouts_enabled,
+      details_submitted: account.details_submitted,
+      requirements: account.requirements,
+      updated_at: new Date().toISOString(),
+    });
 
     if (error) {
       console.error('Failed to update Connect account:', error);
@@ -492,7 +527,7 @@ export class StripeConnectService {
       .from('connect_accounts')
       .update({
         status: 'deauthorized',
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('stripe_account_id', application.account);
 
@@ -504,19 +539,20 @@ export class StripeConnectService {
   /**
    * Handle Transfer Created Webhook
    */
-  private async handleTransferCreated(transfer: any, accountId?: string): Promise<void> {
-    const { error } = await supabase
-      .from('marketplace_transfers')
-      .insert({
-        stripe_transfer_id: transfer.id,
-        amount: transfer.amount,
-        currency: transfer.currency,
-        destination_account: transfer.destination,
-        source_transaction: transfer.source_transaction,
-        transfer_group: transfer.transfer_group,
-        status: 'created',
-        created_at: new Date(transfer.created * 1000).toISOString()
-      });
+  private async handleTransferCreated(
+    transfer: any,
+    accountId?: string
+  ): Promise<void> {
+    const { error } = await supabase.from('marketplace_transfers').insert({
+      stripe_transfer_id: transfer.id,
+      amount: transfer.amount,
+      currency: transfer.currency,
+      destination_account: transfer.destination,
+      source_transaction: transfer.source_transaction,
+      transfer_group: transfer.transfer_group,
+      status: 'created',
+      created_at: new Date(transfer.created * 1000).toISOString(),
+    });
 
     if (error) {
       console.error('Failed to record transfer:', error);
@@ -526,13 +562,16 @@ export class StripeConnectService {
   /**
    * Handle Transfer Reversed Webhook
    */
-  private async handleTransferReversed(reversal: any, accountId?: string): Promise<void> {
+  private async handleTransferReversed(
+    reversal: any,
+    accountId?: string
+  ): Promise<void> {
     const { error } = await supabase
       .from('marketplace_transfers')
       .update({
         status: 'reversed',
         reversal_amount: reversal.amount,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('stripe_transfer_id', reversal.transfer);
 
@@ -544,18 +583,19 @@ export class StripeConnectService {
   /**
    * Handle Payout Paid Webhook
    */
-  private async handlePayoutPaid(payout: any, accountId?: string): Promise<void> {
-    const { error } = await supabase
-      .from('connect_payouts')
-      .upsert({
-        stripe_payout_id: payout.id,
-        stripe_account_id: accountId,
-        amount: payout.amount,
-        currency: payout.currency,
-        arrival_date: new Date(payout.arrival_date * 1000).toISOString(),
-        status: 'paid',
-        updated_at: new Date().toISOString()
-      });
+  private async handlePayoutPaid(
+    payout: any,
+    accountId?: string
+  ): Promise<void> {
+    const { error } = await supabase.from('connect_payouts').upsert({
+      stripe_payout_id: payout.id,
+      stripe_account_id: accountId,
+      amount: payout.amount,
+      currency: payout.currency,
+      arrival_date: new Date(payout.arrival_date * 1000).toISOString(),
+      status: 'paid',
+      updated_at: new Date().toISOString(),
+    });
 
     if (error) {
       console.error('Failed to update payout status:', error);
@@ -565,14 +605,17 @@ export class StripeConnectService {
   /**
    * Handle Payout Failed Webhook
    */
-  private async handlePayoutFailed(payout: any, accountId?: string): Promise<void> {
+  private async handlePayoutFailed(
+    payout: any,
+    accountId?: string
+  ): Promise<void> {
     const { error } = await supabase
       .from('connect_payouts')
       .update({
         status: 'failed',
         failure_code: payout.failure_code,
         failure_message: payout.failure_message,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('stripe_payout_id', payout.id);
 
@@ -600,9 +643,12 @@ export class StripeConnectService {
       fee_revenue: number;
     }>;
   }> {
-    const { data, error } = await supabase.functions.invoke('get-marketplace-analytics', {
-      body: params
-    });
+    const { data, error } = await supabase.functions.invoke(
+      'get-marketplace-analytics',
+      {
+        body: params,
+      }
+    );
 
     if (error) {
       throw error;
@@ -625,23 +671,23 @@ export class StripeConnectService {
       standard: {
         card: 0.029, // 2.9%
         bank_transfer: 0.008, // 0.8%
-        wallet: 0.025 // 2.5%
+        wallet: 0.025, // 2.5%
       },
       premium: {
         card: 0.024, // 2.4%
         bank_transfer: 0.005, // 0.5%
-        wallet: 0.02 // 2.0%
+        wallet: 0.02, // 2.0%
       },
       enterprise: {
         card: 0.019, // 1.9%
         bank_transfer: 0.003, // 0.3%
-        wallet: 0.015 // 1.5%
-      }
+        wallet: 0.015, // 1.5%
+      },
     };
 
     const feeRate = feeStructure[partnerTier][paymentMethod];
     const calculatedFee = Math.round(amount * feeRate);
-    
+
     // Minimum fee of $0.30 (30 cents)
     return Math.max(calculatedFee, 30);
   }
@@ -651,23 +697,28 @@ export class StripeConnectService {
 export const connectService = StripeConnectService.getInstance();
 
 // Export utility functions
-export const formatTransferAmount = (amount: number, currency: string): string => {
+export const formatTransferAmount = (
+  amount: number,
+  currency: string
+): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency.toUpperCase(),
   }).format(amount / 100); // Convert from cents
 };
 
-export const getTransferStatus = (status: string): {
+export const getTransferStatus = (
+  status: string
+): {
   label: string;
   color: 'green' | 'yellow' | 'red' | 'blue';
 } => {
   const statusMap = {
-    'paid': { label: 'Completed', color: 'green' as const },
-    'pending': { label: 'Processing', color: 'yellow' as const },
-    'in_transit': { label: 'In Transit', color: 'blue' as const },
-    'canceled': { label: 'Cancelled', color: 'red' as const },
-    'failed': { label: 'Failed', color: 'red' as const }
+    paid: { label: 'Completed', color: 'green' as const },
+    pending: { label: 'Processing', color: 'yellow' as const },
+    in_transit: { label: 'In Transit', color: 'blue' as const },
+    canceled: { label: 'Cancelled', color: 'red' as const },
+    failed: { label: 'Failed', color: 'red' as const },
   };
 
   return statusMap[status] || { label: 'Unknown', color: 'red' as const };

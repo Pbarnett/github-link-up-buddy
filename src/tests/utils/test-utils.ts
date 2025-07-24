@@ -1,4 +1,4 @@
-import { vi, type MockedFunction, expect } from 'vitest'
+import { vi, type MockedFunction, expect } from 'vitest';
 
 /**
  * Modern Vitest utilities for enhanced testing experience (non-JSX)
@@ -9,35 +9,37 @@ export const mockUtils = {
   /**
    * Create a deep mock with Vitest's latest features
    */
-  createDeepMock: <T extends Record<string, any>>(obj: T): MockedFunction<T> => {
-    const mock = vi.fn() as MockedFunction<T>
+  createDeepMock: <T extends Record<string, any>>(
+    obj: T
+  ): MockedFunction<T> => {
+    const mock = vi.fn() as MockedFunction<T>;
     Object.keys(obj).forEach(key => {
       if (typeof obj[key] === 'function') {
-        mock[key] = vi.fn(obj[key])
+        mock[key] = vi.fn(obj[key]);
       } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-        mock[key] = mockUtils.createDeepMock(obj[key])
+        mock[key] = mockUtils.createDeepMock(obj[key]);
       } else {
-        mock[key] = obj[key]
+        mock[key] = obj[key];
       }
-    })
-    return mock
+    });
+    return mock;
   },
 
   /**
    * Create a partial mock with type safety
    */
   createPartialMock: <T>(overrides: Partial<T> = {}): T => {
-    return overrides as T
+    return overrides as T;
   },
 
   /**
    * Mock a module with automatic cleanup
    */
   mockModuleWithCleanup: (moduleName: string, mockImplementation: any) => {
-    vi.doMock(moduleName, () => mockImplementation)
-    return () => vi.doUnmock(moduleName)
-  }
-}
+    vi.doMock(moduleName, () => mockImplementation);
+    return () => vi.doUnmock(moduleName);
+  },
+};
 
 // Modern async utilities
 export const asyncUtils = {
@@ -46,30 +48,33 @@ export const asyncUtils = {
    */
   waitForPromises: (timeout = 1000): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => reject(new Error('Timeout waiting for promises')), timeout)
+      const timeoutId = setTimeout(
+        () => reject(new Error('Timeout waiting for promises')),
+        timeout
+      );
       queueMicrotask(() => {
-        clearTimeout(timeoutId)
-        resolve()
-      })
-    })
+        clearTimeout(timeoutId);
+        resolve();
+      });
+    });
   },
 
   /**
    * Advanced timer utilities
    */
   advanceTimers: async (ms: number) => {
-    vi.advanceTimersByTime(ms)
-    await asyncUtils.waitForPromises()
+    vi.advanceTimersByTime(ms);
+    await asyncUtils.waitForPromises();
   },
 
   /**
    * Run all timers and wait for promises
    */
   runAllTimersAndWait: async () => {
-    vi.runAllTimers()
-    await asyncUtils.waitForPromises()
-  }
-}
+    vi.runAllTimers();
+    await asyncUtils.waitForPromises();
+  },
+};
 
 // Modern assertion utilities
 export const assertionUtils = {
@@ -80,13 +85,13 @@ export const assertionUtils = {
     mockFn: MockedFunction<(...args: T) => any>,
     expectedArgs: Partial<T>
   ) => {
-    const calls = mockFn.mock.calls
-    const matchingCall = calls.find(call => 
-      Object.keys(expectedArgs).every(key => 
-        call[key as any] === expectedArgs[key as any]
+    const calls = mockFn.mock.calls;
+    const matchingCall = calls.find(call =>
+      Object.keys(expectedArgs).every(
+        key => call[key as any] === expectedArgs[key as any]
       )
-    )
-    return !!matchingCall
+    );
+    return !!matchingCall;
   },
 
   /**
@@ -97,24 +102,26 @@ export const assertionUtils = {
     expected: { resolves?: T; rejects?: any }
   ) => {
     if (expected.resolves !== undefined) {
-      await expect(promise).resolves.toEqual(expected.resolves)
+      await expect(promise).resolves.toEqual(expected.resolves);
     }
     if (expected.rejects !== undefined) {
-      await expect(promise).rejects.toEqual(expected.rejects)
+      await expect(promise).rejects.toEqual(expected.rejects);
     }
-  }
-}
+  },
+};
 
 // Performance testing utilities
 export const performanceUtils = {
   /**
    * Measure execution time of a function
    */
-  measureTime: async <T>(fn: () => T | Promise<T>): Promise<{ result: T; duration: number }> => {
-    const start = performance.now()
-    const result = await fn()
-    const duration = performance.now() - start
-    return { result, duration }
+  measureTime: async <T>(
+    fn: () => T | Promise<T>
+  ): Promise<{ result: T; duration: number }> => {
+    const start = performance.now();
+    const result = await fn();
+    const duration = performance.now() - start;
+    return { result, duration };
   },
 
   /**
@@ -124,11 +131,11 @@ export const performanceUtils = {
     fn: () => T | Promise<T>,
     maxDuration: number
   ): Promise<T> => {
-    const { result, duration } = await performanceUtils.measureTime(fn)
-    expect(duration).toBeLessThan(maxDuration)
-    return result
-  }
-}
+    const { result, duration } = await performanceUtils.measureTime(fn);
+    expect(duration).toBeLessThan(maxDuration);
+    return result;
+  },
+};
 
 // Enhanced cleanup utilities
 export const cleanupUtils = {
@@ -137,25 +144,25 @@ export const cleanupUtils = {
    */
   cleanupTest: () => {
     // Clear all mocks
-    vi.clearAllMocks()
-    
+    vi.clearAllMocks();
+
     // Reset all modules
-    vi.resetAllMocks()
-    
+    vi.resetAllMocks();
+
     // Clear timers
-    vi.clearAllTimers()
-    vi.useRealTimers()
-    
+    vi.clearAllTimers();
+    vi.useRealTimers();
+
     // Clear storage
     if (typeof localStorage !== 'undefined') {
-      localStorage.clear()
+      localStorage.clear();
     }
     if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.clear()
+      sessionStorage.clear();
     }
-    
+
     // Unstub globals
-    vi.unstubAllGlobals()
+    vi.unstubAllGlobals();
   },
 
   /**
@@ -163,10 +170,10 @@ export const cleanupUtils = {
    */
   setupAutoCleanup: () => {
     afterEach(() => {
-      cleanupUtils.cleanupTest()
-    })
-  }
-}
+      cleanupUtils.cleanupTest();
+    });
+  },
+};
 
 // Modern snapshot utilities
 export const snapshotUtils = {
@@ -174,19 +181,23 @@ export const snapshotUtils = {
    * Create inline snapshots with better formatting
    */
   expectInlineSnapshot: (value: any) => {
-    expect(value).toMatchInlineSnapshot()
+    expect(value).toMatchInlineSnapshot();
   },
 
   /**
    * Create custom snapshot serializers
    */
-  createCustomSerializer: (name: string, test: (val: any) => boolean, serialize: (val: any) => string) => {
+  createCustomSerializer: (
+    name: string,
+    test: (val: any) => boolean,
+    serialize: (val: any) => string
+  ) => {
     expect.addSnapshotSerializer({
       test,
-      serialize: (val, config, indentation, depth) => serialize(val)
-    })
-  }
-}
+      serialize: (val, config, indentation, depth) => serialize(val),
+    });
+  },
+};
 
 // Export all utilities as a single object for easy importing
 export const vitestUtils = {
@@ -195,7 +206,7 @@ export const vitestUtils = {
   assert: assertionUtils,
   performance: performanceUtils,
   cleanup: cleanupUtils,
-  snapshot: snapshotUtils
-}
+  snapshot: snapshotUtils,
+};
 
-export default vitestUtils
+export default vitestUtils;

@@ -6,8 +6,8 @@
  */
 
 import { test, expect, Page } from '@playwright/test';
-import { test as extendedTest } from '../fixtures/extendedTest';
 import { faker } from '@faker-js/faker';
+import { test as extendedTest } from '../fixtures/extendedTest';
 
 // Test configuration
 const TEST_BASE_URL = process.env.TEST_URL || 'http://localhost:3000';

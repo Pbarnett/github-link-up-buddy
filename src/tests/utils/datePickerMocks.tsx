@@ -1,10 +1,15 @@
-
 // Test utilities for mocking react-day-picker components
 
 // Mock Calendar component that allows easy date setting
 import * as React from 'react';
 
-export const MockCalendar = ({ onSelect }: { selected?: Date; onSelect?: (date: Date) => void; [key: string]: unknown }) => {
+export const MockCalendar = ({
+  onSelect,
+}: {
+  selected?: Date;
+  onSelect?: (date: Date) => void;
+  [key: string]: unknown;
+}) => {
   const handleDateClick = (date: Date) => {
     if (onSelect) {
       onSelect(date);
@@ -20,7 +25,7 @@ export const MockCalendar = ({ onSelect }: { selected?: Date; onSelect?: (date: 
 
   return (
     <div data-testid="mock-calendar" role="grid">
-      <button 
+      <button
         type="button"
         role="button"
         onClick={() => handleDateClick(tomorrow)}
@@ -28,7 +33,7 @@ export const MockCalendar = ({ onSelect }: { selected?: Date; onSelect?: (date: 
       >
         {tomorrow.getDate()}
       </button>
-      <button 
+      <button
         type="button"
         role="button"
         onClick={() => handleDateClick(nextWeek)}
@@ -41,7 +46,11 @@ export const MockCalendar = ({ onSelect }: { selected?: Date; onSelect?: (date: 
 };
 
 // Mock DateRangeField that uses simple inputs instead of complex UI
-export const MockDateRangeField = ({ control }: { control: { _formValues: Record<string, unknown> } }) => {
+export const MockDateRangeField = ({
+  control,
+}: {
+  control: { _formValues: Record<string, unknown> };
+}) => {
   return (
     <div data-testid="mock-date-range-field">
       <label htmlFor="earliestDeparture">Earliest Departure</label>
@@ -50,20 +59,20 @@ export const MockDateRangeField = ({ control }: { control: { _formValues: Record
         id="earliestDeparture"
         name="earliestDeparture"
         data-testid="earliest-departure-input"
-        onChange={(e) => {
+        onChange={e => {
           const date = new Date((e.target as HTMLInputElement).value);
           // Trigger form field change
           control._formValues.earliestDeparture = date;
         }}
       />
-      
+
       <label htmlFor="latestDeparture">Latest Departure</label>
       <input
         type="date"
         id="latestDeparture"
         name="latestDeparture"
         data-testid="latest-departure-input"
-        onChange={(e) => {
+        onChange={e => {
           const date = new Date((e.target as HTMLInputElement).value);
           // Trigger form field change
           control._formValues.latestDeparture = date;
@@ -74,7 +83,11 @@ export const MockDateRangeField = ({ control }: { control: { _formValues: Record
 };
 
 // Helper function to set form dates programmatically
-export const setFormDates = (form: { setValue: (key: string, value: Date) => void }, earliestDate: Date, latestDate: Date) => {
+export const setFormDates = (
+  form: { setValue: (key: string, value: Date) => void },
+  earliestDate: Date,
+  latestDate: Date
+) => {
   form.setValue('earliestDeparture', earliestDate);
   form.setValue('latestDeparture', latestDate);
 };
@@ -83,9 +96,9 @@ export const setFormDates = (form: { setValue: (key: string, value: Date) => voi
 export const createTestDateRange = (daysFromNow = 1, rangeDays = 7) => {
   const earliest = new Date();
   earliest.setDate(earliest.getDate() + daysFromNow);
-  
+
   const latest = new Date(earliest);
   latest.setDate(earliest.getDate() + rangeDays);
-  
+
   return { earliest, latest };
 };

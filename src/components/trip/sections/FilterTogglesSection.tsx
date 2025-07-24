@@ -1,10 +1,10 @@
-
-
-type FC<T = {}> = React.FC<T>;
-
+import * as React from 'react';
+import { Control, useController } from 'react-hook-form';
+import { Plane, Package } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import * as React from 'react';
+
+type FC<T = {}> = React.FC<T>;
 
 // Form data interface for filter toggles
 interface FilterToggleFormData {
@@ -19,18 +19,14 @@ interface FilterTogglesSectionProps {
 
 const FilterTogglesSection: FC<FilterTogglesSectionProps> = ({ control }) => {
   // Controller for nonstop_required switch
-  const {
-    field: nonstopField,
-  } = useController({
+  const { field: nonstopField } = useController({
     name: 'nonstop_required',
     control,
     defaultValue: true,
   });
 
   // Controller for baggage_included_required switch
-  const {
-    field: baggageField,
-  } = useController({
+  const { field: baggageField } = useController({
     name: 'baggage_included_required',
     control,
     defaultValue: false,
@@ -45,8 +41,8 @@ const FilterTogglesSection: FC<FilterTogglesSectionProps> = ({ control }) => {
             <Plane className="h-4 w-4 text-blue-600" />
           </div>
           <div className="space-y-0.5">
-            <Label 
-              htmlFor="nonstop-toggle" 
+            <Label
+              htmlFor="nonstop-toggle"
               className="text-base font-medium text-gray-900 cursor-pointer"
             >
               Nonstop flights only
@@ -73,8 +69,8 @@ const FilterTogglesSection: FC<FilterTogglesSectionProps> = ({ control }) => {
             <Package className="h-4 w-4 text-green-600" />
           </div>
           <div className="space-y-0.5">
-            <Label 
-              htmlFor="baggage-toggle" 
+            <Label
+              htmlFor="baggage-toggle"
               className="text-base font-medium text-gray-900 cursor-pointer"
             >
               Include carry-on + personal item

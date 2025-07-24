@@ -1,8 +1,7 @@
-
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { useCurrentUser } from "./useCurrentUser";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useCurrentUser } from './useCurrentUser';
 
 export interface Profile {
   id: string;
@@ -18,16 +17,16 @@ export function useProfile() {
   const queryClient = useQueryClient();
 
   const query = useQuery<Profile | null>({
-    queryKey: ["profile", userId],
+    queryKey: ['profile', userId],
     queryFn: async () => {
       if (!userId) return null;
-      
+
       const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data;
     },
@@ -35,12 +34,14 @@ export function useProfile() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (updates: Partial<Omit<Profile, "id" | "created_at" | "updated_at">>) => {
-      if (!userId) throw new Error("User not authenticated");
-      
+    mutationFn: async (
+      updates: Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>
+    ) => {
+      if (!userId) throw new Error('User not authenticated');
+
       // Use upsert to handle both insert and update cases
       const { data, error } = await supabase
-        .from("profiles")
+        .from('profiles')
         .upsert({
           id: userId,
           ...updates,
@@ -48,23 +49,23 @@ export function useProfile() {
         })
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+        title: 'Profile updated',
+        description: 'Your profile has been updated successfully.',
       });
     },
-    onError: (error) => {
-      console.error("Error updating profile:", error);
+    onError: error => {
+      console.error('Error updating profile:', error);
       toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to update profile. Please try again.',
+        variant: 'destructive',
       });
     },
   });

@@ -1,5 +1,3 @@
-
-
 /**
  * Step 1: Campaign Criteria
  * Define travel search criteria (destination, dates, budget)
@@ -7,31 +5,50 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import * as React from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { trackCampaignEvent } from '@/utils/monitoring';
-import * as React from 'react';
 
 // Validation schema for criteria step
 const criteriaSchema = z.object({
-  campaignName: z.string().min(3, 'Campaign name must be at least 3 characters'),
+  campaignName: z
+    .string()
+    .min(3, 'Campaign name must be at least 3 characters'),
   origin: z.string().min(3, 'Origin airport is required'),
   destination: z.string().min(3, 'Destination is required'),
   departureStart: z.string().min(1, 'Departure start date is required'),
   departureEnd: z.string().min(1, 'Departure end date is required'),
   returnStart: z.string().optional(),
   returnEnd: z.string().optional(),
-  maxPrice: z.number().min(50, 'Minimum budget is $50').max(10000, 'Maximum budget is $10,000'),
+  maxPrice: z
+    .number()
+    .min(50, 'Minimum budget is $50')
+    .max(10000, 'Maximum budget is $10,000'),
   currency: z.string().default('USD'),
   tripType: z.enum(['one_way', 'round_trip']),
   directFlightsOnly: z.boolean().default(false),
-  cabinClass: z.enum(['economy', 'premium_economy', 'business', 'first']).default('economy'),
+  cabinClass: z
+    .enum(['economy', 'premium_economy', 'business', 'first'])
+    .default('economy'),
   minDuration: z.number().min(1).max(365).optional(),
   maxDuration: z.number().min(1).max(365).optional(),
 });
@@ -45,12 +62,22 @@ interface StepCriteriaProps {
   isLoading?: boolean;
 }
 
-function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCriteriaProps) {
+function StepCriteria({
+  initialData,
+  onNext,
+  onBack,
+  isLoading = false,
+}: StepCriteriaProps) {
   const [tripType, setTripType] = useState<'one_way' | 'round_trip'>(
     initialData?.tripType || 'round_trip'
   );
 
-  const { control, handleSubmit, formState: { errors }, setValue } = useForm<CriteriaFormData>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useForm<CriteriaFormData>({
     resolver: zodResolver(criteriaSchema),
     defaultValues: {
       campaignName: initialData?.campaignName || '',
@@ -96,10 +123,11 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
           Campaign Criteria
         </CardTitle>
         <CardDescription>
-          Define your travel preferences and search criteria for automated booking
+          Define your travel preferences and search criteria for automated
+          booking
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           {/* Campaign Name */}
@@ -118,7 +146,9 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
               )}
             />
             {errors.campaignName && (
-              <p className="text-sm text-red-500">{errors.campaignName.message}</p>
+              <p className="text-sm text-red-500">
+                {errors.campaignName.message}
+              </p>
             )}
           </div>
 
@@ -129,7 +159,10 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
               name="tripType"
               control={control}
               render={({ field }) => (
-                <Select onValueChange={handleTripTypeChange} value={field.value}>
+                <Select
+                  onValueChange={handleTripTypeChange}
+                  value={field.value}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select trip type" />
                   </SelectTrigger>
@@ -184,7 +217,9 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                 )}
               />
               {errors.destination && (
-                <p className="text-sm text-red-500">{errors.destination.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.destination.message}
+                </p>
               )}
             </div>
           </div>
@@ -197,7 +232,9 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
             </Label>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="departureStart" className="text-sm">Earliest Departure</Label>
+                <Label htmlFor="departureStart" className="text-sm">
+                  Earliest Departure
+                </Label>
                 <Controller
                   name="departureStart"
                   control={control}
@@ -211,12 +248,16 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                   )}
                 />
                 {errors.departureStart && (
-                  <p className="text-sm text-red-500">{errors.departureStart.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.departureStart.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="departureEnd" className="text-sm">Latest Departure</Label>
+                <Label htmlFor="departureEnd" className="text-sm">
+                  Latest Departure
+                </Label>
                 <Controller
                   name="departureEnd"
                   control={control}
@@ -230,7 +271,9 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                   )}
                 />
                 {errors.departureEnd && (
-                  <p className="text-sm text-red-500">{errors.departureEnd.message}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.departureEnd.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -242,31 +285,27 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
               <Label>Return Date Range</Label>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="returnStart" className="text-sm">Earliest Return</Label>
+                  <Label htmlFor="returnStart" className="text-sm">
+                    Earliest Return
+                  </Label>
                   <Controller
                     name="returnStart"
                     control={control}
                     render={({ field }) => (
-                      <Input
-                        {...field}
-                        type="date"
-                        id="returnStart"
-                      />
+                      <Input {...field} type="date" id="returnStart" />
                     )}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="returnEnd" className="text-sm">Latest Return</Label>
+                  <Label htmlFor="returnEnd" className="text-sm">
+                    Latest Return
+                  </Label>
                   <Controller
                     name="returnEnd"
                     control={control}
                     render={({ field }) => (
-                      <Input
-                        {...field}
-                        type="date"
-                        id="returnEnd"
-                      />
+                      <Input {...field} type="date" id="returnEnd" />
                     )}
                   />
                 </div>
@@ -292,13 +331,19 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                     min="50"
                     max="10000"
                     step="50"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt((e.target as HTMLInputElement).value) || 0)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      field.onChange(
+                        parseInt((e.target as HTMLInputElement).value) || 0
+                      )
+                    }
                     className={errors.maxPrice ? 'border-red-500' : ''}
                   />
                 )}
               />
               {errors.maxPrice && (
-                <p className="text-sm text-red-500">{errors.maxPrice.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.maxPrice.message}
+                </p>
               )}
             </div>
 
@@ -314,7 +359,9 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="economy">Economy</SelectItem>
-                      <SelectItem value="premium_economy">Premium Economy</SelectItem>
+                      <SelectItem value="premium_economy">
+                        Premium Economy
+                      </SelectItem>
                       <SelectItem value="business">Business</SelectItem>
                       <SelectItem value="first">First Class</SelectItem>
                     </SelectContent>
@@ -324,7 +371,10 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="directFlightsOnly" className="flex items-center gap-2">
+              <Label
+                htmlFor="directFlightsOnly"
+                className="flex items-center gap-2"
+              >
                 <Controller
                   name="directFlightsOnly"
                   control={control}
@@ -356,7 +406,11 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                       id="minDuration"
                       min="1"
                       max="365"
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt((e.target as HTMLInputElement).value) || 0)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        field.onChange(
+                          parseInt((e.target as HTMLInputElement).value) || 0
+                        )
+                      }
                     />
                   )}
                 />
@@ -374,7 +428,11 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                       id="maxDuration"
                       min="1"
                       max="365"
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt((e.target as HTMLInputElement).value) || 0)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        field.onChange(
+                          parseInt((e.target as HTMLInputElement).value) || 0
+                        )
+                      }
                     />
                   )}
                 />
@@ -385,7 +443,8 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              We'll monitor flights matching these criteria and automatically book when we find deals within your budget.
+              We'll monitor flights matching these criteria and automatically
+              book when we find deals within your budget.
             </AlertDescription>
           </Alert>
 
@@ -399,11 +458,8 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
             >
               Back
             </Button>
-            
-            <Button
-              type="submit"
-              disabled={isLoading}
-            >
+
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Processing...' : 'Next: Traveler Info'}
             </Button>
           </div>

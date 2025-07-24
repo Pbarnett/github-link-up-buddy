@@ -1,6 +1,6 @@
 /**
  * Comprehensive Test Suite for New Filtering Architecture
- * 
+ *
  * This test suite validates the new filtering system and ensures it correctly
  * replaces the old filtering logic while maintaining backwards compatibility.
  */
@@ -23,77 +23,96 @@ const createMockAmadeusOffer = (
 ): FlightOffer => ({
   provider: 'Amadeus',
   id,
-  itineraries: isRoundTrip ? [
-    {
-      duration: 'PT6H30M',
-      segments: [{
-        departure: { iataCode: 'JFK', at: '2024-12-15T08:00:00Z' },
-        arrival: { iataCode: 'LAX', at: '2024-12-15T14:30:00Z' },
-        carrierCode: 'AA',
-        flightNumber: '123',
-        duration: 'PT6H30M',
-        numberOfStops: nonstop ? 0 : 1
-      }]
-    },
-    {
-      duration: 'PT6H30M',
-      segments: [{
-        departure: { iataCode: 'LAX', at: '2024-12-22T10:00:00Z' },
-        arrival: { iataCode: 'JFK', at: '2024-12-22T16:30:00Z' },
-        carrierCode: 'AA',
-        flightNumber: '456',
-        duration: 'PT6H30M',
-        numberOfStops: nonstop ? 0 : 1
-      }]
-    }
-  ] : [
-    {
-      duration: 'PT6H30M',
-      segments: [{
-        departure: { iataCode: 'JFK', at: '2024-12-15T08:00:00Z' },
-        arrival: { iataCode: 'LAX', at: '2024-12-15T14:30:00Z' },
-        carrierCode: 'AA',
-        flightNumber: '123',
-        duration: 'PT6H30M',
-        numberOfStops: nonstop ? 0 : 1
-      }]
-    }
-  ],
+  itineraries: isRoundTrip
+    ? [
+        {
+          duration: 'PT6H30M',
+          segments: [
+            {
+              departure: { iataCode: 'JFK', at: '2024-12-15T08:00:00Z' },
+              arrival: { iataCode: 'LAX', at: '2024-12-15T14:30:00Z' },
+              carrierCode: 'AA',
+              flightNumber: '123',
+              duration: 'PT6H30M',
+              numberOfStops: nonstop ? 0 : 1,
+            },
+          ],
+        },
+        {
+          duration: 'PT6H30M',
+          segments: [
+            {
+              departure: { iataCode: 'LAX', at: '2024-12-22T10:00:00Z' },
+              arrival: { iataCode: 'JFK', at: '2024-12-22T16:30:00Z' },
+              carrierCode: 'AA',
+              flightNumber: '456',
+              duration: 'PT6H30M',
+              numberOfStops: nonstop ? 0 : 1,
+            },
+          ],
+        },
+      ]
+    : [
+        {
+          duration: 'PT6H30M',
+          segments: [
+            {
+              departure: { iataCode: 'JFK', at: '2024-12-15T08:00:00Z' },
+              arrival: { iataCode: 'LAX', at: '2024-12-15T14:30:00Z' },
+              carrierCode: 'AA',
+              flightNumber: '123',
+              duration: 'PT6H30M',
+              numberOfStops: nonstop ? 0 : 1,
+            },
+          ],
+        },
+      ],
   totalBasePrice: price,
   currency,
   carryOnIncluded: true,
   totalPriceWithCarryOn: price,
   stopsCount: nonstop ? 0 : 1,
   validatingAirlines: ['AA'],
-  rawData: { oneWay: !isRoundTrip }
+  rawData: { oneWay: !isRoundTrip },
 });
-
 
 describe('FilterFactory', () => {
   describe('Pipeline Creation', () => {
     it('should create a standard pipeline with all filters', () => {
       const pipeline = FilterFactory.createStandardPipeline();
       const filters = pipeline.getFilters();
-      
-    expect(filters).toHaveLength(5);
-    expect(filters.map(f => f.name)).toEqual(['RoundTripFilter', 'BudgetFilter', 'CarryOnFilter', 'NonstopFilter', 'AirlineFilter']);
-    expect(filters.map(f => f.priority)).toEqual([5, 10, 12, 15, 20]);
+
+      expect(filters).toHaveLength(5);
+      expect(filters.map(f => f.name)).toEqual([
+        'RoundTripFilter',
+        'BudgetFilter',
+        'CarryOnFilter',
+        'NonstopFilter',
+        'AirlineFilter',
+      ]);
+      expect(filters.map(f => f.priority)).toEqual([5, 10, 12, 15, 20]);
     });
 
     it('should create a budget pipeline with limited filters', () => {
       const pipeline = FilterFactory.createBudgetPipeline();
       const filters = pipeline.getFilters();
-      
+
       expect(filters).toHaveLength(2);
-      expect(filters.map(f => f.name)).toEqual(['RoundTripFilter', 'BudgetFilter']);
+      expect(filters.map(f => f.name)).toEqual([
+        'RoundTripFilter',
+        'BudgetFilter',
+      ]);
     });
 
     it('should create a fast pipeline with essential filters only', () => {
       const pipeline = FilterFactory.createFastPipeline();
       const filters = pipeline.getFilters();
-      
+
       expect(filters).toHaveLength(2);
-      expect(filters.map(f => f.name)).toEqual(['RoundTripFilter', 'BudgetFilter']);
+      expect(filters.map(f => f.name)).toEqual([
+        'RoundTripFilter',
+        'BudgetFilter',
+      ]);
     });
   });
 
@@ -106,7 +125,7 @@ describe('FilterFactory', () => {
         destinationLocationCode: 'LAX',
         departureDate: '2024-12-15',
         returnDate: '2024-12-22',
-        nonstopRequired: true
+        nonstopRequired: true,
       };
 
       const context = FilterFactory.createFilterContext(searchParams);
@@ -124,7 +143,7 @@ describe('FilterFactory', () => {
         origin: 'JFK',
         destination: 'LAX',
         return_date: '2024-12-22',
-        nonstop_required: true
+        nonstop_required: true,
       };
 
       const context = FilterFactory.createFilterContext(searchParams);
@@ -141,7 +160,7 @@ describe('FilterFactory', () => {
       const validParams = {
         originLocationCode: 'JFK',
         destinationLocationCode: 'LAX',
-        departureDate: '2024-12-15'
+        departureDate: '2024-12-15',
       };
 
       const validation = FilterFactory.validateSearchParams(validParams);
@@ -151,7 +170,7 @@ describe('FilterFactory', () => {
 
     it('should detect missing required parameters', () => {
       const invalidParams = {
-        destinationLocationCode: 'LAX'
+        destinationLocationCode: 'LAX',
         // Missing origin and departure date
       };
 
@@ -166,12 +185,14 @@ describe('FilterFactory', () => {
         originLocationCode: 'JFK',
         destinationLocationCode: 'LAX',
         departureDate: '2024-12-15',
-        returnDate: '2024-12-10' // Return before departure
+        returnDate: '2024-12-10', // Return before departure
       };
 
       const validation = FilterFactory.validateSearchParams(invalidParams);
       expect(validation.isValid).toBe(false);
-      expect(validation.errors).toContain('Return date must be after departure date');
+      expect(validation.errors).toContain(
+        'Return date must be after departure date'
+      );
     });
   });
 });
@@ -186,16 +207,16 @@ describe('RoundTripFilter', () => {
       originLocationCode: 'JFK',
       destinationLocationCode: 'LAX',
       departureDate: '2024-12-15',
-      returnDate: '2024-12-22'
+      returnDate: '2024-12-22',
     });
   });
 
   it('should filter out one-way offers for round-trip searches', () => {
     const offers = [
-      createMockAmadeusOffer('rt1', 400, 'USD', true),  // Round-trip
+      createMockAmadeusOffer('rt1', 400, 'USD', true), // Round-trip
       createMockAmadeusOffer('ow1', 200, 'USD', false), // One-way
-      createMockAmadeusOffer('rt2', 450, 'USD', true),  // Round-trip
-      createMockAmadeusOffer('ow2', 250, 'USD', false)  // One-way
+      createMockAmadeusOffer('rt2', 450, 'USD', true), // Round-trip
+      createMockAmadeusOffer('ow2', 250, 'USD', false), // One-way
     ];
 
     const filtered = filter.apply(offers, context);
@@ -213,16 +234,18 @@ describe('RoundTripFilter', () => {
         validOffer.itineraries[0],
         {
           duration: 'PT6H30M',
-          segments: [{
-            departure: { iataCode: 'LAX', at: '2024-12-22T10:00:00Z' },
-            arrival: { iataCode: 'ORD', at: '2024-12-22T16:30:00Z' }, // Wrong destination
-            carrierCode: 'AA',
-            flightNumber: '456',
-            duration: 'PT6H30M',
-            numberOfStops: 0
-          }]
-        }
-      ]
+          segments: [
+            {
+              departure: { iataCode: 'LAX', at: '2024-12-22T10:00:00Z' },
+              arrival: { iataCode: 'ORD', at: '2024-12-22T16:30:00Z' }, // Wrong destination
+              carrierCode: 'AA',
+              flightNumber: '456',
+              duration: 'PT6H30M',
+              numberOfStops: 0,
+            },
+          ],
+        },
+      ],
     };
 
     const offers = [validOffer, invalidOffer];
@@ -236,12 +259,12 @@ describe('RoundTripFilter', () => {
     const oneWayContext = FilterFactory.createFilterContext({
       originLocationCode: 'JFK',
       destinationLocationCode: 'LAX',
-      departureDate: '2024-12-15'
+      departureDate: '2024-12-15',
       // No return date
     });
 
     const offers = [
-      createMockAmadeusOffer('rt1', 400, 'USD', true),  // Round-trip
+      createMockAmadeusOffer('rt1', 400, 'USD', true), // Round-trip
       createMockAmadeusOffer('ow1', 200, 'USD', false), // One-way
     ];
 
@@ -262,7 +285,7 @@ describe('BudgetFilter', () => {
       budget: 400,
       currency: 'USD',
       originLocationCode: 'JFK',
-      destinationLocationCode: 'LAX'
+      destinationLocationCode: 'LAX',
     });
   });
 
@@ -271,7 +294,7 @@ describe('BudgetFilter', () => {
       createMockAmadeusOffer('cheap', 300, 'USD'),
       createMockAmadeusOffer('expensive', 500, 'USD'),
       createMockAmadeusOffer('mid', 400, 'USD'),
-      createMockAmadeusOffer('very-expensive', 600, 'USD')
+      createMockAmadeusOffer('very-expensive', 600, 'USD'),
     ];
 
     const filtered = await filter.apply(offers, context);
@@ -283,12 +306,12 @@ describe('BudgetFilter', () => {
   it('should apply budget tolerance', async () => {
     const contextWithTolerance = {
       ...context,
-      config: { ...context.config!, budgetTolerance: 50 }
+      config: { ...context.config!, budgetTolerance: 50 },
     };
 
     const offers = [
       createMockAmadeusOffer('within-tolerance', 440, 'USD'), // Within 50 tolerance
-      createMockAmadeusOffer('beyond-tolerance', 460, 'USD') // Beyond 50 tolerance
+      createMockAmadeusOffer('beyond-tolerance', 460, 'USD'), // Beyond 50 tolerance
     ];
 
     const filtered = await filter.apply(offers, contextWithTolerance);
@@ -321,7 +344,7 @@ describe('NonstopFilter', () => {
     context = FilterFactory.createFilterContext({
       originLocationCode: 'JFK',
       destinationLocationCode: 'LAX',
-      nonstopRequired: true
+      nonstopRequired: true,
     });
   });
 
@@ -330,7 +353,7 @@ describe('NonstopFilter', () => {
       createMockAmadeusOffer('nonstop1', 400, 'USD', true, true),
       createMockAmadeusOffer('with-stops1', 300, 'USD', true, false),
       createMockAmadeusOffer('nonstop2', 450, 'USD', true, true),
-      createMockAmadeusOffer('with-stops2', 350, 'USD', true, false)
+      createMockAmadeusOffer('with-stops2', 350, 'USD', true, false),
     ];
 
     const filtered = filter.apply(offers, context);
@@ -343,7 +366,7 @@ describe('NonstopFilter', () => {
     const contextNoNonstop = {
       ...context,
       nonstop: false,
-      userPrefs: { ...context.userPrefs, nonstopRequired: false }
+      userPrefs: { ...context.userPrefs, nonstopRequired: false },
     };
 
     const offers = [
@@ -367,22 +390,22 @@ describe('Integration Tests', () => {
       destinationLocationCode: 'LAX',
       departureDate: '2024-12-15',
       returnDate: '2024-12-22',
-      nonstopRequired: true
+      nonstopRequired: true,
     });
 
     const offers = [
       // This should pass all filters
       createMockAmadeusOffer('perfect', 350, 'USD', true, true),
-      
+
       // This should fail budget filter
       createMockAmadeusOffer('expensive', 500, 'USD', true, true),
-      
+
       // This should fail round-trip filter
       createMockAmadeusOffer('one-way', 300, 'USD', false, true),
-      
+
       // This should fail nonstop filter
       createMockAmadeusOffer('with-stops', 300, 'USD', true, false),
-      
+
       // This should pass all filters
       createMockAmadeusOffer('good', 380, 'USD', true, true),
     ];
@@ -401,7 +424,7 @@ describe('Integration Tests', () => {
     const invalidContext = FilterFactory.createFilterContext({
       // Missing required fields to trigger validation errors
       budget: -100, // Invalid budget
-      currency: 'USD'
+      currency: 'USD',
     });
 
     const offers = [createMockAmadeusOffer('test', 300, 'USD')];
@@ -421,24 +444,36 @@ describe('Legacy Adapter', () => {
         id: 'legacy1',
         price: { total: 400, currency: 'USD' },
         itineraries: [
-          { segments: [{ departure: { iataCode: 'JFK' }, arrival: { iataCode: 'LAX' } }] },
-          { segments: [{ departure: { iataCode: 'LAX' }, arrival: { iataCode: 'JFK' } }] }
-        ]
+          {
+            segments: [
+              { departure: { iataCode: 'JFK' }, arrival: { iataCode: 'LAX' } },
+            ],
+          },
+          {
+            segments: [
+              { departure: { iataCode: 'LAX' }, arrival: { iataCode: 'JFK' } },
+            ],
+          },
+        ],
       },
       {
         id: 'legacy2',
         price: { total: 300, currency: 'USD' },
         itineraries: [
-          { segments: [{ departure: { iataCode: 'JFK' }, arrival: { iataCode: 'LAX' } }] }
+          {
+            segments: [
+              { departure: { iataCode: 'JFK' }, arrival: { iataCode: 'LAX' } },
+            ],
+          },
         ],
-        oneWay: true
-      }
+        oneWay: true,
+      },
     ];
 
     const searchParams = {
       originLocationCode: 'JFK',
       destinationLocationCode: 'LAX',
-      returnDate: '2024-12-22'
+      returnDate: '2024-12-22',
     };
 
     const filtered = await LegacyFilterAdapter.filterRoundTripOffers(
@@ -451,19 +486,23 @@ describe('Legacy Adapter', () => {
     // because it only runs RoundTripFilter and BudgetFilter, and the budget filter
     // doesn't filter since budget is 0
     expect(filtered).toHaveLength(2);
-    expect(filtered.map((o: unknown) => (o as { id: string }).id)).toContain('legacy1');
-    expect(filtered.map((o: unknown) => (o as { id: string }).id)).toContain('legacy2');
+    expect(filtered.map((o: unknown) => (o as { id: string }).id)).toContain(
+      'legacy1'
+    );
+    expect(filtered.map((o: unknown) => (o as { id: string }).id)).toContain(
+      'legacy2'
+    );
   });
 
   it('should warn about deprecated function usage', () => {
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    
+
     LegacyFilterAdapter.deprecatedWarning('filterAmadeusRoundTripOffers');
-    
+
     expect(consoleSpy).toHaveBeenCalledWith(
       '[DEPRECATED] filterAmadeusRoundTripOffers is deprecated. Use FilterFactory.createStandardPipeline() instead.'
     );
-    
+
     consoleSpy.mockRestore();
   });
 });
@@ -476,11 +515,11 @@ describe('Performance Tests', () => {
       currency: 'USD',
       originLocationCode: 'JFK',
       destinationLocationCode: 'LAX',
-      returnDate: '2024-12-22'
+      returnDate: '2024-12-22',
     });
 
     // Create 1000 test offers
-    const offers = Array.from({ length: 1000 }, (_, i) => 
+    const offers = Array.from({ length: 1000 }, (_, i) =>
       createMockAmadeusOffer(`offer-${i}`, 300 + (i % 300), 'USD')
     );
 
@@ -495,14 +534,14 @@ describe('Performance Tests', () => {
 
   it('should respect maxOffersToProcess limit', async () => {
     const pipeline = FilterFactory.createFastPipeline({
-      maxOffersToProcess: 10
+      maxOffersToProcess: 10,
     });
     const context = FilterFactory.createFilterContext({
       originLocationCode: 'JFK',
-      destinationLocationCode: 'LAX'
+      destinationLocationCode: 'LAX',
     });
 
-    const offers = Array.from({ length: 100 }, (_, i) => 
+    const offers = Array.from({ length: 100 }, (_, i) =>
       createMockAmadeusOffer(`offer-${i}`, 300, 'USD')
     );
 
@@ -520,7 +559,9 @@ describe('Error Handling', () => {
     const errorFilter = {
       name: 'ErrorFilter',
       priority: 1,
-      apply: () => { throw new Error('Test error'); }
+      apply: () => {
+        throw new Error('Test error');
+      },
     };
 
     const pipeline = new DefaultFilterPipeline();
@@ -530,7 +571,7 @@ describe('Error Handling', () => {
     const context = FilterFactory.createFilterContext({
       originLocationCode: 'JFK',
       destinationLocationCode: 'LAX',
-      returnDate: '2024-12-22'
+      returnDate: '2024-12-22',
     });
 
     const offers = [createMockAmadeusOffer('test', 300, 'USD')];

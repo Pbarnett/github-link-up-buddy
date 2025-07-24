@@ -20,14 +20,18 @@ export const invokeEdgeFn = async <T = unknown>(
   fetchImpl: typeof fetch = fetch
 ): Promise<EdgeFunctionResult<T>> => {
   try {
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321';
-    const response = await fetchImpl(`${SUPABASE_URL}/functions/v1/${functionName}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
+    const SUPABASE_URL =
+      import.meta.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321';
+    const response = await fetchImpl(
+      `${SUPABASE_URL}/functions/v1/${functionName}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      }
+    );
 
     if (!response.ok) {
       return {
@@ -45,7 +49,8 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'http://127.0.0.1:5432
     return {
       data: null,
       error: {
-        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        message:
+          error instanceof Error ? error.message : 'Unknown error occurred',
         details: error,
       },
     };

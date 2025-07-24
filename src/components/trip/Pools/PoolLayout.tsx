@@ -1,5 +1,3 @@
-
-
 import * as React from 'react';
 type FC<T = {}> = React.FC<T>;
 
@@ -22,13 +20,13 @@ const PoolLayout: FC<PoolLayoutProps> = ({ tripId }) => {
     isLoading,
     hasError,
     errorMessage,
-    isUsingFallback
+    isUsingFallback,
   } = usePoolsSafe({ tripId });
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        {[1, 2, 3].map((i) => (
+        {[1, 2, 3].map(i => (
           <div key={i} className="space-y-4">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-32 w-full" />
@@ -47,7 +45,7 @@ const PoolLayout: FC<PoolLayoutProps> = ({ tripId }) => {
   }
 
   const pools = [pool1, pool2, pool3];
-  
+
   // If using fallback, show only pool1 with all offers
   if (isUsingFallback) {
     return (
@@ -57,14 +55,14 @@ const PoolLayout: FC<PoolLayoutProps> = ({ tripId }) => {
           count={pool1.length}
           defaultOpen={true}
         >
-          {pool1.map((offer) => (
+          {pool1.map(offer => (
             <TripOfferCard key={offer.id} offer={offer} />
           ))}
         </PoolSection>
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       {pools.map((pool, index) => {
@@ -76,7 +74,7 @@ const PoolLayout: FC<PoolLayoutProps> = ({ tripId }) => {
             count={pool.length}
             defaultOpen={index === 0}
           >
-            {pool.map((offer) => (
+            {pool.map(offer => (
               <TripOfferCard key={offer.id} offer={offer} />
             ))}
           </PoolSection>

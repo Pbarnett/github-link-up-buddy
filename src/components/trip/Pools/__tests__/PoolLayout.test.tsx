@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, MockedFunction } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -30,23 +29,21 @@ const mockedUsePoolsSafe = usePoolsSafe as MockedFunction<typeof usePoolsSafe>;
 // Mock the utility
 vi.mock('@/utils/getPoolDisplayName', () => ({
   getPoolDisplayName: vi.fn((mode: string, index: number) => {
-    const names: Record<string, string[]> = { manual: ['Best Value', 'Low Cost', 'Premium'] };
+    const names: Record<string, string[]> = {
+      manual: ['Best Value', 'Low Cost', 'Premium'],
+    };
     return names[mode]?.[index - 1] || `Pool ${index}`;
   }),
 }));
 
 describe('PoolLayout', () => {
   const renderWithRouter = (component: React.ReactElement) => {
-    return render(
-      <MemoryRouter>
-        {component}
-      </MemoryRouter>
-    );
+    return render(<MemoryRouter>{component}</MemoryRouter>);
   };
 
   it('renders three pool sections', () => {
     renderWithRouter(<PoolLayout tripId="test-trip-id" />);
-    
+
     expect(screen.getByText('Best Value')).toBeInTheDocument();
     expect(screen.getByText('Low Cost')).toBeInTheDocument();
     expect(screen.getByText('Premium')).toBeInTheDocument();
@@ -71,7 +68,7 @@ describe('PoolLayout', () => {
     });
 
     renderWithRouter(<PoolLayout tripId="test-trip-id" />);
-    
+
     // Check for skeleton elements (they should have specific classes)
     const skeletons = document.querySelectorAll('.animate-pulse');
     expect(skeletons.length).toBeGreaterThan(0);
@@ -96,7 +93,9 @@ describe('PoolLayout', () => {
     });
 
     renderWithRouter(<PoolLayout tripId="test-trip-id" />);
-    
-    expect(screen.getByText('Error loading offers: Test error message')).toBeInTheDocument();
+
+    expect(
+      screen.getByText('Error loading offers: Test error message')
+    ).toBeInTheDocument();
   });
 });

@@ -39,7 +39,7 @@ export async function getPersonalizedGreeting(userId) {
     };
 
     const timeGreeting = getTimeBasedGreeting();
-    const personalizedGreeting = userData.name 
+    const personalizedGreeting = userData.name
       ? `${timeGreeting}, ${userData.name}!`
       : timeGreeting;
 
@@ -47,7 +47,7 @@ export async function getPersonalizedGreeting(userId) {
       greeting: personalizedGreeting,
       name: userData.name,
       lastVisit: userData.last_visit,
-      personalized: true
+      personalized: true,
     };
   } catch (error) {
     console.error('Error in getPersonalizedGreeting:', error);
@@ -57,14 +57,12 @@ export async function getPersonalizedGreeting(userId) {
 
 export async function updatePersonalizationPreferences(userId, preferences) {
   try {
-    const { data, error } = await supabase
-      .from('user_personalization')
-      .upsert({
-        user_id: userId,
-        personalization_enabled: preferences.personalizationEnabled,
-        name: preferences.name || null,
-        updated_at: new Date().toISOString()
-      });
+    const { data, error } = await supabase.from('user_personalization').upsert({
+      user_id: userId,
+      personalization_enabled: preferences.personalizationEnabled,
+      name: preferences.name || null,
+      updated_at: new Date().toISOString(),
+    });
 
     if (error) {
       console.error('Error updating personalization preferences:', error);
@@ -100,7 +98,9 @@ export default async function handler(req, res) {
       res.status(200).json(result);
     } catch (error) {
       console.error('API error:', error);
-      res.status(500).json({ error: 'Failed to update personalization preferences' });
+      res
+        .status(500)
+        .json({ error: 'Failed to update personalization preferences' });
     }
   } else {
     res.setHeader('Allow', ['GET', 'PUT']);

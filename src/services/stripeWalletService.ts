@@ -56,8 +56,11 @@ export async function getOrCreateStripeCustomer(user: User): Promise<string> {
       .eq('user_id', user.id)
       .single();
 
-    if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = no rows
-      throw new Error(`Failed to query existing customer: ${selectError.message}`);
+    if (selectError && selectError.code !== 'PGRST116') {
+      // PGRST116 = no rows
+      throw new Error(
+        `Failed to query existing customer: ${selectError.message}`
+      );
     }
 
     if (existing) {
@@ -100,7 +103,9 @@ export async function getOrCreateStripeCustomer(user: User): Promise<string> {
     return customer.id;
   } catch (error) {
     console.error('Error creating Stripe customer:', error);
-    throw new Error(`Failed to create customer: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to create customer: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -117,18 +122,21 @@ export async function createSetupIntent(
 ): Promise<SetupIntentResult> {
   try {
     const customerId = await getOrCreateStripeCustomer(user);
-    
-    const setupIntent = await stripe.setupIntents.create({
-      customer: customerId,
-      usage: options.usage || 'off_session',
-      payment_method_types: ['card'],
-      metadata: {
-        user_id: user.id,
-        created_via: 'parker_flight_wallet',
+
+    const setupIntent = await stripe.setupIntents.create(
+      {
+        customer: customerId,
+        usage: options.usage || 'off_session',
+        payment_method_types: ['card'],
+        metadata: {
+          user_id: user.id,
+          created_via: 'parker_flight_wallet',
+        },
       },
-    }, {
-      idempotencyKey: options.idempotencyKey,
-    });
+      {
+        idempotencyKey: options.idempotencyKey,
+      }
+    );
 
     // Log the setup intent creation
     await logAuditEvent({
@@ -150,7 +158,9 @@ export async function createSetupIntent(
     };
   } catch (error) {
     console.error('Error creating SetupIntent:', error);
-    throw new Error(`Failed to create setup intent: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to create setup intent: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -158,7 +168,9 @@ export async function createSetupIntent(
  * Get user's payment methods from database
  * Returns decrypted data for UI display
  */
-export async function getUserPaymentMethods(userId: string): Promise<PaymentMethod[]> {
+export async function getUserPaymentMethods(
+  userId: string
+): Promise<PaymentMethod[]> {
   try {
     const { data, error } = await supabase
       .from('payment_methods')
@@ -173,7 +185,9 @@ export async function getUserPaymentMethods(userId: string): Promise<PaymentMeth
     return data || [];
   } catch (error) {
     console.error('Error fetching payment methods:', error);
-    throw new Error(`Failed to get payment methods: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to get payment methods: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -181,7 +195,10 @@ export async function getUserPaymentMethods(userId: string): Promise<PaymentMeth
  * Set a payment method as default
  * Automatically unsets other defaults for the user
  */
-export async function setDefaultPaymentMethod(userId: string, paymentMethodId: string): Promise<void> {
+export async function setDefaultPaymentMethod(
+  userId: string,
+  paymentMethodId: string
+): Promise<void> {
   try {
     const { error } = await supabase
       .from('payment_methods')
@@ -202,7 +219,9 @@ export async function setDefaultPaymentMethod(userId: string, paymentMethodId: s
     });
   } catch (error) {
     console.error('Error setting default payment method:', error);
-    throw new Error(`Failed to set default: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to set default: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -210,7 +229,10 @@ export async function setDefaultPaymentMethod(userId: string, paymentMethodId: s
  * Delete a payment method
  * Removes from both Stripe and our database
  */
-export async function deletePaymentMethod(userId: string, paymentMethodId: string): Promise<void> {
+export async function deletePaymentMethod(
+  userId: string,
+  paymentMethodId: string
+): Promise<void> {
   try {
     // First get the payment method details
     const { data: pm, error: fetchError } = await supabase
@@ -249,7 +271,9 @@ export async function deletePaymentMethod(userId: string, paymentMethodId: strin
       .eq('id', paymentMethodId);
 
     if (deleteError) {
-      throw new Error(`Failed to delete payment method: ${deleteError.message}`);
+      throw new Error(
+        `Failed to delete payment method: ${deleteError.message}`
+      );
     }
 
     await logAuditEvent({
@@ -261,7 +285,9 @@ export async function deletePaymentMethod(userId: string, paymentMethodId: strin
     });
   } catch (error) {
     console.error('Error deleting payment method:', error);
-    throw new Error(`Failed to delete payment method: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to delete payment method: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -275,9 +301,10 @@ export async function handlePaymentMethodAttached(
   try {
     if (!paymentMethod.customer || typeof paymentMethod.customer === 'string') {
       // Get customer info if we only have ID
-      const customerId = typeof paymentMethod.customer === 'string' 
-        ? paymentMethod.customer 
-        : (paymentMethod.customer as unknown as Stripe.Customer)?.id;
+      const customerId =
+        typeof paymentMethod.customer === 'string'
+          ? paymentMethod.customer
+          : (paymentMethod.customer as unknown as Stripe.Customer)?.id;
 
       if (!customerId) {
         throw new Error('Payment method has no customer');
@@ -315,10 +342,14 @@ export async function handlePaymentMethodAttached(
         });
 
       if (insertError) {
-        throw new Error(`Failed to store payment method: ${insertError.message}`);
+        throw new Error(
+          `Failed to store payment method: ${insertError.message}`
+        );
       }
 
-      console.log(`Payment method ${paymentMethod.id} attached for user ${customerData.user_id}`);
+      console.log(
+        `Payment method ${paymentMethod.id} attached for user ${customerData.user_id}`
+      );
     }
   } catch (error) {
     console.error('Error handling payment method attached:', error);
@@ -329,9 +360,9 @@ export async function handlePaymentMethodAttached(
       action: 'PM_ATTACH_FAILED',
       table_name: 'payment_methods',
       record_id: paymentMethod.id,
-      new_data: { 
+      new_data: {
         error: error instanceof Error ? error.message : 'Unknown error',
-        payment_method_id: paymentMethod.id 
+        payment_method_id: paymentMethod.id,
       },
     });
   }
@@ -340,7 +371,9 @@ export async function handlePaymentMethodAttached(
 /**
  * Get default payment method for a user
  */
-export async function getDefaultPaymentMethod(userId: string): Promise<PaymentMethod | null> {
+export async function getDefaultPaymentMethod(
+  userId: string
+): Promise<PaymentMethod | null> {
   try {
     const { data, error } = await supabase
       .from('payment_methods')
@@ -349,8 +382,11 @@ export async function getDefaultPaymentMethod(userId: string): Promise<PaymentMe
       .eq('is_default', true)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows
-      throw new Error(`Failed to fetch default payment method: ${error.message}`);
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 = no rows
+      throw new Error(
+        `Failed to fetch default payment method: ${error.message}`
+      );
     }
 
     return data || null;

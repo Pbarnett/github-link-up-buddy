@@ -1,15 +1,15 @@
 /**
  * Airline Filter - Phase 4.1 Implementation
- * 
+ *
  * Filters flight offers based on user's preferred airlines.
  * Works with both Amadeus and Duffel data structures.
  */
 
-import { 
-  FlightFilter, 
-  FlightOffer, 
-  FilterContext, 
-  ValidationResult 
+import {
+  FlightFilter,
+  FlightOffer,
+  FilterContext,
+  ValidationResult,
 } from '../core/types';
 
 export class AirlineFilter implements FlightFilter {
@@ -19,10 +19,13 @@ export class AirlineFilter implements FlightFilter {
   /**
    * Apply airline filtering to flight offers
    */
-  async apply(offers: FlightOffer[], context: FilterContext): Promise<FlightOffer[]> {
+  async apply(
+    offers: FlightOffer[],
+    context: FilterContext
+  ): Promise<FlightOffer[]> {
     // Get preferred airlines from user preferences
     const preferredAirlines = context.userPrefs.preferredAirlines;
-    
+
     // If no preferred airlines specified, return all offers
     if (!preferredAirlines || preferredAirlines.length === 0) {
       context.performanceLog?.log(this.name, offers.length, offers.length, 0);
@@ -30,22 +33,27 @@ export class AirlineFilter implements FlightFilter {
     }
 
     const startTime = Date.now();
-    
+
     try {
       const filteredOffers = offers.filter(offer => {
         return this.offerMatchesAirlinePreference(offer, preferredAirlines);
       });
 
       const duration = Date.now() - startTime;
-      context.performanceLog?.log(this.name, offers.length, filteredOffers.length, duration);
-      
+      context.performanceLog?.log(
+        this.name,
+        offers.length,
+        filteredOffers.length,
+        duration
+      );
+
       return filteredOffers;
     } catch (error) {
       context.performanceLog?.logError(this.name, error as Error, {
         originalCount: offers.length,
-        preferredAirlines
+        preferredAirlines,
       });
-      
+
       // On error, return original offers to avoid breaking the pipeline
       return offers;
     }
@@ -54,12 +62,15 @@ export class AirlineFilter implements FlightFilter {
   /**
    * Check if an offer matches airline preferences
    */
-  private offerMatchesAirlinePreference(offer: FlightOffer, preferredAirlines: string[]): boolean {
+  private offerMatchesAirlinePreference(
+    offer: FlightOffer,
+    preferredAirlines: string[]
+  ): boolean {
     // Extract airline codes from the offer
     const offerAirlines = this.extractAirlineCodesFromOffer(offer);
-    
+
     // Check if any of the offer's airlines match user preferences
-    return offerAirlines.some(airlineCode => 
+    return offerAirlines.some(airlineCode =>
       preferredAirlines.includes(airlineCode)
     );
   }
@@ -100,7 +111,6 @@ export class AirlineFilter implements FlightFilter {
       if (airlineCodes.size === 0 && offer.rawData) {
         this.extractFromRawData(offer.rawData, airlineCodes);
       }
-
     } catch (error) {
       console.warn('[AirlineFilter] Error extracting airline codes:', error);
     }
@@ -111,7 +121,10 @@ export class AirlineFilter implements FlightFilter {
   /**
    * Extract airline codes from raw provider data
    */
-  private extractFromRawData(rawData: Record<string, unknown>, airlineCodes: Set<string>): void {
+  private extractFromRawData(
+    rawData: Record<string, unknown>,
+    airlineCodes: Set<string>
+  ): void {
     try {
       // Duffel format: marketing_carrier and operating_carrier
       if (rawData.slices) {
@@ -120,8 +133,12 @@ export class AirlineFilter implements FlightFilter {
           if (sliceRecord.segments) {
             (sliceRecord.segments as unknown[]).forEach((segment: unknown) => {
               const segmentRecord = segment as Record<string, unknown>;
-              const marketingCarrier = segmentRecord.marketing_carrier as Record<string, unknown> | undefined;
-              const operatingCarrier = segmentRecord.operating_carrier as Record<string, unknown> | undefined;
+              const marketingCarrier = segmentRecord.marketing_carrier as
+                | Record<string, unknown>
+                | undefined;
+              const operatingCarrier = segmentRecord.operating_carrier as
+                | Record<string, unknown>
+                | undefined;
               if (marketingCarrier?.iata_code) {
                 airlineCodes.add(marketingCarrier.iata_code as string);
               }
@@ -135,7 +152,9 @@ export class AirlineFilter implements FlightFilter {
 
       // Amadeus format: validatingAirlineCodes
       if (rawData.validatingAirlineCodes) {
-        (rawData.validatingAirlineCodes as string[]).forEach((code: string) => airlineCodes.add(code));
+        (rawData.validatingAirlineCodes as string[]).forEach((code: string) =>
+          airlineCodes.add(code)
+        );
       }
 
       // Amadeus itineraries
@@ -143,12 +162,14 @@ export class AirlineFilter implements FlightFilter {
         (rawData.itineraries as unknown[]).forEach((itinerary: unknown) => {
           const itineraryRecord = itinerary as Record<string, unknown>;
           if (itineraryRecord.segments) {
-            (itineraryRecord.segments as unknown[]).forEach((segment: unknown) => {
-              const segmentRecord = segment as Record<string, unknown>;
-              if (segmentRecord.carrierCode) {
-                airlineCodes.add(segmentRecord.carrierCode as string);
+            (itineraryRecord.segments as unknown[]).forEach(
+              (segment: unknown) => {
+                const segmentRecord = segment as Record<string, unknown>;
+                if (segmentRecord.carrierCode) {
+                  airlineCodes.add(segmentRecord.carrierCode as string);
+                }
               }
-            });
+            );
           }
         });
       }
@@ -158,7 +179,6 @@ export class AirlineFilter implements FlightFilter {
       if (owner?.iata_code) {
         airlineCodes.add(owner.iata_code as string);
       }
-
     } catch (error) {
       console.warn('[AirlineFilter] Error parsing raw data:', error);
     }
@@ -175,24 +195,28 @@ export class AirlineFilter implements FlightFilter {
 
     if (preferredAirlines) {
       // Check for valid IATA codes (2-letter format)
-      const invalidCodes = preferredAirlines.filter(code => 
-        !code || typeof code !== 'string' || !/^[A-Z]{2}$/.test(code)
+      const invalidCodes = preferredAirlines.filter(
+        code => !code || typeof code !== 'string' || !/^[A-Z]{2}$/.test(code)
       );
 
       if (invalidCodes.length > 0) {
-        errors.push(`Invalid airline codes: ${invalidCodes.join(', ')}. Must be 2-letter IATA codes.`);
+        errors.push(
+          `Invalid airline codes: ${invalidCodes.join(', ')}. Must be 2-letter IATA codes.`
+        );
       }
 
       // Warn if too many airlines selected (may reduce results significantly)
       if (preferredAirlines.length > 10) {
-        warnings.push(`Many airlines selected (${preferredAirlines.length}). Consider reducing for better performance.`);
+        warnings.push(
+          `Many airlines selected (${preferredAirlines.length}). Consider reducing for better performance.`
+        );
       }
     }
 
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 }
@@ -203,25 +227,25 @@ export class AirlineFilter implements FlightFilter {
  */
 export function getAirlineName(iataCode: string): string {
   const commonAirlines: Record<string, string> = {
-    'AA': 'American Airlines',
-    'DL': 'Delta Air Lines', 
-    'UA': 'United Airlines',
-    'WN': 'Southwest Airlines',
-    'AS': 'Alaska Airlines',
-    'B6': 'JetBlue Airways',
-    'NK': 'Spirit Airlines',
-    'F9': 'Frontier Airlines',
-    'BA': 'British Airways',
-    'LH': 'Lufthansa',
-    'AF': 'Air France',
-    'KL': 'KLM',
-    'VS': 'Virgin Atlantic',
-    'EK': 'Emirates',
-    'QR': 'Qatar Airways',
-    'SQ': 'Singapore Airlines',
-    'CX': 'Cathay Pacific',
-    'JL': 'Japan Airlines',
-    'AC': 'Air Canada',
+    AA: 'American Airlines',
+    DL: 'Delta Air Lines',
+    UA: 'United Airlines',
+    WN: 'Southwest Airlines',
+    AS: 'Alaska Airlines',
+    B6: 'JetBlue Airways',
+    NK: 'Spirit Airlines',
+    F9: 'Frontier Airlines',
+    BA: 'British Airways',
+    LH: 'Lufthansa',
+    AF: 'Air France',
+    KL: 'KLM',
+    VS: 'Virgin Atlantic',
+    EK: 'Emirates',
+    QR: 'Qatar Airways',
+    SQ: 'Singapore Airlines',
+    CX: 'Cathay Pacific',
+    JL: 'Japan Airlines',
+    AC: 'Air Canada',
   };
 
   return commonAirlines[iataCode] || iataCode;
@@ -231,13 +255,19 @@ export function getAirlineName(iataCode: string): string {
  * Extract unique airlines from a list of flight offers
  * Useful for building airline selection UI
  */
-export function getAvailableAirlinesFromOffers(offers: FlightOffer[]): Array<{ code: string; name: string; count: number }> {
+export function getAvailableAirlinesFromOffers(
+  offers: FlightOffer[]
+): Array<{ code: string; name: string; count: number }> {
   const airlineCount = new Map<string, number>();
   const airlineFilter = new AirlineFilter();
 
   offers.forEach(offer => {
     // Use the same extraction logic as the filter
-    const airlines = (airlineFilter as unknown as { extractAirlineCodesFromOffer: (offer: FlightOffer) => string[] }).extractAirlineCodesFromOffer(offer);
+    const airlines = (
+      airlineFilter as unknown as {
+        extractAirlineCodesFromOffer: (offer: FlightOffer) => string[];
+      }
+    ).extractAirlineCodesFromOffer(offer);
     airlines.forEach(code => {
       airlineCount.set(code, (airlineCount.get(code) || 0) + 1);
     });
@@ -247,7 +277,7 @@ export function getAvailableAirlinesFromOffers(offers: FlightOffer[]): Array<{ c
     .map(([code, count]) => ({
       code,
       name: getAirlineName(code),
-      count
+      count,
     }))
     .sort((a, b) => b.count - a.count); // Sort by frequency
 }

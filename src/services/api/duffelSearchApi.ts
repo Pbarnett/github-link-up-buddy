@@ -25,11 +25,14 @@ export async function fetchDuffelFlights(
   options: DuffelSearchRequest
 ): Promise<DuffelSearchResponse> {
   try {
-    logger.info('[DuffelSearchApi] Fetching Duffel flights', { tripRequestId, options });
-    
+    logger.info('[DuffelSearchApi] Fetching Duffel flights', {
+      tripRequestId,
+      options,
+    });
+
     // Call Duffel search function
     const { data, error } = await supabase.functions.invoke('duffel-search', {
-      body: options
+      body: options,
     });
 
     if (error) {

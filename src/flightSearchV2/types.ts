@@ -10,10 +10,10 @@ export interface FlightOfferV2 {
   nonstop: boolean;
   originIata: string;
   destinationIata: string;
-  departDt: string;   // ISO
+  departDt: string; // ISO
   returnDt: string | null;
   seatPref: string | null;
-  createdAt: string;  // ISO
+  createdAt: string; // ISO
   bookingUrl?: string; // External airline booking URL
 }
 
@@ -29,9 +29,9 @@ export interface FlightOfferV2DbRow {
   nonstop: boolean;
   origin_iata: string;
   destination_iata: string;
-  depart_dt: string;   // ISO
+  depart_dt: string; // ISO
   return_dt: string | null;
   seat_pref: string | null;
-  created_at: string;  // ISO
+  created_at: string; // ISO
   booking_url: string | null; // External airline booking URL
 }

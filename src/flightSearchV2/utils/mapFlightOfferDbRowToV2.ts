@@ -6,7 +6,9 @@ import { FlightOfferV2, FlightOfferV2DbRow } from '../types';
  * @param dbRow The flight offer data as retrieved from the database.
  * @returns A FlightOfferV2 object.
  */
-export const mapFlightOfferDbRowToV2 = (dbRow: FlightOfferV2DbRow): FlightOfferV2 => {
+export const mapFlightOfferDbRowToV2 = (
+  dbRow: FlightOfferV2DbRow
+): FlightOfferV2 => {
   return {
     id: dbRow.id,
     tripRequestId: dbRow.trip_request_id,

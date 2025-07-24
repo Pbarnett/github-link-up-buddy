@@ -1,8 +1,6 @@
-
-import { Campaign } from "@/types/campaign";
-import { campaignService } from "@/services/campaignService";
-import { useCurrentUser } from "./useCurrentUser";
-import * as React from 'react';
+import { Campaign } from '@/types/campaign';
+import { campaignService } from '@/services/campaignService';
+import { useCurrentUser } from './useCurrentUser';
 
 export const useCampaigns = () => {
   const { userId } = useCurrentUser();
@@ -21,9 +19,10 @@ export const useCampaigns = () => {
       const data = await campaignService.getCampaigns(userId);
       setCampaigns(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to load campaigns";
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to load campaigns';
       setError(errorMessage);
-      console.error("Failed to load campaigns:", err);
+      console.error('Failed to load campaigns:', err);
     } finally {
       setIsLoading(false);
     }
@@ -37,13 +36,14 @@ export const useCampaigns = () => {
   const pauseCampaign = async (campaignId: string) => {
     try {
       const updatedCampaign = await campaignService.pauseCampaign(campaignId);
-      setCampaigns(prev => 
-        prev.map(campaign => 
+      setCampaigns(prev =>
+        prev.map(campaign =>
           campaign.id === campaignId ? updatedCampaign : campaign
         )
       );
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to pause campaign";
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to pause campaign';
       throw new Error(errorMessage);
     }
   };
@@ -51,13 +51,14 @@ export const useCampaigns = () => {
   const resumeCampaign = async (campaignId: string) => {
     try {
       const updatedCampaign = await campaignService.resumeCampaign(campaignId);
-      setCampaigns(prev => 
-        prev.map(campaign => 
+      setCampaigns(prev =>
+        prev.map(campaign =>
           campaign.id === campaignId ? updatedCampaign : campaign
         )
       );
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to resume campaign";
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to resume campaign';
       throw new Error(errorMessage);
     }
   };
@@ -67,7 +68,8 @@ export const useCampaigns = () => {
       await campaignService.deleteCampaign(campaignId);
       setCampaigns(prev => prev.filter(campaign => campaign.id !== campaignId));
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete campaign";
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to delete campaign';
       throw new Error(errorMessage);
     }
   };

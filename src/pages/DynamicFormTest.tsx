@@ -22,8 +22,8 @@ const sampleFormConfig: FormConfiguration = {
           validation: {
             required: true,
             minLength: 2,
-            maxLength: 50
-          }
+            maxLength: 50,
+          },
         },
         {
           id: 'lastName',
@@ -33,8 +33,8 @@ const sampleFormConfig: FormConfiguration = {
           validation: {
             required: true,
             minLength: 2,
-            maxLength: 50
-          }
+            maxLength: 50,
+          },
         },
         {
           id: 'email',
@@ -43,8 +43,8 @@ const sampleFormConfig: FormConfiguration = {
           placeholder: 'your.email@example.com',
           validation: {
             required: true,
-            email: true
-          }
+            email: true,
+          },
         },
         {
           id: 'phone',
@@ -52,10 +52,10 @@ const sampleFormConfig: FormConfiguration = {
           label: 'Phone Number',
           placeholder: '+1 (555) 123-4567',
           validation: {
-            required: false
-          }
-        }
-      ]
+            required: false,
+          },
+        },
+      ],
     },
     {
       id: 'preferences',
@@ -68,24 +68,24 @@ const sampleFormConfig: FormConfiguration = {
           label: 'Country',
           placeholder: 'Select your country',
           validation: {
-            required: true
-          }
+            required: true,
+          },
         },
         {
           id: 'birthDate',
           type: 'date',
           label: 'Date of Birth',
           validation: {
-            required: true
-          }
+            required: true,
+          },
         },
         {
           id: 'newsletter',
           type: 'checkbox',
           label: 'Subscribe to newsletter',
           validation: {
-            required: false
-          }
+            required: false,
+          },
         },
         {
           id: 'experience',
@@ -95,15 +95,15 @@ const sampleFormConfig: FormConfiguration = {
           options: [
             { label: 'Beginner', value: 'beginner' },
             { label: 'Intermediate', value: 'intermediate' },
-            { label: 'Expert', value: 'expert' }
+            { label: 'Expert', value: 'expert' },
           ],
           validation: {
-            required: true
-          }
-        }
-      ]
-    }
-  ]
+            required: true,
+          },
+        },
+      ],
+    },
+  ],
 };
 
 const DynamicFormTest = () => {

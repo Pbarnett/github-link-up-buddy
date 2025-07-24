@@ -99,16 +99,23 @@ export class ContextBuilder {
       key: userData.id || userData.userId || 'anonymous',
       email: userData.email,
       name: userData.name || userData.displayName,
-      subscription: this.normalizeSubscription(userData.subscription || userData.plan),
+      subscription: this.normalizeSubscription(
+        userData.subscription || userData.plan
+      ),
       region: userData.region || userData.location?.region,
       country: userData.country || userData.location?.country,
-      timezone: userData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezone:
+        userData.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       language: userData.language || navigator?.language,
       role: this.normalizeRole(userData.role),
-      joinDate: userData.createdAt ? new Date(userData.createdAt).getTime() : undefined,
-      lastActive: userData.lastActiveAt ? new Date(userData.lastActiveAt).getTime() : Date.now(),
+      joinDate: userData.createdAt
+        ? new Date(userData.createdAt).getTime()
+        : undefined,
+      lastActive: userData.lastActiveAt
+        ? new Date(userData.lastActiveAt).getTime()
+        : Date.now(),
       avatar: userData.avatar || userData.profilePicture,
-      preferences: userData.preferences || {}
+      preferences: userData.preferences || {},
     };
   }
 
@@ -118,7 +125,7 @@ export class ContextBuilder {
   static buildDeviceContext(userAgent?: string): DeviceContext {
     const parser = new UAParser(userAgent);
     const result = parser.getResult();
-    
+
     return {
       key: this.generateDeviceId(),
       type: this.getDeviceType(result),
@@ -126,14 +133,19 @@ export class ContextBuilder {
       osVersion: result.os.version,
       browser: result.browser.name,
       browserVersion: result.browser.version,
-      screenResolution: typeof window !== 'undefined' 
-        ? `${window.screen.width}x${window.screen.height}` 
-        : undefined,
-      colorDepth: typeof window !== 'undefined' ? window.screen.colorDepth : undefined,
-      pixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio : undefined,
-      touchSupported: typeof window !== 'undefined' ? 'ontouchstart' in window : undefined,
-      language: typeof navigator !== 'undefined' ? navigator.language : undefined,
-      userAgent: userAgent
+      screenResolution:
+        typeof window !== 'undefined'
+          ? `${window.screen.width}x${window.screen.height}`
+          : undefined,
+      colorDepth:
+        typeof window !== 'undefined' ? window.screen.colorDepth : undefined,
+      pixelRatio:
+        typeof window !== 'undefined' ? window.devicePixelRatio : undefined,
+      touchSupported:
+        typeof window !== 'undefined' ? 'ontouchstart' in window : undefined,
+      language:
+        typeof navigator !== 'undefined' ? navigator.language : undefined,
+      userAgent: userAgent,
     };
   }
 
@@ -151,7 +163,7 @@ export class ContextBuilder {
       employees: orgData.employeeCount,
       founded: orgData.foundedYear,
       revenue: orgData.revenue,
-      features: orgData.enabledFeatures || []
+      features: orgData.enabledFeatures || [],
     };
   }
 
@@ -163,10 +175,13 @@ export class ContextBuilder {
       key: sessionData.sessionId || this.generateSessionId(),
       sessionId: sessionData.sessionId || this.generateSessionId(),
       startTime: sessionData.startTime || Date.now(),
-      referrer: typeof document !== 'undefined' ? document.referrer : sessionData.referrer,
+      referrer:
+        typeof document !== 'undefined'
+          ? document.referrer
+          : sessionData.referrer,
       utm: this.extractUTMParams(),
       experiments: sessionData.experiments || [],
-      ab_tests: sessionData.ab_tests || {}
+      ab_tests: sessionData.ab_tests || {},
     };
   }
 
@@ -183,26 +198,28 @@ export class ContextBuilder {
       deployment: process.env.NEXT_PUBLIC_DEPLOYMENT_ID,
       build: process.env.NEXT_PUBLIC_BUILD_ID,
       commit: process.env.NEXT_PUBLIC_GIT_COMMIT,
-      feature_flags: []
+      feature_flags: [],
     };
   }
 
   /**
    * Build complete multi-context
    */
-  static buildMultiContext(options: {
-    userData?: any;
-    orgData?: any;
-    sessionData?: any;
-    userAgent?: string;
-    includeSession?: boolean;
-    includeOrganization?: boolean;
-  } = {}): AppMultiContext {
+  static buildMultiContext(
+    options: {
+      userData?: any;
+      orgData?: any;
+      sessionData?: any;
+      userAgent?: string;
+      includeSession?: boolean;
+      includeOrganization?: boolean;
+    } = {}
+  ): AppMultiContext {
     const context: AppMultiContext = {
       kind: 'multi',
       user: this.buildUserContext(options.userData || {}),
       device: this.buildDeviceContext(options.userAgent),
-      application: this.buildApplicationContext()
+      application: this.buildApplicationContext(),
     };
 
     if (options.includeOrganization && options.orgData) {
@@ -225,11 +242,11 @@ export class ContextBuilder {
       user: {
         key: 'anonymous-' + this.generateAnonymousId(),
         subscription: 'free',
-        role: 'user'
+        role: 'user',
       },
       device: this.buildDeviceContext(userAgent),
       application: this.buildApplicationContext(),
-      session: this.buildSessionContext()
+      session: this.buildSessionContext(),
     };
   }
 
@@ -242,9 +259,9 @@ export class ContextBuilder {
       user: this.buildUserContext(userData),
       device: {
         key: 'server',
-        type: 'desktop' // Default for server-side
+        type: 'desktop', // Default for server-side
       },
-      application: this.buildApplicationContext()
+      application: this.buildApplicationContext(),
     };
 
     if (orgData) {
@@ -255,11 +272,14 @@ export class ContextBuilder {
   }
 
   // Helper methods
-  private static normalizeSubscription(subscription: any): UserContext['subscription'] {
+  private static normalizeSubscription(
+    subscription: any
+  ): UserContext['subscription'] {
     if (!subscription) return 'free';
     const sub = subscription.toLowerCase();
     if (sub.includes('premium') || sub.includes('pro')) return 'premium';
-    if (sub.includes('enterprise') || sub.includes('business')) return 'enterprise';
+    if (sub.includes('enterprise') || sub.includes('business'))
+      return 'enterprise';
     return 'free';
   }
 
@@ -288,7 +308,7 @@ export class ContextBuilder {
       if (size > 10) return 'medium';
       return 'small';
     }
-    
+
     if (typeof size === 'string') {
       const s = size.toLowerCase();
       if (s.includes('enterprise') || s.includes('xl')) return 'enterprise';
@@ -296,7 +316,7 @@ export class ContextBuilder {
       if (s.includes('medium') || s.includes('m')) return 'medium';
       return 'small';
     }
-    
+
     return 'small';
   }
 
@@ -318,12 +338,14 @@ export class ContextBuilder {
       }
       return deviceId;
     }
-    
+
     return 'device_' + Math.random().toString(36).substr(2, 9);
   }
 
   private static generateSessionId(): string {
-    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return (
+      'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    );
   }
 
   private static generateAnonymousId(): string {
@@ -336,20 +358,20 @@ export class ContextBuilder {
       }
       return anonId;
     }
-    
+
     return Math.random().toString(36).substr(2, 9);
   }
 
   private static extractUTMParams(): SessionContext['utm'] {
     if (typeof window === 'undefined') return {};
-    
+
     const params = new URLSearchParams(window.location.search);
     return {
       source: params.get('utm_source') || undefined,
       medium: params.get('utm_medium') || undefined,
       campaign: params.get('utm_campaign') || undefined,
       term: params.get('utm_term') || undefined,
-      content: params.get('utm_content') || undefined
+      content: params.get('utm_content') || undefined,
     };
   }
 }

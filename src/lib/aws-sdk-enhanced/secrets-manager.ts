@@ -1,6 +1,6 @@
+import { IS_MOCK_MODE } from '../aws-sdk-browser-compat';
 import { EnhancedAWSClientFactory } from './client-factory';
 import { EnhancedAWSErrorHandler } from './error-handling';
-import { IS_MOCK_MODE } from '../aws-sdk-browser-compat';
 
 // Conditionally import AWS SDK commands based on environment
 let GetSecretValueCommand: any;
@@ -21,7 +21,10 @@ if (!IS_MOCK_MODE) {
  * It retrieves the specified secret using GetSecretValueCommand
  * and handles errors using EnhancedAWSErrorHandler.
  */
-export async function getSecretValue(secretId: string, region: string): Promise<string | undefined> {
+export async function getSecretValue(
+  secretId: string,
+  region: string
+): Promise<string | undefined> {
   const client = EnhancedAWSClientFactory.createSecretsManagerClient({
     region,
     environment: process.env.NODE_ENV || 'development',

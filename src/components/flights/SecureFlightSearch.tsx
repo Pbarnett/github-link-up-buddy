@@ -1,18 +1,18 @@
 /**
  * Secure Flight Search Component
- * 
+ *
  * React component for flight search with secure API integration.
  * Uses AWS Secrets Manager for secure flight API credentials.
  */
 
 import * as React from 'react';
 import { useState, useCallback, useEffect } from 'react';
-import { 
-  flightSearchServiceSecure, 
-  FlightSearchRequest, 
-  FlightSearchResponse, 
+import {
+  flightSearchServiceSecure,
+  FlightSearchRequest,
+  FlightSearchResponse,
   FlightOffer,
-  FlightSearchUtils 
+  FlightSearchUtils,
 } from '@/services/flightSearchSecure';
 
 // Flight search form interface
@@ -85,17 +85,17 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
   /**
    * Handle form input changes
    */
-  const handleInputChange = useCallback((
-    field: keyof FlightSearchFormData,
-    value: string | number | boolean
-  ) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = useCallback(
+    (field: keyof FlightSearchFormData, value: string | number | boolean) => {
+      setFormData(prev => ({ ...prev, [field]: value }));
 
-    // Clear return date if switching to one-way
-    if (field === 'tripType' && value === 'oneWay') {
-      setFormData(prev => ({ ...prev, returnDate: '' }));
-    }
-  }, []);
+      // Clear return date if switching to one-way
+      if (field === 'tripType' && value === 'oneWay') {
+        setFormData(prev => ({ ...prev, returnDate: '' }));
+      }
+    },
+    []
+  );
 
   /**
    * Validate search form
@@ -157,7 +157,8 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
         origin: formData.origin.toUpperCase(),
         destination: formData.destination.toUpperCase(),
         departureDate: formData.departureDate,
-        returnDate: formData.tripType === 'roundTrip' ? formData.returnDate : undefined,
+        returnDate:
+          formData.tripType === 'roundTrip' ? formData.returnDate : undefined,
         adults: formData.adults,
         children: formData.children > 0 ? formData.children : undefined,
         infants: formData.infants > 0 ? formData.infants : undefined,
@@ -167,7 +168,8 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
         directFlightsOnly: formData.directFlightsOnly,
       };
 
-      const results = await flightSearchServiceSecure.searchFlights(searchRequest);
+      const results =
+        await flightSearchServiceSecure.searchFlights(searchRequest);
 
       setSearchState({
         loading: false,
@@ -177,22 +179,23 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
       });
 
       if (results.data.length === 0) {
-        const noResultsMessage = 'No flights found for your search criteria. Try adjusting your dates or destinations.';
+        const noResultsMessage =
+          'No flights found for your search criteria. Try adjusting your dates or destinations.';
         setSearchState(prev => ({ ...prev, error: noResultsMessage }));
         onError?.(noResultsMessage);
       }
-
     } catch (error) {
       console.error('Flight search failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Flight search failed';
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Flight search failed';
+
       setSearchState({
         loading: false,
         error: errorMessage,
         results: null,
         selectedFlight: null,
       });
-      
+
       onError?.(errorMessage);
     }
   };
@@ -231,7 +234,10 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
    * Render flight search form
    */
   const renderSearchForm = () => (
-    <form onSubmit={handleSearch} className="space-y-6 bg-white p-6 rounded-lg shadow-md">
+    <form
+      onSubmit={handleSearch}
+      className="space-y-6 bg-white p-6 rounded-lg shadow-md"
+    >
       {/* Trip type selection */}
       <div className="flex space-x-4">
         <label className="flex items-center">
@@ -239,7 +245,12 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             type="radio"
             value="roundTrip"
             checked={formData.tripType === 'roundTrip'}
-            onChange={(e) => handleInputChange('tripType', (e.target as HTMLInputElement).value)}
+            onChange={e =>
+              handleInputChange(
+                'tripType',
+                (e.target as HTMLInputElement).value
+              )
+            }
             className="mr-2"
           />
           Round Trip
@@ -249,7 +260,12 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             type="radio"
             value="oneWay"
             checked={formData.tripType === 'oneWay'}
-            onChange={(e) => handleInputChange('tripType', (e.target as HTMLInputElement).value)}
+            onChange={e =>
+              handleInputChange(
+                'tripType',
+                (e.target as HTMLInputElement).value
+              )
+            }
             className="mr-2"
           />
           One Way
@@ -266,7 +282,9 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             type="text"
             placeholder="LAX, New York, etc."
             value={formData.origin}
-            onChange={(e) => handleInputChange('origin', (e.target as HTMLInputElement).value)}
+            onChange={e =>
+              handleInputChange('origin', (e.target as HTMLInputElement).value)
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
@@ -279,7 +297,12 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             type="text"
             placeholder="JFK, London, etc."
             value={formData.destination}
-            onChange={(e) => handleInputChange('destination', (e.target as HTMLInputElement).value)}
+            onChange={e =>
+              handleInputChange(
+                'destination',
+                (e.target as HTMLInputElement).value
+              )
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
@@ -296,7 +319,12 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             type="date"
             value={formData.departureDate}
             min={new Date().toISOString().split('T')[0]}
-            onChange={(e) => handleInputChange('departureDate', (e.target as HTMLInputElement).value)}
+            onChange={e =>
+              handleInputChange(
+                'departureDate',
+                (e.target as HTMLInputElement).value
+              )
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
@@ -310,7 +338,12 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
               type="date"
               value={formData.returnDate || ''}
               min={formData.departureDate}
-              onChange={(e) => handleInputChange('returnDate', (e.target as HTMLInputElement).value)}
+              onChange={e =>
+                handleInputChange(
+                  'returnDate',
+                  (e.target as HTMLInputElement).value
+                )
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
@@ -326,11 +359,18 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
           </label>
           <select
             value={formData.adults}
-            onChange={(e) => handleInputChange('adults', parseInt((e.target as HTMLSelectElement).value))}
+            onChange={e =>
+              handleInputChange(
+                'adults',
+                parseInt((e.target as HTMLSelectElement).value)
+              )
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-              <option key={num} value={num}>{num}</option>
+              <option key={num} value={num}>
+                {num}
+              </option>
             ))}
           </select>
         </div>
@@ -340,11 +380,18 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
           </label>
           <select
             value={formData.children}
-            onChange={(e) => handleInputChange('children', parseInt((e.target as HTMLSelectElement).value))}
+            onChange={e =>
+              handleInputChange(
+                'children',
+                parseInt((e.target as HTMLSelectElement).value)
+              )
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             {[0, 1, 2, 3, 4, 5].map(num => (
-              <option key={num} value={num}>{num}</option>
+              <option key={num} value={num}>
+                {num}
+              </option>
             ))}
           </select>
         </div>
@@ -354,11 +401,18 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
           </label>
           <select
             value={formData.infants}
-            onChange={(e) => handleInputChange('infants', parseInt((e.target as HTMLSelectElement).value))}
+            onChange={e =>
+              handleInputChange(
+                'infants',
+                parseInt((e.target as HTMLSelectElement).value)
+              )
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             {[0, 1, 2].map(num => (
-              <option key={num} value={num}>{num}</option>
+              <option key={num} value={num}>
+                {num}
+              </option>
             ))}
           </select>
         </div>
@@ -372,7 +426,12 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
           </label>
           <select
             value={formData.cabinClass}
-            onChange={(e) => handleInputChange('cabinClass', (e.target as HTMLSelectElement).value)}
+            onChange={e =>
+              handleInputChange(
+                'cabinClass',
+                (e.target as HTMLSelectElement).value
+              )
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="ECONOMY">Economy</option>
@@ -387,7 +446,12 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
           </label>
           <select
             value={formData.currency}
-            onChange={(e) => handleInputChange('currency', (e.target as HTMLSelectElement).value)}
+            onChange={e =>
+              handleInputChange(
+                'currency',
+                (e.target as HTMLSelectElement).value
+              )
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="USD">USD ($)</option>
@@ -406,14 +470,16 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             type="checkbox"
             id="directFlights"
             checked={formData.directFlightsOnly}
-            onChange={(e) => handleInputChange('directFlightsOnly', e.target.checked)}
+            onChange={e =>
+              handleInputChange('directFlightsOnly', e.target.checked)
+            }
             className="mr-2"
           />
           <label htmlFor="directFlights" className="text-sm text-gray-700">
             Direct flights only
           </label>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Maximum Price (optional)
@@ -424,7 +490,14 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             step="50"
             placeholder="e.g., 1000"
             value={formData.maxPrice || ''}
-            onChange={(e) => handleInputChange('maxPrice', (e.target as HTMLSelectElement).value ? parseInt((e.target as HTMLInputElement).value) : undefined)}
+            onChange={e =>
+              handleInputChange(
+                'maxPrice',
+                (e.target as HTMLSelectElement).value
+                  ? parseInt((e.target as HTMLInputElement).value)
+                  : undefined
+              )
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
@@ -461,9 +534,9 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
         <h3 className="text-lg font-semibold text-gray-900">
           Flight Results ({searchState.results.meta.count} found)
         </h3>
-        
+
         <div className="space-y-4">
-          {searchState.results.data.slice(0, 10).map((flight) => (
+          {searchState.results.data.slice(0, 10).map(flight => (
             <div
               key={flight.id}
               className={`border rounded-lg p-4 cursor-pointer transition-colors duration-200 ${
@@ -478,44 +551,55 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center space-x-4">
                       <div className="text-lg font-medium">
-                        {itinerary.segments[0].departure.iataCode} → {' '}
-                        {itinerary.segments[itinerary.segments.length - 1].arrival.iataCode}
+                        {itinerary.segments[0].departure.iataCode} →{' '}
+                        {
+                          itinerary.segments[itinerary.segments.length - 1]
+                            .arrival.iataCode
+                        }
                       </div>
                       <div className="text-sm text-gray-600">
                         {FlightSearchUtils.formatDuration(itinerary.duration)}
                       </div>
                       <div className="text-sm text-gray-600">
-                        {FlightSearchUtils.isDirectFlight(itinerary) ? 'Direct' : 
-                         `${itinerary.segments.length - 1} stop${itinerary.segments.length > 2 ? 's' : ''}`}
+                        {FlightSearchUtils.isDirectFlight(itinerary)
+                          ? 'Direct'
+                          : `${itinerary.segments.length - 1} stop${itinerary.segments.length > 2 ? 's' : ''}`}
                       </div>
                     </div>
                     {index === 0 && (
                       <div className="text-right">
                         <div className="text-xl font-bold text-blue-600">
-                          {formatPrice(flight.price.total, flight.price.currency)}
+                          {formatPrice(
+                            flight.price.total,
+                            flight.price.currency
+                          )}
                         </div>
-                        <div className="text-xs text-gray-500">
-                          per person
-                        </div>
+                        <div className="text-xs text-gray-500">per person</div>
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex justify-between text-sm text-gray-600">
                     <div>
-                      Depart: {formatDateTime(itinerary.segments[0].departure.at)}
+                      Depart:{' '}
+                      {formatDateTime(itinerary.segments[0].departure.at)}
                     </div>
                     <div>
-                      Arrive: {formatDateTime(itinerary.segments[itinerary.segments.length - 1].arrival.at)}
+                      Arrive:{' '}
+                      {formatDateTime(
+                        itinerary.segments[itinerary.segments.length - 1]
+                          .arrival.at
+                      )}
                     </div>
                   </div>
 
                   {/* Airline info */}
                   <div className="mt-2 text-xs text-gray-500">
                     {FlightSearchUtils.getAirlineName(
-                      flight.validatingAirlineCodes[0], 
+                      flight.validatingAirlineCodes[0],
                       searchState.results?.dictionaries
-                    )} • {flight.provider.toUpperCase()}
+                    )}{' '}
+                    • {flight.provider.toUpperCase()}
                   </div>
                 </div>
               ))}
@@ -541,16 +625,16 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
               </span>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
-                Search Error
-              </h3>
+              <h3 className="text-sm font-medium text-red-800">Search Error</h3>
               <div className="mt-2 text-sm text-red-700">
                 {searchState.error}
               </div>
             </div>
             <div className="ml-auto pl-3">
               <button
-                onClick={() => setSearchState(prev => ({ ...prev, error: null }))}
+                onClick={() =>
+                  setSearchState(prev => ({ ...prev, error: null }))
+                }
                 className="inline-flex text-red-400 hover:text-red-600"
               >
                 <span className="sr-only">Dismiss</span>

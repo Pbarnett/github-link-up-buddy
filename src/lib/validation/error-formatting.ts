@@ -1,6 +1,6 @@
 /**
  * Enhanced Zod Error Formatting Utilities
- * 
+ *
  * Implements Zod v4-inspired error formatting and prettification
  * for better user experience with validation errors
  */
@@ -30,25 +30,25 @@ export interface FlattenedErrors {
 export function treeifyError(error: ZodError): ErrorTree {
   const tree: ErrorTree = { errors: [] };
 
-  error.issues.forEach((issue) => {
+  error.issues.forEach(issue => {
     if (issue.path.length === 0) {
       // Root level error
       tree.errors.push(issue.message);
     } else {
       // Navigate through the path to create nested structure
       let current = tree;
-      
+
       for (let i = 0; i < issue.path.length; i++) {
         const segment = issue.path[i];
         const isLast = i === issue.path.length - 1;
-        
+
         if (typeof segment === 'string') {
           // Property access
           if (!current.properties) current.properties = {};
           if (!current.properties[segment]) {
             current.properties[segment] = { errors: [] };
           }
-          
+
           if (isLast) {
             current.properties[segment].errors.push(issue.message);
           } else {
@@ -60,7 +60,7 @@ export function treeifyError(error: ZodError): ErrorTree {
           if (!current.items[segment]) {
             current.items[segment] = { errors: [] };
           }
-          
+
           if (isLast) {
             current.items[segment]!.errors.push(issue.message);
           } else {
@@ -81,7 +81,7 @@ export function flattenError(error: ZodError): FlattenedErrors {
   const formErrors: string[] = [];
   const fieldErrors: { [key: string]: string[] } = {};
 
-  error.issues.forEach((issue) => {
+  error.issues.forEach(issue => {
     if (issue.path.length === 0) {
       formErrors.push(issue.message);
     } else {
@@ -102,9 +102,9 @@ export function flattenError(error: ZodError): FlattenedErrors {
 export function prettifyError(error: ZodError): string {
   const lines: string[] = [];
 
-  error.issues.forEach((issue) => {
+  error.issues.forEach(issue => {
     let line = `✖ ${issue.message}`;
-    
+
     if (issue.path.length > 0) {
       const pathStr = issue.path
         .map((segment, index) => {
@@ -114,10 +114,10 @@ export function prettifyError(error: ZodError): string {
           return index === 0 ? segment : `.${segment}`;
         })
         .join('');
-      
+
       line += `\n  → at ${pathStr}`;
     }
-    
+
     lines.push(line);
   });
 
@@ -146,10 +146,12 @@ export function createCustomErrorMap(customMap: CustomErrorMap) {
     const result = customMap({
       issue,
       input: ctx.data,
-      path: ctx.path
+      path: ctx.path,
     });
-    
-    return result ? { message: result } : { message: issue.message || 'Validation failed' };
+
+    return result
+      ? { message: result }
+      : { message: issue.message || 'Validation failed' };
   };
 }
 
@@ -169,7 +171,8 @@ export const commonErrorMessages = {
   url: 'Please enter a valid URL',
   phone: 'Please enter a valid phone number',
   uuid: 'Please enter a valid UUID',
-  strongPassword: 'Password must contain at least 8 characters with uppercase, lowercase, number, and special character'
+  strongPassword:
+    'Password must contain at least 8 characters with uppercase, lowercase, number, and special character',
 };
 
 /**
@@ -193,7 +196,7 @@ export const errorLocalizations: { [locale: string]: ErrorLocalization } = {
     too_small: 'Input is too small',
     too_big: 'Input is too large',
     invalid_date: 'Please enter a valid date',
-    custom: 'Validation failed'
+    custom: 'Validation failed',
   },
   es: {
     required: 'Este campo es obligatorio',
@@ -202,7 +205,7 @@ export const errorLocalizations: { [locale: string]: ErrorLocalization } = {
     too_small: 'La entrada es demasiado pequeña',
     too_big: 'La entrada es demasiado grande',
     invalid_date: 'Por favor ingrese una fecha válida',
-    custom: 'Falló la validación'
+    custom: 'Falló la validación',
   },
   fr: {
     required: 'Ce champ est obligatoire',
@@ -211,8 +214,8 @@ export const errorLocalizations: { [locale: string]: ErrorLocalization } = {
     too_small: 'La saisie est trop petite',
     too_big: 'La saisie est trop grande',
     invalid_date: 'Veuillez saisir une date valide',
-    custom: 'Échec de la validation'
-  }
+    custom: 'Échec de la validation',
+  },
 };
 
 /**
@@ -220,7 +223,7 @@ export const errorLocalizations: { [locale: string]: ErrorLocalization } = {
  */
 export function createLocalizedErrorMap(locale: string = 'en') {
   const localization = errorLocalizations[locale] || errorLocalizations.en;
-  
+
   return (issue: ZodIssue) => {
     switch (issue.code) {
       case 'invalid_type':
@@ -239,7 +242,7 @@ export function createLocalizedErrorMap(locale: string = 'en') {
       case 'custom':
         return { message: issue.message || localization.custom };
     }
-    
+
     return { message: issue.message || 'Validation error' };
   };
 }

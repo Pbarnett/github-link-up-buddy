@@ -1,14 +1,13 @@
-
-import { Control } from "react-hook-form";
-import { 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Control } from 'react-hook-form';
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 
 // Budget form data interface
 interface BudgetFormData {
@@ -27,10 +26,14 @@ const BudgetSection = ({ control }: BudgetSectionProps) => {
       name="budget"
       render={({ field }) => (
         <FormItem>
-          <FormLabel className="text-sm font-medium text-gray-900">Budget (USD)</FormLabel>
+          <FormLabel className="text-sm font-medium text-gray-900">
+            Budget (USD)
+          </FormLabel>
           <FormControl>
             <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500 text-sm">$</span>
+              <span className="absolute left-3 top-2 text-gray-500 text-sm">
+                $
+              </span>
               <Input
                 type="number"
                 min="100"

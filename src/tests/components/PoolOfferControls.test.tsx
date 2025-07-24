@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -46,20 +45,20 @@ describe('PoolOfferControls', () => {
 
   it('renders ConstraintChips with correct dateRange', () => {
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
-    
+
     // Use flexible regex to account for locale differences in date formatting
     expect(screen.getByText(/Jun 1[45] – Jun 2[12]/)).toBeInTheDocument();
   });
 
   it('displays budget information correctly', () => {
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
-    
+
     expect(screen.getByText('Budget: $1000 / Max: $3000')).toBeInTheDocument();
   });
 
   it('enables budget button when bumps < 3 and budget < maxBudget', () => {
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
-    
+
     const budgetButton = screen.getByText('+20% Budget');
     expect(budgetButton).not.toBeDisabled();
   });
@@ -71,7 +70,7 @@ describe('PoolOfferControls', () => {
     });
 
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
-    
+
     const budgetButton = screen.getByText('+20% Budget');
     expect(budgetButton).toBeDisabled();
   });
@@ -84,21 +83,21 @@ describe('PoolOfferControls', () => {
     });
 
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
-    
+
     const budgetButton = screen.getByText('+20% Budget');
     expect(budgetButton).toBeDisabled();
   });
 
   it('calls bumpBudget and shows toast when budget button is clicked', () => {
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
-    
+
     const budgetButton = screen.getByText('+20% Budget');
     fireEvent.click(budgetButton);
-    
+
     expect(mockHookData.bumpBudget).toHaveBeenCalledTimes(1);
     expect(toast).toHaveBeenCalledWith({
       title: 'Budget raised to $1000',
-      description: 'Maximum budget: $3000'
+      description: 'Maximum budget: $3000',
     });
   });
 
@@ -109,7 +108,7 @@ describe('PoolOfferControls', () => {
     });
 
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
-    
+
     expect(screen.getByText('(2/3 raises used)')).toBeInTheDocument();
   });
 });

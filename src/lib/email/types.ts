@@ -1,6 +1,6 @@
 /**
  * Email Infrastructure Types
- * 
+ *
  * Comprehensive type definitions for the email system including
  * retry logic, circuit breaker, queue management, and monitoring.
  */
@@ -26,7 +26,7 @@ export enum EmailPriority {
   NORMAL = 1,
   HIGH = 2,
   URGENT = 3,
-  CRITICAL = 4
+  CRITICAL = 4,
 }
 
 export enum EmailStatus {
@@ -36,7 +36,7 @@ export enum EmailStatus {
   SENT = 'sent',
   FAILED = 'failed',
   CANCELLED = 'cancelled',
-  RETRYING = 'retrying'
+  RETRYING = 'retrying',
 }
 
 export interface EmailAttempt {
@@ -70,7 +70,7 @@ export enum EmailErrorType {
   PROVIDER_ERROR = 'provider_error',
   TEMPLATE_ERROR = 'template_error',
   VALIDATION = 'validation',
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
 }
 
 export interface RetryConfig {
@@ -93,7 +93,7 @@ export interface CircuitBreakerConfig {
 export enum CircuitBreakerState {
   CLOSED = 'closed',
   OPEN = 'open',
-  HALF_OPEN = 'half_open'
+  HALF_OPEN = 'half_open',
 }
 
 export interface CircuitBreakerStatus {

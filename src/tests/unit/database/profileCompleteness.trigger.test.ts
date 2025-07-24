@@ -1,7 +1,7 @@
 /**
  * Unit Tests for Database Profile Completeness Trigger Functions
  * Day 1 Task: Write unit tests for profile completeness functions (1h)
- * 
+ *
  * Tests the database-side trigger functions and scoring algorithms
  */
 
@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // Mock database functions that would be called via RPC
 const mockDatabase = {
   rpc: vi.fn(),
-  from: vi.fn()
+  from: vi.fn(),
 };
 
 // Mock trigger function results (for future use)
@@ -21,15 +21,15 @@ const mockDatabase = {
 // };
 
 vi.mock('@/integrations/supabase/client', () => ({
-  supabase: mockDatabase
+  supabase: mockDatabase,
 }));
 
 describe('Database Profile Completeness Trigger Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Setup default mock implementations
-    mockDatabase.rpc.mockImplementation((functionName) => {
+    mockDatabase.rpc.mockImplementation(functionName => {
       switch (functionName) {
         case 'calculate_profile_completeness_enhanced':
           return Promise.resolve({
@@ -45,24 +45,24 @@ describe('Database Profile Completeness Trigger Tests', () => {
                   action: 'add_passport',
                   priority: 'medium',
                   title: 'Add passport information',
-                  description: 'Complete your travel documents'
-                }
-              ]
+                  description: 'Complete your travel documents',
+                },
+              ],
             },
-            error: null
+            error: null,
           });
         case 'validate_profile_fields':
           return Promise.resolve({
             data: {
               is_valid: true,
-              validation_errors: []
+              validation_errors: [],
             },
-            error: null
+            error: null,
           });
         case 'log_ai_activity':
           return Promise.resolve({
             data: { success: true },
-            error: null
+            error: null,
           });
         default:
           return Promise.resolve({ data: null, error: null });
@@ -82,12 +82,15 @@ describe('Database Profile Completeness Trigger Tests', () => {
         gender: 'MALE',
         email: 'john@example.com',
         phone: '+1234567890',
-        phone_verified: true
+        phone_verified: true,
       };
 
-      const result = await mockDatabase.rpc('calculate_profile_completeness_enhanced', {
-        profile_data: profileData
-      });
+      const result = await mockDatabase.rpc(
+        'calculate_profile_completeness_enhanced',
+        {
+          profile_data: profileData,
+        }
+      );
 
       expect(result.data.overall_score).toBeGreaterThan(0);
       expect(result.data.overall_score).toBeLessThanOrEqual(100);
@@ -113,16 +116,19 @@ describe('Database Profile Completeness Trigger Tests', () => {
               action: 'complete_basic_info',
               priority: 'high',
               title: 'Complete basic information',
-              description: 'Add your name, email, and birth date'
-            }
-          ]
+              description: 'Add your name, email, and birth date',
+            },
+          ],
         },
-        error: null
+        error: null,
       });
 
-      const result = await mockDatabase.rpc('calculate_profile_completeness_enhanced', {
-        profile_data: {}
-      });
+      const result = await mockDatabase.rpc(
+        'calculate_profile_completeness_enhanced',
+        {
+          profile_data: {},
+        }
+      );
 
       expect(result.data.overall_score).toBe(0);
       expect(result.data.missing_fields.length).toBeGreaterThan(0);
@@ -143,11 +149,12 @@ describe('Database Profile Completeness Trigger Tests', () => {
               action: 'update_passport',
               priority: 'high',
               title: 'Passport expires soon',
-              description: 'Your passport expires within 6 months. Please renew it.'
-            }
-          ]
+              description:
+                'Your passport expires within 6 months. Please renew it.',
+            },
+          ],
         },
-        error: null
+        error: null,
       });
 
       const profileWithExpiredPassport = {
@@ -155,18 +162,21 @@ describe('Database Profile Completeness Trigger Tests', () => {
         email: 'jane@example.com',
         passport_number: 'ABC123',
         passport_country: 'US',
-        passport_expiry: '2024-02-01' // Assuming current date is after this
+        passport_expiry: '2024-02-01', // Assuming current date is after this
       };
 
-      const result = await mockDatabase.rpc('calculate_profile_completeness_enhanced', {
-        profile_data: profileWithExpiredPassport
-      });
+      const result = await mockDatabase.rpc(
+        'calculate_profile_completeness_enhanced',
+        {
+          profile_data: profileWithExpiredPassport,
+        }
+      );
 
       expect(result.data.travel_documents_score).toBeLessThan(50);
       expect(result.data.recommendations).toContainEqual(
         expect.objectContaining({
           action: 'update_passport',
-          priority: 'high'
+          priority: 'high',
         })
       );
     });
@@ -185,44 +195,54 @@ describe('Database Profile Completeness Trigger Tests', () => {
               action: 'verify_phone',
               priority: 'high',
               title: 'Verify phone number',
-              description: 'Phone verification is required for booking'
+              description: 'Phone verification is required for booking',
             },
             {
               action: 'add_passport',
               priority: 'medium',
               title: 'Add passport',
-              description: 'Passport information needed for international travel'
+              description:
+                'Passport information needed for international travel',
             },
             {
               action: 'complete_preferences',
               priority: 'low',
               title: 'Set travel preferences',
-              description: 'Customize your travel experience'
-            }
-          ]
+              description: 'Customize your travel experience',
+            },
+          ],
         },
-        error: null
+        error: null,
       });
 
       const partialProfile = {
         full_name: 'Bob Smith',
         email: 'bob@example.com',
         phone: '+1555000000',
-        phone_verified: false
+        phone_verified: false,
       };
 
-      const result = await mockDatabase.rpc('calculate_profile_completeness_enhanced', {
-        profile_data: partialProfile
-      });
+      const result = await mockDatabase.rpc(
+        'calculate_profile_completeness_enhanced',
+        {
+          profile_data: partialProfile,
+        }
+      );
 
       const recommendations = result.data.recommendations;
       expect(recommendations[0].priority).toBe('high');
-      
+
       // Check that high priority items come first
-      const highPriorityIndex = recommendations.findIndex((r: any) => r.priority === 'high');
-      const mediumPriorityIndex = recommendations.findIndex((r: any) => r.priority === 'medium');
-      const lowPriorityIndex = recommendations.findIndex((r: any) => r.priority === 'low');
-      
+      const highPriorityIndex = recommendations.findIndex(
+        (r: any) => r.priority === 'high'
+      );
+      const mediumPriorityIndex = recommendations.findIndex(
+        (r: any) => r.priority === 'medium'
+      );
+      const lowPriorityIndex = recommendations.findIndex(
+        (r: any) => r.priority === 'low'
+      );
+
       expect(highPriorityIndex).toBeLessThan(mediumPriorityIndex);
       expect(mediumPriorityIndex).toBeLessThan(lowPriorityIndex);
     });
@@ -232,13 +252,16 @@ describe('Database Profile Completeness Trigger Tests', () => {
         data: null,
         error: {
           message: 'Database connection failed',
-          code: 'DB_CONNECTION_ERROR'
-        }
+          code: 'DB_CONNECTION_ERROR',
+        },
       });
 
-      const result = await mockDatabase.rpc('calculate_profile_completeness_enhanced', {
-        profile_data: { full_name: 'Test User' }
-      });
+      const result = await mockDatabase.rpc(
+        'calculate_profile_completeness_enhanced',
+        {
+          profile_data: { full_name: 'Test User' },
+        }
+      );
 
       expect(result.error).toBeDefined();
       expect(result.error.code).toBe('DB_CONNECTION_ERROR');
@@ -252,11 +275,11 @@ describe('Database Profile Completeness Trigger Tests', () => {
         full_name: 'Alice Johnson',
         email: 'alice@example.com',
         date_of_birth: '1985-05-15',
-        phone: '+1234567890'
+        phone: '+1234567890',
       };
 
       const result = await mockDatabase.rpc('validate_profile_fields', {
-        profile_data: validProfile
+        profile_data: validProfile,
       });
 
       expect(result.data.is_valid).toBe(true);
@@ -271,28 +294,28 @@ describe('Database Profile Completeness Trigger Tests', () => {
             {
               field: 'email',
               error: 'Invalid email format',
-              severity: 'error'
-            }
-          ]
+              severity: 'error',
+            },
+          ],
         },
-        error: null
+        error: null,
       });
 
       const invalidProfile = {
         full_name: 'Test User',
         email: 'invalid-email-format',
-        date_of_birth: '1990-01-01'
+        date_of_birth: '1990-01-01',
       };
 
       const result = await mockDatabase.rpc('validate_profile_fields', {
-        profile_data: invalidProfile
+        profile_data: invalidProfile,
       });
 
       expect(result.data.is_valid).toBe(false);
       expect(result.data.validation_errors).toContainEqual(
         expect.objectContaining({
           field: 'email',
-          error: 'Invalid email format'
+          error: 'Invalid email format',
         })
       );
     });
@@ -305,27 +328,27 @@ describe('Database Profile Completeness Trigger Tests', () => {
             {
               field: 'phone',
               error: 'Invalid phone number format',
-              severity: 'warning'
-            }
-          ]
+              severity: 'warning',
+            },
+          ],
         },
-        error: null
+        error: null,
       });
 
       const invalidPhoneProfile = {
         full_name: 'Test User',
         email: 'test@example.com',
-        phone: 'invalid-phone'
+        phone: 'invalid-phone',
       };
 
       const result = await mockDatabase.rpc('validate_profile_fields', {
-        profile_data: invalidPhoneProfile
+        profile_data: invalidPhoneProfile,
       });
 
       expect(result.data.validation_errors).toContainEqual(
         expect.objectContaining({
           field: 'phone',
-          error: 'Invalid phone number format'
+          error: 'Invalid phone number format',
         })
       );
     });
@@ -338,27 +361,27 @@ describe('Database Profile Completeness Trigger Tests', () => {
             {
               field: 'date_of_birth',
               error: 'Invalid date format. Expected YYYY-MM-DD',
-              severity: 'error'
-            }
-          ]
+              severity: 'error',
+            },
+          ],
         },
-        error: null
+        error: null,
       });
 
       const invalidDateProfile = {
         full_name: 'Test User',
         email: 'test@example.com',
-        date_of_birth: '01/01/1990' // Wrong format
+        date_of_birth: '01/01/1990', // Wrong format
       };
 
       const result = await mockDatabase.rpc('validate_profile_fields', {
-        profile_data: invalidDateProfile
+        profile_data: invalidDateProfile,
       });
 
       expect(result.data.validation_errors).toContainEqual(
         expect.objectContaining({
           field: 'date_of_birth',
-          error: expect.stringContaining('Invalid date format')
+          error: expect.stringContaining('Invalid date format'),
         })
       );
     });
@@ -372,18 +395,21 @@ describe('Database Profile Completeness Trigger Tests', () => {
         details: {
           overall_score: 75,
           calculation_time_ms: 45,
-          recommendations_count: 3
+          recommendations_count: 3,
         },
         metadata: {
           trigger: 'profile_update',
-          version: '1.0'
-        }
+          version: '1.0',
+        },
       };
 
       const result = await mockDatabase.rpc('log_ai_activity', activityData);
 
       expect(result.data.success).toBe(true);
-      expect(mockDatabase.rpc).toHaveBeenCalledWith('log_ai_activity', activityData);
+      expect(mockDatabase.rpc).toHaveBeenCalledWith(
+        'log_ai_activity',
+        activityData
+      );
     });
 
     it('should handle logging errors gracefully', async () => {
@@ -391,14 +417,14 @@ describe('Database Profile Completeness Trigger Tests', () => {
         data: null,
         error: {
           message: 'Failed to insert activity log',
-          code: 'INSERT_ERROR'
-        }
+          code: 'INSERT_ERROR',
+        },
       });
 
       const activityData = {
         user_id: 'user-456',
         activity_type: 'profile_validation',
-        details: { errors_found: 2 }
+        details: { errors_found: 2 },
       };
 
       const result = await mockDatabase.rpc('log_ai_activity', activityData);
@@ -416,26 +442,32 @@ describe('Database Profile Completeness Trigger Tests', () => {
         email: 'complete@example.com',
         date_of_birth: '1990-01-01',
         phone: '+1234567890',
-        phone_verified: true
+        phone_verified: true,
       };
 
       // First, validate the profile
-      const validationResult = await mockDatabase.rpc('validate_profile_fields', {
-        profile_data: profileUpdate
-      });
+      const validationResult = await mockDatabase.rpc(
+        'validate_profile_fields',
+        {
+          profile_data: profileUpdate,
+        }
+      );
       expect(validationResult.data.is_valid).toBe(true);
 
       // Then calculate completeness
-      const completenessResult = await mockDatabase.rpc('calculate_profile_completeness_enhanced', {
-        profile_data: profileUpdate
-      });
+      const completenessResult = await mockDatabase.rpc(
+        'calculate_profile_completeness_enhanced',
+        {
+          profile_data: profileUpdate,
+        }
+      );
       expect(completenessResult.data.overall_score).toBeGreaterThan(0);
 
       // Finally, log the activity
       const logResult = await mockDatabase.rpc('log_ai_activity', {
         user_id: 'user-789',
         activity_type: 'profile_completeness_calculation',
-        details: completenessResult.data
+        details: completenessResult.data,
       });
       expect(logResult.data.success).toBe(true);
 
@@ -449,29 +481,37 @@ describe('Database Profile Completeness Trigger Tests', () => {
         .mockResolvedValueOnce({
           data: {
             is_valid: false,
-            validation_errors: [{ field: 'email', error: 'Invalid format' }]
+            validation_errors: [{ field: 'email', error: 'Invalid format' }],
           },
-          error: null
+          error: null,
         })
         .mockResolvedValueOnce({
           data: null,
-          error: { message: 'Cannot calculate completeness for invalid profile' }
+          error: {
+            message: 'Cannot calculate completeness for invalid profile',
+          },
         });
 
       const invalidProfile = {
         full_name: 'Invalid User',
-        email: 'bad-email'
+        email: 'bad-email',
       };
 
-      const validationResult = await mockDatabase.rpc('validate_profile_fields', {
-        profile_data: invalidProfile
-      });
+      const validationResult = await mockDatabase.rpc(
+        'validate_profile_fields',
+        {
+          profile_data: invalidProfile,
+        }
+      );
       expect(validationResult.data.is_valid).toBe(false);
 
       // Should not proceed with completeness calculation if validation fails
-      const completenessResult = await mockDatabase.rpc('calculate_profile_completeness_enhanced', {
-        profile_data: invalidProfile
-      });
+      const completenessResult = await mockDatabase.rpc(
+        'calculate_profile_completeness_enhanced',
+        {
+          profile_data: invalidProfile,
+        }
+      );
       expect(completenessResult.error).toBeDefined();
     });
   });
@@ -480,18 +520,22 @@ describe('Database Profile Completeness Trigger Tests', () => {
     it('should handle large profile objects efficiently', async () => {
       const largeProfile = {
         full_name: 'Large Profile User',
-        email: 'large@example.com'
+        email: 'large@example.com',
       };
 
       // Add many custom fields
       for (let i = 0; i < 100; i++) {
-        (largeProfile as Record<string, unknown>)[`custom_field_${i}`] = `value_${i}`;
+        (largeProfile as Record<string, unknown>)[`custom_field_${i}`] =
+          `value_${i}`;
       }
 
       const startTime = Date.now();
-      const result = await mockDatabase.rpc('calculate_profile_completeness_enhanced', {
-        profile_data: largeProfile
-      });
+      const result = await mockDatabase.rpc(
+        'calculate_profile_completeness_enhanced',
+        {
+          profile_data: largeProfile,
+        }
+      );
       const endTime = Date.now();
 
       expect(result.data).toBeDefined();
@@ -502,12 +546,12 @@ describe('Database Profile Completeness Trigger Tests', () => {
       const profiles = Array.from({ length: 10 }, (_, i) => ({
         full_name: `User ${i}`,
         email: `user${i}@example.com`,
-        date_of_birth: '1990-01-01'
+        date_of_birth: '1990-01-01',
       }));
 
       const promises = profiles.map(profile =>
         mockDatabase.rpc('calculate_profile_completeness_enhanced', {
-          profile_data: profile
+          profile_data: profile,
         })
       );
 
@@ -534,11 +578,11 @@ describe('Database Profile Completeness Trigger Tests', () => {
               action: 'add_phone',
               priority: 'high',
               title: 'Add phone number',
-              description: 'Phone number is required for notifications'
-            }
-          ]
+              description: 'Phone number is required for notifications',
+            },
+          ],
         },
-        error: null
+        error: null,
       });
 
       const profileWithNulls = {
@@ -546,12 +590,15 @@ describe('Database Profile Completeness Trigger Tests', () => {
         email: 'null@example.com',
         phone: null,
         passport_number: undefined,
-        travel_preferences: null
+        travel_preferences: null,
       };
 
-      const result = await mockDatabase.rpc('calculate_profile_completeness_enhanced', {
-        profile_data: profileWithNulls
-      });
+      const result = await mockDatabase.rpc(
+        'calculate_profile_completeness_enhanced',
+        {
+          profile_data: profileWithNulls,
+        }
+      );
 
       expect(result.data).toBeDefined();
       expect(result.data.overall_score).toBeGreaterThanOrEqual(0);

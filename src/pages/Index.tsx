@@ -1,35 +1,55 @@
-
-
-
-import { Button } from "@/components/ui/button";
-import { InteractiveButton } from "@/components/ui/interactive-button";
-import { EnhancedInput } from "@/components/ui/enhanced-input";
-import { ModernScrollArea, ScrollItem } from "@/components/ui/modern-scroll-area";
-import RadixThemeDemo from "@/components/demo/RadixThemeDemo";
 import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import { InteractiveButton } from '@/components/ui/interactive-button';
+import { EnhancedInput } from '@/components/ui/enhanced-input';
+import {
+  ModernScrollArea,
+  ScrollItem,
+} from '@/components/ui/modern-scroll-area';
+import RadixThemeDemo from '@/components/demo/RadixThemeDemo';
 
 const Index = () => {
   const [showDemo, setShowDemo] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  
+  const [searchTerm, setSearchTerm] = useState('');
+
   if (showDemo) {
     return <RadixThemeDemo />;
   }
-  
+
   const features = [
-    { icon: Search, title: "Smart Search", description: "AI-powered flight recommendations" },
-    { icon: Plane, title: "Auto Booking", description: "Hands-free flight booking" },
-    { icon: Users, title: "Multi-Traveler", description: "Manage group bookings easily" },
-    { icon: Star, title: "Premium Support", description: "24/7 customer assistance" }
+    {
+      icon: Search,
+      title: 'Smart Search',
+      description: 'AI-powered flight recommendations',
+    },
+    {
+      icon: Plane,
+      title: 'Auto Booking',
+      description: 'Hands-free flight booking',
+    },
+    {
+      icon: Users,
+      title: 'Multi-Traveler',
+      description: 'Manage group bookings easily',
+    },
+    {
+      icon: Star,
+      title: 'Premium Support',
+      description: '24/7 customer assistance',
+    },
   ];
-  
+
   const testimonials = [
-    { name: "Sarah Johnson", text: "Saved me hours of searching!", rating: 5 },
-    { name: "Mike Chen", text: "The auto-booking feature is incredible.", rating: 5 },
-    { name: "Emily Davis", text: "Best flight platform I've used.", rating: 5 },
-    { name: "David Smith", text: "Simple, fast, and reliable.", rating: 5 }
+    { name: 'Sarah Johnson', text: 'Saved me hours of searching!', rating: 5 },
+    {
+      name: 'Mike Chen',
+      text: 'The auto-booking feature is incredible.',
+      rating: 5,
+    },
+    { name: 'Emily Davis', text: "Best flight platform I've used.", rating: 5 },
+    { name: 'David Smith', text: 'Simple, fast, and reliable.', rating: 5 },
   ];
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Hero Section with Modern Features */}
@@ -39,12 +59,14 @@ const Index = () => {
             Welcome to Parker Flight
           </h1>
           <p className="hero-lead-redesigned animate-slide-in">
-            Smart flight search and booking platform with AI-powered recommendations
+            Smart flight search and booking platform with AI-powered
+            recommendations
           </p>
           <p className="hero-sub-redesigned">
-            Join thousands of travelers who save time and money with automated flight booking
+            Join thousands of travelers who save time and money with automated
+            flight booking
           </p>
-          
+
           {/* Interactive Search Demo */}
           <div className="mt-8 max-w-md mx-auto">
             <div className="relative">
@@ -53,13 +75,15 @@ const Index = () => {
                 variant="enhanced"
                 placeholder="Try searching for destinations..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm((e.target as HTMLInputElement).value)}
+                onChange={e =>
+                  setSearchTerm((e.target as HTMLInputElement).value)
+                }
                 className="pl-10"
                 interactive
               />
             </div>
           </div>
-          
+
           {/* Modern Interactive Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
             <Link to="/login">
@@ -68,15 +92,19 @@ const Index = () => {
               </InteractiveButton>
             </Link>
             <Link to="/dashboard">
-              <InteractiveButton variant="secondary" size="lg" className="btn-redesigned">
+              <InteractiveButton
+                variant="secondary"
+                size="lg"
+                className="btn-redesigned"
+              >
                 Dashboard
               </InteractiveButton>
             </Link>
           </div>
-          
+
           {/* Demo Button */}
           <div className="mt-6">
-            <InteractiveButton 
+            <InteractiveButton
               onClick={() => setShowDemo(true)}
               variant="ghost"
               size="sm"
@@ -87,19 +115,19 @@ const Index = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Features Section with Scroll Snap */}
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
             Why Choose Parker Flight?
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <div 
+                <div
                   key={index}
                   className="interactive-card p-6 bg-white rounded-xl shadow-soft border border-gray-200"
                 >
@@ -116,14 +144,14 @@ const Index = () => {
           </div>
         </div>
       </section>
-      
+
       {/* Testimonials with Modern Scroll */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
             What Our Users Say
           </h2>
-          
+
           <ModernScrollArea
             variant="snap-x"
             snapType="proximity"
@@ -141,7 +169,10 @@ const Index = () => {
                   <div className="p-6 bg-gray-50 rounded-xl border border-gray-200 h-full">
                     <div className="flex items-center mb-4">
                       {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <Star
+                          key={i}
+                          className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                        />
                       ))}
                     </div>
                     <p className="text-gray-700 mb-4 selectable-text">
@@ -157,7 +188,7 @@ const Index = () => {
           </ModernScrollArea>
         </div>
       </section>
-      
+
       {/* Call to Action */}
       <section className="py-16 px-4 bg-brand-blue text-white">
         <div className="max-w-4xl mx-auto text-center">
@@ -168,7 +199,7 @@ const Index = () => {
             Start saving time and money on flights today
           </p>
           <Link to="/auto-booking/new">
-            <InteractiveButton 
+            <InteractiveButton
               size="lg"
               className="bg-white text-brand-blue hover:bg-gray-50"
             >

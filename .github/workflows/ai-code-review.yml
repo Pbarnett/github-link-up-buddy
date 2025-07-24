@@ -1,0 +1,258 @@
+name: 🤖 AI Code Review Enforcement
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.js'
+      - '**/*.jsx'
+      - '**/*.vue'
+      - '**/*.py'
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  ai-code-review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+    
+    # Skip if PR is from dependabot or if it's a draft
+    if: github.actor != 'dependabot[bot]' && !github.event.pull_request.draft
+    
+    permissions:
+      contents: read
+      pull-requests: write
+      
+    steps:
+      - name: 🏗️ Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history for proper diff analysis
+          fetch-depth: 0
+          # Get both base and head ref
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: |
+          npm ci
+          # Install OpenAI SDK if not already in dependencies
+          npm install openai
+
+      - name: 🔍 Setup Git Configuration
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Ensure we can access the base branch
+          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
+
+      - name: 📊 Run AI Code Review Enforcement
+        id: ai-review
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTIONS: 'true'
+          GITHUB_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          GITHUB_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          echo "🤖 Starting AI Code Review Enforcement..."
+          node scripts/enforcement/ai-code-review.js
+        continue-on-error: true
+          
+      - name: 📋 Upload Review Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-code-review-report-${{ github.event.number }}
+          path: reports/ai-code-review/
+          retention-days: 30
+
+      - name: 📝 Post Review Summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            try {
+              // Find the latest review report
+              const reportDir = 'reports/ai-code-review';
+              if (!fs.existsSync(reportDir)) {
+                console.log('No review report directory found');
+                return;
+              }
+              
+              const files = fs.readdirSync(reportDir);
+              const latestReport = files
+                .filter(f => f.startsWith('review-'))
+                .sort()
+                .pop();
+              
+              if (!latestReport) {
+                console.log('No review report found');
+                return;
+              }
+              
+              const reportPath = path.join(reportDir, latestReport);
+              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              
+              // Create comment body
+              let commentBody = `## 🤖 AI Code Review Summary\n\n`;
+              commentBody += `**Files Reviewed:** ${report.reviewedFiles}/${report.totalFiles}\n`;
+              commentBody += `**Critical Issues:** ${report.criticalIssues}\n`;
+              commentBody += `**High Priority Issues:** ${report.highIssues}\n`;
+              commentBody += `**Medium Priority Issues:** ${report.mediumIssues}\n`;
+              commentBody += `**Suggestions:** ${report.suggestions}\n`;
+              commentBody += `**Total Cost:** $${report.totalCost.toFixed(6)}\n`;
+              commentBody += `**Should Block:** ${report.shouldBlock ? '❌ YES' : '✅ NO'}\n\n`;
+              
+              if (report.files && report.files.length > 0) {
+                commentBody += `### 📋 File Details\n\n`;
+                
+                report.files.forEach(file => {
+                  if (file.blocking_issues && file.blocking_issues.length > 0) {
+                    commentBody += `#### 🔍 ${file.file}\n`;
+                    commentBody += `**Quality:** ${file.overall_quality} | **Confidence:** ${(file.confidence * 100).toFixed(1)}%\n\n`;
+                    
+                    file.blocking_issues.forEach(issue => {
+                      const severityEmoji = {
+                        'critical': '🚨',
+                        'high': '⚠️',
+                        'medium': '📝',
+                        'low': 'ℹ️'
+                      }[issue.severity] || '•';
+                      
+                      commentBody += `${severityEmoji} **${issue.severity?.toUpperCase()}** (${issue.category}): ${issue.issue}\n`;
+                      if (issue.line) commentBody += `   *Line ${issue.line}*\n`;
+                      commentBody += `   ${issue.explanation}\n`;
+                      if (issue.suggestion) commentBody += `   **Fix:** ${issue.suggestion}\n`;
+                      commentBody += `\n`;
+                    });
+                  }
+                });
+              }
+              
+              commentBody += `\n<details>\n<summary>💡 About AI Code Review Enforcement</summary>\n\n`;
+              commentBody += `This review was generated by **OpenAI GPT-4.1 mini** with confidence gating:\n`;
+              commentBody += `- **Cost**: ~$0.0015 per review (with caching)\n`;
+              commentBody += `- **Focus**: Logic errors, security issues, performance problems\n`;
+              commentBody += `- **Escalation**: Low confidence reviews automatically escalate to o4-mini\n`;
+              commentBody += `- **Enforcement**: Critical issues block PR merging\n\n`;
+              commentBody += `*Generated automatically with budget controls and graceful degradation*\n`;
+              commentBody += `</details>\n\n`;
+              commentBody += `---\n*Report: \`${latestReport}\` | Model: GPT-4.1 mini*`;
+              
+              // Find existing AI review comment
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+              });
+              
+              const botComment = comments.find(comment => 
+                comment.user.type === 'Bot' && 
+                comment.body.includes('🤖 AI Code Review Summary')
+              );
+              
+              if (botComment) {
+                // Update existing comment  
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: commentBody
+                });
+                console.log('Updated existing AI review comment');
+              } else {
+                // Create new comment
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: commentBody
+                });
+                console.log('Created new AI review comment');
+              }
+              
+            } catch (error) {
+              console.error('Error posting review summary:', error);
+              
+              // Post fallback comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `## 🤖 AI Code Review\n\n❌ **Error:** Could not generate review summary.\n\nPlease check the action logs and uploaded artifacts for details.\n\n---\n*AI Code Review Enforcement*`
+              });
+            }
+            
+      - name: 🚨 Enforcement Status Check
+        if: always()
+        run: |
+          if [ -d "reports/ai-code-review" ]; then
+            LATEST_REPORT=$(ls -t reports/ai-code-review/review-*.json | head -1)
+            
+            if [ -f "$LATEST_REPORT" ]; then
+              SHOULD_BLOCK=$(cat "$LATEST_REPORT" | jq -r '.shouldBlock')
+              CRITICAL_COUNT=$(cat "$LATEST_REPORT" | jq -r '.criticalIssues')
+              HIGH_COUNT=$(cat "$LATEST_REPORT" | jq -r '.highIssues')
+              
+              echo "AI Code Review Results:"
+              echo "  Critical Issues: $CRITICAL_COUNT"
+              echo "  High Priority Issues: $HIGH_COUNT"
+              echo "  Should Block PR: $SHOULD_BLOCK"
+              
+              if [ "$SHOULD_BLOCK" = "true" ]; then
+                echo "::error::🚨 AI Code Review found blocking issues!"
+                echo "::error::Please address critical and high-priority issues before merging."
+                echo "ENFORCEMENT_RESULT=blocked" >> $GITHUB_ENV
+                exit 1
+              else
+                echo "✅ AI Code Review passed - no blocking issues found"
+                echo "ENFORCEMENT_RESULT=passed" >> $GITHUB_ENV
+                exit 0
+              fi
+            else
+              echo "⚠️ No review report found - allowing merge but recommend manual review"
+              echo "ENFORCEMENT_RESULT=skipped" >> $GITHUB_ENV
+              exit 0
+            fi
+          else
+            echo "⚠️ No review reports directory found - enforcement may have failed"
+            echo "ENFORCEMENT_RESULT=error" >> $GITHUB_ENV
+            exit 0
+          fi
+
+  # Optional: Create a required status check
+  ai-review-status:
+    name: AI Review Status Check
+    runs-on: ubuntu-latest
+    needs: ai-code-review
+    if: always()
+    
+    steps:
+      - name: ✅ Mark as Success
+        if: needs.ai-code-review.result == 'success'
+        run: echo "AI Code Review enforcement passed successfully"
+        
+      - name: ❌ Mark as Blocked
+        if: needs.ai-code-review.result == 'failure'
+        run: |
+          echo "AI Code Review enforcement found blocking issues"
+          exit 1
+          
+      - name: ⚠️ Mark as Warning
+        if: needs.ai-code-review.result == 'cancelled' || needs.ai-code-review.result == 'skipped'
+        run: echo "AI Code Review enforcement was skipped or cancelled"

@@ -1,35 +1,34 @@
 import * as React from 'react';
 
-
 type FC<T = {}> = React.FC<T>;
 
 const steps = [
   {
-    icon: "🛠️",
-    title: "Set criteria", 
-    detail: "dates • route • max price",
-    highlight: "30 seconds to set up"
+    icon: '🛠️',
+    title: 'Set criteria',
+    detail: 'dates • route • max price',
+    highlight: '30 seconds to set up',
   },
   {
-    icon: "🔍",
-    title: "We monitor",
-    detail: "24/7 fare checks", 
-    highlight: "Every 15 minutes"
+    icon: '🔍',
+    title: 'We monitor',
+    detail: '24/7 fare checks',
+    highlight: 'Every 15 minutes',
   },
   {
-    icon: "✅", 
-    title: "Auto-book",
-    detail: "ticket issued instantly",
-    highlight: "While you sleep"
-  }
+    icon: '✅',
+    title: 'Auto-book',
+    detail: 'ticket issued instantly',
+    highlight: 'While you sleep',
+  },
 ];
 
 interface ThreeStepExplainerProps {
   className?: string;
 }
 
-export const ThreeStepExplainer: FC<ThreeStepExplainerProps> = ({ 
-  className = "" 
+export const ThreeStepExplainer: FC<ThreeStepExplainerProps> = ({
+  className = '',
 }) => {
   return (
     <div className={`steps-container ${className}`}>
@@ -42,9 +41,7 @@ export const ThreeStepExplainer: FC<ThreeStepExplainerProps> = ({
               <h3 className="step-title">{step.title}</h3>
               <p className="step-detail">{step.detail}</p>
             </div>
-            {index < steps.length - 1 && (
-              <div className="step-arrow">→</div>
-            )}
+            {index < steps.length - 1 && <div className="step-arrow">→</div>}
           </Fragment>
         ))}
       </div>

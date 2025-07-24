@@ -1,15 +1,15 @@
 /**
  * CarryOn Filter - Phase 4.1 Implementation
- * 
+ *
  * This is a CORE APPLICATION FILTER that ensures ALL flights include carry-on baggage.
  * This is NOT a user preference - it's a business requirement of the app.
  */
 
-import { 
-  FlightFilter, 
-  FlightOffer, 
-  FilterContext, 
-  ValidationResult 
+import {
+  FlightFilter,
+  FlightOffer,
+  FilterContext,
+  ValidationResult,
 } from '../core/types';
 
 export class CarryOnFilter implements FlightFilter {
@@ -19,30 +19,42 @@ export class CarryOnFilter implements FlightFilter {
   /**
    * Apply carry-on filtering to flight offers
    */
-  async apply(offers: FlightOffer[], context: FilterContext): Promise<FlightOffer[]> {
+  async apply(
+    offers: FlightOffer[],
+    context: FilterContext
+  ): Promise<FlightOffer[]> {
     const startTime = Date.now();
-    
+
     try {
       console.log(`[CarryOnFilter] Starting carry-on filtering`);
-      console.log(`[CarryOnFilter] Filtering for carry-on included offers only (app requirement)`);
-      
+      console.log(
+        `[CarryOnFilter] Filtering for carry-on included offers only (app requirement)`
+      );
+
       const filteredOffers = offers.filter(offer => {
         return this.offerIncludesCarryOn(offer);
       });
 
       const removedCount = offers.length - filteredOffers.length;
-      console.log(`[CarryOnFilter] Carry-on filtering complete: ${offers.length} → ${filteredOffers.length} offers (removed ${removedCount} without carry-on)`);
+      console.log(
+        `[CarryOnFilter] Carry-on filtering complete: ${offers.length} → ${filteredOffers.length} offers (removed ${removedCount} without carry-on)`
+      );
 
       const duration = Date.now() - startTime;
-      context.performanceLog?.log(this.name, offers.length, filteredOffers.length, duration);
-      
+      context.performanceLog?.log(
+        this.name,
+        offers.length,
+        filteredOffers.length,
+        duration
+      );
+
       return filteredOffers;
     } catch (error) {
       context.performanceLog?.logError(this.name, error as Error, {
         originalCount: offers.length,
-        appRequirement: 'carry-on-included'
+        appRequirement: 'carry-on-included',
       });
-      
+
       // On error, return original offers to avoid breaking the pipeline
       return offers;
     }
@@ -59,7 +71,10 @@ export class CarryOnFilter implements FlightFilter {
       }
 
       // Method 2: If carryOnIncluded is false but no fee, it might still be included
-      if (offer.carryOnIncluded === false && (offer.carryOnFee === undefined || offer.carryOnFee === 0)) {
+      if (
+        offer.carryOnIncluded === false &&
+        (offer.carryOnFee === undefined || offer.carryOnFee === 0)
+      ) {
         // Some providers mark carry-on as false but don't charge a fee
         // This could indicate it's actually included
         return true;
@@ -72,18 +87,25 @@ export class CarryOnFilter implements FlightFilter {
 
       // Method 4: Check raw data for provider-specific carry-on information
       if (offer.rawData) {
-        const hasCarryOnInRawData = this.checkRawDataForCarryOn(offer.rawData, offer.provider);
+        const hasCarryOnInRawData = this.checkRawDataForCarryOn(
+          offer.rawData,
+          offer.provider
+        );
         if (hasCarryOnInRawData) {
           return true;
         }
       }
 
       // If we reach here, carry-on is likely not included or has a fee
-      console.log(`[CarryOnFilter] Offer ${offer.id}: Carry-on not included or has fee`);
+      console.log(
+        `[CarryOnFilter] Offer ${offer.id}: Carry-on not included or has fee`
+      );
       return false;
-
     } catch (error) {
-      console.warn(`[CarryOnFilter] Error checking carry-on for offer ${offer.id}:`, error);
+      console.warn(
+        `[CarryOnFilter] Error checking carry-on for offer ${offer.id}:`,
+        error
+      );
       // On error, be conservative and exclude the offer
       return false;
     }
@@ -92,7 +114,10 @@ export class CarryOnFilter implements FlightFilter {
   /**
    * Check raw provider data for carry-on information
    */
-  private checkRawDataForCarryOn(rawData: Record<string, unknown>, provider: string): boolean {
+  private checkRawDataForCarryOn(
+    rawData: Record<string, unknown>,
+    provider: string
+  ): boolean {
     try {
       if (provider === 'Amadeus') {
         return this.checkAmadeusCarryOn(rawData);
@@ -102,7 +127,7 @@ export class CarryOnFilter implements FlightFilter {
     } catch (error) {
       console.warn('[CarryOnFilter] Error parsing raw data:', error);
     }
-    
+
     return false;
   }
 
@@ -113,7 +138,10 @@ export class CarryOnFilter implements FlightFilter {
     // Check travelerPricings for baggage information
     if (rawData.travelerPricings && Array.isArray(rawData.travelerPricings)) {
       for (const travelerPricing of rawData.travelerPricings) {
-        if (travelerPricing.fareDetailsBySegment && Array.isArray(travelerPricing.fareDetailsBySegment)) {
+        if (
+          travelerPricing.fareDetailsBySegment &&
+          Array.isArray(travelerPricing.fareDetailsBySegment)
+        ) {
           for (const segmentDetail of travelerPricing.fareDetailsBySegment) {
             // Check for cabin baggage allowance
             if (segmentDetail.includedCabinBags) {
@@ -124,17 +152,28 @@ export class CarryOnFilter implements FlightFilter {
             }
 
             // Check additional services for carry-on fees
-            if (segmentDetail.additionalServices && Array.isArray(segmentDetail.additionalServices)) {
-              const carryOnService = segmentDetail.additionalServices.find((service: unknown) => 
-                typeof service === 'object' && service !== null &&
-                (service as { type?: string }).type === 'BAGGAGE' && 
-                /CARRY ON|CABIN BAG|HAND BAG/i.test((service as { description?: string }).description || '')
+            if (
+              segmentDetail.additionalServices &&
+              Array.isArray(segmentDetail.additionalServices)
+            ) {
+              const carryOnService = segmentDetail.additionalServices.find(
+                (service: unknown) =>
+                  typeof service === 'object' &&
+                  service !== null &&
+                  (service as { type?: string }).type === 'BAGGAGE' &&
+                  /CARRY ON|CABIN BAG|HAND BAG/i.test(
+                    (service as { description?: string }).description || ''
+                  )
               );
-              
+
               // If carry-on service exists with no fee, it's included
-              if (carryOnService && 
-                  (!(carryOnService as { amount?: string }).amount || 
-                   parseFloat((carryOnService as { amount?: string }).amount || '0') === 0)) {
+              if (
+                carryOnService &&
+                (!(carryOnService as { amount?: string }).amount ||
+                  parseFloat(
+                    (carryOnService as { amount?: string }).amount || '0'
+                  ) === 0)
+              ) {
                 return true;
               }
             }
@@ -173,17 +212,27 @@ export class CarryOnFilter implements FlightFilter {
 
     // Check services for carry-on information
     if (rawData.services && Array.isArray(rawData.services)) {
-      const carryOnService = rawData.services.find((service: unknown) => 
-        typeof service === 'object' && service !== null &&
-        (service as { type?: string }).type === 'baggage' && 
-        /cabin|carry.on|hand.bag/i.test(
-          (service as { metadata?: { title?: string; description?: string } }).metadata?.title || 
-          (service as { metadata?: { title?: string; description?: string } }).metadata?.description || 
-          ''
-        )
+      const carryOnService = rawData.services.find(
+        (service: unknown) =>
+          typeof service === 'object' &&
+          service !== null &&
+          (service as { type?: string }).type === 'baggage' &&
+          /cabin|carry.on|hand.bag/i.test(
+            (service as { metadata?: { title?: string; description?: string } })
+              .metadata?.title ||
+              (
+                service as {
+                  metadata?: { title?: string; description?: string };
+                }
+              ).metadata?.description ||
+              ''
+          )
       );
-      
-      if (carryOnService && (carryOnService as { total_amount?: string }).total_amount === "0.00") {
+
+      if (
+        carryOnService &&
+        (carryOnService as { total_amount?: string }).total_amount === '0.00'
+      ) {
         return true;
       }
     }
@@ -201,13 +250,15 @@ export class CarryOnFilter implements FlightFilter {
     // This is a core app requirement - no user validation needed
     // Warn if budget is very low since carry-on is always required
     if (context.budget > 0 && context.budget < 100) {
-      warnings.push('Very low budget may result in no available flights with carry-on included.');
+      warnings.push(
+        'Very low budget may result in no available flights with carry-on included.'
+      );
     }
 
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 }

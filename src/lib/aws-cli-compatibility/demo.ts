@@ -18,7 +18,7 @@ const keyIds = [
   '12345678-1234-1234-1234-123456789012',
   'arn:aws:kms:us-west-2:123456789012:key/12345678-1234-1234-1234-123456789012',
   'invalid-key-id',
-  ''
+  '',
 ];
 
 keyIds.forEach(keyId => {
@@ -41,15 +41,19 @@ console.log('─'.repeat(50));
 
 const contexts = [
   { department: 'engineering', project: 'web-app', environment: 'production' },
-  { 'café': 'résumé', 'naïve': 'Zürich' }, // Unicode test
+  { café: 'résumé', naïve: 'Zürich' }, // Unicode test
   { password: 'secret123' }, // Sensitive data - should fail
   { 'key\x01': 'value' }, // Control character - should fail
-  Object.fromEntries(Array.from({length: 65}, (_, i) => [`key${i}`, `value${i}`])) // Too many pairs
+  Object.fromEntries(
+    Array.from({ length: 65 }, (_, i) => [`key${i}`, `value${i}`])
+  ), // Too many pairs
 ];
 
 contexts.forEach((context, index) => {
   const result = AWSCLIParameterValidator.validateEncryptionContext(context);
-  console.log(`Context ${index + 1}: ${JSON.stringify(context).substring(0, 60)}${Object.keys(context).length > 3 ? '...' : ''}`);
+  console.log(
+    `Context ${index + 1}: ${JSON.stringify(context).substring(0, 60)}${Object.keys(context).length > 3 ? '...' : ''}`
+  );
   console.log(`  ${result.valid ? '✓' : '✗'} Valid: ${result.valid}`);
   if (!result.valid) {
     console.log(`  ✗ Error: ${result.error}`);
@@ -66,23 +70,25 @@ const encryptParams = [
     keyId: 'alias/my-key',
     plaintext: 'Hello, World!',
     encryptionContext: { department: 'engineering' },
-    encryptionAlgorithm: 'SYMMETRIC_DEFAULT'
+    encryptionAlgorithm: 'SYMMETRIC_DEFAULT',
   },
   {
     keyId: 'invalid-key',
-    plaintext: 'Hello, World!'
+    plaintext: 'Hello, World!',
   },
   {
     keyId: 'alias/my-key',
-    plaintext: 'x'.repeat(5000) // Too large
-  }
+    plaintext: 'x'.repeat(5000), // Too large
+  },
 ];
 
 encryptParams.forEach((params, index) => {
   const result = AWSCLIParameterValidator.validateEncryptParams(params);
   console.log(`Encrypt Params ${index + 1}:`);
   console.log(`  Key ID: ${params.keyId}`);
-  console.log(`  Plaintext: ${params.plaintext.length > 20 ? params.plaintext.substring(0, 20) + '...' : params.plaintext}`);
+  console.log(
+    `  Plaintext: ${params.plaintext.length > 20 ? params.plaintext.substring(0, 20) + '...' : params.plaintext}`
+  );
   console.log(`  ${result.valid ? '✓' : '✗'} Valid: ${result.valid}`);
   if (!result.valid) {
     console.log(`  ✗ Error: ${result.error}`);
@@ -97,11 +103,12 @@ console.log('─'.repeat(50));
 const algorithms = [
   'SYMMETRIC_DEFAULT',
   'RSAES_OAEP_SHA_256',
-  'INVALID_ALGORITHM'
+  'INVALID_ALGORITHM',
 ];
 
 algorithms.forEach(algorithm => {
-  const result = AWSCLIParameterValidator.validateEncryptionAlgorithm(algorithm);
+  const result =
+    AWSCLIParameterValidator.validateEncryptionAlgorithm(algorithm);
   console.log(`Algorithm: "${algorithm}"`);
   console.log(`  ${result.valid ? '✓' : '✗'} Valid: ${result.valid}`);
   if (!result.valid) {
@@ -128,7 +135,11 @@ const endTime = performance.now();
 const duration = endTime - startTime;
 const validationsPerSecond = Math.round((iterations / duration) * 1000);
 
-console.log(`✓ Completed ${iterations} validations in ${duration.toFixed(2)}ms`);
-console.log(`✓ Performance: ~${validationsPerSecond.toLocaleString()} validations/second`);
+console.log(
+  `✓ Completed ${iterations} validations in ${duration.toFixed(2)}ms`
+);
+console.log(
+  `✓ Performance: ~${validationsPerSecond.toLocaleString()} validations/second`
+);
 
 console.log('\n🎉 Demo completed successfully!');

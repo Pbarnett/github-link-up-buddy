@@ -1,36 +1,67 @@
-
 import * as React from 'react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { 
-  Users, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Star, 
+import {
+  Users,
+  Plus,
+  Edit,
+  Trash2,
+  Star,
   Calendar,
   MapPin,
   User,
-  AlertTriangle
+  AlertTriangle,
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
 // Zod schema for traveler profile validation
 const travelerProfileSchema = z.object({
   id: z.string().optional(),
-  firstName: z.string().min(1, 'First name is required').max(50, 'First name must be less than 50 characters'),
-  lastName: z.string().min(1, 'Last name is required').max(50, 'Last name must be less than 50 characters'),
-  dateOfBirth: z.string().refine((date) => {
+  firstName: z
+    .string()
+    .min(1, 'First name is required')
+    .max(50, 'First name must be less than 50 characters'),
+  lastName: z
+    .string()
+    .min(1, 'Last name is required')
+    .max(50, 'Last name must be less than 50 characters'),
+  dateOfBirth: z.string().refine(date => {
     const birthDate = new Date(date);
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
@@ -44,10 +75,12 @@ const travelerProfileSchema = z.object({
   redressNumber: z.string().optional(),
   dietaryRestrictions: z.array(z.string()).optional(),
   mobilityAssistance: z.boolean().optional(),
-  preferredSeat: z.enum(['window', 'aisle', 'middle', 'no-preference']).optional(),
+  preferredSeat: z
+    .enum(['window', 'aisle', 'middle', 'no-preference'])
+    .optional(),
   emailNotifications: z.boolean().default(true),
   isDefault: z.boolean().default(false),
-  isActive: z.boolean().default(true)
+  isActive: z.boolean().default(true),
 });
 
 export type TravelerProfile = z.infer<typeof travelerProfileSchema>;
@@ -55,7 +88,10 @@ export type TravelerProfile = z.infer<typeof travelerProfileSchema>;
 interface MultiTravelerManagerProps {
   travelers: TravelerProfile[];
   onAddTraveler: (traveler: Omit<TravelerProfile, 'id'>) => Promise<void>;
-  onUpdateTraveler: (id: string, traveler: Partial<TravelerProfile>) => Promise<void>;
+  onUpdateTraveler: (
+    id: string,
+    traveler: Partial<TravelerProfile>
+  ) => Promise<void>;
   onDeleteTraveler: (id: string) => Promise<void>;
   onSetDefault: (id: string) => Promise<void>;
   loading?: boolean;
@@ -74,19 +110,19 @@ const NATIONALITY_OPTIONS = [
   // Add more countries as needed
 ];
 
-
 export function MultiTravelerManager({
   travelers,
   onAddTraveler,
-  onUpdateTraveler, 
+  onUpdateTraveler,
   onDeleteTraveler,
   onSetDefault,
   loading = false,
   maxTravelers = 6,
-  className = ''
+  className = '',
 }: MultiTravelerManagerProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingTraveler, setEditingTraveler] = useState<TravelerProfile | null>(null);
+  const [editingTraveler, setEditingTraveler] =
+    useState<TravelerProfile | null>(null);
   const [deletingTraveler, setDeletingTraveler] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -99,8 +135,8 @@ export function MultiTravelerManager({
       nationality: '',
       emailNotifications: true,
       isDefault: false,
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   const activeTravelers = travelers.filter(t => t.isActive);
@@ -111,39 +147,41 @@ export function MultiTravelerManager({
       if (travelers.length === 0) {
         data.isDefault = true;
       }
-      
+
       await onAddTraveler(data);
       setIsAddDialogOpen(false);
       form.reset();
       toast({
-        title: "Traveler added",
-        description: `${data.firstName} ${data.lastName} has been added to your profiles.`
+        title: 'Traveler added',
+        description: `${data.firstName} ${data.lastName} has been added to your profiles.`,
       });
     } catch (error) {
       toast({
-        title: "Error adding traveler",
-        description: error instanceof Error ? error.message : "Failed to add traveler",
-        variant: "destructive"
+        title: 'Error adding traveler',
+        description:
+          error instanceof Error ? error.message : 'Failed to add traveler',
+        variant: 'destructive',
       });
     }
   };
 
   const handleUpdateTraveler = async (data: TravelerProfile) => {
     if (!editingTraveler?.id) return;
-    
+
     try {
       await onUpdateTraveler(editingTraveler.id, data);
       setEditingTraveler(null);
       form.reset();
       toast({
-        title: "Traveler updated",
-        description: `${data.firstName} ${data.lastName}'s profile has been updated.`
+        title: 'Traveler updated',
+        description: `${data.firstName} ${data.lastName}'s profile has been updated.`,
       });
     } catch (error) {
       toast({
-        title: "Error updating traveler", 
-        description: error instanceof Error ? error.message : "Failed to update traveler",
-        variant: "destructive"
+        title: 'Error updating traveler',
+        description:
+          error instanceof Error ? error.message : 'Failed to update traveler',
+        variant: 'destructive',
       });
     }
   };
@@ -153,14 +191,15 @@ export function MultiTravelerManager({
       await onDeleteTraveler(id);
       setDeletingTraveler(null);
       toast({
-        title: "Traveler removed",
-        description: "The traveler profile has been removed."
+        title: 'Traveler removed',
+        description: 'The traveler profile has been removed.',
       });
     } catch (error) {
       toast({
-        title: "Error removing traveler",
-        description: error instanceof Error ? error.message : "Failed to remove traveler",
-        variant: "destructive"
+        title: 'Error removing traveler',
+        description:
+          error instanceof Error ? error.message : 'Failed to remove traveler',
+        variant: 'destructive',
       });
     }
   };
@@ -169,14 +208,17 @@ export function MultiTravelerManager({
     try {
       await onSetDefault(id);
       toast({
-        title: "Default traveler updated",
-        description: "The default traveler has been changed."
+        title: 'Default traveler updated',
+        description: 'The default traveler has been changed.',
       });
     } catch (error) {
       toast({
-        title: "Error setting default",
-        description: error instanceof Error ? error.message : "Failed to set default traveler",
-        variant: "destructive"
+        title: 'Error setting default',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to set default traveler',
+        variant: 'destructive',
       });
     }
   };
@@ -201,7 +243,8 @@ export function MultiTravelerManager({
               Traveler Profiles
             </CardTitle>
             <CardDescription>
-              Manage profiles for yourself and family members ({activeTravelers.length}/{maxTravelers} travelers)
+              Manage profiles for yourself and family members (
+              {activeTravelers.length}/{maxTravelers} travelers)
             </CardDescription>
           </div>
           <Button
@@ -220,22 +263,29 @@ export function MultiTravelerManager({
         {activeTravelers.length === 0 ? (
           <div className="text-center py-8">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No traveler profiles yet</h3>
+            <h3 className="text-lg font-medium mb-2">
+              No traveler profiles yet
+            </h3>
             <p className="text-muted-foreground mb-4">
               Add your first traveler profile to get started with bookings
             </p>
-            <Button onClick={() => setIsAddDialogOpen(true)} className="flex items-center gap-2">
+            <Button
+              onClick={() => setIsAddDialogOpen(true)}
+              className="flex items-center gap-2"
+            >
               <Plus className="h-4 w-4" />
               Add First Traveler
             </Button>
           </div>
         ) : (
           <div className="space-y-4">
-            {activeTravelers.map((traveler) => (
+            {activeTravelers.map(traveler => (
               <div
                 key={traveler.id}
                 className={`p-4 border rounded-lg ${
-                  traveler.isDefault ? 'border-blue-200 bg-blue-50' : 'border-gray-200'
+                  traveler.isDefault
+                    ? 'border-blue-200 bg-blue-50'
+                    : 'border-gray-200'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -259,25 +309,31 @@ export function MultiTravelerManager({
                         {traveler.dateOfBirth && (
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date().getFullYear() - new Date(traveler.dateOfBirth).getFullYear()} years old
+                            {new Date().getFullYear() -
+                              new Date(traveler.dateOfBirth).getFullYear()}{' '}
+                            years old
                           </div>
                         )}
                         {traveler.nationality && (
                           <div className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
-                            {NATIONALITY_OPTIONS.find(n => n.value === traveler.nationality)?.label || traveler.nationality}
+                            {NATIONALITY_OPTIONS.find(
+                              n => n.value === traveler.nationality
+                            )?.label || traveler.nationality}
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     {!traveler.isDefault && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => traveler.id && handleSetDefault(traveler.id)}
+                        onClick={() =>
+                          traveler.id && handleSetDefault(traveler.id)
+                        }
                         className="text-xs"
                       >
                         Make Default
@@ -294,7 +350,9 @@ export function MultiTravelerManager({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => traveler.id && setDeletingTraveler(traveler.id)}
+                        onClick={() =>
+                          traveler.id && setDeletingTraveler(traveler.id)
+                        }
                         className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -312,7 +370,7 @@ export function MultiTravelerManager({
           <Alert className="mt-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              You've reached the maximum of {maxTravelers} traveler profiles. 
+              You've reached the maximum of {maxTravelers} traveler profiles.
               Remove a profile to add a new one.
             </AlertDescription>
           </Alert>
@@ -320,27 +378,34 @@ export function MultiTravelerManager({
       </CardContent>
 
       {/* Add/Edit Traveler Dialog */}
-      <Dialog open={isAddDialogOpen || !!editingTraveler} onOpenChange={(open) => {
-        if (!open) {
-          setIsAddDialogOpen(false);
-          closeEditDialog();
-        }
-      }}>
+      <Dialog
+        open={isAddDialogOpen || !!editingTraveler}
+        onOpenChange={open => {
+          if (!open) {
+            setIsAddDialogOpen(false);
+            closeEditDialog();
+          }
+        }}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingTraveler ? 'Edit Traveler Profile' : 'Add New Traveler'}
             </DialogTitle>
             <DialogDescription>
-              {editingTraveler 
+              {editingTraveler
                 ? 'Update the traveler information below.'
-                : 'Add a new traveler profile for booking flights.'
-              }
+                : 'Add a new traveler profile for booking flights.'}
             </DialogDescription>
           </DialogHeader>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(editingTraveler ? handleUpdateTraveler : handleAddTraveler)} className="space-y-6">
+            <form
+              onSubmit={form.handleSubmit(
+                editingTraveler ? handleUpdateTraveler : handleAddTraveler
+              )}
+              className="space-y-6"
+            >
               {/* Basic Information */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -391,7 +456,10 @@ export function MultiTravelerManager({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Gender</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select gender" />
@@ -401,7 +469,9 @@ export function MultiTravelerManager({
                           <SelectItem value="male">Male</SelectItem>
                           <SelectItem value="female">Female</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
-                          <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                          <SelectItem value="prefer-not-to-say">
+                            Prefer not to say
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -423,7 +493,7 @@ export function MultiTravelerManager({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {NATIONALITY_OPTIONS.map((country) => (
+                        {NATIONALITY_OPTIONS.map(country => (
                           <SelectItem key={country.value} value={country.value}>
                             {country.label}
                           </SelectItem>
@@ -437,7 +507,9 @@ export function MultiTravelerManager({
 
               {/* Travel Documents */}
               <div className="space-y-4">
-                <h4 className="font-medium text-sm text-muted-foreground">Travel Documents (Optional)</h4>
+                <h4 className="font-medium text-sm text-muted-foreground">
+                  Travel Documents (Optional)
+                </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -489,12 +561,16 @@ export function MultiTravelerManager({
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deletingTraveler} onOpenChange={() => setDeletingTraveler(null)}>
+      <Dialog
+        open={!!deletingTraveler}
+        onOpenChange={() => setDeletingTraveler(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Remove Traveler Profile</DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove this traveler profile? This action cannot be undone.
+              Are you sure you want to remove this traveler profile? This action
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -503,7 +579,9 @@ export function MultiTravelerManager({
             </Button>
             <Button
               variant="destructive"
-              onClick={() => deletingTraveler && handleDeleteTraveler(deletingTraveler)}
+              onClick={() =>
+                deletingTraveler && handleDeleteTraveler(deletingTraveler)
+              }
             >
               Remove Traveler
             </Button>

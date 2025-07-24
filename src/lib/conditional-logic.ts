@@ -1,6 +1,6 @@
 /**
  * Conditional Logic Engine for Dynamic Forms
- * 
+ *
  * Evaluates conditional rules to determine field visibility, enablement,
  * and other dynamic behaviors in forms
  */
@@ -15,14 +15,14 @@ export const evaluateConditionalRule = (
   formData: Record<string, unknown>
 ): boolean => {
   const fieldValue = formData[rule.field];
-  
+
   switch (rule.operator) {
     case 'equals':
       return fieldValue === rule.value;
-    
+
     case 'not_equals':
       return fieldValue !== rule.value;
-    
+
     case 'contains':
       if (typeof fieldValue === 'string' && typeof rule.value === 'string') {
         return fieldValue.toLowerCase().includes(rule.value.toLowerCase());
@@ -31,7 +31,7 @@ export const evaluateConditionalRule = (
         return fieldValue.includes(rule.value);
       }
       return false;
-    
+
     case 'not_contains':
       if (typeof fieldValue === 'string' && typeof rule.value === 'string') {
         return !fieldValue.toLowerCase().includes(rule.value.toLowerCase());
@@ -40,43 +40,43 @@ export const evaluateConditionalRule = (
         return !fieldValue.includes(rule.value);
       }
       return true;
-    
+
     case 'oneOf':
       if (Array.isArray(rule.value)) {
         return rule.value.includes(fieldValue);
       }
       return false;
-    
+
     case 'notOneOf':
       if (Array.isArray(rule.value)) {
         return !rule.value.includes(fieldValue);
       }
       return true;
-    
+
     case 'greater': {
       const numValue = Number(fieldValue);
       const ruleValue = Number(rule.value);
       return !isNaN(numValue) && !isNaN(ruleValue) && numValue > ruleValue;
     }
-    
+
     case 'less': {
       const numValue2 = Number(fieldValue);
       const ruleValue2 = Number(rule.value);
       return !isNaN(numValue2) && !isNaN(ruleValue2) && numValue2 < ruleValue2;
     }
-    
+
     case 'greaterOrEqual': {
       const numValue3 = Number(fieldValue);
       const ruleValue3 = Number(rule.value);
       return !isNaN(numValue3) && !isNaN(ruleValue3) && numValue3 >= ruleValue3;
     }
-    
+
     case 'lessOrEqual': {
       const numValue4 = Number(fieldValue);
       const ruleValue4 = Number(rule.value);
       return !isNaN(numValue4) && !isNaN(ruleValue4) && numValue4 <= ruleValue4;
     }
-    
+
     default:
       console.warn(`Unknown conditional operator: ${rule.operator}`);
       return true;
@@ -138,13 +138,13 @@ export const evaluateComplexConditionalRule = (
 
   // Complex rule with AND/OR
   if (rule.operator === 'AND') {
-    return rule.rules.every(subRule => 
+    return rule.rules.every(subRule =>
       evaluateComplexConditionalRule(subRule, formData)
     );
   }
 
   if (rule.operator === 'OR') {
-    return rule.rules.some(subRule => 
+    return rule.rules.some(subRule =>
       evaluateComplexConditionalRule(subRule, formData)
     );
   }
@@ -214,16 +214,18 @@ export const validateConditionalLogic = (
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 };
 
 /**
  * Create a dependency graph for conditional logic
  */
-export const createConditionalDependencyGraph = (
-  formConfig: { sections: Array<{ fields: Array<{ id: string; conditional?: ConditionalLogic }> }> }
-): Map<string, string[]> => {
+export const createConditionalDependencyGraph = (formConfig: {
+  sections: Array<{
+    fields: Array<{ id: string; conditional?: ConditionalLogic }>;
+  }>;
+}): Map<string, string[]> => {
   const dependencyGraph = new Map<string, string[]>();
 
   // Process sections and their fields
@@ -292,36 +294,36 @@ export const conditionalRules = {
    * Show field when another field equals a specific value
    */
   showWhenEquals: (fieldId: string, value: unknown): ConditionalLogic => ({
-    showWhen: { field: fieldId, operator: 'equals', value }
+    showWhen: { field: fieldId, operator: 'equals', value },
   }),
 
   /**
    * Hide field when another field equals a specific value
    */
   hideWhenEquals: (fieldId: string, value: unknown): ConditionalLogic => ({
-    hideWhen: { field: fieldId, operator: 'equals', value }
+    hideWhen: { field: fieldId, operator: 'equals', value },
   }),
 
   /**
    * Show field when another field is one of multiple values
    */
   showWhenOneOf: (fieldId: string, values: unknown[]): ConditionalLogic => ({
-    showWhen: { field: fieldId, operator: 'oneOf', value: values }
+    showWhen: { field: fieldId, operator: 'oneOf', value: values },
   }),
 
   /**
    * Enable field when another field has a value
    */
   enableWhenHasValue: (fieldId: string): ConditionalLogic => ({
-    enableWhen: { field: fieldId, operator: 'not_equals', value: null }
+    enableWhen: { field: fieldId, operator: 'not_equals', value: null },
   }),
 
   /**
    * Show field when value is greater than threshold
    */
   showWhenGreater: (fieldId: string, threshold: number): ConditionalLogic => ({
-    showWhen: { field: fieldId, operator: 'greater', value: threshold }
-  })
+    showWhen: { field: fieldId, operator: 'greater', value: threshold },
+  }),
 };
 
 export default {
@@ -332,5 +334,5 @@ export default {
   validateConditionalLogic,
   createConditionalDependencyGraph,
   hasCircularDependencies,
-  conditionalRules
+  conditionalRules,
 };

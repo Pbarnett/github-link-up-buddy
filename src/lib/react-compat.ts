@@ -1,7 +1,7 @@
 import * as React from 'react';
 /**
  * React 19 Compatibility Layer
- * 
+ *
  * This module provides compatibility with React 19 by re-exporting
  * functions and types that may have changed or moved.
  */
@@ -65,22 +65,53 @@ export type FC<P = {}> = ComponentType<P>;
 // We'll create type aliases that work with React's event system
 
 // Create a temporary div element to extract React's actual event types from JSX.IntrinsicElements
-type ReactDivProps = React.DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
-type ReactInputProps = React.DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
+type ReactDivProps = React.DetailedHTMLProps<
+  HTMLAttributes<HTMLDivElement>,
+  HTMLDivElement
+>;
+type ReactInputProps = React.DetailedHTMLProps<
+  InputHTMLAttributes<HTMLInputElement>,
+  HTMLInputElement
+>;
 
 // Extract event types from React's intrinsic element handlers
-export type MouseEvent = NonNullable<ReactDivProps['onClick']> extends (e: infer E) => void ? E : never;
-export type KeyboardEvent = NonNullable<ReactDivProps['onKeyDown']> extends (e: infer E) => void ? E : never;
-export type ChangeEvent = NonNullable<ReactInputProps['onChange']> extends (e: infer E) => void ? E : never;
-export type FocusEvent = NonNullable<ReactDivProps['onFocus']> extends (e: infer E) => void ? E : never;
-export type FormEvent = NonNullable<React.DetailedHTMLProps<React.FormHTMLAttributes<HTMLFormElement>, HTMLFormElement>['onSubmit']> extends (e: infer E) => void ? E : never;
+export type MouseEvent =
+  NonNullable<ReactDivProps['onClick']> extends (e: infer E) => void
+    ? E
+    : never;
+export type KeyboardEvent =
+  NonNullable<ReactDivProps['onKeyDown']> extends (e: infer E) => void
+    ? E
+    : never;
+export type ChangeEvent =
+  NonNullable<ReactInputProps['onChange']> extends (e: infer E) => void
+    ? E
+    : never;
+export type FocusEvent =
+  NonNullable<ReactDivProps['onFocus']> extends (e: infer E) => void
+    ? E
+    : never;
+export type FormEvent =
+  NonNullable<
+    React.DetailedHTMLProps<
+      React.FormHTMLAttributes<HTMLFormElement>,
+      HTMLFormElement
+    >['onSubmit']
+  > extends (e: infer E) => void
+    ? E
+    : never;
 
 // Event handler types - these match React's expected function signatures
 export type MouseEventHandler = NonNullable<ReactDivProps['onClick']>;
 export type KeyboardEventHandler = NonNullable<ReactDivProps['onKeyDown']>;
 export type ChangeEventHandler = NonNullable<ReactInputProps['onChange']>;
 export type FocusEventHandler = NonNullable<ReactDivProps['onFocus']>;
-export type FormEventHandler = NonNullable<React.DetailedHTMLProps<React.FormHTMLAttributes<HTMLFormElement>, HTMLFormElement>['onSubmit']>;
+export type FormEventHandler = NonNullable<
+  React.DetailedHTMLProps<
+    React.FormHTMLAttributes<HTMLFormElement>,
+    HTMLFormElement
+  >['onSubmit']
+>;
 
 // Provide additional compatibility exports
 export const ReactCompat = {

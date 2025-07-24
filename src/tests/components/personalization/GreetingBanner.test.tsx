@@ -1,17 +1,16 @@
-
-
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { GreetingBanner } from '@/components/personalization/GreetingBanner';
 import * as React from 'react';
+import { GreetingBanner } from '@/components/personalization/GreetingBanner';
 
 // Mock dependencies
-vi.mock('@/contexts/PersonalizationContext', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/contexts/PersonalizationContext')>();
+vi.mock('@/contexts/PersonalizationContext', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/contexts/PersonalizationContext')>();
   const mockTrackPersonalizationEvent = vi.fn();
-  
+
   return {
     ...actual,
     usePersonalization: () => ({
@@ -28,7 +27,7 @@ vi.mock('@/contexts/PersonalizationContext', async (importOriginal) => {
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    from: vi.fn().mockImplementation((table) => {
+    from: vi.fn().mockImplementation(table => {
       const chainMock = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
@@ -37,7 +36,7 @@ vi.mock('@/integrations/supabase/client', () => ({
         single: vi.fn(),
         maybeSingle: vi.fn(),
       };
-      
+
       if (table === 'profiles') {
         chainMock.single.mockResolvedValue({
           data: { first_name: 'John' },
@@ -49,7 +48,7 @@ vi.mock('@/integrations/supabase/client', () => ({
           error: null,
         });
       }
-      
+
       return chainMock;
     }),
   },
@@ -70,7 +69,9 @@ vi.mock('@/lib/personalization/abTesting', () => {
 });
 
 vi.mock('@/lib/personalization/voiceAndTone', () => ({
-  getGreeting: vi.fn().mockReturnValue('Welcome back, traveler! Where to next?'),
+  getGreeting: vi
+    .fn()
+    .mockReturnValue('Welcome back, traveler! Where to next?'),
 }));
 
 vi.mock('@/hooks/useAnalytics', () => {
@@ -105,7 +106,7 @@ describe('GreetingBanner', () => {
 
   it('should track exposure event on render', async () => {
     renderComponent({ userId: 'test-user' });
-    
+
     // The component should render and call the tracking function
     await waitFor(() => {
       const greetingElement = screen.getByRole('button');
@@ -116,7 +117,7 @@ describe('GreetingBanner', () => {
   it('should handle click event and track engagement', async () => {
     const onClickMock = vi.fn();
     renderComponent({ userId: 'test-user', onClick: onClickMock });
-    
+
     await waitFor(() => {
       const greetingElement = screen.getByRole('button');
       fireEvent.click(greetingElement);

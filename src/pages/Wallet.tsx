@@ -1,21 +1,21 @@
 import { useState } from 'react';
-import { Link } from "react-router-dom";
-import { X, Plus } from "lucide-react";
-import AuthGuard from "@/components/AuthGuard";
-import { useWallet } from "@/contexts/WalletContext";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { toast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
-import { AddCardModal } from "@/components/wallet/AddCardModal";
+import { Link } from 'react-router-dom';
+import { X, Plus } from 'lucide-react';
+import AuthGuard from '@/components/AuthGuard';
+import { useWallet } from '@/contexts/WalletContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { toast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
+import { AddCardModal } from '@/components/wallet/AddCardModal';
 function WalletPage() {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-  const { 
-    paymentMethods, 
-    loading, 
-    error, 
-    refreshPaymentMethods, 
-    setDefaultPaymentMethod, 
-    deletePaymentMethod 
+  const {
+    paymentMethods,
+    loading,
+    error,
+    refreshPaymentMethods,
+    setDefaultPaymentMethod,
+    deletePaymentMethod,
   } = useWallet();
   const { user } = useCurrentUser();
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
@@ -24,9 +24,9 @@ function WalletPage() {
   const handleSetDefault = async (paymentMethod: any) => {
     if (!user) {
       toast({
-        title: "Error",
-        description: "User not authenticated",
-        variant: "destructive",
+        title: 'Error',
+        description: 'User not authenticated',
+        variant: 'destructive',
       });
       return;
     }
@@ -34,17 +34,18 @@ function WalletPage() {
     try {
       setIsUpdating(paymentMethod.id);
       await setDefaultPaymentMethod(paymentMethod.id);
-      
+
       toast({
-        title: "Payment method updated",
-        description: "Your default payment method has been updated.",
+        title: 'Payment method updated',
+        description: 'Your default payment method has been updated.',
       });
     } catch (err: unknown) {
-      console.error("Error setting default payment method:", err);
+      console.error('Error setting default payment method:', err);
       toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : 'An unknown error occurred',
-        variant: "destructive",
+        title: 'Error',
+        description:
+          err instanceof Error ? err.message : 'An unknown error occurred',
+        variant: 'destructive',
       });
     } finally {
       setIsUpdating(null);
@@ -54,18 +55,19 @@ function WalletPage() {
   const handleDeleteCard = async (paymentMethod: any) => {
     if (!user) {
       toast({
-        title: "Error",
-        description: "User not authenticated",
-        variant: "destructive",
+        title: 'Error',
+        description: 'User not authenticated',
+        variant: 'destructive',
       });
       return;
     }
 
     if (paymentMethod.is_default) {
       toast({
-        title: "Cannot delete default payment method",
-        description: "Please set another payment method as default before deleting this one.",
-        variant: "destructive",
+        title: 'Cannot delete default payment method',
+        description:
+          'Please set another payment method as default before deleting this one.',
+        variant: 'destructive',
       });
       return;
     }
@@ -73,17 +75,18 @@ function WalletPage() {
     try {
       setIsUpdating(paymentMethod.id);
       await deletePaymentMethod(paymentMethod.id);
-      
+
       toast({
-        title: "Payment method deleted",
-        description: "Your payment method has been removed successfully.",
+        title: 'Payment method deleted',
+        description: 'Your payment method has been removed successfully.',
       });
     } catch (err: unknown) {
-      console.error("Error deleting payment method:", err);
+      console.error('Error deleting payment method:', err);
       toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : 'An unknown error occurred',
-        variant: "destructive",
+        title: 'Error',
+        description:
+          err instanceof Error ? err.message : 'An unknown error occurred',
+        variant: 'destructive',
       });
     } finally {
       setIsUpdating(null);
@@ -96,14 +99,19 @@ function WalletPage() {
         <div className="bg-white shadow overflow-hidden rounded-lg">
           <div className="px-4 py-5 sm:p-6 space-y-6">
             <h1 className="text-2xl font-semibold">Wallet</h1>
-            
+
             {loading && <p className="text-gray-600">Loading saved cards…</p>}
-            {error && <p className="text-red-600">Error loading cards: {error}</p>}
+            {error && (
+              <p className="text-red-600">Error loading cards: {error}</p>
+            )}
 
             {paymentMethods && paymentMethods.length > 0 ? (
               <ul className="divide-y divide-gray-200">
                 {paymentMethods.map((pm: any) => (
-                  <li key={pm.id} className="py-4 flex justify-between items-center">
+                  <li
+                    key={pm.id}
+                    className="py-4 flex justify-between items-center"
+                  >
                     <div className="flex items-center space-x-3">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                         {pm.brand?.toUpperCase() || 'UNKNOWN'}
@@ -119,23 +127,29 @@ function WalletPage() {
                           Default
                         </span>
                       ) : (
-                        <Button 
-                          onClick={() => handleSetDefault(pm)} 
+                        <Button
+                          onClick={() => handleSetDefault(pm)}
                           disabled={isUpdating !== null}
-                          variant="outline" 
+                          variant="outline"
                           size="sm"
                           className="text-sm text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
                         >
-                          {isUpdating === pm.id ? 'Updating...' : 'Make default'}
+                          {isUpdating === pm.id
+                            ? 'Updating...'
+                            : 'Make default'}
                         </Button>
                       )}
-                      <Button 
+                      <Button
                         onClick={() => handleDeleteCard(pm)}
-                        disabled={isUpdating !== null || pm.is_default} 
+                        disabled={isUpdating !== null || pm.is_default}
                         variant="outline"
                         size="sm"
                         className="text-sm text-red-600 hover:text-red-900 disabled:opacity-50"
-                        title={pm.is_default ? "Cannot delete default payment method" : "Delete payment method"}
+                        title={
+                          pm.is_default
+                            ? 'Cannot delete default payment method'
+                            : 'Delete payment method'
+                        }
                       >
                         {isUpdating === pm.id ? 'Deleting...' : 'Delete'}
                       </Button>
@@ -143,8 +157,12 @@ function WalletPage() {
                   </li>
                 ))}
               </ul>
-            ) : !loading && (
-              <p className="text-gray-600 py-4">No payment methods saved yet.</p>
+            ) : (
+              !loading && (
+                <p className="text-gray-600 py-4">
+                  No payment methods saved yet.
+                </p>
+              )
             )}
 
             {/* Add Payment Method Section */}
@@ -170,7 +188,7 @@ function WalletPage() {
                   )}
                 </Button>
               </div>
-              
+
               <AddCardModal
                 isOpen={showAddForm}
                 onClose={() => setShowAddForm(false)}
@@ -184,18 +202,22 @@ function WalletPage() {
             {!stripeKey && (
               <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4">
                 <p className="text-yellow-700">
-                  Stripe isn't configured. Please set <code>VITE_STRIPE_PUBLISHABLE_KEY</code> in your
+                  Stripe isn't configured. Please set{' '}
+                  <code>VITE_STRIPE_PUBLISHABLE_KEY</code> in your
                   <code>.env</code>.
                 </p>
               </div>
             )}
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h3 className="text-sm font-medium text-blue-900 mb-2">Enhanced Security</h3>
+              <h3 className="text-sm font-medium text-blue-900 mb-2">
+                Enhanced Security
+              </h3>
               <p className="text-sm text-blue-700">
-                All payment method changes are now synchronized with Stripe for enhanced security. 
-                Setting a payment method as default will update your Stripe customer profile, 
-                and deleting a payment method will remove it from both our system and Stripe.
+                All payment method changes are now synchronized with Stripe for
+                enhanced security. Setting a payment method as default will
+                update your Stripe customer profile, and deleting a payment
+                method will remove it from both our system and Stripe.
               </p>
             </div>
 

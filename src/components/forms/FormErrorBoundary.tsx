@@ -1,7 +1,6 @@
-
 /**
  * Form Error Boundary Component
- * 
+ *
  * Catches and handles errors in React Hook Form components
  * following best practices for error handling and user experience
  */
@@ -10,9 +9,9 @@ type ReactNode = React.ReactNode;
 type ErrorInfo = React.ErrorInfo;
 type ComponentType<P = {}> = ComponentType<P>;
 
+import * as React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import * as React from 'react';
 
 interface Props {
   children: ReactNode;
@@ -40,18 +39,18 @@ export class FormErrorBoundary extends React.Component<Props, State> {
     super(props);
     this.state = {
       hasError: false,
-      errorId: ''
+      errorId: '',
     };
   }
 
   public static getDerivedStateFromError(error: Error): State {
     // Generate unique error ID for logging purposes
     const errorId = `form-error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     return {
       hasError: true,
       error,
-      errorId
+      errorId,
     };
   }
 
@@ -61,7 +60,7 @@ export class FormErrorBoundary extends React.Component<Props, State> {
       error: error.message,
       stack: error.stack,
       errorInfo,
-      errorId: this.state.errorId
+      errorId: this.state.errorId,
     });
 
     // Call custom error handler if provided
@@ -72,7 +71,7 @@ export class FormErrorBoundary extends React.Component<Props, State> {
     // Update state with error info
     this.setState({
       error,
-      errorInfo
+      errorInfo,
     });
   }
 
@@ -103,7 +102,7 @@ export class FormErrorBoundary extends React.Component<Props, State> {
       hasError: false,
       error: undefined,
       errorInfo: undefined,
-      errorId: ''
+      errorId: '',
     });
   };
 
@@ -126,31 +125,37 @@ export class FormErrorBoundary extends React.Component<Props, State> {
       }
 
       // Determine error type for better user messaging
-      const isFormValidationError = error?.message?.includes('validation') ||
+      const isFormValidationError =
+        error?.message?.includes('validation') ||
         error?.message?.includes('required') ||
         error?.message?.includes('invalid');
 
-      const isNetworkError = error?.message?.includes('fetch') ||
+      const isNetworkError =
+        error?.message?.includes('fetch') ||
         error?.message?.includes('network') ||
         error?.message?.includes('timeout');
 
-      const isRenderError = error?.message?.includes('render') ||
-        error?.name === 'ChunkLoadError';
+      const isRenderError =
+        error?.message?.includes('render') || error?.name === 'ChunkLoadError';
 
       // Provide contextual error messages
       let errorTitle = 'Form Error';
-      let errorMessage = 'An unexpected error occurred while processing your form.';
+      let errorMessage =
+        'An unexpected error occurred while processing your form.';
       let showReload = false;
 
       if (isFormValidationError) {
         errorTitle = 'Form Validation Error';
-        errorMessage = 'There was an issue with form validation. Please check your inputs and try again.';
+        errorMessage =
+          'There was an issue with form validation. Please check your inputs and try again.';
       } else if (isNetworkError) {
         errorTitle = 'Connection Error';
-        errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+        errorMessage =
+          'Unable to connect to the server. Please check your internet connection and try again.';
       } else if (isRenderError) {
         errorTitle = 'Loading Error';
-        errorMessage = 'There was an issue loading the form. Please refresh the page to try again.';
+        errorMessage =
+          'There was an issue loading the form. Please refresh the page to try again.';
         showReload = true;
       }
 
@@ -181,7 +186,7 @@ export class FormErrorBoundary extends React.Component<Props, State> {
                     <RefreshCw className="h-3 w-3" />
                     Try Again
                   </Button>
-                  
+
                   {showReload && (
                     <Button
                       onClick={this.handleReload}
@@ -231,10 +236,10 @@ export class FormErrorBoundary extends React.Component<Props, State> {
 export const useFormErrorHandler = () => {
   const handleFormError = useCallback((error: Error) => {
     console.error('Form error:', error);
-    
+
     // You can integrate with error reporting services here
     // Example: Sentry.captureException(error);
-    
+
     return error;
   }, []);
 

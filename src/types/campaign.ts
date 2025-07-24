@@ -31,7 +31,14 @@ export interface Campaign {
   user_id: string;
   trip_request_id: string;
   name?: string;
-  status: 'active' | 'watching' | 'paused' | 'booked' | 'completed' | 'cancelled' | 'expired';
+  status:
+    | 'active'
+    | 'watching'
+    | 'paused'
+    | 'booked'
+    | 'completed'
+    | 'cancelled'
+    | 'expired';
   criteria: CampaignCriteria;
   price_history?: {
     timestamp: string;

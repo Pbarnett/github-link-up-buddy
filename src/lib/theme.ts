@@ -1,7 +1,7 @@
 /**
  * Theme configuration for Radix Themes integration
  * This file configures the theme settings for GitHub Link-Up Buddy
- * 
+ *
  * Based on the extensive Radix Themes documentation, this configuration
  * provides a cohesive design system with proper color scales, typography,
  * and spacing that integrates seamlessly with the existing Tailwind CSS setup.
@@ -13,19 +13,19 @@ import type { ThemeProps } from '@radix-ui/themes';
 export const themeConfig: ThemeProps = {
   // Primary accent color - using blue to match the brand
   accentColor: 'blue',
-  
+
   // Gray color scale - using slate for better contrast
   grayColor: 'slate',
-  
+
   // Panel background - using translucent for modern overlay effect
   panelBackground: 'translucent',
-  
+
   // Border radius - using medium for balanced rounded corners
   radius: 'medium',
-  
+
   // Scaling factor - using 100% for default sizing
   scaling: '100%',
-  
+
   // Appearance will be controlled by next-themes
   // so we don't set it here to avoid conflicts
 };
@@ -37,15 +37,15 @@ export const customTokens = {
     // Primary blue brand color
     brandBlue: '#3B82F6',
     brandBlueLight: '#EFF6FF',
-    
+
     // Success green
     brandGreen: '#10B981',
     brandGreenLight: '#ECFDF5',
-    
+
     // Warning orange
     brandOrange: '#F59E0B',
     brandOrangeLight: '#FEF3C7',
-    
+
     // Status colors
     statusSuccess: '#10B981',
     statusWarning: '#F59E0B',
@@ -53,15 +53,16 @@ export const customTokens = {
     statusInfo: '#3B82F6',
     statusProcessing: '#8B5CF6',
   },
-  
+
   // Typography settings
   typography: {
     fontFamily: {
-      default: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      default:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
       mono: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
     },
   },
-  
+
   // Spacing and layout
   spacing: {
     // Custom spacing scale that aligns with Tailwind
@@ -77,7 +78,7 @@ export const customTokens = {
       9: '64px',
     },
   },
-  
+
   // Border radius settings
   radius: {
     scale: {
@@ -88,7 +89,7 @@ export const customTokens = {
       full: '9999px',
     },
   },
-  
+
   // Shadow settings
   shadows: {
     sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
@@ -118,7 +119,7 @@ export const componentThemes = {
       borderColor: 'transparent',
     },
   },
-  
+
   // Card variants
   card: {
     default: {
@@ -133,7 +134,7 @@ export const componentThemes = {
       boxShadow: 'var(--shadow-2)',
     },
   },
-  
+
   // Input variants
   input: {
     default: {
@@ -166,7 +167,7 @@ export const animations = {
     normal: '200ms',
     slow: '300ms',
   },
-  
+
   // Easing functions
   easing: {
     ease: 'cubic-bezier(0.4, 0, 0.2, 1)',

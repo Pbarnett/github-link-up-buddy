@@ -1,13 +1,15 @@
-import { getLaunchDarklyServerClient } from '../lib/launchdarkly/server-client';
 import * as React from 'react';
 import { useContext, useEffect, useState } from 'react';
+import { getLaunchDarklyServerClient } from '../lib/launchdarkly/server-client';
 
 interface LaunchDarklyContextProps {
   flags: LDFlagSet;
   ldClient: LDClient | null;
 }
 
-const LaunchDarklyContext = createContext<LaunchDarklyContextProps | undefined>(undefined);
+const LaunchDarklyContext = createContext<LaunchDarklyContextProps | undefined>(
+  undefined
+);
 
 export const LaunchDarklyProvider: React.FC = ({ children }) => {
   const [flags, setFlags] = useState<LDFlagSet>({});
@@ -44,7 +46,9 @@ export const LaunchDarklyProvider: React.FC = ({ children }) => {
 export const useLaunchDarkly = () => {
   const context = useContext(LaunchDarklyContext);
   if (!context) {
-    throw new Error('useLaunchDarkly must be used within a LaunchDarklyProvider');
+    throw new Error(
+      'useLaunchDarkly must be used within a LaunchDarklyProvider'
+    );
   }
   return context;
 };

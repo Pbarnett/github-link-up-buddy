@@ -26,20 +26,18 @@ export interface AuditEvent {
  */
 export async function logAuditEvent(event: AuditEvent): Promise<void> {
   try {
-    const { error } = await supabase
-      .from('traveler_data_audit')
-      .insert({
-        user_id: event.user_id,
-        action: event.action,
-        table_name: event.table_name,
-        record_id: event.record_id,
-        old_data: event.old_data || null,
-        new_data: event.new_data || null,
-        ip_address: event.ip_address || null,
-        user_agent: event.user_agent || null,
-        session_id: event.session_id || null,
-        created_at: new Date().toISOString(),
-      });
+    const { error } = await supabase.from('traveler_data_audit').insert({
+      user_id: event.user_id,
+      action: event.action,
+      table_name: event.table_name,
+      record_id: event.record_id,
+      old_data: event.old_data || null,
+      new_data: event.new_data || null,
+      ip_address: event.ip_address || null,
+      user_agent: event.user_agent || null,
+      session_id: event.session_id || null,
+      created_at: new Date().toISOString(),
+    });
 
     if (error) {
       console.error('Failed to log audit event:', error);
@@ -91,14 +89,12 @@ export async function logAIActivity(
   details: Record<string, unknown>
 ): Promise<void> {
   try {
-    const { error } = await supabase
-      .from('ai_activity')
-      .insert({
-        user_id: userId,
-        action,
-        details,
-        created_at: new Date().toISOString(),
-      });
+    const { error } = await supabase.from('ai_activity').insert({
+      user_id: userId,
+      action,
+      details,
+      created_at: new Date().toISOString(),
+    });
 
     if (error) {
       console.error('Failed to log AI activity:', error);

@@ -1,17 +1,15 @@
-
-
 import * as React from 'react';
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import { 
-  AlertTriangle, 
-  TrendingUp, 
+import {
+  AlertTriangle,
+  TrendingUp,
   CheckCircle,
   Phone,
   FileText,
   Shield,
   User,
-  X
+  X,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,23 +59,32 @@ export function RecommendationCard({
   onAction,
   onDismiss,
   className = '',
-  compact = false
+  compact = false,
 }: RecommendationCardProps) {
-  const { category, priority, title, description, action, points_value } = recommendation;
-  
+  const { category, priority, title, description, action, points_value } =
+    recommendation;
+
   const colors = priorityColors[priority];
-  const ActionIcon = actionIcons[action as keyof typeof actionIcons] || TrendingUp;
+  const ActionIcon =
+    actionIcons[action as keyof typeof actionIcons] || TrendingUp;
   const PriorityIcon = priority === 'high' ? AlertTriangle : TrendingUp;
 
   const getActionLabel = (action: string) => {
     switch (action) {
-      case 'verify_phone': return 'Verify Phone';
-      case 'add_phone': return 'Add Phone';
-      case 'add_passport': return 'Add Passport';
-      case 'update_passport': return 'Update Passport';
-      case 'verify_identity': return 'Verify Identity';
-      case 'complete_profile': return 'Complete Profile';
-      default: return 'Take Action';
+      case 'verify_phone':
+        return 'Verify Phone';
+      case 'add_phone':
+        return 'Add Phone';
+      case 'add_passport':
+        return 'Add Passport';
+      case 'update_passport':
+        return 'Update Passport';
+      case 'verify_identity':
+        return 'Verify Identity';
+      case 'complete_profile':
+        return 'Complete Profile';
+      default:
+        return 'Take Action';
     }
   };
 
@@ -87,10 +94,14 @@ export function RecommendationCard({
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <PriorityIcon className={`h-4 w-4 ${colors.icon} flex-shrink-0`} />
+              <PriorityIcon
+                className={`h-4 w-4 ${colors.icon} flex-shrink-0`}
+              />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium truncate">{title}</p>
-                <p className="text-xs text-muted-foreground truncate">{description}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {description}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -136,7 +147,7 @@ export function RecommendationCard({
                 </p>
               </div>
             </div>
-            
+
             {onDismiss && (
               <Button
                 variant="ghost"
@@ -155,12 +166,11 @@ export function RecommendationCard({
               <span className="capitalize">{category.replace(/_/g, ' ')}</span>
               {points_value && (
                 <span className="flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3" />
-                  +{points_value} points
+                  <TrendingUp className="h-3 w-3" />+{points_value} points
                 </span>
               )}
             </div>
-            
+
             <Button
               size="sm"
               onClick={() => onAction?.(action)}
@@ -192,7 +202,7 @@ export function RecommendationList({
   onDismiss,
   maxVisible = 3,
   compact = false,
-  className = ''
+  className = '',
 }: RecommendationListProps) {
   const visibleRecommendations = recommendations.slice(0, maxVisible);
   const hiddenCount = Math.max(0, recommendations.length - maxVisible);
@@ -222,12 +232,13 @@ export function RecommendationList({
           compact={compact}
         />
       ))}
-      
+
       {hiddenCount > 0 && (
         <Card className="border-dashed">
           <CardContent className="p-4 text-center">
             <p className="text-sm text-muted-foreground">
-              {hiddenCount} more recommendation{hiddenCount > 1 ? 's' : ''} available
+              {hiddenCount} more recommendation{hiddenCount > 1 ? 's' : ''}{' '}
+              available
             </p>
             <Button variant="ghost" size="sm" className="mt-2">
               View All Recommendations

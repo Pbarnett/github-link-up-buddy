@@ -10,7 +10,7 @@ import type {
   ISODateString,
   AsyncState,
   Result,
-  ValidationError
+  ValidationError,
 } from './index';
 
 // ============================================================================
@@ -39,8 +39,8 @@ export interface ApiRequestConfig {
 export type ApiRequestBody<T = unknown> = T extends { method: 'GET' | 'DELETE' }
   ? never
   : T extends { method: 'POST' | 'PUT' | 'PATCH' }
-  ? Record<string, unknown>
-  : never;
+    ? Record<string, unknown>
+    : never;
 
 /**
  * Paginated API response
@@ -79,10 +79,22 @@ export interface ApiErrorResponse {
 // HTTP STATUS CODE TYPES
 // ============================================================================
 
-export type HttpStatusCode = 
-  | 200 | 201 | 202 | 204 // Success
-  | 400 | 401 | 403 | 404 | 409 | 422 | 429 // Client Error
-  | 500 | 502 | 503 | 504; // Server Error
+export type HttpStatusCode =
+  | 200
+  | 201
+  | 202
+  | 204 // Success
+  | 400
+  | 401
+  | 403
+  | 404
+  | 409
+  | 422
+  | 429 // Client Error
+  | 500
+  | 502
+  | 503
+  | 504; // Server Error
 
 export type SuccessStatusCode = 200 | 201 | 202 | 204;
 export type ClientErrorStatusCode = 400 | 401 | 403 | 404 | 409 | 422 | 429;
@@ -97,22 +109,58 @@ export type ServerErrorStatusCode = 500 | 502 | 503 | 504;
  */
 export type ApiEndpoints = {
   // Authentication
-  '/api/auth/login': { method: 'POST'; body: LoginRequest; response: LoginResponse };
-  '/api/auth/logout': { method: 'POST'; body: never; response: { success: boolean } };
-  '/api/auth/refresh': { method: 'POST'; body: RefreshTokenRequest; response: TokenResponse };
-  
+  '/api/auth/login': {
+    method: 'POST';
+    body: LoginRequest;
+    response: LoginResponse;
+  };
+  '/api/auth/logout': {
+    method: 'POST';
+    body: never;
+    response: { success: boolean };
+  };
+  '/api/auth/refresh': {
+    method: 'POST';
+    body: RefreshTokenRequest;
+    response: TokenResponse;
+  };
+
   // User management
   '/api/users/profile': { method: 'GET'; body: never; response: UserProfile };
-  '/api/users/profile/update': { method: 'PUT'; body: UpdateUserRequest; response: UserProfile };
-  
+  '/api/users/profile/update': {
+    method: 'PUT';
+    body: UpdateUserRequest;
+    response: UserProfile;
+  };
+
   // Flight search
-  '/api/flights/search': { method: 'POST'; body: FlightSearchRequest; response: FlightSearchResponse };
-  '/api/flights/offers/{offerId}': { method: 'GET'; body: never; response: FlightOffer };
-  
+  '/api/flights/search': {
+    method: 'POST';
+    body: FlightSearchRequest;
+    response: FlightSearchResponse;
+  };
+  '/api/flights/offers/{offerId}': {
+    method: 'GET';
+    body: never;
+    response: FlightOffer;
+  };
+
   // Bookings
-  '/api/bookings': { method: 'GET'; body: never; response: PaginatedResponse<Booking> };
-  '/api/bookings/create': { method: 'POST'; body: CreateBookingRequest; response: Booking };
-  '/api/bookings/{bookingId}': { method: 'GET'; body: never; response: Booking };
+  '/api/bookings': {
+    method: 'GET';
+    body: never;
+    response: PaginatedResponse<Booking>;
+  };
+  '/api/bookings/create': {
+    method: 'POST';
+    body: CreateBookingRequest;
+    response: Booking;
+  };
+  '/api/bookings/{bookingId}': {
+    method: 'GET';
+    body: never;
+    response: Booking;
+  };
 };
 
 // ============================================================================
@@ -122,20 +170,20 @@ export type ApiEndpoints = {
 /**
  * Extract request body type from endpoint definition
  */
-export type ApiRequestType<T extends keyof ApiEndpoints> = 
-  ApiEndpoints[T]['body'] extends never 
-    ? void 
-    : ApiEndpoints[T]['body'];
+export type ApiRequestType<T extends keyof ApiEndpoints> =
+  ApiEndpoints[T]['body'] extends never ? void : ApiEndpoints[T]['body'];
 
 /**
  * Extract response type from endpoint definition
  */
-export type ApiResponseType<T extends keyof ApiEndpoints> = ApiEndpoints[T]['response'];
+export type ApiResponseType<T extends keyof ApiEndpoints> =
+  ApiEndpoints[T]['response'];
 
 /**
  * Extract HTTP method from endpoint definition
  */
-export type ApiMethodType<T extends keyof ApiEndpoints> = ApiEndpoints[T]['method'];
+export type ApiMethodType<T extends keyof ApiEndpoints> =
+  ApiEndpoints[T]['method'];
 
 // ============================================================================
 // API CLIENT TYPES
@@ -152,23 +200,23 @@ export interface ApiClient {
       params?: Record<string, string | number>;
     }
   ): Promise<Result<ApiResponseType<T>, ApiErrorResponse>>;
-  
+
   get<T extends keyof ApiEndpoints>(
     endpoint: T,
     params?: Record<string, string | number>
   ): Promise<Result<ApiResponseType<T>, ApiErrorResponse>>;
-  
+
   post<T extends keyof ApiEndpoints>(
     endpoint: T,
     body: ApiRequestType<T>,
     config?: Partial<ApiRequestConfig>
   ): Promise<Result<ApiResponseType<T>, ApiErrorResponse>>;
-  
+
   put<T extends keyof ApiEndpoints>(
     endpoint: T,
     body: ApiRequestType<T>
   ): Promise<Result<ApiResponseType<T>, ApiErrorResponse>>;
-  
+
   delete<T extends keyof ApiEndpoints>(
     endpoint: T
   ): Promise<Result<ApiResponseType<T>, ApiErrorResponse>>;
@@ -224,9 +272,18 @@ export interface SearchParams {
 /**
  * Filter operators for API queries
  */
-export type FilterOperator = 
-  | 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' 
-  | 'in' | 'nin' | 'contains' | 'startsWith' | 'endsWith';
+export type FilterOperator =
+  | 'eq'
+  | 'ne'
+  | 'gt'
+  | 'gte'
+  | 'lt'
+  | 'lte'
+  | 'in'
+  | 'nin'
+  | 'contains'
+  | 'startsWith'
+  | 'endsWith';
 
 /**
  * Filter condition structure

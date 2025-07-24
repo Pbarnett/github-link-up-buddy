@@ -39,7 +39,7 @@ export const buildPaymentMetadata = ({
   campaignId,
   marketingSource,
   deviceInfo,
-  additionalData = {}
+  additionalData = {},
 }: {
   userId: string;
   flightRoute?: string;
@@ -59,37 +59,54 @@ export const buildPaymentMetadata = ({
     booking_type: bookingType,
     created_via: 'parker_flight_platform',
     timestamp: new Date().toISOString(),
-    
+
     // Flight-specific data
     ...(flightRoute && { flight_route: flightRoute.slice(0, 500) }),
-    
+
     // Marketing attribution
     ...(campaignId && { campaign_id: campaignId.slice(0, 500) }),
     ...(marketingSource && { marketing_source: marketingSource.slice(0, 500) }),
-    
+
     // Technical metadata
-    ...(deviceInfo?.platform && { device_platform: deviceInfo.platform.slice(0, 500) }),
-    ...(deviceInfo?.userAgent && { user_agent: deviceInfo.userAgent.slice(0, 500) }),
-    ...(deviceInfo?.screenResolution && { screen_resolution: deviceInfo.screenResolution.slice(0, 500) }),
-    
+    ...(deviceInfo?.platform && {
+      device_platform: deviceInfo.platform.slice(0, 500),
+    }),
+    ...(deviceInfo?.userAgent && {
+      user_agent: deviceInfo.userAgent.slice(0, 500),
+    }),
+    ...(deviceInfo?.screenResolution && {
+      screen_resolution: deviceInfo.screenResolution.slice(0, 500),
+    }),
+
     // Additional business data (ensure we don't exceed 50 key limit)
     ...Object.fromEntries(
       Object.entries(additionalData)
         .slice(0, 50 - 10) // Reserve space for core metadata
         .map(([key, value]) => [
           key.slice(0, 40), // Max 40 chars for key
-          String(value).slice(0, 500) // Max 500 chars for value
+          String(value).slice(0, 500), // Max 500 chars for value
         ])
-    )
+    ),
   };
-  
+
   // Ensure we don't exceed 50 keys total
   const entries = Object.entries(metadata).slice(0, 50);
   return Object.fromEntries(entries);
 };
 
 export interface PaymentMethodParams {
-  type: 'card' | 'us_bank_account' | 'sepa_debit' | 'ideal' | 'sofort' | 'bancontact' | 'giropay' | 'eps' | 'p24' | 'alipay' | 'wechat_pay';
+  type:
+    | 'card'
+    | 'us_bank_account'
+    | 'sepa_debit'
+    | 'ideal'
+    | 'sofort'
+    | 'bancontact'
+    | 'giropay'
+    | 'eps'
+    | 'p24'
+    | 'alipay'
+    | 'wechat_pay';
   card?: unknown; // Stripe card element
   us_bank_account?: {
     routing_number: string;
@@ -139,23 +156,23 @@ export interface PaymentMethodConfiguration {
   };
 }
 
-type PaymentMethodType = 
-  | 'card' 
-  | 'apple_pay' 
-  | 'google_pay' 
-  | 'link' 
-  | 'us_bank_account' 
-  | 'sepa_debit' 
-  | 'ideal' 
-  | 'sofort' 
-  | 'bancontact' 
-  | 'giropay' 
-  | 'eps' 
-  | 'p24' 
-  | 'alipay' 
-  | 'wechat_pay' 
-  | 'klarna' 
-  | 'afterpay_clearpay' 
+type PaymentMethodType =
+  | 'card'
+  | 'apple_pay'
+  | 'google_pay'
+  | 'link'
+  | 'us_bank_account'
+  | 'sepa_debit'
+  | 'ideal'
+  | 'sofort'
+  | 'bancontact'
+  | 'giropay'
+  | 'eps'
+  | 'p24'
+  | 'alipay'
+  | 'wechat_pay'
+  | 'klarna'
+  | 'afterpay_clearpay'
   | 'affirm';
 
 /**
@@ -163,20 +180,21 @@ type PaymentMethodType =
  * Per API reference recommendations for international payments
  */
 export const getOptimalPaymentMethods = (
-  country: string, 
+  country: string,
   currency: string,
   amount: number
 ): PaymentMethodType[] => {
   const baseMethods: PaymentMethodType[] = ['card'];
-  
+
   // Add digital wallets (high conversion)
   baseMethods.push('apple_pay', 'google_pay', 'link');
-  
+
   // Add region-specific methods per API reference
   switch (country.toUpperCase()) {
     case 'US':
       baseMethods.push('us_bank_account');
-      if (amount >= 5000) { // $50+ for BNPL
+      if (amount >= 5000) {
+        // $50+ for BNPL
         baseMethods.push('klarna', 'afterpay_clearpay', 'affirm');
       }
       break;
@@ -198,7 +216,7 @@ export const getOptimalPaymentMethods = (
       break;
     // Add more regions as needed
   }
-  
+
   return baseMethods;
 };
 
@@ -229,14 +247,19 @@ export class StripeService {
    */
   async createPaymentIntent(params: PaymentIntentParams) {
     try {
-      const { data, error } = await supabase.functions.invoke('create-payment-session', {
-        body: {
-          amount: Math.round(params.amount * 100), // Convert to cents
-          currency: params.currency.toLowerCase(),
-          metadata: params.metadata || {},
-          automatic_payment_methods: params.automatic_payment_methods || { enabled: true }
+      const { data, error } = await supabase.functions.invoke(
+        'create-payment-session',
+        {
+          body: {
+            amount: Math.round(params.amount * 100), // Convert to cents
+            currency: params.currency.toLowerCase(),
+            metadata: params.metadata || {},
+            automatic_payment_methods: params.automatic_payment_methods || {
+              enabled: true,
+            },
+          },
         }
-      });
+      );
 
       if (error) {
         const handledError = StripeService.handleStripeError(error);
@@ -248,7 +271,7 @@ export class StripeService {
         id: data.id,
         amount: data.amount,
         currency: data.currency,
-        status: data.status
+        status: data.status,
       };
     } catch (error) {
       console.error('Error creating payment intent:', error);
@@ -266,7 +289,7 @@ export class StripeService {
     paymentMethod,
     offerId,
     passengers,
-    returnUrl
+    returnUrl,
   }: {
     clientSecret: string;
     paymentMethod: PaymentMethodParams;
@@ -283,7 +306,7 @@ export class StripeService {
       const duffelSession = await this.createDuffelPaymentSession({
         offerId,
         paymentMethod,
-        passengers
+        passengers,
       });
 
       if (duffelSession.status !== 'ready_for_payment') {
@@ -293,11 +316,13 @@ export class StripeService {
       // Step 2: Confirm payment with Stripe
       const confirmResult = await this.stripe.confirmCardPayment(clientSecret, {
         payment_method: paymentMethod as any,
-        return_url: returnUrl
+        return_url: returnUrl,
       });
 
       if (confirmResult.error) {
-        const handledError = StripeService.handleStripeError(confirmResult.error);
+        const handledError = StripeService.handleStripeError(
+          confirmResult.error
+        );
         throw new Error(handledError.error);
       }
 
@@ -305,9 +330,8 @@ export class StripeService {
       return {
         paymentIntent: confirmResult.paymentIntent,
         duffelSession,
-        success: true
+        success: true,
       };
-
     } catch (error) {
       console.error('Error confirming payment:', error);
       const handledError = StripeService.handleStripeError(error);
@@ -322,7 +346,7 @@ export class StripeService {
   private async createDuffelPaymentSession({
     offerId,
     paymentMethod,
-    passengers
+    passengers,
   }: {
     offerId: string;
     paymentMethod: PaymentMethodParams;
@@ -330,37 +354,40 @@ export class StripeService {
   }): Promise<DuffelPaymentSession> {
     try {
       // Create temporary card with Duffel
-      const { data: cardData, error: cardError } = await supabase.functions.invoke('duffel-create-card', {
-        body: {
-          payment_method: paymentMethod,
-          cardholder_name: `${passengers[0]?.given_name} ${passengers[0]?.family_name}`,
-          cardholder_email: passengers[0]?.email
-        }
-      });
+      const { data: cardData, error: cardError } =
+        await supabase.functions.invoke('duffel-create-card', {
+          body: {
+            payment_method: paymentMethod,
+            cardholder_name: `${passengers[0]?.given_name} ${passengers[0]?.family_name}`,
+            cardholder_email: passengers[0]?.email,
+          },
+        });
 
       if (cardError) {
         throw new Error(`Card creation failed: ${cardError.message}`);
       }
 
       // Create 3D Secure session
-      const { data: sessionData, error: sessionError } = await supabase.functions.invoke('duffel-3ds-session', {
-        body: {
-          card_id: cardData.card_id,
-          offer_id: offerId,
-          cardholder_present: true
-        }
-      });
+      const { data: sessionData, error: sessionError } =
+        await supabase.functions.invoke('duffel-3ds-session', {
+          body: {
+            card_id: cardData.card_id,
+            offer_id: offerId,
+            cardholder_present: true,
+          },
+        });
 
       if (sessionError) {
-        throw new Error(`3D Secure session creation failed: ${sessionError.message}`);
+        throw new Error(
+          `3D Secure session creation failed: ${sessionError.message}`
+        );
       }
 
       return {
         card_id: cardData.card_id,
         three_d_secure_session_id: sessionData.session_id,
-        status: sessionData.status
+        status: sessionData.status,
       };
-
     } catch (error) {
       console.error('Error creating Duffel payment session:', error);
       throw error;
@@ -376,7 +403,8 @@ export class StripeService {
     }
 
     try {
-      const { paymentIntent, error } = await this.stripe.retrievePaymentIntent(clientSecret);
+      const { paymentIntent, error } =
+        await this.stripe.retrievePaymentIntent(clientSecret);
 
       if (error) {
         throw new Error(error.message);
@@ -398,20 +426,39 @@ export class StripeService {
     endpointSecret: string
   ) {
     const stripe = new StripeServerModule(process.env.STRIPE_SECRET_KEY!);
-    
+
     try {
-      const event = stripe.webhooks.constructEvent(payload, signature, endpointSecret);
+      const event = stripe.webhooks.constructEvent(
+        payload,
+        signature,
+        endpointSecret
+      );
       return { event, valid: true };
     } catch (error) {
       console.error('Webhook signature verification failed:', error);
-      return { event: null, valid: false, error: error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' ? error.message : 'Unknown error' };
+      return {
+        event: null,
+        valid: false,
+        error:
+          error &&
+          typeof error === 'object' &&
+          'message' in error &&
+          typeof error.message === 'string'
+            ? error.message
+            : 'Unknown error',
+      };
     }
   }
 
   /**
    * Handle Stripe errors according to API reference standards
    */
-  private static handleStripeError(error: any): { success: false; error: string; retryable: boolean; errorType: string } {
+  private static handleStripeError(error: any): {
+    success: false;
+    error: string;
+    retryable: boolean;
+    errorType: string;
+  } {
     // Handle different Stripe error types per API reference documentation
     if (error.type) {
       switch (error.type) {
@@ -422,9 +469,9 @@ export class StripeService {
             success: false,
             error: error.message || 'Card was declined',
             retryable: false,
-            errorType: 'card_error'
+            errorType: 'card_error',
           };
-        
+
         case 'StripeRateLimitError':
         case 'rate_limit_error':
           // Handle rate limiting - should retry with exponential backoff
@@ -432,9 +479,9 @@ export class StripeService {
             success: false,
             error: 'Too many requests. Please try again shortly.',
             retryable: true,
-            errorType: 'rate_limit_error'
+            errorType: 'rate_limit_error',
           };
-        
+
         case 'StripeInvalidRequestError':
         case 'invalid_request_error':
           // Handle malformed requests - don't retry
@@ -442,9 +489,9 @@ export class StripeService {
             success: false,
             error: error.message || 'Invalid request parameters',
             retryable: false,
-            errorType: 'invalid_request_error'
+            errorType: 'invalid_request_error',
           };
-        
+
         case 'StripeAPIError':
         case 'api_error':
           // Handle Stripe API errors - can retry
@@ -452,9 +499,9 @@ export class StripeService {
             success: false,
             error: 'Payment processing temporarily unavailable',
             retryable: true,
-            errorType: 'api_error'
+            errorType: 'api_error',
           };
-        
+
         case 'StripeConnectionError':
         case 'connection_error':
           // Handle network errors - can retry
@@ -462,9 +509,9 @@ export class StripeService {
             success: false,
             error: 'Network error. Please check your connection and try again.',
             retryable: true,
-            errorType: 'connection_error'
+            errorType: 'connection_error',
           };
-        
+
         case 'StripeAuthenticationError':
         case 'authentication_error':
           // Handle authentication errors - don't retry
@@ -472,24 +519,24 @@ export class StripeService {
             success: false,
             error: 'Authentication failed',
             retryable: false,
-            errorType: 'authentication_error'
+            errorType: 'authentication_error',
           };
-        
+
         case 'idempotency_error':
           // Handle idempotency errors
           return {
             success: false,
             error: 'Duplicate request detected',
             retryable: false,
-            errorType: 'idempotency_error'
+            errorType: 'idempotency_error',
           };
-        
+
         default:
           return {
             success: false,
             error: error.message || 'An unexpected error occurred',
             retryable: false,
-            errorType: 'unknown_error'
+            errorType: 'unknown_error',
           };
       }
     }
@@ -502,49 +549,49 @@ export class StripeService {
             success: false,
             error: 'Bad request - please check your payment information',
             retryable: false,
-            errorType: 'bad_request'
+            errorType: 'bad_request',
           };
         case 401:
           return {
             success: false,
             error: 'Authentication failed',
             retryable: false,
-            errorType: 'unauthorized'
+            errorType: 'unauthorized',
           };
         case 402:
           return {
             success: false,
             error: 'Payment required',
             retryable: false,
-            errorType: 'payment_required'
+            errorType: 'payment_required',
           };
         case 403:
           return {
             success: false,
             error: 'Forbidden - insufficient permissions',
             retryable: false,
-            errorType: 'forbidden'
+            errorType: 'forbidden',
           };
         case 404:
           return {
             success: false,
             error: 'Resource not found',
             retryable: false,
-            errorType: 'not_found'
+            errorType: 'not_found',
           };
         case 409:
           return {
             success: false,
             error: 'Conflict - request conflicts with existing resource',
             retryable: false,
-            errorType: 'conflict'
+            errorType: 'conflict',
           };
         case 429:
           return {
             success: false,
             error: 'Rate limited - please try again shortly',
             retryable: true,
-            errorType: 'rate_limited'
+            errorType: 'rate_limited',
           };
         case 500:
         case 502:
@@ -554,14 +601,14 @@ export class StripeService {
             success: false,
             error: 'Server error - please try again',
             retryable: true,
-            errorType: 'server_error'
+            errorType: 'server_error',
           };
         default:
           return {
             success: false,
             error: error.message || 'An unexpected error occurred',
             retryable: false,
-            errorType: 'unknown_error'
+            errorType: 'unknown_error',
           };
       }
     }
@@ -571,7 +618,7 @@ export class StripeService {
       success: false,
       error: error.message || 'An unexpected error occurred',
       retryable: false,
-      errorType: 'generic_error'
+      errorType: 'generic_error',
     };
   }
 
@@ -581,20 +628,23 @@ export class StripeService {
   async processRefund({
     paymentIntentId,
     amount,
-    reason
+    reason,
   }: {
     paymentIntentId: string;
     amount?: number;
     reason?: string;
   }) {
     try {
-      const { data, error } = await supabase.functions.invoke('process-refund', {
-        body: {
-          payment_intent_id: paymentIntentId,
-          amount: amount ? Math.round(amount * 100) : undefined, // Convert to cents if provided
-          reason: reason || 'requested_by_customer'
+      const { data, error } = await supabase.functions.invoke(
+        'process-refund',
+        {
+          body: {
+            payment_intent_id: paymentIntentId,
+            amount: amount ? Math.round(amount * 100) : undefined, // Convert to cents if provided
+            reason: reason || 'requested_by_customer',
+          },
         }
-      });
+      );
 
       if (error) {
         const handledError = StripeService.handleStripeError(error);
@@ -614,9 +664,12 @@ export class StripeService {
    */
   async getPaymentMethods(customerId: string) {
     try {
-      const { data, error } = await supabase.functions.invoke('get-payment-methods', {
-        body: { customer_id: customerId }
-      });
+      const { data, error } = await supabase.functions.invoke(
+        'get-payment-methods',
+        {
+          body: { customer_id: customerId },
+        }
+      );
 
       if (error) {
         throw new Error(`Failed to retrieve payment methods: ${error.message}`);
@@ -634,9 +687,12 @@ export class StripeService {
    */
   async deletePaymentMethod(paymentMethodId: string) {
     try {
-      const { data, error } = await supabase.functions.invoke('delete-payment-method', {
-        body: { payment_method_id: paymentMethodId }
-      });
+      const { data, error } = await supabase.functions.invoke(
+        'delete-payment-method',
+        {
+          body: { payment_method_id: paymentMethodId },
+        }
+      );
 
       if (error) {
         throw new Error(`Failed to delete payment method: ${error.message}`);
@@ -663,14 +719,14 @@ export const formatCurrency = (amount: number, currency: string): string => {
 
 export const getCurrencySymbol = (currency: string): string => {
   const symbols: Record<string, string> = {
-    'USD': '$',
-    'EUR': '€',
-    'GBP': '£',
-    'JPY': '¥',
-    'CAD': 'C$',
-    'AUD': 'A$'
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    CAD: 'C$',
+    AUD: 'A$',
   };
-  
+
   return symbols[currency.toUpperCase()] || currency.toUpperCase();
 };
 
@@ -684,19 +740,19 @@ class StripeCache {
   set(key: string, data: any, ttl: number = this.defaultTTL): void {
     this.cache.set(key, {
       data,
-      expiry: Date.now() + ttl
+      expiry: Date.now() + ttl,
     });
   }
 
   get<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
-    
+
     if (Date.now() > entry.expiry) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return entry.data as T;
   }
 
@@ -736,21 +792,21 @@ export class StripeBatch {
 
   async execute(): Promise<any[]> {
     const results: any[] = [];
-    
+
     // Process operations in batches to respect rate limits
     for (let i = 0; i < this.operations.length; i += this.batchSize) {
       const batch = this.operations.slice(i, i + this.batchSize);
-      
+
       // Wait for rate limit slot before processing batch
       await rateLimiter.waitForSlot();
-      
+
       const batchResults = await Promise.allSettled(
         batch.map(operation => exponentialBackoff(operation))
       );
-      
+
       results.push(...batchResults);
     }
-    
+
     return results;
   }
 
@@ -768,7 +824,7 @@ export const searchCharges = async (params: {
   expand?: string[];
 }): Promise<PaginatedResponse<any>> => {
   const cacheKey = `search_charges_${JSON.stringify(params)}`;
-  
+
   // Try cache first
   const cached = stripeCache.get<PaginatedResponse<any>>(cacheKey);
   if (cached) {
@@ -776,13 +832,13 @@ export const searchCharges = async (params: {
   }
 
   await rateLimiter.waitForSlot();
-  
+
   const { data, error } = await supabase.functions.invoke('search-charges', {
     body: {
       query: params.query,
       limit: params.limit || 10,
-      expand: params.expand || []
-    }
+      expand: params.expand || [],
+    },
   });
 
   if (error) {
@@ -791,7 +847,7 @@ export const searchCharges = async (params: {
 
   // Cache results
   stripeCache.set(cacheKey, data, 2 * 60 * 1000); // 2 minutes
-  
+
   return data;
 };
 
@@ -805,22 +861,22 @@ export const convertCurrency = async (
   toCurrency: string
 ): Promise<{ amount: number; rate: number; converted_amount: number }> => {
   const cacheKey = `fx_rate_${fromCurrency}_${toCurrency}`;
-  
+
   // Try cache first (rates change infrequently)
   const cached = stripeCache.get<{ rate: number; timestamp: number }>(cacheKey);
   if (cached) {
     return {
       amount,
       rate: cached.rate,
-      converted_amount: Math.round(amount * cached.rate)
+      converted_amount: Math.round(amount * cached.rate),
     };
   }
 
   const { data, error } = await supabase.functions.invoke('get-fx-rate', {
     body: {
       from: fromCurrency.toLowerCase(),
-      to: toCurrency.toLowerCase()
-    }
+      to: toCurrency.toLowerCase(),
+    },
   });
 
   if (error) {
@@ -828,15 +884,19 @@ export const convertCurrency = async (
   }
 
   // Cache exchange rate for 1 hour
-  stripeCache.set(cacheKey, {
-    rate: data.rate,
-    timestamp: Date.now()
-  }, 60 * 60 * 1000);
+  stripeCache.set(
+    cacheKey,
+    {
+      rate: data.rate,
+      timestamp: Date.now(),
+    },
+    60 * 60 * 1000
+  );
 
   return {
     amount,
     rate: data.rate,
-    converted_amount: Math.round(amount * data.rate)
+    converted_amount: Math.round(amount * data.rate),
   };
 };
 

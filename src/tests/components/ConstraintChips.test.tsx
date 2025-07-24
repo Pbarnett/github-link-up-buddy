@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ConstraintChips from '@/components/trip/ConstraintChips';
@@ -28,21 +27,25 @@ describe('ConstraintChips', () => {
 
   it('calls onToggleNonStop when non-stop chip is clicked', () => {
     render(<ConstraintChips {...mockProps} />);
-    
+
     const nonStopChip = screen.getByText('Non-stop only');
     fireEvent.click(nonStopChip);
-    
+
     expect(mockProps.onToggleNonStop).toHaveBeenCalledTimes(1);
   });
 
   it('shows different styling when nonStopOnly is true', () => {
     render(<ConstraintChips {...mockProps} nonStopOnly={true} />);
-    
-    const nonStopButton = screen.getByRole('button', { name: /non-stop flights enabled/i });
+
+    const nonStopButton = screen.getByRole('button', {
+      name: /non-stop flights enabled/i,
+    });
     expect(nonStopButton).toHaveAttribute('aria-pressed', 'true');
-    
+
     // Check that the badge has the default variant (not outline)
-    const badge = nonStopButton.querySelector('[data-testid="chip-nonstop"]') || nonStopButton.firstElementChild;
+    const badge =
+      nonStopButton.querySelector('[data-testid="chip-nonstop"]') ||
+      nonStopButton.firstElementChild;
     expect(badge).not.toHaveClass('border-input'); // outline variant has border-input class
   });
 });

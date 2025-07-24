@@ -1,46 +1,70 @@
-
-
 type FC<T = {}> = React.FC<T>;
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form';
 import { Form } from '@/components/ui/form';
-import * as React from 'react';
 
 // Define schema directly here since it's not exported from types/form
-const unifiedFlightFormSchema = z.object({
-  origin: z.array(z.string()).min(1, 'At least one departure airport must be selected'),
-  destination: z.string().min(1, 'Please provide a destination'),
-  earliestOutbound: z.date({ required_error: 'Earliest outbound date is required' })
-    .refine(date => {
-      const tomorrow = new Date();
-      tomorrow.setHours(0, 0, 0, 0);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return date >= tomorrow;
-    }, 'Earliest outbound date must be in the future'),
-  latestReturn: z.date({ required_error: 'Latest return date is required' }),
-  cabinClass: z.enum(['any', 'economy', 'premium_economy', 'business', 'first']),
-  budget: z.number().min(100, 'Budget must be at least $100').max(10000, 'Budget cannot exceed $10,000'),
-  autoBookEnabled: z.boolean().optional(),
-  paymentMethodId: z.string().optional(),
-}).superRefine((data, ctx) => {
-  // Consolidated validation for better performance
-  
-  // Date sequence validation - only validate if both dates exist
-  if (data.earliestOutbound && data.latestReturn) {
-    if (data.latestReturn <= data.earliestOutbound) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Latest return date must be after earliest outbound date',
-        path: ['latestReturn']
-      });
+const unifiedFlightFormSchema = z
+  .object({
+    origin: z
+      .array(z.string())
+      .min(1, 'At least one departure airport must be selected'),
+    destination: z.string().min(1, 'Please provide a destination'),
+    earliestOutbound: z
+      .date({ required_error: 'Earliest outbound date is required' })
+      .refine(date => {
+        const tomorrow = new Date();
+        tomorrow.setHours(0, 0, 0, 0);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return date >= tomorrow;
+      }, 'Earliest outbound date must be in the future'),
+    latestReturn: z.date({ required_error: 'Latest return date is required' }),
+    cabinClass: z.enum([
+      'any',
+      'economy',
+      'premium_economy',
+      'business',
+      'first',
+    ]),
+    budget: z
+      .number()
+      .min(100, 'Budget must be at least $100')
+      .max(10000, 'Budget cannot exceed $10,000'),
+    autoBookEnabled: z.boolean().optional(),
+    paymentMethodId: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    // Consolidated validation for better performance
+
+    // Date sequence validation - only validate if both dates exist
+    if (data.earliestOutbound && data.latestReturn) {
+      if (data.latestReturn <= data.earliestOutbound) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Latest return date must be after earliest outbound date',
+          path: ['latestReturn'],
+        });
+      }
     }
-  }
-});
+  });
 
 // Use the optimized schema directly
 const finalSchema = unifiedFlightFormSchema;
@@ -52,15 +76,18 @@ interface FlightRuleFormProps {
   defaultValues?: Partial<UnifiedFlightRuleForm>;
 }
 
-export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValues }) => {
+export const FlightRuleForm: FC<FlightRuleFormProps> = ({
+  onSubmit,
+  defaultValues,
+}) => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const nextWeek = new Date();
   nextWeek.setDate(nextWeek.getDate() + 7);
-  
+
   const form = useForm<UnifiedFlightRuleForm>({
     resolver: zodResolver(finalSchema),
-    mode: 'onChange',        // validate every keystroke
+    mode: 'onChange', // validate every keystroke
     reValidateMode: 'onChange',
     criteriaMode: 'firstError',
     shouldFocusError: true,
@@ -86,10 +113,10 @@ export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValue
   // Watch for changes in date fields and trigger validation
   const watchedEarliestOutbound = form.watch('earliestOutbound');
   const watchedLatestReturn = form.watch('latestReturn');
-  
+
   // ✅ FIXED: Destructure specific methods to avoid infinite loops
   const { trigger } = form;
-  
+
   useEffect(() => {
     if (watchedEarliestOutbound && watchedLatestReturn) {
       trigger(['latestReturn']);
@@ -103,17 +130,17 @@ export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValue
     errors,
     isSubmitting,
     isDirty,
-    values: form.getValues()
+    values: form.getValues(),
   });
 
   return (
     <Form {...form}>
-      <form 
-        onSubmit={form.handleSubmit(handleSubmit, (errors) => {
+      <form
+        onSubmit={form.handleSubmit(handleSubmit, errors => {
           console.log('Form validation failed:', errors);
           console.log('Form state:', form.formState);
         })}
-        className="space-y-6" 
+        className="space-y-6"
         role="form"
       >
         <FormField
@@ -123,13 +150,22 @@ export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValue
             <FormItem>
               <FormLabel>Origin Airports</FormLabel>
               <FormControl>
-                <Input 
+                <Input
                   {...field}
                   placeholder="Enter origin airports"
-                  value={Array.isArray(field.value) ? field.value.join(', ') : ''}
-                  onChange={(e) => {
+                  value={
+                    Array.isArray(field.value) ? field.value.join(', ') : ''
+                  }
+                  onChange={e => {
                     const value = (e.target as HTMLInputElement).value.trim();
-                    field.onChange(value ? value.split(',').map(s => s.trim()).filter(Boolean) : []);
+                    field.onChange(
+                      value
+                        ? value
+                            .split(',')
+                            .map(s => s.trim())
+                            .filter(Boolean)
+                        : []
+                    );
                   }}
                 />
               </FormControl>
@@ -159,15 +195,17 @@ export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValue
             <FormItem>
               <FormLabel>Earliest Outbound</FormLabel>
               <FormControl>
-                <Input 
+                <Input
                   {...field}
                   type="date"
-                  value={field.value ? field.value.toISOString().split('T')[0] : ''}
-                  onChange={(e) => {
+                  value={
+                    field.value ? field.value.toISOString().split('T')[0] : ''
+                  }
+                  onChange={e => {
                     field.onChange(
-                      (e.target as HTMLInputElement).value 
-                        ? new Date((e.target as HTMLInputElement).value) 
-                        : undefined  // use undefined for empty to trigger required error
+                      (e.target as HTMLInputElement).value
+                        ? new Date((e.target as HTMLInputElement).value)
+                        : undefined // use undefined for empty to trigger required error
                     );
                   }}
                 />
@@ -184,12 +222,18 @@ export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValue
             <FormItem>
               <FormLabel>Latest Return</FormLabel>
               <FormControl>
-                <Input 
+                <Input
                   {...field}
                   type="date"
-                  value={field.value ? field.value.toISOString().split('T')[0] : ''}
-                  onChange={(e) => {
-                    field.onChange((e.target as HTMLInputElement).value ? new Date((e.target as HTMLInputElement).value) : undefined);
+                  value={
+                    field.value ? field.value.toISOString().split('T')[0] : ''
+                  }
+                  onChange={e => {
+                    field.onChange(
+                      (e.target as HTMLInputElement).value
+                        ? new Date((e.target as HTMLInputElement).value)
+                        : undefined
+                    );
                   }}
                 />
               </FormControl>
@@ -213,7 +257,9 @@ export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValue
                 <SelectContent>
                   <SelectItem value="any">Any</SelectItem>
                   <SelectItem value="economy">Economy</SelectItem>
-                  <SelectItem value="premium_economy">Premium Economy</SelectItem>
+                  <SelectItem value="premium_economy">
+                    Premium Economy
+                  </SelectItem>
                   <SelectItem value="business">Business</SelectItem>
                   <SelectItem value="first">First Class</SelectItem>
                 </SelectContent>
@@ -230,12 +276,12 @@ export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValue
             <FormItem>
               <FormLabel>Budget</FormLabel>
               <FormControl>
-                <Input 
+                <Input
                   {...field}
-                  type="number" 
+                  type="number"
                   placeholder="Enter budget"
-                  value={field.value ?? ''}  // show empty string if undefined
-                  onChange={(e) => {
+                  value={field.value ?? ''} // show empty string if undefined
+                  onChange={e => {
                     const value = (e.target as HTMLInputElement).value;
                     if (value === '' || value === null) {
                       field.onChange(undefined);
@@ -260,4 +306,3 @@ export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValue
     </Form>
   );
 };
-

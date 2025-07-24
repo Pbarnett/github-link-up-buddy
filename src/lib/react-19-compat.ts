@@ -12,8 +12,10 @@ export const Fragment = React.Fragment;
 export const createElement = React.createElement;
 
 // Type definitions for compatibility
-export type ComponentPropsWithoutRef<T extends React.ElementType> = React.ComponentPropsWithoutRef<T>;
-export type ComponentProps<T extends React.ElementType> = React.ComponentProps<T>;
+export type ComponentPropsWithoutRef<T extends React.ElementType> =
+  React.ComponentPropsWithoutRef<T>;
+export type ComponentProps<T extends React.ElementType> =
+  React.ComponentProps<T>;
 export type ElementRef<T extends React.ElementType> = React.ElementRef<T>;
 export type HTMLAttributes<T> = React.HTMLAttributes<T>;
 export type CSSProperties = React.CSSProperties;
