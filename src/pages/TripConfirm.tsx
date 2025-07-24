@@ -14,6 +14,8 @@ import { TablesInsert } from "@/integrations/supabase/types";
 import { toJsonSafe } from "@/utils/toJsonSafe";
 import { supabase } from "@/integrations/supabase/client";
 import * as React from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const TripConfirm = () => {
   const navigate = useNavigate();

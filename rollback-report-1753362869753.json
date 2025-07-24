@@ -1,0 +1,46 @@
+{
+  "rollback_id": "rollback-1753362869752",
+  "timestamp": "2025-07-24T13:14:29.752Z",
+  "duration": "6.97s",
+  "reason": "Testing rollback functionality",
+  "source_deployment": "git-4f78e82",
+  "target_commit": "20a7d89",
+  "emergency_mode": false,
+  "dry_run": true,
+  "attempt_number": 1,
+  "checks": {
+    "preRollback": true,
+    "gitRollback": false,
+    "databaseRollback": false,
+    "edgeFunctionRollback": false,
+    "infrastructureRestore": false,
+    "postRollbackValidation": true
+  },
+  "rollback_steps": [
+    {
+      "name": "Git Rollback",
+      "description": "Rollback to commit 20a7d89",
+      "critical": true
+    },
+    {
+      "name": "Database Migrations Rollback",
+      "description": "Rollback database schema changes",
+      "critical": true
+    },
+    {
+      "name": "Edge Functions Rollback",
+      "description": "Redeploy previous Edge Functions",
+      "critical": true
+    },
+    {
+      "name": "Infrastructure State Restore",
+      "description": "Restore infrastructure configuration",
+      "critical": false
+    }
+  ],
+  "environment": {
+    "node_env": "production",
+    "aws_region": "us-east-1",
+    "supabase_url": "https://bbonngdyfyfjqfhvoljl.supabase.co"
+  }
+}

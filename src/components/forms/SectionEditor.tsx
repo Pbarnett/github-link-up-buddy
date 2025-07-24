@@ -5,6 +5,8 @@
  * Provides editing interface for form sections and their fields
  */
 
+import * as React from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,11 +17,12 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type {
-import * as React from 'react';
   FormSection,
   FieldConfiguration,
   ValidationRules
 } from '@/types/dynamic-forms';
+
+type FC<T = {}> = React.FC<T>;
 
 interface SectionEditorProps {
   section: FormSection;

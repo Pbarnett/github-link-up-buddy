@@ -383,23 +383,38 @@ vi.mock('react-router-dom', async () => {
     return createElement('a', { ...props, href: to }, children);
   };
   
+  // Store current location state for router mocks
+  let currentLocation = {
+    pathname: '/',
+    search: '',
+    hash: '',
+    state: null,
+    key: 'default'
+  };
+  
   return {
     ...actual,
     Link: MockLink,
-    useSearchParams: vi.fn(() => [
-      new URLSearchParams(),
-      vi.fn()
-    ]),
+    useSearchParams: vi.fn(() => {
+      const searchParams = new URLSearchParams(currentLocation.search);
+      return [searchParams, vi.fn()];
+    }),
     useNavigate: vi.fn(() => vi.fn()),
-    useLocation: vi.fn(() => ({
-      pathname: '/',
-      search: '',
-      hash: '',
-      state: null,
-      key: 'default'
-    })),
+    useLocation: vi.fn(() => currentLocation),
     useParams: vi.fn(() => ({})),
     MemoryRouter: ({ children, initialEntries, ...props }: any) => {
+      // Parse the initial entry to set up proper location mock
+      if (initialEntries && initialEntries.length > 0) {
+        const entry = initialEntries[0];
+        const url = new URL(entry, 'http://localhost');
+        currentLocation = {
+          pathname: url.pathname,
+          search: url.search,
+          hash: url.hash,
+          state: null,
+          key: 'test-key'
+        };
+      }
       // Don't pass initialEntries as a DOM prop to avoid React warnings
       return createElement('div', { ...props, 'data-testid': 'memory-router' }, children);
     },
@@ -436,6 +451,12 @@ const MockRoute = ({ children, element, ...props }: any) => {
 
 ;(globalThis as Record<string, unknown>).Routes = MockRoutes
 ;(globalThis as Record<string, unknown>).Route = MockRoute
+
+// Mock Navigate component
+const MockNavigate = ({ to, ...props }: any) => {
+  return createElement('div', { ...props, 'data-testid': 'navigate-mock' }, `Redirecting to ${to}`);
+};
+;(globalThis as Record<string, unknown>).Navigate = MockNavigate
 
 // Make React Router hooks globally available
 ;(globalThis as Record<string, unknown>).useParams = vi.fn(() => ({}))
@@ -664,7 +685,15 @@ vi.mock('@radix-ui/react-label', () => ({
 }));
 
 vi.mock('@radix-ui/react-slot', () => ({
-  Slot: ({ children, ...props }: any) => createElement('div', props, children),
+  Slot: ({ children, ...props }: any) => {
+    // The Slot component from Radix UI should render the first child directly
+    // and merge any props with it
+    if (React.isValidElement(children)) {
+      return React.cloneElement(children, { ...props, ...children.props });
+    }
+    // Fallback if children is not a valid React element
+    return createElement('div', props, children);
+  },
 }));
 
 vi.mock('@radix-ui/react-tabs', () => ({
@@ -722,8 +751,19 @@ vi.mock('@radix-ui/react-select', () => ({
 
 vi.mock('@radix-ui/react-popover', () => ({
   Root: ({ children }: any) => createElement(Fragment, {}, children),
-  Trigger: ({ children, ...props }: any) => createElement('button', props, children),
-  Content: ({ children, ...props }: any) => createElement('div', props, children),
+  Trigger: ({ children, asChild, ...props }: any) => {
+    // If asChild is true, render the children directly (they should handle their own props)
+    if (asChild && children) {
+      return children;
+    }
+    // Otherwise render as a button
+    return createElement('button', props, children);
+  },
+  Content: ({ children, sideOffset, ...props }: any) => {
+    // Filter out non-DOM props
+    const { align, side, ...domProps } = props;
+    return createElement('div', domProps, children);
+  },
   Portal: ({ children }: any) => createElement(Fragment, {}, children),
   Close: ({ children, ...props }: any) => createElement('button', props, children),
   Anchor: ({ children, ...props }: any) => createElement('div', props, children),
@@ -732,6 +772,16 @@ vi.mock('@radix-ui/react-popover', () => ({
 
 vi.mock('@radix-ui/react-separator', () => ({
   Root: ({ ...props }: any) => createElement('hr', props),
+}));
+
+vi.mock('@radix-ui/react-checkbox', () => ({
+  Root: ({ children, ...props }: any) => createElement('button', { role: 'checkbox', ...props }, children),
+  Indicator: ({ children, ...props }: any) => createElement('span', props, children),
+}));
+
+vi.mock('@radix-ui/react-switch', () => ({
+  Root: ({ children, ...props }: any) => createElement('button', { role: 'switch', ...props }, children),
+  Thumb: ({ ...props }: any) => createElement('span', props),
 }));
 
 // ==============================================================================
@@ -832,10 +882,36 @@ vi.mock('react-hook-form', () => ({
     setValue: vi.fn(),
     getValue: vi.fn(),
     getValues: vi.fn(() => ({})),
-    watch: vi.fn(),
+    watch: vi.fn((fields) => {
+      // Return reasonable defaults for watched fields
+      if (Array.isArray(fields)) {
+        const watchedValues: any = {};
+        fields.forEach(field => {
+          if (field === 'earliestDeparture' || field === 'latestDeparture') {
+            watchedValues[field] = new Date();
+          } else if (field === 'min_duration' || field === 'max_duration') {
+            watchedValues[field] = 7;
+          } else {
+            watchedValues[field] = '';
+          }
+        });
+        return watchedValues;
+      }
+      // If watching all fields, return some defaults
+      return {
+        earliestDeparture: new Date(),
+        latestDeparture: new Date(),
+        min_duration: 7,
+        max_duration: 14,
+        origin: '',
+        destination: '',
+        budget: 1000
+      };
+    }),
     control: {},
     clearErrors: vi.fn(),
     setError: vi.fn(),
+    getFieldState: vi.fn(() => ({ error: null, isDirty: false, isTouched: false })),
   })),
   Controller: ({ render, ...props }: any) => {
     const field = {
@@ -858,6 +934,30 @@ vi.mock('react-hook-form', () => ({
   FormProvider: ({ children }: { children: ReactNode }) => {
     return createElement(Fragment, {}, children);
   },
+  useFormContext: vi.fn(() => ({
+    register: vi.fn(() => ({})),
+    handleSubmit: vi.fn((fn) => (e: any) => {
+      e?.preventDefault?.();
+      return fn({});
+    }),
+    formState: {
+      errors: {},
+      isSubmitting: false,
+      isValid: true,
+      isDirty: false,
+      isSubmitted: false,
+    },
+    reset: vi.fn(),
+    setValue: vi.fn(),
+    getValue: vi.fn(),
+    getValues: vi.fn(() => ({})),
+    watch: vi.fn(),
+    control: {},
+    clearErrors: vi.fn(),
+    setError: vi.fn(),
+    getFieldState: vi.fn(() => ({ error: null, isDirty: false, isTouched: false })),
+  })),
+  useWatch: vi.fn(() => ({})),
 }));
 
 // Make useForm globally available
@@ -878,11 +978,41 @@ vi.mock('react-hook-form', () => ({
   setValue: vi.fn(),
   getValue: vi.fn(),
   getValues: vi.fn(() => ({})),
-  watch: vi.fn(),
+  watch: vi.fn((fields) => {
+    // Return reasonable defaults for watched fields
+    if (Array.isArray(fields)) {
+      const watchedValues: any = {};
+      fields.forEach(field => {
+        if (field === 'earliestDeparture' || field === 'latestDeparture') {
+          watchedValues[field] = new Date();
+        } else if (field === 'min_duration' || field === 'max_duration') {
+          watchedValues[field] = 7;
+        } else {
+          watchedValues[field] = '';
+        }
+      });
+      return watchedValues;
+    }
+    // If watching all fields, return some defaults
+    return {
+      earliestDeparture: new Date(),
+      latestDeparture: new Date(),
+      min_duration: 7,
+      max_duration: 14,
+      origin: '',
+      destination: '',
+      budget: 1000
+    };
+  }),
   control: {},
   clearErrors: vi.fn(),
   setError: vi.fn(),
 }))
+
+// Make FormProvider globally available
+;(globalThis as Record<string, unknown>).FormProvider = ({ children }: { children: ReactNode }) => {
+  return createElement(Fragment, {}, children);
+};
 
 // ==============================================================================
 // RADIX UI SLOT COMPONENT
@@ -922,10 +1052,12 @@ vi.mock('lucide-react', () => {
     XCircle: createMockIcon('XCircle'),
     Info: createMockIcon('Info'), 
     Loader: createMockIcon('Loader'),
+    Loader2: createMockIcon('Loader2'),
     RefreshCw: createMockIcon('RefreshCw'),
     Search: createMockIcon('Search'),
     Filter: createMockIcon('Filter'),
     Calendar: createMockIcon('Calendar'),
+    CalendarIcon: createMockIcon('CalendarIcon'),
     Clock: createMockIcon('Clock'),
     MapPin: createMockIcon('MapPin'),
     Plane: createMockIcon('Plane'),
@@ -939,6 +1071,8 @@ vi.mock('lucide-react', () => {
     ChevronLeft: createMockIcon('ChevronLeft'),
     ChevronRight: createMockIcon('ChevronRight'),
     Plus: createMockIcon('Plus'),
+    PlusCircle: createMockIcon('PlusCircle'),
+    Activity: createMockIcon('Activity'),
     Minus: createMockIcon('Minus'),
     Edit: createMockIcon('Edit'),
     Trash: createMockIcon('Trash'),
@@ -961,6 +1095,14 @@ vi.mock('lucide-react', () => {
     ArrowLeft: createMockIcon('ArrowLeft'),
     ArrowUp: createMockIcon('ArrowUp'),
     ArrowDown: createMockIcon('ArrowDown'),
+    PlaneTakeoff: createMockIcon('PlaneTakeoff'),
+    Check: createMockIcon('Check'),
+    User: createMockIcon('User'),
+    ToggleLeft: createMockIcon('ToggleLeft'),
+    ToggleRight: createMockIcon('ToggleRight'),
+    HelpCircle: createMockIcon('HelpCircle'),
+    CreditCard: createMockIcon('CreditCard'),
+    Shield: createMockIcon('Shield'),
   };
 });
 
@@ -983,7 +1125,53 @@ const createMockIcon = (name: string) => ({
 ;(globalThis as Record<string, unknown>).Terminal = createMockIcon('Terminal')
 ;(globalThis as Record<string, unknown>).CheckCircle = createMockIcon('CheckCircle')
 ;(globalThis as Record<string, unknown>).XCircle = createMockIcon('XCircle')
+;(globalThis as Record<string, unknown>).X = createMockIcon('X')
+;(globalThis as Record<string, unknown>).PlusCircle = createMockIcon('PlusCircle')
+;(globalThis as Record<string, unknown>).Activity = createMockIcon('Activity')
+;(globalThis as Record<string, unknown>).Loader2 = createMockIcon('Loader2')
 ;(globalThis as Record<string, unknown>).RefreshCw = createMockIcon('RefreshCw')
+;(globalThis as Record<string, unknown>).Calendar = createMockIcon('Calendar')
+;(globalThis as Record<string, unknown>).CalendarIcon = createMockIcon('CalendarIcon')
+;(globalThis as Record<string, unknown>).Clock = createMockIcon('Clock')
+;(globalThis as Record<string, unknown>).PlaneTakeoff = createMockIcon('PlaneTakeoff')
+;(globalThis as Record<string, unknown>).Check = createMockIcon('Check')
+;(globalThis as Record<string, unknown>).Eye = createMockIcon('Eye')
+;(globalThis as Record<string, unknown>).Search = createMockIcon('Search')
+;(globalThis as Record<string, unknown>).HelpCircle = createMockIcon('HelpCircle')
+;(globalThis as Record<string, unknown>).Users = createMockIcon('Users')
+;(globalThis as Record<string, unknown>).Info = createMockIcon('Info')
+
+// Make Radix UI primitives globally available
+;(globalThis as Record<string, unknown>).CheckboxPrimitive = {
+  Root: ({ children, ...props }: any) => createElement('button', { role: 'checkbox', ...props }, children),
+  Indicator: ({ children, ...props }: any) => createElement('span', props, children),
+}
+
+;(globalThis as Record<string, unknown>).SeparatorPrimitive = {
+  Root: ({ ...props }: any) => createElement('hr', props),
+}
+
+;(globalThis as Record<string, unknown>).SwitchPrimitives = {
+  Root: ({ children, ...props }: any) => createElement('button', { role: 'switch', ...props }, children),
+  Thumb: ({ ...props }: any) => createElement('span', props),
+}
+
+// Add missing testing library utilities
+// Mock renderHook from @testing-library/react
+const mockRenderHook = (hook: () => any) => {
+  const result = {
+    current: hook()
+  };
+  return { result };
+};
+;(globalThis as Record<string, unknown>).renderHook = mockRenderHook
+;(globalThis as Record<string, unknown>).BrowserRouter = ({ children, ...props }: any) => createElement('div', { ...props, 'data-testid': 'browser-router' }, children)
+
+// Make QueryClientProvider globally available
+const MockQueryClientProvider = ({ children }: { children: ReactNode }) => {
+  return createElement(Fragment, {}, children);
+};
+;(globalThis as Record<string, unknown>).QueryClientProvider = MockQueryClientProvider
 
 // Export commonly used mocks for test files
 const createMockSupabaseClient = () => mockSupabaseClient;

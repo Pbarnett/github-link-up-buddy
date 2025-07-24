@@ -3,6 +3,9 @@ import { Button } from '@/components/ui/button';
 import FilterTogglesSection from './FilterTogglesSection';
 import TripDurationInputs from './TripDurationInputs';
 import * as React from 'react';
+import { useState } from 'react';
+import { Control } from 'react-hook-form';
+import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 
 // Collapsible filters form data interface
 interface CollapsibleFiltersFormData {

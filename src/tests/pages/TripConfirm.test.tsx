@@ -6,6 +6,7 @@ import TripConfirm from '@/pages/TripConfirm';
 import { supabase as supabaseClient } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import * as React from 'react';
+import { useLocation } from 'react-router-dom';
 
 // Mock Supabase client and other hooks
 vi.mock('@/integrations/supabase/client', () => ({
@@ -43,6 +44,15 @@ describe('TripConfirm Page', () => {
   // --- Tests for Auto-Book Banner and Book Now Button ---
 
   it('should display auto-booking banner if tripRequest.auto_book_enabled is true', async () => {
+    // Override the global useLocation mock for this test
+    vi.mocked(useLocation).mockReturnValue({
+      pathname: '/trip/confirm',
+      search: '?id=offer-for-auto-book&airline=AA&flight_number=123&price=500&departure_date=2024-01-01&departure_time=10:00&return_date=2024-01-05&return_time=12:00&duration=PT2H',
+      hash: '',
+      state: null,
+      key: 'test-key'
+    });
+    
     (vi.mocked(supabaseClient.from) as any).mockImplementation((tableName: string) => {
       if (tableName === 'flight_offers') {
         return {
@@ -79,6 +89,15 @@ describe('TripConfirm Page', () => {
   });
 
   it('should display "Book Now" button if tripRequest.auto_book_enabled is false', async () => {
+    // Override the global useLocation mock for this test
+    vi.mocked(useLocation).mockReturnValue({
+      pathname: '/trip/confirm',
+      search: '?id=offer-for-manual-book&airline=BB&flight_number=456&price=600&departure_date=2024-02-01&departure_time=11:00&return_date=2024-02-05&return_time=13:00&duration=PT3H',
+      hash: '',
+      state: null,
+      key: 'test-key'
+    });
+    
     (vi.mocked(supabaseClient.from) as any).mockImplementation((tableName: string) => {
       if (tableName === 'flight_offers') {
         return {

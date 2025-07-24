@@ -1,10 +1,10 @@
-
-
-
+import React, { useState, useEffect } from 'react';
+import { useWatch, Control } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
-import * as React from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface StickyFormActionsFormData {
   nyc_airports?: string[];

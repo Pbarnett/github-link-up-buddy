@@ -1,6 +1,8 @@
 import { format } from 'date-fns';
+import { useWatch, Control } from 'react-hook-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 // Trip form data interface
 interface TripFormData {

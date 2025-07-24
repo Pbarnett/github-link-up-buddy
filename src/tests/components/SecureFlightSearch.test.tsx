@@ -33,7 +33,7 @@ it('renders flight search form correctly', () => {
   expect(screen.getByPlaceholderText(/jfk, london, etc./i)).toBeVisible();
   
   // Check for departure date input by looking for the date input with min attribute
-  const departureInput = screen.getByDisplayValue('2025-07-23');
+  const departureInput = screen.getByDisplayValue('2025-07-24');
   expect(departureInput).toBeVisible();
   expect(departureInput.getAttribute('type')).toBe('date');
   

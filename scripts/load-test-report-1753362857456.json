@@ -1,0 +1,23 @@
+{
+  "timestamp": "2025-07-24T13:14:17.456Z",
+  "duration": "16.34s",
+  "concurrency": 50,
+  "requestsPerEndpoint": 200,
+  "results": {
+    "/rest/v1/": {
+      "failedRequests": "0",
+      "requestsPerSecond": "49.56",
+      "timePerRequest": "20.177"
+    },
+    "/functions/v1/encrypt-data": {
+      "failedRequests": "0",
+      "requestsPerSecond": "26.95",
+      "timePerRequest": "37.112"
+    },
+    "/functions/v1/create-payment-method": {
+      "failedRequests": "0",
+      "requestsPerSecond": "43.55",
+      "timePerRequest": "22.964"
+    }
+  }
+}

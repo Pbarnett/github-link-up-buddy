@@ -1,6 +1,5 @@
-
-
-
+import React, { useEffect } from 'react';
+import { useFormContext, useWatch, Control } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -8,7 +7,7 @@ import { FormValues } from "@/types/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
-import * as React from 'react';
+import { Settings, DollarSign, CreditCard, Shield } from 'lucide-react';
 
 interface AutoBookingSectionProps {
   control: Control<FormValues>;

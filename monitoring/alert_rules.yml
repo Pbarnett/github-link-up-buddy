@@ -50,3 +50,52 @@ groups:
     annotations:
       summary: "Low disk space"
       description: "Disk space is below 10% for more than 5 minutes"
+
+  # Database connection issues
+  - alert: DatabaseConnectionIssue
+    expr: pg_stat_database_numbackends{datname="postgres"} > 80
+    for: 3m
+    labels:
+      severity: warning
+      service: database
+    annotations:
+      summary: "High database connection count"
+      description: "Database has {{ $value }} active connections"
+
+  # KMS operation failures
+  - alert: KMSOperationFailure
+    expr: increase(aws_kms_errors_total[5m]) > 5
+    for: 2m
+    labels:
+      severity: critical
+      service: kms
+    annotations:
+      summary: "KMS operation failures detected"
+      description: "{{ $value }} KMS operation failures in the last 5 minutes"
+
+  # Edge function performance issues
+  - alert: EdgeFunctionTimeout
+    expr: |
+      sum(rate(aws_lambda_duration_sum{function_name=~"parker-flight-.*"}[5m])) /
+      sum(rate(aws_lambda_duration_count{function_name=~"parker-flight-.*"}[5m])) > 10000
+    for: 3m
+    labels:
+      severity: warning
+      service: edge-functions
+    annotations:
+      summary: "Edge function timeout issues"
+      description: "Average execution time is {{ $value }}ms for Edge Functions"
+
+  # High response time alert
+  - alert: HighResponseTime
+    expr: |
+      histogram_quantile(0.95, 
+        sum(rate(http_request_duration_seconds_bucket{job="parker-flight"}[5m])) by (le)
+      ) > 2
+    for: 5m
+    labels:
+      severity: warning
+      service: parker-flight
+    annotations:
+      summary: "High response time detected"
+      description: "95th percentile response time is {{ $value }}s"

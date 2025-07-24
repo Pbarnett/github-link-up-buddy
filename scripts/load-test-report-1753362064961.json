@@ -1,0 +1,7 @@
+{
+  "timestamp": "2025-07-24T13:01:04.961Z",
+  "duration": "0.12s",
+  "concurrency": 50,
+  "requestsPerEndpoint": 200,
+  "results": {}
+}

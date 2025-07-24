@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import Dashboard from '@/pages/Dashboard';
 import * as React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // --- Mock Dependencies ---
 

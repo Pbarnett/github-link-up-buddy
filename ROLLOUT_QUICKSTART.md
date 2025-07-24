@@ -13,19 +13,29 @@ This guide helps you quickly set up and run the coordinated feature rollout for 
 
 ## 🔧 Quick Setup (2 minutes)
 
-### Step 1: Update Environment Configuration
+### Step 1: Set Up the Database
 
-Edit `.env.rollout-dev` and replace these values:
+Run the database setup script to create feature flags tables:
 
 ```bash
-# 1. Database Connection
-DATABASE_URL="postgresql://postgres:your_password@localhost:5432/github_link_up_buddy_dev"
-# OR for Supabase:
-# DATABASE_URL="postgresql://postgres:your_password@db.your_project.supabase.co:5432/postgres"
+# Initialize the feature flags database
+./scripts/setup-rollout-database.sh
+```
 
-# 2. LaunchDarkly Keys (get from LaunchDarkly dashboard)
-LAUNCHDARKLY_SDK_KEY="sdk-your_actual_development_key"
-VITE_LD_CLIENT_ID="your_actual_development_client_id"
+This will:
+- Create the `feature_flags` and `logs` tables in your Supabase database
+- Set up the initial `wallet_ui` and `profile_ui_revamp` flags
+- Configure your `.env.rollout-dev` file with the database connection
+
+### Step 2: Verify Configuration
+
+The database setup script automatically configures LaunchDarkly keys from your existing setup:
+
+```bash
+# These are already configured:
+LAUNCHDARKLY_SDK_KEY="sdk-382cff6d-3979-4830-a69d-52eb1bd09299"
+VITE_LD_CLIENT_ID="686f3ab8ed094f0948726002"
+DATABASE_URL="postgresql://postgres:your_password@db.bbonngdyfyfjqfhvoljl.supabase.co:5432/postgres"
 ```
 
 ### Step 2: Test Your Setup
