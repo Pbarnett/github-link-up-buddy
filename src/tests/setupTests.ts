@@ -780,7 +780,17 @@ vi.mock('@radix-ui/react-checkbox', () => ({
 }));
 
 vi.mock('@radix-ui/react-switch', () => ({
-  Root: ({ children, ...props }: any) => createElement('button', { role: 'switch', ...props }, children),
+  Root: ({ children, onCheckedChange, checked, ...props }: any) => {
+    // Convert onCheckedChange to onClick for DOM compatibility
+    const handleClick = onCheckedChange ? () => onCheckedChange(!checked) : undefined;
+    const { 'data-state': dataState, ...domProps } = props;
+    return createElement('button', { 
+      role: 'switch', 
+      'aria-checked': checked,
+      onClick: handleClick,
+      ...domProps 
+    }, children);
+  },
   Thumb: ({ ...props }: any) => createElement('span', props),
 }));
 
@@ -1020,6 +1030,12 @@ vi.mock('react-hook-form', () => ({
 
 // Make Slot globally available (needed for button component)
 const MockSlot = ({ children, ...props }: any) => {
+  // The Slot component from Radix UI should render the first child directly
+  // and merge any props with it
+  if (React.isValidElement(children)) {
+    return React.cloneElement(children, { ...props, ...children.props });
+  }
+  // Fallback if children is not a valid React element
   return createElement('div', props, children);
 };
 ;(globalThis as Record<string, unknown>).Slot = MockSlot

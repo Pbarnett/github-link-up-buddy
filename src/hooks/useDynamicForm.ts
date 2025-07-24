@@ -10,15 +10,17 @@
  * - Analytics and performance tracking
  */
 
-type FormEvent = React.FormEvent;
-
-import { zodResolver } from '@hookform/resolvers/zod';
-import type { 
 import * as React from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import type { UseFormReturn } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import type { 
   FormSubmissionData,
   FieldConfiguration
 } from '@/types/dynamic-forms';
+
+type FormEvent = React.FormEvent;
 
 // Type aliases to handle missing exports
 type DynamicFormConfig = any;
