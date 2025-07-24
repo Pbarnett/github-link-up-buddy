@@ -398,14 +398,36 @@ vi.mock('react-router-dom', async () => {
       key: 'default'
     })),
     useParams: vi.fn(() => ({})),
+    MemoryRouter: ({ children, initialEntries, ...props }: any) => {
+      // Don't pass initialEntries as a DOM prop to avoid React warnings
+      return createElement('div', { ...props, 'data-testid': 'memory-router' }, children);
+    },
   };
 });
 
-// Make Link globally available for components
+// Make Link and MemoryRouter globally available for components
 const MockLink = ({ to, children, ...props }: any) => {
   return createElement('a', { ...props, href: to }, children);
 };
+
+const MockMemoryRouter = ({ children, initialEntries, ...props }: any) => {
+  // Don't pass initialEntries as a DOM prop to avoid React warnings
+  return createElement('div', { ...props, 'data-testid': 'memory-router' }, children);
+};
+
 ;(globalThis as Record<string, unknown>).Link = MockLink
+;(globalThis as Record<string, unknown>).MemoryRouter = MockMemoryRouter
+
+// Make React Router hooks globally available
+;(globalThis as Record<string, unknown>).useParams = vi.fn(() => ({}))
+;(globalThis as Record<string, unknown>).useNavigate = vi.fn(() => vi.fn())
+;(globalThis as Record<string, unknown>).useLocation = vi.fn(() => ({
+  pathname: '/',
+  search: '',
+  hash: '',
+  state: null,
+  key: 'default'
+}))
 
 // ==============================================================================
 // GLOBAL TEST ENVIRONMENT RESET
@@ -711,6 +733,148 @@ vi.mock('@sentry/react', () => ({
   captureMessage: vi.fn(),
 }))
 
+// ==============================================================================
+// TANSTACK QUERY (REACT QUERY) MOCKS
+// ==============================================================================
+
+// Mock TanStack Query
+class MockQueryClient {
+  invalidateQueries = vi.fn();
+  setQueryData = vi.fn();
+  getQueryData = vi.fn();
+  refetchQueries = vi.fn();
+  cancelQueries = vi.fn();
+  removeQueries = vi.fn();
+  clear = vi.fn();
+}
+
+const mockQueryClient = new MockQueryClient();
+
+vi.mock('@tanstack/react-query', () => ({
+  QueryClient: MockQueryClient,
+  QueryClientProvider: ({ children }: { children: ReactNode }) => {
+    return createElement(Fragment, {}, children);
+  },
+  useQuery: vi.fn((options: any) => ({
+    data: null,
+    error: null,
+    isLoading: false,
+    isError: false,
+    isSuccess: true,
+    refetch: vi.fn(),
+    ...options.defaultData,
+  })),
+  useMutation: vi.fn(() => ({
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+    data: null,
+    error: null,
+    isLoading: false,
+    isError: false,
+    isSuccess: false,
+    reset: vi.fn(),
+  })),
+  useQueryClient: vi.fn(() => mockQueryClient),
+  useInfiniteQuery: vi.fn(() => ({
+    data: null,
+    error: null,
+    isLoading: false,
+    isError: false,
+    isSuccess: true,
+    fetchNextPage: vi.fn(),
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    refetch: vi.fn(),
+  })),
+}));
+
+// Make QueryClient globally available
+;(globalThis as Record<string, unknown>).QueryClient = MockQueryClient
+
+// ==============================================================================
+// REACT HOOK FORM MOCKS
+// ==============================================================================
+
+vi.mock('react-hook-form', () => ({
+  useForm: vi.fn(() => ({
+    register: vi.fn(() => ({})),
+    handleSubmit: vi.fn((fn) => (e: any) => {
+      e?.preventDefault?.();
+      return fn({});
+    }),
+    formState: {
+      errors: {},
+      isSubmitting: false,
+      isValid: true,
+      isDirty: false,
+      isSubmitted: false,
+    },
+    reset: vi.fn(),
+    setValue: vi.fn(),
+    getValue: vi.fn(),
+    getValues: vi.fn(() => ({})),
+    watch: vi.fn(),
+    control: {},
+    clearErrors: vi.fn(),
+    setError: vi.fn(),
+  })),
+  Controller: ({ render, ...props }: any) => {
+    const field = {
+      value: props.defaultValue || '',
+      onChange: vi.fn(),
+      onBlur: vi.fn(),
+      name: props.name,
+    };
+    return render({ field, fieldState: { error: null } });
+  },
+  useController: vi.fn(() => ({
+    field: {
+      value: '',
+      onChange: vi.fn(),
+      onBlur: vi.fn(),
+      name: 'test',
+    },
+    fieldState: { error: null },
+  })),
+  FormProvider: ({ children }: { children: ReactNode }) => {
+    return createElement(Fragment, {}, children);
+  },
+}));
+
+// Make useForm globally available
+;(globalThis as Record<string, unknown>).useForm = vi.fn(() => ({
+  register: vi.fn(() => ({})),
+  handleSubmit: vi.fn((fn) => (e: any) => {
+    e?.preventDefault?.();
+    return fn({});
+  }),
+  formState: {
+    errors: {},
+    isSubmitting: false,
+    isValid: true,
+    isDirty: false,
+    isSubmitted: false,
+  },
+  reset: vi.fn(),
+  setValue: vi.fn(),
+  getValue: vi.fn(),
+  getValues: vi.fn(() => ({})),
+  watch: vi.fn(),
+  control: {},
+  clearErrors: vi.fn(),
+  setError: vi.fn(),
+}))
+
+// ==============================================================================
+// RADIX UI SLOT COMPONENT
+// ==============================================================================
+
+// Make Slot globally available (needed for button component)
+const MockSlot = ({ children, ...props }: any) => {
+  return createElement('div', props, children);
+};
+;(globalThis as Record<string, unknown>).Slot = MockSlot
+
 // Export commonly used mocks for test files
 const createMockSupabaseClient = () => mockSupabaseClient;
-export { mockSupabaseClient, createMockSupabaseClient };
+export { mockSupabaseClient, createMockSupabaseClient, mockQueryClient };

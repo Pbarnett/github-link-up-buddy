@@ -5,9 +5,8 @@
  * Admin interface for creating and editing dynamic form configurations
  */
 
-type FC<T = {}> = React.FC<T>;
-type _Component<P = {}, S = {}> = React.Component<P, S>;
-
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,7 +16,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type {
-import * as React from 'react';
   FormConfiguration,
   FormBuilderProps,
   FormSection,
@@ -26,6 +24,9 @@ import * as React from 'react';
   SecurityValidationResult,
   SecurityViolation
 } from '@/types/dynamic-forms';
+
+type FC<T = {}> = React.FC<T>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 import { useFormStore } from '@/stores/useFormStore';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
 import { FieldTemplateLibrary } from './FieldTemplateLibrary';

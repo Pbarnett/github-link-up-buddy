@@ -5,15 +5,16 @@
  * Provides a library of field templates for form building
  */
 
-type _Component<P = {}, S = {}> = React.Component<P, S>;
-type FC<T = {}> = React.FC<T>;
-
-import { 
 import * as React from 'react';
+import { useState } from 'react';
+import { 
   Type, Mail, Phone, Hash, Calendar, MapPin, List, 
   CheckSquare, ToggleLeft, SlidersHorizontal, Star, Upload, 
   Plane, Globe, CreditCard, Minus, FileText
 } from 'lucide-react';
+
+type _Component<P = {}, S = {}> = React.Component<P, S>;
+type FC<T = {}> = React.FC<T>;
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

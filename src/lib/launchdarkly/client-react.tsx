@@ -3,9 +3,8 @@
  * Comprehensive client-side implementation with hooks and context management
  */
 
-import { 
 import * as React from 'react';
-import { useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import { import { useContext, useEffect, useState, useCallback, useMemo } from 'react';
   LDProvider, 
   LDClient, 
   LDContext,
