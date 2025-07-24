@@ -1,6 +1,4 @@
-import { Control, useWatch } from 'react-hook-form';
 import { format } from 'date-fns';
-import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 

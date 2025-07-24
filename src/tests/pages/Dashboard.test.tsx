@@ -1,14 +1,10 @@
 
 
-import * as React from 'react';
-const { use } = React;
 
-import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import Dashboard from '@/pages/Dashboard';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as React from 'react';
 
 // --- Mock Dependencies ---
 
@@ -52,6 +48,13 @@ vi.mock('@/lib/personalization/abTesting', () => ({
 
 vi.mock('@/lib/personalization/voiceAndTone', () => ({
   getGreeting: vi.fn().mockReturnValue('Welcome back, traveler! Where to next?'),
+}));
+
+// Mock the GreetingBanner component
+vi.mock('@/components/personalization/GreetingBanner', () => ({
+  DashboardGreeting: ({ userId, variant, className }: any) => (
+    <div className={className}>Welcome back, traveler! Where to next?</div>
+  ),
 }));
 
 vi.mock('@/hooks/useAnalytics', () => ({
@@ -208,7 +211,7 @@ describe('Dashboard Page', () => {
 
     await waitFor(() => expect(screen.getByTestId('trip-history-mock')).toBeInTheDocument());
     const { default: TripHistoryMock } = await import('@/components/dashboard/TripHistory');
-    expect(TripHistoryMock).toHaveBeenCalledWith(expect.objectContaining({ userId: mockUser.id }), expect.anything());
+    expect(TripHistoryMock).toHaveBeenCalledWith(expect.objectContaining({ userId: mockUser.id }), undefined);
     expect(screen.queryByText(/TestAir TA101/i)).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /My Trips/i, selected: true })).toBeInTheDocument();
   });

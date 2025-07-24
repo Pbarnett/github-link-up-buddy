@@ -1,20 +1,17 @@
 
 
-import * as React from 'react';
-const { useEffect, useMemo } = React;
 type FC<T = {}> = React.FC<T>;
 
-import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Terminal, AlertCircle, Filter } from "lucide-react";
 import TripOffersV2Skeleton from '@/components/TripOffersV2Skeleton';
 import AdvancedFilterControls, { FilterOptions } from '@/components/filtering/AdvancedFilterControls';
 import { useFilterState } from '@/hooks/useFilterState';
 import { useTripOffersPools } from '@/hooks/useTripOffers';
 import { toast } from '@/components/ui/use-toast';
+import * as React from 'react';
 
 const EmptyStateCard: FC = () => (
   <Card className="shadow-lg">
@@ -94,7 +91,7 @@ const TripOffersV2Enhanced: FC = () => {
       
       try {
         await refreshPools();
-      } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      } catch (_error) {  
         toast({
           title: "Error",
           description: "Failed to refresh results. Please try again.",

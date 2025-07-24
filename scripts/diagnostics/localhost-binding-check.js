@@ -10,11 +10,6 @@ import { promisify } from 'util';
 import net from 'net';
 import dns from 'dns';
 import os from 'os';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const dnsLookup = promisify(dns.lookup);
 
@@ -51,7 +46,7 @@ class LocalhostDiagnostics {
       if (this.results.ipv4Available) {
         this.log('IPv4 loopback (127.0.0.1) is working');
       }
-    } catch (error) {
+    } catch {
       this.results.ipv4Available = false;
       this.log('IPv4 loopback (127.0.0.1) is not working', 'error');
       this.results.warnings.push('IPv4 loopback connectivity is broken');
@@ -65,7 +60,7 @@ class LocalhostDiagnostics {
       if (this.results.ipv6Available) {
         this.log('IPv6 loopback (::1) is working');
       }
-    } catch (error) {
+    } catch {
       this.results.ipv6Available = false;
       this.log('IPv6 loopback (::1) is not working', 'warn');
       this.results.warnings.push('IPv6 loopback connectivity is broken');
@@ -122,7 +117,7 @@ class LocalhostDiagnostics {
       } else {
         this.log('No development servers currently running on common ports');
       }
-    } catch (error) {
+    } catch {
       // No servers running, which is fine
       this.log('No development servers detected');
     }
@@ -158,7 +153,7 @@ class LocalhostDiagnostics {
           this.log('macOS 14+ detected - may have IPv6 localhost resolution issues', 'warn');
           this.results.recommendations.push('Consider using explicit IPv4 binding (127.0.0.1)');
         }
-      } catch (error) {
+      } catch {
         this.log('Could not detect macOS version', 'warn');
       }
     }

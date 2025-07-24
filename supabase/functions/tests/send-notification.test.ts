@@ -143,7 +143,7 @@ mockSupabaseSingle.mockResolvedValue({ data: { id: 'notification_id_123' }, erro
       let notificationData;
       try {
         notificationData = await req.json();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       
       } catch (_e) {
         return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), {
           status: 400,

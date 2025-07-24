@@ -1,0 +1,64 @@
+routes:
+  - receiver: executive-alerts
+    group_by:
+      - alertname
+      - environment
+    group_wait: 30s
+    group_interval: 2m
+    repeat_interval: 4h
+    matchers:
+      - severity="critical"
+      - type="business"
+      - environment="production"
+    continue: true
+  - receiver: engineering-alerts
+    group_by:
+      - alertname
+      - service
+    group_wait: 15s
+    group_interval: 1m
+    repeat_interval: 2h
+    matchers:
+      - severity=~"critical|warning"
+      - type=~"technical|slo"
+    continue: false
+  - receiver: sre-alerts
+    group_by:
+      - alertname
+      - environment
+    group_wait: 10s
+    group_interval: 30s
+    repeat_interval: 1h
+    matchers:
+      - severity="critical"
+      - type="infrastructure"
+  - receiver: development-alerts
+    group_by:
+      - alertname
+    group_wait: 5m
+    group_interval: 10m
+    repeat_interval: 24h
+    matchers:
+      - environment="development"
+receivers:
+  - name: executive-alerts
+    slack_configs:
+      - channel: #executive-alerts
+        title: 🚨 Business Impact Alert
+        text: {{ range .Alerts }}
+**Alert**: {{ .Annotations.summary }}
+**Environment**: {{ .Labels.environment }}
+**Severity**: {{ .Labels.severity }}
+**Business Impact**: {{ .Annotations.business_impact }}
+**Dashboard**: {{ .Annotations.dashboard_url }}
+{{ end }}
+  - name: engineering-alerts
+    slack_configs:
+      - channel: #engineering-alerts
+        title: 🔧 Technical Alert
+        text: {{ range .Alerts }}
+**Alert**: {{ .Annotations.summary }}
+**Service**: {{ .Labels.service }}
+**Environment**: {{ .Labels.environment }}
+**Runbook**: {{ .Annotations.runbook_url }}
+{{ end }}

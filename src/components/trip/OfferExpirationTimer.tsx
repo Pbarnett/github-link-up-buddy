@@ -4,12 +4,10 @@
  * Handles the 5-20 minute validity window for Duffel flight offers
  */
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 type FC<T = {}> = React.FC<T>;
 
 import { Badge } from '@/components/ui/badge';
-import { Clock, AlertTriangle } from 'lucide-react';
+import * as React from 'react';
 
 interface OfferExpirationTimerProps {
   expiresAt?: string;

@@ -8,6 +8,14 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { healthCheck, evaluateFlag, createUserContext, createOrgContext } from "../_shared/launchdarkly.ts";
+
+// Define context interface since it's not exported
+interface LDContext {
+  key: string;
+  kind: string;
+  [key: string]: any;
+}
 
 // Import the flight API service (edge version) with explicit fetchToken
 // (This will be dynamically imported only when needed in production mode)
@@ -60,6 +68,22 @@ serve(async (req: Request) => {
       status: 204,
       headers: corsHeaders,
     });
+  }
+
+  // Initialize LaunchDarkly context for feature flags
+  const ldContext: LDContext = {
+    kind: 'user', // Use 'user' since service contexts might not be supported
+    key: 'flight-search-service',
+    environment: Deno.env.get('ENVIRONMENT') || 'development',
+    service: 'flight-search'
+  };
+
+  // Check LaunchDarkly health
+  try {
+    await healthCheck();
+    console.log('[flight-search] LaunchDarkly health check passed');
+  } catch (error) {
+    console.warn('[flight-search] LaunchDarkly health check failed:', error.message);
   }
 
   // 🔧 LOCAL DEVELOPMENT MODE BYPASS
@@ -335,16 +359,52 @@ serve(async (req: Request) => {
           continue;
         }
         
+        // Evaluate feature flags for search behavior
+        const budgetMultiplierResponse = await evaluateFlag('flight-search-budget-multiplier', ldContext, false);
+        const enableBudgetMultiplier = budgetMultiplierResponse.value;
+        
+        const extendedConnectionsResponse = await evaluateFlag('flight-search-extended-connections', ldContext, false);
+        const enableExtendedConnections = extendedConnectionsResponse.value;
+        
+        const relaxedDurationResponse = await evaluateFlag('flight-search-relaxed-duration', ldContext, false);
+        const enableRelaxedDuration = relaxedDurationResponse.value;
+        
+        console.log(`[flight-search] Feature flags - Budget multiplier: ${enableBudgetMultiplier}, Extended connections: ${enableExtendedConnections}, Relaxed duration: ${enableRelaxedDuration}`);
+        
+        // Apply budget multiplier feature flag
+        let adjustedBudget = request.budget;
+        if (relaxedCriteria) {
+          adjustedBudget = Math.ceil(request.budget * 1.2);
+        } else if (enableBudgetMultiplier) {
+          adjustedBudget = Math.ceil(request.budget * 1.1); // 10% increase with feature flag
+          console.log(`[flight-search] Applied budget multiplier: ${request.budget} → ${adjustedBudget}`);
+        }
+        
+        // Apply extended connections feature flag
+        const maxConnections = enableExtendedConnections ? 3 : 2;
+        
+        // Apply relaxed duration feature flag
+        let minDuration = request.min_duration;
+        let maxDuration = request.max_duration;
+        if (relaxedCriteria) {
+          minDuration = 1;
+          maxDuration = 30;
+        } else if (enableRelaxedDuration) {
+          minDuration = Math.max(1, request.min_duration - 1);
+          maxDuration = request.max_duration + 2;
+          console.log(`[flight-search] Applied relaxed duration: ${request.min_duration}-${request.max_duration} → ${minDuration}-${maxDuration}`);
+        }
+        
         // Create search params from the trip request - use ONLY the exact destination specified
         const searchParams: FlightSearchParams = {
           origin: request.departure_airports,
           destination: request.destination_location_code, // Use exact destination only, no nearby airports
           earliestDeparture: new Date(request.earliest_departure),
           latestDeparture: new Date(request.latest_departure),
-          minDuration: relaxedCriteria ? 1 : request.min_duration, // Relax min duration if requested
-          maxDuration: relaxedCriteria ? 30 : request.max_duration, // Relax max duration if requested
-          budget: relaxedCriteria ? Math.ceil(request.budget * 1.2) : request.budget, // Increase budget by 20% if relaxed
-          maxConnections: 2 // reasonable default
+          minDuration: minDuration,
+          maxDuration: maxDuration,
+          budget: adjustedBudget,
+          maxConnections: maxConnections
         };
         
         // Log search parameters for debugging
@@ -399,21 +459,22 @@ serve(async (req: Request) => {
 
         console.log(`[flight-search] Request ${request.id}: Generated ${exactDestinationOffers.length} exact destination offers, filtered to ${priceFilteredOffers.length} by max price`);
 
+        // Evaluate feature flag for enhanced filtering
+        const enhancedFilteringResponse = await evaluateFlag('flight-search-enhanced-filtering', ldContext, true);
+        const enableEnhancedFiltering = enhancedFilteringResponse.value;
+        console.log(`[flight-search] Enhanced filtering enabled: ${enableEnhancedFiltering}`);
+        
         // --- Start of new filtering logic ---
         const finalFilteredOffers = [];
         for (const offer of priceFilteredOffers) {
-          // Apply nonstop_required filter
-          // It's assumed `offer.nonstop_match` is a boolean indicating if the offer is non-stop.
-          // `request.nonstop_required` is from the trip_requests table.
-          if (request.nonstop_required === true && offer.nonstop_match !== true) {
+          // Apply nonstop_required filter (only if enhanced filtering is enabled)
+          if (enableEnhancedFiltering && request.nonstop_required === true && offer.nonstop_match !== true) {
             console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to nonstop mismatch. Request nonstop: ${request.nonstop_required}, Offer nonstop: ${offer.nonstop_match}`);
             continue;
           }
 
-          // Apply baggage_included_required filter
-          // It's assumed `offer.baggage_included` is a boolean.
-          // `request.baggage_included_required` is from the trip_requests table.
-          if (request.baggage_included_required === true && offer.baggage_included !== true) {
+          // Apply baggage_included_required filter (only if enhanced filtering is enabled)
+          if (enableEnhancedFiltering && request.baggage_included_required === true && offer.baggage_included !== true) {
             console.log(`[flight-search] Offer skipped for trip ${request.id} (price: ${offer.price}) due to baggage mismatch. Request baggage: ${request.baggage_included_required}, Offer baggage: ${offer.baggage_included}`);
             continue;
           }

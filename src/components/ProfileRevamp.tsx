@@ -1,19 +1,13 @@
-
 // Enhanced profile component with React 19 features
-
-import * as React from 'react';
-const { useState, useMemo, useDeferredValue, useTransition } = React;
 type FC<T = {}> = React.FC<T>;
-type Component<P = {}, S = {}> = React.Component<P, S>;
-
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, User, Settings, Bell, Plane } from 'lucide-react';
-
+import * as React from 'react';
 // Mock user activities for demo
 const mockActivities = [
   { id: '1', type: 'flight', title: 'Flight to NYC', date: '2024-03-15', status: 'completed' },
@@ -27,6 +21,7 @@ const ProfileRevamp: FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeView, setActiveView] = useState<'overview' | 'activity'>('overview');
   const deferredQuery = useDeferredValue(searchQuery);
+  const [_isPending, startTransition] = useTransition();
   
   // Filter activities with deferred value for better performance
   const filteredActivities = useMemo(() => {
@@ -172,7 +167,7 @@ const ProfileRevamp: FC = () => {
                 type="text"
                 placeholder="Search activities..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => setSearchQuery((e.target as HTMLInputElement).value)}
                 className="pl-10"
               />
             </div>

@@ -1,5 +1,3 @@
-import { Control } from 'react-hook-form';
-import { Users } from 'lucide-react';
 
 // Travelers and cabin form data interface
 interface TravelersAndCabinFormData {

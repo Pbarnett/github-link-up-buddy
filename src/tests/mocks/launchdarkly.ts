@@ -1,7 +1,7 @@
 
 import * as React from 'react';
 type ReactNode = React.ReactNode;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 import { vi } from 'vitest';
 
@@ -25,7 +25,7 @@ const mockUseFlag = vi.fn((key: string, defaultValue: any) => defaultValue);
 
 // Mock LaunchDarkly Provider components
 const MockLDProvider = ({ children }: { children: ReactNode }) => {
-  return React.createElement(React.Fragment, {}, children);
+  return createElement(Fragment, {}, children);
 };
 
 // Mock asyncWithLDProvider to return a simple provider
@@ -33,7 +33,7 @@ const mockAsyncWithLDProvider = vi.fn().mockResolvedValue(MockLDProvider);
 
 // Mock withLDProvider HOC
 const mockWithLDProvider = vi.fn((config: any) => (Component: ComponentType) => {
-  return (props: any) => React.createElement(Component, props);
+  return (props: any) => createElement(Component, props);
 });
 
 // Export all mocks

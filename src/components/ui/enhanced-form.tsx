@@ -31,16 +31,16 @@ interface BaseFieldProps {
 /**
  * Enhanced Text Input with better accessibility and validation states
  */
-interface TextFieldProps extends BaseFieldProps, ComponentProps<typeof Input> {
+interface TextFieldProps extends BaseFieldPropsProps<typeof Input> {
   value?: string
   onValueChange?: (value: string) => void
 }
 
-export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
+export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
   ({ label, description, required, error, className, value, onValueChange, onChange, ...props }, ref) => {
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
       onChange?.(e)
-      onValueChange?.(e.target.value)
+      onValueChange?.((e.target as HTMLInputElement).value)
     }
 
     return (
@@ -82,7 +82,7 @@ interface SelectFieldProps extends BaseFieldProps {
   options: Array<{ value: string; label: string; disabled?: boolean }>
 }
 
-export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>(
+export const SelectField = forwardRef<HTMLButtonElement, SelectFieldProps>(
   ({ label, description, required, error, className, value, onValueChange, placeholder, options, ...props }, ref) => {
     return (
       <FormItem className={className}>
@@ -120,16 +120,16 @@ SelectField.displayName = 'SelectField'
 /**
  * Enhanced Textarea Field
  */
-interface TextareaFieldProps extends BaseFieldProps, ComponentProps<typeof Textarea> {
+interface TextareaFieldProps extends BaseFieldPropsProps<typeof Textarea> {
   value?: string
   onValueChange?: (value: string) => void
 }
 
-export const TextareaField = React.forwardRef<HTMLTextAreaElement, TextareaFieldProps>(
+export const TextareaField = forwardRef<HTMLTextAreaElement, TextareaFieldProps>(
   ({ label, description, required, error, className, value, onValueChange, onChange, ...props }, ref) => {
     const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
       onChange?.(e)
-      onValueChange?.(e.target.value)
+      onValueChange?.((e.target as HTMLInputElement).value)
     }
 
     return (
@@ -170,7 +170,7 @@ interface CheckboxFieldProps extends BaseFieldProps {
   id?: string
 }
 
-export const CheckboxField = React.forwardRef<HTMLButtonElement, CheckboxFieldProps>(
+export const CheckboxField = forwardRef<HTMLButtonElement, CheckboxFieldProps>(
   ({ label, description, required, error, className, checked, onCheckedChange, id, ...props }, ref) => {
     return (
       <FormItem className={cn("flex flex-row items-start space-x-3 space-y-0", className)}>
@@ -219,7 +219,7 @@ interface SwitchFieldProps extends BaseFieldProps {
   id?: string
 }
 
-export const SwitchField = React.forwardRef<HTMLButtonElement, SwitchFieldProps>(
+export const SwitchField = forwardRef<HTMLButtonElement, SwitchFieldProps>(
   ({ label, description, required, error, className, checked, onCheckedChange, id, ...props }, ref) => {
     return (
       <FormItem className={cn("flex flex-row items-center justify-between rounded-lg border p-4", className)}>

@@ -1,13 +1,10 @@
-import * as React from 'react';
-const { useMemo } = React;
 
-import { Control, useWatch } from 'react-hook-form';
+import { format } from 'date-fns';
 import { FormValues } from '@/types/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, CreditCard, DollarSign } from 'lucide-react';
-import { format } from 'date-fns';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
+import * as React from 'react';
 
 interface LiveBookingSummaryProps {
   control: Control<FormValues>;

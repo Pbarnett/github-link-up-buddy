@@ -8,9 +8,9 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import Stripe from "https://esm.sh/stripe@14.21.0"; // Import Stripe
 import { bookWithAmadeus } from "../lib/amadeus.ts"; // This is a helper function
 import { amadeus } from "../lib/amadeus.ts"; // Assuming this exports the initialized Amadeus SDK instance
-import Stripe from "https://esm.sh/stripe@14.21.0"; // Import Stripe
 import { USE_MANUAL_CAPTURE } from "../lib/config.ts"; // Import feature flag
 
 const corsHeaders = {

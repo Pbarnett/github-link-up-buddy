@@ -1,9 +1,11 @@
-import { createRoot } from 'react-dom/client'
-import * as Sentry from '@sentry/react'
-import { asyncWithLDProvider } from 'launchdarkly-react-client-sdk'
-import { ThemeProvider } from 'next-themes'
-import App from './App.tsx'
-import './index.css'
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import * as Sentry from '@sentry/react';
+import { asyncWithLDProvider } from 'launchdarkly-react-client-sdk';
+import { ThemeProvider } from 'next-themes';
+import App from './App.tsx';
+import { SmartErrorBoundary } from './components/ErrorBoundary';
+import './index.css';
 
 // Initialize Sentry
 Sentry.init({

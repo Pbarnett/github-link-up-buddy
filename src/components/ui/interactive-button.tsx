@@ -1,14 +1,11 @@
 
 
-import * as React from 'react';
-const { forwardRef } = React;
-type HTMLAttributes<T = HTMLElement> = React.HTMLAttributes<T>;
+
 
 import { cn } from '@/lib/utils';
-import { Slot } from '@radix-ui/react-slot';
 
 export interface InteractiveButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
   variant?: 'default' | 'secondary' | 'ghost' | 'link' | 'destructive';
   size?: 'default' | 'sm' | 'lg' | 'icon';
@@ -16,7 +13,7 @@ export interface InteractiveButtonProps
   interactive?: boolean;
 }
 
-const InteractiveButton = React.forwardRef<HTMLButtonElement, InteractiveButtonProps>(
+const InteractiveButton = forwardRef<HTMLButtonElement, InteractiveButtonProps>(
   ({ className, variant = 'default', size = 'default', asChild = false, loading = false, interactive = true, children, disabled, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
     

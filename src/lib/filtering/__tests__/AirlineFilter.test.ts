@@ -5,9 +5,9 @@
  * Tests both Amadeus and Duffel data structures.
  */
 
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { AirlineFilter, getAirlineName, getAvailableAirlinesFromOffers } from '../filters/AirlineFilter';
 import { FlightOffer, FilterContext, UserPreferences } from '../core/types';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock logger for testing
 const mockLogger = {

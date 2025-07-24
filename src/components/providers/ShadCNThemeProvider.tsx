@@ -1,3 +1,4 @@
+import * as React from 'react';
 
 /**
  * ShadCN Theme Provider Component
@@ -14,11 +15,9 @@
  * - CSS variable theming support
  */
 
-import * as React from 'react';
-const { useState, useEffect, useContext } = React;
 type ReactNode = React.ReactNode;
 type FC<T = {}> = React.FC<T>;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 type Theme = 'dark' | 'light' | 'system'
 

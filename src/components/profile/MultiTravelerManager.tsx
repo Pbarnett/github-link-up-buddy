@@ -1,18 +1,9 @@
-import * as React from 'react';
-const { useState } = React;
 
+import * as React from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Users, 
   Plus, 
@@ -24,6 +15,14 @@ import {
   User,
   AlertTriangle
 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
 // Zod schema for traveler profile validation
@@ -75,17 +74,6 @@ const NATIONALITY_OPTIONS = [
   // Add more countries as needed
 ];
 
-const DIETARY_RESTRICTIONS = [
-  'Vegetarian',
-  'Vegan', 
-  'Gluten-free',
-  'Dairy-free',
-  'Nut allergy',
-  'Kosher',
-  'Halal',
-  'Diabetic',
-  'Low sodium'
-];
 
 export function MultiTravelerManager({
   travelers,
@@ -115,7 +103,6 @@ export function MultiTravelerManager({
     }
   });
 
-  const defaultTraveler = travelers.find(t => t.isDefault);
   const activeTravelers = travelers.filter(t => t.isActive);
 
   const handleAddTraveler = async (data: TravelerProfile) => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AWSCLIParameterValidator, ValidationResult, KeyIdValidationResult } from './parameter-validator';
+import { AWSCLIParameterValidator, _ValidationResult, KeyIdValidationResult } from './parameter-validator';
 
 describe('AWSCLIParameterValidator', () => {
   describe('validateKeyId', () => {

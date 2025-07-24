@@ -1,5 +1,6 @@
 import { LDClient } from 'launchdarkly-js-client-sdk';
 
+/* global process */
 class PersonalizationService {
   constructor() {
     this.ldClient = null;

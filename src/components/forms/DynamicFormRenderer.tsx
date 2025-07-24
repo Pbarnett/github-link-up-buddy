@@ -7,9 +7,7 @@
  */
 
 import * as React from 'react';
-const { useMemo } = React;
-type FC<T = {}> = React.FC<T>;
-
+import { useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,16 +16,13 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-import type {
-  DynamicFormRendererProps,
-  FormSubmissionData
-} from '@/types/dynamic-forms';
-
-import { FormSection } from './FormSection';
+import type { DynamicFormRendererProps, FormSubmissionData } from '@/types/dynamic-forms';
 import { useFormConfiguration } from '@/hooks/useFormConfiguration';
 import { useFormState } from '@/hooks/useFormState';
 import { generateZodSchema } from '@/lib/form-validation';
+import { FormSection } from './FormSection';
+
+type FC<T = {}> = React.FC<T>;
 
 export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
   configId,

@@ -1,15 +1,14 @@
+
 /**
  * Common TypeScript event handler types for consistent typing across components
  */
-import { ChangeEvent, FormEvent, MouseEvent, KeyboardEvent } from 'react';
-
 // Input element event handlers
 export type InputChangeHandler = (e: ChangeEvent<HTMLInputElement>) => void;
 export type TextAreaChangeHandler = (e: ChangeEvent<HTMLTextAreaElement>) => void;
 export type SelectChangeHandler = (e: ChangeEvent<HTMLSelectElement>) => void;
 
 // Generic form event handlers
-export type FormSubmitHandler = (e: FormEvent<HTMLFormElement>) => void;
+export type FormSubmitHandler = (e: FormEvent) => void;
 export type ButtonClickHandler = (e: MouseEvent<HTMLButtonElement>) => void;
 export type DivClickHandler = (e: MouseEvent<HTMLDivElement>) => void;
 export type KeyPressHandler = (e: KeyboardEvent<HTMLElement>) => void;

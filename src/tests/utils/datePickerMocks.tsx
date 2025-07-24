@@ -51,7 +51,7 @@ export const MockDateRangeField = ({ control }: { control: { _formValues: Record
         name="earliestDeparture"
         data-testid="earliest-departure-input"
         onChange={(e) => {
-          const date = new Date(e.target.value);
+          const date = new Date((e.target as HTMLInputElement).value);
           // Trigger form field change
           control._formValues.earliestDeparture = date;
         }}
@@ -64,7 +64,7 @@ export const MockDateRangeField = ({ control }: { control: { _formValues: Record
         name="latestDeparture"
         data-testid="latest-departure-input"
         onChange={(e) => {
-          const date = new Date(e.target.value);
+          const date = new Date((e.target as HTMLInputElement).value);
           // Trigger form field change
           control._formValues.latestDeparture = date;
         }}

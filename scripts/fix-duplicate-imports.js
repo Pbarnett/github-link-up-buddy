@@ -42,7 +42,6 @@ async function findTSXFiles() {
 function fixDuplicateImports(content) {
   const lines = content.split('\n');
   const reactImportIndices = [];
-  const importLines = new Set();
   let hasChanges = false;
   
   // Find all React import lines

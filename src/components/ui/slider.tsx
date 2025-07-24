@@ -1,16 +1,11 @@
 
 
-import * as React from 'react';
-const { forwardRef } = React;
-type ComponentPropsWithoutRef<T> = React.ComponentPropsWithoutRef<T>;
-type ElementRef<T> = React.ElementRef<T>;
 
-import * as SliderPrimitive from "@radix-ui/react-slider"
 
 import { cn } from "@/lib/utils"
 
-const Slider = React.forwardRef<
-  React.ElementRef<typeof SliderPrimitive.Root>,
+const Slider = forwardRef<
+  ElementRef<typeof SliderPrimitive.Root>,
   ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
 >(({ className, ...props }, ref) => (
   <SliderPrimitive.Root

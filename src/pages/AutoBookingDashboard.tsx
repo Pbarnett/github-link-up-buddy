@@ -1,11 +1,9 @@
-import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/components/ui/use-toast";
-import { Plus, Plane } from "lucide-react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { CampaignCard } from "@/components/autobooking/CampaignCard";
@@ -34,7 +32,7 @@ function AutoBookingDashboard() {
         title: "Campaign paused",
         description: "Your auto-booking campaign has been paused.",
       });
-    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    } catch (_error) {  
       toast({
         title: "Error",
         description: "Failed to pause campaign. Please try again.",
@@ -50,7 +48,7 @@ function AutoBookingDashboard() {
         title: "Campaign resumed",
         description: "Your auto-booking campaign is now active.",
       });
-    } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    } catch (_error) {  
       toast({
         title: "Error",
         description: "Failed to resume campaign. Please try again.",
@@ -67,7 +65,7 @@ function AutoBookingDashboard() {
           title: "Campaign deleted",
           description: "Your auto-booking campaign has been deleted.",
         });
-      } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      } catch (_error) {  
         toast({
           title: "Error",
           description: "Failed to delete campaign. Please try again.",

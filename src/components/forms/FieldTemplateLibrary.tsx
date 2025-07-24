@@ -5,12 +5,11 @@
  * Provides a library of field templates for form building
  */
 
-import * as React from 'react';
-const { useState } = React;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
 
 import { 
+import * as React from 'react';
   Type, Mail, Phone, Hash, Calendar, MapPin, List, 
   CheckSquare, ToggleLeft, SlidersHorizontal, Star, Upload, 
   Plane, Globe, CreditCard, Minus, FileText
@@ -20,7 +19,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-
 import type { FieldTemplate } from '@/types/dynamic-forms';
 
 interface FieldTemplateLibraryProps {
@@ -304,7 +302,7 @@ const fieldTemplates: FieldTemplate[] = [
 ];
 
 // Icon mapping
-const iconMap: Record<string, ComponentType<{ className?: string }>> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Type,
   Mail,
   Phone,
@@ -358,7 +356,7 @@ export const FieldTemplateLibrary: FC<FieldTemplateLibraryProps> = ({
         <Input
           placeholder="Search fields..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => setSearchQuery((e.target as HTMLInputElement).value)}
           className="h-8"
         />
 

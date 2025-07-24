@@ -1,10 +1,7 @@
 
 
-import * as React from 'react';
-const { useEffect } = React;
 type FC<T = {}> = React.FC<T>;
 
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -12,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Form } from '@/components/ui/form';
+import * as React from 'react';
 
 // Define schema directly here since it's not exported from types/form
 const unifiedFlightFormSchema = z.object({
@@ -130,7 +128,7 @@ export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValue
                   placeholder="Enter origin airports"
                   value={Array.isArray(field.value) ? field.value.join(', ') : ''}
                   onChange={(e) => {
-                    const value = e.target.value.trim();
+                    const value = (e.target as HTMLInputElement).value.trim();
                     field.onChange(value ? value.split(',').map(s => s.trim()).filter(Boolean) : []);
                   }}
                 />
@@ -167,8 +165,8 @@ export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValue
                   value={field.value ? field.value.toISOString().split('T')[0] : ''}
                   onChange={(e) => {
                     field.onChange(
-                      e.target.value 
-                        ? new Date(e.target.value) 
+                      (e.target as HTMLInputElement).value 
+                        ? new Date((e.target as HTMLInputElement).value) 
                         : undefined  // use undefined for empty to trigger required error
                     );
                   }}
@@ -191,7 +189,7 @@ export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValue
                   type="date"
                   value={field.value ? field.value.toISOString().split('T')[0] : ''}
                   onChange={(e) => {
-                    field.onChange(e.target.value ? new Date(e.target.value) : undefined);
+                    field.onChange((e.target as HTMLInputElement).value ? new Date((e.target as HTMLInputElement).value) : undefined);
                   }}
                 />
               </FormControl>
@@ -238,7 +236,7 @@ export const FlightRuleForm: FC<FlightRuleFormProps> = ({ onSubmit, defaultValue
                   placeholder="Enter budget"
                   value={field.value ?? ''}  // show empty string if undefined
                   onChange={(e) => {
-                    const value = e.target.value;
+                    const value = (e.target as HTMLInputElement).value;
                     if (value === '' || value === null) {
                       field.onChange(undefined);
                     } else {

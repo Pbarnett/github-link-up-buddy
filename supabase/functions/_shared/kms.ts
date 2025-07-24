@@ -266,7 +266,7 @@ export function getKMSManager(): KMSManager {
  * Utility function to convert legacy pgcrypto format to KMS format
  * Used during migration from old encryption to new KMS encryption
  */
-export function createLegacyDecryptionInput(_encryptedText: string): DecryptionInput | null { // eslint-disable-line @typescript-eslint/no-unused-vars
+export function createLegacyDecryptionInput(_encryptedText: string): DecryptionInput | null {  
   // This is for backward compatibility with pgcrypto encrypted data
   // Returns null if the data is not in legacy format
   try {

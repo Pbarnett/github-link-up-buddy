@@ -7,10 +7,11 @@
  */
 
 import * as React from 'react';
-const { useCallback, useMemo } = React;
+import { useMemo, useCallback } from 'react';
+import { useFormContext } from 'react-hook-form';
+
 type FC<T = {}> = React.FC<T>;
 
-import { useFormContext } from 'react-hook-form';
 import {
   FormField,
   FormItem,
@@ -35,7 +36,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-
 import type {
   FieldConfiguration,
   FormConfiguration
@@ -80,8 +80,8 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
   error,
   disabled = false,
   required = false,
-  config: _config, // eslint-disable-line @typescript-eslint/no-unused-vars
-  formData: _formData, // eslint-disable-line @typescript-eslint/no-unused-vars
+  config: _config,  
+  formData: _formData,  
   className
 }) => {
   const form = useFormContext();
@@ -120,7 +120,7 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
         return (
           <Input
             value={value as string || ''}
-            onChange={(e) => handleChange(e.target.value)}
+            onChange={(e) => handleChange((e.target as HTMLInputElement).value)}
             onBlur={onBlur}
             disabled={fieldState.isDisabled}
             className={cn(
@@ -149,7 +149,7 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
             max={field.validation?.max}
             step={field.validation?.step || 1}
             onChange={(e) => handleChange(
-              e.target.value ? Number(e.target.value) : undefined
+              (e.target as HTMLInputElement).value ? Number((e.target as HTMLInputElement).value) : undefined
             )}
           />
         );
@@ -158,7 +158,7 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
         return (
           <Textarea
             value={value as string || ''}
-            onChange={(e) => handleChange(e.target.value)}
+            onChange={(e) => handleChange((e.target as HTMLInputElement).value)}
             onBlur={onBlur}
             disabled={fieldState.isDisabled}
             className={cn(
@@ -401,7 +401,7 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
         return (
           <Input
             value={value as string || ''}
-            onChange={(e) => handleChange(e.target.value)}
+            onChange={(e) => handleChange((e.target as HTMLInputElement).value)}
             onBlur={onBlur}
             disabled={fieldState.isDisabled}
             className={cn(
@@ -575,7 +575,7 @@ const FileUploadField: FC<{
   accept?: string;
   multiple?: boolean;
   maxSize?: number;
-}> = ({ value: _value, onChange, disabled, error: _error, accept, multiple, maxSize }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+}> = ({ value: _value, onChange, disabled, error: _error, accept, multiple, maxSize }) => {  
   return (
     <div className="border-2 border-dashed rounded-lg p-6 text-center">
       <Input
@@ -604,7 +604,7 @@ const RatingField: FC<{
   disabled?: boolean;
   max?: number;
   allowHalf?: boolean;
-}> = ({ value, onChange, disabled, max = 5, allowHalf: _allowHalf }) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+}> = ({ value, onChange, disabled, max = 5, allowHalf: _allowHalf }) => {  
   return (
     <div className="flex space-x-1">
       {Array.from({ length: max }, (_, i) => (

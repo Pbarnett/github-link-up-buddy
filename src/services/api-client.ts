@@ -13,12 +13,10 @@ import type {
   ApiErrorResponse,
   HttpStatusCode
 } from '../types/api.types';
-
 import type {
   Result,
   ISODateString
 } from '../types';
-
 import {
   isSuccessResult,
   isErrorResult,
@@ -221,7 +219,7 @@ class RetryHandler {
     
     for (let attempt = 1; attempt <= (config?.attempts ?? 1); attempt++) {
       try {
-        return await operation();
+        return await operation()();
       } catch (error) {
         lastError = error as Error;
         
@@ -454,7 +452,7 @@ export class TypeSafeApiClient implements ApiClient {
   private async applyResponseInterceptors<T>(
     response: Result<T, ApiErrorResponse>
   ): Promise<Result<T, ApiErrorResponse>> {
-    let finalResponse = response;
+    const finalResponse = response;
     
     for (const interceptor of this.config.interceptors.response) {
       if (isSuccessResult(finalResponse)) {

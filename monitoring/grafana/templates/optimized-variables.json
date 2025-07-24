@@ -1,0 +1,72 @@
+{
+  "datasourceVariable": {
+    "allValue": null,
+    "current": {
+      "selected": false,
+      "text": "prometheus",
+      "value": "prometheus"
+    },
+    "hide": 0,
+    "includeAll": false,
+    "label": "Environment",
+    "multi": false,
+    "name": "datasource",
+    "options": [],
+    "query": "prometheus",
+    "queryValue": "",
+    "refresh": 1,
+    "regex": "/prometheus.*/",
+    "skipUrlSync": false,
+    "type": "datasource"
+  },
+  "environmentVariable": {
+    "allValue": null,
+    "current": {
+      "selected": false,
+      "text": "production",
+      "value": "production"
+    },
+    "datasource": "$datasource",
+    "definition": "label_values(up, environment)",
+    "hide": 0,
+    "includeAll": false,
+    "label": "Environment",
+    "multi": false,
+    "name": "env",
+    "options": [],
+    "query": {
+      "query": "label_values(up, environment)",
+      "refId": "StandardVariableQuery"
+    },
+    "refresh": 2,
+    "regex": "",
+    "skipUrlSync": false,
+    "sort": 1,
+    "type": "query"
+  },
+  "serviceVariable": {
+    "allValue": null,
+    "current": {
+      "selected": false,
+      "text": "parker-flight",
+      "value": "parker-flight"
+    },
+    "datasource": "$datasource",
+    "definition": "label_values(up{environment=\"$env\"}, service)",
+    "hide": 0,
+    "includeAll": true,
+    "label": "Service",
+    "multi": true,
+    "name": "service",
+    "options": [],
+    "query": {
+      "query": "label_values(up{environment=\"$env\"}, service)",
+      "refId": "StandardVariableQuery"
+    },
+    "refresh": 1,
+    "regex": "",
+    "skipUrlSync": false,
+    "sort": 1,
+    "type": "query"
+  }
+}

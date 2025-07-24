@@ -1,0 +1,186 @@
+name: github-link-up-buddy
+services:
+  fluentd:
+    container_name: parker-flight-logs
+    deploy:
+      resources:
+        limits:
+          cpus: 0.25
+          memory: "268435456"
+    environment:
+      FLUENTD_CONF: fluent.conf
+    image: fluent/fluentd:v1.16-debian-1
+    networks:
+      parker-flight-network: null
+    ports:
+      - mode: ingress
+        target: 24224
+        published: "24224"
+        protocol: tcp
+      - mode: ingress
+        target: 24224
+        published: "24224"
+        protocol: udp
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /Users/parkerbarnett/github-link-up-buddy/fluentd
+        target: /fluentd/etc
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: volume
+        source: app_logs
+        target: /var/log/app
+        read_only: true
+        volume: {}
+  parker-flight:
+    container_name: parker-flight-app
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: "536870912"
+        reservations:
+          cpus: 0.25
+          memory: "268435456"
+    environment:
+      NODE_ENV: production
+      VITE_FLAG_FS_V2: "true"
+      VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJib25uZ2R5ZnlmanFmaHZvbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNTE5NTQsImV4cCI6MjA2MjgyNzk1NH0.qoXypUh-SemZwFjTyONGztNbhoowqLMiKSRKgA7fRR0
+      VITE_SUPABASE_URL: https://bbonngdyfyfjqfhvoljl.supabase.co
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost/health
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 40s
+    image: ghcr.io/parkerbarnett/github-link-up-buddy:latest
+    labels:
+      com.docker.compose.service: parker-flight
+      environment: production
+      traefik.enable: "true"
+      traefik.http.routers.parker-flight.rule: Host(`localhost`)
+      traefik.http.routers.parker-flight.tls: "true"
+      traefik.http.routers.parker-flight.tls.certresolver: letsencrypt
+      version: latest
+    networks:
+      parker-flight-network: null
+    ports:
+      - mode: ingress
+        target: 80
+        published: "80"
+        protocol: tcp
+    read_only: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /var/cache/nginx:rw,noexec,nosuid,size=50m
+      - /var/run:rw,noexec,nosuid,size=50m
+      - /tmp:rw,noexec,nosuid,size=50m
+    user: 101:101
+    volumes:
+      - type: bind
+        source: /Users/parkerbarnett/github-link-up-buddy/docker/nginx.production.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: volume
+        source: app_logs
+        target: /var/log/nginx
+        volume: {}
+  redis:
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 100mb
+      - --maxmemory-policy
+      - allkeys-lru
+    container_name: parker-flight-cache
+    deploy:
+      resources:
+        limits:
+          cpus: 0.1
+          memory: "134217728"
+    image: redis:7-alpine
+    networks:
+      parker-flight-network: null
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: redis_data
+        target: /data
+        volume: {}
+  traefik:
+    container_name: parker-flight-lb
+    deploy:
+      resources:
+        limits:
+          cpus: 0.25
+          memory: "268435456"
+    environment:
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: ""
+    image: traefik:v3.0
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.traefik.rule: Host(`traefik.localhost`)
+      traefik.http.routers.traefik.tls: "true"
+      traefik.http.services.traefik.loadbalancer.server.port: "8080"
+    networks:
+      parker-flight-network: null
+    ports:
+      - mode: ingress
+        target: 80
+        published: "80"
+        protocol: tcp
+      - mode: ingress
+        target: 443
+        published: "443"
+        protocol: tcp
+      - mode: ingress
+        target: 8080
+        published: "8080"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /Users/parkerbarnett/github-link-up-buddy/traefik
+        target: /etc/traefik
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: volume
+        source: traefik_certs
+        target: /etc/traefik/certs
+        volume: {}
+networks:
+  parker-flight-network:
+    name: github-link-up-buddy_parker-flight-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+volumes:
+  app_logs:
+    name: github-link-up-buddy_app_logs
+    driver: local
+  redis_data:
+    name: github-link-up-buddy_redis_data
+    driver: local
+  traefik_certs:
+    name: github-link-up-buddy_traefik_certs
+    driver: local

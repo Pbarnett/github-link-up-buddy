@@ -5,11 +5,31 @@
  * following AWS SDK v3 and Well-Architected Framework best practices.
  */
 
-import { KMSClient, EncryptCommand, DecryptCommand, DescribeKeyCommand } from '@aws-sdk/client-kms';
-import { S3Client, HeadBucketCommand } from '@aws-sdk/client-s3';
-import { DynamoDBClient, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
 import { EnhancedAWSClientFactory, Environment } from './client-factory';
 import { EnhancedAWSErrorHandler, ErrorCategory } from './error-handling';
+import { IS_MOCK_MODE } from '../aws-sdk-browser-compat';
+
+// Conditionally import AWS SDK commands based on environment
+let KMSClient: any, S3Client: any, DynamoDBClient: any;
+let EncryptCommand: any, DecryptCommand: any, DescribeKeyCommand: any;
+let HeadBucketCommand: any, DescribeTableCommand: any;
+
+if (!IS_MOCK_MODE) {
+  ({ KMSClient, EncryptCommand, DecryptCommand, DescribeKeyCommand } = require('@aws-sdk/client-kms'));
+  ({ S3Client, HeadBucketCommand } = require('@aws-sdk/client-s3'));
+  ({ DynamoDBClient, DescribeTableCommand } = require('@aws-sdk/client-dynamodb'));
+} else {
+  // Mock clients and commands for browser environments
+  KMSClient = class MockKMSClient {};
+  S3Client = class MockS3Client {};
+  DynamoDBClient = class MockDynamoDBClient {};
+  
+  EncryptCommand = class MockEncryptCommand { constructor(public input: any) {} };
+  DecryptCommand = class MockDecryptCommand { constructor(public input: any) {} };
+  DescribeKeyCommand = class MockDescribeKeyCommand { constructor(public input: any) {} };
+  HeadBucketCommand = class MockHeadBucketCommand { constructor(public input: any) {} };
+  DescribeTableCommand = class MockDescribeTableCommand { constructor(public input: any) {} };
+}
 
 // Region configuration interface
 export interface RegionConfig {

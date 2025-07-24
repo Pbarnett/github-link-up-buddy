@@ -3,16 +3,13 @@
  * Collect and tokenize payment methods using Stripe Elements
  */
 
-import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { loadStripe } from '@stripe/stripe-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useStripe, useElements, CardElement, Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import { CreditCard, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { trackCampaignEvent } from '@/utils/monitoring';
@@ -60,7 +57,7 @@ function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
     if (cardElement) {
       const { error, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
-        card: cardElement as any, // Type assertion to resolve compatibility issue
+        card: cardElement,
         billing_details: {
           name: 'Jenny Rosen', // TODO: Use actual cardholder name
         },

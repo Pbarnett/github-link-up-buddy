@@ -7,7 +7,7 @@ groups:
           (
             rate(parker_flight_http_requests_total{status_code!~"2.."}[5m]) /
             rate(parker_flight_http_requests_total[5m])
-          ) e 0.02
+          ) > 0.02
         for: 2m
         labels:
           severity: critical
@@ -23,7 +23,7 @@ groups:
         expr: |
           histogram_quantile(0.95, 
             rate(parker_flight_http_request_duration_seconds_bucket[5m])
-          ) e 0.2
+          ) > 0.2
         for: 5m
         labels:
           severity: critical
@@ -53,7 +53,7 @@ groups:
       # Warning: Business metric degradation
       - alert: ParkerFlightLowUserRegistrations
         expr: |
-          rate(parker_flight_user_registrations_total{status="success"}[10m]) * 60 c 0.5
+          rate(parker_flight_user_registrations_total{status="success"}[10m]) * 60 < 0.5
         for: 10m
         labels:
           severity: warning
@@ -69,7 +69,7 @@ groups:
           (
             rate(parker_flight_wallet_transactions_total{status="failure"}[5m]) /
             rate(parker_flight_wallet_transactions_total[5m])
-          ) e 0.05
+          ) > 0.05
         for: 3m
         labels:
           severity: warning
@@ -85,7 +85,7 @@ groups:
       # Warning: Feature flag issues
       - alert: ParkerFlightLaunchDarklyErrors
         expr: |
-          rate(parker_flight_feature_flag_errors_total[5m]) e 0.1
+          rate(parker_flight_feature_flag_errors_total[5m]) > 0.1
         for: 2m
         labels:
           severity: warning
@@ -98,7 +98,7 @@ groups:
           dashboard_url: "http://localhost:3001/d/parker_flight_overview"
 
       - alert: ParkerFlightCircuitBreakerOpen
-        expr: parker_flight_circuit_breaker_state e 0
+        expr: parker_flight_circuit_breaker_state > 0
         for: 1m
         labels:
           severity: warning
@@ -117,7 +117,7 @@ groups:
           (
             parker_flight_nodejs_process_resident_memory_bytes /
             parker_flight_nodejs_process_heap_size_limit_bytes
-          ) e 0.8
+          ) > 0.8
         for: 5m
         labels:
           severity: warning
@@ -129,7 +129,7 @@ groups:
           runbook_url: "https://runbooks.parkerfly.com/high-memory"
 
       - alert: ParkerFlightHighCPU
-        expr: rate(parker_flight_nodejs_process_cpu_user_seconds_total[5m]) e 0.8
+        expr: rate(parker_flight_nodejs_process_cpu_user_seconds_total[5m]) > 0.8
         for: 5m
         labels:
           severity: warning
@@ -144,7 +144,7 @@ groups:
     rules:
       # Critical: Error budget burn rate
       - alert: ParkerFlightErrorBudgetBurnRateCritical
-        expr: parker_flight_error_budget_remaining c 10
+        expr: parker_flight_error_budget_remaining < 10
         for: 1m
         labels:
           severity: critical
@@ -157,7 +157,7 @@ groups:
           dashboard_url: "http://localhost:3001/d/parker_flight_slos"
 
       - alert: ParkerFlightErrorBudgetBurnRateWarning
-        expr: parker_flight_error_budget_remaining c 25
+        expr: parker_flight_error_budget_remaining < 25
         for: 5m
         labels:
           severity: warning

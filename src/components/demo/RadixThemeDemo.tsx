@@ -14,12 +14,8 @@
  */
 
 import * as React from 'react';
-const { useState, useEffect } = React;
-type FC<T = {}> = React.FC<T>;
-type Component<P = {}, S = {}> = React.Component<P, S>;
-
+import { useState, useEffect } from 'react';
 import {
-  Theme,
   Box,
   Flex,
   Grid,
@@ -57,6 +53,8 @@ import {
   PlusIcon,
 } from '@radix-ui/react-icons';
 import { ThemeToggle } from '../providers/RadixThemeProvider';
+
+type FC<T = {}> = React.FC<T>;
 
 export const RadixThemeDemo: FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -254,7 +252,7 @@ export const RadixThemeDemo: FC = () => {
                             </Text>
                             <TextField.Root
                               value={textValue}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTextValue(e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTextValue((e.target as HTMLInputElement).value)}
                               placeholder="Enter text..."
                             >
                               <TextField.Slot>

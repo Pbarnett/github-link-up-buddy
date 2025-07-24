@@ -5,12 +5,11 @@
  * Queues tasks for re-execution when network becomes available
  */
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 
 import localforage from 'localforage';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { trackEvent } from './monitoring';
+import * as React from 'react';
 
 const QUEUE_KEY = 'pf-retry-queue';
 

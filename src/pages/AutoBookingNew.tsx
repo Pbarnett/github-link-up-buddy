@@ -1,10 +1,9 @@
-import * as React from 'react';
-const { useDeferredValue, useActionState } = React;
 
 import { Skeleton } from '@/components/ui/skeleton';
 import PageWrapper from '@/components/layout/PageWrapper';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import * as React from 'react';
 
 // Lazy load the campaign wizard and demo components
 const CampaignWizard = lazy(() => import('@/components/autobooking/CampaignWizard/CampaignWizard'));

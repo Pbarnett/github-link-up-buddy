@@ -1,6 +1,6 @@
 
-import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
 
 // Lookups
 import { airportNames } from "@/data/airportLookup";

@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi, beforeAll } from 'vitest';
-import { setupAdvancedOAuthTesting } from '../utils/advancedOAuthMocks';
 import { modernGoogleAuth } from '@/services/modernGoogleAuthService';
+import { setupAdvancedOAuthTesting } from '../utils/advancedOAuthMocks';
 
 // Use vi.hoisted() for proper pre-import mocking
 const mockGoogleAccounts = vi.hoisted(() => ({

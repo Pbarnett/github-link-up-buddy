@@ -1,8 +1,8 @@
+import { QueryData, QueryError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, Tables, TablesInsert, TablesUpdate } from '@/types/database';
-import { SupabaseErrorHandler, withRetry } from './error-handler';
-import { QueryData, QueryError } from '@supabase/supabase-js';
 import { performanceMonitor } from '@/services/monitoring/performanceMonitor';
+import { SupabaseErrorHandler, withRetry } from './error-handler';
 
 // Connection health monitoring
 class ConnectionMonitor {

@@ -5,7 +5,8 @@
  * Uses AWS Secrets Manager for secure flight API credentials.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { 
   flightSearchServiceSecure, 
   FlightSearchRequest, 
@@ -79,7 +80,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
     if (!formData.departureDate) {
       setFormData(prev => ({ ...prev, departureDate: today }));
     }
-  }, []);
+  }, [formData.departureDate]);
 
   /**
    * Handle form input changes
@@ -238,7 +239,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             type="radio"
             value="roundTrip"
             checked={formData.tripType === 'roundTrip'}
-            onChange={(e) => handleInputChange('tripType', e.target.value)}
+            onChange={(e) => handleInputChange('tripType', (e.target as HTMLInputElement).value)}
             className="mr-2"
           />
           Round Trip
@@ -248,7 +249,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             type="radio"
             value="oneWay"
             checked={formData.tripType === 'oneWay'}
-            onChange={(e) => handleInputChange('tripType', e.target.value)}
+            onChange={(e) => handleInputChange('tripType', (e.target as HTMLInputElement).value)}
             className="mr-2"
           />
           One Way
@@ -265,7 +266,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             type="text"
             placeholder="LAX, New York, etc."
             value={formData.origin}
-            onChange={(e) => handleInputChange('origin', e.target.value)}
+            onChange={(e) => handleInputChange('origin', (e.target as HTMLInputElement).value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
@@ -278,7 +279,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             type="text"
             placeholder="JFK, London, etc."
             value={formData.destination}
-            onChange={(e) => handleInputChange('destination', e.target.value)}
+            onChange={(e) => handleInputChange('destination', (e.target as HTMLInputElement).value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
@@ -295,7 +296,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             type="date"
             value={formData.departureDate}
             min={new Date().toISOString().split('T')[0]}
-            onChange={(e) => handleInputChange('departureDate', e.target.value)}
+            onChange={(e) => handleInputChange('departureDate', (e.target as HTMLInputElement).value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required
           />
@@ -309,7 +310,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
               type="date"
               value={formData.returnDate || ''}
               min={formData.departureDate}
-              onChange={(e) => handleInputChange('returnDate', e.target.value)}
+              onChange={(e) => handleInputChange('returnDate', (e.target as HTMLInputElement).value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
@@ -325,7 +326,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
           </label>
           <select
             value={formData.adults}
-            onChange={(e) => handleInputChange('adults', parseInt(e.target.value))}
+            onChange={(e) => handleInputChange('adults', parseInt((e.target as HTMLSelectElement).value))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
@@ -339,7 +340,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
           </label>
           <select
             value={formData.children}
-            onChange={(e) => handleInputChange('children', parseInt(e.target.value))}
+            onChange={(e) => handleInputChange('children', parseInt((e.target as HTMLSelectElement).value))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             {[0, 1, 2, 3, 4, 5].map(num => (
@@ -353,7 +354,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
           </label>
           <select
             value={formData.infants}
-            onChange={(e) => handleInputChange('infants', parseInt(e.target.value))}
+            onChange={(e) => handleInputChange('infants', parseInt((e.target as HTMLSelectElement).value))}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             {[0, 1, 2].map(num => (
@@ -371,7 +372,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
           </label>
           <select
             value={formData.cabinClass}
-            onChange={(e) => handleInputChange('cabinClass', e.target.value)}
+            onChange={(e) => handleInputChange('cabinClass', (e.target as HTMLSelectElement).value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="ECONOMY">Economy</option>
@@ -386,7 +387,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
           </label>
           <select
             value={formData.currency}
-            onChange={(e) => handleInputChange('currency', e.target.value)}
+            onChange={(e) => handleInputChange('currency', (e.target as HTMLSelectElement).value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="USD">USD ($)</option>
@@ -423,7 +424,7 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             step="50"
             placeholder="e.g., 1000"
             value={formData.maxPrice || ''}
-            onChange={(e) => handleInputChange('maxPrice', e.target.value ? parseInt(e.target.value) : undefined)}
+            onChange={(e) => handleInputChange('maxPrice', (e.target as HTMLSelectElement).value ? parseInt((e.target as HTMLInputElement).value) : undefined)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>

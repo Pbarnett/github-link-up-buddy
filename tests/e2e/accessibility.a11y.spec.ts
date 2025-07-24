@@ -1,5 +1,5 @@
-import { test, expect } from '../fixtures/extendedTest';
 import { injectAxe, checkA11y } from 'axe-playwright';
+import { test, expect } from '../fixtures/extendedTest';
 
 test.describe('Accessibility (WCAG 2.2 AA)', () => {
   test.beforeEach(async ({ page }) => {

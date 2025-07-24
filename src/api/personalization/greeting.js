@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
+/* global process */
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -90,6 +91,7 @@ export default async function handler(req, res) {
       const greetingData = await getPersonalizedGreeting(userId);
       res.status(200).json(greetingData);
     } catch (error) {
+      console.error('API error:', error);
       res.status(500).json({ error: 'Failed to fetch personalized greeting' });
     }
   } else if (req.method === 'PUT') {
@@ -97,6 +99,7 @@ export default async function handler(req, res) {
       const result = await updatePersonalizationPreferences(userId, req.body);
       res.status(200).json(result);
     } catch (error) {
+      console.error('API error:', error);
       res.status(500).json({ error: 'Failed to update personalization preferences' });
     }
   } else {

@@ -3,8 +3,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import Dashboard from '@/pages/Dashboard';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import Dashboard from '@/pages/Dashboard';
 
 // --- Mock Dependencies ---
 
@@ -177,7 +177,10 @@ describe('Dashboard Page', () => {
 
     await waitFor(() => expect(screen.getByTestId('trip-history-mock')).toBeInTheDocument());
     const { default: TripHistoryMock } = await import('@/components/dashboard/TripHistory');
-    expect(TripHistoryMock).toHaveBeenCalledWith(expect.objectContaining({ userId: mockUser.id }), expect.anything());
+    // Check that TripHistory was called with the correct userId
+    expect(TripHistoryMock).toHaveBeenCalled();
+    const mockCall = TripHistoryMock.mock.calls[0];
+    expect(mockCall[0]).toEqual(expect.objectContaining({ userId: mockUser.id }));
 
     expect(screen.queryByText(/TestAir TA101/i)).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /My Trips/i, selected: true })).toBeInTheDocument();

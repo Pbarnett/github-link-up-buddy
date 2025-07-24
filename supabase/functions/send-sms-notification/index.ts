@@ -1,5 +1,5 @@
-import { createTwilioService, SMSTemplateRenderer } from '../lib/twilio.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createTwilioService, SMSTemplateRenderer } from '../lib/twilio.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

@@ -1,16 +1,13 @@
 
 
-import * as React from 'react';
-const { useState, useEffect, useCallback } = React;
 type FC<T = {}> = React.FC<T>;
 
-import { useUser } from '@supabase/auth-helpers-react';
 import { DatabaseOperations } from '@/lib/supabase/database-operations';
-import { ProfileCompletenessIndicator, ProfileCompletenessData, ProfileField } from './ProfileCompletenessIndicator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ProfileCompletenessIndicator, ProfileCompletenessData, ProfileField } from './ProfileCompletenessIndicator';
+import * as React from 'react';
 
 interface ProfileCompletenessConnectedProps {
   onFieldClick?: (fieldId: string) => void;

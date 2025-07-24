@@ -5,10 +5,9 @@
  * Monitors online/offline state and connection quality
  */
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 
 import { trackEvent } from '@/utils/monitoring';
+import * as React from 'react';
 
 interface NetworkStatus {
   isOnline: boolean;

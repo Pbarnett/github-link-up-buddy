@@ -1,9 +1,20 @@
 
 
 import * as React from 'react';
-const { useState, useEffect } = React;
-
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  PlaneTakeoff,
+  Home,
+  Calendar,
+  User,
+  CreditCard,
+  LogOut,
+  Menu,
+  ChevronDown,
+  Loader2,
+  Search
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -19,20 +30,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  PlaneTakeoff,
-  Home,
-  Calendar,
-  User,
-  CreditCard,
-  LogOut,
-  Menu,
-  ChevronDown,
-  Loader2,
-  Search
-} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
 import { cn } from '@/lib/utils';
 
 interface User {

@@ -1,14 +1,11 @@
-import * as React from 'react';
-const { useState, useEffect } = React;
 
-import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserInitializationService } from '@/services/userInitialization';
 import { modernGoogleAuth, type AuthResult } from '@/services/modernGoogleAuthService';
-import { Loader2, Shield, AlertTriangle } from 'lucide-react';
+import * as React from 'react';
 
 /**
  * MODERN LOGIN COMPONENT - Uses Google Identity Services (GIS)

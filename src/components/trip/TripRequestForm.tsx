@@ -1,9 +1,5 @@
-import * as React from 'react';
-const { useState, useEffect } = React;
 
-import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, FormProvider } from "react-hook-form";
 import { parseISO } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -12,7 +8,6 @@ import { Form } from "@/components/ui/form";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { FormValues, tripFormSchema, ExtendedTripFormValues } from "@/types/form";
-import { Loader2, Search } from "lucide-react";
 import { TripRequestFromDB } from "@/hooks/useTripOffers";
 // import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
@@ -32,6 +27,7 @@ import CollapsibleFiltersSection from "./sections/CollapsibleFiltersSection";
 import LiveBookingSummary from "./LiveBookingSummary";
 import TripSummaryChips from "./sections/TripSummaryChips";
 import AutoBookingSection from "./sections/AutoBookingSection";
+import * as React from 'react';
 
 // import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 

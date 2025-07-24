@@ -3,13 +3,13 @@
 import * as React from 'react';
 type FC<T = {}> = React.FC<T>;
 
+import { format as formatDate } from "date-fns";
 import {
   Card,
   CardHeader,
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
-import { format as formatDate } from "date-fns";
 import { TripDetails } from "@/hooks/useTripOffers"; // Import TripDetails
 
 // Remove local TripDetails definition

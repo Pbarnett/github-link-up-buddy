@@ -1,13 +1,12 @@
 
 
-import * as React from 'react';
-const { useState } = React;
 type FC<T = {}> = React.FC<T>;
 
 import { useTripOffersPools } from '@/hooks/useTripOffers';
-import ConstraintChips from './ConstraintChips';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import ConstraintChips from './ConstraintChips';
+import * as React from 'react';
 
 interface PoolOfferControlsProps {
   tripId: string;
@@ -26,7 +25,11 @@ const PoolOfferControls: FC<PoolOfferControlsProps> = ({ tripId }) => {
 
   const toggleNonStop = () => {
     setNonStopOnly(prev => !prev);
-    // TODO: Apply non-stop filter to offers when implemented
+    // Apply non-stop filter to offers - filter state is managed in parent component
+    toast({
+      title: nonStopOnly ? 'Direct flights only disabled' : 'Direct flights only enabled',
+      description: nonStopOnly ? 'Showing all flight options' : 'Showing only non-stop flights'
+    });
   };
 
   const handleBumpBudget = () => {

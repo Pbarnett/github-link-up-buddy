@@ -322,7 +322,7 @@ export class FlagErrorHandler {
     
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        return await operation();
+        return await operation()();
       } catch (error) {
         lastError = error as Error;
         

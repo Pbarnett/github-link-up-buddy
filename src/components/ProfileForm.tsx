@@ -1,17 +1,11 @@
-
-
-import * as React from 'react';
-const { useState, useEffect } = React;
 type FormEvent = React.FormEvent;
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile } from "@/hooks/useProfile";
 import { useProfileKMS } from "@/hooks/useProfileKMS";
-import { useState as reactUseState } from 'react';
-
+import * as React from 'react';
 interface ProfileFormProps {
   useKMS?: boolean;
 }
@@ -21,7 +15,7 @@ export function ProfileForm({ useKMS = false }: ProfileFormProps = {}) {
   const kmsProfile = useProfileKMS();
   
   // Choose which profile service to use
-  const { profile, isLoading, updateProfile, isUpdating, error } = useKMS ? kmsProfile : legacyProfile;
+  const { profile, isLoading, updateProfile, isUpdating, error: _error } = useKMS ? kmsProfile : legacyProfile;
   const [encryptionEnabled] = reactUseState(useKMS);
   
   console.log(`ProfileForm: Using ${useKMS ? 'KMS-encrypted' : 'legacy'} profile service`);
@@ -91,7 +85,7 @@ export function ProfileForm({ useKMS = false }: ProfileFormProps = {}) {
                 id="first_name"
                 type="text"
                 value={formData.first_name}
-                onChange={(e) => handleChange("first_name", e.target.value)}
+                onChange={(e) => handleChange("first_name", (e.target as HTMLInputElement).value)}
                 placeholder="Enter your first name"
               />
             </div>
@@ -101,7 +95,7 @@ export function ProfileForm({ useKMS = false }: ProfileFormProps = {}) {
                 id="last_name"
                 type="text"
                 value={formData.last_name}
-                onChange={(e) => handleChange("last_name", e.target.value)}
+                onChange={(e) => handleChange("last_name", (e.target as HTMLInputElement).value)}
                 placeholder="Enter your last name"
               />
             </div>
@@ -113,7 +107,7 @@ export function ProfileForm({ useKMS = false }: ProfileFormProps = {}) {
               id="phone"
               type="tel"
               value={formData.phone}
-              onChange={(e) => handleChange("phone", e.target.value)}
+              onChange={(e) => handleChange("phone", (e.target as HTMLInputElement).value)}
               placeholder="Enter your phone number (e.g., +1234567890)"
             />
             <p className="text-sm text-muted-foreground">

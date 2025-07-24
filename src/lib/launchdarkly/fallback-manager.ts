@@ -177,7 +177,7 @@ export class LaunchDarklyFallbackManager {
   ): () => Promise<T> {
     return async (): Promise<T> => {
       try {
-        const result = await sdkEvaluator();
+        const result = await sdkEvaluator()();
         
         // If we got a result, connection is working
         if (!this.state.isOffline && this.state.failedAttempts > 0) {

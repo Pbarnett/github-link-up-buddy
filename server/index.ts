@@ -1,4 +1,4 @@
-import { startServer } from './api';
+import { startServer } from './api.js';
 
 const server = startServer(5001);
 

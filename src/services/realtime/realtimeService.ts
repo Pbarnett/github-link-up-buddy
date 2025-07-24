@@ -6,12 +6,11 @@
  * Based on Supabase real-time documentation best practices
  */
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 
-import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/types/database';
+import * as React from 'react';
 
 type Tables = Database['public']['Tables'];
 type TableName = keyof Tables;
@@ -288,7 +287,7 @@ class RealtimeService {
     }
 
     this.reconnectAttempts++;
-    const delay = this.baseReconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+    const _delay = this.baseReconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
     
     console.log(`🔄 Attempting to reconnect... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
     

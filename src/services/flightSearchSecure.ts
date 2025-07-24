@@ -376,7 +376,7 @@ export class FlightSearchServiceSecure {
         }
       } catch (error) {
         console.warn(`Flight search failed for provider ${provider}:`, error);
-        return null;
+        throw error;
       }
     });
 
@@ -386,6 +386,11 @@ export class FlightSearchServiceSecure {
       .map((result) => (result as PromiseFulfilledResult<FlightSearchResponse>).value);
 
     if (successfulResults.length === 0) {
+      // Get the first error to provide more specific error information
+      const firstRejection = results.find((result) => result.status === 'rejected');
+      if (firstRejection && firstRejection.status === 'rejected') {
+        throw firstRejection.reason;
+      }
       throw new Error('All flight search providers failed');
     }
 

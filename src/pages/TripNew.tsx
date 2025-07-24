@@ -1,19 +1,16 @@
 
 
-import * as React from 'react';
-const { useState, useEffect, useRef } = React;
 
-import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Settings, Check } from "lucide-react";
 import TripRequestForm from "@/components/trip/TripRequestForm";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { ActiveBookingsPill } from "@/components/ActiveBookingsPill";
 import ThreeStepExplainer from "@/components/ThreeStepExplainer";
 import SimplifiedSocialProof from "@/components/SimplifiedSocialProof";
+import * as React from 'react';
 
 const TripNew = () => {
   const [searchParams] = useSearchParams();

@@ -25,9 +25,9 @@ export interface FeatureFlagConfig {
 export const DEFAULT_FEATURE_FLAGS: Record<string, FeatureFlag> = {
   wallet_ui: {
     name: 'wallet_ui',
-    enabled: false,
+    enabled: true,
     description: 'Enable wallet UI features',
-    rolloutPercentage: 0
+    rolloutPercentage: 5
   },
   advanced_search: {
     name: 'advanced_search',

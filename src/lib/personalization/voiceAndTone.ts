@@ -71,47 +71,70 @@ export const VOICE_GUIDELINES = {
   },
 };
 
-// Greeting content library with variants for different contexts
+// Friend-next-to-you greeting library (Parker Flight edition)
+// Every line: sounds like an actual pal, keeps psychology levers, avoids corporate tells
 export const GREETING_LIBRARY = {
   dashboard: {
     withFirstName: [
-      '✈️ Welcome back, {firstName}!',
-      'Good to see you, {firstName}!',
-      'Hello {firstName}! Ready to find your next adventure?',
-      'Hey {firstName}! What\'s your next destination?',
-      'Welcome back, {firstName}! Let\'s find some great flights.',
+      'Good to see you again, {firstName}. Any place in mind?',
+      'Hey {firstName}, looking for fresh flight ideas?',
+      'You\'re back, {firstName}. Let\'s browse a few options.',
     ],
     withFirstNameAndTrip: [
-      '✈️ Welcome back, {firstName}! Still planning that trip to {nextTripCity}?',
-      'Hello {firstName}! Ready for {nextTripCity}?',
-      'Good to see you, {firstName}! How\'s that {nextTripCity} trip coming along?',
-      'Hey {firstName}! Let\'s get you to {nextTripCity}!',
-      'Welcome back, {firstName}! {nextTripCity} is calling! 🌎',
+      'Good to see you again, {firstName}. Still thinking about {nextTripCity}?',
+      'Hey {firstName}, ready to book that {nextTripCity} trip?',
+      'You\'re back, {firstName}. {nextTripCity} is waiting.',
     ],
     generic: [
-      '✈️ Welcome back! Ready for your next adventure?',
-      'Hello! What\'s your next destination?',
-      'Welcome back! Let\'s find some great flights.',
-      'Ready to explore the world?',
-      'Welcome back, traveler! Where to next?',
+      'Good to see you again. Any place in mind?',
+      'Looking for fresh flight ideas?',
+      'Let\'s browse a few options.',
+    ],
+  },
+  welcome: {
+    withFirstName: [
+      'Good to see you, {firstName}.',
+      'Glad you\'re here, {firstName}. Let\'s pick somewhere fun.',
+      'Nice to see you, {firstName}. Ready to dream up a trip?',
+    ],
+    generic: [
+      'Good to see you.',
+      'Glad you\'re here. Let\'s pick somewhere fun.',
+      'Ready to dream up a trip?',
     ],
   },
   bookingConfirmation: {
     withFirstName: [
-      '🎉 Congratulations {firstName}! Your flight is booked.',
-      'All set, {firstName}! Have an amazing trip.',
-      'Perfect, {firstName}! Your journey begins soon.',
-      'Excellent choice, {firstName}! Safe travels ahead.',
+      'Booking complete. All set, {firstName}.',
+      'Done and dusted, {firstName}. Safe travels.',
+      'All sorted, {firstName}. Have a great trip.',
     ],
     withFirstNameAndTrip: [
-      '🎉 {firstName}, you\'re all set for {nextTripCity}!',
-      'Perfect! {firstName}, {nextTripCity} here you come!',
-      '{firstName}, your {nextTripCity} adventure is confirmed! ✈️',
+      'Booking complete. {nextTripCity} is going to be a blast.',
+      'All set, {firstName}. Can\'t wait for you to see {nextTripCity}.',
+      'Done and dusted. {nextTripCity} is waiting for you.',
     ],
     generic: [
-      '🎉 Your flight is booked! Have an amazing trip.',
-      'All set! Safe travels ahead.',
-      'Perfect! Your journey begins soon.',
+      'Booking complete. Safe travels.',
+      'All set. Have a great trip.',
+      'Done and dusted.',
+    ],
+  },
+  flightStatus: {
+    withFirstName: [
+      'Quick update for you, {firstName}. Your flight is on schedule.',
+      'Just checked. No changes to your flight.',
+      'Everything\'s on track, {firstName}.',
+    ],
+    withFirstNameAndTrip: [
+      'Quick update for you, {firstName}. Your {nextTripCity} flight is on schedule.',
+      'Just checked. No changes to your {nextTripCity} flight.',
+      'Everything\'s on track. {nextTripCity} here you come.',
+    ],
+    generic: [
+      'Quick update. Your flight is on schedule.',
+      'Just checked. No changes to your flight.',
+      'Everything\'s on track.',
     ],
   },
   profile: {
@@ -128,14 +151,14 @@ export const GREETING_LIBRARY = {
   },
   error: {
     withFirstName: [
-      'Sorry {firstName}, we hit a small turbulence. Let\'s try again.',
-      '{firstName}, something went wrong. We\'re on it!',
-      'Oops {firstName}! Let\'s get this sorted.',
+      'Looks like a hiccup, {firstName}. Let\'s refresh and try again.',
+      'Something glitched. Give it another go in a sec.',
+      'Odd snag there. One more reload should sort it out.',
     ],
     generic: [
-      'Sorry, we hit a small turbulence. Let\'s try again.',
-      'Something went wrong. We\'re on it!',
-      'Oops! Let\'s get this sorted.',
+      'Looks like a hiccup. Let\'s refresh and try again.',
+      'Something glitched. Give it another go in a sec.',
+      'Odd snag there. One more reload should sort it out.',
     ],
   },
 };

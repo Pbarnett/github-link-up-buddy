@@ -6,9 +6,9 @@
  */
 
 import { loadStripe, Stripe } from '@stripe/stripe-js';
+import { createClient } from '@supabase/supabase-js';
 import { getSecretValue } from '@/lib/aws-sdk-enhanced/secrets-manager';
 import { secretCache } from '@/lib/aws-sdk-enhanced/examples/secrets-manager-usage';
-import { createClient } from '@supabase/supabase-js';
 
 // Environment configuration
 const ENVIRONMENT = process.env.NODE_ENV || 'development';
@@ -285,11 +285,11 @@ export class StripeServiceSecure {
         payment_method: paymentMethod,
       });
 
-      if (result.error) {
+      if (result?.error) {
         throw new Error(result.error.message || 'Payment confirmation failed');
       }
 
-      return result.paymentIntent;
+      return result?.paymentIntent || result;
     } catch (error) {
       console.error('Error confirming payment:', error);
       throw error;
@@ -409,4 +409,4 @@ export const SecurePaymentUtils = {
 export const stripeServiceSecure = new StripeServiceSecure();
 
 // Export configuration for edge functions
-export { StripeSecureConfig, SupabaseSecureConfig, SECRET_PATTERNS };
+export { SECRET_PATTERNS };

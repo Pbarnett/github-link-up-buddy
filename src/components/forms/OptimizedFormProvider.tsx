@@ -1,3 +1,4 @@
+import * as React from 'react';
 
 /**
  * Optimized FormProvider Component
@@ -6,13 +7,10 @@
  * to prevent unnecessary re-renders in complex form applications.
  */
 
-import * as React from 'react';
-const { useMemo } = React;
 type ReactNode = React.ReactNode;
 type FC<T = {}> = React.FC<T>;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import { FormProvider, UseFormReturn } from 'react-hook-form';
 
 interface OptimizedFormProviderProps {
   children: ReactNode;
@@ -21,7 +19,7 @@ interface OptimizedFormProviderProps {
 }
 
 /**
- * Optimized FormProvider that uses React.memo to prevent
+ * Optimized FormProvider that uses memo to prevent
  * unnecessary re-renders when form state hasn't changed
  */
 export const OptimizedFormProvider: FC<OptimizedFormProviderProps> = memo(

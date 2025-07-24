@@ -1,11 +1,18 @@
 import { describe, beforeAll, afterAll, it, expect } from 'vitest';
-import { testEnvironment } from '../testcontainers/setup';
 import { createClient } from '@supabase/supabase-js';
+import { testEnvironment } from '../testcontainers/setup';
 
 describe('Database Integration Tests', () => {
   beforeAll(async () => {
-    await testEnvironment.setup();
-  }, 60000); // 60 second timeout for container startup
+    try {
+      console.log('Starting TestContainers setup...');
+      await testEnvironment.setup();
+      console.log('TestContainers setup completed.');
+    } catch (error) {
+      console.error('TestContainers setup failed:', error);
+      throw error;
+    }
+  }, 120000); // 2 minute timeout for container startup
 
   afterAll(async () => {
     await testEnvironment.teardown();

@@ -7,7 +7,6 @@
  */
 
 import { z } from 'zod';
-
 // ===== TRAVELER DATA SCHEMAS =====
 
 export const travelerDataSchema = z.object({

@@ -8,9 +8,10 @@ config({ path: '.env.local' });
 // Test all known feature flags from the application
 const KNOWN_FLAGS = [
   'personalization_greeting',
-  'show_opt_out_banner', 
+  'personalizedGreetings',
   'profile_ui_revamp',
-  'wallet_ui'
+  'wallet_ui',
+  'sample-feature'
 ];
 
 async function main() {

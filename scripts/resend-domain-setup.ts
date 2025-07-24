@@ -4,7 +4,6 @@
  * Based on Resend API Reference and Best Practices
  */
 
-import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
 // Load environment variables

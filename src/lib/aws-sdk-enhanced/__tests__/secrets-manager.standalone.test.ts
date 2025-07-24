@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import type { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager'
+import type { _SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager'
 
 describe('AWS Secrets Manager Integration - Standalone', () => {
   let mockSecretsManagerClient: any

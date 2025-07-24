@@ -1,10 +1,5 @@
-
-
 import * as React from 'react';
-const { useState, useEffect } = React;
-type FC<T = {}> = React.FC<T>;
-type FormEvent = React.FormEvent;
-
+import { useState, useEffect, useCallback } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -12,8 +7,11 @@ import {
   useStripe,
   useElements
 } from '@stripe/react-stripe-js';
+
 import { createClient } from '@supabase/supabase-js';
 
+type FC<T = {}> = React.FC<T>;
+type FormEvent = React.FormEvent;
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!);
 
@@ -58,33 +56,33 @@ const PaymentForm: FC<PaymentFormProps> = ({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   // Create payment intent on component mount
-  useEffect(() => {
-    const createPaymentIntent = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('create-payment-session', {
-          body: {
-            amount: Math.round(amount * 100), // Convert to cents
-            currency: currency.toLowerCase(),
-            metadata: {
-              offer_id: offerId,
-              passenger_count: passengers.length
-            }
+  const createPaymentIntent = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-payment-session', {
+        body: {
+          amount: Math.round(amount * 100), // Convert to cents
+          currency: currency.toLowerCase(),
+          metadata: {
+            offer_id: offerId,
+            passenger_count: passengers.length
           }
-        });
-
-        if (error) {
-          onError(`Failed to create payment session: ${error.message}`);
-          return;
         }
+      });
 
-        setClientSecret(data.client_secret);
-      } catch {
-        onError('Failed to initialize payment');
+      if (error) {
+        onError(`Failed to create payment session: ${error.message}`);
+        return;
       }
-    };
 
+      setClientSecret(data.client_secret);
+    } catch {
+      onError('Failed to initialize payment');
+    }
+  }, [amount, currency, offerId, passengers.length, onError]);
+
+  useEffect(() => {
     createPaymentIntent();
-  }, [amount, currency, offerId, passengers.length]);
+  }, [createPaymentIntent]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();

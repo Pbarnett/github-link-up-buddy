@@ -1,12 +1,10 @@
 
 
-import * as React from 'react';
 type ReactNode = React.ReactNode;
 type FC<T = {}> = React.FC<T>;
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
+import * as React from 'react';
 
 // Create a test-specific query client
 const createTestQueryClient = () => new QueryClient({

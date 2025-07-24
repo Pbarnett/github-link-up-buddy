@@ -1,7 +1,7 @@
 
 
 import * as React from 'react';
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 type ReactNode = React.ReactNode;
 type ErrorInfo = React.ErrorInfo;
 

@@ -9,12 +9,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderHook, act } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import AdvancedFilterControls, { FilterState } from '../AdvancedFilterControls';
 import { useFilterState } from '@/hooks/useFilterState';
 import { ScoredOffer } from '@/types/offer';
+import AdvancedFilterControls, { FilterState } from '../AdvancedFilterControls';
 
 // Mock ResizeObserver for JSDOM compatibility
 class MockResizeObserver {

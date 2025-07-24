@@ -40,7 +40,7 @@ export type {
   FilterConfig,
   UserPreferences,
   PerformanceLogger,
-  ValidationResult,
+  _ValidationResult,
   ProviderAdapter,
   CurrencyConverter,
   BagageeFeeProvider,

@@ -1,14 +1,11 @@
 
 
-import * as React from 'react';
 type ReactNode = React.ReactNode;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import { render, RenderOptions, screen } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
 import { createSupabaseStub } from './supabaseMocks';
+import * as React from 'react';
 
 // Mock toast notifications
 export const mockToast = {

@@ -1,13 +1,10 @@
-import * as React from 'react';
-const { useState, useEffect, useCallback } = React;
 type FormEvent = React.FormEvent;
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, AlertCircle } from 'lucide-react';
+import * as React from 'react';
 
 interface FormState {
   success?: boolean;
@@ -87,7 +84,7 @@ export function ActionStateForm({ onSearchComplete, className }: ActionStateForm
   const [isPending, setIsPending] = useState(false);
   
   // Handle form submission
-  const handleSubmit = useCallback(async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = useCallback(async (event: FormEvent) => {
     event.preventDefault();
     setIsPending(true);
     

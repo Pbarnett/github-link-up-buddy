@@ -1,9 +1,8 @@
 
 
-import * as React from 'react';
-const { useState, useEffect, useRef } = React;
 
-import { Navigate } from 'react-router-dom';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,11 +10,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye, PlusCircle, Plane, DollarSign, Activity } from 'lucide-react';
 import TripHistory from '@/components/dashboard/TripHistory'; // Added import
 import { DashboardGreeting } from '@/components/personalization/GreetingBanner';
-import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
-import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import * as React from 'react';
 
 interface BookingRequest {
   id: string;

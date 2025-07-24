@@ -1,9 +1,6 @@
-import * as React from 'react';
-const { useState, useEffect } = React;
-
 import { createClient } from '@supabase/supabase-js';
 import { PhoneNumberSetup } from './PhoneNumberSetup';
-
+import * as React from 'react';
 interface NotificationPreferences {
   booking_confirmations: { email: boolean; sms: boolean };
   booking_failures: { email: boolean; sms: boolean };
@@ -71,11 +68,7 @@ export function NotificationPreferences() {
     import.meta.env.VITE_SUPABASE_ANON_KEY!
   );
 
-  useEffect(() => {
-    loadPreferences();
-  }, []);
-
-  async function loadPreferences() {
+  const loadPreferences = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -94,7 +87,11 @@ export function NotificationPreferences() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    loadPreferences();
+  }, [loadPreferences]);
 
   async function savePreferences() {
     setSaving(true);

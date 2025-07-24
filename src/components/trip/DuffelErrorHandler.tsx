@@ -4,12 +4,11 @@
  * Provides user-friendly error messages and recovery options
  */
 
-import * as React from 'react';
 type FC<T = {}> = React.FC<T>;
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw, Clock, Wifi, CreditCard } from 'lucide-react';
+import * as React from 'react';
 
 export interface DuffelError {
   type: 'search' | 'booking' | 'payment' | 'network' | 'api' | 'validation';

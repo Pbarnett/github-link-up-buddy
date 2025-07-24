@@ -1,13 +1,12 @@
 
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 
-import { useTripOffersPools, clearUnifiedCache, PoolsHookResult } from './useTripOffers';
-import { useTripOffers, UseTripOffersReturn } from './useTripOffersLegacy';
 import { toast } from '@/hooks/use-toast';
 import logger from '@/lib/logger';
 import { ScoredOffer } from '@/types/offer';
+import { useTripOffers, UseTripOffersReturn } from './useTripOffersLegacy';
+import { useTripOffersPools, clearUnifiedCache, PoolsHookResult } from './useTripOffers';
+import * as React from 'react';
 
 interface UsePoolsSafeParams {
   tripId: string | null;

@@ -1,8 +1,6 @@
 
-import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw, PlaneTakeoff, Settings, Filter } from 'lucide-react';
 
 type TripErrorCardProps = {
   message?: string;

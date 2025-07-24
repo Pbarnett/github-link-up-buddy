@@ -49,7 +49,17 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'integration',
+      testMatch: '**/external-services.test.ts',
+      use: { 
+        ...devices['Desktop Chrome'],
+        // Use new headless mode for better reliability
+        channel: process.env.CI ? 'chrome' : undefined,
+      },
+    },
+    {
       name: 'chromium',
+      testIgnore: '**/external-services.test.ts',
       use: { 
         ...devices['Desktop Chrome'],
         // Use new headless mode for better reliability
@@ -104,6 +114,19 @@ export default defineConfig({
   // Global setup for auth, test data, etc.
   globalSetup: './tests/global-setup.ts',
   globalTeardown: './tests/global-teardown.ts',
+  
+  // Setup files to run before tests
+  setupFiles: './tests/playwright.setup.ts',
+  
+  // Prevent conflicts with other test runners
+  testIgnore: [
+    '**/node_modules/**',
+    '**/*.test.{ts,tsx,js,jsx}', // Exclude Vitest files
+    '**/vitest.config.ts',
+    'src/**/__tests__/**',
+    'src/tests/setupTests.ts', // Exclude Vitest setup
+    '**/vitest.*.ts' // Exclude all Vitest config files
+  ],
   // Test output directory
   outputDir: 'tests/test-results',
   // Capture git information for reports

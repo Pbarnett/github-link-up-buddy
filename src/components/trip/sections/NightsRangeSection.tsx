@@ -51,7 +51,7 @@ const NightsRangeSection = ({ control }: NightsRangeSectionProps) => {
                     className="h-12 border-gray-300 hover:border-gray-400 focus:border-blue-500"
                     {...field}
                     onChange={(e) => {
-                      const value = clamp(parseInt(e.target.value) || 1);
+                      const value = clamp(parseInt((e.target as HTMLInputElement).value) || 1);
                       field.onChange(value);
                     }}
                     value={field.value || ''}
@@ -81,7 +81,7 @@ const NightsRangeSection = ({ control }: NightsRangeSectionProps) => {
                     className="h-12 border-gray-300 hover:border-gray-400 focus:border-blue-500"
                     {...field}
                     onChange={(e) => {
-                      const value = clamp(parseInt(e.target.value) || 1);
+                      const value = clamp(parseInt((e.target as HTMLInputElement).value) || 1);
                       field.onChange(value);
                     }}
                     value={field.value || ''}

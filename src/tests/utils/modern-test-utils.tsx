@@ -1,3 +1,4 @@
+import * as React from 'react';
 
 
 /**
@@ -5,11 +6,7 @@
  */
 
 // Enhanced render utilities with modern providers
-import * as React from 'react';
 type ReactNode = React.ReactNode;
-import { render, type RenderOptions } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
 
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   initialEntries?: string[]

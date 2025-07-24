@@ -1,20 +1,19 @@
 
 
-import * as React from 'react';
-const { forwardRef, InputHTMLAttributes } = React;
-type HTMLAttributes<T = HTMLElement> = React.HTMLAttributes<T>;
+import { forwardRef } from 'react';
+type HTMLAttributes<T = HTMLElement> = HTMLAttributes<T>;
 
 import { cn } from '@/lib/utils';
 
 export interface EnhancedInputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+  extends InputHTMLAttributes<HTMLInputElement> {
   variant?: 'default' | 'enhanced' | 'ghost';
   inputSize?: 'default' | 'sm' | 'lg';
   interactive?: boolean;
   status?: 'default' | 'success' | 'warning' | 'error';
 }
 
-const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
+const EnhancedInput = forwardRef<HTMLInputElement, EnhancedInputProps>(
   ({ className, variant = 'default', inputSize = 'default', interactive = true, status = 'default', type, ...props }, ref) => {
     return (
       <input

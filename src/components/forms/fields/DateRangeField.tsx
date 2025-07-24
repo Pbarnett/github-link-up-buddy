@@ -5,17 +5,17 @@
  * Renders a date range picker with optional flexible dates
  */
 
-import * as React from 'react';
-const { useState } = React;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
 
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
+import * as React from 'react';
+import { useState } from 'react';
+import { CalendarIcon } from 'lucide-react';
 import {
   Popover,
   PopoverContent,

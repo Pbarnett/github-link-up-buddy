@@ -1,7 +1,52 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm';
+import * as React from 'react';
+
+// Mock all the hooks and services
+vi.mock('@/hooks/useCurrentUser', () => ({
+  useCurrentUser: () => ({ userId: 'test-user' }),
+}));
+
+vi.mock('@/hooks/usePaymentMethods', () => ({
+  usePaymentMethods: () => ({
+    data: [],
+    isLoading: false,
+    error: undefined,
+    refetch: vi.fn(),
+  }),
+}));
+
+vi.mock('@/hooks/useTravelerInfoCheck', () => ({
+  useTravelerInfoCheck: () => ({
+    data: { has_traveler_info: true },
+    isLoading: false,
+    error: null
+  })
+}));
+
+vi.mock('@/hooks/useFeatureFlag', () => ({
+  useFeatureFlag: () => false,
+}));
+
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: () => false,
+}));
+
+// Mock Supabase
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    from: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockResolvedValue({ data: [{}], error: null }),
+  },
+}));
+
+// Mock API services
+vi.mock('@/services/api/flightSearchApi', () => ({
+  invokeFlightSearch: vi.fn().mockResolvedValue({ success: true }),
+}));
 
 // Mock react-day-picker at the top level to avoid complex interactions
 vi.mock('react-day-picker', () => ({
@@ -31,19 +76,35 @@ vi.mock('@/components/ui/calendar', () => ({
   ),
 }));
 
+// Test wrapper with providers
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        {children}
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
+};
+
 describe('TripRequestForm - Basic Functionality', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should render the form with basic elements', async () => {
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <TripRequestForm />
-        </MemoryRouter>
-      );
-    });
+    render(
+      <TestWrapper>
+        <TripRequestForm />
+      </TestWrapper>
+    );
 
     // Wait for any async updates to complete
     await waitFor(() => {
@@ -56,13 +117,11 @@ describe('TripRequestForm - Basic Functionality', () => {
   });
 
   it('should render form input fields', async () => {
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <TripRequestForm />
-        </MemoryRouter>
-      );
-    });
+    render(
+      <TestWrapper>
+        <TripRequestForm />
+      </TestWrapper>
+    );
 
     // Wait for async state updates and check that form inputs exist
     await waitFor(() => {
@@ -79,13 +138,11 @@ describe('TripRequestForm - Basic Functionality', () => {
   });
 
   it('should allow selecting cabin class', async () => {
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <TripRequestForm />
-        </MemoryRouter>
-      );
-    });
+    render(
+      <TestWrapper>
+        <TripRequestForm />
+      </TestWrapper>
+    );
 
     // Wait for async state updates
     await waitFor(() => {
@@ -98,13 +155,11 @@ describe('TripRequestForm - Basic Functionality', () => {
   });
 
   it('should have submit button disabled initially', async () => {
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <TripRequestForm />
-        </MemoryRouter>
-      );
-    });
+    render(
+      <TestWrapper>
+        <TripRequestForm />
+      </TestWrapper>
+    );
 
     // Wait for async state updates and check submit button state
     await waitFor(() => {
@@ -116,13 +171,11 @@ describe('TripRequestForm - Basic Functionality', () => {
   });
 
   it('should render date input fields', async () => {
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <TripRequestForm />
-        </MemoryRouter>
-      );
-    });
+    render(
+      <TestWrapper>
+        <TripRequestForm />
+      </TestWrapper>
+    );
 
     // Wait for async state updates
     await waitFor(() => {
@@ -136,13 +189,11 @@ describe('TripRequestForm - Basic Functionality', () => {
   });
 
   it('should allow filling out basic form fields', async () => {
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <TripRequestForm />
-        </MemoryRouter>
-      );
-    });
+    render(
+      <TestWrapper>
+        <TripRequestForm />
+      </TestWrapper>
+    );
 
     // Wait for form to be ready
     await waitFor(() => {
@@ -162,13 +213,11 @@ describe('TripRequestForm - Basic Functionality', () => {
   });
 
   it('should render form sections', async () => {
-    await act(async () => {
-      render(
-        <MemoryRouter>
-          <TripRequestForm />
-        </MemoryRouter>
-      );
-    });
+    render(
+      <TestWrapper>
+        <TripRequestForm />
+      </TestWrapper>
+    );
 
     // Wait for async state updates
     await waitFor(() => {

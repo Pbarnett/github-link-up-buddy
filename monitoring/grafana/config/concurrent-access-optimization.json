@@ -1,0 +1,45 @@
+{
+  "grafanaConfig": {
+    "caching": {
+      "enabled": true,
+      "backend_cache_ttl": "300s",
+      "dashboard_cache_ttl": "600s"
+    },
+    "database": {
+      "max_open_conn": 50,
+      "max_idle_conn": 10,
+      "conn_max_lifetime": 3600
+    },
+    "performance": {
+      "query_timeout": "60s",
+      "max_concurrent_queries": 20,
+      "datasource_proxy_timeout": "30s"
+    }
+  },
+  "organizationBestPractices": {
+    "folderLimits": {
+      "max_dashboards_per_folder": 25,
+      "max_folder_depth": 3,
+      "recommended_folder_count": 10
+    },
+    "dashboardOptimization": {
+      "max_panels_per_dashboard": 20,
+      "recommended_refresh_interval": "30s",
+      "max_query_range": "24h"
+    },
+    "variableOptimization": {
+      "max_variables_per_dashboard": 8,
+      "variable_refresh_priority": [
+        "datasource",
+        "environment",
+        "service",
+        "instance"
+      ]
+    }
+  },
+  "monitoring": {
+    "dashboard_load_time_threshold": "2s",
+    "query_response_time_threshold": "5s",
+    "concurrent_user_limit": 100
+  }
+}

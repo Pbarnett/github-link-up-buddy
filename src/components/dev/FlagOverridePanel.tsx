@@ -1,21 +1,16 @@
-
-
-import * as React from 'react';
-const { useState, useEffect } = React;
 type FC<T = {}> = React.FC<T>;
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, Download, Upload, RefreshCw, Info, AlertTriangle } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import LaunchDarklyService from '@/lib/featureFlags/launchDarklyService';
+import * as React from 'react';
 
 // Known flag definitions for development
 const KNOWN_FLAGS = {
@@ -90,12 +85,7 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
   const [importData, setImportData] = useState('');
   const [showImport, setShowImport] = useState(false);
 
-  // Load existing overrides on component mount
-  useEffect(() => {
-    loadOverrides();
-  }, []);
-
-  const loadOverrides = () => {
+  const loadOverrides = useCallback(() => {
     const savedOverrides: FlagOverride[] = [];
     if (typeof window !== 'undefined' && window.localStorage) {
       Object.keys(localStorage).forEach(key => {
@@ -112,7 +102,7 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
               type: (flagInfo?.type || inferType(parsedValue)) as "string" | "number" | "boolean",
                 description: flagInfo?.description
               });
-            } catch (e) {
+            } catch (_e) {
               console.warn(`Invalid override value for ${flagKey}:`, value);
             }
           }
@@ -120,9 +110,14 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
       });
     }
     setOverrides(savedOverrides);
-  };
+  }, []);
 
-  const inferType = (value: any): 'boolean' | 'string' | 'number' => {
+  // Load existing overrides on component mount
+  useEffect(() => {
+    loadOverrides();
+  }, [loadOverrides]);
+
+  const inferType = (value: unknown): 'boolean' | 'string' | 'number' => {
     if (typeof value === 'boolean') return 'boolean';
     if (typeof value === 'number') return 'number';
     return 'string';
@@ -202,7 +197,7 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
       loadOverrides();
       setImportData('');
       setShowImport(false);
-    } catch (e) {
+    } catch (_e) {
       alert('Invalid JSON format');
     }
   };
@@ -299,13 +294,13 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
                           {override.type === 'boolean' ? (
                             <Switch
                               checked={override.value as boolean}
-                              onCheckedChange={(checked) => toggleBooleanFlag(override.key, override.value as boolean)}
+                              onCheckedChange={(_checked) => toggleBooleanFlag(override.key, override.value as boolean)}
                             />
                           ) : (
                             <Input
                               value={String(override.value)}
                               onChange={(e) => updateOverride(override.key, 
-                                override.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
+                                override.type === 'number' ? parseFloat((e.target as HTMLInputElement).value) || 0 : (e.target as HTMLInputElement).value
                               )}
                               className="h-8 text-sm"
                             />
@@ -327,10 +322,10 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
                   <Input
                     placeholder="Flag key"
                     value={newFlagKey}
-                    onChange={(e) => setNewFlagKey(e.target.value)}
+                    onChange={(e) => setNewFlagKey((e.target as HTMLInputElement).value)}
                     className="flex-1"
                   />
-                  <Select value={newFlagType} onValueChange={(value: any) => setNewFlagType(value)}>
+                  <Select value={newFlagType} onValueChange={(value: 'boolean' | 'string' | 'number') => setNewFlagType(value)}>
                     <SelectTrigger className="w-24">
                       <SelectValue />
                     </SelectTrigger>
@@ -346,7 +341,7 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
                   <Input
                     placeholder={newFlagType === 'boolean' ? 'true/false' : 'Value'}
                     value={newFlagValue}
-                    onChange={(e) => setNewFlagValue(e.target.value)}
+                    onChange={(e) => setNewFlagValue((e.target as HTMLInputElement).value)}
                     className="flex-1"
                   />
                   <Button onClick={addOverride} size="sm">
@@ -414,7 +409,7 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({ className }) => 
                   <Textarea
                     placeholder='{"flag_key": true, "another_flag": "value"}'
                     value={importData}
-                    onChange={(e) => setImportData(e.target.value)}
+                    onChange={(e) => setImportData((e.target as HTMLInputElement).value)}
                     className="h-20 text-sm font-mono"
                   />
                   <div className="flex gap-2">

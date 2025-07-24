@@ -1,9 +1,8 @@
-import * as React from 'react';
-const { useState, useEffect } = React;
 
 import { Campaign } from "@/types/campaign";
 import { campaignService } from "@/services/campaignService";
 import { useCurrentUser } from "./useCurrentUser";
+import * as React from 'react';
 
 export const useCampaigns = () => {
   const { userId } = useCurrentUser();
@@ -11,7 +10,7 @@ export const useCampaigns = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadCampaigns = async () => {
+  const loadCampaigns = useCallback(async () => {
     if (!userId) {
       setIsLoading(false);
       return;
@@ -28,7 +27,7 @@ export const useCampaigns = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
 
   const refreshCampaigns = async () => {
     setIsLoading(true);
@@ -75,7 +74,7 @@ export const useCampaigns = () => {
 
   useEffect(() => {
     loadCampaigns();
-  }, [userId]);
+  }, [loadCampaigns]);
 
   return {
     campaigns,

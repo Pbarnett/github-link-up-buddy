@@ -5,10 +5,6 @@
  * Define travel search criteria (destination, dates, budget)
  */
 
-import * as React from 'react';
-const { useState } = React;
-
-import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,10 +13,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, MapPin, DollarSign, Plane, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { trackCampaignEvent } from '@/utils/monitoring';
+import * as React from 'react';
 
 // Validation schema for criteria step
 const criteriaSchema = z.object({
@@ -296,7 +292,7 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                     min="50"
                     max="10000"
                     step="50"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt(e.target.value) || 0)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt((e.target as HTMLInputElement).value) || 0)}
                     className={errors.maxPrice ? 'border-red-500' : ''}
                   />
                 )}
@@ -360,7 +356,7 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                       id="minDuration"
                       min="1"
                       max="365"
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt(e.target.value) || 0)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt((e.target as HTMLInputElement).value) || 0)}
                     />
                   )}
                 />
@@ -378,7 +374,7 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
                       id="maxDuration"
                       min="1"
                       max="365"
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt(e.target.value) || 0)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt((e.target as HTMLInputElement).value) || 0)}
                     />
                   )}
                 />

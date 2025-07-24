@@ -16,7 +16,7 @@
 
 import * as React from 'react';
 type ReactNode = React.ReactNode;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
 
 import { Theme } from '@radix-ui/themes';

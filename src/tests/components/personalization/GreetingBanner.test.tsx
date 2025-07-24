@@ -1,11 +1,11 @@
 
 
-import * as React from 'react';
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { GreetingBanner } from '@/components/personalization/GreetingBanner';
+import * as React from 'react';
 
 // Mock dependencies
 vi.mock('@/contexts/PersonalizationContext', async (importOriginal) => {

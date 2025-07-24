@@ -2,8 +2,8 @@ import * as React from 'react';
 // src/tests/components/dashboard/TripHistory.test.tsx
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed
 import { MemoryRouter } from 'react-router-dom'; // For <Link>
+import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed
 
 // Use global Supabase mock from setupTests.ts
 // Access the global mock for test-specific behavior
@@ -28,9 +28,9 @@ vi.mock('react-router-dom', async () => {
 
 // --- Test Data ---
 const mockBookingsData = [
-  { id: 'b1', trip_request_id: 'tr1', pnr: 'PNR123', price: 150.75, selected_seat_number: '12A', created_at: new Date('2023-10-01T10:00:00Z').toISOString() },
-  { id: 'b2', trip_request_id: 'tr2', pnr: 'PNR456', price: 200, selected_seat_number: null, created_at: new Date('2023-09-15T14:30:00Z').toISOString() },
-  { id: 'b3', trip_request_id: 'tr3', pnr: null, price: null, selected_seat_number: '5C', created_at: new Date('2023-08-20T11:00:00Z').toISOString() },
+  { id: 'b1', trip_request_id: 'tr1', pnr: 'PNR123', price: 150.75, selected_seat_number: '12A', created_at: new Date('2023-10-01T10:00:00Z').toISOString(), status: 'confirmed' },
+  { id: 'b2', trip_request_id: 'tr2', pnr: 'PNR456', price: 200, selected_seat_number: null, created_at: new Date('2023-09-15T14:30:00Z').toISOString(), status: 'ticketed' },
+  { id: 'b3', trip_request_id: 'tr3', pnr: null, price: null, selected_seat_number: '5C', created_at: new Date('2023-08-20T11:00:00Z').toISOString(), status: null },
 ];
 
 // --- Test Suite ---
@@ -125,8 +125,7 @@ describe('TripHistory Component', () => {
   });
 
   it('5. Verifies link construction for "View Details"', async () => {
-    // This is implicitly tested in scenario 4 by checking the href attribute.
-    // If more specific Link prop testing was needed, the mock for Link could be enhanced.
+    // This test verifies that the Link component receives the correct props
     renderTripHistory();
     mockSupabaseQueryResolver.resolve({ data: [mockBookingsData[0]], error: null });
 
@@ -134,12 +133,18 @@ describe('TripHistory Component', () => {
       const detailsLink = screen.getByRole('link', { name: /View Details/i });
       expect(detailsLink).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}`);
     });
-    // Check that the mocked Link component was called with the correct `to` prop
+    
+    // Verify the mocked Link component was called with correct props
     const { Link } = await import('react-router-dom');
     const LinkMock = Link as unknown as MockedFunction<React.ComponentType<{ to: string; children: React.ReactNode }>>;
+    
+    // Simply check that Link was called with the right props structure
     expect(LinkMock).toHaveBeenCalledWith(
-        expect.objectContaining({ to: `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}` }),
-        expect.anything()
+      expect.objectContaining({
+        to: `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}`,
+        children: 'View Details'
+      }),
+      undefined
     );
   });
 });

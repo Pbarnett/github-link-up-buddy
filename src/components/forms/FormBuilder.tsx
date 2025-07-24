@@ -5,12 +5,9 @@
  * Admin interface for creating and editing dynamic form configurations
  */
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 type FC<T = {}> = React.FC<T>;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import { Plus, Save, Settings, Eye, Trash2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,8 +16,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-
 import type {
+import * as React from 'react';
   FormConfiguration,
   FormBuilderProps,
   FormSection,
@@ -29,11 +26,10 @@ import type {
   SecurityValidationResult,
   SecurityViolation
 } from '@/types/dynamic-forms';
-
+import { useFormStore } from '@/stores/useFormStore';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
 import { FieldTemplateLibrary } from './FieldTemplateLibrary';
 import { SectionEditor } from './SectionEditor';
-import { useFormStore } from '@/stores/useFormStore';
 
 export const FormBuilder: FC<FormBuilderProps> = ({
   initialConfiguration,
@@ -374,7 +370,7 @@ export const FormBuilder: FC<FormBuilderProps> = ({
                     <Input
                       id="form-name"
                       value={configuration.name}
-                      onChange={(e) => updateConfiguration({ name: e.target.value })}
+                      onChange={(e) => updateConfiguration({ name: (e.target as HTMLInputElement).value })}
                       placeholder="Enter form name"
                       disabled={readonly}
                     />
@@ -386,7 +382,7 @@ export const FormBuilder: FC<FormBuilderProps> = ({
                       id="form-version"
                       type="number"
                       value={configuration.version}
-                      onChange={(e) => updateConfiguration({ version: parseInt(e.target.value) })}
+                      onChange={(e) => updateConfiguration({ version: parseInt((e.target as HTMLInputElement).value) })}
                       disabled={readonly}
                     />
                   </div>

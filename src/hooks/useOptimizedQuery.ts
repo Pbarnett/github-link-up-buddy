@@ -4,8 +4,8 @@
  */
 
 import { useQuery, useQueryClient, QueryKey, UseQueryOptions } from '@tanstack/react-query';
-import { useNetworkStatus } from './useNetworkStatus';
 import { trackEvent } from '@/utils/monitoring';
+import { useNetworkStatus } from './useNetworkStatus';
 
 interface OptimizedQueryOptions<T> extends Omit<UseQueryOptions<T>, 'queryKey' | 'queryFn'> {
   // Custom options for optimization
@@ -49,7 +49,7 @@ export const useOptimizedQuery = <T>(
       }
 
       try {
-        const result = await queryFn();
+        const result = await queryFn()();
         
         if (trackPerformance) {
           trackEvent('query_network_success', {

@@ -4,17 +4,14 @@
  * Battle-tested approach: Build and test incrementally
  */
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 type FC<T = {}> = React.FC<T>;
 
+import type { User } from '@supabase/supabase-js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, TestTube, CheckCircle2, XCircle } from 'lucide-react';
-
 import useDuffelFlights from '@/hooks/useDuffelFlights';
 import DuffelBookingCard from '@/components/trip/DuffelBookingCard';
 import OfferExpirationTimer from '@/components/trip/OfferExpirationTimer';
@@ -22,7 +19,10 @@ import OfferExpirationTimer from '@/components/trip/OfferExpirationTimer';
 import DuffelErrorHandler, { DuffelError } from '@/components/trip/DuffelErrorHandler';
 import { DuffelTraveler } from '@/services/api/duffelBookingApi';
 import { supabase } from '@/integrations/supabase/client';
-import type { User } from '@supabase/supabase-js';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
+import { TestTube, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import * as React from 'react';
 
 const DuffelTest: FC = () => {
   // Authentication state
@@ -60,7 +60,7 @@ const DuffelTest: FC = () => {
   }, []);
 
   // Sign in with test credentials (currently unused but kept for future functionality)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const _signIn = async () => {
     setIsAuthenticating(true);
     try {
@@ -82,7 +82,7 @@ const DuffelTest: FC = () => {
   };
 
   // Sign out (currently unused but kept for future functionality)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const _signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -152,7 +152,7 @@ const DuffelTest: FC = () => {
                   id="tripRequestId"
                   placeholder="Enter a valid trip request ID"
                   value={tripRequestId}
-                  onChange={(e) => setTripRequestId(e.target.value)}
+                  onChange={(e) => setTripRequestId((e.target as HTMLInputElement).value)}
                 />
               </div>
             </div>

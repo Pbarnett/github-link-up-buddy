@@ -136,7 +136,7 @@ export async function withRetry<T>(
   
   for (let i = 0; i <= maxRetries; i++) {
     try {
-      return await operation();
+      return await operation()();
     } catch (error) {
       lastError = error as Error;
       

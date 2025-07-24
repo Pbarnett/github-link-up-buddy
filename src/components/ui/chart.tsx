@@ -1,9 +1,7 @@
 
 
-import * as React from 'react';
-const { useMemo, useContext, useId } = React;
 type ReactNode = React.ReactNode;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 import * as RechartsPrimitive from "recharts"
 
@@ -26,7 +24,7 @@ type ChartContextProps = {
   config: ChartConfig
 }
 
-const ChartContext = React.createContext<ChartContextProps | null>(null)
+const ChartContext = createContext<ChartContextProps | null>(null)
 
 function useChart() {
   const context = useContext(ChartContext)
@@ -38,16 +36,15 @@ function useChart() {
   return context
 }
 
-const ChartContainer = React.forwardRef<
-  HTMLDivElement,
-  ComponentProps<"div"> & {
+const ChartContainer = forwardRef<
+  HTMLDivElementProps<"div"> & {
     config: ChartConfig
     children: ComponentProps<
       typeof RechartsPrimitive.ResponsiveContainer
     >["children"]
   }
 >(({ id, className, children, config, ...props }, ref) => {
-  const uniqueId = React.useId()
+  const uniqueId = useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
 
   return (
@@ -106,9 +103,8 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
-const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  ComponentProps<typeof RechartsPrimitive.Tooltip> &
+const ChartTooltipContent = forwardRef<
+  HTMLDivElementProps<typeof RechartsPrimitive.Tooltip> &
     ComponentProps<"div"> & {
       hideLabel?: boolean
       hideIndicator?: boolean
@@ -225,7 +221,7 @@ const ChartTooltipContent = React.forwardRef<
                             {
                               "--color-bg": indicatorColor,
                               "--color-border": indicatorColor,
-                            } as React.CSSProperties
+                            } as CSSProperties
                           }
                         />
                       )
@@ -262,9 +258,8 @@ ChartTooltipContent.displayName = "ChartTooltip"
 
 const ChartLegend = RechartsPrimitive.Legend
 
-const ChartLegendContent = React.forwardRef<
-  HTMLDivElement,
-  ComponentProps<"div"> &
+const ChartLegendContent = forwardRef<
+  HTMLDivElementProps<"div"> &
     Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
       hideIcon?: boolean
       nameKey?: string

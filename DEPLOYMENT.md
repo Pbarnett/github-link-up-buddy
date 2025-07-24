@@ -4,6 +4,29 @@
 
 This deployment setup provides maximum flexibility for different environments and port configurations.
 
+## 🎯 Modern Deployment Quick Start
+
+### Pre-deployment Validation
+```bash
+# Validate deployment readiness
+npm run validate:deployment
+
+# Run validation with automatic fixes
+npm run validate:deployment:fix
+
+# Complete pre-deployment checklist
+npm run pre-deploy
+```
+
+### Performance-Optimized Build
+```bash
+# Build with optimizations
+npm run build
+
+# Validate build performance
+ls -la dist/assets/ | grep -E '\.(js|css)$'
+```
+
 ## 🎯 Quick Start Commands
 
 ### Development Environment (Port 3000)
@@ -141,11 +164,44 @@ kubectl port-forward service/parker-flight-service 8080:80
 - **Health monitoring**: Built-in health checks
 - **Resource limits**: Memory and CPU constraints
 
-## 📊 Monitoring & Health
+## 📊 Enhanced Monitoring & Health
+
+### Modern Health API (`/api/health`)
+Comprehensive health monitoring with:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-01-23T04:58:04Z",
+  "version": "1.0.0",
+  "services": {
+    "database": { "status": "up", "responseTime": 45 },
+    "launchdarkly": { "status": "up", "responseTime": 12 }
+  },
+  "environment": "production",
+  "uptime": 3600000
+}
+```
+
+### Performance Optimization Results
+**Before optimization:**
+- Main bundle: ~1.9MB
+- Single large chunk
+- No tree shaking
+
+**After optimization:**
+- Main bundle: ~1.4MB (-26% improvement)
+- Optimized chunking:
+  - Vendor chunk: React libraries
+  - UI chunk: Radix components
+  - Router chunk: Navigation
+  - Feature chunks: Supabase, LaunchDarkly, Forms
+- Terser minification with dead code elimination
+- Asset optimization with content hashing
 
 ### Health Endpoints
-- **Health Check**: `GET /health` - Returns "healthy" if service is running
-- **Status**: Returns 200 OK when container is healthy
+- **Modern Health Check**: `GET /api/health` - Detailed service status
+- **Legacy Health**: `GET /health` - Simple "healthy" response
+- **Status Codes**: 200 (healthy), 503 (unhealthy)
 
 ### Monitoring Commands
 ```bash

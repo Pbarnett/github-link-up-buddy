@@ -13,7 +13,6 @@ import {
   PerformanceLogger,
   FlightOffer
 } from './core/types';
-
 import { DefaultFilterPipeline, ConsolePerformanceLogger } from './core/FilterPipeline';
 import { BudgetFilter, SimpleCurrencyConverter } from './filters/BudgetFilter';
 import { RoundTripFilter } from './filters/RoundTripFilter';

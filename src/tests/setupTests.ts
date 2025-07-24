@@ -1,15 +1,21 @@
-
-
-import * as React from 'react';
-const { use } = React;
-type ReactNode = React.ReactNode;
-type Component<P = {}, S = {}> = React.Component<P, S>;
-
+import * as nodeCrypto from 'node:crypto';
+import React, { createElement, Fragment } from 'react';
 import { vi, afterEach, expect } from "vitest";
-import { cleanup } from '@testing-library/react';
-
-// Import testing-library jest-dom for custom matchers
+import { parseISO, format, isValid } from 'date-fns';
+import { cleanup, render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
+
+type ReactNode = React.ReactNode;
+type ComponentType<P = {}> = ComponentType<P>;
+
+declare module 'vitest' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface Assertion<T = any> extends jest.Matchers<void, T>, TestingLibraryMatchers<T, void> {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface AsymmetricMatchersContaining extends jest.Expect {}
+}
+
 // Custom matchers for date testing
 expect.extend({
   toMatchISODate(received: string) {
@@ -50,8 +56,32 @@ Object.defineProperty(import.meta, 'env', {
   configurable: true,
 })
 
+// Set up process.env for Node.js style environment variables
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key-for-testing'
+process.env.NODE_ENV = 'test'
+
 // Make React available globally for component tests
 ;(globalThis as Record<string, unknown>).React = React
+;(globalThis as Record<string, unknown>).forwardRef = React.forwardRef
+;(globalThis as Record<string, unknown>).createElement = React.createElement
+;(globalThis as Record<string, unknown>).Fragment = React.Fragment
+;(globalThis as Record<string, unknown>).useState = React.useState
+;(globalThis as Record<string, unknown>).useEffect = React.useEffect
+;(globalThis as Record<string, unknown>).useCallback = React.useCallback
+;(globalThis as Record<string, unknown>).useMemo = React.useMemo
+;(globalThis as Record<string, unknown>).useRef = React.useRef
+;(globalThis as Record<string, unknown>).useContext = React.useContext
+;(globalThis as Record<string, unknown>).useReducer = React.useReducer
+;(globalThis as Record<string, unknown>).useLayoutEffect = React.useLayoutEffect
+;(globalThis as Record<string, unknown>).createContext = React.createContext
+
+// Make React Testing Library functions globally available
+;(globalThis as Record<string, unknown>).render = render
+;(globalThis as Record<string, unknown>).screen = screen
+;(globalThis as Record<string, unknown>).waitFor = waitFor
+;(globalThis as Record<string, unknown>).fireEvent = fireEvent
+;(globalThis as Record<string, unknown>).act = act
 
 // ==============================================================================
 // JSDOM POLYFILLS FOR MODERN WEB APIS (OAUTH + RADIX UI)
@@ -84,8 +114,6 @@ Object.defineProperty(globalThis, 'matchMedia', {
 })
 
 // Crypto API polyfill using Node.js crypto for OAuth token generation
-import * as nodeCrypto from 'node:crypto'
-
 if (!globalThis.crypto) {
   vi.stubGlobal('crypto', {
     getRandomValues: nodeCrypto.getRandomValues || ((arr) => {
@@ -148,14 +176,23 @@ if (!globalThis.CustomEvent) {
 }
 
 // Modern storage APIs with proper error handling
-const createStorageMock = () => ({
-  length: 0,
-  clear: vi.fn(),
-  getItem: vi.fn(() => null),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  key: vi.fn(() => null)
-})
+const createStorageMock = () => {
+  let store: Record<string, string> = {};
+  return {
+    length: 0,
+    clear: vi.fn(() => {
+      store = {};
+    }),
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+    key: vi.fn(() => null)
+  };
+};
 
 if (!globalThis.localStorage) {
   Object.defineProperty(globalThis, 'localStorage', {
@@ -171,27 +208,39 @@ if (!globalThis.sessionStorage) {
   })
 }
 
+// Mock HTMLElement for Node.js environment (needed for AWS SDK tests)
+if (typeof HTMLElement === 'undefined') {
+  global.HTMLElement = class HTMLElement {
+    hasPointerCapture() { return false; }
+    setPointerCapture() {}
+    releasePointerCapture() {}
+    scrollIntoView() {}
+  } as any;
+}
+
 // Pointer capture methods for Radix UI components
-Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
-  value: () => false,
-  writable: true,
-})
+if (typeof HTMLElement !== 'undefined' && HTMLElement.prototype) {
+  Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
+    value: () => false,
+    writable: true,
+  });
 
-Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
-  value: () => {},
-  writable: true,
-})
+  Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
+    value: () => {},
+    writable: true,
+  });
 
-Object.defineProperty(HTMLElement.prototype, 'releasePointerCapture', {
-  value: () => {},
-  writable: true,
-})
+  Object.defineProperty(HTMLElement.prototype, 'releasePointerCapture', {
+    value: () => {},
+    writable: true,
+  });
 
-// Scroll methods
-Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
-  value: vi.fn(),
-  writable: true,
-})
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    value: vi.fn(),
+    writable: true,
+  });
+}
+
 
 // PointerEvent constructor for JSDOM
 if (!globalThis.PointerEvent) {
@@ -207,12 +256,61 @@ if (!globalThis.PointerEvent) {
 // SUPABASE MOCK SETUP
 // ==============================================================================
 
-// Import the comprehensive mock
-import { mockSupabaseClient, createMockSupabaseClient } from './mocks/supabase'
+// Create simple inline Supabase mock
+const mockSupabaseClient = {
+  from: vi.fn(() => ({
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+  })),
+  auth: {
+    getUser: vi.fn().mockResolvedValue({
+      data: { user: { id: 'test-user-id', email: 'test@example.com' } },
+      error: null
+    }),
+    getSession: vi.fn().mockResolvedValue({
+      data: { session: { user: { id: 'test-user-id' } } },
+      error: null
+    }),
+    onAuthStateChange: vi.fn(() => ({
+      data: { subscription: { unsubscribe: vi.fn() } },
+      error: null
+    }))
+  }
+};
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: mockSupabaseClient,
 }))
+
+// Mock the Profile API KMS service
+vi.mock('@/services/api/profileApiKMS', () => ({
+  ProfileApiKMS: class {
+    static getInstance() {
+      return {
+        getProfile: vi.fn().mockResolvedValue({ data: null, error: null }),
+        updateProfile: vi.fn().mockResolvedValue({ data: null, error: null }),
+        createProfile: vi.fn().mockResolvedValue({ data: null, error: null }),
+        calculateCompleteness: vi.fn().mockReturnValue({
+          overall: 85,
+          categories: {
+            basic_info: 100,
+            contact_info: 90,
+            travel_documents: 80,
+            preferences: 60,
+            verification: 50
+          },
+          missing_fields: ['known_traveler_number'],
+          recommendations: []
+        })
+      };
+    }
+  }
+}));
 
 // ==============================================================================
 // BUSINESS RULES MOCK WITH SAFE DEFAULTS
@@ -255,8 +353,6 @@ vi.mock('@/hooks/useFeatureFlag', () => ({
 // DATE UTILITY SAFE WRAPPER
 // ==============================================================================
 
-import { parseISO, format, isValid } from 'date-fns'
-
 // Create safe date formatting utility
 export const formatDateSafe = (dateString: string, formatStr: string = 'MMM dd, yyyy'): string => {
   try {
@@ -277,8 +373,39 @@ vi.mock('@/lib/utils/formatDate', () => ({
 // ROUTER MOCK
 // ==============================================================================
 
-// Don't globally mock react-router-dom - let tests import the real ones when needed
-// This allows MemoryRouter in tests to work correctly with query parameters
+// Mock React Router hooks for tests that need them
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom') as any;
+  
+  // Create a mock Link component
+  const MockLink = ({ to, children, ...props }: any) => {
+    return createElement('a', { ...props, href: to }, children);
+  };
+  
+  return {
+    ...actual,
+    Link: MockLink,
+    useSearchParams: vi.fn(() => [
+      new URLSearchParams(),
+      vi.fn()
+    ]),
+    useNavigate: vi.fn(() => vi.fn()),
+    useLocation: vi.fn(() => ({
+      pathname: '/',
+      search: '',
+      hash: '',
+      state: null,
+      key: 'default'
+    })),
+    useParams: vi.fn(() => ({})),
+  };
+});
+
+// Make Link globally available for components
+const MockLink = ({ to, children, ...props }: any) => {
+  return createElement('a', { ...props, href: to }, children);
+};
+;(globalThis as Record<string, unknown>).Link = MockLink
 
 // ==============================================================================
 // GLOBAL TEST ENVIRONMENT RESET
@@ -349,8 +476,6 @@ vi.mock('@/components/ui/use-toast', () => ({
 
 // Mock LaunchDarkly React SDK
 vi.mock('launchdarkly-react-client-sdk', () => {
-  const React = require('react');
-  
   const mockLDClient = {
     variation: vi.fn((key: string, defaultValue: any) => defaultValue),
     allFlags: vi.fn(() => ({})),
@@ -364,7 +489,7 @@ vi.mock('launchdarkly-react-client-sdk', () => {
   };
 
   const MockLDProvider = ({ children }: { children: ReactNode }) => {
-    return React.createElement(React.Fragment, {}, children);
+    return createElement(Fragment, {}, children);
   };
 
   return {
@@ -373,8 +498,8 @@ vi.mock('launchdarkly-react-client-sdk', () => {
     useFlag: vi.fn((key: string, defaultValue: any) => defaultValue),
     LDProvider: MockLDProvider,
     asyncWithLDProvider: vi.fn().mockResolvedValue(MockLDProvider),
-    withLDProvider: vi.fn((config: any) => (Component: ComponentType) => {
-      return (props: any) => React.createElement(Component, props);
+    withLDProvider: vi.fn((_config: any) => (Component: ComponentType) => {
+      return (props: any) => createElement(Component, props);
     }),
   };
 });
@@ -401,12 +526,38 @@ vi.mock('launchdarkly-js-client-sdk', () => ({
   },
 }));
 
+// Mock LaunchDarkly Node.js SDK for server-side tests
+vi.mock('launchdarkly-node-server-sdk', () => {
+  const mockLDClientNode = {
+    variation: vi.fn((key: string, user: any, defaultValue: any) => defaultValue),
+    allFlagsState: vi.fn(() => ({ valid: true, toJSON: () => ({}) })),
+    track: vi.fn(),
+    identify: vi.fn(),
+    flush: vi.fn(),
+    close: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    waitForInitialization: vi.fn().mockResolvedValue(true),
+    initialized: vi.fn(() => true),
+  };
+
+  return {
+    init: vi.fn().mockResolvedValue(mockLDClientNode),
+    createConsoleLogger: vi.fn(),
+    basicLogger: {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    },
+  };
+});
+
 // Mock our custom LaunchDarkly components
 vi.mock('@/lib/launchdarkly/LaunchDarklyProvider', () => {
-  const React = require('react');
   return {
     LaunchDarklyProvider: ({ children }: { children: ReactNode }) => {
-      return React.createElement(React.Fragment, {}, children);
+      return createElement(Fragment, {}, children);
     },
     useLDClient: vi.fn(() => ({
       variation: vi.fn((key: string, defaultValue: any) => defaultValue),
@@ -423,10 +574,9 @@ vi.mock('@/lib/launchdarkly/LaunchDarklyProvider', () => {
 });
 
 vi.mock('@/lib/launchdarkly/DevOverrides', () => {
-  const React = require('react');
   return {
     DevFlagOverrides: class {
-      static get = vi.fn((key: string) => null);
+      static get = vi.fn((_key: string) => null);
       static set = vi.fn();
       static remove = vi.fn();
       static clear = vi.fn();
@@ -436,7 +586,7 @@ vi.mock('@/lib/launchdarkly/DevOverrides', () => {
     useDevFlags: vi.fn(() => ({})),
     useDevFlag: vi.fn((key: string, defaultValue: any) => defaultValue),
     DevFlagOverrideStatus: ({ children }: { children: ReactNode }) => {
-      return React.createElement(React.Fragment, {}, children);
+      return createElement(Fragment, {}, children);
     },
   };
 });
@@ -447,8 +597,8 @@ vi.mock('@/lib/launchdarkly/context-manager', () => ({
     createAnonymousContext: vi.fn(() => ({ key: 'anonymous', kind: 'user', anonymous: true })),
     updateContextOnAuth: vi.fn((context: any, attributes: any) => ({ ...context, ...attributes })),
     updateContextOnSubscription: vi.fn((context: any, subscription: string) => ({ ...context, subscription })),
-    updateContextWithFeatureUsage: vi.fn((context: any, feature: string, used: boolean) => context),
-    updateContextWithLocation: vi.fn((context: any, country?: string, timezone?: string) => context),
+    updateContextWithFeatureUsage: vi.fn((context: any, _feature: string, _used: boolean) => context),
+    updateContextWithLocation: vi.fn((context: any, _country?: string, _timezone?: string) => context),
     createExperimentContext: vi.fn((attributes: any, group: string) => ({ ...attributes, experimentGroup: group })),
     validateContext: vi.fn(() => true),
     sanitizeContext: vi.fn((context: any) => context),
@@ -456,13 +606,92 @@ vi.mock('@/lib/launchdarkly/context-manager', () => ({
 }));
 
 vi.mock('@/lib/launchdarkly/AuthSync', () => {
-  const React = require('react');
   return {
     AuthSync: ({ children }: { children: ReactNode }) => {
-      return React.createElement(React.Fragment, {}, children);
+      return createElement(Fragment, {}, children);
     },
   };
 });
+
+// ==============================================================================
+// RADIX UI MOCKS
+// ==============================================================================
+
+// Mock all Radix UI components with simple div replacements
+vi.mock('@radix-ui/react-label', () => ({
+  Root: ({ children, ...props }: any) => createElement('label', props, children),
+}));
+
+vi.mock('@radix-ui/react-slot', () => ({
+  Slot: ({ children, ...props }: any) => createElement('div', props, children),
+}));
+
+vi.mock('@radix-ui/react-tabs', () => ({
+  Root: ({ children, ...props }: any) => createElement('div', props, children),
+  List: ({ children, ...props }: any) => createElement('div', props, children),
+  Trigger: ({ children, ...props }: any) => createElement('button', props, children),
+  Content: ({ children, ...props }: any) => createElement('div', props, children),
+}));
+
+vi.mock('@radix-ui/react-toast', () => ({
+  Provider: ({ children }: any) => createElement(Fragment, {}, children),
+  Root: ({ children, ...props }: any) => createElement('div', props, children),
+  Title: ({ children, ...props }: any) => createElement('div', props, children),
+  Description: ({ children, ...props }: any) => createElement('div', props, children),
+  Action: ({ children, ...props }: any) => createElement('button', props, children),
+  Close: ({ children, ...props }: any) => createElement('button', props, children),
+  Viewport: ({ children, ...props }: any) => createElement('div', props, children),
+}));
+
+vi.mock('@radix-ui/react-progress', () => ({
+  Root: ({ children, ...props }: any) => createElement('div', props, children),
+  Indicator: ({ ...props }: any) => createElement('div', props),
+}));
+
+vi.mock('@radix-ui/react-dialog', () => ({
+  Root: ({ children }: any) => createElement(Fragment, {}, children),
+  Portal: ({ children }: any) => createElement(Fragment, {}, children),
+  Overlay: ({ children, ...props }: any) => createElement('div', props, children),
+  Content: ({ children, ...props }: any) => createElement('div', props, children),
+  Header: ({ children, ...props }: any) => createElement('div', props, children),
+  Footer: ({ children, ...props }: any) => createElement('div', props, children),
+  Title: ({ children, ...props }: any) => createElement('h2', props, children),
+  Description: ({ children, ...props }: any) => createElement('p', props, children),
+  Close: ({ children, ...props }: any) => createElement('button', props, children),
+  Trigger: ({ children, ...props }: any) => createElement('button', props, children),
+}));
+
+vi.mock('@radix-ui/react-select', () => ({
+  Root: ({ children }: any) => createElement(Fragment, {}, children),
+  Trigger: ({ children, ...props }: any) => createElement('button', props, children),
+  Value: ({ children, ...props }: any) => createElement('span', props, children),
+  Content: ({ children, ...props }: any) => createElement('div', props, children),
+  Item: ({ children, ...props }: any) => createElement('div', props, children),
+  ItemText: ({ children, ...props }: any) => createElement('span', props, children),
+  ItemIndicator: ({ children, ...props }: any) => createElement('span', props, children),
+  ScrollUpButton: ({ children, ...props }: any) => createElement('button', props, children),
+  ScrollDownButton: ({ children, ...props }: any) => createElement('button', props, children),
+  Group: ({ children, ...props }: any) => createElement('div', props, children),
+  Label: ({ children, ...props }: any) => createElement('label', props, children),
+  Separator: ({ ...props }: any) => createElement('hr', props),
+  Icon: ({ children, ...props }: any) => createElement('span', props, children),
+  Portal: ({ children }: any) => createElement(Fragment, {}, children),
+  Viewport: ({ children, ...props }: any) => createElement('div', props, children),
+}));
+
+vi.mock('@radix-ui/react-popover', () => ({
+  Root: ({ children }: any) => createElement(Fragment, {}, children),
+  Trigger: ({ children, ...props }: any) => createElement('button', props, children),
+  Content: ({ children, ...props }: any) => createElement('div', props, children),
+  Portal: ({ children }: any) => createElement(Fragment, {}, children),
+  Close: ({ children, ...props }: any) => createElement('button', props, children),
+  Anchor: ({ children, ...props }: any) => createElement('div', props, children),
+  Arrow: ({ ...props }: any) => createElement('div', props),
+}));
+
+vi.mock('@radix-ui/react-separator', () => ({
+  Root: ({ ...props }: any) => createElement('hr', props),
+}));
 
 // ==============================================================================
 // EXTERNAL SERVICE MOCKS
@@ -483,4 +712,5 @@ vi.mock('@sentry/react', () => ({
 }))
 
 // Export commonly used mocks for test files
-export { mockSupabaseClient, createMockSupabaseClient as createQueryMock }
+const createMockSupabaseClient = () => mockSupabaseClient;
+export { mockSupabaseClient, createMockSupabaseClient };

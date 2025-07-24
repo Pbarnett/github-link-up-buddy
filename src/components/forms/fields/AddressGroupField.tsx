@@ -5,15 +5,14 @@
  * Renders a grouped address input with multiple fields
  */
 
-import * as React from 'react';
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
 
-import { MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CountrySelectField } from './CountrySelectField';
+import * as React from 'react';
 
 interface AddressValue {
   street: string;
@@ -67,7 +66,7 @@ export const AddressGroupField: FC<AddressGroupFieldProps> = ({
         <Input
           id="street"
           value={value.street}
-          onChange={(e) => handleFieldChange('street', e.target.value)}
+          onChange={(e) => handleFieldChange('street', (e.target as HTMLInputElement).value)}
           placeholder="Enter street address"
           disabled={disabled}
           className={cn(error && "border-destructive")}
@@ -83,7 +82,7 @@ export const AddressGroupField: FC<AddressGroupFieldProps> = ({
           <Input
             id="city"
             value={value.city}
-            onChange={(e) => handleFieldChange('city', e.target.value)}
+            onChange={(e) => handleFieldChange('city', (e.target as HTMLInputElement).value)}
             placeholder="Enter city"
             disabled={disabled}
             className={cn(error && "border-destructive")}
@@ -97,7 +96,7 @@ export const AddressGroupField: FC<AddressGroupFieldProps> = ({
           <Input
             id="state"
             value={value.state}
-            onChange={(e) => handleFieldChange('state', e.target.value)}
+            onChange={(e) => handleFieldChange('state', (e.target as HTMLInputElement).value)}
             placeholder="Enter state or province"
             disabled={disabled}
             className={cn(error && "border-destructive")}
@@ -114,7 +113,7 @@ export const AddressGroupField: FC<AddressGroupFieldProps> = ({
           <Input
             id="zipCode"
             value={value.zipCode}
-            onChange={(e) => handleFieldChange('zipCode', e.target.value)}
+            onChange={(e) => handleFieldChange('zipCode', (e.target as HTMLInputElement).value)}
             placeholder="Enter ZIP or postal code"
             disabled={disabled}
             className={cn(error && "border-destructive")}

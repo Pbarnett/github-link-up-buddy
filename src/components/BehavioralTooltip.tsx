@@ -1,9 +1,5 @@
-import * as React from 'react';
-const { useState, useEffect } = React;
-
-import { X, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
+import * as React from 'react';
 interface BehavioralTooltipProps {
   show: boolean;
   onDismiss: () => void;
@@ -20,6 +16,7 @@ export const BehavioralTooltip = ({ show, onDismiss, variant = 'hesitation' }: B
       return () => clearTimeout(timer);
     } else {
       setIsVisible(false);
+      return undefined;
     }
   }, [show]);
 

@@ -5,11 +5,10 @@
  * Battle-tested pattern following existing useTripOffers approach
  */
 
-import * as React from 'react';
-const { useState, useEffect, useCallback } = React;
 
 import { fetchDuffelFlights, DuffelSearchResponse } from '@/services/api/duffelSearchApi';
 import logger from '@/lib/logger';
+import * as React from 'react';
 
 export interface DuffelSearchOptions {
   maxPrice?: number;
@@ -116,10 +115,9 @@ export const useDuffelFlights = (
           inserted: response.inserted
         });
 
-        // For now, we'll need to fetch the actual offers from the database
-        // since the search function only inserts them
-        // TODO: Extend the search API to return the actual offer data
-        // For MVP, we'll fetch from the flight_offers table
+        // Current architecture: Search API inserts offers to database, then we fetch them
+        // This allows for better caching, persistence, and data integrity
+        // NOTE: Could optimize by returning offers directly from search API in future
         await fetchOffersFromDatabase();
       } else {
         const errorMessage = response.error?.message || 'Search failed without specific error';

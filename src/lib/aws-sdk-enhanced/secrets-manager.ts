@@ -1,6 +1,18 @@
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { EnhancedAWSClientFactory } from './client-factory';
 import { EnhancedAWSErrorHandler } from './error-handling';
+import { IS_MOCK_MODE } from '../aws-sdk-browser-compat';
+
+// Conditionally import AWS SDK commands based on environment
+let GetSecretValueCommand: any;
+
+if (!IS_MOCK_MODE) {
+  ({ GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager'));
+} else {
+  // Mock command for browser environments
+  GetSecretValueCommand = class MockGetSecretValueCommand {
+    constructor(public input: any) {}
+  };
+}
 
 /**
  * Retrieves a secret value from AWS Secrets Manager.

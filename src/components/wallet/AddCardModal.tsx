@@ -1,11 +1,10 @@
 
 
-import * as React from 'react';
-const { useState } = React;
 type FormEvent = React.FormEvent;
 
+import * as React from 'react';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import type { StripeCardElementChangeEvent } from '@stripe/stripe-js';
 import {
   Dialog,
   DialogContent,
@@ -16,11 +15,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
-import { CreditCard, Shield, AlertTriangle } from 'lucide-react';
 import { AddCardModalProps } from '@/types/wallet';
 import { useWallet } from '@/contexts/WalletContext';
 import { useToast } from '@/hooks/use-toast';
-import type { StripeCardElementChangeEvent } from '@stripe/stripe-js';
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!);

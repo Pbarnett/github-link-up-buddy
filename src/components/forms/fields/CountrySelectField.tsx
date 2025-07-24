@@ -5,14 +5,14 @@
  * Renders a searchable country selector
  */
 
-import * as React from 'react';
-const { useState } = React;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
 
-import { Globe, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import * as React from 'react';
+import { useState } from 'react';
+import { Globe, Check } from 'lucide-react';
 import {
   Command,
   CommandEmpty,

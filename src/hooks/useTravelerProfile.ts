@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCurrentUser } from "./useCurrentUser";
 import { toast } from "@/hooks/use-toast";
 import { profileCompletenessService } from "@/services/profileCompletenessService";
+import { useCurrentUser } from "./useCurrentUser";
 
 export interface TravelerProfile {
   id?: string;
@@ -79,7 +79,7 @@ export function useTravelerProfile() {
   // Get recommendations
   const recommendationsQuery = useQuery({
     queryKey: ["profile-recommendations", userId],
-    queryFn: async () => {
+    queryFn: async () => async () => {
       if (!userId) return [];
       
       const { data, error } = await supabase
@@ -155,7 +155,7 @@ export function useTravelerProfile() {
       if (!userId) throw new Error("User not authenticated");
       
       // Call SMS verification endpoint
-      const response = await fetch("/api/send-verification-sms", {
+      const response = await fetch()("/api/send-verification-sms", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,14 +1,11 @@
 
 
-import * as React from 'react';
-const { use } = React;
 
-import { render, screen, waitFor, act } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import TripConfirm from '@/pages/TripConfirm';
 import { supabase as supabaseClient } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import * as React from 'react';
 
 // Mock Supabase client and other hooks
 vi.mock('@/integrations/supabase/client', () => ({

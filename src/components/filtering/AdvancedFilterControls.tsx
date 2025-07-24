@@ -1,9 +1,4 @@
-
-
-import * as React from 'react';
-const { useState, useEffect, useCallback } = React;
 type FC<T = {}> = React.FC<T>;
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,8 +6,8 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { DollarSign, Plane, X, RefreshCw, Filter } from 'lucide-react';
 import AirlineSelector from './AirlineSelector';
+import * as React from 'react';
 
 /**
  * Filter options that integrate with the backend FilterFactory system
@@ -395,7 +390,7 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
 };
 
 // Utility function for debouncing
-function debounce<T extends (...args: any[]) => any>(
+function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {

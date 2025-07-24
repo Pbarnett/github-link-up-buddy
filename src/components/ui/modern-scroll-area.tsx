@@ -1,12 +1,10 @@
 
 
-import * as React from 'react';
-const { forwardRef } = React;
-type HTMLAttributes<T = HTMLElement> = React.HTMLAttributes<T>;
+
 
 import { cn } from '@/lib/utils';
 
-export interface ModernScrollAreaProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface ModernScrollAreaProps extends HTMLAttributes<HTMLDivElement> {
   variant?: 'default' | 'snap-x' | 'snap-y' | 'snap-both';
   snapType?: 'mandatory' | 'proximity' | 'none';
   scrollBehavior?: 'auto' | 'smooth';
@@ -15,7 +13,7 @@ export interface ModernScrollAreaProps extends React.HTMLAttributes<HTMLDivEleme
   scrollPadding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
-const ModernScrollArea = React.forwardRef<HTMLDivElement, ModernScrollAreaProps>(
+const ModernScrollArea = forwardRef<HTMLDivElement, ModernScrollAreaProps>(
   ({ 
     className, 
     variant = 'default', 
@@ -80,12 +78,12 @@ const ModernScrollArea = React.forwardRef<HTMLDivElement, ModernScrollAreaProps>
 ModernScrollArea.displayName = 'ModernScrollArea';
 
 // Scroll item component for snap containers
-export interface ScrollItemProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface ScrollItemProps extends HTMLAttributes<HTMLDivElement> {
   snapAlign?: 'start' | 'center' | 'end' | 'none';
   snapStop?: 'always' | 'normal';
 }
 
-const ScrollItem = React.forwardRef<HTMLDivElement, ScrollItemProps>(
+const ScrollItem = forwardRef<HTMLDivElement, ScrollItemProps>(
   ({ className, snapAlign = 'start', snapStop = 'normal', children, ...props }, ref) => {
     return (
       <div

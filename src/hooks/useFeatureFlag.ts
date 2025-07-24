@@ -1,10 +1,8 @@
-import * as React from 'react';
-const { useEffect } = React;
 
-import { useFlags } from 'launchdarkly-react-client-sdk';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { trackPersonalizationSeen } from '../services/launchDarklyService';
 import { type FeatureFlag, isFeatureEnabled as isEnabled } from '@/shared/featureFlag';
+import { trackPersonalizationSeen } from '../services/launchDarklyService';
+import * as React from 'react';
 
 // New LaunchDarkly-powered hook with tracking
 export const useFeatureFlag = (flagName: string, defaultValue: boolean = false) => {
@@ -47,10 +45,15 @@ export const useFeatureFlag = (flagName: string, defaultValue: boolean = false) 
     flagValue = flags[flagName] ?? defaultValue;
   }
   
-  // Track personalization events
+  // Track personalization events with error handling
   useEffect(() => {
     if (flagName === 'personalization_greeting' && typeof flagValue === 'boolean') {
-      trackPersonalizationSeen(flagValue);
+      try {
+        trackPersonalizationSeen(flagValue);
+      } catch (error) {
+        console.error('Failed to track personalization seen event:', error);
+        // Don't throw - tracking failures shouldn't break the app
+      }
     }
   }, [flagName, flagValue]);
   

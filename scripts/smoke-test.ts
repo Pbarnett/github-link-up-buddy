@@ -27,7 +27,7 @@ interface SmokeTestConfig {
 }
 
 const config: SmokeTestConfig = {
-  baseUrl: 'http://localhost:8080',
+  baseUrl: 'http://localhost:5001',
   timeout: 10000, // 10 second timeout
   userId: 'smoke-tester@example.com',
   flagName: 'ENABLE_CONFIG_DRIVEN_FORMS'

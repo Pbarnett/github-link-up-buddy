@@ -4,21 +4,18 @@
 
 import * as React from 'react';
 const { useState, useEffect } = React;
-
 import { useRouter, useSearchParams } from "next/navigation";
+import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-
 type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
 type TablesInsert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert'];
 import { safeQuery } from "@/lib/supabaseUtils";
-
 const TripConfirm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();

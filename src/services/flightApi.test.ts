@@ -88,7 +88,7 @@ describe("OAuth Token Management", () => {
   let mockToken: string | undefined = undefined;
   let mockTokenExpires = 0;
   let mockFetchCounter = 0;
-  const _baseUrl = "https://test.api.amadeus.com"; // eslint-disable-line @typescript-eslint/no-unused-vars
+  const _baseUrl = "https://test.api.amadeus.com";  
 
   const fetchTokenForTest = async () => {
     const now = Date.now();
@@ -161,7 +161,7 @@ describe("Retry Logic", () => {
   async function withRetryForTest<T>(
     fn: () => Promise<T>,
     maxAttempts: number = 3,
-    _baseDelayMs: number = 100 // eslint-disable-line @typescript-eslint/no-unused-vars
+    _baseDelayMs: number = 100  
   ): Promise<T> {
     let attempts = 0;
     

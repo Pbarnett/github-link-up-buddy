@@ -1,6 +1,3 @@
-import type { ReactNode } from 'react';
-import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BusinessRulesProvider } from '@/hooks/useBusinessRules';
 
 interface TestWrapperProps {

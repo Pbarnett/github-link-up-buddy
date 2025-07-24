@@ -3,8 +3,9 @@
  * Comprehensive client-side implementation with hooks and context management
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { 
+import * as React from 'react';
+import { useContext, useEffect, useState, useCallback, useMemo } from 'react';
   LDProvider, 
   LDClient, 
   LDContext,
@@ -15,8 +16,8 @@ import {
   LDFlagSet,
   LDFlagValue
 } from '@launchdarkly/react-client-sdk';
-import { ContextBuilder } from './context-builder';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { ContextBuilder } from './context-builder';
 
 // Client-side configuration
 const CLIENT_SIDE_CONFIG = {
@@ -326,7 +327,7 @@ function LaunchDarklyContextProvider({ children }: { children: React.ReactNode }
 
 // HOC for wrapping components with LaunchDarkly
 export function withLaunchDarkly<P extends object = {}>(
-  Component: React.ComponentType<P>,
+  Component: ComponentType<P>,
   options?: LaunchDarklyProviderProps
 ) {
   return function WrappedComponent(props: P) {

@@ -1,0 +1,322 @@
+{
+  "id": null,
+  "uid": "parker-flight-deployment-comparison",
+  "title": "🚀 Parker Flight - Deployment Impact Analysis",
+  "tags": [
+    "parker-flight",
+    "deployment",
+    "comparison",
+    "analysis"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 0,
+  "schemaVersion": 27,
+  "version": 1,
+  "templating": {
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "now-1h",
+          "value": "now-1h"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Deployment Time",
+        "multi": false,
+        "name": "deployment_time",
+        "options": [
+          {
+            "selected": false,
+            "text": "now-15m",
+            "value": "now-15m"
+          },
+          {
+            "selected": false,
+            "text": "now-30m",
+            "value": "now-30m"
+          },
+          {
+            "selected": true,
+            "text": "now-1h",
+            "value": "now-1h"
+          },
+          {
+            "selected": false,
+            "text": "now-2h",
+            "value": "now-2h"
+          },
+          {
+            "selected": false,
+            "text": "now-4h",
+            "value": "now-4h"
+          }
+        ],
+        "query": "now-15m,now-30m,now-1h,now-2h,now-4h",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": "prometheus",
+        "enable": true,
+        "expr": "changes(parker_flight_build_info[5m]) > 0",
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "Deployments",
+        "refId": "deployment-annotations",
+        "step": "60s",
+        "tagKeys": "version,environment",
+        "textFormat": "Deployment: {{version}} to {{environment}}",
+        "titleFormat": "Deployment"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "📊 Pre/Post Deployment Metrics Comparison",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (environment) (rate(parker_flight_requests_total[5m]))",
+          "legendFormat": "{{environment}} Request Rate",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (environment) (rate(parker_flight_requests_total{status=~\"5..\"}[5m])) / sum by (environment) (rate(parker_flight_requests_total[5m])) * 100",
+          "legendFormat": "{{environment}} Error Rate %",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "title": "🎯 SLO Impact Analysis",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "avg_over_time((1 - sum(rate(parker_flight_requests_total{status=~\"5..\",environment=\"production\"}[5m])) / sum(rate(parker_flight_requests_total{environment=\"production\"}[5m])))[$deployment_time:5m]) * 100",
+          "legendFormat": "Production SLO",
+          "refId": "A"
+        },
+        {
+          "expr": "avg_over_time((1 - sum(rate(parker_flight_requests_total{status=~\"5..\",environment=\"staging\"}[5m])) / sum(rate(parker_flight_requests_total{environment=\"staging\"}[5m])))[$deployment_time:5m]) * 100",
+          "legendFormat": "Staging SLO",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 95,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 99
+              },
+              {
+                "color": "green",
+                "value": 99.5
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      }
+    },
+    {
+      "id": 3,
+      "title": "⏱️ Latency Impact",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (environment, le) (rate(parker_flight_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "{{environment}} P95 Latency",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      }
+    }
+  ],
+  "time": {
+    "from": "$deployment_time",
+    "to": "now"
+  },
+  "timepicker": {},
+  "refresh": "30s",
+  "description": "Deployment impact analysis dashboard for comparing metrics before and after deployments across environments."
+}

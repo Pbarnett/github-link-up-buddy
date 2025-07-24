@@ -1,0 +1,50 @@
+groups:
+  - name: parker_flight_recording_rules_5m
+    interval: 30s
+    rules:
+      - record: parker_flight:request_rate_5m
+        expr: rate(parker_flight_requests_total[5m])
+        labels:
+          job: parker-flight
+      - record: parker_flight:error_rate_5m
+        expr: rate(parker_flight_requests_total{status=~"5.."}[5m]) / rate(parker_flight_requests_total[5m])
+        labels:
+          job: parker-flight
+      - record: parker_flight:p95_latency_5m
+        expr: histogram_quantile(0.95, rate(parker_flight_request_duration_seconds_bucket[5m]))
+        labels:
+          job: parker-flight
+      - record: parker_flight:dependency_success_rate_5m
+        expr: rate(parker_flight_service_dependency_requests_total{status_code="200"}[5m]) / rate(parker_flight_service_dependency_requests_total[5m])
+        labels:
+          job: parker-flight
+  - name: parker_flight_recording_rules_1h
+    interval: 5m
+    rules:
+      - record: parker_flight:request_rate_1h
+        expr: avg_over_time(parker_flight:request_rate_5m[1h])
+        labels:
+          job: parker-flight
+      - record: parker_flight:error_rate_1h
+        expr: avg_over_time(parker_flight:error_rate_5m[1h])
+        labels:
+          job: parker-flight
+      - record: parker_flight:p95_latency_1h
+        expr: avg_over_time(parker_flight:p95_latency_5m[1h])
+        labels:
+          job: parker-flight
+  - name: parker_flight_recording_rules_1d
+    interval: 1h
+    rules:
+      - record: parker_flight:request_rate_1d
+        expr: avg_over_time(parker_flight:request_rate_1h[1d])
+        labels:
+          job: parker-flight
+      - record: parker_flight:error_rate_1d
+        expr: avg_over_time(parker_flight:error_rate_1h[1d])
+        labels:
+          job: parker-flight
+      - record: parker_flight:availability_1d
+        expr: 1 - avg_over_time(parker_flight:error_rate_1h[1d])
+        labels:
+          job: parker-flight

@@ -1,11 +1,9 @@
-import * as React from 'react';
-const { useState, useMemo, useDeferredValue } = React;
 
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Plane, MapPin, Clock } from 'lucide-react';
+import * as React from 'react';
 
 interface FlightResult {
   id: string;
@@ -179,7 +177,7 @@ export function DeferredSearchDemo() {
               type="text"
               placeholder="Search flights by airline, flight number, or airport code..."
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => setQuery((e.target as HTMLInputElement).value)}
               className="pl-10"
             />
           </div>

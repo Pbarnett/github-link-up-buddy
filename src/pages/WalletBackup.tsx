@@ -1,17 +1,13 @@
-import * as React from 'react';
-const { useState } = React;
 
 import AuthGuard from "@/components/AuthGuard";
-import { Link } from "react-router-dom";
 import { usePaymentMethods, PaymentMethod } from "@/hooks/usePaymentMethods";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { safeQuery } from "@/lib/supabaseUtils";
-import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { AddPaymentMethodForm } from "@/components/AddPaymentMethodForm";
-import { Plus, X } from "lucide-react";
+import * as React from 'react';
 
 function WalletPage() {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;

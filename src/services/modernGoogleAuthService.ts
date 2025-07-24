@@ -4,7 +4,7 @@
 // Replaces deprecated gapi.auth2 library
 
 import * as React from 'react';
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 import { supabase } from '@/integrations/supabase/client';
 import { authSecurityMonitor } from './authSecurityMonitor';

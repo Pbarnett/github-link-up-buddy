@@ -1,6 +1,29 @@
-import { chromium, FullConfig } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { chromium, FullConfig } from '@playwright/test';
+import dotenv from 'dotenv';
+
+// Ensure we're in Playwright context - clear any Vitest globals
+delete (globalThis as any).describe;
+delete (globalThis as any).test;
+delete (globalThis as any).it;
+delete (globalThis as any).expect;
+delete (globalThis as any).vi;
+delete (globalThis as any).vitest;
+
+// Load environment variables - priority: .env.test.local (secure) > .env.test (placeholder) > .env
+if (fs.existsSync('.env.test.local')) {
+  dotenv.config({ path: '.env.test.local' });
+  console.log('📄 Loaded secure credentials from .env.test.local');
+} else if (fs.existsSync('.env.test')) {
+  dotenv.config({ path: '.env.test' });
+  console.log('📄 Loaded placeholder credentials from .env.test');
+} else if (fs.existsSync('.env')) {
+  dotenv.config({ path: '.env' });
+  console.log('📄 Loaded environment from .env');
+} else {
+  console.log('⚠️  No .env file found - using system environment variables only');
+}
 
 /**
  * Global setup that runs once before all tests

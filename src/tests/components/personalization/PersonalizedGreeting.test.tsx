@@ -1,11 +1,10 @@
 
 
-import * as React from 'react';
-
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import PersonalizedGreeting from '@/components/personalization/PersonalizedGreeting';
+import * as React from 'react';
 
 // Mock the analytics tracking
 vi.mock('@/scripts/analytics/personalization-tracking', () => ({

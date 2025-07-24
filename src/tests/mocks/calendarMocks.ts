@@ -1,6 +1,5 @@
 
 import * as React from 'react';
-
 import { vi } from 'vitest';
 
 // Create predictable test dates
@@ -46,11 +45,11 @@ const MockDayPicker = ({ onSelect, disabled }: MockDayPickerProps) => {
     }
   };
 
-  return React.createElement('div', {
+  return createElement('div', {
     'data-testid': 'mock-day-picker',
     role: 'grid'
   }, [
-    React.createElement('button', {
+    createElement('button', {
       key: 'tomorrow',
       type: 'button',
       role: 'button',
@@ -58,7 +57,7 @@ const MockDayPicker = ({ onSelect, disabled }: MockDayPickerProps) => {
       onClick: () => handleDateClick(tomorrow),
       'data-testid': 'calendar-day-tomorrow'
     }, tomorrow.getDate().toString()),
-    React.createElement('button', {
+    createElement('button', {
       key: 'next-week',
       type: 'button',
       role: 'button', 

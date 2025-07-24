@@ -4,16 +4,25 @@
  * Global error boundary with retry mechanisms and graceful degradation
  */
 
-import * as React from 'react';
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+
 type ReactNode = React.ReactNode;
 type ErrorInfo = React.ErrorInfo;
 type ComponentType<P = {}> = React.ComponentType<P>;
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { RefreshCw, AlertTriangle, Home } from 'lucide-react';
-import { reportError } from '@/utils/monitoring';
+// Safe error reporting that doesn't throw
+const reportError = (error: Error, context?: any) => {
+  try {
+    console.error('Error reported:', error, context);
+    // Add your error reporting service here
+  } catch (e) {
+    console.error('Failed to report error:', e);
+  }
+};
 
 interface Props {
   children: ReactNode;

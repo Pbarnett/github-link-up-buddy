@@ -4,10 +4,9 @@
  * Tracks query performance, connection health, and provides analytics
  */
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 
 import { DatabaseOperations } from '@/lib/supabase/database-operations';
+import * as React from 'react';
 
 interface PerformanceMetric {
   operation: string;

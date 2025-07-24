@@ -10,13 +10,11 @@
  * - Analytics and performance tracking
  */
 
-import * as React from 'react';
-const { useState, useEffect, useCallback, useMemo } = React;
 type FormEvent = React.FormEvent;
 
-import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { 
+import * as React from 'react';
   FormSubmissionData,
   FieldConfiguration
 } from '@/types/dynamic-forms';
@@ -406,7 +404,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
 
     // Analytics
     trackFieldInteraction,
-    trackFormEvent,
+    track_FormEvent,
 
     // Utility
     getFieldConfig,

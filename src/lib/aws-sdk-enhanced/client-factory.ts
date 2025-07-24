@@ -5,15 +5,36 @@
  * from AWS SDK Developer Guide and Tools Reference Guide.
  */
 
-import { KMSClient, KMSClientConfig } from '@aws-sdk/client-kms';
-import { SecretsManagerClient, SecretsManagerClientConfig } from '@aws-sdk/client-secrets-manager';
-import { S3Client, S3ClientConfig } from '@aws-sdk/client-s3';
-import { DynamoDBClient, DynamoDBClientConfig } from '@aws-sdk/client-dynamodb';
-import { STSClient, STSClientConfig } from '@aws-sdk/client-sts';
-import { CloudWatchClient, CloudWatchClientConfig } from '@aws-sdk/client-cloudwatch';
-import { NodeHttpHandler } from '@aws-sdk/node-http-handler';
-import { fromInstanceMetadata, fromEnv, fromContainerMetadata } from '@aws-sdk/credential-providers';
 import https from 'https';
+import { 
+  IS_MOCK_MODE, 
+  MockKMSClient, 
+  MockSecretsManagerClient, 
+  MockS3Client, 
+  MockDynamoDBClient, 
+  MockSTSClient, 
+  MockCloudWatchClient 
+} from '../aws-sdk-browser-compat';
+
+let KMSClient: any, SecretsManagerClient: any, S3Client: any, DynamoDBClient: any, STSClient: any, CloudWatchClient: any;
+let KMSClientConfig: any, SecretsManagerClientConfig: any, S3ClientConfig: any, DynamoDBClientConfig: any, STSClientConfig: any, CloudWatchClientConfig: any;
+
+if (IS_MOCK_MODE) {
+  KMSClient = MockKMSClient;
+  SecretsManagerClient = MockSecretsManagerClient;
+  S3Client = MockS3Client;
+  DynamoDBClient = MockDynamoDBClient;
+  STSClient = MockSTSClient;
+  CloudWatchClient = MockCloudWatchClient;
+} else {
+  // Import real AWS clients for server environments
+  ({ KMSClient } = require('@aws-sdk/client-kms'));
+  ({ SecretsManagerClient } = require('@aws-sdk/client-secrets-manager'));
+  ({ S3Client } = require('@aws-sdk/client-s3'));
+  ({ DynamoDBClient } = require('@aws-sdk/client-dynamodb'));
+  ({ STSClient } = require('@aws-sdk/client-sts'));
+  ({ CloudWatchClient } = require('@aws-sdk/client-cloudwatch'));
+}
 
 // Environment types for configuration optimization
 export type Environment = 'development' | 'staging' | 'production';
@@ -82,7 +103,12 @@ export class EnhancedAWSClientFactory {
   /**
    * Creates optimized HTTPS agent for connection pooling
    */
-  private static createHttpsAgent(config: EnhancedClientConfig): https.Agent {
+  private static createHttpsAgent(config: EnhancedClientConfig): any {
+    // In browser environments, return undefined as HTTPS agents are not supported
+    if (IS_MOCK_MODE) {
+      return undefined;
+    }
+    
     return new https.Agent({
       keepAlive: config.keepAlive ?? true,
       keepAliveMsecs: 1000,
@@ -97,42 +123,14 @@ export class EnhancedAWSClientFactory {
 
   /**
    * Creates credential provider following AWS precedence order
+   * Note: For browser environments, credentials should be provided through other means
+   * like AWS Cognito or temporary credentials from your backend
    */
   private static createCredentialProvider(config: EnhancedClientConfig) {
-    const { credentialSource = 'auto', environment } = config;
-
-    switch (credentialSource) {
-      case 'instance-metadata':
-        return fromInstanceMetadata({
-          timeout: 1000,
-          maxRetries: 3,
-        });
-
-      case 'container-metadata':
-        return fromContainerMetadata({
-          timeout: 1000,
-          maxRetries: 3,
-        });
-
-      case 'environment':
-        return fromEnv();
-
-      case 'auto':
-      default:
-        // Follow AWS SDK credential provider chain
-        // 1. Environment variables
-        // 2. Container metadata (if available)
-        // 3. Instance metadata (for EC2)
-        if (environment === 'production') {
-          // In production, prefer container/instance metadata for security
-          return process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI
-            ? fromContainerMetadata({ timeout: 1000, maxRetries: 3 })
-            : fromInstanceMetadata({ timeout: 1000, maxRetries: 3 });
-        } else {
-          // In development/staging, use environment variables
-          return fromEnv();
-        }
-    }
+    // For browser environments, return undefined to use default credential provider chain
+    // This allows the SDK to handle credentials through environment variables or
+    // other browser-compatible methods
+    return undefined;
   }
 
   /**
@@ -170,11 +168,6 @@ export class EnhancedAWSClientFactory {
       credentials,
       maxAttempts: mergedConfig.maxAttempts,
       retryMode: 'adaptive' as const,
-      requestHandler: new NodeHttpHandler({
-        httpsAgent,
-        connectionTimeout: mergedConfig.connectionTimeout,
-        socketTimeout: mergedConfig.socketTimeout,
-      }),
       logger,
     };
   }
@@ -399,8 +392,13 @@ export class EnhancedAWSClientFactory {
       const stsClient = this.createSTSClient(config);
       const startTime = Date.now();
       
-      const { GetCallerIdentityCommand } = await import('@aws-sdk/client-sts');
-      await stsClient.send(new GetCallerIdentityCommand({}));
+      if (!IS_MOCK_MODE) {
+        const { GetCallerIdentityCommand } = await import('@aws-sdk/client-sts');
+        await stsClient.send(new GetCallerIdentityCommand({}));
+      } else {
+        // Mock successful health check for browser environments
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
       
       results.services.sts = true;
       results.latency.sts = Date.now() - startTime;

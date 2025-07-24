@@ -1,0 +1,21 @@
+{
+  "grafana": {
+    "protocol": "https",
+    "cert_file": "/etc/grafana/ssl/grafana.crt",
+    "cert_key": "/etc/grafana/ssl/grafana.key",
+    "ssl_mode": "require"
+  },
+  "prometheus": {
+    "tls_config": {
+      "cert_file": "/etc/prometheus/ssl/prometheus.crt",
+      "key_file": "/etc/prometheus/ssl/prometheus.key",
+      "ca_file": "/etc/prometheus/ssl/ca.crt"
+    }
+  },
+  "recommendations": [
+    "Use Let's Encrypt for production SSL certificates",
+    "Enable HSTS headers for security",
+    "Use strong cipher suites (TLS 1.2+)",
+    "Implement certificate rotation policies"
+  ]
+}

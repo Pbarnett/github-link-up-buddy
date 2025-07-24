@@ -1,10 +1,9 @@
 
 
-import * as React from 'react';
-const { useCallback, useMemo, useContext } = React;
 type ReactNode = React.ReactNode;
 
 import { usePersonalization } from '@/hooks/usePersonalization';
+import * as React from 'react';
 
 interface PersonalizationData {
   firstName?: string;

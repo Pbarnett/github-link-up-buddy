@@ -215,7 +215,7 @@ export const getFormErrors = () => {
 
 // NEW: Programmatic date setting using calendar mocks
 export const setDatesWithMockedCalendar = async () => {
-  const { tomorrow: _tomorrow, nextWeek: _nextWeek } = getTestDates(); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const { tomorrow: _tomorrow, nextWeek: _nextWeek } = getTestDates();  
   
   try {
     // Open earliest date picker
@@ -265,7 +265,7 @@ export const selectDestinationRobust = async (destination: string) => {
     const option = screen.getByRole('option', { name: new RegExp(destination, 'i') });
     await userEvent.click(option);
     return;
-  } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+  } catch (_error) {  
     console.warn('Combobox destination selection failed, trying custom input');
   }
   
@@ -275,7 +275,7 @@ export const selectDestinationRobust = async (destination: string) => {
     await userEvent.clear(customInput);
     await userEvent.type(customInput, destination);
     return;
-  } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+  } catch (_error) {  
     console.warn('Custom destination input failed, using direct value setting');
   }
   
@@ -292,7 +292,7 @@ export const setDatesRobust = async () => {
   try {
     await setDatesWithMockedCalendar();
     return;
-  } catch (_error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+  } catch (_error) {  
     console.warn('Mocked calendar failed, trying direct input approach');
   }
   

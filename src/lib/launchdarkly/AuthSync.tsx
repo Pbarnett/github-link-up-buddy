@@ -1,13 +1,11 @@
 
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 
-import { useLDClient } from 'launchdarkly-react-client-sdk';
-import { supabase } from '../../integrations/supabase/client';
-import { LaunchDarklyContextManager, UserAttributes } from './context-manager';
 import { LDContext } from 'launchdarkly-js-client-sdk';
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { supabase } from '../../integrations/supabase/client';
+import { LaunchDarklyContextManager, UserAttributes } from './context-manager';
+import * as React from 'react';
 
 export function LaunchDarklyAuthSync() {
   const ldClient = useLDClient();

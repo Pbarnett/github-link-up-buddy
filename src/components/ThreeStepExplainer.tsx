@@ -1,7 +1,6 @@
-
-
 import * as React from 'react';
-const { Fragment  } = React;
+
+
 type FC<T = {}> = React.FC<T>;
 
 const steps = [
@@ -37,7 +36,7 @@ export const ThreeStepExplainer: FC<ThreeStepExplainerProps> = ({
       {/* Desktop Layout */}
       <div className="hidden md:flex items-center justify-between">
         {steps.map((step, index) => (
-          <React.Fragment key={index}>
+          <Fragment key={index}>
             <div className="step-item">
               <span className="step-icon">{step.icon}</span>
               <h3 className="step-title">{step.title}</h3>
@@ -46,7 +45,7 @@ export const ThreeStepExplainer: FC<ThreeStepExplainerProps> = ({
             {index < steps.length - 1 && (
               <div className="step-arrow">→</div>
             )}
-          </React.Fragment>
+          </Fragment>
         ))}
       </div>
 

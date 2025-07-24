@@ -1,0 +1,181 @@
+groups:
+  - name: parker-flight-slo-alerts
+    rules:
+      # SLO Burn Rate Alerts
+      - alert: ParkerFlightHighErrorBudgetBurnRate
+        expr: |
+          (
+            rate(parker_flight_requests_total{status=~"5.."}[1h]) / rate(parker_flight_requests_total[1h])
+          ) / (1 - 0.999) > 14.4
+        for: 2m
+        labels:
+          severity: critical
+          service: parker-flight
+          slo: availability
+          burn_rate: fast
+        annotations:
+          summary: "Parker Flight is burning error budget too quickly"
+          description: |
+            Parker Flight availability SLO burn rate is {{ $value | humanizePercentage }}.
+            At this rate, the entire monthly error budget will be consumed in ~2 hours.
+            Current availability: {{ with query "(1 - (rate(parker_flight_requests_total{status=~\"5..\"}[5m]) / rate(parker_flight_requests_total[5m]))) * 100" }}{{ . | first | value | humanizePercentage }}{{ end }}
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/slo-burn-rate.md"
+
+      - alert: ParkerFlightModerateBurnRate
+        expr: |
+          (
+            rate(parker_flight_requests_total{status=~"5.."}[6h]) / rate(parker_flight_requests_total[6h])
+          ) / (1 - 0.999) > 6
+        for: 15m
+        labels:
+          severity: warning
+          service: parker-flight
+          slo: availability
+          burn_rate: moderate
+        annotations:
+          summary: "Parker Flight moderate error budget burn rate"
+          description: |
+            Parker Flight availability SLO burn rate is {{ $value | humanizePercentage }}.
+            At this rate, the entire monthly error budget will be consumed in ~5 days.
+            Current availability: {{ with query "(1 - (rate(parker_flight_requests_total{status=~\"5..\"}[5m]) / rate(parker_flight_requests_total[5m]))) * 100" }}{{ . | first | value | humanizePercentage }}{{ end }}
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/slo-burn-rate.md"
+
+      # Golden Signal Alerts
+      - alert: ParkerFlightHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(parker_flight_request_duration_seconds_bucket[5m])) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          service: parker-flight
+          signal: latency
+        annotations:
+          summary: "Parker Flight P95 latency is high"
+          description: |
+            Parker Flight P95 latency is {{ $value }}s, which exceeds the 2s threshold.
+            This may impact user experience and SLO compliance.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/high-latency.md"
+
+      - alert: ParkerFlightHighErrorRate
+        expr: |
+          rate(parker_flight_requests_total{status=~"5.."}[5m]) / rate(parker_flight_requests_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          service: parker-flight
+          signal: errors
+        annotations:
+          summary: "Parker Flight error rate is high"
+          description: |
+            Parker Flight 5xx error rate is {{ $value | humanizePercentage }}, exceeding 1% threshold.
+            This directly impacts availability SLO.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/high-error-rate.md"
+
+      - alert: ParkerFlightLowTraffic
+        expr: |
+          rate(parker_flight_requests_total[5m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: parker-flight
+          signal: traffic
+        annotations:
+          summary: "Parker Flight traffic is unusually low"
+          description: |
+            Parker Flight is receiving {{ $value }} requests per second, which is below normal levels.
+            This could indicate an upstream issue or service outage.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/low-traffic.md"
+
+      - alert: ParkerFlightHighCPU
+        expr: |
+          rate(process_cpu_seconds_total{job="parker-flight"}[5m]) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          service: parker-flight
+          signal: saturation
+          resource: cpu
+        annotations:
+          summary: "Parker Flight CPU usage is high"
+          description: |
+            Parker Flight CPU usage is {{ $value }}%, exceeding 80% threshold.
+            This may cause increased latency and reduced throughput.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/high-cpu.md"
+
+      - alert: ParkerFlightHighMemory
+        expr: |
+          (process_resident_memory_bytes{job="parker-flight"} / (1024 * 1024 * 1024)) / 4 * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          service: parker-flight
+          signal: saturation
+          resource: memory
+        annotations:
+          summary: "Parker Flight memory usage is high"
+          description: |
+            Parker Flight memory usage is {{ $value }}% of allocated 4GB, exceeding 80% threshold.
+            This may cause performance degradation or out-of-memory errors.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/high-memory.md"
+
+      # Service Dependency Alerts
+      - alert: ParkerFlightDependencyDown
+        expr: |
+          parker_flight_dependency_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: parker-flight
+          signal: dependency
+        annotations:
+          summary: "Parker Flight dependency {{ $labels.service }} is down"
+          description: |
+            External service dependency {{ $labels.service }} is not responding.
+            This may impact Parker Flight functionality and user experience.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/dependency-down.md"
+
+      - alert: ParkerFlightDependencyHighLatency
+        expr: |
+          parker_flight_dependency_latency_seconds > 5.0
+        for: 5m
+        labels:
+          severity: warning
+          service: parker-flight
+          signal: dependency
+        annotations:
+          summary: "Parker Flight dependency {{ $labels.service }} has high latency"
+          description: |
+            External service dependency {{ $labels.service }} response time is {{ $value }}s.
+            This may cause increased Parker Flight latency and user impact.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/dependency-latency.md"
+
+      # Error Budget Exhaustion
+      - alert: ParkerFlightErrorBudgetExhausted
+        expr: |
+          ((1 - (rate(parker_flight_requests_total{status=~"5.."}[30d]) / rate(parker_flight_requests_total[30d]))) - 0.999) / (1 - 0.999) * 100 < 5
+        for: 5m
+        labels:
+          severity: critical
+          service: parker-flight
+          slo: availability
+        annotations:
+          summary: "Parker Flight error budget is nearly exhausted"
+          description: |
+            Parker Flight has only {{ $value }}% error budget remaining for the month.
+            Further reliability issues may violate the availability SLO.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/error-budget-exhausted.md"
+
+      # Service Health Check
+      - alert: ParkerFlightDown
+        expr: |
+          up{job="parker-flight"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: parker-flight
+        annotations:
+          summary: "Parker Flight service is down"
+          description: |
+            Parker Flight service is not responding to health checks.
+            All user traffic is impacted.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/service-down.md"

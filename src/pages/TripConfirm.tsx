@@ -1,13 +1,9 @@
 
 
-import * as React from 'react';
-const { useState, useEffect, use } = React;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
@@ -17,6 +13,7 @@ import TravelerDataForm, { TravelerData } from "@/components/TravelerDataForm";
 import { TablesInsert } from "@/integrations/supabase/types";
 import { toJsonSafe } from "@/utils/toJsonSafe";
 import { supabase } from "@/integrations/supabase/client";
+import * as React from 'react';
 
 const TripConfirm = () => {
   const navigate = useNavigate();

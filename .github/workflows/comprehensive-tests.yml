@@ -36,6 +36,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+        
       - name: Run type checking
         run: pnpm tsc --noEmit
         
@@ -44,11 +47,16 @@ jobs:
         
       - name: Run integration tests
         run: |
+          pnpm test:integration:external
           node test-env-validation.js --local
           node test-kms-integration.js
           node validate-profile-architecture.js
         env:
           NODE_ENV: test
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          LAUNCHDARKLY_SDK_KEY: ${{ secrets.LAUNCHDARKLY_SDK_KEY }}
           
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4

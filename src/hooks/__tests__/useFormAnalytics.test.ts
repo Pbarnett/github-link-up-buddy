@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
-import { supabase } from '@/integrations/supabase/client';
 import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest';
+import { supabase } from '@/integrations/supabase/client';
 
 // Mock Supabase client with proper typing
 type MockSupabaseClient = {

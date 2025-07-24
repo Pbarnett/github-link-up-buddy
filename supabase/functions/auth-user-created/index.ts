@@ -13,7 +13,7 @@ interface WebhookPayload {
 
 Deno.serve(async (req) => {
   // Verify the webhook signature for security
-  const _signature = req.headers.get('Authorization') // eslint-disable-line @typescript-eslint/no-unused-vars
+  const _signature = req.headers.get('Authorization')  
   
   try {
     const payload: WebhookPayload = await req.json()

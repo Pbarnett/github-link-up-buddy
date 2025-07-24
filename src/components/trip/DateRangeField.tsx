@@ -1,7 +1,5 @@
 
 import { format } from "date-fns";
-import { CalendarIcon, ArrowRight } from "lucide-react";
-import { Control } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -18,7 +16,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-react";
 
 interface DateRangeFieldProps {
   control: Control<{

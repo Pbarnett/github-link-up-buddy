@@ -1,10 +1,9 @@
-import * as React from 'react';
-const { useState, useEffect, useCallback, useMemo } = React;
 
 import { FilterOptions, FilterState } from '@/components/filtering/AdvancedFilterControls';
 import { ScoredOffer } from '@/types/offer';
 import { toast } from '@/components/ui/use-toast';
 import logger from '@/lib/logger';
+import * as React from 'react';
 
 /**
  * Filter persistence options

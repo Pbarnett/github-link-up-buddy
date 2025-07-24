@@ -1,10 +1,9 @@
 
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import * as React from 'react';
 
 interface CurrentUserState {
   user: User | null;

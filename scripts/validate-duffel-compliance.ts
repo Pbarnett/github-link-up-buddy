@@ -19,10 +19,6 @@
 
 import fs from 'fs'
 import path from 'path'
-import { exec } from 'child_process'
-import { promisify } from 'util'
-
-const execAsync = promisify(exec)
 
 interface ComplianceResult {
   category: string
@@ -114,7 +110,9 @@ class DuffelComplianceValidator {
     try {
       const packageJson = JSON.parse(fs.readFileSync(path.join(this.basePath, 'package.json'), 'utf8'))
       packageJsonHasDuffel = !!packageJson.dependencies?.['@duffel/api']
-    } catch {}
+    } catch {
+      // Ignore package.json read errors - packageJsonHasDuffel remains false
+    }
 
     const checks = [
       {

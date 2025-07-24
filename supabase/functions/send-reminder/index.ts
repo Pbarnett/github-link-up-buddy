@@ -3,7 +3,7 @@
 // Conditional imports for Deno vs Node.js environments
 let serve: ((handler: (req: Request) => Promise<Response>) => void) | undefined;
 let createClient: ((url: string, key: string, options?: { auth?: { persistSession?: boolean } }) => unknown) | undefined;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 let _SupabaseClient: unknown;
 
 async function initializeEnvironment() {

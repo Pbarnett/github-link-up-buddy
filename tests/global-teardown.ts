@@ -1,5 +1,5 @@
-import { FullConfig } from '@playwright/test';
 import fs from 'fs';
+import { FullConfig } from '@playwright/test';
 
 /**
  * Global teardown executed after all tests

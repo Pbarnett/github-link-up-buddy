@@ -1,9 +1,8 @@
+import * as React from 'react';
 
 
 // Hook for useTravelerInfoCheck
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 
 export interface UseTravelerInfoCheckReturn {
   hasTravelerInfo: boolean;

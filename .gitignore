@@ -24,11 +24,23 @@ dist-ssr
 *.sw?
 .env.backup
 
-# Environment files with secrets
+# Environment files with secrets - NEVER commit these!
+.env
 .env.local
+.env.development
 .env.development.local
+.env.test
 .env.test.local
+.env.production
 .env.production.local
+
+# Professional Security System
+.security/
+.security/vault/
+.security/audit/
+.security/config/
+security-report.json
+security-audit-*.json
 
 # Supabase secrets
 .env.supabase

@@ -44,7 +44,7 @@ function runCommandWithLiveOutput(command, description) {
     });
     console.log(`✅ ${description} completed`);
     return true;
-  } catch (error) {
+  } catch {
     console.error(`❌ ${description} failed`);
     return false;
   }

@@ -1,15 +1,12 @@
 
 
-import * as React from 'react';
-const { useState } = React;
 
 import { Button } from "@/components/ui/button";
 import { InteractiveButton } from "@/components/ui/interactive-button";
 import { EnhancedInput } from "@/components/ui/enhanced-input";
 import { ModernScrollArea, ScrollItem } from "@/components/ui/modern-scroll-area";
-import { Link } from "react-router-dom";
 import RadixThemeDemo from "@/components/demo/RadixThemeDemo";
-import { Search, Plane, Users, Star } from "lucide-react";
+import * as React from 'react';
 
 const Index = () => {
   const [showDemo, setShowDemo] = useState(false);
@@ -56,7 +53,7 @@ const Index = () => {
                 variant="enhanced"
                 placeholder="Try searching for destinations..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm((e.target as HTMLInputElement).value)}
                 className="pl-10"
                 interactive
               />

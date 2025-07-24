@@ -1,5 +1,5 @@
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
-import { GenericContainer, StartedTestContainer } from 'testcontainers';
+import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers';
 
 export class TestEnvironment {
   private postgresContainer?: StartedPostgreSqlContainer;
@@ -15,12 +15,8 @@ export class TestEnvironment {
         .withUsername('test_user')
         .withPassword('test_password')
         .withExposedPorts(5432)
+        .withWaitStrategy(Wait.forLogMessage('database system is ready to accept connections', 2))
         .withStartupTimeout(120_000) // 2 minute timeout
-        .withWaitStrategy({
-          type: 'LOG',
-          message: 'database system is ready to accept connections',
-          times: 2
-        })
         .start();
 
       console.log(`PostgreSQL container started successfully on port: ${this.postgresContainer.getPort()}`);

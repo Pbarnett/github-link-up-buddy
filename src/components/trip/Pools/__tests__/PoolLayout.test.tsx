@@ -2,8 +2,8 @@
 import { describe, it, expect, vi, MockedFunction } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import PoolLayout from '../PoolLayout';
 import { usePoolsSafe } from '@/hooks/usePoolsSafe';
+import PoolLayout from '../PoolLayout';
 
 // Mock the hook
 vi.mock('@/hooks/usePoolsSafe', () => ({

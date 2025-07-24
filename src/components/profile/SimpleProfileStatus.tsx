@@ -1,13 +1,7 @@
 
 
-import * as React from 'react';
-const { createElement } = React;
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { createElement } from 'react';
 import { 
   CheckCircle, 
   AlertTriangle, 
@@ -16,6 +10,11 @@ import {
   FileText,
   Shield
 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ProfileCompletenessScore } from '@/services/profileCompletenessService';
 
 interface SimpleProfileStatusProps {
@@ -96,7 +95,7 @@ export function SimpleProfileStatus({
                     className="ml-4"
                   >
                     {getActionIcon(nextStep.action) && 
-                      React.createElement(getActionIcon(nextStep.action), { className: 'h-3 w-3 mr-1' })
+                      createElement(getActionIcon(nextStep.action), { className: 'h-3 w-3 mr-1' })
                     }
                     Take Action
                   </Button>

@@ -5,12 +5,11 @@
  * Provides targeted subscriptions, connection monitoring, and specialized methods
  */
 
-import * as React from 'react';
-const { useState, useEffect, useRef } = React;
 
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseClient, RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import type { Database, Tables } from '@/types/database';
+import * as React from 'react';
 
 interface SubscriptionOptions {
   schema?: string;
@@ -172,7 +171,7 @@ export class RealtimeService {
     }
 
     this.connectionState.connectionAttempts++;
-    const delay = Math.min(this.connectionState.connectionAttempts * 1000, 30000);
+    const _delay = Math.min(this.connectionState.connectionAttempts * 1000, 30000);
 
     console.log(`🔄 Attempting to reconnect ${channelName} in ${delay}ms (attempt ${this.connectionState.connectionAttempts})`);
 

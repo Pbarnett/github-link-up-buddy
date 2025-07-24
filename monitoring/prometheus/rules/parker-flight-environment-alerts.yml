@@ -1,0 +1,163 @@
+groups:
+  - name: parker_flight_development_alerts
+    rules:
+      - alert: ParkerFlightDevelopmentHighErrorRate
+        expr: sum(rate(parker_flight_requests_total{status=~"5..",environment="development"}[5m])) / sum(rate(parker_flight_requests_total{environment="development"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: info
+          service: parker-flight
+          environment: development
+          type: technical
+        annotations:
+          summary: Parker Flight Development error rate is high
+          description: Development environment error rate is {{ $value | humanizePercentage }}, exceeding threshold for development.
+          runbook_url: https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/development-high-error-rate.md
+          dashboard_url: http://localhost:3001/d/parker-flight-env-overview/parker-flight-environment-overview?var-env=development
+      - alert: ParkerFlightDevelopmentHighLatency
+        expr: histogram_quantile(0.95, sum(rate(parker_flight_request_duration_seconds_bucket{environment="development"}[5m])) by (le)) > 2.0
+        for: 5m
+        labels:
+          severity: info
+          service: parker-flight
+          environment: development
+          type: technical
+        annotations:
+          summary: Parker Flight Development latency is high
+          description: Development environment P95 latency is {{ $value }}s, exceeding 2.0s threshold.
+          runbook_url: https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/development-high-latency.md
+          dashboard_url: http://localhost:3001/d/parker-flight-env-overview/parker-flight-environment-overview?var-env=development
+      - alert: ParkerFlightDevelopmentSLOViolation
+        expr: (1 - sum(rate(parker_flight_requests_total{status=~"5..",environment="development"}[5m])) / sum(rate(parker_flight_requests_total{environment="development"}[5m]))) * 100 < 95
+        for: 10m
+        labels:
+          severity: info
+          service: parker-flight
+          environment: development
+          type: slo
+        annotations:
+          summary: Parker Flight Development SLO violation
+          description: Development environment availability is {{ $value | humanizePercentage }}, below 95% SLO target.
+          runbook_url: https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/development-slo-violation.md
+          dashboard_url: http://localhost:3001/d/parker-flight-env-comparison/parker-flight-environment-comparison
+      - alert: ParkerFlightDevelopmentServiceDown
+        expr: up{job="parker-flight", environment="development"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: parker-flight
+          environment: development
+          type: infrastructure
+        annotations:
+          summary: Parker Flight Development service is down
+          description: Development environment service is not responding to health checks.
+          runbook_url: https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/development-service-down.md
+          dashboard_url: http://localhost:3001/d/parker-flight-env-overview/parker-flight-environment-overview?var-env=development
+  - name: parker_flight_staging_alerts
+    rules:
+      - alert: ParkerFlightStagingHighErrorRate
+        expr: sum(rate(parker_flight_requests_total{status=~"5..",environment="staging"}[5m])) / sum(rate(parker_flight_requests_total{environment="staging"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: parker-flight
+          environment: staging
+          type: technical
+        annotations:
+          summary: Parker Flight Staging error rate is high
+          description: Staging environment error rate is {{ $value | humanizePercentage }}, exceeding threshold for staging.
+          runbook_url: https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/staging-high-error-rate.md
+          dashboard_url: http://localhost:3001/d/parker-flight-env-overview/parker-flight-environment-overview?var-env=staging
+      - alert: ParkerFlightStagingHighLatency
+        expr: histogram_quantile(0.95, sum(rate(parker_flight_request_duration_seconds_bucket{environment="staging"}[5m])) by (le)) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          service: parker-flight
+          environment: staging
+          type: technical
+        annotations:
+          summary: Parker Flight Staging latency is high
+          description: Staging environment P95 latency is {{ $value }}s, exceeding 2.0s threshold.
+          runbook_url: https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/staging-high-latency.md
+          dashboard_url: http://localhost:3001/d/parker-flight-env-overview/parker-flight-environment-overview?var-env=staging
+      - alert: ParkerFlightStagingSLOViolation
+        expr: (1 - sum(rate(parker_flight_requests_total{status=~"5..",environment="staging"}[5m])) / sum(rate(parker_flight_requests_total{environment="staging"}[5m]))) * 100 < 99
+        for: 10m
+        labels:
+          severity: warning
+          service: parker-flight
+          environment: staging
+          type: slo
+        annotations:
+          summary: Parker Flight Staging SLO violation
+          description: Staging environment availability is {{ $value | humanizePercentage }}, below 99% SLO target.
+          runbook_url: https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/staging-slo-violation.md
+          dashboard_url: http://localhost:3001/d/parker-flight-env-comparison/parker-flight-environment-comparison
+      - alert: ParkerFlightStagingServiceDown
+        expr: up{job="parker-flight", environment="staging"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: parker-flight
+          environment: staging
+          type: infrastructure
+        annotations:
+          summary: Parker Flight Staging service is down
+          description: Staging environment service is not responding to health checks.
+          runbook_url: https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/staging-service-down.md
+          dashboard_url: http://localhost:3001/d/parker-flight-env-overview/parker-flight-environment-overview?var-env=staging
+  - name: parker_flight_production_alerts
+    rules:
+      - alert: ParkerFlightProductionHighErrorRate
+        expr: sum(rate(parker_flight_requests_total{status=~"5..",environment="production"}[5m])) / sum(rate(parker_flight_requests_total{environment="production"}[5m])) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          service: parker-flight
+          environment: production
+          type: technical
+        annotations:
+          summary: Parker Flight Production error rate is high
+          description: Production environment error rate is {{ $value | humanizePercentage }}, exceeding threshold for production.
+          runbook_url: https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/production-high-error-rate.md
+          dashboard_url: http://localhost:3001/d/parker-flight-env-overview/parker-flight-environment-overview?var-env=production
+      - alert: ParkerFlightProductionHighLatency
+        expr: histogram_quantile(0.95, sum(rate(parker_flight_request_duration_seconds_bucket{environment="production"}[5m])) by (le)) > 1.0
+        for: 2m
+        labels:
+          severity: critical
+          service: parker-flight
+          environment: production
+          type: technical
+        annotations:
+          summary: Parker Flight Production latency is high
+          description: Production environment P95 latency is {{ $value }}s, exceeding 1.0s threshold.
+          runbook_url: https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/production-high-latency.md
+          dashboard_url: http://localhost:3001/d/parker-flight-env-overview/parker-flight-environment-overview?var-env=production
+      - alert: ParkerFlightProductionSLOViolation
+        expr: (1 - sum(rate(parker_flight_requests_total{status=~"5..",environment="production"}[5m])) / sum(rate(parker_flight_requests_total{environment="production"}[5m]))) * 100 < 99.9
+        for: 5m
+        labels:
+          severity: critical
+          service: parker-flight
+          environment: production
+          type: slo
+        annotations:
+          summary: Parker Flight Production SLO violation
+          description: Production environment availability is {{ $value | humanizePercentage }}, below 99.9% SLO target.
+          runbook_url: https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/production-slo-violation.md
+          dashboard_url: http://localhost:3001/d/parker-flight-env-comparison/parker-flight-environment-comparison
+      - alert: ParkerFlightProductionServiceDown
+        expr: up{job="parker-flight", environment="production"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: parker-flight
+          environment: production
+          type: infrastructure
+        annotations:
+          summary: Parker Flight Production service is down
+          description: Production environment service is not responding to health checks.
+          runbook_url: https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/production-service-down.md
+          dashboard_url: http://localhost:3001/d/parker-flight-env-overview/parker-flight-environment-overview?var-env=production

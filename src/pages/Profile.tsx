@@ -20,6 +20,7 @@ import { useWallet } from "@/contexts/WalletContext";
 import { PaymentMethodList } from "@/components/wallet/PaymentMethodList";
 import { AddCardModal } from "@/components/wallet/AddCardModal";
 import { User, Phone, MapPin, FileText } from "lucide-react";
+import * as React from 'react';
 import { useState, useMemo } from 'react';
 
 // Utility function to convert ProfileCompletenessScore to ProfileCompletenessData

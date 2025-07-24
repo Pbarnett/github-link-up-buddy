@@ -1,11 +1,8 @@
-import * as React from 'react';
-const { useState } = React;
 
-import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FilterTogglesSection from './FilterTogglesSection';
 import TripDurationInputs from './TripDurationInputs';
-import { Control } from 'react-hook-form';
+import * as React from 'react';
 
 // Collapsible filters form data interface
 interface CollapsibleFiltersFormData {

@@ -1,4 +1,3 @@
-
 /**
  * Form Analytics Dashboard
  * 
@@ -6,14 +5,7 @@
  */
 
 import * as React from 'react';
-const { useState, useEffect } = React;
-type FC<T = {}> = React.FC<T>;
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart3, 
   AlertTriangle,
@@ -24,6 +16,13 @@ import {
   Calendar,
   RefreshCw
 } from 'lucide-react';
+
+type FC<T = {}> = React.FC<T>;
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 
 interface FormAnalytics {
@@ -51,11 +50,7 @@ export const FormAnalyticsDashboard: FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d'>('7d');
 
-  useEffect(() => {
-    loadAnalytics();
-  }, [selectedPeriod]);
-
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -84,7 +79,7 @@ export const FormAnalyticsDashboard: FC = () => {
         .lte('date', endDate.toISOString().split('T')[0])
         .order('date', { ascending: false });
       
-      const { data: analyticsData, error: analyticsError } = await (queryResult as any);
+      const { data: analyticsData, error: analyticsError } = await queryResult;
 
       if (analyticsError) throw analyticsError;
 
@@ -124,13 +119,20 @@ export const FormAnalyticsDashboard: FC = () => {
       const totalViews = analyticsArray.reduce((sum, form) => sum + (form.total_views || 0), 0);
       const totalSubmissions = analyticsArray.reduce((sum, form) => sum + (form.total_submissions || 0), 0);
       const avgCompletionRate = totalViews > 0 ? (totalSubmissions / totalViews) * 100 : 0;
+      
+      // Calculate weighted average completion time across all forms
+      const totalCompletionTime = analyticsArray.reduce((sum, form) => {
+        const weight = form.total_submissions || 0;
+        return sum + ((form.avg_completion_time_ms || 0) * weight);
+      }, 0);
+      const avgCompletionTime = totalSubmissions > 0 ? totalCompletionTime / totalSubmissions : 0;
 
       setOverview({
         totalForms: analyticsArray.length,
         totalViews,
         totalSubmissions,
         avgCompletionRate,
-        avgCompletionTime: 0 // TODO: Calculate from raw data
+        avgCompletionTime
       });
 
     } catch (err) {
@@ -139,7 +141,11 @@ export const FormAnalyticsDashboard: FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPeriod]);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
 
   const formatDuration = (ms: number): string => {
     if (ms < 1000) return `${ms}ms`;

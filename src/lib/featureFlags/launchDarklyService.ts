@@ -8,7 +8,7 @@ import {
 } from '../../types/launchDarkly';
 
 // Import metrics for monitoring (only in browser environment)
-let metricsModule: any = null;
+const metricsModule: any = null;
 try {
   // Check if we can import metrics (won't work in all environments)
   if (typeof window !== 'undefined') {
@@ -227,12 +227,23 @@ class LaunchDarklyService {
     if (!this.client || !this.state.isInitialized) {
       return defaultValue;
     }
-    return this.client.variation(flagKey, defaultValue);
+    try {
+      return this.client.variation(flagKey, defaultValue);
+    } catch (error) {
+      console.error(`Error in raw variation for flag ${flagKey}:`, error);
+      this.recordFailure();
+      return defaultValue;
+    }
   }
 
   // Helper method for getting raw variation - used by override system
   private _getRawVariation<T>(flagKey: string, defaultValue: T): T {
-    return this.client?.variation?.(flagKey, defaultValue) ?? defaultValue;
+    try {
+      return this.client?.variation?.(flagKey, defaultValue) ?? defaultValue;
+    } catch (error) {
+      console.error(`Error in raw variation helper for flag ${flagKey}:`, error);
+      return defaultValue;
+    }
   }
 
   private getVariationWithResilience<T>(flagKey: string, defaultValue: T): T {
@@ -283,7 +294,12 @@ class LaunchDarklyService {
       return defaultValue;
     }
 
-    return this.client.variation(flagKey, defaultValue);
+    try {
+      return this.client.variation(flagKey, defaultValue);
+    } catch (error) {
+      console.error(`Error in legacy variation for flag ${flagKey}:`, error);
+      return defaultValue;
+    }
   }
 
   private getFallbackValue<T>(flagKey: string, defaultValue: T): T {

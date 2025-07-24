@@ -1,6 +1,3 @@
-import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { test, expect, vi, beforeEach, describe } from 'vitest';
 import TripRequestForm from '@/components/trip/TripRequestForm';
 

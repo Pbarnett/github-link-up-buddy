@@ -62,7 +62,7 @@ export class AWSCLIParameterValidator {
     // Check for ARN format
     if (this.KEY_ID_PATTERNS.ARN.test(trimmed)) {
       const arnParts = trimmed.split(':');
-      const resourcePart = arnParts[5];
+      const _resourcePart = arnParts[5];
       
       return {
         valid: true,

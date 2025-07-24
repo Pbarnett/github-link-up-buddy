@@ -1,8 +1,7 @@
-import * as React from 'react';
-const { useState, useEffect } = React;
 
 import { supabase } from '@/integrations/supabase/client';
 import { type FeatureFlag, isFeatureEnabled as isEnabled } from '@/shared/featureFlag';
+import * as React from 'react';
 
 interface FeatureFlagState {
   enabled: boolean;

@@ -1,4 +1,3 @@
-import * as React from 'react';
 // packages/shared/stripe.ts
 export interface StripeCustomer {
   id: string;
@@ -165,25 +164,28 @@ export const generateIdempotencyKey = (userId: string, operation: string): strin
  * Implement exponential backoff for retryable operations
  * As specified in Stripe API reference for rate limiting
  */
-export const exponentialBackoff = async (
-  operation: () => Promise<any>,
+export const exponentialBackoff = async <T>(
+  operation: () => Promise<T>,
   maxRetries: number = 3,
   baseDelay: number = 1000
-): Promise<any> => {
+): Promise<T> => {
   let attempt = 0;
   
   while (attempt < maxRetries) {
     try {
       return await operation();
-    } catch (error: any) {
+    } catch (error: unknown) {
       attempt++;
       
+      // Type guard for Stripe error structure
+      const stripeError = error as { type?: string; statusCode?: number };
+      
       // Check if error is retryable (rate limit, API error, connection error)
-      const isRetryable = error.type === 'rate_limit_error' || 
-                         error.type === 'api_error' ||
-                         error.type === 'connection_error' ||
-                         error.statusCode === 429 ||
-                         error.statusCode >= 500;
+      const isRetryable = stripeError.type === 'rate_limit_error' || 
+                         stripeError.type === 'api_error' ||
+                         stripeError.type === 'connection_error' ||
+                         stripeError.statusCode === 429 ||
+                         (stripeError.statusCode && stripeError.statusCode >= 500);
       
       if (!isRetryable || attempt >= maxRetries) {
         throw error;
@@ -194,6 +196,9 @@ export const exponentialBackoff = async (
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
+  
+  // This should never be reached due to maxRetries check above, but TypeScript needs this
+  throw new Error(`Operation failed after ${maxRetries} attempts`);
 };
 
 /**

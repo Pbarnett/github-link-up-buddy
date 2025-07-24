@@ -16,7 +16,7 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+// const { execSync } = require('child_process'); // Unused import
 
 // Colors for console output
 const colors = {
@@ -139,7 +139,7 @@ class LaunchDarklyVerifier {
         if (foundAdditional.length > 0) {
           this.logSuccess(`Additional variables found in ${file}: ${foundAdditional.join(', ')}`);
         }
-      } catch (error) {
+      } catch {
         // Already logged above
       }
     });
@@ -594,11 +594,11 @@ class LaunchDarklyVerifier {
         try {
           const content = fs.readFileSync(file, 'utf8');
           return pattern.test(content);
-        } catch (error) {
+        } catch {
           return false;
         }
       });
-    } catch (error) {
+    } catch {
       return false;
     }
   }

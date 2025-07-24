@@ -1,18 +1,16 @@
 
 
-import * as React from 'react';
 type FC<T = {}> = React.FC<T>;
 
-import { useParams, useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import { useFlightOffers } from '@/flightSearchV2/useFlightOffers';
 import { FlightOfferV2 } from '@/flightSearchV2/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Terminal, AlertCircle } from "lucide-react";
 import TripOffersV2Skeleton from '@/components/TripOffersV2Skeleton';
-import { format } from 'date-fns';
 import { toast } from '@/components/ui/use-toast';
+import * as React from 'react';
 
 // Placeholder for a component to show when the feature flag is disabled
 const FlagDisabledPlaceholder: FC = () => (
@@ -147,14 +145,14 @@ const TripOffersV2: FC = () => {
     }
   };
 
-  const formatFlightTime = (_departDt: string, _returnDt: string | null) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+  const formatFlightTime = (_departDt: string, _returnDt: string | null) => {  
     // For V2, we don't have individual flight durations stored,
     // so we'll estimate based on route distance
     try {
       // This is a simplified estimation - in real implementation,
       // actual flight time would come from Amadeus API response
       return '~8h 30m'; // Placeholder for typical international flight
-    } catch (_e) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    } catch (_e) {  
       return 'N/A';
     }
   };

@@ -1,19 +1,15 @@
 
 
-import * as React from 'react';
-const { useState } = React;
 type FC<T = {}> = React.FC<T>;
 type FormEvent = React.FormEvent;
 type ChangeEvent<T = Element> = React.ChangeEvent<T>;
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import { Loader2 } from 'lucide-react';
-
+import * as React from 'react';
 interface AddPaymentMethodFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
@@ -49,7 +45,7 @@ export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
     // Add spaces every 4 digits
     const matches = v.match(/\d{4,16}/g);
     const match = matches && matches[0] || '';
-    const parts = [];
+    const parts: string[] = [];
     
     for (let i = 0, len = match.length; i < len; i += 4) {
       parts.push(match.substring(i, i + 4));
@@ -63,26 +59,26 @@ export const AddPaymentMethodForm: FC<AddPaymentMethodFormProps> = ({
   };
 
   const handleCardNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCardNumber(e.target.value);
+    const formatted = formatCardNumber((e.target as HTMLInputElement).value);
     setFormData(prev => ({ ...prev, card_number: formatted }));
   };
 
   const handleExpMonthChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '');
+    const value = (e.target as HTMLInputElement).value.replace(/\D/g, '');
     if (value.length <= 2) {
       setFormData(prev => ({ ...prev, exp_month: value }));
     }
   };
 
   const handleExpYearChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '');
+    const value = (e.target as HTMLInputElement).value.replace(/\D/g, '');
     if (value.length <= 4) {
       setFormData(prev => ({ ...prev, exp_year: value }));
     }
   };
 
   const handleCvvChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '');
+    const value = (e.target as HTMLInputElement).value.replace(/\D/g, '');
     if (value.length <= 4) {
       setFormData(prev => ({ ...prev, cvv: value }));
     }

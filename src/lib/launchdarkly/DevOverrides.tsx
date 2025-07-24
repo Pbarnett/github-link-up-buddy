@@ -1,8 +1,6 @@
-import * as React from 'react';
-const { useState, useEffect } = React;
 
-import { useFlags as useLDFlags, useLDClient } from 'launchdarkly-react-client-sdk';
 import { LDFlagValue } from 'launchdarkly-js-client-sdk';
+import * as React from 'react';
 
 const OVERRIDE_KEY = 'LD_FLAG_OVERRIDES';
 

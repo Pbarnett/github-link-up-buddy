@@ -5,14 +5,14 @@
  * Renders an airport search input with autocomplete functionality
  */
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 type FC<T = {}> = React.FC<T>;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import { Plane } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
+import { Plane } from 'lucide-react';
 import {
   Command,
   CommandEmpty,

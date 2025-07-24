@@ -7,11 +7,10 @@
  * custom validation rules, and integration with React Hook Form
  */
 
-import * as React from 'react';
-const { useState, useCallback, useMemo } = React;
 
 import { z } from 'zod';
 import type { 
+import * as React from 'react';
   FieldConfiguration,
   FormConfiguration,
   DynamicFormConfig

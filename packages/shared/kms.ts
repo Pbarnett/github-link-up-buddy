@@ -1,6 +1,6 @@
 import { EncryptCommand, DecryptCommand } from '@aws-sdk/client-kms';
 import { EnhancedAWSClientFactory, Environment } from '../src/lib/aws-sdk-enhanced/client-factory';
-import { EnhancedAWSErrorHandler, ErrorCategory } from '../src/lib/aws-sdk-enhanced/error-handling';
+import { EnhancedAWSErrorHandler } from '../src/lib/aws-sdk-enhanced/error-handling';
 import { MultiRegionAWSManager } from '../src/lib/aws-sdk-enhanced/multi-region-manager';
 
 // KMS Configuration - Production Keys from AWS SDK Enhanced Integration
@@ -17,7 +17,7 @@ const KMS_KEYS = {
 type KMSKeyType = keyof typeof KMS_KEYS;
 
 // Initialize enhanced KMS client with production-grade configuration
-const kmsClient = EnhancedAWSClientFactory.createKMSClient({
+export const kmsClient = EnhancedAWSClientFactory.createKMSClient({
   region: KMS_REGION,
   environment: ENVIRONMENT,
   enableMetrics: true,

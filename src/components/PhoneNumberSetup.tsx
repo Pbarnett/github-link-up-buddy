@@ -1,15 +1,12 @@
-import * as React from 'react';
-const { useState, useEffect } = React;
-
 import { createBrowserClient } from '@supabase/ssr';
-
+import * as React from 'react';
 interface PhoneNumberSetupProps {
   userId?: string;
   onPhoneVerified?: () => void;
   className?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export function PhoneNumberSetup({ userId: _userId, onPhoneVerified, className = '' }: PhoneNumberSetupProps) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -24,11 +21,7 @@ export function PhoneNumberSetup({ userId: _userId, onPhoneVerified, className =
     import.meta.env.VITE_SUPABASE_ANON_KEY!
   );
 
-  useEffect(() => {
-    loadExistingPhone();
-  }, []);
-
-  async function loadExistingPhone() {
+  const loadExistingPhone = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.user_metadata?.phone) {
@@ -38,7 +31,11 @@ export function PhoneNumberSetup({ userId: _userId, onPhoneVerified, className =
     } catch (error) {
       console.error('Error loading phone number:', error);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    loadExistingPhone();
+  }, [loadExistingPhone]);
 
   function formatPhoneNumber(value: string) {
     // Remove all non-digits
@@ -219,7 +216,7 @@ export function PhoneNumberSetup({ userId: _userId, onPhoneVerified, className =
               type="tel"
               id="phone"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+              onChange={(e) => setPhoneNumber(formatPhoneNumber((e.target as HTMLInputElement).value))}
               placeholder="+1 (555) 123-4567"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               maxLength={18}
@@ -247,7 +244,7 @@ export function PhoneNumberSetup({ userId: _userId, onPhoneVerified, className =
               type="text"
               id="code"
               value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(e) => setVerificationCode((e.target as HTMLInputElement).value.replace(/\D/g, '').slice(0, 6))}
               placeholder="123456"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-lg font-mono"
               maxLength={6}

@@ -7,11 +7,11 @@
  */
 
 import * as React from 'react';
-const { useState } = React;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+import { useState } from 'react';
+
 type FC<T = {}> = React.FC<T>;
 
-import { 
+import {
   TestTube,
   Play, 
   Pause, 
@@ -22,7 +22,6 @@ import {
   Target,
   BarChart3
 } from 'lucide-react';
-
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

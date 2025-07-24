@@ -1,6 +1,6 @@
+import { describe, it, expect } from 'vitest';
 import { profileCompletenessService } from '@/services/profileCompletenessService';
 import { TravelerProfile } from '@/hooks/useTravelerProfile';
-import { describe, it, expect } from 'vitest';
 
 describe('ProfileCompletenessService', () => {
   const createBasicProfile = (overrides: Partial<TravelerProfile> = {}): TravelerProfile => ({

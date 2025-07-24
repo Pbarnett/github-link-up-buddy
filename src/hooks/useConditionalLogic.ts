@@ -7,15 +7,13 @@
  * Handles field visibility, enablement, and dependency tracking
  */
 
-import * as React from 'react';
-const { useCallback, useMemo } = React;
 
 import type { 
+import * as React from 'react';
   FormConfiguration, 
   FieldConfiguration, 
   FormSection 
 } from '../types/dynamic-forms';
-
 import { 
   evaluateConditionalLogic,
   createConditionalDependencyGraph,

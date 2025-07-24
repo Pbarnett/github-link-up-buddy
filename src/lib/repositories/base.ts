@@ -91,7 +91,7 @@ export abstract class BaseRepository<
         console.log(`[${this.tableName}] Executing query`, context);
       }
 
-      const { data, error } = await operation();
+      const { data, error } = await operation()();
 
       if (error) {
         const errorMessage = error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Unknown error';

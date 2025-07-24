@@ -1,5 +1,5 @@
-import { userInBucket, getUserBucket } from '@/shared/featureFlag';
 import { describe, it, expect } from 'vitest';
+import { userInBucket, getUserBucket } from '@/shared/featureFlag';
 
 describe('userInBucket', () => {
   // Test that verifies the hash algorithm produces consistent results

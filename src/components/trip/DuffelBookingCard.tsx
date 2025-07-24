@@ -4,20 +4,18 @@
  * Battle-tested component that integrates with validated backend
  */
 
-import * as React from 'react';
-const { useState } = React;
 type FC<T = {}> = React.FC<T>;
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, PlaneTakeoff, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { createDuffelBooking, DuffelTraveler, DuffelBookingResponse } from "@/services/api/duffelBookingApi";
 import { airportNames } from "@/data/airportLookup";
 import { airlineNames } from "@/data/airlineLookup";
 import OfferExpirationTimer from "./OfferExpirationTimer";
+import * as React from 'react';
 
 export interface DuffelFlightOffer {
   id: string;

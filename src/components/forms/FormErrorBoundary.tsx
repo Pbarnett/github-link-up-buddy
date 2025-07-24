@@ -6,15 +6,13 @@
  * following best practices for error handling and user experience
  */
 
-import * as React from 'react';
-const { useCallback } = React;
 type ReactNode = React.ReactNode;
 type ErrorInfo = React.ErrorInfo;
-type ComponentType<P = {}> = React.ComponentType<P>;
+type ComponentType<P = {}> = ComponentType<P>;
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import * as React from 'react';
 
 interface Props {
   children: ReactNode;

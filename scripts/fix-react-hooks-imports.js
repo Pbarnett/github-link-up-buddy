@@ -21,13 +21,6 @@ const REACT_HOOKS = [
   'forwardRef', 'lazy', 'Suspense', 'memo', 'Fragment'
 ];
 
-// Types that should be imported separately
-const REACT_TYPES = [
-  'ReactNode', 'ReactElement', 'FC', 'FunctionComponent', 'ComponentType',
-  'PropsWithChildren', 'RefObject', 'MutableRefObject', 'FormEvent', 'FormEventHandler',
-  'ChangeEvent', 'MouseEvent', 'KeyboardEvent', 'HTMLAttributes', 'CSSProperties',
-  'HTMLProps', 'DetailedHTMLProps', 'InputHTMLAttributes', 'HTMLInputElement'
-];
 
 async function findTSXFiles() {
   const patterns = [

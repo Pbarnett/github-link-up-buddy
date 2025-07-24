@@ -1,25 +1,21 @@
 
 
-import * as React from 'react';
 type ReactNode = React.ReactNode;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import { Slot } from "@radix-ui/react-slot"
-import { ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import * as React from 'react';
 
-const Breadcrumb = React.forwardRef<
-  HTMLElement,
-  ComponentPropsWithoutRef<"nav"> & {
+const Breadcrumb = forwardRef<
+  HTMLElementPropsWithoutRef<"nav"> & {
     separator?: ReactNode
   }
 >(({ ...props }, ref) => <nav ref={ref} aria-label="breadcrumb" {...props} />)
 Breadcrumb.displayName = "Breadcrumb"
 
-const BreadcrumbList = React.forwardRef<
-  HTMLOListElement,
-  ComponentPropsWithoutRef<"ol">
+const BreadcrumbList = forwardRef<
+  HTMLOListElementPropsWithoutRef<"ol">
 >(({ className, ...props }, ref) => (
   <ol
     ref={ref}
@@ -32,9 +28,8 @@ const BreadcrumbList = React.forwardRef<
 ))
 BreadcrumbList.displayName = "BreadcrumbList"
 
-const BreadcrumbItem = React.forwardRef<
-  HTMLLIElement,
-  ComponentPropsWithoutRef<"li">
+const BreadcrumbItem = forwardRef<
+  HTMLLIElementPropsWithoutRef<"li">
 >(({ className, ...props }, ref) => (
   <li
     ref={ref}
@@ -44,9 +39,8 @@ const BreadcrumbItem = React.forwardRef<
 ))
 BreadcrumbItem.displayName = "BreadcrumbItem"
 
-const BreadcrumbLink = React.forwardRef<
-  HTMLAnchorElement,
-  ComponentPropsWithoutRef<"a"> & {
+const BreadcrumbLink = forwardRef<
+  HTMLAnchorElementPropsWithoutRef<"a"> & {
     asChild?: boolean
   }
 >(({ asChild, className, ...props }, ref) => {
@@ -62,9 +56,8 @@ const BreadcrumbLink = React.forwardRef<
 })
 BreadcrumbLink.displayName = "BreadcrumbLink"
 
-const BreadcrumbPage = React.forwardRef<
-  HTMLSpanElement,
-  ComponentPropsWithoutRef<"span">
+const BreadcrumbPage = forwardRef<
+  HTMLSpanElementPropsWithoutRef<"span">
 >(({ className, ...props }, ref) => (
   <span
     ref={ref}

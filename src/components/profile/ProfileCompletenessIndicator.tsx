@@ -1,4 +1,4 @@
-import React, { ComponentType } from 'react';
+import * as React from 'react';
 import {
   CheckCircle2,
   AlertCircle,

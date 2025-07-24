@@ -1,12 +1,10 @@
 
 
-import * as React from 'react';
 type FC<T = {}> = React.FC<T>;
 
-import { Control, useController } from 'react-hook-form';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Plane, Package } from 'lucide-react';
+import * as React from 'react';
 
 // Form data interface for filter toggles
 interface FilterToggleFormData {

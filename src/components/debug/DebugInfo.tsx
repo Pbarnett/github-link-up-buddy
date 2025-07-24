@@ -1,15 +1,13 @@
-import * as React from 'react';
-const { useState, useEffect } = React;
-
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import * as React from 'react';
 
 interface DebugInfoProps {
   tripId?: string | null;
 }
 
 export default function DebugInfo({ tripId }: DebugInfoProps) {
-  const [_featureFlags, setFeatureFlags] = useState<Record<string, unknown>[]>([]); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [_featureFlags, setFeatureFlags] = useState<Record<string, unknown>[]>([]);  
   const [tripData, setTripData] = useState<Record<string, unknown> | null>(null);
   const [offersCount, setOffersCount] = useState<number>(0);
   

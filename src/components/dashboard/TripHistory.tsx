@@ -1,14 +1,8 @@
-
-
-import * as React from 'react';
-const { useState, useEffect, useCallback } = React;
 type FC<T = {}> = React.FC<T>;
-
-import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast'; // Added useToast
-import { Loader2 } from 'lucide-react'; // Added Loader2
+import * as React from 'react';
 // For now, using 'any'. Replace with a proper type for booking history items.
 // import { Tables } from '@/integrations/supabase/types'; // Example if you have this type
 
@@ -58,7 +52,7 @@ const TripHistory: FC<TripHistoryProps> = ({ userId }) => {
     } finally {
       setHistoryLoading(false);
     }
-  }, [userId, supabase]); // supabase is stable from client import
+  }, [userId]); // supabase is stable from client import
 
   useEffect(() => {
     if (userId) {

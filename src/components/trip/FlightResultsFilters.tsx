@@ -1,10 +1,9 @@
 
 
-import * as React from 'react';
 type FC<T = {}> = React.FC<T>;
 
 import { Badge } from '@/components/ui/badge';
-import { Plane, Package, Check } from 'lucide-react';
+import * as React from 'react';
 
 interface FlightResultsFiltersProps {
   totalResults: number;

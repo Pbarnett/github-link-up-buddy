@@ -1,10 +1,8 @@
-
-
 import * as React from 'react';
-type FC<T = {}> = React.FC<T>;
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton'; // Assuming you have a Skeleton component
+
+type FC<T = {}> = React.FC<T>;
 
 const TripOffersV2Skeleton: FC = () => {
   return (

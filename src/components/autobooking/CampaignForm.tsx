@@ -1,4 +1,3 @@
-import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { CampaignFormData } from "@/types/campaign";
-import { Calendar, MapPin, DollarSign, Plane } from "lucide-react";
 // import { ConfigDrivenCampaignForm } from "./CampaignForm.config-driven";
 
 const campaignFormSchema = z.object({
@@ -153,7 +151,7 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
                     id="minDuration" 
                     min="1" 
                     max="365"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt(e.target.value) || 0)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt((e.target as HTMLInputElement).value) || 0)}
                   />
                 )}
               />
@@ -171,7 +169,7 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
                     id="maxDuration" 
                     min="1" 
                     max="365"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt(e.target.value) || 0)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt((e.target as HTMLInputElement).value) || 0)}
                   />
                 )}
               />
@@ -243,7 +241,7 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
                   step="50"
                   placeholder="e.g., 500"
                   className={errors.maxPrice ? "border-red-500" : ""}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt(e.target.value) || 0)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(parseInt((e.target as HTMLInputElement).value) || 0)}
                 />
               )}
             />

@@ -1,12 +1,10 @@
 
-import { useSearchParams, useLocation } from "react-router-dom";
 import PoolLayout from "@/components/trip/Pools/PoolLayout";
 import PoolOfferControls from "@/components/trip/PoolOfferControls";
 import TripOfferDetailsCard from "@/components/trip/TripOfferDetailsCard";
 import { TripDetails } from "@/hooks/useTripOffers";
 import { usePoolsSafe } from "@/hooks/usePoolsSafe";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
 
 export default function TripOffersWithPools() {
   const [searchParams] = useSearchParams();

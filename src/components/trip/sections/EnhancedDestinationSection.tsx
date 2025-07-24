@@ -1,5 +1,4 @@
 
-import { Control, UseFormWatch } from "react-hook-form";
 import { 
   FormControl, 
   FormDescription, 
@@ -11,7 +10,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-react";
 import { POPULAR_DESTINATIONS } from "@/data/airports";
 
 interface EnhancedDestinationSectionProps {

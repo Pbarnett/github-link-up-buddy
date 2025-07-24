@@ -5,12 +5,9 @@
  * Provides editing interface for form sections and their fields
  */
 
-import * as React from 'react';
-const { useState } = React;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
 
-import { Settings, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,8 +17,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-
 import type {
+import * as React from 'react';
   FormSection,
   FieldConfiguration,
   ValidationRules
@@ -80,7 +77,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
             <Input
               id="section-title"
               value={section.title}
-              onChange={(e) => onUpdate({ title: e.target.value })}
+              onChange={(e) => onUpdate({ title: (e.target as HTMLInputElement).value })}
               placeholder="Enter section title"
               disabled={readonly}
             />
@@ -91,7 +88,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
             <Textarea
               id="section-description"
               value={section.description || ''}
-              onChange={(e) => onUpdate({ description: e.target.value })}
+              onChange={(e) => onUpdate({ description: (e.target as HTMLInputElement).value })}
               placeholder="Enter section description"
               disabled={readonly}
               rows={2}
@@ -103,7 +100,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
             <Input
               id="section-class"
               value={section.className || ''}
-              onChange={(e) => onUpdate({ className: e.target.value })}
+              onChange={(e) => onUpdate({ className: (e.target as HTMLInputElement).value })}
               placeholder="Custom CSS classes"
               disabled={readonly}
             />
@@ -168,7 +165,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                             <Label className="text-xs">Label</Label>
                             <Input
                               value={field.label}
-                              onChange={(e) => onUpdateField(field.id, { label: e.target.value })}
+                              onChange={(e) => onUpdateField(field.id, { label: (e.target as HTMLInputElement).value })}
                               className="h-8 text-sm"
                               disabled={readonly}
                             />
@@ -178,7 +175,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                             <Label className="text-xs">Placeholder</Label>
                             <Input
                               value={field.placeholder || ''}
-                              onChange={(e) => onUpdateField(field.id, { placeholder: e.target.value })}
+                              onChange={(e) => onUpdateField(field.id, { placeholder: (e.target as HTMLInputElement).value })}
                               className="h-8 text-sm"
                               disabled={readonly}
                             />
@@ -190,7 +187,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                           <Label className="text-xs">Description</Label>
                           <Textarea
                             value={field.description || ''}
-                            onChange={(e) => onUpdateField(field.id, { description: e.target.value })}
+                            onChange={(e) => onUpdateField(field.id, { description: (e.target as HTMLInputElement).value })}
                             className="text-sm"
                             rows={2}
                             disabled={readonly}
@@ -225,7 +222,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                                     value={field.validation?.minLength || ''}
                                     onChange={(e) => 
                                       updateFieldValidation(field.id, { 
-                                        minLength: e.target.value ? parseInt(e.target.value) : undefined 
+                                        minLength: (e.target as HTMLInputElement).value ? parseInt((e.target as HTMLInputElement).value) : undefined 
                                       })
                                     }
                                     className="h-7 text-sm"
@@ -240,7 +237,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                                     value={field.validation?.maxLength || ''}
                                     onChange={(e) => 
                                       updateFieldValidation(field.id, { 
-                                        maxLength: e.target.value ? parseInt(e.target.value) : undefined 
+                                        maxLength: (e.target as HTMLInputElement).value ? parseInt((e.target as HTMLInputElement).value) : undefined 
                                       })
                                     }
                                     className="h-7 text-sm"
@@ -259,7 +256,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                                     value={field.validation?.min || ''}
                                     onChange={(e) => 
                                       updateFieldValidation(field.id, { 
-                                        min: e.target.value ? parseFloat(e.target.value) : undefined 
+                                        min: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined 
                                       })
                                     }
                                     className="h-7 text-sm"
@@ -274,7 +271,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                                     value={field.validation?.max || ''}
                                     onChange={(e) => 
                                       updateFieldValidation(field.id, { 
-                                        max: e.target.value ? parseFloat(e.target.value) : undefined 
+                                        max: (e.target as HTMLInputElement).value ? parseFloat((e.target as HTMLInputElement).value) : undefined 
                                       })
                                     }
                                     className="h-7 text-sm"
@@ -290,7 +287,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                                 <Input
                                   value={field.validation?.pattern || ''}
                                   onChange={(e) => 
-                                    updateFieldValidation(field.id, { pattern: e.target.value })
+                                    updateFieldValidation(field.id, { pattern: (e.target as HTMLInputElement).value })
                                   }
                                   placeholder="Regular expression"
                                   className="h-7 text-sm"
@@ -304,7 +301,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                               <Input
                                 value={field.validation?.message || ''}
                                 onChange={(e) => 
-                                  updateFieldValidation(field.id, { message: e.target.value })
+                                  updateFieldValidation(field.id, { message: (e.target as HTMLInputElement).value })
                                 }
                                 placeholder="Custom error message"
                                 className="h-7 text-sm"
@@ -325,7 +322,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                                     value={option.label}
                                     onChange={(e) => {
                                       const newOptions = [...field.options!];
-                                      newOptions[optIndex] = { ...option, label: e.target.value };
+                                      newOptions[optIndex] = { ...option, label: (e.target as HTMLInputElement).value };
                                       onUpdateField(field.id, { options: newOptions });
                                     }}
                                     placeholder="Label"
@@ -336,7 +333,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                                     value={option.value.toString()}
                                     onChange={(e) => {
                                       const newOptions = [...field.options!];
-                                      newOptions[optIndex] = { ...option, value: e.target.value };
+                                      newOptions[optIndex] = { ...option, value: (e.target as HTMLInputElement).value };
                                       onUpdateField(field.id, { options: newOptions });
                                     }}
                                     placeholder="Value"
@@ -384,7 +381,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                           <Label className="text-xs">CSS Class</Label>
                           <Input
                             value={field.className || ''}
-                            onChange={(e) => onUpdateField(field.id, { className: e.target.value })}
+                            onChange={(e) => onUpdateField(field.id, { className: (e.target as HTMLInputElement).value })}
                             placeholder="Custom CSS classes"
                             className="h-7 text-sm"
                             disabled={readonly}

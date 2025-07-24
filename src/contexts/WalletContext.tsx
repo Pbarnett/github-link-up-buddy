@@ -1,19 +1,19 @@
 
 
 import * as React from 'react';
-import { useState, useEffect, useContext, createContext } from 'react';
-type ReactNode = React.ReactNode;
-
+import { useState, useContext, useEffect, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   PaymentMethod, 
   SetupIntentResponse, 
-  PaymentMethodsResponse, 
+  _PaymentMethodsResponse, 
   WalletContextType,
   PaymentMethodError as ImportedPaymentMethodError
 } from '@/types/wallet';
 
-const WalletContext = createContext<WalletContextType | undefined>(undefined);
+type ReactNode = React.ReactNode;
+
+const WalletContext = createContext<WalletContextType | undefined | null>(null);
 
 export function useWallet(): WalletContextType {
   const context = useContext(WalletContext);

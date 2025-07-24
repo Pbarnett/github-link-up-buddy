@@ -1,12 +1,7 @@
-import * as React from 'react';
-import { useState, useTransition, lazy, Suspense } from 'react';
-
-import { useNavigate } from 'react-router-dom';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, Circle } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { trackCampaignEvent } from '@/utils/monitoring';
@@ -14,6 +9,7 @@ import { campaignService } from '@/services/campaignService';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { CriteriaFormData } from './StepCriteria';
 import { TravelerFormData } from './StepTraveler';
+import * as React from 'react';
 
 // Lazy load step components
 const StepCriteria = lazy(() => import('./StepCriteria'));

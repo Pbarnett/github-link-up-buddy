@@ -5,12 +5,11 @@
  * Integrates with existing Stripe payment infrastructure
  */
 
-import * as React from 'react';
-const { useState, useCallback } = React;
 
 import { createStripePaymentIntent } from '@/services/api/paymentApi';
 import logger from '@/lib/logger';
 import { DuffelError } from '@/components/trip/DuffelErrorHandler';
+import * as React from 'react';
 
 export interface DuffelPaymentIntent {
   id: string;

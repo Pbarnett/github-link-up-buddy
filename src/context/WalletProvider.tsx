@@ -3,7 +3,8 @@
 // Day 4: Payments & Wallet System
 
 import * as React from 'react';
-const { useState, useCallback, useContext } = React;
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+
 type ReactNode = React.ReactNode;
 type FC<T = {}> = React.FC<T>;
 
@@ -46,14 +47,14 @@ export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
     // Assume user's ID is available via context/session
     const userId = 'user-id'; // Replace with context/session retrieval
     await deletePaymentMethod(userId, paymentMethodId);
-    await fetchPaymentMethods();
+    await fetchPaymentMethods()();
   }, [fetchPaymentMethods]);
 
   const setDefault = useCallback(async (paymentMethodId: string) => {
     // Assume user's ID is available via context/session
     const userId = 'user-id'; // Replace with context/session retrieval
     await setDefaultPaymentMethod(userId, paymentMethodId);
-    await fetchPaymentMethods();
+    await fetchPaymentMethods()();
   }, [fetchPaymentMethods]);
 
   return (

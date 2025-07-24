@@ -1,14 +1,39 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, useNavigate } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm';
-
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { toast } from '@/components/ui/use-toast';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTravelerInfoCheck } from '@/hooks/useTravelerInfoCheck';
+
+// Comprehensive window mock for tests
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+// Mock window dimensions
+Object.defineProperty(window, 'innerWidth', {
+  writable: true,
+  configurable: true,
+  value: 1024,
+});
+
+Object.defineProperty(window, 'innerHeight', {
+  writable: true,
+  configurable: true,
+  value: 768,
+});
 
 /**
  * WORKING DEMO: Calendar Testing Solution
@@ -57,6 +82,10 @@ vi.mock('@/hooks/usePaymentMethods', () => ({
 
 vi.mock('@/hooks/useTravelerInfoCheck', () => ({
   useTravelerInfoCheck: vi.fn(),
+}));
+
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: vi.fn().mockReturnValue(false),
 }));
 
 describe('Calendar Testing Solution - Working Demo', () => {

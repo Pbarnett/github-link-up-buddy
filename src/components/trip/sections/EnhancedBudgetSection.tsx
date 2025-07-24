@@ -1,5 +1,4 @@
 
-import { Control } from "react-hook-form";
 import { 
   FormControl, 
   FormField, 
@@ -9,7 +8,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-react";
 
 // Budget form data interface
 interface BudgetFormData {

@@ -5,14 +5,13 @@
  * Simple phone input with basic formatting
  */
 
-import * as React from 'react';
 type ChangeEvent<T = Element> = React.ChangeEvent<T>;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
 
-import { Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import * as React from 'react';
 
 interface PhoneInputFieldProps {
   value?: string;
@@ -32,7 +31,7 @@ export const PhoneInputField: FC<PhoneInputFieldProps> = ({
   className
 }) => {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
+    const inputValue = (e.target as HTMLInputElement).value;
     
     // Basic phone number formatting (US format)
     const cleaned = inputValue.replace(/\D/g, '');

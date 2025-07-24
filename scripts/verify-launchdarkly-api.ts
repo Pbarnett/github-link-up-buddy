@@ -52,7 +52,7 @@ async function main() {
         console.log(`✅ Retrieved ${flags.items.length} feature flag(s)`);
         
         // Display first few flags
-        flags.items.slice(0, 5).forEach((flag: any) => {
+        flags.items.slice(0, 5).forEach((flag: { key: string; name: string }) => {
           console.log(`  - ${flag.key}: ${flag.name}`);
         });
       } else {

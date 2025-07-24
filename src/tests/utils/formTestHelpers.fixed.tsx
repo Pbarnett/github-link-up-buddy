@@ -9,17 +9,14 @@
  * - FormProvider context handling
  */
 
-import * as React from 'react';
 type ReactNode = React.ReactNode;
 type FC<T = {}> = React.FC<T>;
 
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useForm, FormProvider, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-
 import { vi, Mock } from 'vitest';
+import * as React from 'react';
 
 // ✅ CORRECT: Test wrapper that provides form context
 export const FormTestWrapper: FC<{
@@ -61,7 +58,7 @@ export const testFormValidation = async (options: {
   render(component);
 
   // Fill fields
-  await fillFields();
+  await fillFields()();
 
   // Submit form
   const submitButton = screen.getByRole('button', { name: /submit/i });
@@ -181,7 +178,7 @@ export const testFormSubmission = async (options: {
   render(component);
 
   // Fill form with valid data
-  await fillValidData();
+  await fillValidData()();
 
   // Submit form
   const submitButton = screen.getByTestId('submit-button');
@@ -231,7 +228,7 @@ export const testFormStateChange = async (options: {
   render(component);
 
   // Perform action that should change form state
-  await action();
+  await action()();
 
   // Wait for form state to update
   await waitFor(() => {

@@ -7,9 +7,6 @@
  */
 
 import * as React from 'react';
-type Component<P = {}, S = {}> = React.Component<P, S>;
-type FC<T = {}> = React.FC<T>;
-
 import { useFormContext } from 'react-hook-form';
 import {
   FormField,
@@ -19,6 +16,8 @@ import {
   FormDescription,
   FormMessage,
 } from '@/components/ui/form';
+
+type FC<T = {}> = React.FC<T>;
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -34,7 +33,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-
 import type {
   FieldConfiguration,
   FieldRendererProps
@@ -189,7 +187,7 @@ const FieldInput: FC<FieldInputProps> = ({
           placeholder={field.placeholder}
           disabled={disabled}
           onChange={(e) => handleChange(
-            field.type === 'number' ? Number(e.target.value) : e.target.value
+            field.type === 'number' ? Number((e.target as HTMLInputElement).value) : (e.target as HTMLInputElement).value
           )}
           className={cn(error && "border-destructive")}
           aria-invalid={error ? "true" : "false"}
@@ -205,7 +203,7 @@ const FieldInput: FC<FieldInputProps> = ({
           value={typeof value === 'string' ? value : ''}
           placeholder={field.placeholder}
           disabled={disabled}
-          onChange={(e) => handleChange(e.target.value)}
+          onChange={(e) => handleChange((e.target as HTMLInputElement).value)}
           className={cn(error && "border-destructive")}
           rows={4}
         />
@@ -440,7 +438,7 @@ const FieldInput: FC<FieldInputProps> = ({
           value={typeof value === 'string' ? value : ''}
           placeholder={field.placeholder}
           disabled={disabled}
-          onChange={(e) => handleChange(e.target.value)}
+          onChange={(e) => handleChange((e.target as HTMLInputElement).value)}
           className={cn(error && "border-destructive")}
         />
       );

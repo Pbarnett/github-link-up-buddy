@@ -1,20 +1,18 @@
-
-
 import * as React from 'react';
-const { useState, useEffect, useMemo, useContext } = React;
-type ReactNode = React.ReactNode;
-type FC<T = {}> = React.FC<T>;
-
+import { useState, useEffect, useMemo, useContext, useCallback, createContext } from 'react';
 import { PersonalizationData, PersonalizationError } from '@/types/personalization';
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { enablePersonalizationForTesting } from '@/lib/personalization/featureFlags';
-import { 
+import {
   getUserVariant, 
   getExperimentConfig,
   trackABTestEvent,
   ABTestEvent 
 } from '@/lib/personalization/abTesting';
+
+type ReactNode = React.ReactNode;
+type FC<T = {}> = React.FC<T>;
 
 interface PersonalizationContextType {
   personalizationData: PersonalizationData | null;
@@ -23,11 +21,11 @@ interface PersonalizationContextType {
   refreshPersonalizationData: () => Promise<void>;
   isPersonalizationEnabled: boolean;
   abTestVariant: string | null;
-experimentConfig: Record<string, unknown> | null;
+  experimentConfig: Record<string, unknown> | null;
   trackPersonalizationEvent: (eventType: 'exposure' | 'conversion' | 'engagement', eventName: string, metadata?: Record<string, unknown>) => Promise<void>;
 }
 
-const PersonalizationContext = createContext<PersonalizationContextType | undefined>(undefined);
+const PersonalizationContext = createContext<PersonalizationContextType | undefined | null>(null);
 
 interface PersonalizationProviderProps {
   children: ReactNode;
@@ -48,17 +46,18 @@ export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
   
   // Feature flag check for controlled rollout (Alpha/Beta phases)
   // Now enhanced with A/B testing
-  const featureFlagResult = useFeatureFlag('personalizedGreetings');
+  const featureFlagResult = useFeatureFlag('personalization_greeting');
   const featureFlagEnabled = (featureFlagResult?.data ?? false) as boolean;
   const temporaryFlagEnabled = enablePersonalizationForTesting();
   const abTestPersonalizationEnabled = (experimentConfig?.enablePersonalization ?? false) as boolean;
-  const isPersonalizationEnabled: boolean = featureFlagEnabled || temporaryFlagEnabled || abTestPersonalizationEnabled;
+  // TEMPORARILY FORCE ENABLE FOR TESTING YOUR FRIEND-TEST GREETINGS
+  const isPersonalizationEnabled: boolean = true; // featureFlagEnabled || temporaryFlagEnabled || abTestPersonalizationEnabled;
 
-  // A/B testing event tracking function
-  const trackPersonalizationEvent = async (
+  // A/B testing event tracking function (memoized to prevent infinite loops)
+  const trackPersonalizationEvent = useCallback(async (
     eventType: 'exposure' | 'conversion' | 'engagement',
     eventName: string,
-metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>
   ) => {
     if (!userId || !abTestVariant) return;
 
@@ -73,21 +72,9 @@ metadata?: Record<string, unknown>
     };
 
     await trackABTestEvent(event);
-  };
+  }, [userId, abTestVariant]);
 
-  // Memoized value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    personalizationData,
-    loading,
-    error,
-    refreshPersonalizationData: fetchPersonalizationData,
-    isPersonalizationEnabled,
-    abTestVariant,
-    experimentConfig,
-    trackPersonalizationEvent,
-  }), [personalizationData, loading, error, isPersonalizationEnabled, abTestVariant, experimentConfig, trackPersonalizationEvent]);
-
-  async function fetchPersonalizationData(): Promise<void> {
+  const fetchPersonalizationData = useCallback(async (): Promise<void> => {
     if (!userId || !isPersonalizationEnabled) {
       setPersonalizationData(null);
       return;
@@ -98,7 +85,7 @@ metadata?: Record<string, unknown>
 
     try {
       // Use the deployed edge function for personalization data
-      const { data: personalizationResult, error: functionError } = await supabase.functions.invoke(
+      const response = await supabase.functions.invoke(
         'get-personalization-data',
         {
           headers: {
@@ -107,10 +94,12 @@ metadata?: Record<string, unknown>
         }
       );
 
-      if (functionError) {
-        throw new Error(`Edge function failed: ${functionError.message}`);
+      // Defensive check for response structure
+      if (!response || response.error) {
+        throw new Error(`Edge function failed: ${response?.error?.message || 'Unknown error'}`);
       }
 
+      const { data: personalizationResult } = response;
       if (!personalizationResult) {
         throw new Error('No personalization data returned from edge function');
       }
@@ -163,7 +152,19 @@ metadata?: Record<string, unknown>
     } finally {
       setLoading(false);
     }
-  }
+  }, [userId, isPersonalizationEnabled, trackPersonalizationEvent]);
+
+  // Memoized value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    personalizationData,
+    loading,
+    error,
+    refreshPersonalizationData: fetchPersonalizationData,
+    isPersonalizationEnabled,
+    abTestVariant,
+    experimentConfig,
+    trackPersonalizationEvent,
+  }), [personalizationData, loading, error, fetchPersonalizationData, isPersonalizationEnabled, abTestVariant, experimentConfig, trackPersonalizationEvent]);
 
   // Fetch data when userId changes or feature is enabled
   useEffect(() => {
@@ -174,7 +175,7 @@ metadata?: Record<string, unknown>
       setLoading(false);
       setError(null);
     }
-  }, [userId, isPersonalizationEnabled]);
+  }, [userId, isPersonalizationEnabled]); // Removed fetchPersonalizationData to prevent infinite loop
 
   return (
     <PersonalizationContext.Provider value={contextValue}>

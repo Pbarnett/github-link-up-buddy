@@ -1,13 +1,10 @@
 
 
-import * as React from 'react';
-const { useState } = React;
 
-import { Control } from "react-hook-form";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
+import * as React from 'react';
 
 interface AdvancedOptionsPanelProps {
   control: Control<Record<string, unknown>>;

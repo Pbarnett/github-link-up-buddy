@@ -52,7 +52,7 @@ serve(async (req: Request) => {
     let body;
     try {
         body = await req.json();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     } catch (_e) {
         return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
@@ -134,7 +134,7 @@ serve(async (req: Request) => {
         if (!amadeusResult.success) {
             console.error(`[CancelBooking] Amadeus cancellation failed for Order ID ${amadeusOrderIdToCancel}:`, amadeusResult.error);
         } else {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+             
             _amadeusCancellationSuccessful = true;
             console.log(`[CancelBooking] Amadeus cancellation successful for Order ID: ${amadeusOrderIdToCancel}`);
         }

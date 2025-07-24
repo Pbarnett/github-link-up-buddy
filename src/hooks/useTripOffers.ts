@@ -1,15 +1,15 @@
-import * as React from 'react';
-const { useState, useEffect, useCallback, useMemo } = React;
 
-import { useSearchParams } from "react-router-dom";
+import { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Offer } from "@/services/tripOffersService";
 import { ScoredOffer } from "@/types/offer";
 import { toast } from "@/components/ui/use-toast";
 import { fetchFlightSearch } from "@/services/api/flightSearchApi";
 import { Tables } from "@/integrations/supabase/types";
-import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
+import * as React from 'react';
+import { useSearchParams } from 'react-router-dom';
+const { useState, useCallback, useMemo, useEffect } = React;
 
 // Type for a row from the 'trip_requests' database table - EXPORTED
 export type TripRequestFromDB = Tables<'trip_requests'>;

@@ -1,0 +1,1215 @@
+
+> parker-flight@1.0.0 tsc
+> tsc
+
+src/components/debug/DebugInfo.tsx(29,33): error TS1320: Type of 'await' operand must either be a valid promise or must not contain a callable 'then' member.
+src/components/debug/DebugInfo.tsx(64,54): error TS1320: Type of 'await' operand must either be a valid promise or must not contain a callable 'then' member.
+src/components/demo/ShadCNIntegrationDemo.tsx(77,31): error TS2339: Property 'theme' does not exist on type '{}'.
+src/components/ProfileForm.tsx(20,46): error TS2339: Property 'isUpdating' does not exist on type '{ profile: NoInfer<TQueryFnData>; isLoading: false; error: Error | null; updateProfile: UseMutateFunction<{ created_at: string | null; email: string; first_name: string | null; ... 9 more ...; updated_at: string | null; } | null, Error, Partial<...>, unknown>; isUpdating: boolean; } | UseProfileKMSReturn'.
+src/components/providers/ShadCNThemeProvider.tsx(40,36): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/components/providers/ShadCNThemeProvider.tsx(103,11): error TS2339: Property 'theme' does not exist on type '{} | null'.
+src/components/providers/ShadCNThemeProvider.tsx(103,18): error TS2339: Property 'setTheme' does not exist on type '{} | null'.
+src/components/StripePaymentForm.tsx(111,7): error TS2322: Type 'unknown' is not assignable to type 'boolean'.
+src/components/TravelerDataForm.tsx(27,58): error TS2345: Argument of type '{ fullName: string; dateOfBirth: string; gender: "MALE" | "FEMALE" | "OTHER"; email: string; phone: string; passportNumber: string; passportCountry: string; passportExpiry: string; knownTravelerNumber: string; isPrimary: boolean; }' is not assignable to parameter of type 'TravelerProfileKMS | (() => TravelerProfileKMS)'.
+  Type '{ fullName: string; dateOfBirth: string; gender: "MALE" | "FEMALE" | "OTHER"; email: string; phone: string; passportNumber: string; passportCountry: string; passportExpiry: string; knownTravelerNumber: string; isPrimary: boolean; }' is missing the following properties from type 'TravelerProfileKMS': id, createdAt, updatedAt
+src/components/trip/DuffelErrorHandler.tsx(104,9): error TS2345: Argument of type 'Element' is not assignable to parameter of type 'never'.
+src/components/trip/DuffelErrorHandler.tsx(119,9): error TS2345: Argument of type 'Element' is not assignable to parameter of type 'never'.
+src/components/trip/DuffelErrorHandler.tsx(133,9): error TS2345: Argument of type 'Element' is not assignable to parameter of type 'never'.
+src/components/trip/LiveBookingSummary.tsx(55,32): error TS2345: Argument of type '"NYC (JFK/LGA/EWR)"' is not assignable to parameter of type 'never'.
+src/components/trip/LiveBookingSummary.tsx(57,32): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/components/trip/LiveBookingSummary.tsx(61,30): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/components/trip/sections/NightsRangeSection.tsx(54,61): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/components/trip/sections/NightsRangeSection.tsx(84,61): error TS2339: Property 'value' does not exist on type 'EventTarget'.
+src/components/trip/sections/TripSummaryChips.tsx(52,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/components/trip/sections/TripSummaryChips.tsx(55,18): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/components/trip/StickyFormActions.tsx(74,9): error TS2345: Argument of type 'Element' is not assignable to parameter of type 'never'.
+src/components/trip/StickyFormActions.tsx(83,9): error TS2345: Argument of type 'Element' is not assignable to parameter of type 'never'.
+src/components/trip/StickyFormActions.tsx(92,9): error TS2345: Argument of type 'Element' is not assignable to parameter of type 'never'.
+src/components/trip/StickyFormActions.tsx(101,9): error TS2345: Argument of type 'Element' is not assignable to parameter of type 'never'.
+src/components/ui/accordion.tsx(12,60): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/accordion.tsx(12,139): error TS2694: Namespace '"react"' has no exported member 'Ref'.
+src/components/ui/accordion.tsx(12,149): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/accordion.tsx(21,73): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/accordion.tsx(21,155): error TS2694: Namespace '"react"' has no exported member 'Ref'.
+src/components/ui/accordion.tsx(21,165): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/accordion.tsx(38,73): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/accordion.tsx(38,155): error TS2694: Namespace '"react"' has no exported member 'Ref'.
+src/components/ui/accordion.tsx(38,165): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/alert-dialog.tsx(16,34): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/alert-dialog.tsx(17,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/alert-dialog.tsx(18,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/alert-dialog.tsx(31,34): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/alert-dialog.tsx(32,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/alert-dialog.tsx(33,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/alert-dialog.tsx(52,10): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/alert-dialog.tsx(66,10): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/alert-dialog.tsx(77,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/alert-dialog.tsx(78,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/alert-dialog.tsx(79,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/alert-dialog.tsx(89,38): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/alert-dialog.tsx(90,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/alert-dialog.tsx(91,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/alert-dialog.tsx(102,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/alert-dialog.tsx(103,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/alert-dialog.tsx(104,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/alert-dialog.tsx(114,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/alert-dialog.tsx(115,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/alert-dialog.tsx(116,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/alert.tsx(25,21): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/alert.tsx(27,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/alert.tsx(38,26): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/alert.tsx(40,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/alert.tsx(50,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/alert.tsx(52,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/avatar.tsx(9,22): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/avatar.tsx(10,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/avatar.tsx(11,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/avatar.tsx(24,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/avatar.tsx(25,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/avatar.tsx(26,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/avatar.tsx(36,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/avatar.tsx(37,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/avatar.tsx(38,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/badge.tsx(32,17): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/breadcrumb.tsx(12,26): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/breadcrumb.tsx(14,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/breadcrumb.tsx(20,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/breadcrumb.tsx(22,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/breadcrumb.tsx(35,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/breadcrumb.tsx(37,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/breadcrumb.tsx(47,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/breadcrumb.tsx(49,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/breadcrumb.tsx(65,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/breadcrumb.tsx(67,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/breadcrumb.tsx(84,4): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/breadcrumb.tsx(99,4): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/button.tsx(40,17): error TS2694: Namespace '"react"' has no exported member 'ButtonReact'.
+src/components/ui/button.tsx(45,22): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/calendar.tsx(12,29): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/card.tsx(7,20): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/card.tsx(9,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/card.tsx(22,26): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/card.tsx(24,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/card.tsx(34,25): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/card.tsx(36,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/card.tsx(49,31): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/card.tsx(51,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/card.tsx(61,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/card.tsx(63,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/card.tsx(69,26): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/card.tsx(71,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/card.tsx(81,26): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/card.tsx(83,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/carousel.tsx(4,55): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/components/ui/carousel.tsx(4,70): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/carousel.tsx(5,41): error TS2694: Namespace '"react"' has no exported member 'KeyboardEvent'.
+src/components/ui/carousel.tsx(6,37): error TS2694: Namespace '"react"' has no exported member 'ElementType'.
+src/components/ui/carousel.tsx(6,58): error TS2694: Namespace '"react"' has no exported member 'ComponentProps'.
+src/components/ui/carousel.tsx(37,31): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/components/ui/carousel.tsx(49,24): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/carousel.tsx(51,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/carousel.tsx(92,21): error TS2694: Namespace '"react"' has no exported member 'KeyboardEvent'.
+src/components/ui/carousel.tsx(156,31): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/carousel.tsx(158,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/carousel.tsx(160,11): error TS2339: Property 'carouselRef' does not exist on type '{}'.
+src/components/ui/carousel.tsx(160,24): error TS2339: Property 'orientation' does not exist on type '{}'.
+src/components/ui/carousel.tsx(178,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/carousel.tsx(180,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/carousel.tsx(182,11): error TS2339: Property 'orientation' does not exist on type '{}'.
+src/components/ui/carousel.tsx(200,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/carousel.tsx(204,11): error TS2339: Property 'orientation' does not exist on type '{}'.
+src/components/ui/carousel.tsx(204,24): error TS2339: Property 'scrollPrev' does not exist on type '{}'.
+src/components/ui/carousel.tsx(204,36): error TS2339: Property 'canScrollPrev' does not exist on type '{}'.
+src/components/ui/carousel.tsx(229,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/carousel.tsx(233,11): error TS2339: Property 'orientation' does not exist on type '{}'.
+src/components/ui/carousel.tsx(233,24): error TS2339: Property 'scrollNext' does not exist on type '{}'.
+src/components/ui/carousel.tsx(233,36): error TS2339: Property 'canScrollNext' does not exist on type '{}'.
+src/components/ui/chart.tsx(4,30): error TS2339: Property 'useId' does not exist on type 'typeof import("react")'.
+src/components/ui/chart.tsx(18,12): error TS2304: Cannot find name 'ComponentType'.
+src/components/ui/chart.tsx(29,28): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/components/ui/chart.tsx(41,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/chart.tsx(43,3): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/chart.tsx(45,15): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/chart.tsx(50,26): error TS2339: Property 'useId' does not exist on type 'typeof import("react")'.
+src/components/ui/chart.tsx(109,35): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/chart.tsx(111,3): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/chart.tsx(112,5): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/chart.tsx(138,13): error TS2339: Property 'config' does not exist on type '{}'.
+src/components/ui/chart.tsx(228,40): error TS2694: Namespace '"react"' has no exported member 'CSSProperties'.
+src/components/ui/chart.tsx(265,34): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/chart.tsx(267,3): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/chart.tsx(277,13): error TS2339: Property 'config' does not exist on type '{}'.
+src/components/ui/checkbox.tsx(10,24): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/checkbox.tsx(11,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/checkbox.tsx(12,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/command.tsx(12,23): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/command.tsx(13,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/command.tsx(14,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/command.tsx(41,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/command.tsx(42,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/command.tsx(43,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/command.tsx(60,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/command.tsx(61,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/command.tsx(62,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/command.tsx(73,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/command.tsx(74,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/command.tsx(75,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/command.tsx(86,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/command.tsx(87,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/command.tsx(88,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/command.tsx(102,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/command.tsx(103,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/command.tsx(104,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/command.tsx(114,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/command.tsx(115,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/command.tsx(116,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/command.tsx(133,10): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/context-menu.tsx(22,37): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/context-menu.tsx(23,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/context-menu.tsx(24,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/context-menu.tsx(43,37): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/context-menu.tsx(44,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/context-menu.tsx(45,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/context-menu.tsx(58,34): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/context-menu.tsx(59,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/context-menu.tsx(60,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/context-menu.tsx(75,31): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/context-menu.tsx(76,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/context-menu.tsx(77,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/context-menu.tsx(93,39): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/context-menu.tsx(94,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/context-menu.tsx(95,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/context-menu.tsx(117,36): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/context-menu.tsx(118,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/context-menu.tsx(119,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/context-menu.tsx(139,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/context-menu.tsx(140,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/context-menu.tsx(141,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/context-menu.tsx(157,36): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/context-menu.tsx(158,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/context-menu.tsx(159,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/context-menu.tsx(172,10): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dialog.tsx(18,29): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/dialog.tsx(19,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dialog.tsx(20,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/dialog.tsx(33,29): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/dialog.tsx(34,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dialog.tsx(35,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/dialog.tsx(60,10): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dialog.tsx(74,10): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dialog.tsx(85,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/dialog.tsx(86,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dialog.tsx(87,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/dialog.tsx(100,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/dialog.tsx(101,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dialog.tsx(102,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/drawer.tsx(13,4): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/drawer.tsx(27,29): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/drawer.tsx(28,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/drawer.tsx(29,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/drawer.tsx(39,29): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/drawer.tsx(40,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/drawer.tsx(41,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/drawer.tsx(63,10): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/drawer.tsx(74,10): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/drawer.tsx(82,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/drawer.tsx(83,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/drawer.tsx(84,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/drawer.tsx(97,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/drawer.tsx(98,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/drawer.tsx(99,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/dropdown-menu.tsx(22,38): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/dropdown-menu.tsx(23,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dropdown-menu.tsx(24,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/dropdown-menu.tsx(44,38): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/dropdown-menu.tsx(45,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dropdown-menu.tsx(46,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/dropdown-menu.tsx(60,35): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/dropdown-menu.tsx(61,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dropdown-menu.tsx(62,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/dropdown-menu.tsx(78,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/dropdown-menu.tsx(79,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dropdown-menu.tsx(80,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/dropdown-menu.tsx(96,40): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/dropdown-menu.tsx(97,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dropdown-menu.tsx(98,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/dropdown-menu.tsx(120,37): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/dropdown-menu.tsx(121,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dropdown-menu.tsx(122,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/dropdown-menu.tsx(142,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/dropdown-menu.tsx(143,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dropdown-menu.tsx(144,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/dropdown-menu.tsx(160,37): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/dropdown-menu.tsx(161,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/dropdown-menu.tsx(162,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/dropdown-menu.tsx(175,10): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/enhanced-form.tsx(34,50): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/enhanced-form.tsx(39,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/enhanced-form.tsx(85,34): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/enhanced-form.tsx(123,54): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/enhanced-form.tsx(128,36): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/enhanced-form.tsx(173,36): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/enhanced-form.tsx(222,34): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/enhanced-input.tsx(4,9): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/enhanced-input.tsx(4,21): error TS2339: Property 'InputHTMLAttributes' does not exist on type 'typeof import("react")'.
+src/components/ui/enhanced-input.tsx(9,17): error TS2694: Namespace '"react"' has no exported member 'InputReact'.
+src/components/ui/enhanced-input.tsx(16,29): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/form.tsx(4,21): error TS2339: Property 'useId' does not exist on type 'typeof import("react")'.
+src/components/ui/form.tsx(30,32): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/components/ui/form.tsx(52,36): error TS18046: 'fieldContext' is of type 'unknown'.
+src/components/ui/form.tsx(58,11): error TS2339: Property 'id' does not exist on type 'unknown'.
+src/components/ui/form.tsx(62,24): error TS2339: Property 'name' does not exist on type '{}'.
+src/components/ui/form.tsx(74,31): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/components/ui/form.tsx(78,24): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/form.tsx(80,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/form.tsx(82,20): error TS2339: Property 'useId' does not exist on type 'typeof import("react")'.
+src/components/ui/form.tsx(92,25): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/form.tsx(93,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/form.tsx(94,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/form.tsx(109,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/form.tsx(110,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/form.tsx(111,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/form.tsx(131,31): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/form.tsx(133,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/form.tsx(148,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/form.tsx(150,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/hover-card.tsx(13,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/hover-card.tsx(14,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/hover-card.tsx(15,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/input-otp.tsx(11,24): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/input-otp.tsx(12,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/input-otp.tsx(13,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/input-otp.tsx(15,4): error TS2739: Type '{ ref: any; containerClassName: string; className: string; }' is missing the following properties from type 'OTPInputProps': value, onChange
+src/components/ui/input-otp.tsx(27,29): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/input-otp.tsx(28,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/input-otp.tsx(29,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/input-otp.tsx(35,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/input-otp.tsx(36,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/input-otp.tsx(37,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/input-otp.tsx(40,44): error TS18046: 'inputOTPContext' is of type 'unknown'.
+src/components/ui/input-otp.tsx(63,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/input-otp.tsx(64,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/input-otp.tsx(65,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/input.tsx(7,21): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/input.tsx(7,50): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/interactive-button.tsx(9,17): error TS2694: Namespace '"react"' has no exported member 'ButtonReact'.
+src/components/ui/interactive-button.tsx(17,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/label.tsx(14,21): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/label.tsx(15,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/label.tsx(16,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/menubar.tsx(20,23): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/menubar.tsx(21,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/menubar.tsx(22,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/menubar.tsx(35,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/menubar.tsx(36,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/menubar.tsx(37,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/menubar.tsx(50,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/menubar.tsx(51,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/menubar.tsx(52,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/menubar.tsx(71,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/menubar.tsx(72,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/menubar.tsx(73,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/menubar.tsx(86,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/menubar.tsx(87,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/menubar.tsx(88,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/menubar.tsx(111,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/menubar.tsx(112,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/menubar.tsx(113,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/menubar.tsx(129,35): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/menubar.tsx(130,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/menubar.tsx(131,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/menubar.tsx(152,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/menubar.tsx(153,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/menubar.tsx(154,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/menubar.tsx(174,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/menubar.tsx(175,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/menubar.tsx(176,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/menubar.tsx(192,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/menubar.tsx(193,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/menubar.tsx(194,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/menubar.tsx(207,10): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/modern-scroll-area.tsx(7,54): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/modern-scroll-area.tsx(16,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/modern-scroll-area.tsx(81,48): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/modern-scroll-area.tsx(86,26): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/navigation-menu.tsx(11,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/navigation-menu.tsx(12,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/navigation-menu.tsx(13,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/navigation-menu.tsx(29,34): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/navigation-menu.tsx(30,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/navigation-menu.tsx(31,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/navigation-menu.tsx(50,37): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/navigation-menu.tsx(51,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/navigation-menu.tsx(52,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/navigation-menu.tsx(68,37): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/navigation-menu.tsx(69,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/navigation-menu.tsx(70,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/navigation-menu.tsx(85,38): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/navigation-menu.tsx(86,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/navigation-menu.tsx(87,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/navigation-menu.tsx(103,39): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/navigation-menu.tsx(104,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/navigation-menu.tsx(105,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/pagination.tsx(11,46): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/pagination.tsx(21,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/pagination.tsx(23,3): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/pagination.tsx(33,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/pagination.tsx(35,3): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/pagination.tsx(44,3): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/pagination.tsx(69,4): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/pagination.tsx(85,4): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/pagination.tsx(101,4): error TS2304: Cannot find name 'ComponentProps'.
+src/components/ui/popover.tsx(13,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/popover.tsx(14,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/popover.tsx(15,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/progress.tsx(9,24): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/progress.tsx(10,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/progress.tsx(11,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/radio-group.tsx(10,26): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/radio-group.tsx(11,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/radio-group.tsx(12,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/radio-group.tsx(24,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/radio-group.tsx(25,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/radio-group.tsx(26,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/resizable.tsx(12,10): error TS2694: Namespace '"react"' has no exported member 'ComponentProps'.
+src/components/ui/resizable.tsx(28,10): error TS2694: Namespace '"react"' has no exported member 'ComponentProps'.
+src/components/ui/scroll-area.tsx(9,26): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/scroll-area.tsx(10,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/scroll-area.tsx(11,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/scroll-area.tsx(27,25): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/scroll-area.tsx(28,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/scroll-area.tsx(29,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/select.tsx(16,29): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/select.tsx(17,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/select.tsx(18,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/select.tsx(36,36): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/select.tsx(37,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/select.tsx(38,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/select.tsx(53,38): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/select.tsx(54,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/select.tsx(55,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/select.tsx(71,29): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/select.tsx(72,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/select.tsx(73,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/select.tsx(103,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/select.tsx(104,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/select.tsx(105,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/select.tsx(115,26): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/select.tsx(116,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/select.tsx(117,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/select.tsx(138,31): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/select.tsx(139,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/select.tsx(140,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/separator.tsx(9,25): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/separator.tsx(10,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/separator.tsx(11,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/sheet.tsx(17,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sheet.tsx(18,9): error TS2694: Namespace '"react"' has no exported member 'ElementRef'.
+src/components/ui/sheet.tsx(19,9): error TS2694: Namespace '"react"' has no exported member 'ComponentProps'.
+src/components/ui/sheet.tsx(52,17): error TS2694: Namespace '"react"' has no exported member 'ComponentProps'.
+src/components/ui/sheet.tsx(55,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sheet.tsx(56,9): error TS2694: Namespace '"react"' has no exported member 'ElementRef'.
+src/components/ui/sheet.tsx(63,37): error TS2322: Type 'string' is not assignable to type '"right" | "top" | "bottom" | "left" | null | undefined'.
+src/components/ui/sheet.tsx(79,10): error TS2694: Namespace '"react"' has no exported member 'HTMLAttributes'.
+src/components/ui/sheet.tsx(93,10): error TS2694: Namespace '"react"' has no exported member 'HTMLAttributes'.
+src/components/ui/sheet.tsx(104,26): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sheet.tsx(105,9): error TS2694: Namespace '"react"' has no exported member 'ElementRef'.
+src/components/ui/sheet.tsx(106,9): error TS2694: Namespace '"react"' has no exported member 'ComponentProps'.
+src/components/ui/sheet.tsx(116,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sheet.tsx(117,9): error TS2694: Namespace '"react"' has no exported member 'ElementRef'.
+src/components/ui/sheet.tsx(118,9): error TS2694: Namespace '"react"' has no exported member 'ComponentProps'.
+src/components/ui/sidebar.tsx(5,41): error TS2694: Namespace '"react"' has no exported member 'KeyboardEvent'.
+src/components/ui/sidebar.tsx(6,37): error TS2694: Namespace '"react"' has no exported member 'ElementType'.
+src/components/ui/sidebar.tsx(6,58): error TS2694: Namespace '"react"' has no exported member 'ComponentProps'.
+src/components/ui/sidebar.tsx(42,30): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(53,31): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(122,26): error TS2347: Untyped function calls may not accept type arguments.
+src/components/ui/sidebar.tsx(142,24): error TS2694: Namespace '"react"' has no exported member 'CSSProperties'.
+src/components/ui/sidebar.tsx(159,23): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(204,26): error TS2694: Namespace '"react"' has no exported member 'CSSProperties'.
+src/components/ui/sidebar.tsx(261,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(262,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/sidebar.tsx(264,17): error TS2300: Duplicate identifier 'any'.
+src/components/ui/sidebar.tsx(264,31): error TS2300: Duplicate identifier 'any'.
+src/components/ui/sidebar.tsx(273,32): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(275,9): error TS2304: Cannot find name 'onClick'.
+src/components/ui/sidebar.tsx(287,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(308,9): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(316,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(326,9): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(334,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(335,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/sidebar.tsx(344,9): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(352,29): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(360,48): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(367,29): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(375,48): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(382,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(383,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/sidebar.tsx(390,54): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(397,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(407,9): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(415,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(423,66): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(430,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(451,34): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(474,35): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(481,37): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(487,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(494,57): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(500,31): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(507,47): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(535,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(563,51): error TS2322: Type 'string' is not assignable to type '"default" | "outline" | null | undefined'.
+src/components/ui/sidebar.tsx(563,60): error TS2322: Type 'string' is not assignable to type '"default" | "sm" | "lg" | null | undefined'.
+src/components/ui/sidebar.tsx(593,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(624,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(638,7): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(645,35): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(675,22): error TS2694: Namespace '"react"' has no exported member 'CSSProperties'.
+src/components/ui/sidebar.tsx(683,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(693,7): error TS2304: Cannot find name 'className'.
+src/components/ui/sidebar.tsx(700,34): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/sidebar.tsx(706,36): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/skeleton.tsx(8,10): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/slider.tsx(9,22): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/slider.tsx(10,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/slider.tsx(11,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/switch.tsx(9,22): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/switch.tsx(10,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/switch.tsx(11,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/table.tsx(7,21): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/table.tsx(9,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/table.tsx(21,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/table.tsx(23,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/table.tsx(29,25): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/table.tsx(31,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/table.tsx(41,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/table.tsx(43,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/table.tsx(56,24): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/table.tsx(58,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/table.tsx(71,25): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/table.tsx(73,9): error TS2694: Namespace '"react"' has no exported member 'ThReact'.
+src/components/ui/table.tsx(86,25): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/table.tsx(88,9): error TS2694: Namespace '"react"' has no exported member 'TdReact'.
+src/components/ui/table.tsx(98,28): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/table.tsx(100,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/tabs.tsx(11,24): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/tabs.tsx(12,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/tabs.tsx(13,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/tabs.tsx(26,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/tabs.tsx(27,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/tabs.tsx(28,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/tabs.tsx(41,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/tabs.tsx(42,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/tabs.tsx(43,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/textarea.tsx(7,35): error TS2694: Namespace '"react"' has no exported member 'TextareaReact'.
+src/components/ui/textarea.tsx(9,24): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/toast.tsx(4,9): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/toast.tsx(4,21): error TS2339: Property 'ReactElement' does not exist on type 'typeof import("react")'.
+src/components/ui/toast.tsx(14,29): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/toast.tsx(15,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/toast.tsx(16,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/toast.tsx(45,21): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/toast.tsx(46,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/toast.tsx(47,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/toast.tsx(60,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/toast.tsx(61,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/toast.tsx(62,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/toast.tsx(75,26): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/toast.tsx(76,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/toast.tsx(77,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/toast.tsx(93,26): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/toast.tsx(94,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/toast.tsx(95,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/toast.tsx(105,32): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/toast.tsx(106,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/toast.tsx(107,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/toast.tsx(117,25): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/toast.tsx(119,33): error TS2694: Namespace '"react"' has no exported member 'ReactElement'.
+src/components/ui/toaster.tsx(2,9): error TS2339: Property 'use' does not exist on type 'typeof import("react")'.
+src/components/ui/toggle-group.tsx(12,34): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/components/ui/toggle-group.tsx(19,27): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/toggle-group.tsx(20,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/toggle-group.tsx(21,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/toggle-group.tsx(37,31): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/toggle-group.tsx(38,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/toggle-group.tsx(39,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/toggle-group.tsx(49,20): error TS18046: 'context' is of type 'unknown'.
+src/components/ui/toggle-group.tsx(50,17): error TS18046: 'context' is of type 'unknown'.
+src/components/ui/toggle.tsx(32,22): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/toggle.tsx(33,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/toggle.tsx(34,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/components/ui/tooltip.tsx(15,30): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/components/ui/tooltip.tsx(16,9): error TS2694: Namespace '"react"' has no exported member 'React'.
+src/components/ui/tooltip.tsx(17,9): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/contexts/PersonalizationContext.tsx(28,38): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/contexts/PersonalizationContext.tsx(200,3): error TS2740: Type '{}' is missing the following properties from type 'PersonalizationContextType': personalizationData, loading, error, refreshPersonalizationData, and 4 more.
+src/contexts/WalletContext.tsx(13,29): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/contexts/WalletContext.tsx(29,3): error TS2740: Type '{}' is missing the following properties from type 'WalletContextType': paymentMethods, loading, error, refreshPaymentMethods, and 7 more.
+src/hooks/useFormAnalytics.ts(85,66): error TS2345: Argument of type '{ p_form_config_id: string; p_form_name: string; p_form_version: number; p_session_id: string; p_user_id: string | null; p_event_type: "form_submit" | "field_interaction" | "form_view" | "field_error" | "form_abandon"; ... 8 more ...; p_referrer: string | null; }' is not assignable to parameter of type '{ p_form_config_id: string; p_form_name: string; p_form_version: number; p_session_id: string; p_event_type: string; p_user_id?: string | undefined; p_event_data?: Json | undefined; ... 7 more ...; p_referrer?: string | undefined; }'.
+  Types of property 'p_user_id' are incompatible.
+    Type 'string | null' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.
+src/hooks/usePersonalization.ts(77,74): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { context?: Json | undefined; created_at?: string | null | undefined; event_type: string; id?: string | undefined; user_id: string; }, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): MockQueryChain | PostgrestFilterBuilder<...>', gave the following error.
+    Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+      Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 29 more.
+  Overload 2 of 2, '(values: { context?: Json | undefined; created_at?: string | null | undefined; event_type: string; id?: string | undefined; user_id: string; }[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): MockQueryChain | PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'user_id' does not exist in type '{ context?: Json | undefined; created_at?: string | null | undefined; event_type: string; id?: string | undefined; user_id: string; }[]'.
+src/hooks/useProfile.ts(22,5): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataOptions<Profile | null, Error, Profile | null, readonly unknown[]>, queryClient?: QueryClient | undefined): DefinedUseQueryResult<...>', gave the following error.
+    Type '() => Promise<{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null>' is not assignable to type 'QueryFunction<Profile | null, readonly unknown[]>'.
+      Type 'Promise<{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null>' is not assignable to type 'Profile | Promise<Profile | null> | null'.
+        Type 'Promise<{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null>' is not assignable to type 'Promise<Profile | null>'.
+          Type '{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null' is not assignable to type 'Profile | null'.
+            Type '{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; }' is not assignable to type 'Profile'.
+              Types of property 'created_at' are incompatible.
+                Type 'string | null' is not assignable to type 'string'.
+                  Type 'null' is not assignable to type 'string'.
+  Overload 2 of 3, '(options: UndefinedInitialDataOptions<Profile | null, Error, Profile | null, readonly unknown[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Type '() => Promise<{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null>' is not assignable to type 'unique symbol | QueryFunction<Profile | null, readonly unknown[], never> | undefined'.
+      Type '() => Promise<{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null>' is not assignable to type 'QueryFunction<Profile | null, readonly unknown[], never>'.
+        Type 'Promise<{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null>' is not assignable to type 'Profile | Promise<Profile | null> | null'.
+          Type 'Promise<{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null>' is not assignable to type 'Promise<Profile | null>'.
+            Type '{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null' is not assignable to type 'Profile | null'.
+              Type '{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; }' is not assignable to type 'Profile'.
+                Types of property 'created_at' are incompatible.
+                  Type 'string | null' is not assignable to type 'string'.
+                    Type 'null' is not assignable to type 'string'.
+  Overload 3 of 3, '(options: UseQueryOptions<Profile | null, Error, Profile | null, readonly unknown[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Type '() => Promise<{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null>' is not assignable to type 'unique symbol | QueryFunction<Profile | null, readonly unknown[], never> | undefined'.
+      Type '() => Promise<{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null>' is not assignable to type 'QueryFunction<Profile | null, readonly unknown[], never>'.
+        Type 'Promise<{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null>' is not assignable to type 'Profile | Promise<Profile | null> | null'.
+          Type 'Promise<{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null>' is not assignable to type 'Promise<Profile | null>'.
+            Type '{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; } | null' is not assignable to type 'Profile | null'.
+              Type '{ created_at: string | null; email: string; first_name: string | null; id: string; last_login_at: string | null; last_name: string | null; loyalty_tier: string | null; next_trip_city: string | null; ... 4 more ...; updated_at: string | null; }' is not assignable to type 'Profile'.
+                Types of property 'created_at' are incompatible.
+                  Type 'string | null' is not assignable to type 'string'.
+                    Type 'null' is not assignable to type 'string'.
+src/hooks/useProfile.ts(44,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { created_at?: string | null | undefined; email: string; first_name?: string | null | undefined; id: string; last_login_at?: string | null | undefined; last_name?: string | null | undefined; ... 6 more ...; updated_at?: string | ... 1 more ... | undefined; }, options?: { ...; } | undefined): MockQueryChain | PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ updated_at: string; first_name?: string | null | undefined; last_name?: string | null | undefined; phone?: string | null | undefined; id: string; }' is not assignable to parameter of type '{ created_at?: string | null | undefined; email: string; first_name?: string | null | undefined; id: string; last_login_at?: string | null | undefined; last_name?: string | null | undefined; ... 6 more ...; updated_at?: string | ... 1 more ... | undefined; }'.
+      Property 'email' is missing in type '{ updated_at: string; first_name?: string | null | undefined; last_name?: string | null | undefined; phone?: string | null | undefined; id: string; }' but required in type '{ created_at?: string | null | undefined; email: string; first_name?: string | null | undefined; id: string; last_login_at?: string | null | undefined; last_name?: string | null | undefined; ... 6 more ...; updated_at?: string | ... 1 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { created_at?: string | null | undefined; email: string; first_name?: string | null | undefined; id: string; last_login_at?: string | null | undefined; last_name?: string | null | undefined; ... 6 more ...; updated_at?: string | ... 1 more ... | undefined; }[], options?: { ...; } | undefined): MockQueryChain | PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'updated_at' does not exist in type '{ created_at?: string | null | undefined; email: string; first_name?: string | null | undefined; id: string; last_login_at?: string | null | undefined; last_name?: string | null | undefined; ... 6 more ...; updated_at?: string | ... 1 more ... | undefined; }[]'.
+src/hooks/useTravelerProfile.ts(45,5): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataOptions<TravelerProfile | null, Error, TravelerProfile | null, readonly unknown[]>, queryClient?: QueryClient | undefined): DefinedUseQueryResult<...>', gave the following error.
+    Type '() => Promise<{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null>' is not assignable to type 'QueryFunction<TravelerProfile | null, readonly unknown[]>'.
+      Type 'Promise<{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null>' is not assignable to type 'TravelerProfile | Promise<TravelerProfile | null> | null'.
+        Type 'Promise<{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null>' is not assignable to type 'Promise<TravelerProfile | null>'.
+          Type '{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null' is not assignable to type 'TravelerProfile | null'.
+            Type '{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; id: string; ... 15 more ...; verification_level: string | null; }' is not assignable to type 'TravelerProfile'.
+              Types of property 'gender' are incompatible.
+                Type 'string' is not assignable to type '"MALE" | "FEMALE" | "OTHER"'.
+  Overload 2 of 3, '(options: UndefinedInitialDataOptions<TravelerProfile | null, Error, TravelerProfile | null, readonly unknown[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Type '() => Promise<{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null>' is not assignable to type 'unique symbol | QueryFunction<TravelerProfile | null, readonly unknown[], never> | undefined'.
+      Type '() => Promise<{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null>' is not assignable to type 'QueryFunction<TravelerProfile | null, readonly unknown[], never>'.
+        Type 'Promise<{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null>' is not assignable to type 'TravelerProfile | Promise<TravelerProfile | null> | null'.
+          Type 'Promise<{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null>' is not assignable to type 'Promise<TravelerProfile | null>'.
+            Type '{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null' is not assignable to type 'TravelerProfile | null'.
+              Type '{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; id: string; ... 15 more ...; verification_level: string | null; }' is not assignable to type 'TravelerProfile'.
+                Types of property 'gender' are incompatible.
+                  Type 'string' is not assignable to type '"MALE" | "FEMALE" | "OTHER"'.
+  Overload 3 of 3, '(options: UseQueryOptions<TravelerProfile | null, Error, TravelerProfile | null, readonly unknown[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Type '() => Promise<{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null>' is not assignable to type 'unique symbol | QueryFunction<TravelerProfile | null, readonly unknown[], never> | undefined'.
+      Type '() => Promise<{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null>' is not assignable to type 'QueryFunction<TravelerProfile | null, readonly unknown[], never>'.
+        Type 'Promise<{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null>' is not assignable to type 'TravelerProfile | Promise<TravelerProfile | null> | null'.
+          Type 'Promise<{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null>' is not assignable to type 'Promise<TravelerProfile | null>'.
+            Type '{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null' is not assignable to type 'TravelerProfile | null'.
+              Type '{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; id: string; ... 15 more ...; verification_level: string | null; }' is not assignable to type 'TravelerProfile'.
+                Types of property 'gender' are incompatible.
+                  Type 'string' is not assignable to type '"MALE" | "FEMALE" | "OTHER"'.
+src/hooks/useTravelerProfile.ts(64,5): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataOptions<ProfileCompletionData | null, Error, ProfileCompletionData | null, readonly unknown[]>, queryClient?: QueryClient | undefined): DefinedUseQueryResult<...>', gave the following error.
+    Type '() => Promise<{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json | null; user_id: string; } | null>' is not assignable to type 'QueryFunction<ProfileCompletionData | null, readonly unknown[]>'.
+      Type 'Promise<{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json; user_id: string; } | null>' is not assignable to type 'ProfileCompletionData | Promise<ProfileCompletionData | null> | null'.
+        Type 'Promise<{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json; user_id: string; } | null>' is not assignable to type 'Promise<ProfileCompletionData | null>'.
+          Type '{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json; user_id: string; } | null' is not assignable to type 'ProfileCompletionData | null'.
+            Type '{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json; user_id: string; }' is not assignable to type 'ProfileCompletionData'.
+              Types of property 'missing_fields' are incompatible.
+                Type 'string[] | null' is not assignable to type 'string[]'.
+                  Type 'null' is not assignable to type 'string[]'.
+  Overload 2 of 3, '(options: UndefinedInitialDataOptions<ProfileCompletionData | null, Error, ProfileCompletionData | null, readonly unknown[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Type '() => Promise<{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json | null; user_id: string; } | null>' is not assignable to type 'unique symbol | QueryFunction<ProfileCompletionData | null, readonly unknown[], never> | undefined'.
+      Type '() => Promise<{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json | null; user_id: string; } | null>' is not assignable to type 'QueryFunction<ProfileCompletionData | null, readonly unknown[], never>'.
+        Type 'Promise<{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json; user_id: string; } | null>' is not assignable to type 'ProfileCompletionData | Promise<ProfileCompletionData | null> | null'.
+          Type 'Promise<{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json; user_id: string; } | null>' is not assignable to type 'Promise<ProfileCompletionData | null>'.
+            Type '{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json; user_id: string; } | null' is not assignable to type 'ProfileCompletionData | null'.
+              Type '{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json; user_id: string; }' is not assignable to type 'ProfileCompletionData'.
+                Types of property 'missing_fields' are incompatible.
+                  Type 'string[] | null' is not assignable to type 'string[]'.
+                    Type 'null' is not assignable to type 'string[]'.
+  Overload 3 of 3, '(options: UseQueryOptions<ProfileCompletionData | null, Error, ProfileCompletionData | null, readonly unknown[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Type '() => Promise<{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json | null; user_id: string; } | null>' is not assignable to type 'unique symbol | QueryFunction<ProfileCompletionData | null, readonly unknown[], never> | undefined'.
+      Type '() => Promise<{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json | null; user_id: string; } | null>' is not assignable to type 'QueryFunction<ProfileCompletionData | null, readonly unknown[], never>'.
+        Type 'Promise<{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json; user_id: string; } | null>' is not assignable to type 'ProfileCompletionData | Promise<ProfileCompletionData | null> | null'.
+          Type 'Promise<{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json; user_id: string; } | null>' is not assignable to type 'Promise<ProfileCompletionData | null>'.
+            Type '{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json; user_id: string; } | null' is not assignable to type 'ProfileCompletionData | null'.
+              Type '{ completion_percentage: number; id: string; last_calculated: string | null; missing_fields: string[] | null; recommendations: Json; user_id: string; }' is not assignable to type 'ProfileCompletionData'.
+                Types of property 'missing_fields' are incompatible.
+                  Type 'string[] | null' is not assignable to type 'string[]'.
+                    Type 'null' is not assignable to type 'string[]'.
+src/hooks/useTravelerProfile.ts(110,19): error TS2345: Argument of type 'Partial<TravelerProfile>' is not assignable to parameter of type '{ created_at?: string | null | undefined; date_of_birth?: string | undefined; default_payment_method_id?: string | null | undefined; email?: string | undefined; encryption_version?: number | ... 1 more ... | undefined; ... 18 more ...; verification_level?: string | ... 1 more ... | undefined; }'.
+  Types of property 'notification_preferences' are incompatible.
+    Type 'Record<string, unknown> | undefined' is not assignable to type 'Json | undefined'.
+      Type 'Record<string, unknown>' is not assignable to type 'Json | undefined'.
+        Type 'Record<string, unknown>' is missing the following properties from type 'Json[]': length, pop, push, concat, and 29 more.
+src/hooks/useTravelerProfile.ts(121,12): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { created_at?: string | null | undefined; date_of_birth: string; default_payment_method_id?: string | null | undefined; email: string; encryption_version?: number | null | undefined; ... 18 more ...; verification_level?: string | ... 1 more ... | undefined; }, options?: { ...; } | undefined): MockQueryChain | PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type '{ user_id: string; is_primary: true; id?: string | undefined; full_name?: string | undefined; date_of_birth?: string | undefined; gender?: "MALE" | "FEMALE" | "OTHER" | undefined; email?: string | undefined; ... 13 more ...; last_profile_update?: string | undefined; }' is not assignable to parameter of type '{ created_at?: string | null | undefined; date_of_birth: string; default_payment_method_id?: string | null | undefined; email: string; encryption_version?: number | null | undefined; ... 18 more ...; verification_level?: string | ... 1 more ... | undefined; }'.
+      Types of property 'date_of_birth' are incompatible.
+        Type 'string | undefined' is not assignable to type 'string'.
+          Type 'undefined' is not assignable to type 'string'.
+  Overload 2 of 2, '(values: { created_at?: string | null | undefined; date_of_birth: string; default_payment_method_id?: string | null | undefined; email: string; encryption_version?: number | null | undefined; ... 18 more ...; verification_level?: string | ... 1 more ... | undefined; }[], options?: { ...; } | undefined): MockQueryChain | PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'user_id' does not exist in type '{ created_at?: string | null | undefined; date_of_birth: string; default_payment_method_id?: string | null | undefined; email: string; encryption_version?: number | null | undefined; ... 18 more ...; verification_level?: string | ... 1 more ... | undefined; }[]'.
+src/integrations/supabase/client.ts(223,5): error TS2322: Type 'SupabaseClient<Database, "public" extends keyof Database ? "public" : string & keyof Database, Database[SchemaName] extends GenericSchema ? Database[SchemaName] : any>' is not assignable to type 'SupabaseClient<Database, "public", { Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; };...'.
+  Type 'SupabaseClient<Database, "public" extends keyof Database ? "public" : string & keyof Database, Database[SchemaName] extends GenericSchema ? Database[SchemaName] : any>' is not assignable to type 'SupabaseClient<Database, "public", { Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; };...'.
+    Type '"public" extends keyof Database ? "public" : string & keyof Database' is not assignable to type '"public"'.
+      Type '"public" | (string & keyof Database)' is not assignable to type '"public"'.
+        Type 'string & keyof Database' is not assignable to type '"public"'.
+src/integrations/supabase/client.ts(223,78): error TS2345: Argument of type '{ db: { schema: string; }; auth: { autoRefreshToken: boolean; persistSession: boolean; storage?: undefined; detectSessionInUrl?: undefined; flowType?: undefined; }; global: { headers: { 'x-client-info': string; Connection: string; }; }; realtime?: undefined; } | { ...; }' is not assignable to parameter of type 'SupabaseClientOptions<"public"> | undefined'.
+  Type '{ db: { schema: string; }; auth: { autoRefreshToken: boolean; persistSession: boolean; storage?: undefined; detectSessionInUrl?: undefined; flowType?: undefined; }; global: { headers: { 'x-client-info': string; Connection: string; }; }; realtime?: undefined; }' is not assignable to type 'SupabaseClientOptions<"public">'.
+    The types of 'db.schema' are incompatible between these types.
+      Type 'string' is not assignable to type '"public"'.
+src/lib/aws-sdk-enhanced/client-factory.ts(8,10): error TS2724: '"@aws-sdk/client-kms"' has no exported member named 'KMSClient'. Did you mean 'Client'?
+src/lib/aws-sdk-enhanced/client-factory.ts(8,21): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'KMSClientConfig'.
+src/lib/aws-sdk-enhanced/client-factory.ts(10,10): error TS2724: '"@aws-sdk/client-s3"' has no exported member named 'S3Client'. Did you mean 'Client'?
+src/lib/aws-sdk-enhanced/client-factory.ts(10,20): error TS2305: Module '"@aws-sdk/client-s3"' has no exported member 'S3ClientConfig'.
+src/lib/aws-sdk-enhanced/client-factory.ts(11,10): error TS2305: Module '"@aws-sdk/client-dynamodb"' has no exported member 'DynamoDBClient'.
+src/lib/aws-sdk-enhanced/client-factory.ts(11,26): error TS2305: Module '"@aws-sdk/client-dynamodb"' has no exported member 'DynamoDBClientConfig'.
+src/lib/aws-sdk-enhanced/client-factory.ts(92,7): error TS2353: Object literal may only specify known properties, and 'freeSocketTimeout' does not exist in type 'AgentOptions'.
+src/lib/aws-sdk-enhanced/error-handling.ts(9,3): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'KMSServiceException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(10,3): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'DisabledException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(11,3): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'InvalidKeyUsageException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(12,3): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'KeyUnavailableException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(13,3): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'LimitExceededException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(14,3): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'NotFoundException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(15,3): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'InvalidCiphertextException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(18,3): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'InvalidAliasNameException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(19,3): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'InvalidGrantTokenException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(20,3): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'MalformedPolicyDocumentException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(21,3): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'UnsupportedOperationException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(25,3): error TS2305: Module '"@aws-sdk/client-s3"' has no exported member 'S3ServiceException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(35,3): error TS2305: Module '"@aws-sdk/client-dynamodb"' has no exported member 'DynamoDBServiceException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(36,3): error TS2305: Module '"@aws-sdk/client-dynamodb"' has no exported member 'ResourceNotFoundException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(37,3): error TS2305: Module '"@aws-sdk/client-dynamodb"' has no exported member 'ConditionalCheckFailedException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(39,3): error TS2305: Module '"@aws-sdk/client-dynamodb"' has no exported member 'ProvisionedThroughputExceededException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(40,3): error TS2305: Module '"@aws-sdk/client-dynamodb"' has no exported member 'ResourceInUseException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(41,3): error TS2305: Module '"@aws-sdk/client-dynamodb"' has no exported member 'TableNotFoundException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(42,3): error TS2305: Module '"@aws-sdk/client-dynamodb"' has no exported member 'ItemCollectionSizeLimitExceededException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(66,3): error TS2305: Module '"@aws-sdk/client-secrets-manager"' has no exported member 'DecryptionFailureException'.
+src/lib/aws-sdk-enhanced/error-handling.ts(67,3): error TS2724: '"@aws-sdk/client-secrets-manager"' has no exported member named 'InternalServiceErrorException'. Did you mean 'InternalServiceError'?
+src/lib/aws-sdk-enhanced/error-handling.ts(767,15): error TS2484: Export declaration conflicts with exported declaration of 'EnhancedError'.
+src/lib/aws-sdk-enhanced/error-handling.ts(767,30): error TS2484: Export declaration conflicts with exported declaration of 'RetryConfig'.
+src/lib/aws-sdk-enhanced/multi-region-manager.ts(8,10): error TS2724: '"@aws-sdk/client-kms"' has no exported member named 'KMSClient'. Did you mean 'Client'?
+src/lib/aws-sdk-enhanced/multi-region-manager.ts(8,21): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'EncryptCommand'.
+src/lib/aws-sdk-enhanced/multi-region-manager.ts(8,37): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'DecryptCommand'.
+src/lib/aws-sdk-enhanced/multi-region-manager.ts(8,53): error TS2305: Module '"@aws-sdk/client-kms"' has no exported member 'DescribeKeyCommand'.
+src/lib/aws-sdk-enhanced/multi-region-manager.ts(9,10): error TS2724: '"@aws-sdk/client-s3"' has no exported member named 'S3Client'. Did you mean 'Client'?
+src/lib/aws-sdk-enhanced/multi-region-manager.ts(9,20): error TS2305: Module '"@aws-sdk/client-s3"' has no exported member 'HeadBucketCommand'.
+src/lib/aws-sdk-enhanced/multi-region-manager.ts(10,10): error TS2305: Module '"@aws-sdk/client-dynamodb"' has no exported member 'DynamoDBClient'.
+src/lib/aws-sdk-enhanced/multi-region-manager.ts(10,26): error TS2305: Module '"@aws-sdk/client-dynamodb"' has no exported member 'DescribeTableCommand'.
+src/lib/aws-sdk-enhanced/secrets-manager.ts(15,5): error TS2322: Type 'string' is not assignable to type 'Environment'.
+src/lib/feature-flags/useFeatureFlag.ts(53,40): error TS18047: 'flag' is possibly 'null'.
+src/lib/feature-flags/useFeatureFlag.ts(59,11): error TS2322: Type 'number | null' is not assignable to type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/lib/feature-flags/useFeatureFlag.ts(59,30): error TS18047: 'flag' is possibly 'null'.
+src/lib/form-validation.ts(415,7): error TS2322: Type '(issue: ZodIssue) => { message: string; }' is not assignable to type 'ZodErrorMap'.
+  Types of parameters 'issue' and 'issue' are incompatible.
+    Type 'ZodIssueOptionalMessage' is not assignable to type 'ZodIssue'.
+      Type 'ZodInvalidTypeIssue' is not assignable to type 'ZodIssue'.
+        Type 'ZodInvalidTypeIssue' is not assignable to type 'ZodInvalidTypeIssue & { fatal?: boolean | undefined; message: string; }'.
+          Type 'ZodInvalidTypeIssue' is not assignable to type '{ fatal?: boolean | undefined; message: string; }'.
+            Types of property 'message' are incompatible.
+              Type 'string | undefined' is not assignable to type 'string'.
+                Type 'undefined' is not assignable to type 'string'.
+src/lib/form-validation.ts(460,26): error TS2339: Property 'title' does not exist on type 'FormConfiguration'.
+src/lib/launchdarkly/analytics.ts(298,39): error TS2339: Property 'kind' does not exist on type 'LDContext'.
+  Property 'kind' does not exist on type 'LDUser'.
+src/lib/launchdarkly/analytics.ts(318,40): error TS2339: Property 'kind' does not exist on type 'LDContext'.
+  Property 'kind' does not exist on type 'LDUser'.
+src/lib/launchdarkly/client-react.tsx(6,17): error TS2305: Module '"react"' has no exported member 'createContext'.
+src/lib/launchdarkly/client-react.tsx(17,8): error TS2307: Cannot find module '@launchdarkly/react-client-sdk' or its corresponding type declarations.
+src/lib/launchdarkly/client-react.tsx(70,3): error TS2740: Type '{}' is missing the following properties from type 'LaunchDarklyContextValue': getBooleanFlag, getStringFlag, getNumberFlag, getJsonFlag, and 8 more.
+src/lib/launchdarkly/client-react.tsx(143,32): error TS2503: Cannot find namespace 'JSX'.
+src/lib/launchdarkly/client-react.tsx(155,36): error TS2339: Property 'organization' does not exist on type 'User'.
+src/lib/launchdarkly/client-react.tsx(199,84): error TS2503: Cannot find namespace 'JSX'.
+src/lib/launchdarkly/connection-monitor.ts(161,49): error TS2345: Argument of type 'number' is not assignable to parameter of type 'LDWaitForInitializationOptions'.
+src/lib/launchdarkly/connection-monitor.ts(307,47): error TS2345: Argument of type 'number' is not assignable to parameter of type 'LDWaitForInitializationOptions'.
+src/lib/launchdarkly/connection-monitor.ts(446,31): error TS2686: 'React' refers to a UMD global, but the current file is a module. Consider adding an import instead.
+src/lib/launchdarkly/connection-monitor.ts(447,37): error TS2686: 'React' refers to a UMD global, but the current file is a module. Consider adding an import instead.
+src/lib/launchdarkly/connection-monitor.ts(449,3): error TS2686: 'React' refers to a UMD global, but the current file is a module. Consider adding an import instead.
+src/lib/launchdarkly/context-builder.ts(7,26): error TS2307: Cannot find module 'ua-parser-js' or its corresponding type declarations.
+src/lib/launchdarkly/context-builder.ts(81,42): error TS2312: An interface can only extend an object type or intersection of object types with statically known members.
+src/lib/launchdarkly/server-client.ts(40,7): error TS2353: Object literal may only specify known properties, and 'useReport' does not exist in type 'LDOptions'.
+src/lib/launchdarkly/server-client.ts(65,47): error TS2345: Argument of type 'number' is not assignable to parameter of type 'LDWaitForInitializationOptions'.
+src/lib/launchdarkly/server-client.ts(218,9): error TS2322: Type 'number | null | undefined' is not assignable to type 'number | undefined'.
+  Type 'null' is not assignable to type 'number | undefined'.
+src/lib/react-compat.ts(13,3): error TS2305: Module '"react"' has no exported member 'Fragment'.
+src/lib/react-compat.ts(14,3): error TS2305: Module '"react"' has no exported member 'Profiler'.
+src/lib/react-compat.ts(15,3): error TS2724: '"react"' has no exported member named 'PureComponent'. Did you mean 'Component'?
+src/lib/react-compat.ts(16,3): error TS2305: Module '"react"' has no exported member 'StrictMode'.
+src/lib/react-compat.ts(18,3): error TS2305: Module '"react"' has no exported member 'cloneElement'.
+src/lib/react-compat.ts(19,3): error TS2305: Module '"react"' has no exported member 'createContext'.
+src/lib/react-compat.ts(20,3): error TS2305: Module '"react"' has no exported member 'createElement'.
+src/lib/react-compat.ts(21,3): error TS2305: Module '"react"' has no exported member 'createRef'.
+src/lib/react-compat.ts(22,3): error TS2305: Module '"react"' has no exported member 'forwardRef'.
+src/lib/react-compat.ts(23,3): error TS2305: Module '"react"' has no exported member 'isValidElement'.
+src/lib/react-compat.ts(25,3): error TS2305: Module '"react"' has no exported member 'memo'.
+src/lib/react-compat.ts(27,3): error TS2305: Module '"react"' has no exported member 'use'.
+src/lib/react-compat.ts(31,3): error TS2305: Module '"react"' has no exported member 'useDeferredValue'.
+src/lib/react-compat.ts(33,3): error TS2305: Module '"react"' has no exported member 'useId'.
+src/lib/react-compat.ts(35,3): error TS2305: Module '"react"' has no exported member 'useInsertionEffect'.
+src/lib/react-compat.ts(41,3): error TS2305: Module '"react"' has no exported member 'useSyncExternalStore'.
+src/lib/react-compat.ts(47,3): error TS2305: Module '"react"' has no exported member 'ComponentProps'.
+src/lib/react-compat.ts(48,3): error TS2305: Module '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/lib/react-compat.ts(49,3): error TS2305: Module '"react"' has no exported member 'ElementRef'.
+src/lib/react-compat.ts(50,3): error TS2305: Module '"react"' has no exported member 'ElementType'.
+src/lib/react-compat.ts(51,3): error TS2305: Module '"react"' has no exported member 'HTMLAttributes'.
+src/lib/react-compat.ts(52,3): error TS2305: Module '"react"' has no exported member 'ButtonHTMLAttributes'.
+src/lib/react-compat.ts(53,3): error TS2305: Module '"react"' has no exported member 'InputHTMLAttributes'.
+src/lib/react-compat.ts(54,3): error TS2305: Module '"react"' has no exported member 'ThHTMLAttributes'.
+src/lib/react-compat.ts(55,3): error TS2305: Module '"react"' has no exported member 'TdHTMLAttributes'.
+src/lib/react-compat.ts(57,3): error TS2305: Module '"react"' has no exported member 'ReactElement'.
+src/lib/react-compat.ts(58,3): error TS2305: Module '"react"' has no exported member 'CSSProperties'.
+src/lib/react-compat.ts(70,28): error TS2694: Namespace '"react"' has no exported member 'DetailedHTMLProps'.
+src/lib/react-compat.ts(70,52): error TS2694: Namespace '"react"' has no exported member 'HTMLAttributes'.
+src/lib/react-compat.ts(71,31): error TS2694: Namespace '"react"' has no exported member 'DetailedHTMLProps'.
+src/lib/react-compat.ts(71,55): error TS2694: Namespace '"react"' has no exported member 'ButtonHTMLAttributes'.
+src/lib/react-compat.ts(72,30): error TS2694: Namespace '"react"' has no exported member 'DetailedHTMLProps'.
+src/lib/react-compat.ts(72,54): error TS2694: Namespace '"react"' has no exported member 'InputHTMLAttributes'.
+src/lib/react-compat.ts(79,56): error TS2694: Namespace '"react"' has no exported member 'DetailedHTMLProps'.
+src/lib/react-compat.ts(79,80): error TS2694: Namespace '"react"' has no exported member 'FormHTMLAttributes'.
+src/lib/react-compat.ts(86,63): error TS2694: Namespace '"react"' has no exported member 'DetailedHTMLProps'.
+src/lib/react-compat.ts(86,87): error TS2694: Namespace '"react"' has no exported member 'FormHTMLAttributes'.
+src/lib/react-compat.ts(90,21): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/lib/react-compat.ts(91,24): error TS2339: Property 'createElement' does not exist on type 'typeof import("react")'.
+src/lib/react-compat.ts(92,24): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/lib/react-compat.ts(93,19): error TS2339: Property 'Fragment' does not exist on type 'typeof import("react")'.
+src/lib/react-compat.ts(94,15): error TS2339: Property 'memo' does not exist on type 'typeof import("react")'.
+src/lib/react-compat.ts(95,27): error TS2339: Property 'useDeferredValue' does not exist on type 'typeof import("react")'.
+src/lib/react-compat.ts(96,16): error TS2339: Property 'useId' does not exist on type 'typeof import("react")'.
+src/lib/react-compat.ts(97,14): error TS2339: Property 'use' does not exist on type 'typeof import("react")'.
+src/lib/react-compat.ts(97,34): error TS2339: Property 'use' does not exist on type 'typeof import("react")'.
+src/lib/supabase/database-operations.ts(2,20): error TS2305: Module '"@/types/database"' has no exported member 'Tables'.
+src/lib/supabase/database-operations.ts(2,28): error TS2305: Module '"@/types/database"' has no exported member 'TablesInsert'.
+src/lib/supabase/database-operations.ts(2,42): error TS2305: Module '"@/types/database"' has no exported member 'TablesUpdate'.
+src/lib/supabase/database-operations.ts(29,10): error TS2339: Property 'abortSignal' does not exist on type 'MockQueryChain | PostgrestFilterBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [......'.
+  Property 'abortSignal' does not exist on type 'MockQueryChain'.
+src/lib/supabase/database-operations.ts(84,42): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(arg0: "ab_tests" | "ab_test_variants" | "ab_test_assignments" | "form_configurations" | "trip_requests" | "flight_offers" | "booking_requests" | "campaigns" | "payment_methods" | ... 44 more ... | "user_preferences"): MockQueryChain | PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"' is not assignable to parameter of type '"ab_tests" | "ab_test_variants" | "ab_test_assignments" | "form_configurations" | "trip_requests" | "flight_offers" | "booking_requests" | "campaigns" | "payment_methods" | ... 44 more ... | "user_preferences"'.
+      Type '"github_repositories"' is not assignable to type '"ab_tests" | "ab_test_variants" | "ab_test_assignments" | "form_configurations" | "trip_requests" | "flight_offers" | "booking_requests" | "campaigns" | "payment_methods" | ... 44 more ... | "user_preferences"'.
+  Overload 2 of 2, '(arg0: "auth_health_check" | "booking_attempts_summary" | "booking_monitoring" | "encryption_status_summary"): MockQueryChain | PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { ...; }; ... 52 more ...; user_preferences: { ...; }; }; Views: { ...; }; Functions: { ...; }; Enums: { ...; }; CompositeTypes: {}; }, { ...; } | ... 2 more ... | { ...; }, "auth_health_check" | ... 2 more ... | "encryption_status_summary", [] | [...]>', gave the following error.
+    Argument of type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"' is not assignable to parameter of type '"auth_health_check" | "booking_attempts_summary" | "booking_monitoring" | "encryption_status_summary"'.
+      Type '"profiles"' is not assignable to type '"auth_health_check" | "booking_attempts_summary" | "booking_monitoring" | "encryption_status_summary"'.
+src/lib/supabase/database-operations.ts(84,49): error TS2339: Property 'abortSignal' does not exist on type 'MockQueryChain | PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]...'.
+  Property 'abortSignal' does not exist on type 'MockQueryChain'.
+src/lib/supabase/database-operations.ts(139,40): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(arg0: "ab_tests" | "ab_test_variants" | "ab_test_assignments" | "form_configurations" | "trip_requests" | "flight_offers" | "booking_requests" | "campaigns" | "payment_methods" | ... 44 more ... | "user_preferences"): MockQueryChain | PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"' is not assignable to parameter of type '"ab_tests" | "ab_test_variants" | "ab_test_assignments" | "form_configurations" | "trip_requests" | "flight_offers" | "booking_requests" | "campaigns" | "payment_methods" | ... 44 more ... | "user_preferences"'.
+      Type '"github_repositories"' is not assignable to type '"ab_tests" | "ab_test_variants" | "ab_test_assignments" | "form_configurations" | "trip_requests" | "flight_offers" | "booking_requests" | "campaigns" | "payment_methods" | ... 44 more ... | "user_preferences"'.
+  Overload 2 of 2, '(arg0: "auth_health_check" | "booking_attempts_summary" | "booking_monitoring" | "encryption_status_summary"): MockQueryChain | PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { ...; }; ... 52 more ...; user_preferences: { ...; }; }; Views: { ...; }; Functions: { ...; }; Enums: { ...; }; CompositeTypes: {}; }, { ...; } | ... 2 more ... | { ...; }, "auth_health_check" | ... 2 more ... | "encryption_status_summary", [] | [...]>', gave the following error.
+    Argument of type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"' is not assignable to parameter of type '"auth_health_check" | "booking_attempts_summary" | "booking_monitoring" | "encryption_status_summary"'.
+      Type '"profiles"' is not assignable to type '"auth_health_check" | "booking_attempts_summary" | "booking_monitoring" | "encryption_status_summary"'.
+src/lib/supabase/database-operations.ts(143,37): error TS2339: Property 'upsert' does not exist on type 'MockQueryChain | PostgrestTransformBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...'.
+  Property 'upsert' does not exist on type 'PostgrestTransformBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 52 m...'.
+src/lib/supabase/database-operations.ts(146,22): error TS1320: Type of 'await' operand must either be a valid promise or must not contain a callable 'then' member.
+src/lib/supabase/database-operations.ts(187,40): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(arg0: "ab_tests" | "ab_test_variants" | "ab_test_assignments" | "form_configurations" | "trip_requests" | "flight_offers" | "booking_requests" | "campaigns" | "payment_methods" | ... 44 more ... | "user_preferences"): MockQueryChain | PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"' is not assignable to parameter of type '"ab_tests" | "ab_test_variants" | "ab_test_assignments" | "form_configurations" | "trip_requests" | "flight_offers" | "booking_requests" | "campaigns" | "payment_methods" | ... 44 more ... | "user_preferences"'.
+      Type '"github_repositories"' is not assignable to type '"ab_tests" | "ab_test_variants" | "ab_test_assignments" | "form_configurations" | "trip_requests" | "flight_offers" | "booking_requests" | "campaigns" | "payment_methods" | ... 44 more ... | "user_preferences"'.
+  Overload 2 of 2, '(arg0: "auth_health_check" | "booking_attempts_summary" | "booking_monitoring" | "encryption_status_summary"): MockQueryChain | PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { ...; }; ... 52 more ...; user_preferences: { ...; }; }; Views: { ...; }; Functions: { ...; }; Enums: { ...; }; CompositeTypes: {}; }, { ...; } | ... 2 more ... | { ...; }, "auth_health_check" | ... 2 more ... | "encryption_status_summary", [] | [...]>', gave the following error.
+    Argument of type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"' is not assignable to parameter of type '"auth_health_check" | "booking_attempts_summary" | "booking_monitoring" | "encryption_status_summary"'.
+      Type '"profiles"' is not assignable to type '"auth_health_check" | "booking_attempts_summary" | "booking_monitoring" | "encryption_status_summary"'.
+src/lib/supabase/database-operations.ts(233,40): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(arg0: "ab_tests" | "ab_test_variants" | "ab_test_assignments" | "form_configurations" | "trip_requests" | "flight_offers" | "booking_requests" | "campaigns" | "payment_methods" | ... 44 more ... | "user_preferences"): MockQueryChain | PostgrestQueryBuilder<...>', gave the following error.
+    Argument of type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"' is not assignable to parameter of type '"ab_tests" | "ab_test_variants" | "ab_test_assignments" | "form_configurations" | "trip_requests" | "flight_offers" | "booking_requests" | "campaigns" | "payment_methods" | ... 44 more ... | "user_preferences"'.
+      Type '"github_repositories"' is not assignable to type '"ab_tests" | "ab_test_variants" | "ab_test_assignments" | "form_configurations" | "trip_requests" | "flight_offers" | "booking_requests" | "campaigns" | "payment_methods" | ... 44 more ... | "user_preferences"'.
+  Overload 2 of 2, '(arg0: "auth_health_check" | "booking_attempts_summary" | "booking_monitoring" | "encryption_status_summary"): MockQueryChain | PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { ...; }; ... 52 more ...; user_preferences: { ...; }; }; Views: { ...; }; Functions: { ...; }; Enums: { ...; }; CompositeTypes: {}; }, { ...; } | ... 2 more ... | { ...; }, "auth_health_check" | ... 2 more ... | "encryption_status_summary", [] | [...]>', gave the following error.
+    Argument of type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"' is not assignable to parameter of type '"auth_health_check" | "booking_attempts_summary" | "booking_monitoring" | "encryption_status_summary"'.
+      Type '"profiles"' is not assignable to type '"auth_health_check" | "booking_attempts_summary" | "booking_monitoring" | "encryption_status_summary"'.
+src/lib/supabase/database-operations.ts(284,43): error TS2345: Argument of type 'string' is not assignable to parameter of type '"aggregate_daily_form_analytics" | "batch_migrate_to_kms_encryption" | "calculate_profile_completeness" | "check_feature_flag_rollout" | "convert_price" | "create_booking_attempt" | ... 28 more ... | "verify_kms_migration"'.
+src/lib/supabase/database-operations.ts(326,5): error TS2322: Type '{ data: null; error: null; } | PostgrestResponseSuccess<Json | { migrated_count: number; failed_count: number; total_remaining: number; }[] | { id: string; name: string; version: number; config_data: Json; validation_schema: Json; ui_schema: Json; encrypted_config: string; deployment_id: string; }[] | ... 8 more ......' is not assignable to type 'QueryResult<{ completionPercentage: number; completedFields: number; totalFields: number; missingFields: string[]; }>'.
+  Type 'PostgrestResponseSuccess<Json | { migrated_count: number; failed_count: number; total_remaining: number; }[] | { id: string; name: string; version: number; config_data: Json; validation_schema: Json; ui_schema: Json; encrypted_config: string; deployment_id: string; }[] | ... 8 more ... | undefined>' is not assignable to type 'QueryResult<{ completionPercentage: number; completedFields: number; totalFields: number; missingFields: string[]; }>'.
+    Types of property 'data' are incompatible.
+      Type 'Json | { migrated_count: number; failed_count: number; total_remaining: number; }[] | { id: string; name: string; version: number; config_data: Json; validation_schema: Json; ui_schema: Json; encrypted_config: string; deployment_id: string; }[] | ... 8 more ... | undefined' is not assignable to type '{ completionPercentage: number; completedFields: number; totalFields: number; missingFields: string[]; } | null'.
+        Type 'undefined' is not assignable to type '{ completionPercentage: number; completedFields: number; totalFields: number; missingFields: string[]; } | null'.
+src/lib/supabase/database-operations.ts(338,24): error TS2345: Argument of type '"traveler_profiles"' is not assignable to parameter of type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"'.
+src/lib/supabase/database-operations.ts(340,10): error TS2339: Property 'eq' does not exist on type 'MockQueryChain | PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]...'.
+  Property 'eq' does not exist on type 'PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 52 more ...'.
+src/lib/supabase/database-operations.ts(367,9): error TS2345: Argument of type '"traveler_profiles"' is not assignable to parameter of type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"'.
+src/lib/supabase/database-operations.ts(375,7): error TS2345: Argument of type '"traveler_profiles"' is not assignable to parameter of type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"'.
+src/lib/supabase/database-operations.ts(406,24): error TS2345: Argument of type '"payment_methods"' is not assignable to parameter of type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"'.
+src/lib/supabase/database-operations.ts(408,10): error TS2339: Property 'eq' does not exist on type 'MockQueryChain | PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]...'.
+  Property 'eq' does not exist on type 'PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 52 more ...'.
+src/lib/supabase/database-operations.ts(431,10): error TS2339: Property 'abortSignal' does not exist on type 'MockQueryChain | PostgrestFilterBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [......'.
+  Property 'abortSignal' does not exist on type 'MockQueryChain'.
+src/lib/supabase/database-operations.ts(527,15): error TS2339: Property 'eq' does not exist on type 'MockQueryChain | PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]...'.
+  Property 'eq' does not exist on type 'PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 52 more ...'.
+src/lib/supabase/database-operations.ts(544,27): error TS2339: Property 'range' does not exist on type 'MockQueryChain | PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]...'.
+  Property 'range' does not exist on type 'PostgrestQueryBuilder<{ Tables: { ab_test_assignments: { Row: { ab_test_id: string; assigned_at: string | null; id: string; ip_address: unknown; user_agent: string | null; user_id: string | null; user_session_id: string; variant_id: string; }; Insert: { ...; }; Update: { ...; }; Relationships: [...]; }; ... 52 more ...'.
+src/lib/supabase/database-operations.ts(581,25): error TS2305: Module '"@/types/database"' has no exported member 'Tables'.
+src/lib/supabase/database-operations.ts(581,33): error TS2305: Module '"@/types/database"' has no exported member 'TablesInsert'.
+src/lib/supabase/database-operations.ts(581,47): error TS2305: Module '"@/types/database"' has no exported member 'TablesUpdate'.
+src/lib/validation/conditional-validation.ts(103,24): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any>'.
+src/lib/validation/conditional-validation.ts(190,5): error TS2740: Type 'ZodEffects<ZodObject<Record<string, ZodTypeAny>, "strip", ZodTypeAny, { [x: string]: any; }, { [x: string]: any; }>, { [x: string]: any; }, { [x: string]: any; }>' is missing the following properties from type 'ZodObject<any, UnknownKeysParam, ZodTypeAny, { [x: string]: any; }, { [x: string]: any; }>': _cached, _getCached, shape, strict, and 14 more.
+src/lib/validation/conditional-validation.ts(377,9): error TS2322: Type 'string' is not assignable to type 'boolean | ((value: any) => boolean) | ((values: Record<string, any>) => boolean)'.
+src/lib/validation/conditional-validation.ts(378,34): error TS2339: Property 'min' does not exist on type 'ZodTypeAny'.
+src/lib/validation/conditional-validation.ts(396,34): error TS2339: Property 'regex' does not exist on type 'ZodTypeAny'.
+src/lib/validation/conditional-validation.ts(415,34): error TS2339: Property 'email' does not exist on type 'ZodTypeAny'.
+src/lib/validation/conditional-validation.ts(423,34): error TS2339: Property 'min' does not exist on type 'ZodTypeAny'.
+src/pages/AutoBookingNew.tsx(2,9): error TS2339: Property 'useDeferredValue' does not exist on type 'typeof import("react")'.
+src/pages/AutoBookingNew.tsx(10,24): error TS2304: Cannot find name 'lazy'.
+src/pages/AutoBookingNew.tsx(11,25): error TS2304: Cannot find name 'lazy'.
+src/pages/AutoBookingNew.tsx(12,28): error TS2304: Cannot find name 'lazy'.
+src/pages/AutoBookingNew.tsx(48,14): error TS2304: Cannot find name 'Suspense'.
+src/pages/AutoBookingNew.tsx(50,15): error TS2304: Cannot find name 'Suspense'.
+src/pages/AutoBookingNew.tsx(61,16): error TS2304: Cannot find name 'Suspense'.
+src/pages/AutoBookingNew.tsx(68,17): error TS2304: Cannot find name 'Suspense'.
+src/pages/AutoBookingNew.tsx(80,16): error TS2304: Cannot find name 'Suspense'.
+src/pages/AutoBookingNew.tsx(82,17): error TS2304: Cannot find name 'Suspense'.
+src/pages/Profile.tsx(95,29): error TS2339: Property 'completion_percentage' does not exist on type 'NonNullable<NoInfer<TQueryFnData>>'.
+src/pages/Profile.tsx(103,36): error TS2339: Property 'missing_fields' does not exist on type 'NonNullable<NoInfer<TQueryFnData>>'.
+src/pages/Profile.tsx(104,38): error TS2339: Property 'recommendations' does not exist on type 'NonNullable<NoInfer<TQueryFnData>>'.
+src/pages/Profile.tsx(116,36): error TS2345: Argument of type 'NonNullable<NoInfer<TQueryFnData>>' is not assignable to parameter of type 'TravelerProfile | null'.
+  Type '{}' is missing the following properties from type 'TravelerProfile': full_name, date_of_birth, gender, email
+src/pages/Profile.tsx(263,29): error TS2339: Property 'completion_percentage' does not exist on type 'NonNullable<NoInfer<TQueryFnData>>'.
+src/pages/Profile.tsx(271,36): error TS2339: Property 'missing_fields' does not exist on type 'NonNullable<NoInfer<TQueryFnData>>'.
+src/pages/Profile.tsx(272,38): error TS2339: Property 'recommendations' does not exist on type 'NonNullable<NoInfer<TQueryFnData>>'.
+src/pages/Profile.tsx(284,36): error TS2345: Argument of type 'NonNullable<NoInfer<TQueryFnData>>' is not assignable to parameter of type 'TravelerProfile | null'.
+  Type '{}' is missing the following properties from type 'TravelerProfile': full_name, date_of_birth, gender, email
+src/pages/TripConfirm.tsx(63,23): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string | URL | undefined'.
+  Type 'null' is not assignable to type 'string | URL | undefined'.
+src/pages/TripConfirm.tsx(331,27): error TS18047: 'bookingRequest' is possibly 'null'.
+src/providers/LaunchDarklyProvider.tsx(1,17): error TS2305: Module '"react"' has no exported member 'createContext'.
+src/providers/LaunchDarklyProvider.tsx(2,58): error TS2307: Cannot find module '@launchdarkly/react-client-sdk' or its corresponding type declarations.
+src/providers/LaunchDarklyProvider.tsx(12,50): error TS2339: Property 'children' does not exist on type '{}'.
+src/services/api-client.ts(18,3): error TS2305: Module '"../types"' has no exported member 'Result'.
+src/services/api-client.ts(19,3): error TS2305: Module '"../types"' has no exported member 'ISODateString'.
+src/services/authSecurityMonitor.ts(350,13): error TS2353: Object literal may only specify known properties, and 'pattern' does not exist in type '{ userAgent?: string | undefined; ipAddress?: string | undefined; location?: string | undefined; authMethod?: "one_tap" | "popup" | "redirect" | "fedcm" | undefined; privacyMode?: "standard" | ... 2 more ... | undefined; errorCode?: string | undefined; errorMessage?: string | undefined; tokenClaims?: any; browserInf...'.
+src/services/campaignService.ts(28,24): error TS18047: 'tripRequest' is possibly 'null'.
+src/services/campaignService.ts(55,31): error TS2345: Argument of type '{ created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; } | null' is not assignable to parameter of type '{ created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }'.
+  Type 'null' is not assignable to type '{ created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }'.
+src/services/campaignService.ts(70,31): error TS2345: Argument of type '{ created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; } | null' is not assignable to parameter of type '{ created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }'.
+  Type 'null' is not assignable to type '{ created_at: string | null; criteria: Json; id: string; latest_booking_request_id: string | null; price_history: Json; status: string; trip_request_id: string; updated_at: string | null; user_id: string; }'.
+src/services/duffelPaymentService.ts(13,30): error TS2724: '"@duffel/api/types"' has no exported member named 'PaymentIntentCreate'. Did you mean 'PaymentIntent'?
+src/services/duffelPaymentService.ts(79,11): error TS2322: Type '"2024-06-20"' is not assignable to type '"2025-06-30.basil"'.
+src/services/duffelPaymentService.ts(114,84): error TS2339: Property 'id' does not exist on type 'DuffelResponse<PaymentIntent>'.
+src/services/duffelPaymentService.ts(115,7): error TS2740: Type 'DuffelResponse<PaymentIntent>' is missing the following properties from type 'PaymentIntent': amount, card_country_code, card_last_four_digits, card_network, and 12 more.
+src/services/duffelPaymentService.ts(208,11): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/services/duffelPaymentService.ts(229,20): error TS2367: This comparison appears to be unintentional because the types 'number' and 'string' have no overlap.
+src/services/duffelPaymentService.ts(230,32): error TS2339: Property 'id' does not exist on type 'DuffelResponse<PaymentIntent>'.
+src/services/duffelPaymentService.ts(232,29): error TS2339: Property 'amount' does not exist on type 'DuffelResponse<PaymentIntent>'.
+src/services/duffelPaymentService.ts(233,31): error TS2339: Property 'currency' does not exist on type 'DuffelResponse<PaymentIntent>'.
+src/services/duffelPaymentService.ts(296,55): error TS2339: Property 'refund' does not exist on type 'PaymentIntents'.
+src/services/duffelPaymentService.ts(381,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/duffelPaymentService.ts(382,25): error TS2339: Property 'amount' does not exist on type 'DuffelResponse<PaymentIntent>'.
+src/services/duffelPaymentService.ts(383,27): error TS2339: Property 'currency' does not exist on type 'DuffelResponse<PaymentIntent>'.
+src/services/duffelPaymentService.ts(384,27): error TS2339: Property 'metadata' does not exist on type 'DuffelResponse<PaymentIntent>'.
+src/services/duffelServiceAdvanced.ts(15,3): error TS2724: '"@duffel/api/types"' has no exported member named 'OfferRequestCreate'. Did you mean 'OfferRequest'?
+src/services/duffelServiceAdvanced.ts(18,3): error TS2305: Module '"@duffel/api/types"' has no exported member 'OrderCreate'.
+src/services/duffelServiceAdvanced.ts(21,3): error TS2724: '"@duffel/api/types"' has no exported member named 'PaymentIntentCreate'. Did you mean 'PaymentIntent'?
+src/services/duffelServiceAdvanced.ts(22,3): error TS2305: Module '"@duffel/api/types"' has no exported member 'Service'.
+src/services/duffelServiceAdvanced.ts(145,79): error TS2339: Property 'offers' does not exist on type 'DuffelResponse<any>'.
+src/services/duffelServiceAdvanced.ts(146,7): error TS2740: Type 'DuffelResponse<any>' is missing the following properties from type 'OfferRequest': slices, created_at, id, live_mode, and 2 more.
+src/services/duffelServiceAdvanced.ts(166,11): error TS2353: Object literal may only specify known properties, and 'order_id' does not exist in type 'PaginationMeta'.
+src/services/duffelServiceAdvanced.ts(209,77): error TS2339: Property 'id' does not exist on type 'DuffelResponse<PaymentIntent>'.
+src/services/duffelServiceAdvanced.ts(210,7): error TS2740: Type 'DuffelResponse<PaymentIntent>' is missing the following properties from type 'PaymentIntent': amount, card_country_code, card_last_four_digits, card_network, and 12 more.
+src/services/duffelServiceAdvanced.ts(228,75): error TS2339: Property 'id' does not exist on type 'DuffelResponse<PaymentIntent>'.
+src/services/duffelServiceAdvanced.ts(229,7): error TS2740: Type 'DuffelResponse<PaymentIntent>' is missing the following properties from type 'PaymentIntent': amount, card_country_code, card_last_four_digits, card_network, and 12 more.
+src/services/duffelServiceAdvanced.ts(297,59): error TS2554: Expected 1 arguments, but got 2.
+src/services/duffelServiceAdvanced.ts(304,69): error TS2339: Property 'id' does not exist on type 'DuffelResponse<Order>'.
+src/services/duffelServiceAdvanced.ts(305,7): error TS2740: Type 'DuffelResponse<Order>' is missing the following properties from type 'Order': tax_currency, total_amount, total_currency, slices, and 15 more.
+src/services/duffelServiceAdvanced.ts(328,13): error TS2322: Type '{ service_id: string; }[]' is not assignable to type '{ cabin_class?: CabinClass | null | undefined; departure_date: string; destination: string; origin: string; }[]'.
+  Type '{ service_id: string; }' is missing the following properties from type '{ cabin_class?: CabinClass | null | undefined; departure_date: string; destination: string; origin: string; }': departure_date, destination, origin
+src/services/duffelServiceAdvanced.ts(329,13): error TS2322: Type '{ service_id: string; }[]' is not assignable to type '{ slice_id: string; }[]'.
+  Property 'slice_id' is missing in type '{ service_id: string; }' but required in type '{ slice_id: string; }'.
+src/services/duffelServiceAdvanced.ts(334,83): error TS2339: Property 'id' does not exist on type 'DuffelResponse<OrderChangeRequestResponse>'.
+src/services/duffelServiceAdvanced.ts(337,25): error TS2339: Property 'getOrder' does not exist on type 'DuffelServiceAdvanced'.
+src/services/duffelServiceAdvanced.ts(363,36): error TS2339: Property 'refund_amount' does not exist on type 'DuffelResponse<OrderCancellation>'.
+src/services/duffelServiceAdvanced.ts(364,38): error TS2339: Property 'refund_currency' does not exist on type 'DuffelResponse<OrderCancellation>'.
+src/services/duffelServiceAdvanced.ts(368,7): error TS2322: Type '{ cancellation: DuffelResponse<OrderCancellation>; refundAmount: any; refundCurrency: any; }' is not assignable to type '{ cancellation: OrderCancellation; refundAmount?: string | undefined; refundCurrency?: string | undefined; }'.
+  Types of property 'cancellation' are incompatible.
+    Type 'DuffelResponse<OrderCancellation>' is missing the following properties from type 'OrderCancellation': confirmed_at, created_at, expires_at, id, and 6 more.
+src/services/duffelServiceGuided.ts(17,3): error TS2724: '"@duffel/api/types"' has no exported member named 'OfferRequestCreate'. Did you mean 'OfferRequest'?
+src/services/duffelServiceGuided.ts(20,3): error TS2305: Module '"@duffel/api/types"' has no exported member 'OrderCreate'.
+src/services/duffelServiceGuided.ts(149,74): error TS2339: Property 'id' does not exist on type 'DuffelResponse<any>'.
+src/services/duffelServiceGuided.ts(150,7): error TS2740: Type 'DuffelResponse<any>' is missing the following properties from type 'OfferRequest': slices, created_at, id, live_mode, and 2 more.
+src/services/duffelServiceGuided.ts(196,45): error TS2345: Argument of type 'DuffelResponse<Offer>' is not assignable to parameter of type 'Offer'.
+  Type 'DuffelResponse<Offer>' is missing the following properties from type 'Offer': available_services, base_amount, base_currency, conditions, and 19 more.
+src/services/duffelServiceGuided.ts(202,7): error TS2740: Type 'DuffelResponse<Offer>' is missing the following properties from type 'Offer': available_services, base_amount, base_currency, conditions, and 19 more.
+src/services/duffelServiceGuided.ts(249,59): error TS2554: Expected 1 arguments, but got 2.
+src/services/duffelServiceGuided.ts(256,59): error TS2339: Property 'id' does not exist on type 'DuffelResponse<Order>'.
+src/services/duffelServiceGuided.ts(256,80): error TS2339: Property 'booking_reference' does not exist on type 'DuffelResponse<Order>'.
+src/services/duffelServiceGuided.ts(257,7): error TS2740: Type 'DuffelResponse<Order>' is missing the following properties from type 'Order': tax_currency, total_amount, total_currency, slices, and 15 more.
+src/services/duffelServiceGuided.ts(271,7): error TS2740: Type 'DuffelResponse<Order>' is missing the following properties from type 'Order': tax_currency, total_amount, total_currency, slices, and 15 more.
+src/services/duffelServiceGuided.ts(287,41): error TS2339: Property 'cancel' does not exist on type 'Orders'.
+src/services/duffelServiceGuided.ts(430,9): error TS2739: Type '{ title: any; given_name: string; family_name: string; gender: "m" | "f"; born_on: string; email: string; phone_number: string; }' is missing the following properties from type 'OrderPassenger': id, type
+src/services/duffelServiceGuided.ts(442,21): error TS2339: Property 'identity_documents' does not exist on type 'OrderPassenger'.
+src/services/duffelServiceGuided.ts(469,21): error TS2345: Argument of type '{ type: "adult"; }' is not assignable to parameter of type 'never'.
+src/services/duffelServiceGuided.ts(474,21): error TS2345: Argument of type '{ type: "child"; }' is not assignable to parameter of type 'never'.
+src/services/duffelServiceGuided.ts(479,21): error TS2345: Argument of type '{ type: "infant_without_seat"; }' is not assignable to parameter of type 'never'.
+src/services/flightSearchSecure.ts(218,7): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/form-config.service.ts(42,17): error TS18047: 'data' is possibly 'null'.
+src/services/form-config.service.ts(43,26): error TS2352: Conversion of type '{ archived_at: string | null; canary_percentage: number | null; config_data: Json; created_at: string | null; created_by: string | null; deployed_at: string | null; deployment_strategy: "immediate" | ... 2 more ... | null; ... 10 more ...; version: number; } | null' to type 'FormConfiguration' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'sections' is missing in type '{ archived_at: string | null; canary_percentage: number | null; config_data: Json; created_at: string | null; created_by: string | null; deployed_at: string | null; deployment_strategy: "immediate" | ... 2 more ... | null; ... 10 more ...; version: number; }' but required in type 'FormConfiguration'.
+src/services/form-config.service.ts(57,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { archived_at?: string | null | undefined; canary_percentage?: number | null | undefined; config_data: Json; created_at?: string | null | undefined; created_by?: string | null | undefined; ... 12 more ...; version?: number | undefined; }, options?: { ...; } | undefined): MockQueryChain | PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type 'FormConfiguration' is not assignable to parameter of type '{ archived_at?: string | null | undefined; canary_percentage?: number | null | undefined; config_data: Json; created_at?: string | null | undefined; created_by?: string | null | undefined; ... 12 more ...; version?: number | undefined; }'.
+      Type 'FormConfiguration' is missing the following properties from type '{ archived_at?: string | null | undefined; canary_percentage?: number | null | undefined; config_data: Json; created_at?: string | null | undefined; created_by?: string | null | undefined; ... 12 more ...; version?: number | undefined; }': config_data, validation_schema
+  Overload 2 of 2, '(values: { archived_at?: string | null | undefined; canary_percentage?: number | null | undefined; config_data: Json; created_at?: string | null | undefined; created_by?: string | null | undefined; ... 12 more ...; version?: number | undefined; }[], options?: { ...; } | undefined): MockQueryChain | PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type 'FormConfiguration' is not assignable to parameter of type '{ archived_at?: string | null | undefined; canary_percentage?: number | null | undefined; config_data: Json; created_at?: string | null | undefined; created_by?: string | null | undefined; ... 12 more ...; version?: number | undefined; }[]'.
+      Type 'FormConfiguration' is missing the following properties from type '{ archived_at?: string | null | undefined; canary_percentage?: number | null | undefined; config_data: Json; created_at?: string | null | undefined; created_by?: string | null | undefined; ... 12 more ...; version?: number | undefined; }[]': length, pop, push, concat, and 29 more.
+src/services/form-config.service.ts(70,17): error TS18047: 'data' is possibly 'null'.
+src/services/form-config.service.ts(71,26): error TS2352: Conversion of type '{ archived_at: string | null; canary_percentage: number | null; config_data: Json; created_at: string | null; created_by: string | null; deployed_at: string | null; deployment_strategy: "immediate" | ... 2 more ... | null; ... 10 more ...; version: number; } | null' to type 'FormConfiguration' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'sections' is missing in type '{ archived_at: string | null; canary_percentage: number | null; config_data: Json; created_at: string | null; created_by: string | null; deployed_at: string | null; deployment_strategy: "immediate" | ... 2 more ... | null; ... 10 more ...; version: number; }' but required in type 'FormConfiguration'.
+src/services/form-config.service.ts(98,17): error TS18047: 'data' is possibly 'null'.
+src/services/form-config.service.ts(99,26): error TS2352: Conversion of type '{ archived_at: string | null; canary_percentage: number | null; config_data: Json; created_at: string | null; created_by: string | null; deployed_at: string | null; deployment_strategy: "immediate" | ... 2 more ... | null; ... 10 more ...; version: number; } | null' to type 'FormConfiguration' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'sections' is missing in type '{ archived_at: string | null; canary_percentage: number | null; config_data: Json; created_at: string | null; created_by: string | null; deployed_at: string | null; deployment_strategy: "immediate" | ... 2 more ... | null; ... 10 more ...; version: number; }' but required in type 'FormConfiguration'.
+src/services/form-config.service.ts(113,17): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: { archived_at?: string | null | undefined; canary_percentage?: number | null | undefined; config_data: Json; created_at?: string | null | undefined; created_by?: string | null | undefined; ... 12 more ...; version?: number | undefined; }, options?: { ...; } | undefined): MockQueryChain | PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type 'FormConfiguration' is not assignable to parameter of type '{ archived_at?: string | null | undefined; canary_percentage?: number | null | undefined; config_data: Json; created_at?: string | null | undefined; created_by?: string | null | undefined; ... 12 more ...; version?: number | undefined; }'.
+      Type 'FormConfiguration' is missing the following properties from type '{ archived_at?: string | null | undefined; canary_percentage?: number | null | undefined; config_data: Json; created_at?: string | null | undefined; created_by?: string | null | undefined; ... 12 more ...; version?: number | undefined; }': config_data, validation_schema
+  Overload 2 of 2, '(values: { archived_at?: string | null | undefined; canary_percentage?: number | null | undefined; config_data: Json; created_at?: string | null | undefined; created_by?: string | null | undefined; ... 12 more ...; version?: number | undefined; }[], options?: { ...; } | undefined): MockQueryChain | PostgrestFilterBuilder<...>', gave the following error.
+    Argument of type 'FormConfiguration' is not assignable to parameter of type '{ archived_at?: string | null | undefined; canary_percentage?: number | null | undefined; config_data: Json; created_at?: string | null | undefined; created_by?: string | null | undefined; ... 12 more ...; version?: number | undefined; }[]'.
+      Type 'FormConfiguration' is missing the following properties from type '{ archived_at?: string | null | undefined; canary_percentage?: number | null | undefined; config_data: Json; created_at?: string | null | undefined; created_by?: string | null | undefined; ... 12 more ...; version?: number | undefined; }[]': length, pop, push, concat, and 29 more.
+src/services/form-config.service.ts(126,17): error TS18047: 'data' is possibly 'null'.
+src/services/form-config.service.ts(127,26): error TS2352: Conversion of type '{ archived_at: string | null; canary_percentage: number | null; config_data: Json; created_at: string | null; created_by: string | null; deployed_at: string | null; deployment_strategy: "immediate" | ... 2 more ... | null; ... 10 more ...; version: number; } | null' to type 'FormConfiguration' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'sections' is missing in type '{ archived_at: string | null; canary_percentage: number | null; config_data: Json; created_at: string | null; created_by: string | null; deployed_at: string | null; deployment_strategy: "immediate" | ... 2 more ... | null; ... 10 more ...; version: number; }' but required in type 'FormConfiguration'.
+src/services/form-config.service.ts(155,17): error TS18047: 'data' is possibly 'null'.
+src/services/form-config.service.ts(156,26): error TS2352: Conversion of type '{ archived_at: string | null; canary_percentage: number | null; config_data: Json; created_at: string | null; created_by: string | null; deployed_at: string | null; deployment_strategy: "immediate" | ... 2 more ... | null; ... 10 more ...; version: number; } | null' to type 'FormConfiguration' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'sections' is missing in type '{ archived_at: string | null; canary_percentage: number | null; config_data: Json; created_at: string | null; created_by: string | null; deployed_at: string | null; deployment_strategy: "immediate" | ... 2 more ... | null; ... 10 more ...; version: number; }' but required in type 'FormConfiguration'.
+src/services/form-config.service.ts(241,14): error TS2352: Conversion of type '{ archived_at: string | null; canary_percentage: number | null; config_data: Json; created_at: string | null; created_by: string | null; deployed_at: string | null; deployment_strategy: "immediate" | ... 2 more ... | null; ... 10 more ...; version: number; } | null' to type 'FormConfiguration' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'sections' is missing in type '{ archived_at: string | null; canary_percentage: number | null; config_data: Json; created_at: string | null; created_by: string | null; deployed_at: string | null; deployment_strategy: "immediate" | ... 2 more ... | null; ... 10 more ...; version: number; }' but required in type 'FormConfiguration'.
+src/services/modernGoogleAuthService.ts(91,5): error TS18048: 'window.google' is possibly 'undefined'.
+src/services/modernGoogleAuthService.ts(153,51): error TS2339: Property 'signInWithIdToken' does not exist on type 'SupabaseAuthClient | { getUser: () => Promise<{ data: { user: null; }; error: null; }>; getSession: () => Promise<{ data: { session: null; }; error: null; }>; ... 5 more ...; getSettings: () => Promise<...>; }'.
+  Property 'signInWithIdToken' does not exist on type '{ getUser: () => Promise<{ data: { user: null; }; error: null; }>; getSession: () => Promise<{ data: { session: null; }; error: null; }>; setSession: (session: any) => Promise<{ data: { user: null; session: null; }; error: null; }>; ... 4 more ...; getSettings: () => Promise<...>; }'.
+src/services/modernGoogleAuthService.ts(242,7): error TS18048: 'window.google' is possibly 'undefined'.
+src/services/modernGoogleAuthService.ts(277,22): error TS18048: 'window.google' is possibly 'undefined'.
+src/services/modernGoogleAuthService.ts(439,5): error TS18048: 'window.google' is possibly 'undefined'.
+src/services/realtime/enhancedRealtimeService.ts(13,25): error TS2305: Module '"@/types/database"' has no exported member 'Tables'.
+src/services/realtime/enhancedRealtimeService.ts(80,25): error TS1320: Type of 'await' operand must either be a valid promise or must not contain a callable 'then' member.
+src/services/realtime/enhancedRealtimeService.ts(117,9): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(type: "presence", filter: { event: "sync"; }, callback: () => void): any', gave the following error.
+    Argument of type '"postgres_changes"' is not assignable to parameter of type '"presence"'.
+  Overload 2 of 2, '(type: "broadcast", filter: { event: string; }, callback: (payload: { [key: string]: any; type: "broadcast"; event: string; }) => void): any', gave the following error.
+    Argument of type '"postgres_changes"' is not assignable to parameter of type '"broadcast"'.
+src/services/realtime/enhancedRealtimeService.ts(126,20): error TS2345: Argument of type '{ [key: string]: any; type: "broadcast"; event: string; }' is not assignable to parameter of type 'RealtimePostgresChangesPayload<Tables<T>>'.
+  Type '{ [key: string]: any; type: "broadcast"; event: string; }' is not assignable to type 'RealtimePostgresDeletePayload<Tables<T>>'.
+    Type '{ [key: string]: any; type: "broadcast"; event: string; }' is missing the following properties from type 'RealtimePostgresChangesPayloadBase': schema, table, commit_timestamp, errors
+src/services/realtime/enhancedRealtimeService.ts(132,16): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(type: "presence", filter: { event: "sync"; }, callback: () => void): any', gave the following error.
+    Argument of type '"system"' is not assignable to parameter of type '"presence"'.
+  Overload 2 of 2, '(type: "broadcast", filter: { event: string; }, callback: (payload: { [key: string]: any; type: "broadcast"; event: string; }) => void): any', gave the following error.
+    Argument of type '"system"' is not assignable to parameter of type '"broadcast"'.
+src/services/realtime/enhancedRealtimeService.ts(157,36): error TS2345: Argument of type 'RealtimeChannel | { on: () => any; subscribe: () => any; unsubscribe: () => any; }' is not assignable to parameter of type 'RealtimeChannel'.
+  Type '{ on: () => any; subscribe: () => any; unsubscribe: () => any; }' is missing the following properties from type 'RealtimeChannel': topic, params, socket, bindings, and 16 more.
+src/services/realtime/enhancedRealtimeService.ts(158,5): error TS2322: Type 'RealtimeChannel | { on: () => any; subscribe: () => any; unsubscribe: () => any; }' is not assignable to type 'RealtimeChannel'.
+  Type '{ on: () => any; subscribe: () => any; unsubscribe: () => any; }' is missing the following properties from type 'RealtimeChannel': topic, params, socket, bindings, and 16 more.
+src/services/realtime/enhancedRealtimeService.ts(371,54): error TS2344: Type 'T' does not satisfy the constraint '{ [key: string]: any; }'.
+src/services/realtime/enhancedRealtimeService.ts(380,70): error TS2344: Type 'T' does not satisfy the constraint '{ [key: string]: any; }'.
+src/services/realtime/realtimeService.ts(10,10): error TS2305: Module '"react"' has no exported member 'DependencyList'.
+src/services/realtime/realtimeService.ts(84,11): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(type: "presence", filter: { event: "sync"; }, callback: () => void): any', gave the following error.
+    Argument of type '"postgres_changes"' is not assignable to parameter of type '"presence"'.
+  Overload 2 of 2, '(type: "broadcast", filter: { event: string; }, callback: (payload: { [key: string]: any; type: "broadcast"; event: string; }) => void): any', gave the following error.
+    Argument of type '"postgres_changes"' is not assignable to parameter of type '"broadcast"'.
+src/services/realtime/realtimeService.ts(86,18): error TS2345: Argument of type '{ [key: string]: any; type: "broadcast"; event: string; }' is not assignable to parameter of type 'RealtimePostgresChangesPayload<{ profiles: { Row: { id: string; user_id: string; github_username: string | null; github_avatar_url: string | null; display_name: string | null; bio: string | null; location: string | null; ... 5 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; github_repositorie...'.
+  Type '{ [key: string]: any; type: "broadcast"; event: string; }' is not assignable to type 'RealtimePostgresDeletePayload<{ profiles: { Row: { id: string; user_id: string; github_username: string | null; github_avatar_url: string | null; display_name: string | null; bio: string | null; location: string | null; ... 5 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; github_repositories...'.
+    Type '{ [key: string]: any; type: "broadcast"; event: string; }' is missing the following properties from type 'RealtimePostgresChangesPayloadBase': schema, table, commit_timestamp, errors
+src/services/realtime/realtimeService.ts(113,7): error TS2322: Type 'RealtimeChannel | { on: () => any; subscribe: () => any; unsubscribe: () => any; }' is not assignable to type 'RealtimeChannel'.
+  Type '{ on: () => any; subscribe: () => any; unsubscribe: () => any; }' is missing the following properties from type 'RealtimeChannel': topic, params, socket, bindings, and 16 more.
+src/services/realtime/realtimeService.ts(196,63): error TS2339: Property 'bookings' does not exist on type '{ profiles: { Row: { id: string; user_id: string; github_username: string | null; github_avatar_url: string | null; display_name: string | null; bio: string | null; location: string | null; ... 5 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; github_repositories: { ...; }; connections: { ......'.
+src/services/realtime/realtimeService.ts(200,9): error TS2322: Type '"bookings"' is not assignable to type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"'.
+src/services/realtime/realtimeService.ts(211,63): error TS2339: Property 'trip_requests' does not exist on type '{ profiles: { Row: { id: string; user_id: string; github_username: string | null; github_avatar_url: string | null; display_name: string | null; bio: string | null; location: string | null; ... 5 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; github_repositories: { ...; }; connections: { ......'.
+src/services/realtime/realtimeService.ts(215,9): error TS2322: Type '"trip_requests"' is not assignable to type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"'.
+src/services/realtime/realtimeService.ts(226,63): error TS2339: Property 'notifications' does not exist on type '{ profiles: { Row: { id: string; user_id: string; github_username: string | null; github_avatar_url: string | null; display_name: string | null; bio: string | null; location: string | null; ... 5 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; github_repositories: { ...; }; connections: { ......'.
+src/services/realtime/realtimeService.ts(230,9): error TS2322: Type '"notifications"' is not assignable to type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"'.
+src/services/realtime/realtimeService.ts(241,63): error TS2339: Property 'flight_offers_v2' does not exist on type '{ profiles: { Row: { id: string; user_id: string; github_username: string | null; github_avatar_url: string | null; display_name: string | null; bio: string | null; location: string | null; ... 5 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; github_repositories: { ...; }; connections: { ......'.
+src/services/realtime/realtimeService.ts(245,9): error TS2322: Type '"flight_offers_v2"' is not assignable to type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"'.
+src/services/realtime/realtimeService.ts(256,63): error TS2339: Property 'booking_requests' does not exist on type '{ profiles: { Row: { id: string; user_id: string; github_username: string | null; github_avatar_url: string | null; display_name: string | null; bio: string | null; location: string | null; ... 5 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; github_repositories: { ...; }; connections: { ......'.
+src/services/realtime/realtimeService.ts(260,9): error TS2322: Type '"booking_requests"' is not assignable to type '"profiles" | "github_repositories" | "connections" | "user_skills" | "user_interests"'.
+src/services/stripeConnectService.ts(261,13): error TS2322: Type '"marketplace"' is not assignable to type '"auto_booking" | "business" | "standard" | "premium" | undefined'.
+src/services/stripeServiceSecure.ts(72,14): error TS2323: Cannot redeclare exported variable 'StripeSecureConfig'.
+src/services/stripeServiceSecure.ts(151,14): error TS2323: Cannot redeclare exported variable 'SupabaseSecureConfig'.
+src/services/stripeServiceSecure.ts(412,10): error TS2323: Cannot redeclare exported variable 'StripeSecureConfig'.
+src/services/stripeServiceSecure.ts(412,10): error TS2484: Export declaration conflicts with exported declaration of 'StripeSecureConfig'.
+src/services/stripeServiceSecure.ts(412,30): error TS2323: Cannot redeclare exported variable 'SupabaseSecureConfig'.
+src/services/stripeServiceSecure.ts(412,30): error TS2484: Export declaration conflicts with exported declaration of 'SupabaseSecureConfig'.
+src/services/stripeSubscriptionService.ts(96,13): error TS2322: Type '"subscription"' is not assignable to type '"auto_booking" | "business" | "standard" | "premium" | undefined'.
+src/services/stripeSubscriptionService.ts(210,13): error TS2322: Type '"usage_based"' is not assignable to type '"auto_booking" | "business" | "standard" | "premium" | undefined'.
+src/services/travelerProfileServiceKMS.ts(154,7): error TS1320: Type of 'await' operand must either be a valid promise or must not contain a callable 'then' member.
+src/services/travelerProfileServiceKMS.ts(173,14): error TS2352: Conversion of type '{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null' to type 'TravelerProfileKMS' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; id: string; ... 15 more ...; verification_level: string | null; }' is missing the following properties from type 'TravelerProfileKMS': fullName, dateOfBirth, isPrimary, createdAt, updatedAt
+src/services/travelerProfileServiceKMS.ts(206,14): error TS2352: Conversion of type '{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; ... 16 more ...; verification_level: string | null; } | null' to type 'TravelerProfileKMS' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ created_at: string | null; date_of_birth: string; default_payment_method_id: string | null; email: string; encryption_version: number | null; full_name: string; gender: string; id: string; ... 15 more ...; verification_level: string | null; }' is missing the following properties from type 'TravelerProfileKMS': fullName, dateOfBirth, isPrimary, createdAt, updatedAt
+src/services/tripOffersService.ts(168,27): error TS2339: Property 'origin_iata' does not exist on type '{ adults: number | null; auto_book: boolean; auto_book_enabled: boolean; baggage_included_required: boolean; best_price: number | null; budget: number; created_at: string; departure_airports: string[]; ... 18 more ...; user_id: string; }'.
+src/services/tripOffersService.ts(168,54): error TS2339: Property 'origin' does not exist on type '{ adults: number | null; auto_book: boolean; auto_book_enabled: boolean; baggage_included_required: boolean; best_price: number | null; budget: number; created_at: string; departure_airports: string[]; ... 18 more ...; user_id: string; }'.
+src/services/tripOffersService.ts(169,32): error TS2339: Property 'destination_iata' does not exist on type '{ adults: number | null; auto_book: boolean; auto_book_enabled: boolean; baggage_included_required: boolean; best_price: number | null; budget: number; created_at: string; departure_airports: string[]; ... 18 more ...; user_id: string; }'.
+src/services/tripOffersService.ts(169,64): error TS2339: Property 'destination' does not exist on type '{ adults: number | null; auto_book: boolean; auto_book_enabled: boolean; baggage_included_required: boolean; best_price: number | null; budget: number; created_at: string; departure_airports: string[]; ... 18 more ...; user_id: string; }'.
+src/services/tripOffersService.ts(173,56): error TS2339: Property 'currency' does not exist on type '{ adults: number | null; auto_book: boolean; auto_book_enabled: boolean; baggage_included_required: boolean; best_price: number | null; budget: number; created_at: string; departure_airports: string[]; ... 18 more ...; user_id: string; }'.
+src/services/tripOffersService.ts(174,54): error TS2339: Property 'nonstop' does not exist on type '{ adults: number | null; auto_book: boolean; auto_book_enabled: boolean; baggage_included_required: boolean; best_price: number | null; budget: number; created_at: string; departure_airports: string[]; ... 18 more ...; user_id: string; }'.
+src/services/tripOffersService.ts(175,31): error TS2339: Property 'passengers' does not exist on type '{ adults: number | null; auto_book: boolean; auto_book_enabled: boolean; baggage_included_required: boolean; best_price: number | null; budget: number; created_at: string; departure_airports: string[]; ... 18 more ...; user_id: string; }'.
+src/shared/featureFlag.ts(8,1): error TS2578: Unused '@ts-expect-error' directive.
+src/tests/__helpers/renderWithProviders.tsx(4,10): error TS2305: Module '"react"' has no exported member 'ReactElement'.
+src/tests/mocks/calendarMocks.ts(49,16): error TS2339: Property 'createElement' does not exist on type 'typeof import("react")'.
+src/tests/mocks/calendarMocks.ts(53,11): error TS2339: Property 'createElement' does not exist on type 'typeof import("react")'.
+src/tests/mocks/calendarMocks.ts(61,11): error TS2339: Property 'createElement' does not exist on type 'typeof import("react")'.
+src/tests/mocks/launchdarkly.ts(28,16): error TS2339: Property 'createElement' does not exist on type 'typeof import("react")'.
+src/tests/mocks/launchdarkly.ts(28,36): error TS2339: Property 'Fragment' does not exist on type 'typeof import("react")'.
+src/tests/mocks/launchdarkly.ts(35,63): error TS2304: Cannot find name 'ComponentType'.
+src/tests/mocks/launchdarkly.ts(36,32): error TS2339: Property 'createElement' does not exist on type 'typeof import("react")'.
+src/tests/setupTests.ts(4,9): error TS2339: Property 'use' does not exist on type 'typeof import("react")'.
+src/tests/setupTests.ts(21,13): error TS2540: Cannot assign to 'NODE_ENV' because it is a read-only property.
+src/tests/setupTests.ts(101,48): error TS2339: Property 'length' does not exist on type 'BufferSource'.
+  Property 'length' does not exist on type 'ArrayBuffer'.
+src/tests/setupTests.ts(102,31): error TS2339: Property 'length' does not exist on type 'BufferSource'.
+  Property 'length' does not exist on type 'ArrayBuffer'.
+src/tests/testcontainers/setup.ts(20,11): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type 'WaitStrategy'.
+src/tests/utils/formTestHelpers.fixed.tsx(13,10): error TS2305: Module '"react"' has no exported member 'ReactElement'.
+src/tests/utils/formTestUtils.tsx(4,10): error TS2305: Module '"react"' has no exported member 'ReactElement'.
+src/tests/utils/modern-test-utils.tsx(9,10): error TS2305: Module '"react"' has no exported member 'ReactElement'.
+src/tests/utils/reactTestUtils.tsx(4,10): error TS2305: Module '"react"' has no exported member 'ReactElement'.
+src/tests/utils/reactTestUtils.tsx(57,13): error TS2304: Cannot find name 'ComponentType'.
+src/tests/utils/test-utils.ts(12,75): error TS2344: Type 'T' does not satisfy the constraint 'Procedure'.
+  Type 'Record<string, any>' is not assignable to type 'Procedure'.
+    Type 'Record<string, any>' provides no match for the signature '(...args: any[]): any'.
+src/tests/utils/test-utils.ts(13,18): error TS2352: Conversion of type 'Mock<Procedure>' to type 'MockedFunction<T>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Mock<Procedure>' is not comparable to type 'Mock<T>'.
+    Types of property 'mock' are incompatible.
+      Type 'MockContext<Procedure>' is not comparable to type 'MockContext<T>'.
+        Type 'Procedure' is not comparable to type 'T'.
+          'Procedure' is assignable to the constraint of type 'T', but 'T' could be instantiated with a different subtype of constraint 'Record<string, any>'.
+src/tests/utils/test-utils.ts(13,44): error TS2344: Type 'T' does not satisfy the constraint 'Procedure'.
+  Type 'Record<string, any>' is not assignable to type 'Procedure'.
+    Type 'Record<string, any>' provides no match for the signature '(...args: any[]): any'.
+src/tests/utils/test-utils.ts(16,9): error TS2862: Type 'MockedFunction<T>' is generic and can only be indexed for reading.
+src/tests/utils/test-utils.ts(18,9): error TS2862: Type 'MockedFunction<T>' is generic and can only be indexed for reading.
+src/tests/utils/test-utils.ts(20,9): error TS2862: Type 'MockedFunction<T>' is generic and can only be indexed for reading.
+src/tests/utils/TestErrorBoundary.tsx(19,40): error TS2693: 'Component' only refers to a type, but is being used as a value here.
+src/tests/utils/TestErrorBoundary.tsx(22,10): error TS2339: Property 'state' does not exist on type 'TestErrorBoundary'.
+src/tests/utils/TestErrorBoundary.tsx(30,14): error TS2339: Property 'props' does not exist on type 'TestErrorBoundary'.
+src/tests/utils/TestErrorBoundary.tsx(31,12): error TS2339: Property 'props' does not exist on type 'TestErrorBoundary'.
+src/tests/utils/TestErrorBoundary.tsx(36,14): error TS2339: Property 'state' does not exist on type 'TestErrorBoundary'.
+src/tests/utils/TestErrorBoundary.tsx(37,19): error TS2339: Property 'props' does not exist on type 'TestErrorBoundary'.
+src/tests/utils/TestErrorBoundary.tsx(40,17): error TS2339: Property 'props' does not exist on type 'TestErrorBoundary'.
+src/tests/utils/testUtils.tsx(2,10): error TS2305: Module '"react"' has no exported member 'ReactElement'.
+src/tests/utils/testUtils.tsx(53,3): error TS2322: Type 'string' is not assignable to type '(name: string) => Mock<() => T>'.
+src/tests/utils/TestWrapper.tsx(4,10): error TS2305: Module '"react"' has no exported member 'ReactElement'.
+src/types/ambient.ts(6,10): error TS2305: Module '"react"' has no exported member 'CSSProperties'.
+src/types/ambient.ts(6,25): error TS2305: Module '"react"' has no exported member 'FunctionComponent'.
+src/types/ambient.ts(6,44): error TS2305: Module '"react"' has no exported member 'SVGProps'.
+src/types/ambient.ts(11,16): error TS2665: Invalid module name in augmentation. Module 'murmurhash-js' resolves to an untyped module at '/Users/parkerbarnett/github-link-up-buddy/node_modules/murmurhash-js/index.js', which cannot be augmented.
+src/types/ambient.ts(19,20): error TS2300: Duplicate identifier 'OTPInputProps'.
+src/types/ambient.ts(19,47): error TS2304: Cannot find name 'ComponentProps'.
+src/types/ambient.ts(36,16): error TS2451: Cannot redeclare block-scoped variable 'OTPInput'.
+src/types/ambient.ts(41,3): error TS2666: Exports and export assignments are not permitted in module augmentations.
+src/types/ambient.ts(41,18): error TS2300: Duplicate identifier 'src'.
+src/types/ambient.ts(46,3): error TS2666: Exports and export assignments are not permitted in module augmentations.
+src/types/ambient.ts(46,18): error TS2300: Duplicate identifier 'src'.
+src/types/ambient.ts(51,3): error TS2666: Exports and export assignments are not permitted in module augmentations.
+src/types/ambient.ts(51,18): error TS2300: Duplicate identifier 'src'.
+src/types/ambient.ts(56,3): error TS2666: Exports and export assignments are not permitted in module augmentations.
+src/types/ambient.ts(56,18): error TS2300: Duplicate identifier 'src'.
+src/types/ambient.ts(61,3): error TS2666: Exports and export assignments are not permitted in module augmentations.
+src/types/ambient.ts(61,18): error TS2300: Duplicate identifier 'src'.
+src/types/ambient.ts(66,3): error TS2666: Exports and export assignments are not permitted in module augmentations.
+src/types/ambient.ts(66,18): error TS2300: Duplicate identifier 'src'.
+src/types/api.types.ts(7,3): error TS2305: Module '"./index"' has no exported member 'ApiResponse'.
+src/types/api.types.ts(8,3): error TS2305: Module '"./index"' has no exported member 'HttpMethod'.
+src/types/api.types.ts(9,3): error TS2305: Module '"./index"' has no exported member 'ApiEndpoint'.
+src/types/api.types.ts(10,3): error TS2305: Module '"./index"' has no exported member 'ISODateString'.
+src/types/api.types.ts(11,3): error TS2305: Module '"./index"' has no exported member 'AsyncState'.
+src/types/api.types.ts(12,3): error TS2305: Module '"./index"' has no exported member 'Result'.
+src/types/api.types.ts(13,3): error TS2305: Module '"./index"' has no exported member 'ValidationError'.
+src/types/dynamic-forms.ts(10,6): error TS2300: Duplicate identifier 'FormEvent'.
+src/types/dynamic-forms.ts(298,18): error TS2300: Duplicate identifier 'FormEvent'.
+src/types/flight.types.ts(1,10): error TS2305: Module '"./index"' has no exported member 'Brand'.
+src/types/flight.types.ts(1,17): error TS2305: Module '"./index"' has no exported member 'ISODateString'.
+src/types/flight.types.ts(1,32): error TS2305: Module '"./index"' has no exported member 'Url'.
+src/types/flight.types.ts(1,37): error TS2305: Module '"./index"' has no exported member 'EmailAddress'.
+src/types/flight.types.ts(1,51): error TS2305: Module '"./index"' has no exported member 'GitHubUsername'.
+src/types/flight.types.ts(1,67): error TS2305: Module '"./index"' has no exported member 'UserId'.
+src/types/form.ts(198,7): error TS2322: Type '(issue: ZodIssue) => { message: string; }' is not assignable to type 'ZodEffects<ZodObject<{ earliestDeparture: ZodEffects<ZodDate, Date, Date>; latestDeparture: ZodEffects<ZodDate, Date, Date>; ... 11 more ...; auto_book_consent: ZodOptional<...>; }, "strip", ZodTypeAny, { ...; }, { ...; }>, { ...; }, { ...; }>'.
+src/types/form.ts(198,16): error TS2322: Type '(issue: ZodIssue) => { message: string; }' is not assignable to type 'ZodErrorMap'.
+  Types of parameters 'issue' and 'issue' are incompatible.
+    Type 'ZodIssueOptionalMessage' is not assignable to type 'ZodIssue'.
+      Type 'ZodInvalidTypeIssue' is not assignable to type 'ZodIssue'.
+        Type 'ZodInvalidTypeIssue' is not assignable to type 'ZodInvalidTypeIssue & { fatal?: boolean | undefined; message: string; }'.
+          Type 'ZodInvalidTypeIssue' is not assignable to type '{ fatal?: boolean | undefined; message: string; }'.
+            Types of property 'message' are incompatible.
+              Type 'string | undefined' is not assignable to type 'string'.
+                Type 'undefined' is not assignable to type 'string'.
+src/types/form.ts(212,40): error TS2339: Property 'shape' does not exist on type 'ZodEffects<ZodObject<{ earliestDeparture: ZodEffects<ZodDate, Date, Date>; latestDeparture: ZodEffects<ZodDate, Date, Date>; ... 11 more ...; auto_book_consent: ZodOptional<...>; }, "strip", ZodTypeAny, { ...; }, { ...; }>, { ...; }, { ...; }>'.
+src/types/react-19-compat.ts(8,32): error TS2305: Module '"react"' has no exported member 'HTMLAttributes'.
+src/types/react-19-compat.ts(8,48): error TS2305: Module '"react"' has no exported member 'ButtonHTMLAttributes'.
+src/types/react-19-compat.ts(13,3): error TS2305: Module '"react"' has no exported member 'HTMLAttributes'.
+src/types/react-19-compat.ts(14,3): error TS2305: Module '"react"' has no exported member 'ButtonHTMLAttributes'.
+src/types/react-19-compat.ts(15,3): error TS2305: Module '"react"' has no exported member 'ComponentProps'.
+src/types/react-19-compat.ts(16,3): error TS2305: Module '"react"' has no exported member 'ElementRef'.
+src/types/react-19-compat.ts(17,3): error TS2305: Module '"react"' has no exported member 'CSSProperties'.
+src/types/react-19-compat.ts(36,37): error TS2694: Namespace '"react"' has no exported member 'ForwardedRef'.
+src/types/react-19-compat.ts(37,36): error TS2724: '"react"' has no exported member named 'RefCallback'. Did you mean 'useCallback'?
+src/types/react-19-compat.ts(41,47): error TS2694: Namespace '"react"' has no exported member 'FunctionComponent'.
+src/types/react-19-compat.ts(44,27): error TS2339: Property 'memo' does not exist on type 'typeof import("react")'.
+src/types/react-19-compat.ts(45,33): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/types/react-19-compat.ts(46,36): error TS2339: Property 'createElement' does not exist on type 'typeof import("react")'.
+src/types/react-19-compat.ts(47,31): error TS2339: Property 'Fragment' does not exist on type 'typeof import("react")'.
+src/types/react-19-compat.ts(48,36): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/types/react-19-compat.ts(49,39): error TS2339: Property 'useDeferredValue' does not exist on type 'typeof import("react")'.
+src/types/react-19-compat.ts(51,28): error TS2339: Property 'useId' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(14,34): error TS2694: Namespace '"react"' has no exported member 'ReactElement'.
+src/types/react-compat.ts(19,40): error TS2694: Namespace '"react"' has no exported member 'ElementType'.
+src/types/react-compat.ts(19,61): error TS2694: Namespace '"react"' has no exported member 'ElementRef'.
+src/types/react-compat.ts(20,44): error TS2694: Namespace '"react"' has no exported member 'ElementType'.
+src/types/react-compat.ts(20,65): error TS2694: Namespace '"react"' has no exported member 'ComponentProps'.
+src/types/react-compat.ts(21,54): error TS2694: Namespace '"react"' has no exported member 'ElementType'.
+src/types/react-compat.ts(21,75): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/types/react-compat.ts(24,39): error TS2694: Namespace '"react"' has no exported member 'HTMLAttributes'.
+src/types/react-compat.ts(25,45): error TS2694: Namespace '"react"' has no exported member 'ButtonHTMLAttributes'.
+src/types/react-compat.ts(26,44): error TS2694: Namespace '"react"' has no exported member 'InputHTMLAttributes'.
+src/types/react-compat.ts(30,45): error TS2694: Namespace '"react"' has no exported member 'MouseEvent'.
+src/types/react-compat.ts(31,48): error TS2694: Namespace '"react"' has no exported member 'KeyboardEvent'.
+src/types/react-compat.ts(33,45): error TS2694: Namespace '"react"' has no exported member 'FocusEvent'.
+src/types/react-compat.ts(36,35): error TS2694: Namespace '"react"' has no exported member 'CSSProperties'.
+src/types/react-compat.ts(39,28): error TS2694: Namespace '"react"' has no exported member 'Ref'.
+src/types/react-compat.ts(40,34): error TS2694: Namespace '"react"' has no exported member 'RefObject'.
+src/types/react-compat.ts(41,41): error TS2694: Namespace '"react"' has no exported member 'MutableRefObject'.
+src/types/react-compat.ts(45,3): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(46,3): error TS2339: Property 'memo' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(47,3): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(48,3): error TS2339: Property 'createElement' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(49,3): error TS2339: Property 'Fragment' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(53,3): error TS2339: Property 'useId' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(58,3): error TS2339: Property 'useDeferredValue' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(65,46): error TS2339: Property 'value' does not exist on type 'EventTarget & T'.
+src/types/react-compat.ts(76,16): error TS2339: Property 'isValidElement' does not exist on type 'typeof import("react")'.
+src/types/react-helpers.ts(5,3): error TS2305: Module '"react"' has no exported member 'MouseEvent'.
+src/types/react-helpers.ts(6,3): error TS2305: Module '"react"' has no exported member 'KeyboardEvent'.
+src/types/react-helpers.ts(7,3): error TS2305: Module '"react"' has no exported member 'FocusEvent'.
+src/types/react-helpers.ts(9,3): error TS2305: Module '"react"' has no exported member 'ElementType'.
+src/types/react-helpers.ts(10,3): error TS2305: Module '"react"' has no exported member 'CSSProperties'.
+src/types/react-helpers.ts(13,3): error TS2305: Module '"react"' has no exported member 'HTMLAttributes'.
+src/types/react-helpers.ts(14,3): error TS2305: Module '"react"' has no exported member 'ButtonHTMLAttributes'.
+src/types/react-helpers.ts(15,3): error TS2305: Module '"react"' has no exported member 'InputHTMLAttributes'.
+src/types/react-helpers.ts(16,3): error TS2305: Module '"react"' has no exported member 'ComponentProps'.
+src/types/user.types.ts(7,3): error TS2305: Module '"./index"' has no exported member 'Brand'.
+src/types/user.types.ts(8,3): error TS2305: Module '"./index"' has no exported member 'UserId'.
+src/types/user.types.ts(9,3): error TS2305: Module '"./index"' has no exported member 'EmailAddress'.
+src/types/user.types.ts(10,3): error TS2305: Module '"./index"' has no exported member 'ISODateString'.
+src/types/user.types.ts(11,3): error TS2305: Module '"./index"' has no exported member 'DeepReadonly'.
+src/types/user.types.ts(12,3): error TS2305: Module '"./index"' has no exported member 'Optional'.
+src/types/user.types.ts(13,3): error TS2305: Module '"./index"' has no exported member 'Result'.
+src/utils/type-guards.ts(7,3): error TS2305: Module '"../types"' has no exported member 'Brand'.
+src/utils/type-guards.ts(8,3): error TS2305: Module '"../types"' has no exported member 'UserId'.
+src/utils/type-guards.ts(9,3): error TS2305: Module '"../types"' has no exported member 'EmailAddress'.
+src/utils/type-guards.ts(10,3): error TS2305: Module '"../types"' has no exported member 'ISODateString'.
+src/utils/type-guards.ts(11,3): error TS2305: Module '"../types"' has no exported member 'Result'.
+src/utils/type-guards.ts(12,3): error TS2724: '"../types"' has no exported member named 'ValidationResult'. Did you mean 'ValidationRule'?
+src/utils/type-guards.ts(13,3): error TS2305: Module '"../types"' has no exported member 'ValidationError'.
+src/utils/type-guards.ts(14,3): error TS2305: Module '"../types"' has no exported member 'ApiResponse'.
+src/utils/type-guards.ts(15,3): error TS2305: Module '"../types"' has no exported member 'AsyncState'.

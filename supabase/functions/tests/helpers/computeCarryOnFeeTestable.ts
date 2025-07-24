@@ -16,7 +16,7 @@ export function computeCarryOnFee(offer: Record<string, unknown>): number | null
   if (process.env.DEBUG_BAGGAGE === "true") { // Conditional logging
     try {
         console.log('[carry-on] sample offer (brief):', JSON.stringify(offer, (key, value) => key === "dictionaries" ? undefined : value, 2)?.slice(0,1500));
-    } catch (_e) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    } catch (_e) {  
         console.log('[carry-on] sample offer (brief) could not be stringified for offer ID:', offer?.id);
     }
   }

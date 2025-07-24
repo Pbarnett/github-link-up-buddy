@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, useNavigate } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm';
-
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { toast } from '@/components/ui/use-toast';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
@@ -43,6 +40,10 @@ vi.mock('@/hooks/useTravelerInfoCheck', () => ({
 
 vi.mock('@/services/api/flightSearchApi', () => ({
   invokeFlightSearch: vi.fn().mockResolvedValue({ success: true }),
+}));
+
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: vi.fn().mockReturnValue(false),
 }));
 
 describe('TripRequestForm - Isolated Core Tests', () => {

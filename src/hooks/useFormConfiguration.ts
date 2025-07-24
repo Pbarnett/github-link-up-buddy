@@ -7,8 +7,7 @@
  */
 
 import * as React from 'react';
-const { useState, useEffect, useCallback } = React;
-
+import { useState, useCallback, useEffect } from 'react';
 import { formConfigService } from '@/services/form-config.service';
 import type {
   FormConfiguration,

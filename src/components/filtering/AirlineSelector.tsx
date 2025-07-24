@@ -6,17 +6,13 @@
  * Displays airline logos, names, and allows easy selection/deselection.
  */
 
-import * as React from 'react';
-const { useState, useMemo } = React;
 type FC<T = {}> = React.FC<T>;
-type Component<P = {}, S = {}> = React.Component<P, S>;
-
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
-import { X, ChevronDown, Plane, Search } from 'lucide-react';
+import * as React from 'react';
 
 interface Airline {
   code: string;
@@ -146,7 +142,7 @@ const AirlineSelector: FC<AirlineSelectorProps> = ({
               <input
                 placeholder="Search airlines..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => setSearchQuery((e.target as HTMLInputElement).value)}
                 className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>

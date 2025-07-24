@@ -1,11 +1,8 @@
 
 
 import * as React from 'react';
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { 
   AlertTriangle, 
   TrendingUp, 
@@ -16,6 +13,9 @@ import {
   User,
   X
 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ProfileRecommendation } from '@/services/profileCompletenessService';
 
 interface RecommendationCardProps {

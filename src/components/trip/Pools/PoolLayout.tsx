@@ -5,9 +5,9 @@ type FC<T = {}> = React.FC<T>;
 
 import { usePoolsSafe } from '@/hooks/usePoolsSafe';
 import { getPoolDisplayName } from '@/utils/getPoolDisplayName';
-import PoolSection from './PoolSection';
-import TripOfferCard from '../TripOfferCard';
 import { Skeleton } from '@/components/ui/skeleton';
+import TripOfferCard from '../TripOfferCard';
+import PoolSection from './PoolSection';
 
 interface PoolLayoutProps {
   tripId: string;

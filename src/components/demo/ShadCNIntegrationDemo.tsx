@@ -1,4 +1,3 @@
-
 /**
  * ShadCN Integration Demo Component
  * 
@@ -11,15 +10,10 @@
  */
 
 import * as React from 'react';
-const { useState } = React;
-type Component<P = {}, S = {}> = React.Component<P, S>;
-type FC<T = {}> = React.FC<T>;
-
-import { useForm } from 'react-hook-form'
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-
-// UI Components
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,8 +22,6 @@ import { Form } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
-
-// Enhanced Form Components
 import {
   TextField,
   SelectField,
@@ -39,12 +31,12 @@ import {
   FormGroup,
   FormSection
 } from '@/components/ui/enhanced-form'
-
-// Theme Components
 import { ModeToggle, useShadCNTheme } from '@/components/providers/ShadCNThemeProvider'
+import { Settings, CheckCircle, AlertCircle } from 'lucide-react'
+
+type FC<T = {}> = React.FC<T>;
 
 // Icons
-import { CheckCircle, AlertCircle, Settings, User, Mail, Lock } from 'lucide-react'
 
 // Demo Form Schema
 const demoFormSchema = z.object({

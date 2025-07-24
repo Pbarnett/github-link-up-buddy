@@ -52,18 +52,14 @@ const PersonalizedGreeting = ({ userId, isPersonalizationEnabled = true }) => {
   };
 
   if (loading) {
-    return <div className="greeting-placeholder">Loading...</div>;
+    return React.createElement('div', { className: 'greeting-placeholder' }, 'Loading...');
   }
 
-  return (
-    <div className="personalized-greeting">
-      <h2>{greeting}</h2>
-      {personalData.lastVisit && (
-        <p className="last-visit">
-          Last visit: {new Date(personalData.lastVisit).toLocaleDateString()}
-        </p>
-      )}
-    </div>
+  return React.createElement('div', { className: 'personalized-greeting' },
+    React.createElement('h2', null, greeting),
+    personalData.lastVisit && React.createElement('p', { className: 'last-visit' },
+      `Last visit: ${new Date(personalData.lastVisit).toLocaleDateString()}`
+    )
   );
 };
 

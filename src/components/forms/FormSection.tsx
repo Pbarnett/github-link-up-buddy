@@ -6,19 +6,17 @@
  */
 
 import * as React from 'react';
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-
 import type {
   FormSection as FormSectionType,
   FieldConfiguration,
   FormState
 } from '@/types/dynamic-forms';
-
 import { FieldRenderer } from './FieldRenderer';
 
 interface FormSectionProps {

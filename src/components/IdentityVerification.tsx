@@ -1,11 +1,5 @@
-
-
 import * as React from 'react';
-const { useState, useEffect } = React;
 type FC<T = {}> = React.FC<T>;
-
-import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
-
 interface VerificationSession {
   id: string;
   client_secret: string;
@@ -53,20 +47,13 @@ const IdentityVerification: FC<IdentityVerificationProps> = ({
   const [verificationSession, setVerificationSession] = useState<VerificationSession | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const [_verificationStatus, setVerificationStatus] = useState<string>('');
   const [isVerificationRequired, setIsVerificationRequired] = useState<boolean | null>(null);
 
   const returnUrl = `${window.location.origin}/verification-complete`;
 
-  // Check if verification is required on component mount
-  useEffect(() => {
-    if (user) {
-      checkVerificationRequirement();
-    }
-  }, [user, high_value_booking, campaign_id]);
-
-  const checkVerificationRequirement = async () => {
+  const checkVerificationRequirement = useCallback(async () => {
     try {
       setIsLoading(true);
       setError('');
@@ -100,7 +87,14 @@ const IdentityVerification: FC<IdentityVerificationProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase, returnUrl, purpose, high_value_booking, campaign_id, onVerificationComplete]);
+
+  // Check if verification is required on component mount
+  useEffect(() => {
+    if (user) {
+      checkVerificationRequirement();
+    }
+  }, [user, high_value_booking, campaign_id, checkVerificationRequirement]);
 
   const createVerificationSession = async () => {
     try {

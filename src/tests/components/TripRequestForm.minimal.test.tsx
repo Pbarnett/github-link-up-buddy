@@ -6,8 +6,11 @@ describe('TripRequestForm - Minimal Test', () => {
     // Let's try this without any router to see if that fixes the timeout
     const TestComponent = () => <div>Hello Test</div>;
     
-    render(<TestComponent />);
-
-    expect(screen.getByText('Hello Test')).toBeInTheDocument();
+    const result = render(<TestComponent />);
+    const element = screen.getByText('Hello Test');
+    
+    // Use basic assertions instead of jest-dom matchers for now
+    expect(element).toBeDefined();
+    expect(element.textContent).toBe('Hello Test');
   });
 });

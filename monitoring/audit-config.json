@@ -1,0 +1,43 @@
+{
+  "grafana": {
+    "audit": {
+      "enabled": true,
+      "logger": "file",
+      "settings": {
+        "path": "/var/log/grafana/audit.log",
+        "max_age": "30d",
+        "max_files": 10,
+        "max_file_size": "100MB"
+      },
+      "events": [
+        "dashboard-save",
+        "dashboard-delete",
+        "user-login",
+        "user-logout",
+        "api-key-create",
+        "api-key-delete",
+        "folder-create",
+        "folder-delete"
+      ]
+    }
+  },
+  "prometheus": {
+    "audit": {
+      "enabled": true,
+      "log_file": "/var/log/prometheus/audit.log",
+      "events": [
+        "config-reload",
+        "query-execution",
+        "rule-evaluation",
+        "alert-firing"
+      ]
+    }
+  },
+  "best_practices": [
+    "Enable log rotation to prevent disk space issues",
+    "Ship logs to centralized logging system (ELK stack)",
+    "Set up log monitoring and alerting",
+    "Regular log analysis for security events",
+    "Compliance reporting for SOX/GDPR requirements"
+  ]
+}

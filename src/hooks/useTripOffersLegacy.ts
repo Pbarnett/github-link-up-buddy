@@ -2,15 +2,14 @@
 
 // Legacy useTripOffers hook with dependency injection and improved testability.
 
-import * as React from 'react';
-const { useState, useEffect, useCallback } = React;
 
+import { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Offer, fetchTripOffers } from "@/services/tripOffersService";
 import { toast } from "@/components/ui/use-toast";
 import { invokeFlightSearch, FlightSearchRequestBody, FlightSearchResponse } from "@/services/api/flightSearchApi";
-import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
+import * as React from 'react';
 
 // Imports from the new useTripOffers.ts
 import { TripDetails, mapTripRequestToTripDetails, CACHE_DURATION, unifiedCache, clearUnifiedCache } from './useTripOffers';

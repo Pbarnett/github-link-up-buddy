@@ -13,6 +13,15 @@ import {
   // but are potentially needed for future type annotations
 } from '../_shared/filtering.ts';
 
+// Import LaunchDarkly server integration
+import {
+  evaluateFlag,
+  createUserContext,
+  createMultiContext,
+  validateContext,
+  healthCheck as launchDarklyHealthCheck
+} from '../_shared/launchdarkly.ts';
+
 // Define a type for the expected request payload
 interface FlightSearchRequest {
   tripRequestId: string;
@@ -137,10 +146,18 @@ const getTripRequestDetails = async (tripRequestId: string, supabaseClient: unkn
   return data;
 };
 
+interface FeatureFlagOptions {
+  useAdvancedFiltering: boolean;
+  enablePriceOptimization: boolean;
+  maxOfferLimit: number;
+  enableMockFallback: boolean;
+}
+
 const fetchAmadeusOffers = async (
   tripRequestId: string,
   maxPrice?: number,
-  supabaseClient?: unknown
+  supabaseClient?: unknown,
+  flagOptions?: FeatureFlagOptions
 ): Promise<AmadeusFlightOffer[]> => {
   if (!supabaseClient) {
     throw new Error('Supabase client is required');
@@ -164,6 +181,10 @@ const fetchAmadeusOffers = async (
     throw new Error('No origin airport code available in trip request');
   }
   
+  // Use feature flag for offer limit
+  const offerLimit = flagOptions?.maxOfferLimit || 10;
+  console.log('[DEBUG] Using offer limit from feature flag:', offerLimit);
+  
   const offers = await searchFlightOffers({
     originLocationCode: originCode,
     destinationLocationCode: request.destination_location_code,
@@ -172,71 +193,115 @@ const fetchAmadeusOffers = async (
     adults: request.adults || 1,
     travelClass: 'ECONOMY', // Default to economy for now
     nonStop: request.nonstop_required, // Use required setting directly
-    max: 10,  // Limit number of results for performance
+    max: offerLimit,  // Use feature flag controlled limit
   });
 
     console.log('[DEBUG] Successfully fetched', offers.length, 'offers from Amadeus');
     
-    console.log('[DEBUG] Applying new comprehensive filtering architecture...');
-    
-    // Replace old ad-hoc filtering with new comprehensive filtering system
-    try {
-      // Create filter context from trip request data
-      const filterContext = createFilterContext({
-        budget: maxPrice,
-        currency: 'USD', // Fixed to USD to ensure consistency
-        originLocationCode: originCode,
-        destinationLocationCode: request.destination_location_code,
-        departureDate: request.departure_date,
-        returnDate: request.return_date,
-        nonstopRequired: request.nonstop_required
-      });
+    // Check if advanced filtering is enabled via feature flag
+    if (flagOptions?.useAdvancedFiltering) {
+      console.log('[DEBUG] Advanced filtering enabled by feature flag - applying comprehensive filtering architecture...');
       
-      // Normalize Amadeus offers to our standard format
-      const rawOffers = offers.map(offer => ({ data: offer, provider: 'Amadeus' as const }));
-      const normalizedOffers = normalizeOffers(rawOffers, filterContext);
-      
-      console.log('[DEBUG] Normalized', normalizedOffers.length, 'Amadeus offers to standard format');
-      
-      // Create the appropriate filtering pipeline based on search parameters
-      const pipelineType = FilterFactory.recommendPipelineType({
-        budget: maxPrice,
-        nonstopRequired: request.nonstop_required,
-        returnDate: request.return_date
-      });
-      
-      console.log('[DEBUG] Using', pipelineType, 'filtering pipeline');
-      
-      const pipeline = FilterFactory.createPipeline(pipelineType);
-      
-      // Execute the filtering pipeline
-      const filterResult = await pipeline.execute(normalizedOffers, filterContext);
-      
-      console.log('[DEBUG] Filtering pipeline results:', {
-        originalCount: filterResult.originalCount,
-        finalCount: filterResult.finalCount,
-        removedCount: filterResult.originalCount - filterResult.finalCount,
-        executionTimeMs: filterResult.executionTimeMs,
-        filtersApplied: filterResult.filterResults.map(r => r.filterName)
-      });
-      
-      // Log detailed filter execution results
-      filterResult.filterResults.forEach(result => {
-        console.log(`[DEBUG] ${result.filterName}: ${result.beforeCount} → ${result.afterCount} (removed ${result.removedOffers}, ${result.executionTimeMs}ms)`);
-      });
-      
-      // Convert back to Amadeus format for database insertion
-      const filteredOffers = filterResult.filteredOffers.map(offer => offer.rawData || offer);
-      
-      console.log('[DEBUG] New filtering system processed', offers.length, '→', filteredOffers.length, 'offers in', filterResult.executionTimeMs, 'ms');
-      
-      return filteredOffers;
-      
-    } catch (filterError) {
-      console.error('[DEBUG] New filtering system failed, falling back to original offers:', filterError);
-      // Fallback to unfiltered offers if filtering fails
-      return offers;
+      // Replace old ad-hoc filtering with new comprehensive filtering system
+      try {
+        // Create filter context from trip request data
+        let filterContext = createFilterContext({
+          budget: maxPrice,
+          currency: 'USD', // Fixed to USD to ensure consistency
+          originLocationCode: originCode,
+          destinationLocationCode: request.destination_location_code,
+          departureDate: request.departure_date,
+          returnDate: request.return_date,
+          nonstopRequired: request.nonstop_required
+        });
+        
+        // Apply price optimization if enabled
+        if (flagOptions?.enablePriceOptimization && maxPrice) {
+          console.log('[DEBUG] Price optimization enabled - adjusting budget filter');
+          // Add 10% buffer to maxPrice for price optimization
+          const optimizedBudget = Math.ceil(maxPrice * 1.1);
+          filterContext = {
+            ...filterContext,
+            budget: optimizedBudget
+          };
+          console.log('[DEBUG] Optimized budget from', maxPrice, 'to', optimizedBudget);
+        }
+        
+        // Normalize Amadeus offers to our standard format
+        const rawOffers = offers.map(offer => ({ data: offer, provider: 'Amadeus' as const }));
+        const normalizedOffers = normalizeOffers(rawOffers, filterContext);
+        
+        console.log('[DEBUG] Normalized', normalizedOffers.length, 'Amadeus offers to standard format');
+        
+        // Create the appropriate filtering pipeline based on search parameters
+        const pipelineType = FilterFactory.recommendPipelineType({
+          budget: filterContext.budget,
+          nonstopRequired: request.nonstop_required,
+          returnDate: request.return_date
+        });
+        
+        console.log('[DEBUG] Using', pipelineType, 'filtering pipeline');
+        
+        const pipeline = FilterFactory.createPipeline(pipelineType);
+        
+        // Execute the filtering pipeline
+        const filterResult = await pipeline.execute(normalizedOffers, filterContext);
+        
+        console.log('[DEBUG] Filtering pipeline results:', {
+          originalCount: filterResult.originalCount,
+          finalCount: filterResult.finalCount,
+          removedCount: filterResult.originalCount - filterResult.finalCount,
+          executionTimeMs: filterResult.executionTimeMs,
+          filtersApplied: filterResult.filterResults.map(r => r.filterName)
+        });
+        
+        // Log detailed filter execution results
+        filterResult.filterResults.forEach(result => {
+          console.log(`[DEBUG] ${result.filterName}: ${result.beforeCount} → ${result.afterCount} (removed ${result.removedOffers}, ${result.executionTimeMs}ms)`);
+        });
+        
+        // Convert back to Amadeus format for database insertion
+        let filteredOffers = filterResult.filteredOffers.map(offer => offer.rawData || offer);
+        
+        // Apply offer limit if different from search limit
+        if (flagOptions?.maxOfferLimit && flagOptions.maxOfferLimit < filteredOffers.length) {
+          console.log('[DEBUG] Limiting offers from', filteredOffers.length, 'to', flagOptions.maxOfferLimit, 'based on feature flag');
+          // Sort by price and take the cheapest offers
+          filteredOffers = filteredOffers
+            .sort((a, b) => parseFloat(a.price.total) - parseFloat(b.price.total))
+            .slice(0, flagOptions.maxOfferLimit);
+        }
+        
+        console.log('[DEBUG] Advanced filtering system processed', offers.length, '→', filteredOffers.length, 'offers in', filterResult.executionTimeMs, 'ms');
+        
+        return filteredOffers;
+        
+      } catch (filterError) {
+        console.error('[DEBUG] Advanced filtering system failed, falling back to basic filtering:', filterError);
+        // Fallback to basic filtering if advanced filtering fails
+      }
+    } else {
+      console.log('[DEBUG] Advanced filtering disabled by feature flag - using basic price filtering only');
     }
+    
+    // Basic filtering fallback (when advanced filtering is disabled or fails)
+    let basicFilteredOffers = offers;
+    if (maxPrice !== undefined) {
+      const originalCount = basicFilteredOffers.length;
+      basicFilteredOffers = offers.filter(offer => {
+        const price = parseFloat(offer.price.total);
+        return price <= maxPrice;
+      });
+      console.log('[DEBUG] Basic price filtering: processed', originalCount, '→', basicFilteredOffers.length, 'offers');
+    }
+    
+    // Apply offer limit
+    if (flagOptions?.maxOfferLimit && flagOptions.maxOfferLimit < basicFilteredOffers.length) {
+      console.log('[DEBUG] Limiting offers from', basicFilteredOffers.length, 'to', flagOptions.maxOfferLimit, 'based on feature flag');
+      basicFilteredOffers = basicFilteredOffers.slice(0, flagOptions.maxOfferLimit);
+    }
+    
+    return basicFilteredOffers;
   } catch (error) {
     console.warn('[DEBUG] Amadeus API failed, falling back to mock data:', error.message);
     
@@ -666,6 +731,21 @@ serve(async (req: Request) => {
     console.log('[DEBUG] Trip request ID:', tripRequestId);
     console.log('[DEBUG] Max price filter:', maxPrice);
 
+    // Check LaunchDarkly health before processing
+    const ldHealthy = await launchDarklyHealthCheck();
+    console.log('[DEBUG] LaunchDarkly server health:', ldHealthy);
+
+    // Extract user context from request headers if available
+    const userAgent = req.headers.get('user-agent');
+    const userContext = createUserContext(
+      `trip-${tripRequestId}`, // Use trip request as user key for server-side evaluation
+      {
+        tripRequestId,
+        maxPrice: maxPrice || null,
+        userAgent: userAgent || 'unknown',
+        timestamp: new Date().toISOString()
+      }
+    );
 
     // Fetch trip details to determine if this is a round-trip search for proper filtering
     const { data: tripRequest, error: tripError } = await supabaseClient
@@ -685,8 +765,33 @@ serve(async (req: Request) => {
       isRoundTrip: !!tripRequest?.return_date
     });
 
+    // Evaluate feature flags for flight search pipeline behavior
+    console.log('[DEBUG] Evaluating feature flags for flight search behavior...');
+    
+    const useAdvancedFiltering = await evaluateFlag('flight-search-advanced-filtering', userContext, false);
+    const enablePriceOptimization = await evaluateFlag('flight-search-price-optimization', userContext, false);
+    const maxOfferLimit = await evaluateFlag('flight-search-max-offers', userContext, 10);
+    const enableMockFallback = await evaluateFlag('flight-search-mock-fallback', userContext, true);
+    
+    console.log('[DEBUG] Feature flags evaluated:', {
+      useAdvancedFiltering,
+      enablePriceOptimization,
+      maxOfferLimit,
+      enableMockFallback
+    });
+
     // Fetch Amadeus offers with trip context for filtering
-    const amadeusOffers = await fetchAmadeusOffers(tripRequestId, maxPrice, supabaseClient);
+    const amadeusOffers = await fetchAmadeusOffers(
+      tripRequestId, 
+      maxPrice, 
+      supabaseClient, 
+      {
+        useAdvancedFiltering,
+        enablePriceOptimization,
+        maxOfferLimit,
+        enableMockFallback
+      }
+    );
 
 
     if (amadeusOffers.length === 0) {

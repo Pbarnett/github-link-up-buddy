@@ -2,7 +2,6 @@
 // Complementing @stripe/stripe-js and @stripe/react-stripe-js
 
 import type { Stripe, StripeElements, StripeCardElement } from '@stripe/stripe-js';
-
 // Enhanced Stripe Hook Types
 export interface StripeHookResult {
   stripe: Stripe | null;

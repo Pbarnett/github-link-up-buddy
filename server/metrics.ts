@@ -9,6 +9,17 @@
  */
 
 import client from 'prom-client';
+// Import service dependency tracking
+import {
+  initializeDependencyTracking,
+} from './service-dependency-metrics';
+
+// Initialize dependency tracking when this module is loaded
+let _cleanupDependencyTracking: (() => void) | null = null;
+
+if (process.env.NODE_ENV !== 'test') {
+  _cleanupDependencyTracking = initializeDependencyTracking();
+}
 
 // Enable collection of default Node.js metrics (memory, CPU, etc.)
 client.collectDefaultMetrics({

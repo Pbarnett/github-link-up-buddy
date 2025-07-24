@@ -1,16 +1,16 @@
-import * as React from 'react';
-const { useState } = React;
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import * as React from 'react';
+import { useState } from 'react';
 import { 
   CreditCard, 
   Plus, 
   Trash2
 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PaymentMethodListProps, CARD_BRANDS } from '@/types/wallet';
 import { useToast } from '@/hooks/use-toast';
 import { WalletNickname } from './WalletNickname';

@@ -32,9 +32,15 @@ FROM base AS build
 ARG VITE_SUPABASE_URL=https://bbonngdyfyfjqfhvoljl.supabase.co
 ARG VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJib25uZ2R5ZnlmanFmaHZvbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNTE5NTQsImV4cCI6MjA2MjgyNzk1NH0.qoXypUh-SemZwFjTyONGztNbhoowqLMiKSRKgA7fRR0
 ARG VITE_FLAG_FS_V2=true
+ARG VITE_LAUNCHDARKLY_CLIENT_ID=686f3ab8ed094f0948726002
+ARG NODE_ENV=production
 
-# Build the application with environment variables
+# Build the application with optimized production settings
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm build
+
+# Verify build artifacts and show size
+RUN ls -la dist/ && du -sh dist/
 
 # Production stage with enhanced security
 FROM nginx:alpine AS production
@@ -69,9 +75,9 @@ LABEL org.opencontainers.image.title="Parker Flight" \
 # Expose port 80
 EXPOSE 80
 
-# Enhanced health check with timeout and proper user
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost/health || exit 1
+# Enhanced health check for our new health API endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost/api/health || curl -f http://localhost/health || exit 1
 
 # Start nginx as non-root
 CMD ["nginx", "-g", "daemon off;"]

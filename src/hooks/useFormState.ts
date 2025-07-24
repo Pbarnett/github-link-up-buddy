@@ -7,8 +7,7 @@
  */
 
 import * as React from 'react';
-const { useState, useEffect, useCallback, useMemo } = React;
-
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import type {
   FormConfiguration,

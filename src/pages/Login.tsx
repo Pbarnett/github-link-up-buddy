@@ -1,10 +1,7 @@
 
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 type FormEvent = React.FormEvent;
 
-import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 // import { Input } from '@/components/ui/input';
 // import { Label } from '@/components/ui/label';
@@ -12,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserInitializationService } from '@/services/userInitialization';
+import * as React from 'react';
 
 /**
  * LOGIN COMPONENT - GOOGLE-ONLY MVP
@@ -236,7 +234,7 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessi
                 type="email" 
                 placeholder="you@example.com" 
                 value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
+                onChange={(e) => setEmail((e.target as HTMLInputElement).value)} 
                 disabled={loading}
               />
             </div>

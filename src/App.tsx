@@ -1,40 +1,40 @@
-
-
-import * as React from 'react';
-const { useEffect } = React;
-type ReactNode = React.ReactNode;
-
-import RadixThemeProvider from "./components/providers/RadixThemeProvider";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { SmartErrorBoundary } from "@/components/ErrorBoundary";
-import { useRetryQueue } from "@/utils/retryQueue";
-import { BusinessRulesProvider } from "./hooks/useBusinessRules";
 import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-// Import dev auth for easy development authentication
+import { useRetryQueue } from "@/utils/retryQueue";
 import "@/utils/devAuth";
 import "@/utils/authTest";
+import RadixThemeProvider from "./components/providers/RadixThemeProvider";
+import { BusinessRulesProvider } from "./hooks/useBusinessRules";
+import { FormAnalyticsDashboard } from "./components/forms/analytics/FormAnalyticsDashboard";
+import AuthGuard from "./components/AuthGuard";
+import Breadcrumbs from "./components/navigation/Breadcrumbs";
+import TopNavigation from "./components/navigation/TopNavigation";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import TripNew from "./pages/TripNew";
 import TripOffers from "./pages/TripOffers";
-import TripOffersV2 from "./pages/TripOffersV2"; // Import the V2 component
+import TripOffersV2 from "./pages/TripOffersV2";
 import TripConfirm from "./pages/TripConfirm";
 import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
 import DuffelTest from "./pages/DuffelTest";
 import AutoBookingDashboard from "./pages/AutoBookingDashboard";
 import AutoBookingNew from "./pages/AutoBookingNew";
-import { FormAnalyticsDashboard } from "./components/forms/analytics/FormAnalyticsDashboard";
-import AuthGuard from "./components/AuthGuard";
+import AdminDashboard from "./pages/AdminDashboard";
+import DynamicFormTest from "./pages/DynamicFormTest";
 import NotFound from "./pages/NotFound";
-import TopNavigation from "./components/navigation/TopNavigation";
-import Breadcrumbs from "./components/navigation/Breadcrumbs";
+import { SecureFlightBooking } from '@/components/booking/SecureFlightBooking';
+import TestBooking from '@/pages/TestBooking';
+import SimpleTestBooking from '@/pages/SimpleTestBooking';
+import React, { useEffect } from 'react';
 
+type ReactNode = React.ReactNode;
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -60,6 +60,7 @@ const BreadcrumbsWrapper = () => {
     location.pathname === '/auto-booking' || 
     location.pathname === '/auto-booking/new' ||
     location.pathname === '/dashboard' ||
+    location.pathname === '/admin' ||
     location.pathname === '/search' ||
     location.pathname === '/trip/new' ||
     location.pathname.includes('/trips/') && location.pathname.includes('/v2'); // Hide on flight results pages
@@ -87,7 +88,6 @@ const GlobalMiddleware = ({ children }: { children: ReactNode }) => {
 // Personalization wrapper to provide user context
 const PersonalizationWrapper = ({ children }: { children: ReactNode }) => {
   const { userId } = useCurrentUser();
-  
   return (
     <PersonalizationProvider userId={userId || undefined}>
       {children}
@@ -99,140 +99,175 @@ const App = () => {
   return (
     <RadixThemeProvider>
       <SmartErrorBoundary level="global">
-      <QueryClientProvider client={queryClient}>
-        <BusinessRulesProvider>
-          <TooltipProvider>
-            <GlobalMiddleware>
-            <Toaster />
-            <a href="#main" className="skip-link">
-              Skip to content
-            </a>
-            <BrowserRouter 
-              future={{
-                v7_startTransition: true,
-                v7_relativeSplatPath: true
-              }}
-            >
-              <PersonalizationWrapper>
-                <NavigationWrapper />
-                <BreadcrumbsWrapper />
-                <main id="main" className="flex-1 overflow-auto">
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <AuthGuard>
-                        <AutoBookingDashboard />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/trip/new"
-                    element={<Navigate to="/auto-booking/new" replace />}
-                  />
-                  <Route
-                    path="/search"
-                    element={
-                      <AuthGuard>
-                        <TripNew />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/trip/offers"
-                    element={
-                      <AuthGuard>
-                        <TripOffers />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/trip/confirm"
-                    element={
-                      <AuthGuard>
-                        <TripConfirm />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/profile"
-                    element={
-                      <AuthGuard>
-                        <Profile />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/wallet"
-                    element={
-                      <AuthGuard>
-                        <WalletProvider>
-                          <Wallet />
-                        </WalletProvider>
-                      </AuthGuard>
-                    }
-                  />
-                  <Route path="/trips/:tripId/v2"
-                    element={
-                      <AuthGuard>
-                        <TripOffersV2 />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/auto-booking"
-                    element={
-                      <AuthGuard>
-                        <AutoBookingDashboard />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/auto-booking/new"
-                    element={
-                      <AuthGuard>
-                        <AutoBookingNew />
-                      </AuthGuard>
-                    }
-                  />
-                  {/* Duffel Flight Search - Production Ready */}
-                  <Route
-                    path="/duffel-test"
-                    element={
-                      <AuthGuard>
-                        <DuffelTest />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/flight-search"
-                    element={
-                      <AuthGuard>
-                        <DuffelTest />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/form-analytics"
-                    element={
-                      <AuthGuard>
-                        <FormAnalyticsDashboard />
-                      </AuthGuard>
-                    }
-                  />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                </main>
-              </PersonalizationWrapper>
-            </BrowserRouter>
-            </GlobalMiddleware>
-          </TooltipProvider>
-        </BusinessRulesProvider>
-      </QueryClientProvider>
-    </SmartErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <BusinessRulesProvider>
+            <TooltipProvider>
+              <GlobalMiddleware>
+                <Toaster />
+                <a href="#main" className="skip-link">
+                  Skip to content
+                </a>
+                <BrowserRouter 
+                  future={{
+                    v7_startTransition: true,
+                    v7_relativeSplatPath: true
+                  }}
+                >
+                  <PersonalizationWrapper>
+                    <WalletProvider>
+                      <NavigationWrapper />
+                      <BreadcrumbsWrapper />
+                      <main id="main" className="flex-1 overflow-auto">
+                        <Routes>
+                          <Route path="/" element={<Index />} />
+                          <Route path="/login" element={<Login />} />
+                          <Route
+                            path="/dashboard"
+                            element={
+                              <AuthGuard>
+                                <AutoBookingDashboard />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route
+                            path="/trip/new"
+                            element={<Navigate to="/auto-booking/new" replace />}
+                          />
+                          <Route
+                            path="/search"
+                            element={
+                              <AuthGuard>
+                                <TripNew />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route
+                            path="/trip/offers"
+                            element={
+                              <AuthGuard>
+                                <TripOffers />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route
+                            path="/trip/confirm"
+                            element={
+                              <AuthGuard>
+                                <TripConfirm />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route
+                            path="/profile"
+                            element={
+                              <AuthGuard>
+                                <Profile />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route
+                            path="/wallet"
+                            element={
+                              <AuthGuard>
+                                <Wallet />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route path="/trips/:tripId/v2"
+                            element={
+                              <AuthGuard>
+                                <TripOffersV2 />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route
+                            path="/auto-booking"
+                            element={
+                              <AuthGuard>
+                                <AutoBookingDashboard />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route
+                            path="/auto-booking/new"
+                            element={
+                              <AuthGuard>
+                                <AutoBookingNew />
+                              </AuthGuard>
+                            }
+                          />
+                          {/* Duffel Flight Search - Production Ready */}
+                          <Route
+                            path="/duffel-test"
+                            element={
+                              <AuthGuard>
+                                <DuffelTest />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route
+                            path="/flight-search"
+                            element={
+                              <AuthGuard>
+                                <DuffelTest />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route
+                            path="/form-analytics"
+                            element={
+                              <AuthGuard>
+                                <FormAnalyticsDashboard />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route
+                            path="/admin"
+                            element={
+                              <AuthGuard>
+                                <AdminDashboard />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route
+                            path="/forms/test"
+                            element={
+                              <AuthGuard>
+                                <DynamicFormTest />
+                              </AuthGuard>
+                            }
+                          />
+                          <Route
+                            path="/booking"
+                            element={
+                              <AuthGuard>
+                                <SecureFlightBooking />
+                              </AuthGuard>
+                            }
+                          />
+                          {/* Test-only route for E2E testing without auth */}
+                          <Route
+                            path="/test-booking"
+                            element={
+                              process.env.NODE_ENV === 'development' ? (
+                                <SimpleTestBooking />
+                              ) : (
+                                <Navigate to="/booking" replace />
+                              )
+                            }
+                          />
+                          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </main>
+                    </WalletProvider>
+                  </PersonalizationWrapper>
+                </BrowserRouter>
+              </GlobalMiddleware>
+            </TooltipProvider>
+          </BusinessRulesProvider>
+        </QueryClientProvider>
+      </SmartErrorBoundary>
     </RadixThemeProvider>
   );
 };

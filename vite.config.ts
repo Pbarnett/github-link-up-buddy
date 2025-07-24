@@ -1,6 +1,6 @@
+import path from 'path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
-import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -9,6 +9,27 @@ export default defineConfig({
     port: 3000
   },
   plugins: [react()],
+  define: {
+    global: 'globalThis',
+    'process.env': {}
+  },
+  optimizeDeps: {
+    exclude: [
+      '@aws-sdk/credential-providers',
+      '@aws-sdk/client-secrets-manager',
+      '@aws-sdk/client-kms',
+      '@aws-sdk/client-s3',
+      '@aws-sdk/client-dynamodb',
+      '@aws-sdk/client-sts',
+      '@aws-sdk/client-cloudwatch'
+    ],
+    include: [
+      'fast-xml-parser',
+      'mnemonist',
+      'mnemonist/lru-cache'
+    ],
+    force: true
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -30,10 +51,85 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
+          // Core React libraries
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          ui: ['@radix-ui/react-toast', '@radix-ui/react-tooltip'],
+          
+          // UI component libraries
+          ui: [
+            '@radix-ui/react-toast',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-label',
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-context-menu',
+            '@radix-ui/react-hover-card',
+            '@radix-ui/react-menubar',
+            '@radix-ui/react-navigation-menu',
+            '@radix-ui/react-progress',
+            '@radix-ui/react-radio-group',
+            '@radix-ui/react-scroll-area',
+            '@radix-ui/react-select',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-slider',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-toggle',
+            '@radix-ui/react-toggle-group',
+            'class-variance-authority',
+            'clsx',
+            'tailwind-merge',
+            'lucide-react'
+          ],
+          
+          // Supabase and database
+          supabase: ['@supabase/supabase-js'],
+          
+          // LaunchDarkly feature flags
+          launchdarkly: ['launchdarkly-js-client-sdk'],
+          
+          // Form handling
+          forms: [
+            'react-hook-form',
+            '@hookform/resolvers',
+            'zod'
+          ],
+          
+          // Date/time utilities
+          datetime: [
+            'date-fns'
+          ],
+          
+          // Utility libraries
+          utils: [
+            'lodash-es',
+            'uuid'
+          ]
         },
+        // Optimize chunk naming for better caching
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId
+            ? chunkInfo.facadeModuleId.split('/').pop().replace('.tsx', '').replace('.ts', '')
+            : 'chunk';
+          return `assets/${facadeModuleId}-[hash].js`;
+        },
+        // Optimize asset naming
+        assetFileNames: 'assets/[name]-[hash].[ext]'
+      },
+    },
+    // Increase chunk size warning limit since we're optimizing
+    chunkSizeWarningLimit: 1000,
+    // Enable minification optimizations
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
       },
     },
   },

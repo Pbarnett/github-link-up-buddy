@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { createMockFormConfiguration, createMockFieldConfiguration } from '@/tests/setup-dynamic-forms';
 import {
   generateZodSchema,
   generateFieldSchema,
@@ -12,7 +13,6 @@ import {
   validateFormValues,
   getDefaultValues
 } from './form-validation';
-import { createMockFormConfiguration, createMockFieldConfiguration } from '@/tests/setup-dynamic-forms';
 
 describe('Form Validation', () => {
   describe('generateFieldSchema', () => {

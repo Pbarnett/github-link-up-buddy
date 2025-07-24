@@ -17,8 +17,8 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
 import { createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts'
+import { corsHeaders } from '../_shared/cors.ts'
 
 // Webhook event types from Duffel API
 interface DuffelWebhookEvent {

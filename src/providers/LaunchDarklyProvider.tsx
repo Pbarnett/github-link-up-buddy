@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { LDClient, createSingleContext, LDFlagSet } from '@launchdarkly/react-client-sdk';
 import { getLaunchDarklyServerClient } from '../lib/launchdarkly/server-client';
+import * as React from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 interface LaunchDarklyContextProps {
   flags: LDFlagSet;

@@ -1,11 +1,8 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, useNavigate } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm';
 import { TestWrapper, renderWithProviders } from '@/tests/utils/TestWrapper';
-
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { toast } from '@/components/ui/use-toast';
@@ -174,6 +171,11 @@ vi.mock('@/hooks/useFeatureFlag', () => ({
   })),
   useFeatureFlagLegacy: vi.fn((flagName: string, defaultValue: boolean = false) => defaultValue),
   useClientFeatureFlag: vi.fn((flagName: string, rolloutPercentage: number, defaultValue: boolean = false) => defaultValue),
+}));
+
+// Mock useMobile hook to prevent addEventListener errors
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: vi.fn().mockReturnValue(false),
 }));
 
 describe('TripRequestForm - Filter Toggles Logic', () => {

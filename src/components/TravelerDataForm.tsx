@@ -1,20 +1,13 @@
-
-
-import * as React from 'react';
-const { useState } = React;
 type FormEvent = React.FormEvent;
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Calendar, FileText } from "lucide-react";
 import { travelerProfileServiceKMS, TravelerProfileKMS } from '@/services/travelerProfileServiceKMS';
-
 // Legacy import for fallback
-import { travelerProfileService, TravelerProfile } from '@/services/travelerProfileService';
-
+import { travelerProfileService, TravelerProfile as _TravelerProfile } from '@/services/travelerProfileService';
+import * as React from 'react';
 type TravelerData = TravelerProfileKMS;
 
 interface TravelerDataFormProps {
@@ -166,7 +159,7 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
               <Input
                 id="fullName"
                 value={formData.fullName}
-                onChange={(e) => handleInputChange('fullName', e.target.value)}
+                onChange={(e) => handleInputChange('fullName', (e.target as HTMLInputElement).value)}
                 placeholder="Enter full name"
                 className={errors.fullName ? 'border-red-500' : ''}
                 disabled={isLoading}
@@ -180,7 +173,7 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                onChange={(e) => handleInputChange('email', (e.target as HTMLInputElement).value)}
                 placeholder="Enter email address"
                 className={errors.email ? 'border-red-500' : ''}
                 disabled={isLoading}
@@ -198,7 +191,7 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
                   id="dateOfBirth"
                   type="date"
                   value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                  onChange={(e) => handleInputChange('dateOfBirth', (e.target as HTMLInputElement).value)}
                   className={`pl-10 ${errors.dateOfBirth ? 'border-red-500' : ''}`}
                   disabled={isLoading}
                 />
@@ -233,7 +226,7 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
                 id="phone"
                 type="tel"
                 value={formData.phone || ''}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
+                onChange={(e) => handleInputChange('phone', (e.target as HTMLInputElement).value)}
                 placeholder="Enter phone number"
                 disabled={isLoading}
               />
@@ -244,7 +237,7 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
               <Input
                 id="knownTravelerNumber"
                 value={formData.knownTravelerNumber || ''}
-                onChange={(e) => handleInputChange('knownTravelerNumber', e.target.value)}
+                onChange={(e) => handleInputChange('knownTravelerNumber', (e.target as HTMLInputElement).value)}
                 placeholder="TSA PreCheck/Global Entry"
                 disabled={isLoading}
               />
@@ -259,7 +252,7 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
                 <Input
                   id="passportNumber"
                   value={formData.passportNumber || ''}
-                  onChange={(e) => handleInputChange('passportNumber', e.target.value)}
+                  onChange={(e) => handleInputChange('passportNumber', (e.target as HTMLInputElement).value)}
                   placeholder="Enter passport number"
                   className={`pl-10 ${errors.passportNumber ? 'border-red-500' : ''}`}
                   disabled={isLoading}
@@ -273,7 +266,7 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
               <Input
                 id="passportCountry"
                 value={formData.passportCountry || ''}
-                onChange={(e) => handleInputChange('passportCountry', e.target.value)}
+                onChange={(e) => handleInputChange('passportCountry', (e.target as HTMLInputElement).value)}
                 placeholder="USA, CAN, etc."
                 disabled={isLoading}
               />
@@ -285,7 +278,7 @@ const TravelerDataForm = ({ onSubmit, isLoading = false, initialData = {}, mode 
                 id="passportExpiry"
                 type="date"
                 value={formData.passportExpiry || ''}
-                onChange={(e) => handleInputChange('passportExpiry', e.target.value)}
+                onChange={(e) => handleInputChange('passportExpiry', (e.target as HTMLInputElement).value)}
                 className={errors.passportExpiry ? 'border-red-500' : ''}
                 disabled={isLoading}
               />

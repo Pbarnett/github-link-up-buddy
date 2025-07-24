@@ -1,12 +1,12 @@
 import * as React from 'react';
-type HTMLAttributes<T = HTMLElement> = React.HTMLAttributes<T>;
+type HTMLAttributes<T = HTMLElement> = HTMLAttributes<T>;
 
 import { cn } from "@/lib/utils"
 
 function Skeleton({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn("animate-pulse rounded-md bg-muted", className)}

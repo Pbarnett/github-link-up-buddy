@@ -5,6 +5,7 @@
  * across the entire application.
  */
 
+import { PostgrestError } from '@supabase/supabase-js';
 import { 
   AppError, 
   ErrorCode, 
@@ -16,7 +17,6 @@ import {
   DUFFEL_ERROR_MAPPINGS,
   type ErrorContext
 } from './types';
-import { PostgrestError } from '@supabase/supabase-js';
 
 /**
  * Standard error response format

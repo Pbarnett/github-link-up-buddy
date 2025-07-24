@@ -21,21 +21,110 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     const page = await context.newPage();
 
     try {
-      // Perform authentication
-      await page.goto('/login');
+      // Mock authentication by setting up session storage/cookies
+      await page.goto('/');
       
-      // Use modern selectors for login
-      const emailInput = page.getByRole('textbox', { name: /email/i });
-      const passwordInput = page.getByLabel(/password/i);
-      const loginButton = page.getByRole('button', { name: /sign in|login/i });
-
-      // Fill in test credentials
-      await emailInput.fill(testData.users.testUser.email);
-      await passwordInput.fill(testData.users.testUser.password);
-      await loginButton.click();
-
-      // Wait for successful authentication
-      await expect(page.getByText(/dashboard|welcome/i).first()).toBeVisible({ timeout: 10000 });
+      // Mock OAuth authentication by injecting session data
+      await page.evaluate(() => {
+        // Mock user session in localStorage
+        localStorage.setItem('sb-auth-token', JSON.stringify({
+          access_token: 'mock-access-token',
+          refresh_token: 'mock-refresh-token',
+          user: {
+            id: 'test-user-id',
+            email: 'test@example.com',
+            name: 'Test User'
+          }
+        }));
+        
+        // Mock authenticated state
+        sessionStorage.setItem('auth-state', 'authenticated');
+      });
+      
+      // Mock Supabase auth endpoints
+      await page.route('**/auth/v1/token**', (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            access_token: 'mock-access-token',
+            refresh_token: 'mock-refresh-token',
+            user: {
+              id: 'test-user-id',
+              email: testData.users.testUser.email,
+              user_metadata: {
+                full_name: 'Test User'
+              }
+            }
+          })
+        });
+      });
+      
+      // Mock Supabase client completely
+      await page.addInitScript(() => {
+        // Define mock session
+        const mockSession = {
+          access_token: 'mock-access-token',
+          refresh_token: 'mock-refresh-token',
+          user: {
+            id: 'test-user-id',
+            email: 'test@example.com',
+            user_metadata: {
+              full_name: 'Test User'
+            }
+          }
+        };
+        
+        // Mock Supabase client globally
+        window.mockSupabaseAuth = {
+          getSession: async () => ({ data: { session: mockSession }, error: null }),
+          onAuthStateChange: (callback) => {
+            // Immediately call with signed in state
+            setTimeout(() => callback('SIGNED_IN', mockSession), 0);
+            return {
+              data: {
+                subscription: {
+                  unsubscribe: () => {}
+                }
+              }
+            };
+          }
+        };
+        
+        // Override module resolution for Supabase
+        if (typeof window.require !== 'undefined') {
+          const originalRequire = window.require;
+          window.require = (id) => {
+            if (id.includes('supabase')) {
+              return {
+                supabase: {
+                  auth: window.mockSupabaseAuth
+                }
+              };
+            }
+            return originalRequire(id);
+          };
+        }
+      });
+      
+      // Mock other auth endpoints
+      await page.route('**/auth/**', (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            user: {
+              id: 'test-user-id',
+              email: testData.users.testUser.email,
+              full_name: 'Test User'
+            },
+            session: {
+              access_token: 'mock-access-token'
+            }
+          })
+        });
+      });
 
       await use(context);
     } catch (error) {

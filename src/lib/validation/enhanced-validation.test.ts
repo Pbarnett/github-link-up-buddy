@@ -8,6 +8,12 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { z } from 'zod';
 import {
+  validateFormValuesEnhanced,
+  stringFormatValidators,
+  createConditionalValidation,
+  registerCommonSchemas
+} from '../form-validation';
+import {
   treeifyError,
   flattenError,
   prettifyError,
@@ -20,12 +26,6 @@ import {
   SchemaRegistry,
   SchemaDocumentationGenerator
 } from './schema-registry';
-import {
-  validateFormValuesEnhanced,
-  stringFormatValidators,
-  createConditionalValidation,
-  registerCommonSchemas
-} from '../form-validation';
 
 describe('Enhanced Error Formatting', () => {
   const testSchema = z.object({

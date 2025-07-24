@@ -4,9 +4,8 @@
 
 import * as React from 'react';
 type ReactNode = React.ReactNode;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 type FC<T = {}> = React.FC<T>;
-
 declare module 'murmurhash-js' {
   export function murmur3(key: string, seed?: number): number;
   export function murmur2(key: string, seed?: number): number;
@@ -14,7 +13,6 @@ declare module 'murmurhash-js' {
 
 declare module 'input-otp' {
 
-  
   export interface OTPInputProps extends Omit<ComponentProps<'input'>, 'onChange' | 'value'> {
     value: string;
     onChange: (value: string) => void;
@@ -24,11 +22,11 @@ declare module 'input-otp' {
     hasErrored?: boolean;
     isInputNum?: boolean;
     isInputSecure?: boolean;
-    containerStyle?: React.CSSProperties;
-    inputStyle?: React.CSSProperties;
-    focusStyle?: React.CSSProperties;
-    disabledStyle?: React.CSSProperties;
-    errorStyle?: React.CSSProperties;
+    containerStyle?: CSSProperties;
+    inputStyle?: CSSProperties;
+    focusStyle?: CSSProperties;
+    disabledStyle?: CSSProperties;
+    errorStyle?: CSSProperties;
     shouldAutoFocus?: boolean;
   }
   

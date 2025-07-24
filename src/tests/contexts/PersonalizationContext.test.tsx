@@ -1,13 +1,13 @@
 
 
-import * as React from 'react';
 type ReactNode = React.ReactNode;
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
-import { PersonalizationProvider, usePersonalization } from '@/contexts/PersonalizationContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PersonalizationProvider, usePersonalization } from '@/contexts/PersonalizationContext';
+import * as React from 'react';
 
 // Mock the supabase client and hooks
 vi.mock('@/integrations/supabase/client', () => ({
@@ -37,13 +37,16 @@ vi.mock('@/integrations/supabase/client', () => ({
       return chainMock;
     }),
     functions: {
-      invoke: vi.fn().mockResolvedValue({
-        data: {
-          firstName: 'John',
-          nextTripCity: 'San Francisco',
-          personalizationEnabled: true
-        },
-        error: null
+      invoke: vi.fn(() => {
+        console.log('Mock supabase.functions.invoke called');
+        return Promise.resolve({
+          data: {
+            firstName: 'John',
+            nextTripCity: 'San Francisco',
+            personalizationEnabled: true
+          },
+          error: null
+        });
       })
     }
   },

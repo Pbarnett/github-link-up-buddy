@@ -2,8 +2,6 @@
 // Privacy-first consent management for personalization features
 // Based on GDPR/CCPA compliance requirements
 
-import * as React from 'react';
-const { useState, useEffect } = React;
 type FC<T = {}> = React.FC<T>;
 
 import { Button } from '@/components/ui/button';
@@ -11,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Shield, Settings, Plane } from 'lucide-react';
+import * as React from 'react';
 
 export interface ConsentPreferences {
   personalization: boolean;

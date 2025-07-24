@@ -1,9 +1,6 @@
 
 
-import * as React from 'react';
-const { useEffect } = React;
 
-import { useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import { useTripOffers } from "@/hooks/useTripOffersLegacy";
 import { TripDetails } from "@/hooks/useTripOffers";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -12,8 +9,9 @@ import TripOfferDetailsCard from "@/components/trip/TripOfferDetailsCard";
 import TripOfferList from "@/components/trip/TripOfferList";
 import TripOfferControls from "@/components/trip/TripOfferControls";
 import TripErrorCard from "@/components/trip/TripErrorCard";
-import TripOffersWithPools from "./TripOffersWithPools";
 import DebugInfo from "@/components/debug/DebugInfo";
+import TripOffersWithPools from "./TripOffersWithPools";
+import * as React from 'react';
 
 // Legacy component wrapper for the existing functionality
 const LegacyTripOffers = ({ tripId, initialTripDetails }: { tripId: string; initialTripDetails?: TripDetails }) => {

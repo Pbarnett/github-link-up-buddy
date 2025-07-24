@@ -1,7 +1,5 @@
 
 
-import * as React from 'react';
-const { useEffect } = React;
 type FC<T = {}> = React.FC<T>;
 
 import { cn } from '@/lib/utils';
@@ -9,6 +7,7 @@ import { GreetingBannerProps, PersonalizationEvent } from '@/types/personalizati
 import { usePersonalization } from '@/contexts/PersonalizationContext';
 import { getGreeting } from '@/lib/personalization/voiceAndTone';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import * as React from 'react';
 
 interface GreetingBannerComponentProps extends GreetingBannerProps {
   onClick?: () => void;
@@ -162,7 +161,7 @@ export const GreetingBanner: FC<GreetingBannerComponentProps> = ({
 
   // Render the greeting
   const icon = getIcon();
-  const displayText = greetingText;
+  const displayText = greetingText || 'Welcome!';
 
   return (
     <div
@@ -184,7 +183,7 @@ export const GreetingBanner: FC<GreetingBannerComponentProps> = ({
           <span className="text-2xl" role="img" aria-hidden="true">
             {icon}
           </span>
-          <span>{displayText.replace(icon, '').trim()}</span>
+          <span>{displayText?.replace(icon, '').trim() || displayText}</span>
         </span>
       ) : (
         <span>{displayText}</span>

@@ -5,7 +5,8 @@
  * Integrates AWS Secrets Manager, Stripe payments, and Supabase backend.
  */
 
-import React, { useState, useCallback } from 'react';
+import * as React from 'react';
+import { useState, useCallback } from 'react';
 import { FlightOffer } from '@/services/flightSearchSecure';
 import { stripeServiceSecure } from '@/services/stripeServiceSecure';
 import SecureFlightSearch from '@/components/flights/SecureFlightSearch';
@@ -388,7 +389,7 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
                   <input
                     type="text"
                     value={passenger.firstName}
-                    onChange={(e) => handlePassengerUpdate(index, 'firstName', e.target.value)}
+                    onChange={(e) => handlePassengerUpdate(index, 'firstName', (e.target as HTMLInputElement).value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
@@ -400,7 +401,7 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
                   <input
                     type="text"
                     value={passenger.lastName}
-                    onChange={(e) => handlePassengerUpdate(index, 'lastName', e.target.value)}
+                    onChange={(e) => handlePassengerUpdate(index, 'lastName', (e.target as HTMLInputElement).value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
@@ -415,7 +416,7 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
                   <input
                     type="date"
                     value={passenger.dateOfBirth}
-                    onChange={(e) => handlePassengerUpdate(index, 'dateOfBirth', e.target.value)}
+                    onChange={(e) => handlePassengerUpdate(index, 'dateOfBirth', (e.target as HTMLInputElement).value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
@@ -426,7 +427,7 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
                   </label>
                   <select
                     value={passenger.gender}
-                    onChange={(e) => handlePassengerUpdate(index, 'gender', e.target.value)}
+                    onChange={(e) => handlePassengerUpdate(index, 'gender', (e.target as HTMLSelectElement).value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="M">Male</option>
@@ -451,7 +452,7 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
                   value={bookingState.contactEmail}
                   onChange={(e) => setBookingState(prev => ({ 
                     ...prev, 
-                    contactEmail: e.target.value 
+                    contactEmail: (e.target as HTMLInputElement).value 
                   }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
@@ -466,7 +467,7 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
                   value={bookingState.contactPhone}
                   onChange={(e) => setBookingState(prev => ({ 
                     ...prev, 
-                    contactPhone: e.target.value 
+                    contactPhone: (e.target as HTMLInputElement).value 
                   }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required

@@ -87,7 +87,7 @@ export async function verifyStripeSignature(
     
     // Verify at least one signature matches
     for (const sig of signatureData.signatures) {
-      const isValid = await verifyHmacSha256(signedPayload, sig, secret);
+      const _isValid = await verifyHmacSha256(signedPayload, sig, secret);
       if (isValid) {
         return true;
       }

@@ -1,10 +1,10 @@
+import { formatDistanceToNow } from "date-fns";
+import { MoreVertical, Edit, Pause, Play, Trash2, MapPin, Calendar, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Campaign } from "@/types/campaign";
-import { formatDistanceToNow } from "date-fns";
-import { MoreVertical, Edit, Pause, Play, Trash2, MapPin, Calendar, DollarSign } from "lucide-react";
 
 interface CampaignCardProps {
   campaign: Campaign;

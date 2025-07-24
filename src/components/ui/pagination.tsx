@@ -1,12 +1,11 @@
 
 
-import * as React from 'react';
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { ButtonProps, buttonVariants } from "@/components/ui/button"
+import * as React from 'react';
 
 const Pagination = ({ className, ...props }: ComponentProps<"nav">) => (
   <nav
@@ -18,9 +17,8 @@ const Pagination = ({ className, ...props }: ComponentProps<"nav">) => (
 )
 Pagination.displayName = "Pagination"
 
-const PaginationContent = React.forwardRef<
-  HTMLUListElement,
-  ComponentProps<"ul">
+const PaginationContent = forwardRef<
+  HTMLUListElementProps<"ul">
 >(({ className, ...props }, ref) => (
   <ul
     ref={ref}
@@ -30,9 +28,8 @@ const PaginationContent = React.forwardRef<
 ))
 PaginationContent.displayName = "PaginationContent"
 
-const PaginationItem = React.forwardRef<
-  HTMLLIElement,
-  ComponentProps<"li">
+const PaginationItem = forwardRef<
+  HTMLLIElementProps<"li">
 >(({ className, ...props }, ref) => (
   <li ref={ref} className={cn("", className)} {...props} />
 ))

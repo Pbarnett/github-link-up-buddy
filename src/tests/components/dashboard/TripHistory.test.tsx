@@ -1,13 +1,13 @@
 
 
 // src/tests/components/dashboard/TripHistory.test.tsx
-import * as React from 'react';
-type Component<P = {}, S = {}> = React.Component<P, S>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed
-import { MemoryRouter } from 'react-router-dom'; // For <Link>
+import * as React from 'react';
 
 // Use global Supabase mock from setupTests.ts
 // Access the global mock for test-specific behavior
@@ -129,8 +129,6 @@ describe('TripHistory Component', () => {
   });
 
   it('5. Verifies link construction for "View Details"', async () => {
-    // This is implicitly tested in scenario 4 by checking the href attribute.
-    // If more specific Link prop testing was needed, the mock for Link could be enhanced.
     renderTripHistory();
     mockSupabaseQueryResolver.resolve({ data: [mockBookingsData[0]], error: null });
 
@@ -138,12 +136,18 @@ describe('TripHistory Component', () => {
       const detailsLink = screen.getByRole('link', { name: /View Details/i });
       expect(detailsLink).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}`);
     });
+    
     // Check that the mocked Link component was called with the correct `to` prop
     const { Link } = await import('react-router-dom');
     const LinkMock = Link as any;
+    
+    // Check that Link was called with the correct props
     expect(LinkMock).toHaveBeenCalledWith(
-        expect.objectContaining({ to: `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}` }),
-        expect.anything()
+        expect.objectContaining({ 
+          to: `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}`,
+          children: 'View Details'
+        }),
+        undefined
     );
   });
 });

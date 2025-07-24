@@ -7,8 +7,8 @@
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database, Tables } from '@/integrations/supabase/types';
-import { BaseRepository, FilterCondition, QueryOptions } from './base';
 import { BusinessLogicError, ErrorCode } from '../errors/types';
+import { BaseRepository, FilterCondition, QueryOptions } from './base';
 
 export type TripRequest = Tables<'trip_requests'>;
 export type TripRequestInsert = Database['public']['Tables']['trip_requests']['Insert'];

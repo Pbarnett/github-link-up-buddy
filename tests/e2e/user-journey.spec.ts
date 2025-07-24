@@ -1,5 +1,5 @@
-import { test, expect } from '../fixtures/extendedTest';
 import { injectAxe, checkA11y } from 'axe-playwright';
+import { test, expect } from '../fixtures/extendedTest';
 
 test.describe('Core User Journey', () => {
   test.beforeEach(async ({ page }) => {
