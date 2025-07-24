@@ -74,6 +74,7 @@ process.env.NODE_ENV = 'test'
 ;(globalThis as Record<string, unknown>).useContext = React.useContext
 ;(globalThis as Record<string, unknown>).useReducer = React.useReducer
 ;(globalThis as Record<string, unknown>).useLayoutEffect = React.useLayoutEffect
+;(globalThis as Record<string, unknown>).useId = React.useId
 ;(globalThis as Record<string, unknown>).createContext = React.createContext
 
 // Make React Testing Library functions globally available
@@ -402,6 +403,12 @@ vi.mock('react-router-dom', async () => {
       // Don't pass initialEntries as a DOM prop to avoid React warnings
       return createElement('div', { ...props, 'data-testid': 'memory-router' }, children);
     },
+    Routes: ({ children, ...props }: any) => {
+      return createElement('div', { ...props, 'data-testid': 'routes' }, children);
+    },
+    Route: ({ children, element, ...props }: any) => {
+      return createElement('div', { ...props, 'data-testid': 'route' }, element || children);
+    },
   };
 });
 
@@ -417,6 +424,18 @@ const MockMemoryRouter = ({ children, initialEntries, ...props }: any) => {
 
 ;(globalThis as Record<string, unknown>).Link = MockLink
 ;(globalThis as Record<string, unknown>).MemoryRouter = MockMemoryRouter
+
+// Make React Router Routes and Route components globally available
+const MockRoutes = ({ children, ...props }: any) => {
+  return createElement('div', { ...props, 'data-testid': 'routes' }, children);
+};
+
+const MockRoute = ({ children, element, ...props }: any) => {
+  return createElement('div', { ...props, 'data-testid': 'route' }, element || children);
+};
+
+;(globalThis as Record<string, unknown>).Routes = MockRoutes
+;(globalThis as Record<string, unknown>).Route = MockRoute
 
 // Make React Router hooks globally available
 ;(globalThis as Record<string, unknown>).useParams = vi.fn(() => ({}))
@@ -874,6 +893,97 @@ const MockSlot = ({ children, ...props }: any) => {
   return createElement('div', props, children);
 };
 ;(globalThis as Record<string, unknown>).Slot = MockSlot
+
+// ==============================================================================
+// LUCIDE REACT ICONS MOCKS
+// ==============================================================================
+
+// Mock all commonly used Lucide React icons
+vi.mock('lucide-react', () => {
+  // Create a generic icon component that renders as a span with the icon name
+  const createMockIcon = (name: string) => ({
+    className = '',
+    size,
+    ...props
+  }: any) => {
+    return createElement('span', {
+      ...props,
+      className: `lucide-icon lucide-${name.toLowerCase()} ${className}`,
+      'data-testid': `icon-${name.toLowerCase()}`,
+      'aria-label': name,
+      role: 'img'
+    });
+  };
+
+  return {
+    AlertCircle: createMockIcon('AlertCircle'),
+    Terminal: createMockIcon('Terminal'),
+    CheckCircle: createMockIcon('CheckCircle'),
+    XCircle: createMockIcon('XCircle'),
+    Info: createMockIcon('Info'), 
+    Loader: createMockIcon('Loader'),
+    RefreshCw: createMockIcon('RefreshCw'),
+    Search: createMockIcon('Search'),
+    Filter: createMockIcon('Filter'),
+    Calendar: createMockIcon('Calendar'),
+    Clock: createMockIcon('Clock'),
+    MapPin: createMockIcon('MapPin'),
+    Plane: createMockIcon('Plane'),
+    DollarSign: createMockIcon('DollarSign'),
+    Users: createMockIcon('Users'),
+    Settings: createMockIcon('Settings'),
+    Menu: createMockIcon('Menu'),
+    X: createMockIcon('X'),
+    ChevronDown: createMockIcon('ChevronDown'),
+    ChevronUp: createMockIcon('ChevronUp'),
+    ChevronLeft: createMockIcon('ChevronLeft'),
+    ChevronRight: createMockIcon('ChevronRight'),
+    Plus: createMockIcon('Plus'),
+    Minus: createMockIcon('Minus'),
+    Edit: createMockIcon('Edit'),
+    Trash: createMockIcon('Trash'),
+    Save: createMockIcon('Save'),
+    Copy: createMockIcon('Copy'),
+    Share: createMockIcon('Share'),
+    Download: createMockIcon('Download'),
+    Upload: createMockIcon('Upload'),
+    Eye: createMockIcon('Eye'),
+    EyeOff: createMockIcon('EyeOff'),
+    Lock: createMockIcon('Lock'),
+    Unlock: createMockIcon('Unlock'),
+    Star: createMockIcon('Star'),
+    Heart: createMockIcon('Heart'),
+    Home: createMockIcon('Home'),
+    Mail: createMockIcon('Mail'),
+    Phone: createMockIcon('Phone'),
+    Globe: createMockIcon('Globe'),
+    ArrowRight: createMockIcon('ArrowRight'),
+    ArrowLeft: createMockIcon('ArrowLeft'),
+    ArrowUp: createMockIcon('ArrowUp'),
+    ArrowDown: createMockIcon('ArrowDown'),
+  };
+});
+
+// Make commonly used icons globally available
+const createMockIcon = (name: string) => ({
+  className = '',
+  size,
+  ...props
+}: any) => {
+  return createElement('span', {
+    ...props,
+    className: `lucide-icon lucide-${name.toLowerCase()} ${className}`,
+    'data-testid': `icon-${name.toLowerCase()}`,
+    'aria-label': name,
+    role: 'img'
+  });
+};
+
+;(globalThis as Record<string, unknown>).AlertCircle = createMockIcon('AlertCircle')
+;(globalThis as Record<string, unknown>).Terminal = createMockIcon('Terminal')
+;(globalThis as Record<string, unknown>).CheckCircle = createMockIcon('CheckCircle')
+;(globalThis as Record<string, unknown>).XCircle = createMockIcon('XCircle')
+;(globalThis as Record<string, unknown>).RefreshCw = createMockIcon('RefreshCw')
 
 // Export commonly used mocks for test files
 const createMockSupabaseClient = () => mockSupabaseClient;
