@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { FlightOfferV2DbRow } from '@/flightSearchV2/types';
 import { Tables } from '@/integrations/supabase/types';

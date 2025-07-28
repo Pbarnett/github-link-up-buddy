@@ -1,9 +1,12 @@
-type ReactNode = React.ReactNode;
-type _Component<P = {}, S = {}> = React.Component<P, S>;
-
+import * as React from 'react';
 import * as RechartsPrimitive from 'recharts';
-
 import { cn } from '@/lib/utils';
+import { useMemo } from 'react';
+
+
+type ElementRef<T extends React.ElementType> = React.ElementRef<T>;
+type ComponentPropsWithoutRef<T extends React.ElementType> =
+  React.ComponentPropsWithoutRef<T>;
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;
@@ -34,7 +37,7 @@ function useChart() {
   return context;
 }
 
-const ChartContainer = forwardRef<
+const ChartContainer = React.forwardRef<
   HTMLDivElementProps<'div'> & {
     config: ChartConfig;
     children: ComponentProps<
@@ -101,7 +104,7 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
-const ChartTooltipContent = forwardRef<
+const ChartTooltipContent = React.forwardRef<
   HTMLDivElementProps<typeof RechartsPrimitive.Tooltip> &
     ComponentProps<'div'> & {
       hideLabel?: boolean;
@@ -256,7 +259,7 @@ ChartTooltipContent.displayName = 'ChartTooltip';
 
 const ChartLegend = RechartsPrimitive.Legend;
 
-const ChartLegendContent = forwardRef<
+const ChartLegendContent = React.forwardRef<
   HTMLDivElementProps<'div'> &
     Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> & {
       hideIcon?: boolean;

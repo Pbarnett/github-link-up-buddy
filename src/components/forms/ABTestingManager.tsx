@@ -7,20 +7,61 @@
 
 import * as React from 'react';
 import { useState } from 'react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  Bell,
+  Calendar,
+  CalendarIcon,
+  CheckCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Circle,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Download,
+  Eye,
+  FileText,
+  Filter,
+  Globe,
+  HelpCircle,
+  Info,
+  Loader2,
+  Lock,
+  Mail,
+  MapPin,
+  Package,
+  Pause,
+  Phone,
+  Plane,
+  PlaneTakeoff,
+  Play,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Settings,
+  Shield,
+  Target,
+  TestTube,
+  Trash2,
+  Upload,
+  User,
+  Users,
+  Wifi,
+  X,
+  XCircle,
+  Zap,
+} from 'lucide-react';
 
 type FC<T = {}> = React.FC<T>;
 
-import {
-  TestTube,
-  Play,
-  Pause,
-  CheckCircle,
-  XCircle,
-  Settings,
-  Users,
-  Target,
-  BarChart3,
-} from 'lucide-react';
+// Additional icons imported above
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

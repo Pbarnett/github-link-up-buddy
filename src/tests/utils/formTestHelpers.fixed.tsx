@@ -16,6 +16,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { vi, Mock } from 'vitest';
 import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { UseFormReturn } from 'react-hook-form';
 
 // ✅ CORRECT: Test wrapper that provides form context
 export const FormTestWrapper: FC<{

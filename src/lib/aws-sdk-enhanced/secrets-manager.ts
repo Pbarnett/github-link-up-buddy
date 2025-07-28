@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { IS_MOCK_MODE } from '../aws-sdk-browser-compat';
 import { EnhancedAWSClientFactory } from './client-factory';
 import { EnhancedAWSErrorHandler } from './error-handling';

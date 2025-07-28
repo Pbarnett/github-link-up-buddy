@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * AirlineFilter Tests - Phase 4.1
  *

@@ -20,6 +20,7 @@ import {
 import { MultiTravelerManager } from './MultiTravelerManager';
 import { ProfileCompletionWidget } from './ProfileCompletionWidget';
 import { SimpleProfileStatus } from './SimpleProfileStatus';
+import { useMemo } from 'react';
 
 // Enhanced ProfileV2 Component
 export function ProfileV2() {

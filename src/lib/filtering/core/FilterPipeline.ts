@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Core Filter Pipeline Implementation
  *

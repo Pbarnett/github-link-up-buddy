@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Control, UseFormWatch } from 'react-hook-form';
 import {
   FormControl,

@@ -39,21 +39,26 @@ vi.mock('@/hooks/use-mobile', () => ({
 
 // Mock the LiveBookingSummary component to avoid complex dependencies
 vi.mock('@/components/trip/LiveBookingSummary', () => ({
-  default: ({ isVisible }: { isVisible: boolean }) => 
-    isVisible ? 
-      <div data-testid="live-booking-summary">Live Booking Summary (Mock)</div> : 
-      null,
+  default: ({ isVisible }: { isVisible: boolean }) =>
+    isVisible ? (
+      <div data-testid="live-booking-summary">Live Booking Summary (Mock)</div>
+    ) : null,
 }));
 
 // Mock react-hook-form
-vi.mock('react-hook-form', async (importOriginal) => {
+vi.mock('react-hook-form', async importOriginal => {
   const actual = await importOriginal<typeof import('react-hook-form')>();
   return {
     ...actual,
     useForm: () => ({
       register: vi.fn(),
       handleSubmit: vi.fn(),
-      formState: { errors: {}, isValid: false, isSubmitting: false, defaultValues: {} },
+      formState: {
+        errors: {},
+        isValid: false,
+        isSubmitting: false,
+        defaultValues: {},
+      },
       getValues: vi.fn(() => ({})),
       setValue: vi.fn(),
       reset: vi.fn(),
@@ -81,7 +86,11 @@ vi.mock('react-hook-form', async (importOriginal) => {
       setValue: vi.fn(),
       watch: vi.fn(),
       control: {},
-      getFieldState: vi.fn(() => ({ invalid: false, isTouched: false, isDirty: false })),
+      getFieldState: vi.fn(() => ({
+        invalid: false,
+        isTouched: false,
+        isDirty: false,
+      })),
     }),
     useWatch: vi.fn(() => ({
       earliestDeparture: new Date('2024-12-15'),
@@ -97,7 +106,8 @@ vi.mock('react-hook-form', async (importOriginal) => {
       preferred_payment_method_id: null,
       auto_book_consent: false,
     })),
-    Controller: ({ render }: any) => render({ field: { onChange: vi.fn(), value: undefined } }),
+    Controller: ({ render }: any) =>
+      render({ field: { onChange: vi.fn(), value: undefined } }),
   };
 });
 
@@ -129,26 +139,26 @@ describe('TripRequestForm Debug', () => {
     );
 
     // Debug: log what's actually being rendered
-    console.log('Container HTML length:', container.innerHTML.length);
+    // console.log('Container HTML length:', container.textContent?.length || 0);
 
     // Count elements
     const h1Elements = container.querySelectorAll('h1');
     const h2Elements = container.querySelectorAll('h2');
-    console.log('H1 count:', h1Elements.length);
-    console.log('H2 count:', h2Elements.length);
+    // console.log('H1 count:', h1Elements.length);
+    // console.log('H2 count:', h2Elements.length);
 
     // Check for key text
     const allText = container.textContent || '';
-    console.log('Contains Trip Basics:', allText.includes('Trip Basics'));
-    console.log('Contains Plan Your Trip:', allText.includes('Plan Your Trip'));
-    console.log('Contains Where & When:', allText.includes('Where & When'));
-    console.log('Contains Travel Details:', allText.includes('Travel Details'));
-    console.log('Text content length:', allText.length);
+    // console.log('Contains Trip Basics:', allText.includes('Trip Basics'));
+    // console.log('Contains Plan Your Trip:', allText.includes('Plan Your Trip'));
+    // console.log('Contains Where & When:', allText.includes('Where & When'));
+    // console.log('Contains Travel Details:', allText.includes('Travel Details'));
+    // console.log('Text content length:', allText.length);
 
     // Let's see what H1 elements contain
-    h1Elements.forEach((h1, index) => {
-      console.log(`H1 ${index}:`, h1.textContent);
-    });
+    // h1Elements.forEach((h1, index) => {
+    //   console.log(`H1 ${index}:`, h1.textContent);
+    // });
 
     // This test should pass - just for debugging
     expect(container).toBeInTheDocument();
@@ -162,11 +172,11 @@ describe('TripRequestForm Debug', () => {
     );
 
     const allText = container.textContent || '';
-    console.log(
-      'Manual mode - Contains Plan Your Trip:',
-      allText.includes('Plan Your Trip')
-    );
-    console.log('Manual mode - Text length:', allText.length);
+    // console.log(
+    //   'Manual mode - Contains Plan Your Trip:',
+    //   allText.includes('Plan Your Trip')
+    // );
+    // console.log('Manual mode - Text length:', allText.length);
 
     expect(container).toBeInTheDocument();
   });

@@ -16,7 +16,7 @@ const BusinessRulesContext = createContext<
   BusinessRulesContextType | undefined
 >(undefined);
 
-export function BusinessRulesProvider({ children }: { children: ReactNode }) {
+const BusinessRulesProvider = ({ children }: { children: ReactNode }) => {
   const [config, setConfig] = useState<BusinessRulesConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,9 @@ export function BusinessRulesProvider({ children }: { children: ReactNode }) {
       {children}
     </BusinessRulesContext.Provider>
   );
-}
+};
+
+export { BusinessRulesProvider };
 
 export function useBusinessRules() {
   const context = useContext(BusinessRulesContext);

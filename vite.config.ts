@@ -6,9 +6,16 @@ import react from '@vitejs/plugin-react-swc'
 export default defineConfig({
   server: {
     host: '127.0.0.1',
-    port: 3000
+    port: 3000,
+    hmr: {
+      port: 3001,
+      host: 'localhost'
+    }
   },
   plugins: [react()],
+  esbuild: {
+    target: 'es2022'
+  },
   define: {
     global: 'globalThis',
     'process.env': {}
@@ -48,6 +55,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    target: 'es2022',
     rollupOptions: {
       output: {
         manualChunks: {

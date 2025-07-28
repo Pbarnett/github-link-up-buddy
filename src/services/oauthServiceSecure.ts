@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Secure OAuth Service with AWS Secrets Manager Integration
  *

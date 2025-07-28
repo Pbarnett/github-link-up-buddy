@@ -1,0 +1,105 @@
+# Tracetest Configuration for Flight Booking Flow
+# End-to-end trace validation for the complete booking pipeline
+
+type: Test
+spec:
+  id: booking-flow-e2e
+  name: "Flight Booking End-to-End Trace Validation"
+  description: "Validates complete trace structure and propagation across all services"
+  
+  trigger:
+    type: http
+    httpRequest:
+      method: POST
+      url: ${BOOKING_API_URL}/api/book-flight
+      headers:
+        Content-Type: application/json
+        Authorization: Bearer ${TEST_API_TOKEN}
+      body: |
+        {
+          "departure": "JFK",
+          "arrival": "LAX", 
+          "departureDate": "2024-02-15",
+          "passengers": 1,
+          "paymentMethod": {
+            "type": "card",
+            "token": "test_card_token"
+          }
+        }
+  
+  specs:
+    # Trace structure validation
+    - selector: span[tracetest.span.type="http" name="POST /api/book-flight"]
+      assertions:
+        - attr:http.method = "POST"
+        - attr:http.route = "/api/book-flight"
+        - attr:http.status_code = 200
+        - attr:service.name = "parker-flight-auto-booking"
+        - attr:span.kind = "server"
+    
+    # Duffel API integration spans
+    - selector: span[service.name="duffel-api" span.kind="client"]
+      assertions:
+        - attr:http.method in ["GET", "POST"]
+        - attr:http.url contains "api.duffel.com"
+        - attr:span.status.code = 1  # OK status
+        - duration < 5000ms
+    
+    # Stripe payment processing spans  
+    - selector: span[service.name="stripe-api" span.kind="client"]
+      assertions:
+        - attr:http.method = "POST"
+        - attr:http.url contains "api.stripe.com"
+        - attr:stripe.payment_intent.id exists
+        - attr:span.status.code = 1
+        
+    # Redis cache operations
+    - selector: span[db.system="redis"]
+      assertions:
+        - attr:db.operation in ["GET", "SET", "SETEX"]
+        - attr:db.redis.database_index exists
+        - attr:net.peer.name exists
+        - duration < 100ms
+        
+    # Context propagation validation
+    - selector: span[tracetest.span.type="http"]
+      assertions:
+        - attr:trace.parent_id exists
+        - attr:trace.trace_id exists
+        - attr:trace.span_id exists
+        
+    # Service dependencies - ensure all services are called
+    - selector: span[service.name="duffel-service"]
+      count: ">= 1"
+      
+    - selector: span[service.name="payment-service"] 
+      count: ">= 1"
+      
+    - selector: span[service.name="cache-service"]
+      count: ">= 1"
+      
+    - selector: span[service.name="monitor-service"]
+      count: ">= 1"
+      
+    # Error handling validation
+    - selector: span[span.status.code=2]  # ERROR status
+      count: "= 0"  # No error spans expected in successful flow
+      
+    # Performance assertions
+    - selector: span[tracetest.span.type="http" name="POST /api/book-flight"]
+      assertions:
+        - duration < 10000ms  # Complete booking under 10s
+        
+    # Semantic conventions compliance
+    - selector: span[span.kind="client"][http.method exists]
+      assertions:
+        - attr:http.url exists
+        - attr:http.method in ["GET", "POST", "PUT", "DELETE"]
+        - attr:http.status_code exists
+        
+    # Resource attributes validation
+    - selector: span
+      assertions:
+        - attr:service.name exists
+        - attr:service.version exists
+        - attr:deployment.environment exists

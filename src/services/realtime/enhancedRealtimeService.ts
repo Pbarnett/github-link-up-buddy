@@ -11,6 +11,8 @@ import {
 import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database, Tables } from '@/types/database';
+import { useState } from 'react';
+import { useEffect } from 'react';
 
 interface SubscriptionOptions {
   schema?: string;

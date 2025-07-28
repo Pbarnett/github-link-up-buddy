@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Multi-Region AWS Service Manager
  *

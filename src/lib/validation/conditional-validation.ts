@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Conditional Validation System - Yup-like .when() for Zod
  *

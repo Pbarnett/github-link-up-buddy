@@ -10,6 +10,11 @@ import {
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserInitializationService } from '@/services/userInitialization';
+import { useState, useEffect } from 'react';
+import { AuthErrorHandler } from '@/services/authErrorHandler';
+import { AuthResilience, SessionManager } from '@/services/authResilience';
+import { authMigrationService, getMigrationStatus } from '@/services/authMigrationService';
+import { AlertCircle, AlertTriangle, ArrowRight, Bell, Calendar, CalendarIcon, CheckCircle, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Circle, Clock, CreditCard, DollarSign, Download, Eye, FileText, Filter, Globe, HelpCircle, Info, Loader2, Lock, Mail, MapPin, Package, Phone, Plane, PlaneTakeoff, Plus, RefreshCw, Save, Search, Settings, Shield, Trash2, Upload, User, Wifi, X, XCircle, Zap } from 'lucide-react';
 import {
   modernGoogleAuth,
   type AuthResult,
@@ -34,6 +39,7 @@ const LoginModern = () => {
     'standard'
   );
   const [oneTapAttempted, setOneTapAttempted] = useState(false);
+  const [migrationStatus, setMigrationStatus] = useState(getMigrationStatus());
 
   useEffect(() => {
     initializeAuth();
@@ -41,34 +47,49 @@ const LoginModern = () => {
 
   const initializeAuth = async () => {
     try {
-      // Check current session
-      const { data, error } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error('❌ Session check error:', error);
-        setIsAuthenticated(false);
-      } else {
-        setIsAuthenticated(!!data.session);
-
-        if (data.session) {
+      // Validate session with recovery capability
+      const sessionValid = await SessionManager.validateAndRecoverSession();
+      
+      if (sessionValid) {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (!error && data.session) {
           console.log('✅ User already authenticated');
+          setIsAuthenticated(true);
           return;
         }
       }
 
-      // Initialize modern Google Auth
-      await modernGoogleAuth.initialize();
+      // If we get here, session validation failed or no session exists
+      setIsAuthenticated(false);
 
-      // Determine best auth mode based on browser capabilities
-      const privacyMode = await modernGoogleAuth.handlePrivacySettings();
-      setAuthMode(privacyMode);
+      // Update migration status
+      setMigrationStatus(getMigrationStatus());
 
-      // Attempt One Tap if not already tried and user not authenticated
-      if (!oneTapAttempted && !data.session && privacyMode !== 'redirect') {
-        attemptOneTap();
+      // Initialize authentication using migration service
+      if (migrationStatus.userInMigration) {
+        console.log('🚀 Initializing Modern Google Auth via Migration Service');
+        
+        // Initialize modern Google Auth
+        await modernGoogleAuth.initialize();
+
+        // Determine best auth mode based on browser capabilities
+        const privacyMode = await modernGoogleAuth.handlePrivacySettings();
+        setAuthMode(privacyMode);
+
+        // Attempt One Tap if not already tried and user not authenticated
+        if (!oneTapAttempted && privacyMode !== 'redirect') {
+          attemptOneTap();
+        }
+      } else {
+        console.log('🔄 Using Legacy OAuth via Migration Service');
+        setAuthMode('redirect'); // Use redirect mode for legacy
       }
     } catch (error) {
-      console.error('❌ Auth initialization error:', error);
+      AuthErrorHandler.handleAuthError(error, {
+        component: 'LoginModern',
+        flow: 'initializeAuth'
+      });
       setIsAuthenticated(false);
     }
 
@@ -104,7 +125,9 @@ const LoginModern = () => {
 
     try {
       setOneTapAttempted(true);
-      await modernGoogleAuth.displayOneTap();
+      
+      // Use migration service for One Tap
+      await authMigrationService.displayOneTap();
     } catch (error) {
       console.log('One Tap failed, will use button flow:', error);
     }
@@ -147,8 +170,8 @@ const LoginModern = () => {
       }
       popupTest.close();
 
-      // Use popup flow if One Tap wasn't successful
-      const result: AuthResult = await modernGoogleAuth.signInWithPopup();
+      // Use migration service for sign in
+      const result = await authMigrationService.signIn();
 
       if (!result.success) {
         throw new Error(result.error || 'Sign in failed');
@@ -156,7 +179,10 @@ const LoginModern = () => {
 
       // The auth state change listener will handle the success case
     } catch (error) {
-      console.error('❌ Google sign in error:', error);
+      AuthErrorHandler.handleAuthError(error, {
+        component: 'LoginModern',
+        flow: 'handleGoogleSignIn'
+      });
       setLoading(false);
 
       toast({
@@ -175,18 +201,20 @@ const LoginModern = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/login`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
+      await AuthResilience.withRetry(async () => {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/login`,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
           },
-        },
-      });
+        });
 
-      if (error) throw error;
+        if (error) throw error;
+      }, 'fallback-oauth-signin');
     } catch (error) {
       setLoading(false);
       toast({
@@ -235,11 +263,26 @@ const LoginModern = () => {
           <div className="flex items-center justify-center gap-2 mt-2 text-xs text-gray-500">
             <Shield size={14} />
             <span>
-              {authMode === 'fedcm' && 'Enhanced Privacy Mode'}
-              {authMode === 'standard' && 'Standard Security Mode'}
-              {authMode === 'redirect' && 'Compatibility Mode'}
+              {migrationStatus.userInMigration && authMode === 'fedcm' && 'Enhanced Privacy Mode (Modern)'}
+              {migrationStatus.userInMigration && authMode === 'standard' && 'Standard Security Mode (Modern)'}
+              {migrationStatus.userInMigration && authMode === 'redirect' && 'Compatibility Mode (Modern)'}
+              {!migrationStatus.userInMigration && 'Legacy Authentication Mode'}
             </span>
           </div>
+          
+          {/* Migration Status Indicator */}
+          {import.meta.env.DEV && (
+            <div className="mt-2 text-xs text-center">
+              <span className={`px-2 py-1 rounded text-white ${
+                migrationStatus.userInMigration ? 'bg-green-500' : 'bg-blue-500'
+              }`}>
+                {migrationStatus.userInMigration ? '🚀 Modern Auth' : '🔄 Legacy Auth'}
+              </span>
+              <div className="mt-1 text-gray-400">
+                Phase: {migrationStatus.phase} | Rollout: {migrationStatus.rolloutPercentage}%
+              </div>
+            </div>
+          )}
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -275,12 +318,15 @@ const LoginModern = () => {
           </Button>
 
           {/* Fallback Options */}
-          {authMode === 'redirect' && (
+          {(authMode === 'redirect' || !migrationStatus.userInMigration) && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
                 <AlertTriangle size={14} />
                 <span>
-                  Using compatibility mode for enhanced privacy browsers
+                  {migrationStatus.userInMigration 
+                    ? 'Using compatibility mode for enhanced privacy browsers'
+                    : 'Using legacy authentication for compatibility'
+                  }
                 </span>
               </div>
 
@@ -293,13 +339,13 @@ const LoginModern = () => {
                 {loading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
-                Alternative Sign In Method
+                {migrationStatus.userInMigration ? 'Alternative Sign In Method' : 'Legacy Sign In Method'}
               </Button>
             </div>
           )}
 
           {/* One Tap Status */}
-          {!oneTapAttempted && authMode !== 'redirect' && (
+          {!oneTapAttempted && authMode !== 'redirect' && migrationStatus.userInMigration && (
             <div className="text-xs text-center text-gray-500">
               Looking for seamless sign-in options...
             </div>
@@ -320,9 +366,21 @@ const LoginModern = () => {
 
           {/* Feature Information */}
           <div className="text-xs text-center text-gray-400 space-y-1">
-            <p>✓ Enhanced security with token validation</p>
-            <p>✓ Privacy-first authentication</p>
-            <p>✓ Cross-browser compatibility</p>
+            {migrationStatus.userInMigration ? (
+              <>
+                <p>✓ Modern Google Identity Services</p>
+                <p>✓ Enhanced security with token validation</p>
+                <p>✓ Privacy-first authentication</p>
+                <p>✓ FedCM support for enhanced privacy</p>
+                <p>✓ Cross-browser compatibility</p>
+              </>
+            ) : (
+              <>
+                <p>✓ Legacy OAuth compatibility</p>
+                <p>✓ Reliable authentication</p>
+                <p>✓ Cross-browser support</p>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

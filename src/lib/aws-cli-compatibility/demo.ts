@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+import * as React from 'react';
 
 /**
  * Demo script showing AWS CLI Parameter Validator usage

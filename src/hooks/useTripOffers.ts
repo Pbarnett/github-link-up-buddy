@@ -8,6 +8,11 @@ import { toast } from '@/components/ui/use-toast';
 import { fetchFlightSearch } from '@/services/api/flightSearchApi';
 import { Tables } from '@/integrations/supabase/types';
 import logger from '@/lib/logger';
+import { useState } from 'react';
+import { useEffect } from 'react';
+import { useCallback } from 'react';
+import { useMemo } from 'react';
+
 const { useState, useCallback, useMemo, useEffect } = React;
 
 // Type for a row from the 'trip_requests' database table - EXPORTED

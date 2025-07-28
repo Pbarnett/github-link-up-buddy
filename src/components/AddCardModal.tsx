@@ -43,7 +43,7 @@ const AddCardForm: FC<AddCardFormProps> = ({ onSuccess, onCancel }) => {
 
     const { error } = await stripe.confirmCardSetup(clientSecret, {
       payment_method: {
-        card: cardElement,
+        card: cardElement as any, // Type assertion for Stripe Element compatibility
       },
     });
 

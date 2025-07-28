@@ -1,4 +1,7 @@
 import * as React from 'react';
+import { Suspense } from 'react';
+import { Fragment } from 'react';
+import { createElement } from 'react';
 
 // Re-export React types and functions that may be missing in React 19
 export const createContext = React.createContext;

@@ -1,4 +1,9 @@
+import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/lib/utils';
+
+
+type ButtonHTMLAttributes<T> = React.ButtonHTMLAttributes<T>;
 
 export interface InteractiveButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -9,7 +14,7 @@ export interface InteractiveButtonProps
   interactive?: boolean;
 }
 
-const InteractiveButton = forwardRef<HTMLButtonElement, InteractiveButtonProps>(
+const InteractiveButton = React.forwardRef<HTMLButtonElement, InteractiveButtonProps>(
   (
     {
       className,

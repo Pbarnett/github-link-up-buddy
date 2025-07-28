@@ -1,4 +1,3 @@
-import * as React from 'react';
 /**
  * Production-Ready Duffel Service
  * 
@@ -7,7 +6,11 @@ import * as React from 'react';
  * - Idempotency support for Saga patterns
  * - Type safety and validation
  * - Performance monitoring hooks
+ * - OpenTelemetry distributed tracing
  */
+
+import { withSpan, tracer, getCurrentTraceContext, injectTraceContext } from '../_shared/otel.ts';
+import { logger } from '../_shared/logger.ts';
 
 export interface DuffelPassenger {
   id?: string; // From offer request
@@ -167,6 +170,12 @@ export class DuffelService {
         // Performance monitoring hook
         const startTime = Date.now();
         
+        // Inject trace context for distributed tracing
+        const traceContext = getCurrentTraceContext();
+        if (traceContext) {
+          injectTraceContext(headers, traceContext);
+        }
+
         const response = await fetch(url, {
           ...options,
           headers,
@@ -262,43 +271,89 @@ export class DuffelService {
    * Create offer request with comprehensive validation
    */
   async createOfferRequest(request: DuffelOfferRequest): Promise<{ id: string }> {
-    // Validate request
-    if (!request.slices?.length) {
-      throw new Error('At least one slice is required');
-    }
-    if (!request.passengers?.length) {
-      throw new Error('At least one passenger is required');
-    }
+    return withSpan(
+      'duffel.create_offer_request',
+      async (span) => {
+        // Validate request
+        if (!request.slices?.length) {
+          throw new Error('At least one slice is required');
+        }
+        if (!request.passengers?.length) {
+          throw new Error('At least one passenger is required');
+        }
 
-    const url = `${this.baseURL}/air/offer_requests`;
-    const response = await this.fetchWithRetry(url, {
-      method: 'POST',
-      body: JSON.stringify({ data: request })
-    });
+        span.attributes['duffel.slices_count'] = request.slices.length;
+        span.attributes['duffel.passengers_count'] = request.passengers.length;
+        span.attributes['duffel.cabin_class'] = request.cabin_class || 'economy';
 
-    return this.handleResponse<{ id: string }>(response);
+        const url = `${this.baseURL}/air/offer_requests`;
+        const response = await this.fetchWithRetry(url, {
+          method: 'POST',
+          body: JSON.stringify({ data: request })
+        });
+
+        const result = await this.handleResponse<{ id: string }>(response);
+        span.attributes['duffel.offer_request_id'] = result.id;
+        
+        logger.info('Duffel offer request created', {
+          operation: 'duffel_offer_request_created',
+          offerRequestId: result.id,
+          slicesCount: request.slices.length,
+          passengersCount: request.passengers.length
+        });
+        
+        return result;
+      },
+      {
+        'service.name': 'duffel-api',
+        'http.method': 'POST',
+        'http.url': `${this.baseURL}/air/offer_requests`
+      }
+    );
   }
 
   /**
    * Get offers from offer request with expiration validation
    */
   async getOffers(offerRequestId: string, limit: number = 50): Promise<DuffelOffer[]> {
-    const url = `${this.baseURL}/air/offers?offer_request_id=${offerRequestId}&limit=${limit}`;
-    const response = await this.fetchWithRetry(url, { method: 'GET' });
-    
-    const offers = await this.handleResponse<DuffelOffer[]>(response);
-    
-    // Filter out expired offers
-    const now = new Date();
-    const validOffers = offers.filter(offer => {
-      const expiresAt = new Date(offer.expires_at);
-      const timeLeft = expiresAt.getTime() - now.getTime();
-      const bufferMinutes = 2; // 2-minute safety buffer
-      return timeLeft > (bufferMinutes * 60 * 1000);
-    });
+    return withSpan(
+      'duffel.get_offers',
+      async (span) => {
+        span.attributes['duffel.offer_request_id'] = offerRequestId;
+        span.attributes['duffel.limit'] = limit;
 
-    console.log(`[DuffelService] Retrieved ${offers.length} offers, ${validOffers.length} still valid`);
-    return validOffers;
+        const url = `${this.baseURL}/air/offers?offer_request_id=${offerRequestId}&limit=${limit}`;
+        const response = await this.fetchWithRetry(url, { method: 'GET' });
+        
+        const offers = await this.handleResponse<DuffelOffer[]>(response);
+        
+        // Filter out expired offers
+        const now = new Date();
+        const validOffers = offers.filter(offer => {
+          const expiresAt = new Date(offer.expires_at);
+          const timeLeft = expiresAt.getTime() - now.getTime();
+          const bufferMinutes = 2; // 2-minute safety buffer
+          return timeLeft > (bufferMinutes * 60 * 1000);
+        });
+
+        span.attributes['duffel.total_offers'] = offers.length;
+        span.attributes['duffel.valid_offers'] = validOffers.length;
+
+        logger.info('Duffel offers retrieved', {
+          operation: 'duffel_offers_retrieved',
+          offerRequestId,
+          totalOffers: offers.length,
+          validOffers: validOffers.length
+        });
+
+        return validOffers;
+      },
+      {
+        'service.name': 'duffel-api',
+        'http.method': 'GET',
+        'http.url': `${this.baseURL}/air/offers`
+      }
+    );
   }
 
   /**
@@ -338,65 +393,110 @@ export class DuffelService {
     orderRequest: DuffelOrderRequest, 
     idempotencyKey: string
   ): Promise<DuffelOrder> {
-    // Validate order request
-    if (!orderRequest.offer_id) {
-      throw new Error('Offer ID is required');
-    }
-    if (!orderRequest.passengers?.length) {
-      throw new Error('At least one passenger is required');
-    }
+    return withSpan(
+      'duffel.create_order',
+      async (span) => {
+        // Validate order request
+        if (!orderRequest.offer_id) {
+          throw new Error('Offer ID is required');
+        }
+        if (!orderRequest.passengers?.length) {
+          throw new Error('At least one passenger is required');
+        }
 
-    // Validate passenger data
-    for (const passenger of orderRequest.passengers) {
-      if (!passenger.given_name?.trim()) {
-        throw new Error('Passenger given_name is required');
-      }
-      if (!passenger.family_name?.trim()) {
-        throw new Error('Passenger family_name is required');
-      }
-      if (!passenger.born_on) {
-        throw new Error('Passenger born_on is required');
-      }
-    }
+        // Validate passenger data
+        for (const passenger of orderRequest.passengers) {
+          if (!passenger.given_name?.trim()) {
+            throw new Error('Passenger given_name is required');
+          }
+          if (!passenger.family_name?.trim()) {
+            throw new Error('Passenger family_name is required');
+          }
+          if (!passenger.born_on) {
+            throw new Error('Passenger born_on is required');
+          }
+        }
 
-    const url = `${this.baseURL}/air/orders`;
-    const requestBody = {
-      data: {
-        type: 'instant',
-        selected_offers: [orderRequest.offer_id],
-        passengers: orderRequest.passengers,
-        payments: orderRequest.payments
-      }
-    };
+        span.attributes['duffel.offer_id'] = orderRequest.offer_id;
+        span.attributes['duffel.passengers_count'] = orderRequest.passengers.length;
+        span.attributes['duffel.idempotency_key'] = idempotencyKey;
 
-    console.log(`[DuffelService] Creating order for offer ${orderRequest.offer_id} with idempotency key ${idempotencyKey}`);
+        const url = `${this.baseURL}/air/orders`;
+        const requestBody = {
+          data: {
+            type: 'instant',
+            selected_offers: [orderRequest.offer_id],
+            passengers: orderRequest.passengers,
+            payments: orderRequest.payments
+          }
+        };
 
-    const response = await this.fetchWithRetry(
-      url,
-      {
-        method: 'POST',
-        body: JSON.stringify(requestBody)
+        const response = await this.fetchWithRetry(
+          url,
+          {
+            method: 'POST',
+            body: JSON.stringify(requestBody)
+          },
+          idempotencyKey
+        );
+
+        const order = await this.handleResponse<DuffelOrder>(response);
+        
+        span.attributes['duffel.order_id'] = order.id;
+        span.attributes['duffel.booking_reference'] = order.booking_reference;
+        span.attributes['duffel.order_status'] = order.status;
+
+        logger.info('Duffel order created', {
+          operation: 'duffel_order_created',
+          orderId: order.id,
+          bookingReference: order.booking_reference,
+          status: order.status,
+          offerId: orderRequest.offer_id
+        });
+        
+        return order;
       },
-      idempotencyKey
+      {
+        'service.name': 'duffel-api',
+        'http.method': 'POST',
+        'http.url': `${this.baseURL}/air/orders`
+      }
     );
-
-    const order = await this.handleResponse<DuffelOrder>(response);
-    
-    console.log(`[DuffelService] Order created successfully: ${order.id}, PNR: ${order.booking_reference}, Status: ${order.status}`);
-    return order;
   }
 
   /**
    * Cancel order for compensation in Saga pattern
    */
   async cancelOrder(orderId: string): Promise<{ id: string; status: string }> {
-    const url = `${this.baseURL}/air/orders/${orderId}/actions/cancel`;
-    const response = await this.fetchWithRetry(url, {
-      method: 'POST',
-      body: JSON.stringify({ data: {} })
-    });
+    return withSpan(
+      'duffel.cancel_order',
+      async (span) => {
+        span.attributes['duffel.order_id'] = orderId;
 
-    return this.handleResponse<{ id: string; status: string }>(response);
+        const url = `${this.baseURL}/air/orders/${orderId}/actions/cancel`;
+        const response = await this.fetchWithRetry(url, {
+          method: 'POST',
+          body: JSON.stringify({ data: {} })
+        });
+
+        const result = await this.handleResponse<{ id: string; status: string }>(response);
+        
+        span.attributes['duffel.cancel_status'] = result.status;
+
+        logger.info('Duffel order cancelled', {
+          operation: 'duffel_order_cancelled',
+          orderId,
+          status: result.status
+        });
+
+        return result;
+      },
+      {
+        'service.name': 'duffel-api',
+        'http.method': 'POST',
+        'http.url': `${this.baseURL}/air/orders/${orderId}/actions/cancel`
+      }
+    );
   }
 
   /**

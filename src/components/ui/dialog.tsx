@@ -1,13 +1,14 @@
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
-
 import { cn } from '@/lib/utils';
 
-const { forwardRef } = React;
+
 type ElementRef<T extends React.ElementType> = React.ElementRef<T>;
 type ComponentPropsWithoutRef<T extends React.ElementType> =
   React.ComponentPropsWithoutRef<T>;
+
+React.ComponentPropsWithoutRef<T>;
 type HTMLAttributes<T> = React.HTMLAttributes<T>;
 
 const Dialog = DialogPrimitive.Root;
@@ -18,7 +19,7 @@ const DialogPortal = DialogPrimitive.Portal;
 
 const DialogClose = DialogPrimitive.Close;
 
-const DialogOverlay = forwardRef<
+const DialogOverlay = React.forwardRef<
   ElementRef<typeof DialogPrimitive.Overlay>,
   ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
@@ -33,7 +34,7 @@ const DialogOverlay = forwardRef<
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
-const DialogContent = forwardRef<
+const DialogContent = React.forwardRef<
   ElementRef<typeof DialogPrimitive.Content>,
   ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => (
@@ -85,7 +86,7 @@ const DialogFooter = ({
 );
 DialogFooter.displayName = 'DialogFooter';
 
-const DialogTitle = forwardRef<
+const DialogTitle = React.forwardRef<
   ElementRef<typeof DialogPrimitive.Title>,
   ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
@@ -100,7 +101,7 @@ const DialogTitle = forwardRef<
 ));
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
-const DialogDescription = forwardRef<
+const DialogDescription = React.forwardRef<
   ElementRef<typeof DialogPrimitive.Description>,
   ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
 >(({ className, ...props }, ref) => (

@@ -1,11 +1,19 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import * as Sentry from '@sentry/react';
-import { asyncWithLDProvider } from 'launchdarkly-react-client-sdk';
 import { ThemeProvider } from 'next-themes';
 import App from './App.tsx';
 import {} from './components/ErrorBoundary';
 import './index.css';
+
+// Conditionally import LaunchDarkly providers
+const isTestMode =
+  import.meta.env.VITE_PLAYWRIGHT_TEST === 'true' ||
+  import.meta.env.NODE_ENV === 'test';
+
+const { asyncWithLDProvider } = isTestMode
+  ? await import('./providers/TestLaunchDarklyProvider')
+  : await import('launchdarkly-react-client-sdk');
 
 // Initialize Sentry
 Sentry.init({
@@ -43,20 +51,80 @@ if (import.meta.env.VITE_SUPABASE_URL?.includes('127.0.0.1')) {
 
 // Initialize LaunchDarkly and render app
 (async () => {
-  const LDProvider = await asyncWithLDProvider({
-    clientSideID: import.meta.env.VITE_LD_CLIENT_ID!,
-    user: {
-      key: 'anonymous',
-      anonymous: true,
-    },
-  });
+  const clientSideID = import.meta.env.VITE_LD_CLIENT_ID;
 
-  const WrappedApp = () => (
-    <LDProvider>
+  if (!clientSideID) {
+    console.error(
+      'LaunchDarkly client-side ID is missing. Please set VITE_LD_CLIENT_ID in your environment variables.'
+    );
+    // Render app without LaunchDarkly if ID is missing
+    const AppWithoutLD = () => (
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <App />
       </ThemeProvider>
-    </LDProvider>
-  );
-  createRoot(document.getElementById('root')!).render(<WrappedApp />);
+    );
+    createRoot(document.getElementById('root')!).render(<AppWithoutLD />);
+    return;
+  }
+
+  try {
+    // Add timeout wrapper for LaunchDarkly initialization
+    const initWithTimeout = (timeoutMs = 10000) => {
+      return Promise.race([
+        asyncWithLDProvider({
+          clientSideID,
+          user: {
+            key: 'anonymous',
+            anonymous: true,
+          },
+          options: {
+            bootstrap: 'localStorage', // Cache flags for faster loading
+            sendEvents: false, // Disable events to reduce 500 errors
+            streaming: false, // Disable streaming to prevent connection issues
+            streamReconnectDelay: 5000, // Increased delay between reconnect attempts
+            diagnosticOptOut: true, // Disable diagnostics to reduce traffic
+            sendEventsOnlyForVariation: false,
+            allAttributesPrivate: true, // Increase privacy
+            // Standard LaunchDarkly options only
+            useReport: false, // Use GET instead of POST for better compatibility
+            // Additional stability options
+            logger: {
+              warn: (message: string) =>
+                console.warn('[LaunchDarkly]', message),
+              error: (message: string) =>
+                console.error('[LaunchDarkly]', message),
+              info: () => {}, // Suppress info logs
+              debug: () => {}, // Suppress debug logs
+            },
+          },
+        }),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('LaunchDarkly initialization timeout')),
+            timeoutMs
+          )
+        ),
+      ]);
+    };
+
+    const LDProvider = await initWithTimeout();
+
+    const WrappedApp = () => (
+      <LDProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <App />
+        </ThemeProvider>
+      </LDProvider>
+    );
+    createRoot(document.getElementById('root')!).render(<WrappedApp />);
+  } catch (error) {
+    console.error('Failed to initialize LaunchDarkly:', error);
+    // Render app without LaunchDarkly if initialization fails
+    const AppWithoutLD = () => (
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <App />
+      </ThemeProvider>
+    );
+    createRoot(document.getElementById('root')!).render(<AppWithoutLD />);
+  }
 })();

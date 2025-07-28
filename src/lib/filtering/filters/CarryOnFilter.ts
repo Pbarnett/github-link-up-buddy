@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * CarryOn Filter - Phase 4.1 Implementation
  *

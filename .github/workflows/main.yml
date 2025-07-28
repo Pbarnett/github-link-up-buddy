@@ -36,10 +36,43 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Install Deno for Edge Function tests
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.38.x
+
+      - name: Install stripe-mock
+        run: |
+          curl -L https://github.com/stripe/stripe-mock/releases/download/v0.162.0/stripe-mock_0.162.0_linux_amd64.tar.gz | tar -xz
+          sudo mv stripe-mock /usr/local/bin/
+          stripe-mock --version
+
+      - name: Start stripe-mock service
+        run: |
+          stripe-mock -port 12111 &
+          sleep 5
+          curl --retry 5 --retry-delay 2 http://localhost:12111/v1/charges -H "Authorization: Bearer sk_test_mock" || echo "Stripe mock not ready"
+
       - name: Run unit tests
         run: npm test
         env:
           CI: true
+
+      - name: Run Stripe client tests
+        run: |
+          cd supabase/functions/_shared
+          deno test --allow-all __tests__/stripe.spec.ts
+        env:
+          STRIPE_SECRET_KEY: sk_test_mock_key_for_testing
+
+      - name: Run GDPR delete-user integration tests
+        run: |
+          cd supabase/functions
+          deno test --allow-all tests/delete-user.spec.ts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_FUNCTION_URL: ${{ secrets.SUPABASE_FUNCTION_URL }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

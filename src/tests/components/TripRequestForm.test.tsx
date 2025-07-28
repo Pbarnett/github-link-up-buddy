@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {
   describe,
   it,
@@ -7,11 +8,19 @@ import {
   afterEach,
   type Mock,
 } from 'vitest';
+import {
+  render,
+  screen,
+  waitFor,
+  act,
+  fireEvent,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TripRequestForm from '@/components/trip/TripRequestForm';
 import { TestWrapper, renderWithProviders } from '@/tests/utils/TestWrapper';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTravelerInfoCheck } from '@/hooks/useTravelerInfoCheck';

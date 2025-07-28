@@ -1,4 +1,5 @@
 import { vi, beforeEach, afterEach } from 'vitest';
+import { createElement } from 'react';
 
 /**
  * Advanced OAuth Mocking Utilities

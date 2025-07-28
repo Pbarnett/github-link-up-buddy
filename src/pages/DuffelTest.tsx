@@ -3,13 +3,12 @@
  * Battle-tested approach: Build and test incrementally
  */
 
-type FC<T = {}> = React.FC<T>;
-
 import type { User } from '@supabase/supabase-js';
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { TestTube, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import * as React from 'react';
+
+type FC<T = {}> = React.FC<T>;
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

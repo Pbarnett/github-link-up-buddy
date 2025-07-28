@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { lazy, Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import PageWrapper from '@/components/layout/PageWrapper';
 import { withErrorBoundary } from '@/components/ErrorBoundary';

@@ -9,6 +9,9 @@ import {
   DuffelSearchResponse,
 } from '@/services/api/duffelSearchApi';
 import logger from '@/lib/logger';
+import { useState } from 'react';
+import { useEffect } from 'react';
+import { useCallback } from 'react';
 
 export interface DuffelSearchOptions {
   maxPrice?: number;

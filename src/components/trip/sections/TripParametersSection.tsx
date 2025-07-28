@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Control, UseFormWatch } from 'react-hook-form';
 import DateRangeSection from './DateRangeSection';
 import BudgetSection from './BudgetSection';

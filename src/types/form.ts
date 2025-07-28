@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { z } from 'zod';
 import { Tables } from '@/integrations/supabase/types';
 import {

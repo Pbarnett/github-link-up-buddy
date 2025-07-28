@@ -56,7 +56,7 @@ export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
       // Assume user's ID is available via context/session
       const userId = 'user-id'; // Replace with context/session retrieval
       await deletePaymentMethod(userId, paymentMethodId);
-      await fetchPaymentMethods()();
+      await fetchPaymentMethods();
     },
     [fetchPaymentMethods]
   );
@@ -66,7 +66,7 @@ export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
       // Assume user's ID is available via context/session
       const userId = 'user-id'; // Replace with context/session retrieval
       await setDefaultPaymentMethod(userId, paymentMethodId);
-      await fetchPaymentMethods()();
+      await fetchPaymentMethods();
     },
     [fetchPaymentMethods]
   );

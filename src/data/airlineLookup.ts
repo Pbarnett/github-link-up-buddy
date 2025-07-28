@@ -1,3 +1,4 @@
+import * as React from 'react';
 export const airlineNames: Record<string, string> = {
   B6: 'JetBlue',
   DL: 'Delta Air Lines',

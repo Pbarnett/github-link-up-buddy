@@ -1,11 +1,13 @@
+import * as React from 'react';
+import * as ProgressPrimitive from '@radix-ui/react-progress';
 import { cn } from '@/lib/utils';
 
-const { forwardRef } = React;
+
 type ElementRef<T extends React.ElementType> = React.ElementRef<T>;
 type ComponentPropsWithoutRef<T extends React.ElementType> =
   React.ComponentPropsWithoutRef<T>;
 
-const Progress = forwardRef<
+const Progress = React.forwardRef<
   ElementRef<typeof ProgressPrimitive.Root>,
   ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>
 >(({ className, value, ...props }, ref) => (

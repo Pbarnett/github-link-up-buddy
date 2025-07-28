@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Step 3: Payment Information
  * Collect and tokenize payment methods using Stripe Elements
@@ -6,6 +7,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { loadStripe } from '@stripe/stripe-js';
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from '@stripe/react-stripe-js';
 import {
   Card,
   CardContent,
@@ -19,6 +26,53 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { trackCampaignEvent } from '@/utils/monitoring';
+import { useForm } from 'react-hook-form';
+import { Controller } from 'react-hook-form';
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
+  Bell,
+  Calendar,
+  CalendarIcon,
+  CheckCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Circle,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Download,
+  Eye,
+  FileText,
+  Filter,
+  Globe,
+  HelpCircle,
+  Info,
+  Loader2,
+  Lock,
+  Mail,
+  MapPin,
+  Package,
+  Phone,
+  Plane,
+  PlaneTakeoff,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Settings,
+  Shield,
+  Trash2,
+  Upload,
+  User,
+  Wifi,
+  X,
+  XCircle,
+  Zap,
+} from 'lucide-react';
 
 // Initialize Stripe.js with your publishable key
 const stripePromise = loadStripe(
@@ -70,7 +124,7 @@ function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
     if (cardElement) {
       const { error, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
-        card: cardElement,
+        card: cardElement as any, // Type assertion for Stripe Element compatibility
         billing_details: {
           name: 'Jenny Rosen', // TODO: Use actual cardholder name
         },

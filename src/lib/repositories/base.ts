@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Base Repository Pattern Implementation
  *

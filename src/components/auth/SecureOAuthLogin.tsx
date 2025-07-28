@@ -9,6 +9,8 @@ import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { oauthServiceSecure, OAuthUtils } from '@/services/oauthServiceSecure';
 import { supabaseClient } from '@/lib/supabase';
+import { AuthErrorHandler } from '@/services/authErrorHandler';
+import { AuthResilience, SessionManager } from '@/services/authResilience';
 
 // OAuth provider icons (you can replace with actual icons)
 const ProviderIcons = {
@@ -88,13 +90,17 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
           callbackUrl.searchParams.set('code_verifier', codeVerifier);
         }
 
-        const response = await fetch(callbackUrl.toString(), {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await AuthResilience.withRetry(
+          () => fetch(callbackUrl.toString(), {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+            },
+          }),
+          'oauth-callback-fetch',
+          { maxRetries: 3, baseDelay: 1000 }
+        );
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -150,7 +156,10 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
           window.location.href = redirectTo;
         }
       } catch (error) {
-        console.error('OAuth completion failed:', error);
+        AuthErrorHandler.handleAuthError(error, {
+          component: 'SecureOAuthLogin',
+          flow: 'completeOAuthFlow'
+        });
         const errorMessage =
           error instanceof Error
             ? error.message
@@ -225,7 +234,11 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
       // Redirect to OAuth provider
       window.location.href = url;
     } catch (error) {
-      console.error(`OAuth initiation failed for ${provider}:`, error);
+      AuthErrorHandler.handleAuthError(error, {
+        component: 'SecureOAuthLogin',
+        flow: 'initiateOAuthLogin',
+        provider
+      });
       const errorMessage =
         error instanceof Error ? error.message : 'OAuth initiation failed';
 
@@ -336,9 +349,18 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
 /**
  * Hook for OAuth authentication state management
  */
+// Simple user type for authentication (matches Supabase User)
+interface AuthUser {
+  id: string;
+  email: string;
+  email_verified?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export const useSecureOAuth = () => {
   const [authState, setAuthState] = useState<{
-    user: unknown | null;
+    user: AuthUser | null;
     session: unknown | null;
     loading: boolean;
     error: string | null;
@@ -363,6 +385,14 @@ export const useSecureOAuth = () => {
         return;
       }
 
+      // Validate session with recovery capability
+      const sessionValid = await SessionManager.validateAndRecoverSession();
+      
+      if (!sessionValid) {
+        setAuthState(prev => ({ ...prev, loading: false }));
+        return;
+      }
+      
       const {
         data: { session },
         error,

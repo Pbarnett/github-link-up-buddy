@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Core types for the flight offer filtering system
  *

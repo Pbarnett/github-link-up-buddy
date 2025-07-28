@@ -7,17 +7,52 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import {
-  BarChart3,
+  AlertCircle,
   AlertTriangle,
-  CheckCircle,
-  Clock,
-  Eye,
-  Target,
+  ArrowRight,
+  Bell,
   Calendar,
+  CalendarIcon,
+  CheckCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Circle,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Download,
+  Eye,
+  FileText,
+  Filter,
+  Globe,
+  HelpCircle,
+  Info,
+  Loader2,
+  Lock,
+  Mail,
+  MapPin,
+  Package,
+  Phone,
+  Plane,
+  PlaneTakeoff,
+  Plus,
   RefreshCw,
+  Save,
+  Search,
+  Settings,
+  Shield,
+  Trash2,
+  Upload,
+  User,
+  Wifi,
+  X,
+  XCircle,
+  Zap,
+  BarChart3,
+  Target,
 } from 'lucide-react';
-
-type FC<T = {}> = React.FC<T>;
 import {
   Card,
   CardContent,
@@ -30,6 +65,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+
+type FC<T = {}> = React.FC<T>;
 
 interface FormAnalytics {
   form_name: string;

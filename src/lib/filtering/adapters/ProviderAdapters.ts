@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Provider Adapters for Flight Offer Normalization
  *

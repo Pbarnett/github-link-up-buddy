@@ -1,4 +1,7 @@
+import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { useLocation, Link } from 'react-router-dom';
+import { Home, ChevronRight } from 'lucide-react';
 
 interface BreadcrumbItem {
   label: string;

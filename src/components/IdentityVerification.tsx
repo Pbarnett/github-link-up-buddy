@@ -1,4 +1,7 @@
 import * as React from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useUser, useSupabaseClient } from '@supabase/auth-helpers-react';
+
 type FC<T = {}> = React.FC<T>;
 interface VerificationSession {
   id: string;

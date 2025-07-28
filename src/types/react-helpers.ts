@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Common React type imports to reduce repetition across components
 
 // Event handler types for common use cases

@@ -1,3 +1,4 @@
+import * as React from 'react';
 // src/lib/logger.ts
 const LOG_LEVELS = {
   DEBUG: 0,

@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * LaunchDarkly Connection Monitoring and Health Check System
  * Real-time monitoring of SDK connections with retry logic and fallback mechanisms
@@ -5,6 +6,8 @@
 
 import { LDClient } from '@launchdarkly/node-server-sdk';
 import { FlagErrorHandler, FlagErrorType } from './error-handler';
+import { useState } from 'react';
+import { useEffect } from 'react';
 
 export enum ConnectionState {
   DISCONNECTED = 'disconnected',

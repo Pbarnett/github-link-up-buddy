@@ -33,6 +33,10 @@ ARG VITE_SUPABASE_URL=https://bbonngdyfyfjqfhvoljl.supabase.co
 ARG VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJib25uZ2R5ZnlmanFmaHZvbGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNTE5NTQsImV4cCI6MjA2MjgyNzk1NH0.qoXypUh-SemZwFjTyONGztNbhoowqLMiKSRKgA7fRR0
 ARG VITE_FLAG_FS_V2=true
 ARG VITE_LAUNCHDARKLY_CLIENT_ID=686f3ab8ed094f0948726002
+# Migration Service Configuration
+ARG VITE_ENVIRONMENT=production
+ARG VITE_ENABLE_MODERN_AUTH=true
+ARG VITE_ENABLE_ONE_TAP=true
 ARG NODE_ENV=production
 
 # Build the application with optimized production settings

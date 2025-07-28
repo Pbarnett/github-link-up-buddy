@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Plus } from 'lucide-react';

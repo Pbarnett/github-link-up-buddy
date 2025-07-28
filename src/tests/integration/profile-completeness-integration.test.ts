@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import Profile from '@/pages/Profile';
+import { createElement } from 'react';
 
 // Mock the required hooks and components
 vi.mock('@/hooks/useCurrentUser', () => ({

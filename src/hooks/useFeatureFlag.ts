@@ -1,3 +1,6 @@
+import * as React from 'react';
+import { useEffect } from 'react';
+import { useFlags } from 'launchdarkly-react-client-sdk';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
   type FeatureFlag,
@@ -53,18 +56,23 @@ export const useFeatureFlag = (
     flagValue = flags[flagName] ?? defaultValue;
   }
 
-  // Track personalization events with error handling
+  // Track personalization events with error handling (memoized to prevent loops)
   useEffect(() => {
     if (
       flagName === 'personalization_greeting' &&
       typeof flagValue === 'boolean'
     ) {
-      try {
-        trackPersonalizationSeen(flagValue);
-      } catch (error) {
-        console.error('Failed to track personalization seen event:', error);
-        // Don't throw - tracking failures shouldn't break the app
-      }
+      // Add a small delay to prevent tracking during rapid re-renders
+      const timeoutId = setTimeout(() => {
+        try {
+          trackPersonalizationSeen(flagValue);
+        } catch (error) {
+          console.error('Failed to track personalization seen event:', error);
+          // Don't throw - tracking failures shouldn't break the app
+        }
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [flagName, flagValue]);
 

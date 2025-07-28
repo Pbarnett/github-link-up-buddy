@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Authentication Security Monitoring Service
 // Tracks security events, authentication patterns, and potential threats
 

@@ -2,6 +2,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { createDuffelClient, logDuffelOperation } from '../lib/duffel.ts'
+import { evaluateFlag, createUserContext } from '../_shared/launchdarkly.ts'
 
 interface DuffelSearchRequest {
   tripRequestId: string
@@ -67,7 +68,7 @@ serve(async (req) => {
       })
     }
 
-    // Step 1: Get trip request details
+    // Step 1: Get trip request details and check feature flags
     console.log('🔍 Step 1: Fetching trip request details')
     const { data: tripRequest, error: tripError } = await supabaseClient
       .from('trip_requests')
@@ -78,6 +79,38 @@ serve(async (req) => {
     if (tripError || !tripRequest) {
       throw new Error(`Trip request not found: ${tripError?.message}`)
     }
+
+    // Check LaunchDarkly flags for enhanced search features
+    const userContext = createUserContext(tripRequest.user_id, {
+      trip_request_id: tripRequestId
+    })
+
+    const advancedFiltering = await evaluateFlag(
+      'flight-search-advanced-filtering',
+      userContext,
+      false
+    )
+
+    const priceOptimization = await evaluateFlag(
+      'flight-search-price-optimization',
+      userContext,
+      false
+    )
+
+    const maxOffersFlag = await evaluateFlag(
+      'flight-search-max-offers',
+      userContext,
+      50
+    )
+
+    // Use flag-controlled max offers
+    const effectiveMaxResults = Math.min(maxResults, maxOffersFlag.value)
+    
+    console.log('🔍 Feature flags:', {
+      advancedFiltering: advancedFiltering.value,
+      priceOptimization: priceOptimization.value,
+      maxOffers: maxOffersFlag.value
+    })
 
     console.log('🔍 Trip request details:', {
       origin: tripRequest.departure_airports?.[0] || 'No origin',
@@ -130,8 +163,10 @@ serve(async (req) => {
     
     console.log(`🔍 Retrieved ${offers.length} offers from Duffel`)
 
-    // Step 4: Filter offers by price if specified
+    // Step 4: Enhanced filtering and ranking with multi-criteria
     let filteredOffers = offers
+    
+    // Basic price filtering
     if (maxPrice) {
       filteredOffers = offers.filter(offer => {
         const price = parseFloat(offer.total_amount)
@@ -140,10 +175,85 @@ serve(async (req) => {
       console.log(`🔍 Filtered to ${filteredOffers.length} offers under $${maxPrice}`)
     }
 
-    // Limit results
-    if (filteredOffers.length > maxResults) {
-      filteredOffers = filteredOffers.slice(0, maxResults)
-      console.log(`🔍 Limited to ${maxResults} offers`)
+    // Advanced filtering if enabled by feature flag
+    if (advancedFiltering.value) {
+      console.log('🔍 Applying advanced filtering...')
+      
+      // Filter by duration, stops, airline preference if available
+      filteredOffers = filteredOffers.filter(offer => {
+        // Calculate total duration for all slices
+        const totalDuration = offer.slices?.reduce((total, slice) => {
+          const sliceDuration = slice.duration ? parseInt(slice.duration.replace('PT', '').replace('H', '').replace('M', '')) : 0
+          return total + sliceDuration
+        }, 0) || 0
+        
+        // Skip offers with excessive duration (>24 hours total)
+        if (totalDuration > 1440) return false
+        
+        // Prefer offers with reasonable layover times
+        for (const slice of offer.slices || []) {
+          for (let i = 0; i < (slice.segments?.length || 0) - 1; i++) {
+            const segment = slice.segments![i]
+            const nextSegment = slice.segments![i + 1]
+            if (segment.arriving_at && nextSegment.departing_at) {
+              const layoverMinutes = (new Date(nextSegment.departing_at).getTime() - new Date(segment.arriving_at).getTime()) / (1000 * 60)
+              // Skip offers with layovers less than 30 minutes or more than 12 hours
+              if (layoverMinutes < 30 || layoverMinutes > 720) return false
+            }
+          }
+        }
+        
+        return true
+      })
+      
+      console.log(`🔍 Advanced filtering reduced to ${filteredOffers.length} offers`)
+    }
+
+    // Price optimization ranking if enabled
+    if (priceOptimization.value && filteredOffers.length > 1) {
+      console.log('🔍 Applying price optimization ranking...')
+      
+      filteredOffers.sort((a, b) => {
+        const priceA = parseFloat(a.total_amount)
+        const priceB = parseFloat(b.total_amount)
+        
+        // Calculate duration for ranking
+        const durationA = a.slices?.reduce((total, slice) => {
+          const sliceDuration = slice.duration ? parseInt(slice.duration.replace(/[^0-9]/g, '')) : 0
+          return total + sliceDuration
+        }, 0) || 0
+        
+        const durationB = b.slices?.reduce((total, slice) => {
+          const sliceDuration = slice.duration ? parseInt(slice.duration.replace(/[^0-9]/g, '')) : 0
+          return total + sliceDuration
+        }, 0) || 0
+        
+        // Count stops
+        const stopsA = a.slices?.reduce((total, slice) => {
+          return total + (slice.segments?.length || 1) - 1
+        }, 0) || 0
+        
+        const stopsB = b.slices?.reduce((total, slice) => {
+          return total + (slice.segments?.length || 1) - 1
+        }, 0) || 0
+        
+        // Multi-criteria ranking: price (60%) + duration (25%) + stops (15%)
+        const scoreA = (priceA * 0.6) + (durationA * 0.25) + (stopsA * 50 * 0.15)
+        const scoreB = (priceB * 0.6) + (durationB * 0.25) + (stopsB * 50 * 0.15)
+        
+        return scoreA - scoreB
+      })
+      
+      console.log('🔍 Offers ranked by multi-criteria optimization')
+    } else {
+      // Simple price sorting
+      filteredOffers.sort((a, b) => parseFloat(a.total_amount) - parseFloat(b.total_amount))
+    }
+
+    // Limit results using flag-controlled max
+    if (filteredOffers.length > effectiveMaxResults) {
+      filteredOffers = filteredOffers.slice(0, effectiveMaxResults)
+      console.log(`🔍 Limited to ${effectiveMaxResults} offers (flag-controlled)`)
     }
 
     if (filteredOffers.length === 0) {
@@ -183,8 +293,10 @@ serve(async (req) => {
 
       return {
         trip_request_id: tripRequestId,
+        user_id: tripRequest.user_id, // Required for RLS
         mode: 'AUTO' as const,
         price_total: parseFloat(offer.total_amount),
+        price_amount: parseFloat(offer.total_amount), // Duplicate for new schema
         price_currency: offer.total_currency,
         price_carry_on: null, // Duffel doesn't separate carry-on pricing
         bags_included: false, // Would need to check service offerings
@@ -195,7 +307,10 @@ serve(async (req) => {
         depart_dt: firstSegment?.departing_at ? new Date(firstSegment.departing_at).toISOString() : new Date().toISOString(),
         return_dt: returnDt,
         booking_url: null, // Would need to create booking URL
-        external_offer_id: offer.id,
+        offer_id: offer.id, // Unique offer identifier
+        external_offer_id: offer.id, // External provider ID
+        expires_at: offer.expires_at ? new Date(offer.expires_at).toISOString() : null,
+        status: 'ACTIVE' as const,
         raw_offer_payload: offer as Record<string, unknown>
       }
     })

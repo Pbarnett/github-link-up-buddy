@@ -83,6 +83,7 @@ docs/
 **Purpose**: Automation and utility scripts organized by function
 ```
 scripts/
+├── enforcement/       # Code quality and organization enforcement
 ├── analytics/         # Analytics and reporting scripts
 ├── deployment/        # Deployment and CI/CD scripts
 ├── database/          # Database migration and setup scripts
@@ -175,6 +176,7 @@ infra/
 - **New utility function** → `src/utils/`
 - **New feature documentation** → `docs/[feature-name]/`
 - **New test file** → `tests/unit/[mirrored-src-path]/`
+- **New enforcement script** → `scripts/enforcement/`
 - **New deployment script** → `scripts/deployment/`
 - **New database migration** → `database/migrations/`
 

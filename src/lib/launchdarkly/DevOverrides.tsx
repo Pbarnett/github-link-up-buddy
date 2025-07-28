@@ -1,5 +1,6 @@
 import { LDFlagValue } from 'launchdarkly-js-client-sdk';
 import * as React from 'react';
+import { useEffect } from 'react';
 
 const OVERRIDE_KEY = 'LD_FLAG_OVERRIDES';
 

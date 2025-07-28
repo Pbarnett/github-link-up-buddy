@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * LaunchDarkly Analytics and Performance Monitoring
  * Comprehensive tracking system for feature flag usage and performance

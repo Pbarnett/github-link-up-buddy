@@ -1,4 +1,6 @@
 import * as React from 'react';
+import { useMemo } from 'react';
+import { UseFormReturn, FormProvider } from 'react-hook-form';
 
 /**
  * Optimized FormProvider Component
@@ -21,7 +23,7 @@ interface OptimizedFormProviderProps {
  * Optimized FormProvider that uses memo to prevent
  * unnecessary re-renders when form state hasn't changed
  */
-export const OptimizedFormProvider: FC<OptimizedFormProviderProps> = memo(
+export const OptimizedFormProvider: FC<OptimizedFormProviderProps> = React.memo(
   ({ children, form, className }) => {
     // Memoize form methods to prevent recreation on each render
     const memoizedFormMethods = useMemo(
@@ -75,7 +77,7 @@ interface OptimizedFormSectionProps {
   className?: string;
 }
 
-export const OptimizedFormSection: FC<OptimizedFormSectionProps> = memo(
+export const OptimizedFormSection: FC<OptimizedFormSectionProps> = React.memo(
   ({ children, formState, className }) => {
     // Destructure formState to properly subscribe to changes
     const { isDirty, isValid, isSubmitting, errors } = formState;

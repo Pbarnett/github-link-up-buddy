@@ -1,7 +1,10 @@
+import * as React from 'react';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getFlightOffers } from '@/serverActions/getFlightOffers';
 import { mapFlightOfferDbRowToV2 } from './utils/mapFlightOfferDbRowToV2';
 import type { FlightOfferV2, FlightOfferV2DbRow } from './types';
+import { useState } from 'react';
+import { useEffect } from 'react';
 
 export interface UseFlightOffersOptions {
   // If false, the hook will not run the fetch operation.

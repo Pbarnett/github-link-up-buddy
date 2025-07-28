@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Duffel API Service for Parker Flight
  * Handles flight booking through Duffel as Merchant of Record

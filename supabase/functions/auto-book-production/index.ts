@@ -18,6 +18,11 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
+import { logger } from '../_shared/logger.ts'
+import { initSentryForFunction, captureException, addBreadcrumb } from '../_shared/sentry.ts'
+import { capturePaymentIntent, refundPaymentIntent } from '../_shared/stripe.ts'
+import { recordAutoBookingSuccess, recordAutoBookingFailure, recordStripeCaptureSuccess, recordStripeCaptureFailure, autoBookingFailureTotal } from '../_shared/metrics.ts'
+import { alertBookingSuccess, alertBookingFailure, alertRefundCompleted } from '../_shared/notifications.ts'
 import { 
   createDuffelProductionClient,
   mapTripRequestToDuffelSearch,
@@ -40,6 +45,8 @@ interface BookingAttempt {
 
 console.log('[AutoBookProduction] Function initialized');
 
+initSentryForFunction('auto-book-production');
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -54,6 +61,17 @@ Deno.serve(async (req: Request) => {
   let bookingAttempt: BookingAttempt | null = null;
   let stripeChargeId: string | null = null;
   let duffelOrder: DuffelOrder | null = null;
+  let bookingId: string | null = null;
+
+  // Create stripeClient object with refundPaymentIntent method
+  const stripeClient = {
+    refundPaymentIntent: async (paymentIntentId: string, idempotencyKey: string) => {
+      return await refundPaymentIntent({
+        paymentIntentId,
+        metadata: { idempotency_key: idempotencyKey }
+      });
+    }
+  };
 
   try {
     // Parse and validate request
@@ -66,28 +84,13 @@ Deno.serve(async (req: Request) => {
 
     console.log(`[AutoBookProduction] Processing trip request: ${tripRequestId}`);
 
-    // Step 1: Check feature flags
-    const { data: autoBookingFlag } = await supabaseClient
-      .from('feature_flags')
-      .select('enabled')
-      .eq('name', 'auto_booking_enhanced')
-      .single();
-
-    if (!autoBookingFlag?.enabled) {
-      console.log('[AutoBookProduction] Auto-booking disabled by feature flag');
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Auto-booking is currently disabled'
-      }), {
-        status: 503,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Step 2: Get trip request details
+    // Step 1: Check LaunchDarkly feature flags
+    const { evaluateFlag, createUserContext } = await import('../_shared/launchdarkly.ts');
+    
+    // Get user ID from trip request first for proper flag evaluation
     const { data: tripRequest, error: tripError } = await supabaseClient
       .from('trip_requests')
-      .select('*')
+      .select('user_id')
       .eq('id', tripRequestId)
       .single();
 
@@ -95,12 +98,47 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Trip request not found: ${tripError?.message}`);
     }
 
+    const userContext = createUserContext(tripRequest.user_id, {
+      trip_request_id: tripRequestId
+    });
+
+    const pipelineEnabled = await evaluateFlag(
+      'auto_booking_pipeline_enabled',
+      userContext,
+      false
+    );
+
+    if (!pipelineEnabled.value) {
+      console.log('[AutoBookProduction] Auto-booking disabled by LaunchDarkly feature flag');
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Auto-booking is currently disabled for this user'
+      }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Step 2: Get full trip request details (we already have user_id from Step 1)
+    const { data: fullTripRequest, error: fullTripError } = await supabaseClient
+      .from('trip_requests')
+      .select('*')
+      .eq('id', tripRequestId)
+      .single();
+
+    if (fullTripError || !fullTripRequest) {
+      throw new Error(`Trip request not found: ${fullTripError?.message}`);
+    }
+
+    // Use the full trip request data
+    const tripRequestData = fullTripRequest;
+
     console.log(`[AutoBookProduction] Trip details:`, {
-      origin: tripRequest.departure_airports?.[0],
-      destination: tripRequest.destination_location_code,
-      departure: tripRequest.departure_date,
-      return: tripRequest.return_date,
-      budget: tripRequest.max_price || tripRequest.budget
+      origin: tripRequestData.departure_airports?.[0],
+      destination: tripRequestData.destination_location_code,
+      departure: tripRequestData.departure_date,
+      return: tripRequestData.return_date,
+      budget: tripRequestData.max_price || tripRequestData.budget
     });
 
     // Step 3: Create booking attempt with idempotency
@@ -132,14 +170,14 @@ Deno.serve(async (req: Request) => {
     console.log(`[AutoBookProduction] Created booking attempt: ${bookingAttempt.id}`);
 
     // Step 4: Validate traveler data
-    const travelerData = tripRequest.traveler_data;
+    const travelerData = tripRequestData.traveler_data;
     if (!travelerData?.firstName || !travelerData?.lastName || !travelerData?.email) {
       throw new Error('Missing required traveler data: firstName, lastName, email');
     }
 
     // Check for international travel requirements
-    const originCountry = tripRequest.departure_airports?.[0]?.slice(0, 2);
-    const destCountry = tripRequest.destination_location_code?.slice(0, 2);
+    const originCountry = tripRequestData.departure_airports?.[0]?.slice(0, 2);
+    const destCountry = tripRequestData.destination_location_code?.slice(0, 2);
     const isInternational = originCountry && destCountry && originCountry !== destCountry;
 
     if (isInternational && !travelerData.passportNumber) {
@@ -150,7 +188,7 @@ Deno.serve(async (req: Request) => {
     console.log('[AutoBookProduction] Searching flights with Duffel...');
     
     const duffelClient = await createDuffelProductionClient(supabaseClient);
-    const searchParams = mapTripRequestToDuffelSearch(tripRequest);
+    const searchParams = mapTripRequestToDuffelSearch(tripRequestData);
     
     const { offers } = await duffelClient.searchFlights(searchParams);
     
@@ -159,7 +197,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Step 6: Find best offer within budget
-    const budget = maxPrice || tripRequest.max_price || tripRequest.budget;
+    const budget = maxPrice || tripRequestData.max_price || tripRequestData.budget;
     const validOffers = offers.filter(offer => {
       const price = parseFloat(offer.total_amount);
       const validation = duffelClient.validateOffer(offer);
@@ -167,7 +205,7 @@ Deno.serve(async (req: Request) => {
     });
 
     if (validOffers.length === 0) {
-      throw new Error(`No offers found within budget of ${budget} ${tripRequest.currency || 'USD'}`);
+      throw new Error(`No offers found within budget of ${budget} ${tripRequestData.currency || 'USD'}`);
     }
 
     // Sort by price and select cheapest
@@ -181,18 +219,37 @@ Deno.serve(async (req: Request) => {
       expires: selectedOffer.expires_at
     });
 
-    // Step 7: Charge payment via Stripe
-    console.log('[AutoBookProduction] Processing payment...');
-    
-    const stripeResult = await chargeCustomer(tripRequest.user_id, {
+    // Step 7: Capture payment via Stripe with idempotency
+    logger.info('Capturing payment via Stripe', {
+      operation: 'auto_book_stripe_capture',
+      userId: tripRequest.user_id,
       amount: parseFloat(selectedOffer.total_amount),
-      currency: selectedOffer.total_currency.toLowerCase(),
-      description: `Flight booking ${selectedOffer.id}`,
-      idempotencyKey: `charge-${bookingAttempt.id}`
+      currency: selectedOffer.total_currency,
+      offerId: selectedOffer.id,
+      bookingAttemptId: bookingAttempt.id
+    });
+    
+    // Get existing PaymentIntent ID from booking attempt or trip request
+    const paymentIntentId = tripRequestData.payment_intent_id;
+    if (!paymentIntentId) {
+      throw new Error('No PaymentIntent found for this booking attempt');
+    }
+    
+    // Capture the PaymentIntent using shared Stripe client with idempotency
+    const capturedIntent = await capturePaymentIntent(
+      paymentIntentId,
+      bookingAttempt.idempotency_key
+    );
+
+    stripeChargeId = capturedIntent.id;
+    
+    logger.stripeCaptureSuccess(stripeChargeId, parseFloat(selectedOffer.total_amount) * 100, {
+      userId: tripRequest.user_id,
+      bookingAttemptId: bookingAttempt.id,
+      currency: selectedOffer.total_currency
     });
 
-    stripeChargeId = stripeResult.paymentIntentId;
-    console.log(`[AutoBookProduction] Payment successful: ${stripeChargeId}`);
+    recordStripeCaptureSuccess(stripeChargeId, selectedOffer.total_currency);
 
     // Step 8: Create Duffel order
     console.log('[AutoBookProduction] Creating Duffel order...');
@@ -215,9 +272,77 @@ Deno.serve(async (req: Request) => {
     } catch (duffelError) {
       console.error('[AutoBookProduction] Duffel order creation failed:', duffelError);
       
-      // Compensate: Refund the payment
-      console.log('[AutoBookProduction] Initiating payment refund...');
-      await refundPayment(stripeChargeId, 'Booking failed');
+      // Compensate: Refund the payment using shared Stripe client with idempotency
+      logger.info('Initiating automated refund saga', {
+        operation: 'auto_book_refund_saga',
+        paymentIntentId: stripeChargeId,
+        reason: 'duffel_booking_failed',
+        bookingAttemptId: bookingAttempt.id,
+        userId: tripRequest.user_id
+      });
+      
+      let refundCompleted = false;
+      
+      try {
+        const refundIdempotencyKey = `refund-${bookingAttempt.idempotency_key}`;
+        
+        // Call stripeClient.refundPaymentIntent as specified in task
+        const { refund, status } = await stripeClient.refundPaymentIntent(
+          paymentIntentId, // Use paymentIntentId as specified
+          refundIdempotencyKey
+        );
+        
+        refundCompleted = (status === 'refunded');
+        
+        // Emit observability signals  
+        logger.info('refund_completed', {
+          bookingId: bookingAttempt.id,
+          paymentIntentId: paymentIntentId
+        });
+        
+        // Increment failure metric as specified
+        autoBookingFailureTotal.inc();
+        
+        // Send Slack alert for refund completion
+        await alertRefundCompleted(
+          bookingAttempt.id,
+          paymentIntentId,
+          parseFloat(selectedOffer.total_amount),
+          selectedOffer.total_currency,
+          'Duffel booking failed, refund processed successfully'
+        );
+        
+        // Update booking status to 'refunded' - need to check if this should be flight_bookings table
+        if (refundCompleted) {
+          await supabaseClient
+            .from('flight_bookings')
+            .update({ status: 'refunded' })
+            .eq('id', bookingId);
+        }
+        
+      } catch (refundError) {
+        recordStripeCaptureFailure(stripeChargeId, refundError.message, selectedOffer.total_currency);
+        logger.error('Automated refund failed', {
+          operation: 'auto_book_refund_failed',
+          paymentIntentId: stripeChargeId,
+          error: refundError.message,
+          bookingAttemptId: bookingAttempt.id
+        });
+        
+        captureException(refundError, {
+          operation: 'auto_book_refund_saga',
+          paymentIntentId: stripeChargeId,
+          bookingAttemptId: bookingAttempt.id
+        });
+        
+        // Send Slack alert for refund failure
+        await alertBookingFailure(
+          tripRequest.user_id,
+          `Duffel booking failed and refund also failed: ${refundError.message}`,
+          stripeChargeId,
+          'failed'
+        );
+      }
       
       // Mark attempt as failed
       await supabaseClient.rpc('rpc_fail_booking_attempt', {
@@ -225,8 +350,16 @@ Deno.serve(async (req: Request) => {
         p_error_message: `Duffel booking failed: ${duffelError.message}`,
         p_stripe_refund_id: stripeChargeId
       });
+      
+      // Send initial failure alert
+      await alertBookingFailure(
+        tripRequest.user_id,
+        `Duffel order creation failed: ${duffelError.message}`,
+        stripeChargeId,
+        refundCompleted ? 'completed' : 'pending'
+      );
 
-      throw new Error(`Booking failed: ${duffelError.message}. Payment has been refunded.`);
+      throw new Error(`Booking failed: ${duffelError.message}. Payment has been ${refundCompleted ? 'refunded' : 'queued for refund'}.`);
     }
 
     // Step 9: Complete booking atomically
@@ -267,6 +400,11 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log(`[AutoBookProduction] Booking completed successfully: ${completionResult.booking_id}`);
+    
+    // Set bookingId for potential refund path
+    bookingId = completionResult.booking_id;
+
+    recordAutoBookingSuccess(tripRequest.user_id, selectedOffer.total_currency);
 
     return new Response(JSON.stringify({
       success: true,
@@ -295,6 +433,8 @@ Deno.serve(async (req: Request) => {
         console.error('[AutoBookProduction] Cleanup failed:', cleanupError);
       }
     }
+
+    recordAutoBookingFailure(tripRequest.user_id || 'unknown_user', error.message, selectedOffer.total_currency || 'USD');
 
     return new Response(JSON.stringify({
       success: false,

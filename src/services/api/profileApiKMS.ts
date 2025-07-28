@@ -1,4 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import * as React from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/types/database';
 
 // User profile interface with KMS encryption support
@@ -46,16 +47,21 @@ interface KMSEncryption {
 
 // Profile API service with KMS encryption
 export class ProfileApiKMS {
-  private supabase: ReturnType<typeof createClient<Database>>;
+  private supabase: typeof supabase;
   private kmsKeyId: string;
   private encryptedFields: Set<string>;
 
   constructor() {
-    this.supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    this.kmsKeyId = process.env.NEXT_PUBLIC_KMS_KEY_ID || 'default-key';
+    // Use the existing configured Supabase client
+    this.supabase = supabase;
+
+    // Get KMS key ID from environment variables with fallbacks
+    this.kmsKeyId =
+      process.env.KMS_KEY_ID ||
+      import.meta.env.VITE_KMS_KEY_ID ||
+      process.env.NEXT_PUBLIC_KMS_KEY_ID ||
+      'default-key';
+
     this.encryptedFields = new Set(['email', 'phone', 'bio', 'location']);
   }
 

@@ -1,0 +1,248 @@
+name: OpenTelemetry Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/otel-validation.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'supabase/functions/**'
+  schedule:
+    # Run health check daily at 9 AM UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  otel-health-check:
+    runs-on: ubuntu-latest
+    name: OpenTelemetry Health Check
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.38.x
+          
+      - name: Run OpenTelemetry Health Check
+        run: |
+          cd ${{ github.workspace }}
+          deno run --allow-net --allow-env --allow-read scripts/otel-health-check.ts
+        env:
+          SUPABASE_ENV: development
+          OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4318/v1/traces
+          
+      - name: Run OpenTelemetry Tests
+        run: |
+          cd ${{ github.workspace }}/supabase/functions
+          deno test --allow-net --allow-env --allow-read _tests/otel-integration.test.ts
+          
+  trace-completeness-test:
+    runs-on: ubuntu-latest
+    name: Trace Completeness Validation
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.38.x
+          
+      - name: Validate Service Tracing
+        run: |
+          cd ${{ github.workspace }}/supabase/functions
+          
+          # Test Duffel service tracing
+          echo "Testing Duffel service tracing..."
+          deno run --allow-env --allow-net _tests/duffel-trace.test.ts || exit 1
+          
+          # Test Stripe service tracing  
+          echo "Testing Stripe service tracing..."
+          deno run --allow-env --allow-net _tests/stripe-trace.test.ts || exit 1
+          
+          # Test Redis lock tracing
+          echo "Testing Redis lock tracing..."
+          deno run --allow-env --allow-net _tests/redis-trace.test.ts || exit 1
+          
+          # Test metrics endpoint
+          echo "Testing /metrics endpoint..."
+          deno run --allow-net --allow-env _tests/metrics-endpoint.test.ts || exit 1
+          
+  security-audit:
+    runs-on: ubuntu-latest
+    name: OpenTelemetry Security Audit
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.38.x
+          
+      - name: Run Security Audit
+        run: |
+          cd ${{ github.workspace }}/supabase/functions
+          deno run --allow-env _shared/otel-config.ts
+        env:
+          SUPABASE_ENV: production
+          OTEL_EXPORTER_OTLP_ENDPOINT: https://api.honeycomb.io/v1/traces
+          
+      - name: Check for Hardcoded Secrets
+        run: |
+          echo "Checking for hardcoded API keys..."
+          if grep -r -i "api[_-]*key\s*=\s*['\"][^'\"]*['\"]" supabase/functions/ --exclude-dir=node_modules; then
+            echo "❌ Found potential hardcoded API keys!"
+            exit 1
+          else
+            echo "✅ No hardcoded API keys found"
+          fi
+          
+      - name: Validate HTTPS Endpoints
+        run: |
+          echo "Validating production endpoints use HTTPS..."
+          if grep -r "http://" supabase/functions/_shared/otel-config.ts | grep -v localhost; then
+            echo "❌ Found HTTP endpoints in production config!"
+            exit 1
+          else
+            echo "✅ All production endpoints use HTTPS"
+          fi
+          
+  semantic-conventions-check:
+    runs-on: ubuntu-latest
+    name: Semantic Conventions Validation
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.38.x
+          
+      - name: Validate Span Names
+        run: |
+          echo "Validating span naming conventions..."
+          
+          # Check for proper service prefixes
+          if grep -r "withSpan\|startSpan" supabase/functions/lib/ | grep -v -E "(duffel\.|stripe\.|redis\.|http\.|db\.)" | grep -v test; then
+            echo "⚠️ Found spans without proper service prefixes"
+          fi
+          
+          # Check for camelCase instead of snake_case
+          if grep -r "withSpan.*[A-Z]" supabase/functions/lib/ | grep -v test; then
+            echo "⚠️ Found camelCase span names, should use lowercase with dots"
+          fi
+          
+          echo "✅ Span naming validation complete"
+          
+      - name: Validate Attribute Names  
+        run: |
+          echo "Validating attribute naming conventions..."
+          
+          # Check for proper semantic convention attributes
+          if grep -r "setAttribute.*http" supabase/functions/lib/ | grep -v -E "(http\.method|http\.url|http\.status_code)"; then
+            echo "⚠️ Found non-standard HTTP attributes"
+          fi
+          
+          echo "✅ Attribute naming validation complete"
+          
+  documentation-check:
+    runs-on: ubuntu-latest
+    name: Documentation Validation
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Check Documentation Exists
+        run: |
+          echo "Checking OpenTelemetry documentation..."
+          
+          if [ ! -f "docs/observability/opentelemetry-guide.md" ]; then
+            echo "❌ OpenTelemetry guide not found!"
+            exit 1
+          fi
+          
+          if [ ! -f "scripts/otel-health-check.ts" ]; then
+            echo "❌ Health check script not found!"
+            exit 1
+          fi
+          
+          echo "✅ Documentation files present"
+          
+      - name: Validate Documentation Content
+        run: |
+          echo "Validating documentation completeness..."
+          
+          # Check for required sections
+          required_sections=("Configuration" "Testing" "Troubleshooting" "Security")
+          
+          for section in "${required_sections[@]}"; do
+            if ! grep -q "## $section" docs/observability/opentelemetry-guide.md; then
+              echo "❌ Missing documentation section: $section"
+              exit 1
+            fi
+          done
+          
+          echo "✅ Documentation validation complete"
+          
+  notify-on-failure:
+    runs-on: ubuntu-latest
+    name: Notify on Failure
+    needs: [otel-health-check, trace-completeness-test, security-audit, semantic-conventions-check]
+    if: failure() && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Notify Team
+        run: |
+          echo "🚨 OpenTelemetry validation failed on main branch!"
+          echo "Please check the workflow logs and fix any issues."
+          # In production, you might want to send a Slack notification or email
+          
+  weekly-maintenance:
+    runs-on: ubuntu-latest
+    name: Weekly Maintenance Tasks
+    if: github.event.schedule == '0 9 * * 1' # Monday at 9 AM UTC
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.38.x
+          
+      - name: Generate Health Report
+        run: |
+          echo "# Weekly OpenTelemetry Health Report" > otel-report.md
+          echo "Generated: $(date)" >> otel-report.md
+          echo "" >> otel-report.md
+          
+          # Run comprehensive health check
+          deno run --allow-net --allow-env --allow-read scripts/otel-health-check.ts >> otel-report.md || true
+          
+      - name: Check for Updates
+        run: |
+          echo "Checking for OpenTelemetry updates..."
+          
+          # Check Deno registry for updates (in practice, you'd check npm or your registry)
+          echo "Current implementation date: $(date)"
+          echo "Consider reviewing OpenTelemetry specification updates"
+          
+      - name: Archive Report
+        run: |
+          mkdir -p reports/$(date +%Y-%m)
+          mv otel-report.md reports/$(date +%Y-%m)/otel-report-$(date +%Y-%m-%d).md
+          
+          echo "📋 Weekly report generated and archived"

@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { createClient } from '@supabase/supabase-js';
 import StripeServerModule from 'stripe';

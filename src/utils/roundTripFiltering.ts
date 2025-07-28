@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * @file DEPRECATED: Round-trip flight filtering utilities
  *

@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Conditional Logic Engine for Dynamic Forms
  *

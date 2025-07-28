@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { BusinessRulesProvider } from '@/hooks/useBusinessRules';
 
 interface TestWrapperProps {

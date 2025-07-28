@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Parker Flight Core Business Rules
  *

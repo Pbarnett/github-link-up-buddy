@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Common TypeScript event handler types for consistent typing across components
  */

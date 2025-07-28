@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Legacy useTripOffers hook with dependency injection and improved testability.
 
 import { PostgrestError } from '@supabase/supabase-js';
@@ -10,6 +11,9 @@ import {
   FlightSearchResponse,
 } from '@/services/api/flightSearchApi';
 import logger from '@/lib/logger';
+import { useState } from 'react';
+import { useEffect } from 'react';
+import { useCallback } from 'react';
 
 // Imports from the new useTripOffers.ts
 import {

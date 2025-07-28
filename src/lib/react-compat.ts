@@ -1,4 +1,8 @@
 import * as React from 'react';
+import { Suspense } from 'react';
+import { Fragment } from 'react';
+import { createElement } from 'react';
+
 /**
  * React 19 Compatibility Layer
  *

@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Secure Stripe Service with AWS Secrets Manager Integration
  *
@@ -228,6 +229,19 @@ export class StripeServiceSecure {
       return await loadStripe(publishableKey);
     } catch (error) {
       console.error('Failed to load Stripe:', error);
+
+      // In development mode, provide helpful error message but don't crash
+      if (ENVIRONMENT === 'development') {
+        console.warn(
+          '⚠️ Stripe service failed to initialize in development mode. This is expected if AWS Secrets Manager is not configured.'
+        );
+        console.warn(
+          '💡 To enable payments in development, configure AWS Secrets Manager or use environment variables.'
+        );
+        return null; // Return null instead of throwing to prevent app crash
+      }
+
+      // In production, throw the error as this is critical
       throw new Error('Unable to initialize secure payment processing');
     }
   }

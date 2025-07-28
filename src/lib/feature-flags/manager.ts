@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Feature Flag Manager for Server-side LaunchDarkly Integration
  */

@@ -1,13 +1,61 @@
 // Enhanced profile component with React 19 features
-type FC<T = {}> = React.FC<T>;
-type _Component<P = {}, S = {}> = React.Component<P, S>;
 import * as React from 'react';
+import { useState, useMemo, Suspense, useTransition, useDeferredValue } from 'react';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+
+type FC<T = {}> = React.FC<T>;
+type _Component<P = {}, S = {}> = React.Component<P, S>;
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
+  Bell,
+  Calendar,
+  CalendarIcon,
+  CheckCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Circle,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Download,
+  Eye,
+  FileText,
+  Filter,
+  Globe,
+  HelpCircle,
+  Info,
+  Loader2,
+  Lock,
+  Mail,
+  MapPin,
+  Package,
+  Phone,
+  Plane,
+  PlaneTakeoff,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Settings,
+  Shield,
+  Trash2,
+  Upload,
+  User,
+  Wifi,
+  X,
+  XCircle,
+  Zap,
+} from 'lucide-react';
+
 // Mock user activities for demo
 const mockActivities = [
   {

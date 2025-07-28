@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Privacy compliance service for consent management
 // Based on GDPR/CCPA requirements and research recommendations
 

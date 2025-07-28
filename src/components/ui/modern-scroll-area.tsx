@@ -1,3 +1,9 @@
+import * as React from 'react';
+
+
+type HTMLAttributes<T extends React.ElementType> = React.HTMLAttributes<T>;
+type HTMLAttributes<T> = React.HTMLAttributes<T>;
+
 import { cn } from '@/lib/utils';
 
 export interface ModernScrollAreaProps extends HTMLAttributes<HTMLDivElement> {
@@ -9,7 +15,7 @@ export interface ModernScrollAreaProps extends HTMLAttributes<HTMLDivElement> {
   scrollPadding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
-const ModernScrollArea = forwardRef<HTMLDivElement, ModernScrollAreaProps>(
+const ModernScrollArea = React.forwardRef<HTMLDivElement, ModernScrollAreaProps>(
   (
     {
       className,
@@ -82,7 +88,7 @@ export interface ScrollItemProps extends HTMLAttributes<HTMLDivElement> {
   snapStop?: 'always' | 'normal';
 }
 
-const ScrollItem = forwardRef<HTMLDivElement, ScrollItemProps>(
+const ScrollItem = React.forwardRef<HTMLDivElement, ScrollItemProps>(
   (
     { className, snapAlign = 'start', snapStop = 'normal', children, ...props },
     ref

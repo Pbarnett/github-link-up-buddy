@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { initialize, LDClient, LDContext } from 'launchdarkly-js-client-sdk';
 import LaunchDarklyService from '../launchDarklyService';

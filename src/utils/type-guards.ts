@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Type Guards and Runtime Type Validation
  * Implementing safe type checking and validation patterns

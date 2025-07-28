@@ -1,3 +1,8 @@
+import * as React from 'react';
+import { useEffect } from 'react';
+import { Suspense } from 'react';
+import { useTransition } from 'react';
+
 // React 19 compatibility fixes
 declare module 'react' {
   // Re-export common hooks that might not be properly exported in React 19 types

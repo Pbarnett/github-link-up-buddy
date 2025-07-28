@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Advanced Duffel Service - 100% API Reference Compliance
  *

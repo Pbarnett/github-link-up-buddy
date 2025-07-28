@@ -20,6 +20,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Form } from '@/components/ui/form';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 
 // Define schema directly here since it's not exported from types/form
 const unifiedFlightFormSchema = z

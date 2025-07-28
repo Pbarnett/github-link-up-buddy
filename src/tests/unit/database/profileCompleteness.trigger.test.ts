@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Unit Tests for Database Profile Completeness Trigger Functions
  * Day 1 Task: Write unit tests for profile completeness functions (1h)

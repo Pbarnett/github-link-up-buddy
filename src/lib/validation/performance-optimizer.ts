@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Performance Optimizer for Large-Scale Dynamic Form Validation
  *

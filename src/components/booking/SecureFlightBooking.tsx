@@ -223,7 +223,7 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
     try {
       // Create payment intent with flight booking metadata
       const paymentResult = await stripeServiceSecure.createPaymentIntent({
-        amount: Math.round(bookingState.totalPrice * 100), // Convert to cents
+        amount: bookingState.totalPrice, // Amount in dollars
         currency: bookingState.selectedFlight.price.currency.toLowerCase(),
         metadata: {
           type: 'flight_booking',
@@ -234,16 +234,15 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
           contact_phone: bookingState.contactPhone,
           user_id: user?.id || '',
         },
-        receipt_email: bookingState.contactEmail,
       });
 
-      if (!paymentResult.success) {
-        throw new Error(paymentResult.error || 'Payment creation failed');
+      if (!paymentResult.client_secret) {
+        throw new Error('Payment intent creation failed');
       }
 
       // Confirm payment (in real app, this would be handled by Stripe Elements)
       const confirmResult = await stripeServiceSecure.confirmPayment(
-        paymentResult.clientSecret!,
+        paymentResult.client_secret,
         {
           payment_method: {
             card: {
@@ -263,8 +262,8 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
         }
       );
 
-      if (!confirmResult.success) {
-        throw new Error(confirmResult.error || 'Payment confirmation failed');
+      if (!confirmResult || confirmResult.status !== 'succeeded') {
+        throw new Error('Payment confirmation failed');
       }
 
       // Generate booking reference

@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Type-Safe API Client Implementation
  * Advanced TypeScript patterns for API communication

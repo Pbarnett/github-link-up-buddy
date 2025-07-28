@@ -5,6 +5,7 @@ import {
   useMemo,
   useContext,
   useCallback,
+  useRef,
   createContext,
 } from 'react';
 import {
@@ -20,6 +21,10 @@ import {
   trackABTestEvent,
   ABTestEvent,
 } from '@/lib/personalization/abTesting';
+import {
+  trackComponentRender,
+  analyzeHookDependencies,
+} from '@/utils/debugUtils';
 
 type ReactNode = React.ReactNode;
 type FC<T = {}> = React.FC<T>;
@@ -52,6 +57,9 @@ export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
   children,
   userId,
 }) => {
+  // Track component renders for debugging
+  trackComponentRender('PersonalizationProvider');
+
   const [personalizationData, setPersonalizationData] =
     useState<PersonalizationData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -150,12 +158,23 @@ export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
         },
       });
 
-      // Track successful data fetch
-      await trackPersonalizationEvent('exposure', 'data_fetched', {
-        hasFirstName: !!personalizationData.firstName,
-        hasNextTrip: !!personalizationData.nextTripCity,
-        source: 'edge_function',
-      });
+      // Track successful data fetch (avoid using trackPersonalizationEvent to prevent dependency cycle)
+      if (userId && abTestVariant) {
+        const event: ABTestEvent = {
+          experimentId: 'personalizedGreetings',
+          variantId: abTestVariant,
+          userId,
+          eventType: 'exposure',
+          eventName: 'data_fetched',
+          timestamp: new Date(),
+          metadata: {
+            hasFirstName: !!personalizationData.firstName,
+            hasNextTrip: !!personalizationData.nextTripCity,
+            source: 'edge_function',
+          },
+        };
+        await trackABTestEvent(event);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       const personalizationError: PersonalizationError = {
@@ -170,15 +189,26 @@ export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
 
       console.error('❌ Personalization fetch failed:', personalizationError);
 
-      // Track error event
-      await trackPersonalizationEvent('exposure', 'data_fetch_failed', {
-        error: errorMessage,
-        source: 'edge_function',
-      });
+      // Track error event (avoid using trackPersonalizationEvent to prevent dependency cycle)
+      if (userId && abTestVariant) {
+        const event: ABTestEvent = {
+          experimentId: 'personalizedGreetings',
+          variantId: abTestVariant,
+          userId,
+          eventType: 'exposure',
+          eventName: 'data_fetch_failed',
+          timestamp: new Date(),
+          metadata: {
+            error: errorMessage,
+            source: 'edge_function',
+          },
+        };
+        await trackABTestEvent(event);
+      }
     } finally {
       setLoading(false);
     }
-  }, [userId, isPersonalizationEnabled, trackPersonalizationEvent]);
+  }, [userId, isPersonalizationEnabled, abTestVariant]);
 
   // Memoized value to prevent unnecessary re-renders
   const contextValue = useMemo(
@@ -213,7 +243,7 @@ export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
       setLoading(false);
       setError(null);
     }
-  }, [userId, isPersonalizationEnabled]); // Removed fetchPersonalizationData to prevent infinite loop
+  }, [userId, isPersonalizationEnabled, fetchPersonalizationData]);
 
   return (
     <PersonalizationContext.Provider value={contextValue}>

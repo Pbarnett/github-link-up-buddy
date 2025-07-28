@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * End-to-End Integration Test for Complete Filtering System
  *

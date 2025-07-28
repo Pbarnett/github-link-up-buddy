@@ -1,4 +1,6 @@
+import * as React from 'react';
 import { vi } from 'vitest';
+import DOMPurify from 'dompurify';
 
 // ==============================================================================
 // REACT TESTING UTILITIES
@@ -251,7 +253,8 @@ export const cleanupTest = () => {
 
   // Reset document body
   if (typeof document !== 'undefined') {
-    document.body.innerHTML = '';
+const sanitizer = DOMPurify.sanitize;
+  document.body.innerHTML = sanitizer('');
   }
 };
 

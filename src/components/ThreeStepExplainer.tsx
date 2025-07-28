@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { Fragment } from 'react';
 
 type FC<T = {}> = React.FC<T>;
 

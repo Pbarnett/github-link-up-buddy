@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * @file Simple integration test for filtering architecture
  * Tests core functionality without complex mocking

@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * @file Frontend Integration Tests for Phase 3: Advanced Filter Controls
  *

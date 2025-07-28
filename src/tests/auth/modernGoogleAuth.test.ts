@@ -13,6 +13,7 @@ import {
 } from 'vitest';
 import { modernGoogleAuth } from '@/services/modernGoogleAuthService';
 import { setupAdvancedOAuthTesting } from '../utils/advancedOAuthMocks';
+import { createElement } from 'react';
 
 // Use vi.hoisted() for proper pre-import mocking
 const mockGoogleAccounts = vi.hoisted(() => ({
@@ -368,16 +369,20 @@ describe('ModernGoogleAuthService', () => {
     // Note: Default window.open mock is set in global beforeEach
     // Individual tests can override it as needed
 
-    it('should detect popup blockers', async () => {
+it('should detect popup blockers', async () => {
       // Override the default mock for this test - window.open returns null
       const mockOpen = vi.fn().mockReturnValue(null);
 
       // Clear existing mock and create new one
+      function safeWindowOpen() {
+        return mockOpen;
+      }
+
       vi.unstubAllGlobals();
       vi.stubGlobal('window', {
         ...globalThis.window,
         google: { accounts: mockGoogleAccounts },
-        open: mockOpen,
+        open: safeWindowOpen(),
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
         postMessage: vi.fn(),

@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Control } from 'react-hook-form';
 import AutoBookingSection from './AutoBookingSection';
 

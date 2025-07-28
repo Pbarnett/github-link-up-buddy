@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Parker Flight - Monitoring & Observability
  * Core Web Vitals, Error Tracking, and Analytics Setup

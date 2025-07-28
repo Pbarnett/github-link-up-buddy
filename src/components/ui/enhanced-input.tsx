@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import * as React from 'react';
 type HTMLAttributes<T = HTMLElement> = HTMLAttributes<T>;
 
 import { cn } from '@/lib/utils';

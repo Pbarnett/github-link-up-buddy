@@ -8,7 +8,7 @@
 const https = require('https');
 const url = require('url');
 
-const CLIENT_ID = process.env.SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID || '209526864602-b7g6tlsftft5srildqrv7ulb4ll2v3smk.apps.googleusercontent.com';
+const CLIENT_ID = process.env.SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID || 'your_google_client_id';
 const REDIRECT_URI = 'http://127.0.0.1:54321/auth/v1/callback';
 
 console.log('🔍 Testing Google OAuth Configuration...');

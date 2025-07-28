@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import * as React from 'react';
 import { PhoneNumberSetup } from './PhoneNumberSetup';
+import { useState } from 'react';
+import { useEffect } from 'react';
+import { useCallback } from 'react';
+
 interface NotificationPreferences {
   booking_confirmations: { email: boolean; sms: boolean };
   booking_failures: { email: boolean; sms: boolean };

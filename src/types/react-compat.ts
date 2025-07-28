@@ -29,21 +29,20 @@ import {
 export type {
   ReactNode,
   ReactElement,
-  FCType,
-  ElementRefPropsPropsWithoutRef,
+  FC,
   HTMLAttributes,
   ButtonHTMLAttributes,
   InputHTMLAttributes,
   ChangeEvent,
   MouseEvent,
   KeyboardEvent,
-  _FormEvent,
+  FormEvent,
   FocusEvent,
   CSSProperties,
   Ref,
   RefObject,
   MutableRefObject,
-};
+} from 'react';
 
 // React utilities
 export const {

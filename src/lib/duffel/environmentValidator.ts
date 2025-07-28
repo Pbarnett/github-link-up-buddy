@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Duffel Environment Validation
  *

@@ -2,10 +2,14 @@
 // Replaces deprecated gapi.auth2 library
 
 import * as React from 'react';
+import { createElement } from 'react';
+
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 import { supabase } from '@/integrations/supabase/client';
 import { authSecurityMonitor } from './authSecurityMonitor';
+import { AuthErrorHandler } from './authErrorHandler';
+import { AuthResilience } from './authResilience';
 
 interface GoogleAuthConfig {
   clientId: string;
@@ -81,31 +85,44 @@ class ModernGoogleAuthService {
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
-    // Check if running in browser
-    if (typeof window === 'undefined') {
-      throw new Error(
-        'Google Auth can only be initialized in browser environment'
-      );
+    try {
+      // Check if running in browser
+      if (typeof window === 'undefined') {
+        throw new Error(
+          'Google Auth can only be initialized in browser environment'
+        );
+      }
+
+      // Load Google Identity Services script if not already loaded with retry logic
+      if (!window.google?.accounts) {
+        await AuthResilience.withRetry(
+          () => this.loadGoogleIdentityScript(),
+          'modern-google-script-load',
+          { maxRetries: 3, baseDelay: 1000 }
+        );
+      }
+
+      // Initialize Google Identity Services
+      window.google.accounts.id.initialize({
+        client_id: this.config.clientId,
+        callback: this.handleCredentialResponse.bind(this),
+        auto_select: this.config.autoSelect,
+        cancel_on_tap_outside: this.config.cancelOnTapOutside,
+        // Enhanced security and privacy settings
+        use_fedcm_for_prompt: true, // Use FedCM when available
+        itp_support: true, // Enable Intelligent Tracking Prevention support
+      });
+
+      this.isInitialized = true;
+      console.log('✅ Modern Google Auth Service initialized');
+    } catch (error) {
+      AuthErrorHandler.handleAuthError(error, {
+        component: 'ModernGoogleAuthService',
+        flow: 'initialize',
+        provider: 'google'
+      });
+      throw error;
     }
-
-    // Load Google Identity Services script if not already loaded
-    if (!window.google?.accounts) {
-      await this.loadGoogleIdentityScript();
-    }
-
-    // Initialize Google Identity Services
-    window.google.accounts.id.initialize({
-      client_id: this.config.clientId,
-      callback: this.handleCredentialResponse.bind(this),
-      auto_select: this.config.autoSelect,
-      cancel_on_tap_outside: this.config.cancelOnTapOutside,
-      // Enhanced security and privacy settings
-      use_fedcm_for_prompt: true, // Use FedCM when available
-      itp_support: true, // Enable Intelligent Tracking Prevention support
-    });
-
-    this.isInitialized = true;
-    console.log('✅ Modern Google Auth Service initialized');
   }
 
   /**
@@ -140,70 +157,82 @@ class ModernGoogleAuthService {
     response: GoogleCredentialResponse
   ): Promise<void> {
     try {
-      const userProfile = parseJWT(response.credential);
+      // Use resilience wrapper for token processing
+      await AuthResilience.withRetry(async () => {
+        const userProfile = parseJWT(response.credential);
 
-      if (!userProfile) {
-        authSecurityMonitor.logTokenValidationFailure({
-          reason: 'Invalid credential response - failed to parse JWT',
-          tokenClaims: null,
+        if (!userProfile) {
+          authSecurityMonitor.logTokenValidationFailure({
+            reason: 'Invalid credential response - failed to parse JWT',
+            tokenClaims: null,
+          });
+          throw new Error('Invalid credential response');
+        }
+
+        // Validate token claims
+        if (!this.validateTokenClaims(userProfile)) {
+          authSecurityMonitor.logTokenValidationFailure({
+            reason: 'Token validation failed',
+            tokenClaims: userProfile,
+            expectedAudience: this.config.clientId,
+          });
+          throw new Error('Token validation failed');
+        }
+
+        // Sign in with Supabase using the ID token with retry logic
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: response.credential,
         });
-        throw new Error('Invalid credential response');
-      }
 
-      // Validate token claims
-      if (!this.validateTokenClaims(userProfile)) {
-        authSecurityMonitor.logTokenValidationFailure({
-          reason: 'Token validation failed',
-          tokenClaims: userProfile,
-          expectedAudience: this.config.clientId,
-        });
-        throw new Error('Token validation failed');
-      }
+        if (error) {
+          console.error('❌ Supabase auth error:', error);
+          authSecurityMonitor.logAuthFailure({
+            authMethod: 'one_tap',
+            errorCode: error.message,
+            errorMessage: error.message,
+          });
+          throw error;
+        }
 
-      // Sign in with Supabase using the ID token
-      const { data, error } = await supabase.auth.signInWithIdToken({
-        provider: 'google',
-        token: response.credential,
-      });
+        console.log('✅ Successfully signed in with Google:', data.user?.email);
 
-      if (error) {
-        console.error('❌ Supabase auth error:', error);
-        authSecurityMonitor.logAuthFailure({
+        // Log successful authentication
+        const privacyMode = await this.handlePrivacySettings();
+        authSecurityMonitor.logAuthSuccess({
+          userId: data.user!.id,
+          sessionId: data.session!.access_token,
           authMethod: 'one_tap',
-          errorCode: error.message,
-          errorMessage: error.message,
+          privacyMode: privacyMode,
+          tokenClaims: userProfile,
         });
-        throw error;
-      }
 
-      console.log('✅ Successfully signed in with Google:', data.user?.email);
-
-      // Log successful authentication
-      const privacyMode = await this.handlePrivacySettings();
-      authSecurityMonitor.logAuthSuccess({
-        userId: data.user!.id,
-        sessionId: data.session!.access_token,
-        authMethod: 'one_tap',
-        privacyMode: privacyMode,
-        tokenClaims: userProfile,
-      });
-
-      // Trigger custom event for components to listen to
-      window.dispatchEvent(
-        new CustomEvent('googleAuthSuccess', {
-          detail: {
-            user: data.user,
-            session: data.session,
-          },
-        })
-      );
+        // Trigger custom event for components to listen to
+        window.dispatchEvent(
+          new CustomEvent('googleAuthSuccess', {
+            detail: {
+              user: data.user,
+              session: data.session,
+            },
+          })
+        );
+      }, 'modern-google-credential-response', { maxRetries: 2, baseDelay: 1000 });
     } catch (error) {
+      // Use enterprise error handler
+      const authError = AuthErrorHandler.handleAuthError(error, {
+        component: 'ModernGoogleAuthService',
+        flow: 'handleCredentialResponse',
+        provider: 'google'
+      });
+      
       console.error('❌ Google auth error:', error);
       window.dispatchEvent(
         new CustomEvent('googleAuthError', {
           detail: {
-            error:
-              error instanceof Error ? error.message : 'Authentication failed',
+            error: authError.userMessage,
+            errorId: authError.id,
+            category: authError.category,
+            retryable: authError.retryable
           },
         })
       );
@@ -285,10 +314,18 @@ class ModernGoogleAuthService {
       // Check for popup blockers
       const popupTest = window.open('', '_blank', 'width=1,height=1');
       if (!popupTest || popupTest.closed) {
+        const error = new Error('Popup blocked. Please allow popups for this site and try again.');
+        
+        // Log popup blocking with enterprise error handler
+        AuthErrorHandler.handleAuthError(error, {
+          component: 'ModernGoogleAuthService',
+          flow: 'signInWithPopup',
+          provider: 'google'
+        });
+        
         resolve({
           success: false,
-          error:
-            'Popup blocked. Please allow popups for this site and try again.',
+          error: 'Popup blocked. Please allow popups for this site and try again.',
         });
         return;
       }
@@ -301,6 +338,13 @@ class ModernGoogleAuthService {
         callback: async (response: any) => {
           try {
             if (response.error) {
+              const error = new Error(response.error);
+              AuthErrorHandler.handleAuthError(error, {
+                component: 'ModernGoogleAuthService',
+                flow: 'signInWithPopup-callback',
+                provider: 'google'
+              });
+              
               resolve({
                 success: false,
                 error: response.error,
@@ -308,8 +352,21 @@ class ModernGoogleAuthService {
               return;
             }
 
-            // Exchange access token for user info
-            const userInfo = await this.getUserInfo(response.access_token);
+            // Exchange access token for user info with retry logic
+            const userInfo = await AuthResilience.withRetry(
+              () => this.getUserInfo(response.access_token),
+              'modern-google-userinfo',
+              { maxRetries: 3, baseDelay: 1000 }
+            );
+
+            // Log successful popup authentication
+            authSecurityMonitor.logAuthSuccess({
+              userId: userInfo.id,
+              sessionId: response.access_token,
+              authMethod: 'popup',
+              privacyMode: await this.handlePrivacySettings(),
+              tokenClaims: userInfo,
+            });
 
             resolve({
               success: true,
@@ -317,19 +374,28 @@ class ModernGoogleAuthService {
               token: response.access_token,
             });
           } catch (error) {
+            const authError = AuthErrorHandler.handleAuthError(error, {
+              component: 'ModernGoogleAuthService',
+              flow: 'signInWithPopup-callback',
+              provider: 'google'
+            });
+            
             resolve({
               success: false,
-              error:
-                error instanceof Error
-                  ? error.message
-                  : 'Authentication failed',
+              error: authError.userMessage,
             });
           }
         },
         error_callback: (error: any) => {
+          const authError = AuthErrorHandler.handleAuthError(error, {
+            component: 'ModernGoogleAuthService',
+            flow: 'signInWithPopup-error',
+            provider: 'google'
+          });
+          
           resolve({
             success: false,
-            error: error.message || 'Authentication cancelled',
+            error: authError.userMessage || 'Authentication cancelled',
           });
         },
       });
@@ -350,7 +416,13 @@ class ModernGoogleAuthService {
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch user information');
+      const error = new Error(`Failed to fetch user information: ${response.status} ${response.statusText}`);
+      AuthErrorHandler.handleAuthError(error, {
+        component: 'ModernGoogleAuthService',
+        flow: 'getUserInfo',
+        provider: 'google'
+      });
+      throw error;
     }
 
     return await response.json();

@@ -6,25 +6,25 @@
 @layer base {
   :root {
     --radius: 0.625rem;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.129 0.042 264.695);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.129 0.042 264.695);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.129 0.042 264.695);
-    --primary: oklch(0.208 0.042 265.755);
-    --primary-foreground: oklch(0.984 0.003 247.858);
-    --secondary: oklch(0.968 0.007 247.896);
-    --secondary-foreground: oklch(0.208 0.042 265.755);
-    --muted: oklch(0.968 0.007 247.896);
-    --muted-foreground: oklch(0.554 0.046 257.417);
-    --accent: oklch(0.968 0.007 247.896);
-    --accent-foreground: oklch(0.208 0.042 265.755);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.984 0.003 247.858);
-    --border: oklch(0.929 0.013 255.508);
-    --input: oklch(0.929 0.013 255.508);
-    --ring: oklch(0.704 0.04 256.788);
+    --background: #ffffff;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
+    --primary: #2563eb;
+    --primary-foreground: #ffffff;
+    --secondary: #f1f5f9;
+    --secondary-foreground: #0f172a;
+    --muted: #f1f5f9;
+    --muted-foreground: #374151;
+    --accent: #f1f5f9;
+    --accent-foreground: #0f172a;
+    --destructive: #dc2626;
+    --destructive-foreground: #ffffff;
+    --border: #e2e8f0;
+    --input: #e2e8f0;
+    --ring: #2563eb;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -696,5 +696,247 @@
 
   [data-theme='dark'] .text-muted {
     color: #94a3b8;
+  }
+
+  /* Improved text contrast utilities */
+  .text-readable {
+    color: #374151 !important;
+  }
+
+  .text-muted-foreground {
+    color: var(--muted-foreground) !important;
+  }
+
+  /* Override faint text classes */
+  .text-gray-500,
+  .text-slate-500,
+  .text-zinc-500 {
+    color: #374151 !important;
+  }
+
+  .text-gray-400,
+  .text-slate-400,
+  .text-zinc-400 {
+    color: #4b5563 !important;
+  }
+
+  .text-gray-600,
+  .text-slate-600,
+  .text-zinc-600 {
+    color: #374151 !important;
+  }
+
+  /* Improve placeholder text */
+  input::placeholder,
+  textarea::placeholder {
+    color: #6b7280 !important;
+  }
+
+  /* Improve description text */
+  .text-sm.text-muted-foreground,
+  .text-xs.text-muted-foreground,
+  .text-muted,
+  .description {
+    color: #4b5563 !important;
+  }
+
+  /* Improve secondary text */
+  .text-secondary,
+  .secondary-text {
+    color: #374151 !important;
+  }
+
+  /* Improve all light grays */
+  .text-gray-300 {
+    color: #6b7280 !important;
+  }
+
+  /* Force better contrast on common shadcn/ui classes */
+  .text-muted-foreground {
+    color: #374151 !important;
+  }
+
+  /* Progress text improvements */
+  .progress-text,
+  .completion-text {
+    color: #374151 !important;
+  }
+
+  /* Comprehensive text contrast improvements */
+  
+  /* Target all possible light text variations */
+  .text-neutral-400,
+  .text-neutral-500,
+  .text-neutral-600 {
+    color: #374151 !important;
+  }
+
+  /* Form help text and descriptions */
+  .text-xs,
+  .help-text,
+  .form-description,
+  .field-description {
+    color: #4b5563 !important;
+  }
+
+  /* Status and progress indicators */
+  .remaining-text,
+  .status-text,
+  .info-text {
+    color: #374151 !important;
+  }
+
+  /* Card and component descriptions */
+  .card-description,
+  .component-description,
+  p.text-sm,
+  span.text-sm {
+    color: #4b5563 !important;
+  }
+
+  /* Tab and navigation text */
+  .nav-text,
+  .tab-text,
+  .menu-text {
+    color: #374151 !important;
+  }
+
+  /* Override any remaining faint text */
+  [class*="text-gray-"],
+  [class*="text-slate-"],
+  [class*="text-zinc-"],
+  [class*="text-neutral-"] {
+    color: #374151 !important;
+  }
+
+  /* Specific overrides for very common patterns */
+  .text-gray-500.text-sm,
+  .text-muted-foreground.text-sm,
+  .text-secondary.text-sm {
+    color: #4b5563 !important;
+  }
+
+  /* Force minimum contrast for all small text */
+  .text-xs {
+    color: #374151 !important;
+    font-weight: 500 !important;
+  }
+
+  /* Improve link text that might be faint */
+  a.text-muted-foreground,
+  a.text-gray-500 {
+    color: #2563eb !important;
+  }
+
+  /* Badge and tag text improvements */
+  .badge,
+  .tag {
+    color: #374151 !important;
+  }
+
+  /* Override CSS custom properties that might be too light */
+  * {
+    --text-muted-foreground: #374151;
+    --muted-foreground: #374151;
+  }
+
+  /* Ultra-aggressive text contrast fixes for maximum readability */
+  
+  /* Target any remaining light text with broad selectors */
+  p,
+  span,
+  div,
+  label,
+  button {
+    color: inherit !important;
+  }
+
+  /* Force all text to minimum contrast */
+  .text-gray-100,
+  .text-gray-200,
+  .text-gray-300,
+  .text-slate-100,
+  .text-slate-200,
+  .text-slate-300,
+  .text-zinc-100,
+  .text-zinc-200,
+  .text-zinc-300 {
+    color: #374151 !important;
+  }
+
+  /* Override any opacity that makes text faint */
+  .opacity-50,
+  .opacity-60,
+  .opacity-70 {
+    opacity: 1 !important;
+    color: #374151 !important;
+  }
+
+  /* Force readability on common UI patterns */
+  [data-state],
+  [data-disabled="false"],
+  .disabled\:text-muted-foreground:not(:disabled) {
+    color: #374151 !important;
+  }
+
+  /* Radix UI specific overrides */
+  [data-radix-collection-item],
+  .radix-state-open,
+  .radix-state-closed {
+    color: #374151 !important;
+  }
+
+  /* React components with faint text */
+  [class*="text-"][class*="muted"],
+  [class*="text-"][class*="subtle"],
+  [class*="color-"][class*="muted"] {
+    color: #374151 !important;
+  }
+
+  /* Tailwind arbitrary values that might be light */
+  .text-\[.*\] {
+    color: #374151 !important;
+  }
+
+  /* Catch-all for any remaining faint text */
+  *[style*="color: rgb(156"],
+  *[style*="color: rgb(148"],
+  *[style*="color: rgb(100"],
+  *[style*="color: #9"],
+  *[style*="color: #a"],
+  *[style*="color: #b"] {
+    color: #374151 !important;
+  }
+
+  /* Override any CSS variables that might be too light */
+  :root {
+    --color-text-subtle: #374151 !important;
+    --color-text-muted: #374151 !important;
+    --color-foreground-muted: #374151 !important;
+    --text-color-subtle: #374151 !important;
+    --text-color-muted: #374151 !important;
+  }
+
+  /* Maximum contrast enforcement */
+  .max-contrast * {
+    color: #374151 !important;
+  }
+
+  /* Apply max contrast to the whole app */
+  body * {
+    --tw-text-opacity: 1 !important;
+  }
+
+  /* Specific fixes for form elements */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  textarea {
+    color: #374151 !important;
+  }
+
+  /* Button text fixes */
+  button:not(.btn-primary):not([class*="bg-blue"]):not([class*="bg-green"]) {
+    color: #374151 !important;
   }
 }

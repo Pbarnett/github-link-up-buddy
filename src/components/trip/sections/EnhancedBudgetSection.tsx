@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { HelpCircle } from 'lucide-react';
 import { Control } from 'react-hook-form';
 import {

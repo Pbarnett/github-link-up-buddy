@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Type definitions for PostgREST responses and builders
 // Based on Supabase PostgrestBuilder patterns and TypeScript best practices
 

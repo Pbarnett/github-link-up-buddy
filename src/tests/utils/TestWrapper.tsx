@@ -3,6 +3,8 @@ type FC<T = {}> = React.FC<T>;
 
 import { vi } from 'vitest';
 import * as React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 
 // Create a test-specific query client
 const createTestQueryClient = () =>

@@ -9,6 +9,8 @@ import TripOfferControls from '@/components/trip/TripOfferControls';
 import TripErrorCard from '@/components/trip/TripErrorCard';
 import DebugInfo from '@/components/debug/DebugInfo';
 import TripOffersWithPools from './TripOffersWithPools';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Legacy component wrapper for the existing functionality
 const LegacyTripOffers = ({

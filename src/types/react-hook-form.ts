@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Enhanced React Hook Form type definitions
 // Based on React Hook Form v7+ TypeScript patterns
 

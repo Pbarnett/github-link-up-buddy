@@ -1,14 +1,13 @@
 {
-  "timestamp": "2025-07-24T15:57:54.690Z",
+  "timestamp": "2025-07-26T19:51:38.172Z",
   "summary": {
-    "passed": 19,
-    "failed": 3,
+    "passed": 18,
+    "failed": 4,
     "warnings": 5,
     "overall": "FAIL"
   },
   "details": {
     "passed": [
-      "Code formatting (auto-fixed)",
       "No hardcoded secrets detected",
       "Test files present (623 files)",
       "Performance monitoring configured",
@@ -31,33 +30,34 @@
     "failed": [
       "TypeScript compilation errors found",
       "ESLint check failed",
-      "Bundle size exceeds budget (JS: 1632KB, CSS: 785KB)"
+      "Code formatting issues could not be auto-fixed",
+      "Bundle size exceeds budget (JS: 1622KB, CSS: 785KB)"
     ],
     "warnings": [
       "Console statements found in source code",
       "Security audit could not be completed",
       "Test coverage analysis failed",
-      "40 dependencies are outdated",
+      "42 dependencies are outdated",
       "Missing description in package.json"
     ],
     "metrics": {
       "bundleSize": {
-        "js": 1671234,
-        "css": 804078,
-        "html": 1987,
-        "assets": 7900366
+        "js": 1660920,
+        "css": 803575,
+        "html": 2066,
+        "assets": 7960241
       },
-      "outdatedDependencies": 40
+      "outdatedDependencies": 42
     }
   },
   "metrics": {
     "bundleSize": {
-      "js": 1671234,
-      "css": 804078,
-      "html": 1987,
-      "assets": 7900366
+      "js": 1660920,
+      "css": 803575,
+      "html": 2066,
+      "assets": 7960241
     },
-    "outdatedDependencies": 40
+    "outdatedDependencies": 42
   },
   "thresholds": {
     "TEST_COVERAGE": 80,

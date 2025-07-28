@@ -1,7 +1,10 @@
-type _Component<P = {}, S = {}> = React.Component<P, S>;
-
-import { cn } from '@/lib/utils';
 import * as React from 'react';
+import { cn } from '@/lib/utils';
+
+
+type ElementRef<T extends React.ElementType> = React.ElementRef<T>;
+type ComponentPropsWithoutRef<T extends React.ElementType> =
+  React.ComponentPropsWithoutRef<T>;
 
 const ResizablePanelGroup = ({
   className,

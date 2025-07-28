@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Enhanced Form Validation Schema Generator
  *

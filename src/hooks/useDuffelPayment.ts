@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * @file Payment integration hook for Duffel bookings
  * Integrates with existing Stripe payment infrastructure
@@ -6,6 +7,8 @@
 import { createStripePaymentIntent } from '@/services/api/paymentApi';
 import logger from '@/lib/logger';
 import { DuffelError } from '@/components/trip/DuffelErrorHandler';
+import { useState } from 'react';
+import { useCallback } from 'react';
 
 export interface DuffelPaymentIntent {
   id: string;

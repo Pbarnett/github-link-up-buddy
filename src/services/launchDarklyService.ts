@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { initialize, LDClient, LDContext } from 'launchdarkly-js-client-sdk';
 import {
   LaunchDarklyConfig,

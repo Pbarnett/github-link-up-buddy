@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Global type declarations for missing modules and ambient types
 
 declare module '@aws-sdk/node-http-handler' {

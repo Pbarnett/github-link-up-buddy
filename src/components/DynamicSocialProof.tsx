@@ -1,6 +1,8 @@
 import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+
 interface SocialProofData {
   totalTrips: number;
   avgSavings: number;

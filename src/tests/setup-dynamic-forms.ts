@@ -1,10 +1,14 @@
+import * as React from 'react';
 /**
  * Test Setup Utilities for Dynamic Forms
- * 
+ *
  * Mock factories and utilities for testing dynamic form configurations
  */
 
-import type { FormConfiguration, FieldConfiguration } from '@/types/dynamic-forms';
+import type {
+  FormConfiguration,
+  FieldConfiguration,
+} from '@/types/dynamic-forms';
 
 /**
  * Creates a mock field configuration for testing
@@ -97,14 +101,18 @@ export function createMockFormConfiguration(
 /**
  * Creates a mock field configuration with specific field type
  */
-export function createMockTextField(overrides: Partial<FieldConfiguration> = {}): FieldConfiguration {
+export function createMockTextField(
+  overrides: Partial<FieldConfiguration> = {}
+): FieldConfiguration {
   return createMockFieldConfiguration({
     type: 'text',
     ...overrides,
   });
 }
 
-export function createMockEmailField(overrides: Partial<FieldConfiguration> = {}): FieldConfiguration {
+export function createMockEmailField(
+  overrides: Partial<FieldConfiguration> = {}
+): FieldConfiguration {
   return createMockFieldConfiguration({
     type: 'email',
     validation: {
@@ -114,7 +122,9 @@ export function createMockEmailField(overrides: Partial<FieldConfiguration> = {}
   });
 }
 
-export function createMockNumberField(overrides: Partial<FieldConfiguration> = {}): FieldConfiguration {
+export function createMockNumberField(
+  overrides: Partial<FieldConfiguration> = {}
+): FieldConfiguration {
   return createMockFieldConfiguration({
     type: 'number',
     validation: {
@@ -125,7 +135,9 @@ export function createMockNumberField(overrides: Partial<FieldConfiguration> = {
   });
 }
 
-export function createMockSelectField(overrides: Partial<FieldConfiguration> = {}): FieldConfiguration {
+export function createMockSelectField(
+  overrides: Partial<FieldConfiguration> = {}
+): FieldConfiguration {
   return createMockFieldConfiguration({
     type: 'select',
     options: [
@@ -136,7 +148,9 @@ export function createMockSelectField(overrides: Partial<FieldConfiguration> = {
   });
 }
 
-export function createMockCheckboxField(overrides: Partial<FieldConfiguration> = {}): FieldConfiguration {
+export function createMockCheckboxField(
+  overrides: Partial<FieldConfiguration> = {}
+): FieldConfiguration {
   return createMockFieldConfiguration({
     type: 'checkbox',
     label: 'Accept terms',
@@ -144,7 +158,9 @@ export function createMockCheckboxField(overrides: Partial<FieldConfiguration> =
   });
 }
 
-export function createMockDateField(overrides: Partial<FieldConfiguration> = {}): FieldConfiguration {
+export function createMockDateField(
+  overrides: Partial<FieldConfiguration> = {}
+): FieldConfiguration {
   return createMockFieldConfiguration({
     type: 'date',
     validation: {
@@ -154,7 +170,9 @@ export function createMockDateField(overrides: Partial<FieldConfiguration> = {})
   });
 }
 
-export function createMockAirportField(overrides: Partial<FieldConfiguration> = {}): FieldConfiguration {
+export function createMockAirportField(
+  overrides: Partial<FieldConfiguration> = {}
+): FieldConfiguration {
   return createMockFieldConfiguration({
     type: 'airport-autocomplete',
     label: 'Airport',
@@ -188,7 +206,11 @@ export const mockFormData = {
 /**
  * Helper to create form validation test cases
  */
-export function createValidationTestCase(field: FieldConfiguration, validValue: any, invalidValue: any) {
+export function createValidationTestCase(
+  field: FieldConfiguration,
+  validValue: any,
+  invalidValue: any
+) {
   return {
     field,
     validValue,

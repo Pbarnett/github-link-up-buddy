@@ -69,14 +69,22 @@ vi.mock('react-hook-form', () => ({
     setValue: vi.fn(),
     watch: vi.fn(() => 'economy'),
     getValues: vi.fn(() => ({ cabinClass: 'economy' })),
-    getFieldState: vi.fn(() => ({ invalid: false, isTouched: false, isDirty: false, error: undefined })),
+    getFieldState: vi.fn(() => ({
+      invalid: false,
+      isTouched: false,
+      isDirty: false,
+      error: undefined,
+    })),
   }),
   Controller: ({ render: renderProp, name }: any) => {
     // Return different values based on the field name
     const getFieldValue = (fieldName: string) => {
-      if (fieldName === 'earliestDeparture' || fieldName === 'latestDeparture') {
-        return fieldName === 'earliestDeparture' 
-          ? new Date('2024-02-15') 
+      if (
+        fieldName === 'earliestDeparture' ||
+        fieldName === 'latestDeparture'
+      ) {
+        return fieldName === 'earliestDeparture'
+          ? new Date('2024-02-15')
           : new Date('2024-02-20');
       }
       if (fieldName === 'cabinClass') {
@@ -87,7 +95,7 @@ vi.mock('react-hook-form', () => ({
       }
       return undefined; // Default value for other fields
     };
-    
+
     return renderProp({
       field: {
         onChange: vi.fn(),
@@ -142,10 +150,10 @@ vi.mock('@/hooks/usePaymentMethods', () => ({
 
 // Mock the LiveBookingSummary component to avoid complex dependencies
 vi.mock('@/components/trip/LiveBookingSummary', () => ({
-  default: ({ isVisible }: { isVisible: boolean }) => 
-    isVisible ? 
-      <div data-testid="live-booking-summary">Live Booking Summary (Mock)</div> : 
-      null,
+  default: ({ isVisible }: { isVisible: boolean }) =>
+    isVisible ? (
+      <div data-testid="live-booking-summary">Live Booking Summary (Mock)</div>
+    ) : null,
 }));
 
 // Mock Lucide React icons
@@ -203,7 +211,9 @@ vi.mock('@radix-ui/react-popover', () => ({
       {children}
     </div>
   ),
-  Portal: ({ children }: any) => <div data-testid="popover-portal">{children}</div>,
+  Portal: ({ children }: any) => (
+    <div data-testid="popover-portal">{children}</div>
+  ),
 }));
 
 vi.mock('@radix-ui/react-switch', () => ({
@@ -232,9 +242,7 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        {children}
-      </MemoryRouter>
+      <MemoryRouter>{children}</MemoryRouter>
     </QueryClientProvider>
   );
 };
@@ -265,19 +273,25 @@ describe('TripRequestForm - Enhanced Tests', () => {
       renderWithProviders(<TripRequestForm onSubmit={mockOnSubmit} />);
 
       // The component should render without crashing
-      expect(screen.getByText(/search live flights|trip basics/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/search live flights|trip basics/i)
+      ).toBeInTheDocument();
     });
 
     it('should render form with correct mode', async () => {
-      renderWithProviders(<TripRequestForm mode="manual" onSubmit={mockOnSubmit} />);
-      
+      renderWithProviders(
+        <TripRequestForm mode="manual" onSubmit={mockOnSubmit} />
+      );
+
       // Manual mode should show search flights interface
       expect(screen.getByText(/search live flights/i)).toBeInTheDocument();
     });
 
     it('should render auto mode correctly', async () => {
-      renderWithProviders(<TripRequestForm mode="auto" onSubmit={mockOnSubmit} />);
-      
+      renderWithProviders(
+        <TripRequestForm mode="auto" onSubmit={mockOnSubmit} />
+      );
+
       // Auto mode should show trip basics interface - use getAllByText to handle multiple matches
       const tripBasicsElements = screen.getAllByText(/trip basics/i);
       expect(tripBasicsElements.length).toBeGreaterThan(0);
@@ -287,25 +301,25 @@ describe('TripRequestForm - Enhanced Tests', () => {
   describe('Form Interactions', () => {
     it('should render form sections correctly', async () => {
       renderWithProviders(<TripRequestForm onSubmit={mockOnSubmit} />);
-      
+
       // Should have destination section - use getAllByText for multiple matches
       const destinationElements = screen.getAllByText(/destination/i);
       expect(destinationElements.length).toBeGreaterThan(0);
-      
+
       // Should have departure airports section
       expect(screen.getByText(/departure airports/i)).toBeInTheDocument();
     });
 
     it('should render calendar components', async () => {
       renderWithProviders(<TripRequestForm onSubmit={mockOnSubmit} />);
-      
+
       // Should render calendar icons
       expect(screen.getAllByTestId('calendar-icon')).toHaveLength(2);
     });
 
     it('should render form controls', async () => {
       renderWithProviders(<TripRequestForm onSubmit={mockOnSubmit} />);
-      
+
       // Should have various icons indicating form controls
       expect(screen.getByTestId('users-icon')).toBeInTheDocument();
       // Note: plane-icon may not be present in default mode, check for other common icons
@@ -315,7 +329,9 @@ describe('TripRequestForm - Enhanced Tests', () => {
 
   describe('Accessibility', () => {
     it('should have accessible form structure', () => {
-      const { container } = renderWithProviders(<TripRequestForm onSubmit={mockOnSubmit} />);
+      const { container } = renderWithProviders(
+        <TripRequestForm onSubmit={mockOnSubmit} />
+      );
 
       // Should have proper form structure
       const form =
@@ -330,14 +346,14 @@ describe('TripRequestForm - Enhanced Tests', () => {
       // Check for button accessibility
       const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBeGreaterThan(0);
-      
+
       // At least one button should be present
       expect(buttons[0]).toBeInTheDocument();
     });
 
     it('should render with proper roles and labels', async () => {
       renderWithProviders(<TripRequestForm onSubmit={mockOnSubmit} />);
-      
+
       // Should have form elements with proper structure
       const formElements = screen.getAllByRole('button');
       expect(formElements.length).toBeGreaterThan(0);
@@ -346,25 +362,27 @@ describe('TripRequestForm - Enhanced Tests', () => {
 
   describe('Component Rendering', () => {
     it('should render with different modes', async () => {
-      const { rerender } = renderWithProviders(<TripRequestForm mode="manual" onSubmit={mockOnSubmit} />);
-      
+      const { rerender } = renderWithProviders(
+        <TripRequestForm mode="manual" onSubmit={mockOnSubmit} />
+      );
+
       // Manual mode
       expect(screen.getByText(/search live flights/i)).toBeInTheDocument();
-      
+
       // Switch to auto mode - don't wrap in TestWrapper again as it creates nested routers
       rerender(<TripRequestForm mode="auto" onSubmit={mockOnSubmit} />);
-      
+
       const tripBasicsElements = screen.getAllByText(/trip basics/i);
       expect(tripBasicsElements.length).toBeGreaterThan(0);
     });
 
     it('should render form components correctly', async () => {
       renderWithProviders(<TripRequestForm onSubmit={mockOnSubmit} />);
-      
+
       // Should have form elements
       const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBeGreaterThan(0);
-      
+
       // Should have icons that are present in the form
       expect(screen.getByTestId('users-icon')).toBeInTheDocument();
       expect(screen.getByTestId('search-icon')).toBeInTheDocument();
@@ -372,7 +390,7 @@ describe('TripRequestForm - Enhanced Tests', () => {
 
     it('should render traveler and cabin class sections', async () => {
       renderWithProviders(<TripRequestForm onSubmit={mockOnSubmit} />);
-      
+
       // Should render based on mocked watch values - use getAllByText for multiple matches
       const economyElements = screen.getAllByText(/economy/i);
       expect(economyElements.length).toBeGreaterThan(0);

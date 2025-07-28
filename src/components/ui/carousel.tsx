@@ -1,3 +1,59 @@
+import * as React from 'react';
+import { useState } from 'react';
+import { useEffect } from 'react';
+import { useCallback } from 'react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
+  Bell,
+  Calendar,
+  CalendarIcon,
+  CheckCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Circle,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Download,
+  Eye,
+  FileText,
+  Filter,
+  Globe,
+  HelpCircle,
+  Info,
+  Loader2,
+  Lock,
+  Mail,
+  MapPin,
+  Package,
+  Phone,
+  Plane,
+  PlaneTakeoff,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Settings,
+  Shield,
+  Trash2,
+  Upload,
+  User,
+  Wifi,
+  X,
+  XCircle,
+  Zap,
+} from 'lucide-react';
+
+
+type ComponentPropsWithoutRef<T extends React.ElementType> =
+  React.ComponentPropsWithoutRef<T>;
+type HTMLAttributes<T extends React.ElementType> = React.HTMLAttributes<T>;
+type HTMLAttributes<T> = React.HTMLAttributes<T>;
+
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from 'embla-carousel-react';
@@ -38,7 +94,7 @@ function useCarousel() {
   return context;
 }
 
-const Carousel = forwardRef<
+const Carousel = React.forwardRef<
   HTMLDivElement,
   HTMLAttributes<HTMLDivElement> & CarouselProps
 >(
@@ -146,7 +202,7 @@ const Carousel = forwardRef<
 );
 Carousel.displayName = 'Carousel';
 
-const CarouselContent = forwardRef<
+const CarouselContent = React.forwardRef<
   HTMLDivElement,
   HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
@@ -168,7 +224,7 @@ const CarouselContent = forwardRef<
 });
 CarouselContent.displayName = 'CarouselContent';
 
-const CarouselItem = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+const CarouselItem = React.forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => {
     const { orientation } = useCarousel();
 
@@ -189,7 +245,7 @@ const CarouselItem = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 );
 CarouselItem.displayName = 'CarouselItem';
 
-const CarouselPrevious = forwardRef<ComponentProps<typeof Button>>(
+const CarouselPrevious = React.forwardRef<ComponentProps<typeof Button>>(
   ({ className, variant = 'outline', size = 'icon', ...props }, ref) => {
     const { orientation, scrollPrev, canScrollPrev } = useCarousel();
 
@@ -217,7 +273,7 @@ const CarouselPrevious = forwardRef<ComponentProps<typeof Button>>(
 );
 CarouselPrevious.displayName = 'CarouselPrevious';
 
-const CarouselNext = forwardRef<ComponentProps<typeof Button>>(
+const CarouselNext = React.forwardRef<ComponentProps<typeof Button>>(
   ({ className, variant = 'outline', size = 'icon', ...props }, ref) => {
     const { orientation, scrollNext, canScrollNext } = useCarousel();
 

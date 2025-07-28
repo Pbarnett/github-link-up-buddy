@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Enhanced Stripe type definitions
 // Complementing @stripe/stripe-js and @stripe/react-stripe-js
 

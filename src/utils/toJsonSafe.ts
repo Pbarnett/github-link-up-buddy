@@ -1,3 +1,4 @@
+import * as React from 'react';
 import type { Json } from '@/integrations/supabase/types';
 
 /**

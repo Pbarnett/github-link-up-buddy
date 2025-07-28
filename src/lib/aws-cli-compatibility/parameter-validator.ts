@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * AWS CLI Compatible Parameter Validator
  *

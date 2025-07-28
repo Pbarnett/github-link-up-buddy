@@ -1,3 +1,4 @@
+import * as React from 'react';
 export interface EdgeFunctionError {
   message: string;
   details?: unknown;

@@ -1,3 +1,4 @@
+import * as React from 'react';
 // A/B Testing Framework for Personalization Features
 // Based on research recommendations for statistical rigor
 

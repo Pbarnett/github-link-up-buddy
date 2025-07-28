@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Stripe Wallet Service - Day 4: Payments & Wallet System
 // Handles lazy customer creation and payment method management
 

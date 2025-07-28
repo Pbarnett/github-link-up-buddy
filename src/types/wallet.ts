@@ -1,3 +1,4 @@
+import * as React from 'react';
 export interface PaymentMethod {
   id: string;
   stripe_payment_method_id: string;

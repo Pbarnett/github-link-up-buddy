@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Profile Completeness Service
  * Calculates completion scores and provides recommendations for profile enhancement

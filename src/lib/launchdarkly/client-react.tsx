@@ -26,6 +26,10 @@ import {
 } from '@launchdarkly/react-client-sdk';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { ContextBuilder } from './context-builder';
+import { useState } from 'react';
+import { useEffect } from 'react';
+import { useCallback } from 'react';
+import { useMemo } from 'react';
 
 // Client-side configuration
 const CLIENT_SIDE_CONFIG = {

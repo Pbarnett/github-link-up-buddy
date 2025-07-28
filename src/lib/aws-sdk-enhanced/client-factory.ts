@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Enhanced AWS SDK Client Factory
  *

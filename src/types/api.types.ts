@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * API Type Definitions
  * Comprehensive API types following TypeScript best practices

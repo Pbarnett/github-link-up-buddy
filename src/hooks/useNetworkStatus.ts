@@ -1,8 +1,10 @@
+import * as React from 'react';
 /**
  * Network Status Hook
  * Monitors online/offline state and connection quality
  */
 
+import { useState, useEffect } from 'react';
 import { trackEvent } from '@/utils/monitoring';
 
 interface NetworkStatus {

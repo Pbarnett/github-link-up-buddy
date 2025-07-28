@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * LaunchDarkly Context Builder
  * Multi-context support for precise targeting based on documentation analysis

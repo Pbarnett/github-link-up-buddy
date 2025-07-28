@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Filter Factory - Central Configuration Point
  *

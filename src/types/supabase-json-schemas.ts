@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Type-safe schemas for Supabase JSON columns
  *

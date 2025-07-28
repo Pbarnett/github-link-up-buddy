@@ -35,8 +35,10 @@ import AutoBookingDashboard from './pages/AutoBookingDashboard';
 import AutoBookingNew from './pages/AutoBookingNew';
 import AdminDashboard from './pages/AdminDashboard';
 import DynamicFormTest from './pages/DynamicFormTest';
+import SimpleTestBooking from './pages/SimpleTestBooking';
 import NotFound from './pages/NotFound';
 import React, { useEffect } from 'react';
+import { memo } from '@/types/react-compat';
 
 type ReactNode = React.ReactNode;
 const queryClient = new QueryClient({
@@ -90,15 +92,22 @@ const GlobalMiddleware = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
-// Personalization wrapper to provide user context
-const PersonalizationWrapper = ({ children }: { children: ReactNode }) => {
-  const { userId } = useCurrentUser();
+// Personalization wrapper to provide user context (memoized to prevent unnecessary re-renders)
+const PersonalizationWrapper = memo(({ children }: { children: ReactNode }) => {
+  const { userId, loading } = useCurrentUser();
+
+  // Don't render PersonalizationProvider until user state is determined
+  // This prevents rapid re-renders during auth initialization
+  if (loading) {
+    return <>{children}</>;
+  }
+
   return (
     <PersonalizationProvider userId={userId || undefined}>
       {children}
     </PersonalizationProvider>
   );
-};
+});
 
 const App = () => {
   return (

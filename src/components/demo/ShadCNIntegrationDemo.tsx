@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Settings, CheckCircle, AlertCircle } from 'lucide-react';
+import { Settings, CheckCircle, AlertCircle, User, Mail, Lock } from 'lucide-react';
 import {
   Card,
   CardHeader,

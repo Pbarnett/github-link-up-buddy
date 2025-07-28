@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * LaunchDarkly Server-Side Client Implementation
  * Based on comprehensive documentation analysis recommendations

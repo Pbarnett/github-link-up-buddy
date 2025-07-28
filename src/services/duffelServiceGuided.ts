@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Duffel Service Implementation - Following DUFFEL_IMPLEMENTATION_GUIDE.md
  *

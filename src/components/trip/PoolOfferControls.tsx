@@ -5,6 +5,7 @@ import { useTripOffersPools } from '@/hooks/useTripOffers';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import ConstraintChips from './ConstraintChips';
+import { useState } from 'react';
 
 interface PoolOfferControlsProps {
   tripId: string;

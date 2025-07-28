@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * LaunchDarkly Error Handling System
  * Comprehensive error management for feature flags

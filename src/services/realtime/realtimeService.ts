@@ -11,6 +11,7 @@ import {
 import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/types/database';
+import { useEffect } from 'react';
 
 type Tables = Database['public']['Tables'];
 type TableName = keyof Tables;

@@ -1,5 +1,6 @@
 // Test setup file for Vitest
 import '@testing-library/jest-dom';
+import { Fragment } from 'react';
 
 // Global test setup
 Object.defineProperty(window, 'matchMedia', {
@@ -195,7 +196,9 @@ if (!global.MutationObserver) {
     constructor(callback: MutationCallback) {}
     observe() {}
     disconnect() {}
-    takeRecords() { return []; }
+    takeRecords() {
+      return [];
+    }
   };
 }
 

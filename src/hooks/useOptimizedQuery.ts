@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Optimized Query Hook
  * React Query wrapper with intelligent caching, retry, and performance optimizations

@@ -37,6 +37,10 @@ jobs:
       - name: Run Organization Check
         run: npm run org:check
         
+      - name: Run Enterprise Code Quality Check
+        run: npm run enterprise:code-quality
+        continue-on-error: true  # Allow warnings but track them
+        
       - name: Run Comprehensive Quality Gates
         run: npm run quality:check
         env:

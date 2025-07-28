@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Helper to modify import.meta.env for testing purposes
 export const setEnv = (key: string, value: string): (() => void) => {
   const oldValue = import.meta.env[key];

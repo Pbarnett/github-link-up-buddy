@@ -1,3 +1,4 @@
+import * as React from 'react';
 // Audit Service - Enhanced logging for payment methods and security events
 // Day 4: Payments & Wallet System
 

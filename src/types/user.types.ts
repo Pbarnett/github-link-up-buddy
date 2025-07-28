@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * User Domain Type Definitions
  * Comprehensive user-related types with advanced TypeScript features

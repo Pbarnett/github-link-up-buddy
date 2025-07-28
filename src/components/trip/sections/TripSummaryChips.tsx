@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { format } from 'date-fns';
 import { useWatch, Control } from 'react-hook-form';
 import { X } from 'lucide-react';

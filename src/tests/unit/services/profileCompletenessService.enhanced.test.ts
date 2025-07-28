@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Enhanced Unit Tests for Profile Completeness Service
  * Day 1 Task: Write unit tests for profile completeness functions (1h)

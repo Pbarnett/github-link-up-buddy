@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './types';

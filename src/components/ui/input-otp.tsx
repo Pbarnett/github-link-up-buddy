@@ -1,8 +1,15 @@
+import * as React from 'react';
+
+
+type ElementRef<T extends React.ElementType> = React.ElementRef<T>;
+type ComponentPropsWithoutRef<T extends React.ElementType> =
+  React.ComponentPropsWithoutRef<T>;
+
 import { OTPInput, OTPInputContext } from 'input-otp';
 
 import { cn } from '@/lib/utils';
 
-const InputOTP = forwardRef<
+const InputOTP = React.forwardRef<
   ElementRef<typeof OTPInput>,
   ComponentPropsWithoutRef<typeof OTPInput>
 >(({ className, containerClassName, ...props }, ref) => (
@@ -18,7 +25,7 @@ const InputOTP = forwardRef<
 ));
 InputOTP.displayName = 'InputOTP';
 
-const InputOTPGroup = forwardRef<
+const InputOTPGroup = React.forwardRef<
   ElementRef<'div'>,
   ComponentPropsWithoutRef<'div'>
 >(({ className, ...props }, ref) => (
@@ -26,7 +33,7 @@ const InputOTPGroup = forwardRef<
 ));
 InputOTPGroup.displayName = 'InputOTPGroup';
 
-const InputOTPSlot = forwardRef<
+const InputOTPSlot = React.forwardRef<
   ElementRef<'div'>,
   ComponentPropsWithoutRef<'div'> & { index: number }
 >(({ index, className, ...props }, ref) => {
@@ -54,7 +61,7 @@ const InputOTPSlot = forwardRef<
 });
 InputOTPSlot.displayName = 'InputOTPSlot';
 
-const InputOTPSeparator = forwardRef<
+const InputOTPSeparator = React.forwardRef<
   ElementRef<'div'>,
   ComponentPropsWithoutRef<'div'>
 >(({ ...props }, ref) => (

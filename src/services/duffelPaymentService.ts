@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Duffel Payment Service - Complete Payment Integration
  *

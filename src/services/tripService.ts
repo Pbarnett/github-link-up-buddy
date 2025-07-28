@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TablesInsert, Tables } from '@/integrations/supabase/types';
 import { ExtendedTripFormValues, TripRequestResult } from '@/types/form';

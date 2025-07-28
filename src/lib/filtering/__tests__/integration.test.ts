@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * @file Integration test for Phase 2 filtering architecture implementation
  * Tests the complete flow from service layer through filtering pipeline

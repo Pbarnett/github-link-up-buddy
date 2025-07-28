@@ -12,6 +12,9 @@ import {
 } from '@/components/ui/card';
 import { useProfile } from '@/hooks/useProfile';
 import { useProfileKMS } from '@/hooks/useProfileKMS';
+import { useState } from 'react';
+import { useEffect } from 'react';
+
 interface ProfileFormProps {
   useKMS?: boolean;
 }
@@ -28,7 +31,7 @@ export function ProfileForm({ useKMS = false }: ProfileFormProps = {}) {
     isUpdating,
     error: _error,
   } = useKMS ? kmsProfile : legacyProfile;
-  const [encryptionEnabled] = reactUseState(useKMS);
+  const [encryptionEnabled] = useState(useKMS);
 
   console.log(
     `ProfileForm: Using ${useKMS ? 'KMS-encrypted' : 'legacy'} profile service`

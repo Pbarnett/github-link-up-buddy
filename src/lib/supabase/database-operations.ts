@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { QueryData, QueryError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, Tables, TablesInsert, TablesUpdate } from '@/types/database';

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useState, useContext, useEffect, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useCurrentUser } from '@/hooks/useCurrentUserSingleton';
 import {
   PaymentMethod,
   SetupIntentResponse,
@@ -8,6 +9,7 @@ import {
   WalletContextType,
   PaymentMethodError as ImportedPaymentMethodError,
 } from '@/types/wallet';
+import { trackComponentRender } from '@/utils/debugUtils';
 
 type ReactNode = React.ReactNode;
 
@@ -26,8 +28,12 @@ interface WalletProviderProps {
 }
 
 export function WalletProvider({ children }: WalletProviderProps) {
+  // Track component renders for debugging
+  trackComponentRender('WalletProvider');
+
+  const { user, loading: userLoading } = useCurrentUser();
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Don't start loading until we know user is authenticated
   const [error, setError] = useState<string | null>(null);
 
   // Fetch payment methods from the database
@@ -244,13 +250,24 @@ export function WalletProvider({ children }: WalletProviderProps) {
     }
   };
 
-  // Load payment methods on mount
+  // Load payment methods only when user is authenticated and available
   useEffect(() => {
-    refreshPaymentMethods();
-  }, []);
+    if (!userLoading && user) {
+      refreshPaymentMethods();
+    } else if (!userLoading && !user) {
+      // Clear payment methods if user is not authenticated
+      setPaymentMethods([]);
+      setLoading(false);
+      setError(null);
+    }
+  }, [user, userLoading]);
 
-  // Listen for payment method changes via Supabase realtime (optional)
+  // Listen for payment method changes via Supabase realtime (only when authenticated)
   useEffect(() => {
+    if (!user || userLoading) {
+      return; // Don't set up realtime subscription if user is not authenticated
+    }
+
     const channel = supabase
       .channel('payment-methods-changes')
       .on(
@@ -262,8 +279,10 @@ export function WalletProvider({ children }: WalletProviderProps) {
         } as any,
         (payload: any) => {
           console.log('Payment method changed:', payload);
-          // Refresh payment methods when changes occur
-          refreshPaymentMethods();
+          // Only refresh if user is still authenticated
+          if (user) {
+            refreshPaymentMethods();
+          }
         }
       )
       .subscribe();
@@ -271,7 +290,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user, userLoading]);
 
   // Add payment method - creates setup intent and returns client secret
   const addPaymentMethod = async (idempotencyKey: string): Promise<string> => {

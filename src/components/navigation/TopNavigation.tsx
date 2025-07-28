@@ -143,63 +143,67 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 max-w-screen-2xl items-center">
-        {/* Logo */}
-        <Link
-          to="/auto-booking"
-          className="flex items-center space-x-2 mr-8 hover:opacity-80 transition-opacity"
-        >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <PlaneTakeoff className="h-4 w-4" />
-          </div>
-          <span className="hidden font-bold sm:inline-block text-lg">
-            Parker Flight
-          </span>
-        </Link>
-
-        {/* Primary Navigation (left side) - Desktop */}
-        <div className="hidden md:flex items-center space-x-6 flex-1">
-          {primaryNavItems.map(item => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={cn(
-                  'nav-link px-3 py-2 inline-flex items-center gap-2 text-sm font-medium transition-all duration-200 relative',
-                  active
-                    ? 'text-primary border-b-2 border-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:border-b-2 hover:border-primary'
-                )}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Right side actions */}
-        <div className="flex items-center space-x-4 ml-auto">
-          {/* Find Flights CTA - Desktop */}
-          {!hideFindFlights && (
-            <Button
-              onClick={handleFindFlights}
-              className="hidden md:inline-flex bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2"
-              disabled={isNavigating}
-              aria-busy={isNavigating}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Left section: Logo + Primary Navigation */}
+          <div className="flex items-center space-x-8">
+            {/* Logo */}
+            <Link
+              to="/auto-booking"
+              className="flex items-center space-x-3 hover:opacity-80 transition-opacity flex-shrink-0"
             >
-              {isNavigating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                'Find Flights'
-              )}
-            </Button>
-          )}
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <PlaneTakeoff className="h-5 w-5" />
+              </div>
+              <span className="hidden font-bold sm:inline-block text-xl tracking-tight">
+                Parker Flight
+              </span>
+            </Link>
+
+            {/* Primary Navigation (Desktop) */}
+            <div className="hidden md:flex items-center space-x-1">
+              {primaryNavItems.map(item => {
+                const Icon = item.icon;
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={cn(
+                      'nav-link px-4 py-2 inline-flex items-center gap-2 text-sm font-medium transition-all duration-200 relative rounded-md',
+                      active
+                        ? 'text-primary bg-primary/10 border-primary/20 border'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                    )}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right section: Actions + User Menu */}
+          <div className="flex items-center space-x-4">
+            {/* Find Flights CTA - Desktop */}
+            {!hideFindFlights && (
+              <Button
+                onClick={handleFindFlights}
+                className="hidden md:inline-flex bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-2"
+                disabled={isNavigating}
+                aria-busy={isNavigating}
+              >
+                {isNavigating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  'Find Flights'
+                )}
+              </Button>
+            )}
 
           {/* Mobile menu button */}
           <Popover open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -318,6 +322,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
           ) : (
             <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
           )}
+          </div>
         </div>
       </div>
     </nav>

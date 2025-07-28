@@ -7,6 +7,53 @@ import { toast } from '@/components/ui/use-toast';
 import { safeQuery } from '@/lib/supabaseUtils';
 import { Button } from '@/components/ui/button';
 import { AddPaymentMethodForm } from '@/components/AddPaymentMethodForm';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
+  Bell,
+  Calendar,
+  CalendarIcon,
+  CheckCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Circle,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Download,
+  Eye,
+  FileText,
+  Filter,
+  Globe,
+  HelpCircle,
+  Info,
+  Loader2,
+  Lock,
+  Mail,
+  MapPin,
+  Package,
+  Phone,
+  Plane,
+  PlaneTakeoff,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Settings,
+  Shield,
+  Trash2,
+  Upload,
+  User,
+  Wifi,
+  X,
+  XCircle,
+  Zap,
+} from 'lucide-react';
 
 function WalletPage() {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;

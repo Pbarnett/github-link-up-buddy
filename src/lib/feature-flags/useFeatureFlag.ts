@@ -1,4 +1,6 @@
+import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
 import {
   type FeatureFlag,
   isFeatureEnabled as isEnabled,
