@@ -38,10 +38,10 @@ vi.mock('@supabase/supabase-js', () => ({ createClient: vi.fn(() => mockSupabase
 
 // Set required environment variables
 Object.assign(process.env, {
-  SUPABASE_URL: 'https://test.supabase.co',
-  SUPABASE_SERVICE_ROLE_KEY: 'test-key',
-  STRIPE_SECRET_KEY: 'sk_test_123',
-  STRIPE_WEBHOOK_SECRET: 'whsec_test_123',
+  SUPABASE_URL: process.env.SUPABASE_URL || 'https://test.supabase.co',
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key',
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || 'sk_test_REMOVED_FROM_GIT',
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test_REMOVED_FROM_GIT',
 });
 
 describe('Payment Architecture End-to-End Integration', () => {

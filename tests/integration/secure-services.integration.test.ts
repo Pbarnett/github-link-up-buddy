@@ -37,11 +37,11 @@ vi.mock('@/lib/aws-sdk-enhanced/secrets-manager', () => {
     // Stripe service secrets
     'test/stripe/credentials': JSON.stringify({
       publishable_key: 'pk_test_mock_key',
-      secret_key: 'sk_test_mock_key',
+      secret_key: process.env.STRIPE_SECRET_KEY || 'sk_test_REMOVED_FROM_GIT',
       webhook_secret: 'whsec_mock_secret',
     }),
     'test/payments/stripe-publishable-key': 'pk_test_mock_key',
-    'test/payments/stripe-secret-key': 'sk_test_mock_key',
+    'test/payments/stripe-secret-key': process.env.STRIPE_SECRET_KEY || 'sk_test_REMOVED_FROM_GIT',
     'test/payments/stripe-webhook-secret': 'whsec_mock_secret',
     
     // Supabase database secrets
@@ -99,11 +99,11 @@ vi.mock('@/lib/aws-sdk-enhanced/examples/secrets-manager-usage', async (importOr
     // Stripe service secrets
     'test/stripe/credentials': JSON.stringify({
       publishable_key: 'pk_test_mock_key',
-      secret_key: 'sk_test_mock_key',
+      secret_key: process.env.STRIPE_SECRET_KEY || 'sk_test_REMOVED_FROM_GIT',
       webhook_secret: 'whsec_mock_secret',
     }),
     'test/payments/stripe-publishable-key': 'pk_test_mock_key',
-    'test/payments/stripe-secret-key': 'sk_test_mock_key',
+    'test/payments/stripe-secret-key': process.env.STRIPE_SECRET_KEY || 'sk_test_REMOVED_FROM_GIT',
     'test/payments/stripe-webhook-secret': 'whsec_mock_secret',
     
     // Supabase database secrets

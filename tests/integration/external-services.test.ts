@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 import * as LaunchDarkly from '@launchdarkly/node-server-sdk';
+import { describeIfEnv } from '../helpers/describeIfEnv';
 
 // Test configuration
 const SUPABASE_URL = process.env.SUPABASE_URL || 'http://localhost:54321';
@@ -12,14 +13,13 @@ const LAUNCHDARKLY_SDK_KEY = process.env.LAUNCHDARKLY_SDK_KEY || '';
 // Test timeout for external services
 test.setTimeout(30000);
 
-test.describe('External Services Integration', () => {
-  test.describe('Stripe Integration', () => {
+describeIfEnv(
+  ['STRIPE_SECRET_KEY'],
+  'Stripe Integration', 
+  () => {
     let stripe: Stripe;
 
     test.beforeAll(() => {
-      if (!STRIPE_SECRET_KEY) {
-        throw new Error('STRIPE_SECRET_KEY not configured - set it in .env.test');
-      }
       stripe = new Stripe(STRIPE_SECRET_KEY, {
         apiVersion: '2023-10-16',
       });
@@ -88,14 +88,13 @@ test.describe('External Services Integration', () => {
     });
   });
 
-  test.describe('LaunchDarkly Integration', () => {
+describeIfEnv(
+  ['LAUNCHDARKLY_SDK_KEY'],
+  'LaunchDarkly Integration',
+  () => {
     let ldClient: LaunchDarkly.LDClient;
 
     test.beforeAll(async () => {
-      if (!LAUNCHDARKLY_SDK_KEY) {
-        throw new Error('LAUNCHDARKLY_SDK_KEY not configured - set it in .env.test');
-      }
-      
       ldClient = LaunchDarkly.init(LAUNCHDARKLY_SDK_KEY);
       await ldClient.waitForInitialization();
     });
@@ -172,14 +171,13 @@ test.describe('External Services Integration', () => {
     });
   });
 
-  test.describe('Supabase Integration', () => {
+describeIfEnv(
+  ['SUPABASE_URL', 'SUPABASE_ANON_KEY'],
+  'Supabase Integration',
+  () => {
     let supabase: ReturnType<typeof createClient>;
 
     test.beforeAll(() => {
-      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-        throw new Error('Supabase configuration not available - set SUPABASE_URL and SUPABASE_ANON_KEY in .env.test');
-      }
-      
       supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
 
@@ -288,12 +286,11 @@ test.describe('External Services Integration', () => {
     });
   });
 
-  test.describe('Cross-Service Integration', () => {
+describeIfEnv(
+  ['STRIPE_SECRET_KEY', 'SUPABASE_URL', 'LAUNCHDARKLY_SDK_KEY'],
+  'Cross-Service Integration',
+  () => {
     test('should validate Stripe + Supabase payment flow', async () => {
-      if (!STRIPE_SECRET_KEY || !SUPABASE_URL) {
-        throw new Error('Missing required environment variables: STRIPE_SECRET_KEY or SUPABASE_URL not configured');
-      }
-
       // This would test the full payment flow:
       // 1. Create Stripe payment method
       // 2. Store in Supabase via Edge Function
@@ -332,10 +329,6 @@ test.describe('External Services Integration', () => {
     });
 
     test('should validate LaunchDarkly + UI feature toggle', async () => {
-      if (!LAUNCHDARKLY_SDK_KEY) {
-        throw new Error('Missing required environment variable: LAUNCHDARKLY_SDK_KEY not configured');
-      }
-
       const ldClient = LaunchDarkly.init(LAUNCHDARKLY_SDK_KEY);
       await ldClient.waitForInitialization();
 
@@ -356,7 +349,6 @@ test.describe('External Services Integration', () => {
       console.log('✅ LaunchDarkly feature toggle integration verified');
     });
   });
-});
 
 // Helper function for CI environment detection
 test.describe('CI Environment Validation', () => {
