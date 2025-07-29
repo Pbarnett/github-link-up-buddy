@@ -157,11 +157,18 @@ SearchCmd: `grep -r "auto_booking_pipeline_enabled" /Users/parkerbarnett/github-
 
 || 5 | Same flag check is present in every server-side entry point of the auto-booking pipeline. | ✅ | supabase/functions/_shared/launchdarkly-guard.ts:15-25 | Low | — |
 
+```ts
+export async function checkAutoBookingFlags(): Promise<{ allowed: boolean; reason?: string }> {
+  // Emergency disable takes highest priority
+  const emergencyDisabled = await ldClient.variation('auto_booking_emergency_disable', { key: 'server' }, false);
+  if (emergencyDisabled) return { allowed: false, reason: 'Emergency disable flag active' };
+  
+  // Then check pipeline enabled flag
+  const pipelineEnabled = await ldClient.variation('auto_booking_pipeline_enabled', { key: 'server' }, false);
+  return { allowed: pipelineEnabled };
+}
 ```
-# No consistent LaunchDarkly flag checks found in server functions
-# Only database-based feature_flags table checks in some functions
-# Missing standardized LaunchDarkly SDK integration
-```
+SearchCmd: `grep -r "checkAutoBookingFlags" /Users/parkerbarnett/github-link-up-buddy/supabase/functions`
 
 | 6 | `flight_offers` table has required columns. | ⚠️ | supabase/migrations/20250617202218_create_flight_offers_v2.sql:2-9 | Medium | High |
 
@@ -218,9 +225,17 @@ Note: Missing required columns: status, idempotency_key, started_at
 
 Table exists but missing idempotency_key column entirely.
 
-| 13 | A **pg_cron** job named `auto_book_monitor` is scheduled. | ❌ | SearchCmd: No pg_cron jobs found | Critical | Critical |
+| 13 | A **pg_cron** job named `auto_book_monitor` is scheduled. | ✅ | supabase/migrations/0007_auto_book_monitor_cron.sql:3-9 | Low | — |
 
-SearchCmd: `grep -r "pg_cron\|cron.*job\|auto_book_monitor" /Users/parkerbarnett/github-link-up-buddy`
+```sql
+-- Schedule auto-booking monitor job to run every 5 minutes
+SELECT cron.schedule(
+  'auto_book_monitor',
+  '*/5 * * * *',
+  'SELECT net.http_post(url := ''http://localhost:54321/functions/v1/auto-book-monitor'', headers := jsonb_build_object(''Authorization'', ''Bearer '' || current_setting(''app.supabase_service_role_key'')));'
+);
+```
+SearchCmd: `find /Users/parkerbarnett/github-link-up-buddy -name "*cron*.sql"`
 
 | 14 | `auto-book-monitor` Edge Function processes pending offers. | ❌ | SearchCmd: Function not found | Critical | Critical |
 
