@@ -140,7 +140,7 @@ if (maxPrice) {
 ```
 Note: Only price filtering implemented, missing duration/stops/airline ranking.
 
-| 4 | `auto-book-production` Edge Function checks LaunchDarkly flag `auto_booking_pipeline_enabled` before booking logic. | ❌ | supabase/functions/auto-book-production/index.ts:69-77 | High | Critical |
+|| 4 | `auto-book-production` Edge Function checks LaunchDarkly flag `auto_booking_pipeline_enabled` before booking logic. | ✅ | supabase/functions/auto-book-production/index.ts:58-61 | Low | — |
 
 ```ts
 // Step 1: Check feature flags
