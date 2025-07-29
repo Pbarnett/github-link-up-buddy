@@ -61,7 +61,7 @@ vi.mock('@supabase/supabase-js', () => ({
 // Here, we'll assume that after mocks are set up, we can import and access the handler.
 let autoBookHandler: (req: Request) => Promise<Response>;
 
-describe.skip('auto-book Integration Tests', () => {
+describe('auto-book Integration Tests', () => {
 let consoleLogSpy: MockedFunction<() => void>;
 let consoleErrorSpy: MockedFunction<() => void>;
 let consoleWarnSpy: MockedFunction<() => void>;

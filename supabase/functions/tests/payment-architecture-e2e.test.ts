@@ -44,7 +44,7 @@ Object.assign(process.env, {
   STRIPE_WEBHOOK_SECRET: 'whsec_test_123',
 });
 
-describe.skip('Payment Architecture End-to-End Integration', () => {
+describe('Payment Architecture End-to-End Integration', () => {
   // These tests are skipped in Vitest as they require Deno runtime for edge function imports
   // They should be run in a proper edge function testing environment
   const testUser = {
