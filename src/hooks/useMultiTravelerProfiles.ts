@@ -18,15 +18,15 @@ export interface MultiTravelerProfile {
   dietaryRestrictions?: string[];
   mobilityAssistance?: boolean;
   preferredSeat?:
-    | '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window'
+    | 'window'
     | 'aisle'
     | 'middle'
     | 'no-preference';
   emailNotifications: boolean;
   isDefault: boolean;
   isActive: boolean;
-  created_at?: string;
-  updated_at?: string;
+  created_at?: string | undefined;
+  updated_at?: string | undefined;
 }
 
 export function useMultiTravelerProfiles() {
@@ -39,11 +39,11 @@ export function useMultiTravelerProfiles() {
     queryFn: async () => {
       if (!userId) return [];
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('traveler_profiles')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true }) as any);
 
       if (error) throw error;
 
@@ -87,7 +87,8 @@ export function useMultiTravelerProfiles() {
 
       // If this is the first traveler or explicitly set as default,
       // make sure to unset other defaults first
-      if (newTraveler.isDefault || profilesQuery.data?.length === 0) {
+      const currentProfiles = profilesQuery.data || [];
+      if (newTraveler.isDefault || currentProfiles.length === 0) {
         await supabase
           .from('traveler_profiles')
           .update({ is_primary: false })
@@ -106,7 +107,7 @@ export function useMultiTravelerProfiles() {
           // Note: passport_number_encrypted would need encryption function
           passport_expiry: newTraveler.passportExpiry,
           known_traveler_number: newTraveler.knownTravelerNumber,
-          is_primary: newTraveler.isDefault || profilesQuery.data?.length === 0,
+          is_primary: newTraveler.isDefault || currentProfiles.length === 0,
         })
         .select()
         .single();
@@ -223,7 +224,8 @@ export function useMultiTravelerProfiles() {
       if (!userId) throw new Error('User not authenticated');
 
       // Prevent deleting the last/primary profile
-      if (profilesQuery.data?.length === 1) {
+      const currentProfiles = profilesQuery.data || [];
+      if (currentProfiles.length === 1) {
         throw new Error('Cannot delete the last traveler profile');
       }
 

@@ -214,7 +214,7 @@ export function isUserInVariant(
   variantId: string
 ): boolean {
   const _userVariant = getUserVariant(userId, experimentId);
-  return userVariant === variantId;
+  return _userVariant === variantId;
 }
 
 // Get experiment configuration for a user
@@ -225,11 +225,11 @@ export function getExperimentConfig(
   const experiment = PERSONALIZATION_AB_TESTS[experimentId];
   const _userVariant = getUserVariant(userId, experimentId);
 
-  if (!experiment || !userVariant) {
+  if (!experiment || !_userVariant) {
     return null;
   }
 
-  const variant = experiment.variants.find(v => v.id === userVariant);
+  const variant = experiment.variants.find(v => v.id === _userVariant);
   return variant?.config || null;
 }
 

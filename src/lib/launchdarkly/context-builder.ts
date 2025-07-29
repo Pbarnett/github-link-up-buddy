@@ -78,7 +78,7 @@ export interface ApplicationContext {
   feature_flags?: string[];
 }
 
-export interface AppMultiContext extends LDContext {
+export interface AppMultiContext {
   kind: 'multi';
   user: UserContext;
   device: DeviceContext;

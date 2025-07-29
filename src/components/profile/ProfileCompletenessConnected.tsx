@@ -150,7 +150,7 @@ export const ProfileCompletenessConnected: FC<
 
   const fetchProfileCompleteness = useCallback(
     async (showRefreshIndicator = false) => {
-      if (!user?.id) {
+      if (!_user?.id) {
         setLoading(false);
         return;
       }
@@ -164,7 +164,7 @@ export const ProfileCompletenessConnected: FC<
         setError(null);
 
         const result = await DatabaseOperations.getProfileCompleteness(
-          user.id,
+          _user.id,
           { withRetry: true }
         );
 
@@ -229,7 +229,7 @@ export const ProfileCompletenessConnected: FC<
         setRefreshing(false);
       }
     },
-    [user?.id]
+    [_user?.id]
   );
 
   const handleRefresh = useCallback(() => {
@@ -243,14 +243,14 @@ export const ProfileCompletenessConnected: FC<
 
   // Auto-refresh interval
   useEffect(() => {
-    if (!autoRefresh || !user?.id) return;
+    if (!autoRefresh || !_user?.id) return;
 
     const intervalId = setInterval(() => {
       fetchProfileCompleteness(true);
     }, refreshInterval);
 
     return () => clearInterval(intervalId);
-  }, [autoRefresh, refreshInterval, fetchProfileCompleteness, user?.id]);
+  }, [autoRefresh, refreshInterval, fetchProfileCompleteness, _user?.id]);
 
   // Enhanced field click handler with navigation
   const handleFieldClick = useCallback(
@@ -322,7 +322,7 @@ export const ProfileCompletenessConnected: FC<
   }
 
   // No user state
-  if (!user || !profileData) {
+  if (!_user || !profileData) {
     return (
       <Alert className={className}>
         <AlertTriangle className="h-4 w-4" />

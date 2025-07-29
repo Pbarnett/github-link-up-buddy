@@ -30,7 +30,7 @@ export interface LoadingState {
 
 export interface LoadingOperation {
   id: string;
-  stages: LoadingStage[];
+  stages: readonly LoadingStage[];
   timeoutMs?: number;
   onTimeout?: () => void;
   onProgress?: (state: LoadingState) => void;
@@ -45,11 +45,13 @@ export function useLoadingStates() {
   const timers = useRef<Record<string, NodeJS.Timeout>>({});
   const progressTimers = useRef<Record<string, NodeJS.Timeout>>({});
   const startTimes = useRef<Record<string, number>>({});
+  const originalOperations = useRef<Record<string, LoadingOperation>>({});
 
   // Start a loading operation
   const startLoading = useCallback((operation: LoadingOperation) => {
     const startTime = Date.now();
     startTimes.current[operation.id] = startTime;
+    originalOperations.current[operation.id] = operation;
 
     // Initialize loading state
     const initialState: LoadingState = {
@@ -154,6 +156,7 @@ export function useLoadingStates() {
 
       const nextIndex = current.stageIndex + 1;
       const isComplete = nextIndex >= current.totalStages;
+      const originalOperation = originalOperations.current[operationId];
 
       if (isComplete) {
         // Complete the operation
@@ -180,16 +183,14 @@ export function useLoadingStates() {
       }
 
       // Get the next stage from the original operation
-      const stages = Object.values(prev).find(op => op.totalStages > 0)?.currentStage 
-        ? [current.currentStage!] // This is a simplified approach
-        : [];
+      const nextStage = originalOperation?.stages[nextIndex];
       
       return {
         ...prev,
         [operationId]: {
           ...current,
           stageIndex: nextIndex,
-          currentStage: stages[nextIndex], // This would need the original stages array
+          currentStage: nextStage,
           metadata: { ...current.metadata, ...metadata },
         },
       };

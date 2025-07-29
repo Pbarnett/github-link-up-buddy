@@ -61,7 +61,7 @@ export const LaunchDarklyProvider: React.FC<LaunchDarklyProviderProps> = ({
     []
   );
 
-  const _userContext = context || defaultContext;
+  const userContext = context || defaultContext;
 
   useEffect(() => {
     if (!ldClientId) {
@@ -126,7 +126,7 @@ export const LaunchDarklyProvider: React.FC<LaunchDarklyProviderProps> = ({
       try {
         if (!client || !isInitialized) return defaultValue;
         return client.variation(key, defaultValue);
-      } catch (_err) {
+      } catch (err) {
         console.warn(`Error evaluating boolean flag ${key}:`, err);
         return defaultValue;
       }
@@ -139,7 +139,7 @@ export const LaunchDarklyProvider: React.FC<LaunchDarklyProviderProps> = ({
       try {
         if (!client || !isInitialized) return defaultValue;
         return client.variation(key, defaultValue);
-      } catch (_err) {
+      } catch (err) {
         console.warn(`Error evaluating string flag ${key}:`, err);
         return defaultValue;
       }
@@ -152,7 +152,7 @@ export const LaunchDarklyProvider: React.FC<LaunchDarklyProviderProps> = ({
       try {
         if (!client || !isInitialized) return defaultValue;
         return client.variation(key, defaultValue);
-      } catch (_err) {
+      } catch (err) {
         console.warn(`Error evaluating number flag ${key}:`, err);
         return defaultValue;
       }
@@ -165,7 +165,7 @@ export const LaunchDarklyProvider: React.FC<LaunchDarklyProviderProps> = ({
       try {
         if (!client || !isInitialized) return defaultValue;
         return client.variation(key, defaultValue);
-      } catch (_err) {
+      } catch (err) {
         console.warn(`Error evaluating JSON flag ${key}:`, err);
         return defaultValue;
       }
@@ -187,7 +187,7 @@ export const LaunchDarklyProvider: React.FC<LaunchDarklyProviderProps> = ({
         } else {
           client.track(eventName, data);
         }
-      } catch (_err) {
+      } catch (err) {
         console.error(`Error tracking event ${eventName}:`, err);
       }
     },

@@ -13,7 +13,7 @@ export interface RetryConfig {
   maxDelay: number; // Maximum delay cap
   backoffMultiplier: number;
   jitter: boolean; // Add randomness to prevent thundering herd
-  retryableErrors: Array<string | RegExp | ((error: Error) => boolean)>;
+  retryableErrors: readonly (string | RegExp | ((error: Error) => boolean))[];
   onRetry?: (attempt: number, error: Error, nextDelay: number) => void;
   onMaxRetriesReached?: (error: Error) => void;
 }

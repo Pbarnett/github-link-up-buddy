@@ -21,9 +21,9 @@ export const useBehavioralTriggers = () => {
 
   const startTime = useRef(Date.now());
   const hoverStartTime = useRef<number | null>(null);
-  const scrollTimer = useRef<number>();
+  const scrollTimer = useRef<number | null>(null);
   const cardsRef = useRef<NodeListOf<Element> | null>(null);
-  const timeIntervalRef = useRef<number>();
+  const timeIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     // Guard against SSR
@@ -144,8 +144,8 @@ export const useBehavioralTriggers = () => {
       cardsRef.current = document.querySelectorAll('[data-behavior="card"]');
       cardsRef.current.forEach(card => {
         try {
-          card.addEventListener('mouseenter', handleMouseEnter);
-          card.addEventListener('mouseleave', handleMouseLeave);
+          card.addEventListener('mouseenter', _handleMouseEnter);
+          card.addEventListener('mouseleave', _handleMouseLeave);
         } catch (error) {
           console.warn('Error adding card listeners:', error);
         }
@@ -180,8 +180,8 @@ export const useBehavioralTriggers = () => {
         if (cardsRef.current) {
           cardsRef.current.forEach(card => {
             try {
-              card.removeEventListener('mouseenter', handleMouseEnter);
-              card.removeEventListener('mouseleave', handleMouseLeave);
+              card.removeEventListener('mouseenter', _handleMouseEnter);
+              card.removeEventListener('mouseleave', _handleMouseLeave);
             } catch (error) {
               console.warn('Error removing card listener:', error);
             }

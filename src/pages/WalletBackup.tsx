@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useState, use } from 'react';
 import { Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Plus, X } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 import { usePaymentMethods, PaymentMethod } from '@/hooks/usePaymentMethods';

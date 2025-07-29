@@ -30,13 +30,17 @@ const WalletContext = React.createContext<WalletContextType | undefined>(
   undefined
 );
 
-export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
+interface WalletProviderProps {
+  children: ReactNode;
+}
+
+export const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
   const fetchPaymentMethods = useCallback(async () => {
     // Assume user's ID is available via context/session
     const _userId = 'user-id'; // Replace with context/session retrieval
-    const methods = await getUserPaymentMethods(userId);
+    const methods = await getUserPaymentMethods(_userId);
     setPaymentMethods(methods);
   }, []);
 
@@ -44,7 +48,7 @@ export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
     // Assume user's ID is available via context/session
     const _userId = 'user-id'; // Replace with context/session retrieval
     const setupIntent = await createSetupIntent(
-      { id: userId, email: `${userId}@example.com` },
+      { id: _userId, email: `${_userId}@example.com` },
       { idempotencyKey }
     );
     return setupIntent.client_secret;
@@ -54,7 +58,7 @@ export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
     async (paymentMethodId: string) => {
       // Assume user's ID is available via context/session
       const _userId = 'user-id'; // Replace with context/session retrieval
-      await deletePaymentMethod(userId, paymentMethodId);
+      await deletePaymentMethod(_userId, paymentMethodId);
       await fetchPaymentMethods();
     },
     [fetchPaymentMethods]
@@ -64,7 +68,7 @@ export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
     async (paymentMethodId: string) => {
       // Assume user's ID is available via context/session
       const _userId = 'user-id'; // Replace with context/session retrieval
-      await setDefaultPaymentMethod(userId, paymentMethodId);
+      await setDefaultPaymentMethod(_userId, paymentMethodId);
       await fetchPaymentMethods();
     },
     [fetchPaymentMethods]

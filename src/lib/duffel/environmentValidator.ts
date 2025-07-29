@@ -146,13 +146,13 @@ export function validateDuffelEnvironmentDeno(): ValidationResult {
 
   // Check for required environment variables in Deno
   const requiredVars = {
-    DUFFEL_API_TOKEN_TEST: Deno.env.get('DUFFEL_API_TOKEN_TEST'),
-    DUFFEL_WEBHOOK_SECRET: Deno.env.get('DUFFEL_WEBHOOK_SECRET'),
+    DUFFEL_API_TOKEN_TEST: (typeof globalThis !== 'undefined' && 'Deno' in globalThis ? (globalThis as any).Deno.env.get('DUFFEL_API_TOKEN_TEST') : process.env.DUFFEL_API_TOKEN_TEST),
+    DUFFEL_WEBHOOK_SECRET: (typeof globalThis !== 'undefined' && 'Deno' in globalThis ? (globalThis as any).Deno.env.get('DUFFEL_WEBHOOK_SECRET') : process.env.DUFFEL_WEBHOOK_SECRET),
   };
 
   const optionalVars = {
-    DUFFEL_API_TOKEN_LIVE: Deno.env.get('DUFFEL_API_TOKEN_LIVE'),
-    DUFFEL_LIVE_ENABLED: Deno.env.get('DUFFEL_LIVE_ENABLED'),
+    DUFFEL_API_TOKEN_LIVE: (typeof globalThis !== 'undefined' && 'Deno' in globalThis ? (globalThis as any).Deno.env.get('DUFFEL_API_TOKEN_LIVE') : process.env.DUFFEL_API_TOKEN_LIVE),
+    DUFFEL_LIVE_ENABLED: (typeof globalThis !== 'undefined' && 'Deno' in globalThis ? (globalThis as any).Deno.env.get('DUFFEL_LIVE_ENABLED') : process.env.DUFFEL_LIVE_ENABLED),
   };
 
   // Check required variables

@@ -104,10 +104,10 @@ export abstract class BaseRepository<
   ): Promise<T> {
     const executeOperation = async () => {
       if (this.logQueries) {
-        console.log(`[${this.tableName}] Executing query`, context);
+        console.log(`[${String(this.tableName)}] Executing query`, context);
       }
 
-      const { data, error } = await operation()();
+      const { data, error } = await operation();
 
       if (error) {
         const errorMessage =
@@ -317,7 +317,7 @@ export abstract class BaseRepository<
     );
 
     if (!result) {
-      throw new DatabaseError(`Failed to create record in ${this.tableName}`, {
+      throw new DatabaseError(`Failed to create record in ${String(this.tableName)}`, {
         operation: 'create',
         data,
         ...options.context,
@@ -369,7 +369,7 @@ export abstract class BaseRepository<
 
     if (!result) {
       throw new DatabaseError(
-        `Record not found or update failed in ${this.tableName}`,
+        `Record not found or update failed in ${String(this.tableName)}`,
         { operation: 'updateById', id, data, ...options.context }
       );
     }

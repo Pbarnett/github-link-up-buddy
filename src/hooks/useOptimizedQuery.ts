@@ -59,7 +59,7 @@ export const useOptimizedQuery = <T>(
       }
 
       try {
-        const result = await queryFn()();
+        const result = await queryFn();
 
         if (trackPerformance) {
           trackEvent('query_network_success', {

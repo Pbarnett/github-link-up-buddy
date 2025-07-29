@@ -160,7 +160,7 @@ export class ConnectionMonitor {
 
       if (!isInitialized) {
         this.updateConnectionState(ConnectionState.CONNECTING);
-        await this.client.waitForInitialization(5000);
+        await this.client.waitForInitialization({ timeout: 5000 });
       }
 
       // Update uptime/downtime
@@ -281,12 +281,12 @@ export class ConnectionMonitor {
     const _delay = this.calculateRetryDelay();
 
     console.log(
-      `[LaunchDarkly] Scheduling reconnection attempt ${this.health.connectionAttempts} in ${delay}ms`
+      `[LaunchDarkly] Scheduling reconnection attempt ${this.health.connectionAttempts} in ${_delay}ms`
     );
 
     this.retryTimeout = setTimeout(() => {
       this.attemptReconnection();
-    }, delay);
+    }, _delay);
   }
 
   /**
@@ -322,7 +322,7 @@ export class ConnectionMonitor {
 
     try {
       // For server-side SDK, we might need to reinitialize
-      await this.client.waitForInitialization(10000);
+      await this.client.waitForInitialization({ timeout: 10000 });
 
       this.health.connectionAttempts = 0; // Reset on successful connection
       this.updateConnectionState(ConnectionState.CONNECTED);
@@ -358,7 +358,7 @@ export class ConnectionMonitor {
       try {
         callback({ ...this.health });
       } catch (_error) {
-        console.warn(`[LaunchDarkly] Error notifying listener ${id}:`, error);
+        console.warn(`[LaunchDarkly] Error notifying listener ${id}:`, _error);
       }
     }
   }

@@ -35,6 +35,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useWallet } from '@/contexts/WalletContext';
 import { PaymentMethodList } from '@/components/wallet/PaymentMethodList';
 import { AddCardModal } from '@/components/wallet/AddCardModal';
+import { User, Phone, MapPin, FileText } from 'lucide-react';
 // Utility function to convert ProfileCompletenessScore to ProfileCompletenessData
 function convertToIndicatorData(
   completenessScore: ProfileCompletenessScore,
@@ -266,7 +267,7 @@ function EnhancedProfilePage() {
 
   // Convert to indicator data format
   const indicatorData = useMemo(() => {
-    return convertToIndicatorData(_completenessData, profile);
+    return convertToIndicatorData(_completenessData, profile || null);
   }, [_completenessData, profile]);
 
   // Handle field clicks from the indicator
@@ -523,7 +524,7 @@ function LegacyProfilePage() {
 
   // Convert to indicator data format
   const indicatorData = useMemo(() => {
-    return convertToIndicatorData(completenessData, profile);
+    return convertToIndicatorData(completenessData, profile || null);
   }, [completenessData, profile]);
 
   // Handle field clicks from the indicator

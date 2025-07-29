@@ -78,6 +78,18 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
     setLocalOptions(filterState.options);
   }, [filterState.options]);
 
+  // Simple debounce implementation
+  const createDebounce = <T extends (...args: any[]) => any>(
+    func: T,
+    delay: number
+  ): ((...args: Parameters<T>) => void) => {
+    let timeoutId: NodeJS.Timeout;
+    return (...args: Parameters<T>) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func(...args), delay);
+    };
+  };
+
   // Debounced filter updates to avoid excessive API calls
   const debouncedUpdate = useCallback(
     createDebounce((options: FilterOptions) => {

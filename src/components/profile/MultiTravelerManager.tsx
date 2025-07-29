@@ -76,7 +76,7 @@ const travelerProfileSchema = z.object({
   mobilityAssistance: z.boolean().optional(),
   preferredSeat: z
     .enum([
-      '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window',
+      'window',
       'aisle',
       'middle',
       'no-preference',

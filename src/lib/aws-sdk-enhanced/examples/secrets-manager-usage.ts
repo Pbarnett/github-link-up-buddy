@@ -198,7 +198,7 @@ export async function getSecretWithRegionalFallback(
       return { secret, region: primaryRegion };
     }
   } catch (_error) {
-    console.warn(`Primary region ${primaryRegion} failed:`, error);
+    console.warn(`Primary region ${primaryRegion} failed:`, _error);
   }
 
   // Try fallback regions
@@ -210,7 +210,7 @@ export async function getSecretWithRegionalFallback(
         return { secret, region };
       }
     } catch (_error) {
-      console.warn(`Fallback region ${region} failed:`, error);
+      console.warn(`Fallback region ${region} failed:`, _error);
     }
   }
 
@@ -343,10 +343,10 @@ export async function getSecretWithRotationSupport(
         );
       }
     } catch (_error) {
-      console.warn(`Attempt ${attempt} failed for secret ${secretId}:`, error);
+      console.warn(`Attempt ${attempt} failed for secret ${secretId}:`, _error);
 
       if (attempt === maxRetries) {
-        throw error;
+        throw _error;
       }
 
       // Wait before retrying

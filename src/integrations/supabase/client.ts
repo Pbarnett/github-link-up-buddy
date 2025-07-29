@@ -30,21 +30,22 @@ console.log('🔍 Supabase client initialization:', {
 });
 
 // Create the Supabase client with proper error handling for testing
-let supabaseClient: SupabaseClient<Database> | MockSupabaseClient;
+let supabaseClient: SupabaseClient<Database> | any;
 
 // Connection pooler configuration for different environments
 const getConnectionConfig = () => {
   const isProduction = import.meta.env.PROD;
-  const isServerSide =
-    typeof (
-      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
-    ) === 'undefined';
+  const isServerSide = typeof window === 'undefined';
+
+  const baseHeaders = {
+    'x-client-info': 'github-link-up-buddy@1.0.0',
+  };
 
   if (isServerSide && isProduction) {
     // Server-side production settings
     return {
       db: {
-        schema: 'public',
+        schema: 'public' as const,
       },
       auth: {
         autoRefreshToken: false,
@@ -58,9 +59,9 @@ const getConnectionConfig = () => {
       },
       global: {
         headers: {
-          'x-client-info': 'github-link-up-buddy@1.0.0',
-          Connection: 'close',
-        },
+          ...baseHeaders,
+          'Connection': 'close',
+        } as Record<string, string>,
       },
     };
   }
@@ -71,20 +72,13 @@ const getConnectionConfig = () => {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      storage:
-        typeof (
-          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
-        ) !== 'undefined'
-          ? /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.localStorage
-          : undefined,
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     },
     global: {
-      headers: {
-        'x-client-info': 'github-link-up-buddy@1.0.0',
-      },
+      headers: baseHeaders as Record<string, string>,
     },
     db: {
-      schema: 'public',
+      schema: 'public' as const,
     },
     realtime: {
       params: {
@@ -144,6 +138,7 @@ interface MockSupabaseClient {
       data: { subscription: { unsubscribe: () => void } };
       error: null;
     };
+    signUp: (credentials: any) => Promise<{ data: { user: any; session: any }; error: null }>;
     signOut: () => Promise<{ error: null }>;
     signInWithPassword: (
       credentials: any
@@ -239,6 +234,8 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
             error: null,
           };
         },
+        signUp: (credentials: any) =>
+          Promise.resolve({ data: { user: null, session: null }, error: null }),
         signOut: () => Promise.resolve({ error: null }),
         signInWithPassword: (credentials: any) =>
           Promise.resolve({ data: { user: null, session: null }, error: null }),
@@ -270,16 +267,13 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     supabaseClient = createClient<Database>(
       SUPABASE_URL,
       SUPABASE_ANON_KEY,
-      config
+      config as any
     );
 
     console.log('✅ Supabase client initialized successfully', {
       mode: import.meta.env.MODE,
       isProduction: import.meta.env.PROD,
-      isServerSide:
-        typeof (
-          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
-        ) === 'undefined',
+      isServerSide: typeof window === 'undefined',
       authConfig: config.auth ? 'configured' : 'default',
     });
   } catch (error) {

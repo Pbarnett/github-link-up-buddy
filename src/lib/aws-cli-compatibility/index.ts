@@ -7,8 +7,8 @@
 
 export {
   AWSCLIParameterValidator,
-  type __ValidationResult,
-  type KeyId_ValidationResult,
+  type ValidationResult,
+  type KeyIdValidationResult,
 } from './parameter-validator';
 
 // Re-export for convenience

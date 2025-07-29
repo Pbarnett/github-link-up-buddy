@@ -192,7 +192,7 @@ export class StripeCustomerLifecycleManager {
       try {
         // Get additional customer data from Stripe
         const stripeCustomer = await this.stripe.customers.retrieve(
-          customer.stripe_customer_id
+          customer.stripe_customer_id as string
         );
 
         if (stripeCustomer.deleted) {
@@ -201,7 +201,7 @@ export class StripeCustomerLifecycleManager {
 
         // Calculate days inactive
         const lastActivity = new Date(
-          customer.last_payment_at || customer.created_at
+          (customer.last_payment_at || customer.created_at) as string
         );
         const daysInactive = Math.floor(
           (Date.now() - lastActivity.getTime()) / (1000 * 60 * 60 * 24)
@@ -209,20 +209,20 @@ export class StripeCustomerLifecycleManager {
 
         // Check for active subscriptions
         const subscriptions = await this.stripe.subscriptions.list({
-          customer: customer.stripe_customer_id,
+          customer: customer.stripe_customer_id as string,
           status: 'active',
           limit: 1,
         });
 
         // Get payment methods count
         const paymentMethods = await this.stripe.paymentMethods.list({
-          customer: customer.stripe_customer_id,
+          customer: customer.stripe_customer_id as string,
           limit: 100,
         });
 
         // Calculate total spent (simplified - you might want to get this from your local data)
         const charges = await this.stripe.charges.list({
-          customer: customer.stripe_customer_id,
+          customer: customer.stripe_customer_id as string,
           limit: 100,
         });
 
@@ -232,8 +232,8 @@ export class StripeCustomerLifecycleManager {
           }, 0) / 100; // Convert from cents
 
         inactiveCustomers.push({
-          stripe_customer_id: customer.stripe_customer_id,
-          user_id: customer.user_id,
+          stripe_customer_id: customer.stripe_customer_id as string,
+          user_id: customer.user_id as string | null,
           last_activity: lastActivity.toISOString(),
           days_inactive: daysInactive,
           payment_methods_count: paymentMethods.data.length,
@@ -243,8 +243,8 @@ export class StripeCustomerLifecycleManager {
 
         // Log the identification
         await this.logLifecycleAudit({
-          customer_id: customer.stripe_customer_id,
-          user_id: customer.user_id,
+          customer_id: customer.stripe_customer_id as string,
+          user_id: customer.user_id as string | null,
           action: 'identified_inactive',
           reason: `Customer inactive for ${daysInactive} days`,
           metadata: {
@@ -313,12 +313,12 @@ export class StripeCustomerLifecycleManager {
       }
 
       // Step 1: Anonymize customer data in Stripe
-      const anonymizedEmail = `anonymized-${customer.stripe_customer_id.slice(-8)}@deleted.local`;
+        const anonymizedEmail = `anonymized-${(customer.stripe_customer_id as string).slice(-8)}@deleted.local`;
 
-      await this.stripe.customers.update(customer.stripe_customer_id, {
+      await this.stripe.customers.update(customer.stripe_customer_id as string, {
         email: anonymizedEmail,
         name: 'ANONYMIZED',
-        phone: null,
+        phone: undefined,
         description: 'Customer data anonymized for compliance',
         metadata: {
           anonymized_at: new Date().toISOString(),
@@ -327,19 +327,19 @@ export class StripeCustomerLifecycleManager {
         },
         // Clear address information
         address: {
-          line1: null,
-          line2: null,
-          city: null,
-          state: null,
-          postal_code: null,
-          country: null,
+          line1: undefined,
+          line2: undefined,
+          city: undefined,
+          state: undefined,
+          postal_code: undefined,
+          country: undefined,
         },
-        shipping: null,
+        shipping: undefined,
       });
 
       // Step 2: Remove all payment methods
       const paymentMethods = await this.stripe.paymentMethods.list({
-        customer: customer.stripe_customer_id,
+        customer: customer.stripe_customer_id as string,
         limit: 100,
       });
 
@@ -356,19 +356,19 @@ export class StripeCustomerLifecycleManager {
             anonymized_at: new Date().toISOString(),
             anonymization_reason: 'Inactive customer lifecycle management',
           })
-          .eq('stripe_customer_id', customer.stripe_customer_id);
+          .eq('stripe_customer_id', customer.stripe_customer_id as string);
 
         // Remove payment methods from local database
         await this.supabase
           .from('payment_methods')
           .delete()
-          .eq('stripe_customer_id', customer.stripe_customer_id);
+          .eq('stripe_customer_id', customer.stripe_customer_id as string);
       }
 
       // Step 4: Log the anonymization
       await this.logLifecycleAudit({
-        customer_id: customer.stripe_customer_id,
-        user_id: customer.user_id,
+        customer_id: customer.stripe_customer_id as string,
+        user_id: customer.user_id as string | null,
         action: 'anonymized',
         reason: `Customer anonymized after ${customer.days_inactive} days of inactivity`,
         metadata: {
@@ -415,7 +415,7 @@ export class StripeCustomerLifecycleManager {
     try {
       // Step 1: Verify customer can be deleted (no active subscriptions, charges, etc.)
       const subscriptions = await this.stripe.subscriptions.list({
-        customer: customer.stripe_customer_id,
+        customer: customer.stripe_customer_id as string,
         status: 'active',
         limit: 1,
       });
@@ -434,13 +434,13 @@ export class StripeCustomerLifecycleManager {
 
       // Step 2: Archive payment history and critical audit data before deletion
       const charges = await this.stripe.charges.list({
-        customer: customer.stripe_customer_id,
+        customer: customer.stripe_customer_id as string,
         limit: 100,
       });
 
       const archiveData = {
-        customer_id: customer.stripe_customer_id,
-        user_id: customer.user_id,
+        customer_id: customer.stripe_customer_id as string,
+        user_id: customer.user_id as string | null,
         deletion_date: new Date().toISOString(),
         charges_count: charges.data.length,
         total_amount_processed: charges.data.reduce(
@@ -455,7 +455,7 @@ export class StripeCustomerLifecycleManager {
       await this.supabase.from('customer_deletion_archive').insert(archiveData);
 
       // Step 3: Delete customer from Stripe
-      await this.stripe.customers.del(customer.stripe_customer_id);
+      await this.stripe.customers.del(customer.stripe_customer_id as string);
 
       // Step 4: Clean up local database
       if (customer.user_id) {
@@ -463,18 +463,18 @@ export class StripeCustomerLifecycleManager {
         await this.supabase
           .from('payment_methods')
           .delete()
-          .eq('stripe_customer_id', customer.stripe_customer_id);
+          .eq('stripe_customer_id', customer.stripe_customer_id as string);
 
         await this.supabase
           .from('stripe_customers')
           .delete()
-          .eq('stripe_customer_id', customer.stripe_customer_id);
+          .eq('stripe_customer_id', customer.stripe_customer_id as string);
       }
 
       // Step 5: Log the deletion
       await this.logLifecycleAudit({
-        customer_id: customer.stripe_customer_id,
-        user_id: customer.user_id,
+        customer_id: customer.stripe_customer_id as string,
+        user_id: customer.user_id as string | null,
         action: 'deleted',
         reason: `Customer deleted after ${customer.days_inactive} days of inactivity`,
         metadata: {

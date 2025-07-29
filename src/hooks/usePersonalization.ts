@@ -82,7 +82,7 @@ export function usePersonalization(userId?: string) {
           .insert({
             user_id: userId,
             event_type: params.eventType,
-            context: params.context || {},
+            context: JSON.parse(JSON.stringify(params.context || {})),
             created_at: new Date().toISOString(),
           }) as any);
 

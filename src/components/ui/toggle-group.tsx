@@ -4,6 +4,7 @@ import * as ToggleGroupPrimitive from '@radix-ui/react-toggle-group';
 import { type VariantProps } from 'class-variance-authority';
 import { toggleVariants } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
+
 const ToggleGroupContext = React.createContext<
   VariantProps<typeof toggleVariants>
 >({
@@ -11,30 +12,47 @@ const ToggleGroupContext = React.createContext<
   variant: 'default',
 });
 
-interface ToggleGroupProps
-  extends React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Root>,
-    VariantProps<typeof toggleVariants> {
-  ref?: React.Ref<React.ElementRef<typeof ToggleGroupPrimitive.Root>>;
-}
+type ToggleGroupSingleProps = {
+  type: 'single';
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
+} & Omit<React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Root>, 'type' | 'value' | 'defaultValue' | 'onValueChange' | 'className' | 'children'> &
+  VariantProps<typeof toggleVariants> & {
+    className?: string;
+    children?: React.ReactNode;
+  };
 
-const ToggleGroup = ({
-  className,
-  variant,
-  size,
-  children,
-  ref,
-  ...props
-}: ToggleGroupProps) => (
-  <ToggleGroupPrimitive.Root
-    ref={ref}
-    className={cn('flex items-center justify-center gap-1', className)}
-    {...props}
-  >
-    <ToggleGroupContext.Provider value={{ variant, size }}>
-      {children}
-    </ToggleGroupContext.Provider>
-  </ToggleGroupPrimitive.Root>
-);
+type ToggleGroupMultipleProps = {
+  type: 'multiple';
+  value?: string[];
+  defaultValue?: string[];
+  onValueChange?: (value: string[]) => void;
+} & Omit<React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Root>, 'type' | 'value' | 'defaultValue' | 'onValueChange' | 'className' | 'children'> &
+  VariantProps<typeof toggleVariants> & {
+    className?: string;
+    children?: React.ReactNode;
+  };
+
+type ToggleGroupProps = ToggleGroupSingleProps | ToggleGroupMultipleProps;
+
+const ToggleGroup = React.forwardRef<
+  React.ElementRef<typeof ToggleGroupPrimitive.Root>,
+  ToggleGroupProps
+>(({ className, variant, size, children, ...props }, ref) => {
+  return (
+    <ToggleGroupPrimitive.Root
+      ref={ref}
+      className={cn('flex items-center justify-center gap-1', className)}
+      {...props}
+    >
+      <ToggleGroupContext.Provider value={{ variant, size }}>
+        {children}
+      </ToggleGroupContext.Provider>
+    </ToggleGroupPrimitive.Root>
+  );
+});
+
 ToggleGroup.displayName = ToggleGroupPrimitive.Root.displayName;
 
 interface ToggleGroupItemProps
@@ -69,6 +87,7 @@ const ToggleGroupItem = ({
     </ToggleGroupPrimitive.Item>
   );
 };
+
 ToggleGroupItem.displayName = ToggleGroupPrimitive.Item.displayName;
 
 export { ToggleGroup, ToggleGroupItem };

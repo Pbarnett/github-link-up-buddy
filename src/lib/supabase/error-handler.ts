@@ -126,7 +126,7 @@ export class SupabaseErrorHandler {
       PGRST204: 'No rows found',
     };
 
-    const _userFriendlyMessage = commonErrors[error.code] || error.message;
+    const userFriendlyMessage = commonErrors[error.code] || error.message;
 
     return {
       name: 'SupabaseError',
@@ -164,7 +164,7 @@ export async function withRetry<T>(
 
   for (let i = 0; i <= maxRetries; i++) {
     try {
-      return await operation()();
+      return await operation();
     } catch (error) {
       lastError = error as Error;
 

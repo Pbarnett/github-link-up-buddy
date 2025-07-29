@@ -1,8 +1,6 @@
 // Mock flag values for testing
 import * as React from 'react';
-import { ComponentType } from 'react';
 import { createContext, useContext, useMemo } from 'react';
-type ComponentType<P = {}> = React.ComponentType<P>;
 const DEFAULT_TEST_FLAGS = {
   wallet_ui: true,
   profile_ui_revamp: true,

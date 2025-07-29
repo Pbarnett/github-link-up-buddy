@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect, use } from 'react';
+import { Navigate } from 'react-router-dom';
 import { AlertTriangle, Loader2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {

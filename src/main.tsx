@@ -2,7 +2,7 @@ import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 import * as Sentry from '@sentry/react';
 import { ThemeProvider } from 'next-themes';
-import App from './App.tsx';
+import App from './App';
 import {} from './components/ErrorBoundary';
 import './index.css';
 // Conditionally import LaunchDarkly providers

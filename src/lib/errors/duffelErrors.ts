@@ -149,7 +149,7 @@ export function isDuffelErrorUserActionRequired(errorType: string): boolean {
     'card_declined',
   ];
 
-  return userActionErrors.includes(errorType);
+  return _userActionErrors.includes(errorType);
 }
 
 /**

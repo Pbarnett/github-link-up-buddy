@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useEffect, use } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useTripOffers } from '@/hooks/useTripOffersLegacy';
 import { TripDetails } from '@/hooks/useTripOffers';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';

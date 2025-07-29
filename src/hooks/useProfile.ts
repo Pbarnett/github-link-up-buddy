@@ -3,11 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useCurrentUser } from './useCurrentUser';
+
 export interface Profile {
   id: string;
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
+  email: string;
   created_at: string;
   updated_at: string;
 }
@@ -28,7 +30,7 @@ export function useProfile() {
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      return data as Profile | null;
     },
     enabled: !!userId,
   });
@@ -39,19 +41,47 @@ export function useProfile() {
     ) => {
       if (!userId) throw new Error('User not authenticated');
 
-      // Use upsert to handle both insert and update cases
-      const { data, error } = await supabase
+      // Check if profile exists first
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .upsert({
-          id: userId,
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+        .select('id, email')
+        .eq('id', userId)
+        .maybeSingle();
 
-      if (error) throw error;
-      return data;
+      if (existingProfile) {
+        // Update existing profile
+        const { data, error } = await supabase
+          .from('profiles')
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', userId)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      } else {
+        // Create new profile - need to provide required fields
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.email) throw new Error('User email is required');
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: user.email,
+            ...updates,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile', userId] });
@@ -60,7 +90,7 @@ export function useProfile() {
         description: 'Your profile has been updated successfully.',
       });
     },
-    onError: error => {
+    onError: (error) => {
       console.error('Error updating profile:', error);
       toast({
         title: 'Error',

@@ -32,7 +32,7 @@ export const useCurrentUser = (): CurrentUserState => {
         // Only update if something actually changed
         const _userId = newState.user?.id || null;
         if (
-          prev.user?.id === userId &&
+          prev.user?.id === _userId &&
           prev.loading === (newState.loading ?? prev.loading) &&
           prev.error === (newState.error ?? prev.error)
         ) {
@@ -42,7 +42,7 @@ export const useCurrentUser = (): CurrentUserState => {
         return {
           ...prev,
           ...newState,
-          userId,
+          userId: _userId,
         };
       });
     };

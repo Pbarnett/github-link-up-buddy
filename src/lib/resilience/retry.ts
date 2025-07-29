@@ -152,10 +152,10 @@ export async function retry<T>(
       );
 
       // Call retry callback if provided
-      opts.onRetry?.(error, attempt + 1, delay);
+      opts.onRetry?.(error, attempt + 1, _delay);
 
       // Wait before next attempt
-      await sleep(delay);
+      await sleep(_delay);
     }
   }
 

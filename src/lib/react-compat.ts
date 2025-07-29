@@ -3,6 +3,9 @@ import {
   Suspense,
   Fragment,
   createElement,
+  createContext,
+  forwardRef,
+  memo,
   useState,
   useEffect,
   useCallback,
@@ -18,12 +21,8 @@ import {
   startTransition,
   useSyncExternalStore,
   useId,
-  use,
-  lazy,
 } from 'react';
 
-type FormEvent<T = Element> = React.FormEvent<T>;
-type ChangeEvent<T = Element> = React.ChangeEvent<T>;
 type ComponentType<P = {}> = React.ComponentType<P>;
 type ElementType = React.ElementType;
 
@@ -35,27 +34,17 @@ type CSSProperties = React.CSSProperties;
  * functions and types that may have changed or moved.
  */
 
-// Types are re-exported below, so we don't need to import them directly here
 // Re-export all React functions and types
 export {
   Fragment,
-  Profiler,
-  PureComponent,
-  StrictMode,
   Suspense,
-  cloneElement,
-  createContext,
   createElement,
-  createRef,
+  createContext,
   forwardRef,
-  isValidElement,
-  lazy,
   memo,
   startTransition,
-  use,
   useCallback,
   useContext,
-  useDebugValue,
   useDeferredValue,
   useEffect,
   useId,
@@ -72,14 +61,12 @@ export {
 
 // Re-export types that are available but may need explicit imports
 export type {
-  ComponentPropsPropsWithoutRef,
+  ComponentPropsWithoutRef,
   ElementRef,
   ElementType,
   HTMLAttributes,
   ButtonHTMLAttributes,
   InputHTMLAttributes,
-  ThHTMLAttributes,
-  TdHTMLAttributes,
   ReactNode,
   ReactElement,
   CSSProperties,

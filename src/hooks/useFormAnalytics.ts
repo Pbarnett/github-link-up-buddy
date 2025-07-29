@@ -70,17 +70,17 @@ export const useFormAnalytics = ({
         p_form_name: formConfig.name,
         p_form_version: formConfig.version || 1,
         p_session_id: sessionId,
-        p_user_id: userId || null,
+        p_user_id: userId || undefined,
         p_event_type: event.type,
-        p_event_data: event.eventData || {},
-        p_field_id: event.fieldId || null,
-        p_field_type: event.fieldType || null,
-        p_field_value: event.fieldValue || null,
-        p_validation_error: event.validationError || null,
-        p_duration_ms: event.duration || null,
+        p_event_data: JSON.parse(JSON.stringify(event.eventData || null)) as any,
+        p_field_id: event.fieldId || undefined,
+        p_field_type: event.fieldType || undefined,
+        p_field_value: event.fieldValue || undefined,
+        p_validation_error: event.validationError || undefined,
+        p_duration_ms: event.duration || undefined,
         p_user_agent: navigator.userAgent,
-        p_ip_address: null, // Will be populated by server
-        p_referrer: document.referrer || null,
+        p_ip_address: undefined, // Will be populated by server
+        p_referrer: document.referrer || undefined,
       };
 
       // Retry logic with exponential backoff

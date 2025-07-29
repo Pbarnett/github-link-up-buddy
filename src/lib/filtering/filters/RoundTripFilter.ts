@@ -12,7 +12,7 @@ import {
   FlightOffer,
   FlightFilter,
   FilterContext,
-  _ValidationResult,
+  ValidationResult,
 } from '../core/types';
 
 export class RoundTripFilter implements FlightFilter {

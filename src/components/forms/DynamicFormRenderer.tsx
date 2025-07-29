@@ -200,7 +200,19 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
           };
           await onSubmit(submissionData);
         } else {
-          await onSubmit(data as unknown as FormSubmissionData);
+          // Create basic FormSubmissionData with available information
+          const submissionData: FormSubmissionData = {
+            formId: configId || configName || 'unknown',
+            formName: 'Dynamic Form',
+            data: data as FormSubmissionData['data'],
+            metadata: {
+              submittedAt: new Date().toISOString(),
+              userAgent: navigator.userAgent,
+              formVersion: 1,
+              instanceId: `form-${Date.now()}`,
+            },
+          };
+          await onSubmit(submissionData);
         }
       }
     } catch (error) {

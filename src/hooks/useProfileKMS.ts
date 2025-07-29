@@ -22,7 +22,7 @@ export const useProfileKMS = (): UseProfileKMSReturn => {
       setIsLoading(true);
       setError(undefined);
 
-      const _userProfile = await profileServiceKMS.getProfile();
+      const userProfile = await profileServiceKMS.getProfile();
       setProfile(userProfile);
     } catch (err) {
       console.error('Error fetching profile:', err);

@@ -46,7 +46,7 @@
     
     "preserveSymlinks": false,
     
-    "types": ["node", "vitest/globals", "@testing-library/jest-dom", "web-vitals"],
+    "types": ["vite/client", "node"],
     "skipDefaultLibCheck": false,
     
     "baseUrl": ".",

@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 interface InputOTPProps
   extends React.ComponentPropsWithoutRef<typeof OTPInput> {
   ref?: React.Ref<React.ElementRef<typeof OTPInput>>;
+  className?: string;
+  containerClassName?: string;
 }
 
 const InputOTP = ({

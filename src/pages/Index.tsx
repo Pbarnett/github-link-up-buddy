@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Star } from 'lucide-react';
+import { Search, Star, Plane, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InteractiveButton } from '@/components/ui/interactive-button';
 import { EnhancedInput } from '@/components/ui/enhanced-input';

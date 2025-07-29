@@ -140,5 +140,5 @@ export type { Control, UseFormReturn, FieldValues } from 'react-hook-form';
 export type {
   ComponentType,
   ReactNode,
-  ElementRefPropsWithoutRef,
+  // ElementRefPropsWithoutRef, // Not available in React 19
 } from 'react';

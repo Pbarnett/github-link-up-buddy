@@ -10,7 +10,7 @@ import * as React from 'react';
 import {
   IS_MOCK_MODE,
   MockKMSClient,
-  Mock_SecretsManagerClient,
+  MockSecretsManagerClient,
   MockS3Client,
   MockDynamoDBClient,
   MockSTSClient,
@@ -130,9 +130,6 @@ export class EnhancedAWSClientFactory {
       maxSockets: config.maxSockets ?? 50,
       maxFreeSockets: Math.floor((config.maxSockets ?? 50) / 5),
       timeout: config.socketTimeout ?? 30000,
-      freeSocketTimeout: 30000,
-      // Enable TCP_NODELAY for better latency
-      setNoDelay: true,
     });
   }
 
@@ -190,7 +187,7 @@ export class EnhancedAWSClientFactory {
   /**
    * Creates or retrieves cached KMS client
    */
-  static createKMSClient(config: EnhancedClientConfig): KMSClient {
+  static createKMSClient(config: EnhancedClientConfig): any {
     const cacheKey = `kms-${config.region}-${config.environment}`;
 
     if (this.clientInstances.has(cacheKey)) {
@@ -198,7 +195,7 @@ export class EnhancedAWSClientFactory {
     }
 
     const baseConfig = this.createBaseConfig(config);
-    const kmsConfig: KMSClientConfig = {
+    const kmsConfig: any = {
       ...baseConfig,
       serviceId: 'KMS',
       // KMS-specific optimizations
@@ -214,7 +211,7 @@ export class EnhancedAWSClientFactory {
   /**
    * Creates or retrieves cached S3 client
    */
-  static createS3Client(config: EnhancedClientConfig): S3Client {
+  static createS3Client(config: EnhancedClientConfig): any {
     const cacheKey = `s3-${config.region}-${config.environment}`;
 
     if (this.clientInstances.has(cacheKey)) {
@@ -222,7 +219,7 @@ export class EnhancedAWSClientFactory {
     }
 
     const baseConfig = this.createBaseConfig(config);
-    const s3Config: S3ClientConfig = {
+    const s3Config: any = {
       ...baseConfig,
       serviceId: 'S3',
       // S3-specific optimizations
@@ -240,7 +237,7 @@ export class EnhancedAWSClientFactory {
   /**
    * Creates or retrieves cached DynamoDB client
    */
-  static createDynamoDBClient(config: EnhancedClientConfig): DynamoDBClient {
+  static createDynamoDBClient(config: EnhancedClientConfig): any {
     const cacheKey = `dynamodb-${config.region}-${config.environment}`;
 
     if (this.clientInstances.has(cacheKey)) {
@@ -248,7 +245,7 @@ export class EnhancedAWSClientFactory {
     }
 
     const baseConfig = this.createBaseConfig(config);
-    const dynamoConfig: DynamoDBClientConfig = {
+    const dynamoConfig: any = {
       ...baseConfig,
       serviceId: 'DynamoDB',
       // DynamoDB-specific optimizations
@@ -264,7 +261,7 @@ export class EnhancedAWSClientFactory {
   /**
    * Creates or retrieves cached STS client
    */
-  static createSTSClient(config: EnhancedClientConfig): STSClient {
+  static createSTSClient(config: EnhancedClientConfig): any {
     const cacheKey = `sts-${config.region}-${config.environment}`;
 
     if (this.clientInstances.has(cacheKey)) {
@@ -272,7 +269,7 @@ export class EnhancedAWSClientFactory {
     }
 
     const baseConfig = this.createBaseConfig(config);
-    const stsConfig: STSClientConfig = {
+    const stsConfig: any = {
       ...baseConfig,
       serviceId: 'STS',
       // STS-specific optimizations
@@ -290,7 +287,7 @@ export class EnhancedAWSClientFactory {
    */
   static createCloudWatchClient(
     config: EnhancedClientConfig
-  ): CloudWatchClient {
+  ): any {
     const cacheKey = `cloudwatch-${config.region}-${config.environment}`;
 
     if (this.clientInstances.has(cacheKey)) {
@@ -298,7 +295,7 @@ export class EnhancedAWSClientFactory {
     }
 
     const baseConfig = this.createBaseConfig(config);
-    const cwConfig: CloudWatchClientConfig = {
+    const cwConfig: any = {
       ...baseConfig,
       serviceId: 'CloudWatch',
     };
@@ -314,7 +311,7 @@ export class EnhancedAWSClientFactory {
    */
   static createSecretsManagerClient(
     config: EnhancedClientConfig
-  ): SecretsManagerClient {
+  ): any {
     const cacheKey = `secretsmanager-${config.region}-${config.environment}`;
 
     if (this.clientInstances.has(cacheKey)) {
@@ -322,7 +319,7 @@ export class EnhancedAWSClientFactory {
     }
 
     const baseConfig = this.createBaseConfig(config);
-    const secretsManagerConfig: SecretsManagerClientConfig = {
+    const secretsManagerConfig: any = {
       ...baseConfig,
       serviceId: 'SecretsManager',
     };
@@ -458,7 +455,7 @@ export const createMultiRegionKMSClients = (
   regions: string[],
   environment: Environment
 ) =>
-  EnhancedAWSClientFactory.createMultiRegionClients<KMSClient>(
+  EnhancedAWSClientFactory.createMultiRegionClients<any>(
     'kms',
     regions,
     environment

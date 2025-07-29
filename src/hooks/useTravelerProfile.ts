@@ -9,30 +9,30 @@ export interface TravelerProfile {
   user_id?: string;
   full_name: string;
   date_of_birth: string;
-  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  gender: string; // DB stores string, not enum
   email: string;
-  phone?: string;
-  phone_verified?: boolean;
-  passport_number?: string;
-  passport_country?: string;
-  passport_expiry?: string;
-  known_traveler_number?: string;
-  is_primary?: boolean;
-  is_verified?: boolean;
-  verification_level?: 'basic' | 'enhanced' | 'premium';
-  profile_completeness_score?: number;
-  travel_preferences?: Record<string, unknown>;
-  notification_preferences?: Record<string, unknown>;
-  created_at?: string;
-  updated_at?: string;
-  last_profile_update?: string;
+  phone?: string | null;
+  phone_verified?: boolean | null;
+  passport_number?: string | null;
+  passport_country?: string | null;
+  passport_expiry?: string | null;
+  known_traveler_number?: string | null;
+  is_primary?: boolean | null;
+  is_verified?: boolean | null;
+  verification_level?: string | null;
+  profile_completeness_score?: number | null;
+  travel_preferences?: any | null; // Matches Json type
+  notification_preferences?: any | null; // Matches Json type
+  created_at?: string | null;
+  updated_at?: string | null;
+  last_profile_update?: string | null;
 }
 
 export interface ProfileCompletionData {
   completion_percentage: number;
-  missing_fields: string[];
-  recommendations: Record<string, unknown>[];
-  last_calculated: string;
+  missing_fields: string[] | null;
+  recommendations: any | null; // Matches Json type from Supabase
+  last_calculated: string | null;
 }
 
 export function useTravelerProfile() {
@@ -79,7 +79,7 @@ export function useTravelerProfile() {
   // Get recommendations
   const recommendationsQuery = useQuery({
     queryKey: ['profile-recommendations', userId],
-    queryFn: async () => async () => {
+    queryFn: async () => {
       if (!userId) return [];
 
       const { data, error } = await supabase.rpc(
@@ -117,14 +117,24 @@ export function useTravelerProfile() {
         if (error) throw error;
         return data;
       } else {
-        // Create new profile
+        // Create new profile - ensure required fields are provided
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.email) throw new Error('User email is required');
+        
+        // Prepare insert data with required fields
+        const insertData = {
+          user_id: userId,
+          email: user.email,
+          full_name: updates.full_name || 'User Profile',
+          date_of_birth: updates.date_of_birth || '1990-01-01',
+          gender: updates.gender || 'OTHER',
+          is_primary: true,
+          ...updates, // Override with any specific updates
+        };
+
         const { data, error } = await supabase
           .from('traveler_profiles')
-          .insert({
-            ...updates,
-            user_id: userId,
-            is_primary: true,
-          })
+          .insert(insertData)
           .select()
           .single();
 
@@ -161,7 +171,7 @@ export function useTravelerProfile() {
       if (!userId) throw new Error('User not authenticated');
 
       // Call SMS verification endpoint
-      const response = await fetch()('/api/send-verification-sms', {
+      const response = await fetch('/api/send-verification-sms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

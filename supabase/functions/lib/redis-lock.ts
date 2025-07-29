@@ -95,7 +95,7 @@ export class RedisLockManager {
             span.setStatus({ code: SpanStatusCode.ERROR });
             console.error(`[RedisLock] Error acquiring lock ${key}:`, error);
             
-            if (attempt  retryAttempts) {
+            if (attempt < retryAttempts) {
               await this.sleep(retryDelayMs);
               continue;
             }
@@ -182,6 +182,80 @@ export class RedisLockManager {
       {
         'service.name': 'redis-service',
         'redis.operation': 'release_lock'
+      }
+    );
+  }
+
+  /**
+   * Extend the TTL of an existing lock (task #63 requirement)
+   */
+  async extendLock(key: string, lockId: string, ttlSeconds: number): Promise<boolean> {
+    return withSpan(
+      'redis.extend_lock',
+      async (span) => {
+        span.attributes['redis.key'] = key;
+        span.attributes['redis.lock_id'] = lockId;
+        span.attributes['redis.ttl'] = ttlSeconds;
+        
+        try {
+          // First check if we own the lock
+          const getResponse = await fetch(`${this.redisUrl}/get/${encodeURIComponent(key)}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${this.authToken}`
+            }
+          });
+
+          if (!getResponse.ok) {
+            console.error(`Redis GET failed: ${getResponse.status}`);
+            return false;
+          }
+
+          const getValue = await getResponse.json();
+          
+          // Check if we own the lock
+          if (getValue.result !== lockId) {
+            console.warn(`[RedisLock] Cannot extend lock ${key} - not owner or already expired`);
+            return false;
+          }
+
+          // Extend the TTL using EXPIRE command
+          const expireResponse = await fetch(`${this.redisUrl}/expire/${encodeURIComponent(key)}/${ttlSeconds}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${this.authToken}`
+            }
+          });
+
+          if (!expireResponse.ok) {
+            console.error(`Redis EXPIRE failed: ${expireResponse.status}`);
+            return false;
+          }
+
+          const expireResult = await expireResponse.json();
+          const extended = expireResult.result === 1;
+          
+          if (extended) {
+            const newExpiresAt = new Date(Date.now() + (ttlSeconds * 1000));
+            console.log(`[RedisLock] Extended lock TTL: ${key} (new expiry: ${newExpiresAt.toISOString()})`);
+            span.attributes['redis.extended'] = true;
+          } else {
+            console.warn(`[RedisLock] Failed to extend lock TTL: ${key}`);
+            span.attributes['redis.extended'] = false;
+          }
+          
+          return extended;
+
+        } catch (error) {
+          span.recordException(error);
+          span.setStatus({ code: SpanStatusCode.ERROR });
+          console.error(`[RedisLock] Error extending lock ${key}:`, error);
+          return false;
+        }
+      },
+      {
+        'service.name': 'redis-service',
+        'redis.operation': 'extend_lock'
       }
     );
   }

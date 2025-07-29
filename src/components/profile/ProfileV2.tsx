@@ -62,6 +62,7 @@ export function ProfileV2() {
         contact_info: 0,
         travel_documents: 0,
         preferences: 0,
+        verification: 0,
       },
       missing_fields: [],
       recommendations: [],

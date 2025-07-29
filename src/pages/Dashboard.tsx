@@ -6,12 +6,14 @@ import type {
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
 import {
+  Activity,
   AlertCircle,
   CheckCircle,
   Clock,
   DollarSign,
   Eye,
   Plane,
+  PlusCircle,
   RefreshCw,
   XCircle,
 } from 'lucide-react';
@@ -37,6 +39,7 @@ import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import TripHistory from '@/components/dashboard/TripHistory'; // Added import
 import { DashboardGreeting } from '@/components/personalization/GreetingBanner';
+import { Navigate } from 'react-router-dom';
 interface BookingRequest {
   id: string;
   status: string;
@@ -66,7 +69,7 @@ const Dashboard = () => {
   const [, setSelectedError] = useState<string | null>(null);
 
   // Track previous statuses for smart toast notifications
-  const _prevStatuses = useRef<Record<string, string>>({});
+  const prevStatuses = useRef<Record<string, string>>({});
 
   useEffect(() => {
     const getUser = async () => {

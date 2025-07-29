@@ -27,7 +27,7 @@ export async function getSecretValue(
 ): Promise<string | undefined> {
   const client = EnhancedAWSClientFactory.createSecretsManagerClient({
     region,
-    environment: process.env.NODE_ENV || 'development',
+    environment: (process.env.NODE_ENV as 'development' | 'staging' | 'production') || 'development',
   });
 
   try {
@@ -38,7 +38,7 @@ export async function getSecretValue(
       'getSecretValue'
     );
 
-    return response.SecretString;
+    return (response as any)?.SecretString;
   } catch (error) {
     console.error('Failed to retrieve secret:', error);
     throw error;

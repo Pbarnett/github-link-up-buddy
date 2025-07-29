@@ -42,8 +42,8 @@ export class LaunchDarklyServerClient {
       flushInterval: 5000, // Flush events every 5 seconds
       pollInterval: 30000, // Polling fallback interval
       streamInitialReconnectDelay: 1000,
-      useReport: false, // Use GET for flag requests
-      withReasons: true, // Include evaluation reasons for debugging
+      // Note: useReport option was removed in newer SDK versions
+      // withReasons was also removed - evaluation reasons are now available via variationDetail
     });
 
     this.logger = this.createLogger();
@@ -67,7 +67,7 @@ export class LaunchDarklyServerClient {
    */
   async waitForInitialization(timeout: number = 10000): Promise<void> {
     try {
-      await this.client.waitForInitialization(timeout);
+      await this.client.waitForInitialization({ timeout });
       this.initialized = true;
       this.logger.info('SDK successfully initialized');
     } catch (error) {
@@ -260,7 +260,7 @@ export class LaunchDarklyServerClient {
       return {
         value: detail.value,
         reason: detail.reason,
-        variationIndex: detail.variationIndex,
+        variationIndex: detail.variationIndex ?? undefined,
       };
     } catch (error) {
       const fallbackValue = FlagErrorHandler.handleEvaluationError(

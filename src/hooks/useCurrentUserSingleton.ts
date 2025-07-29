@@ -114,7 +114,7 @@ class UserStateManager {
 }
 
 // Singleton instance
-const _userStateManager = new UserStateManager();
+const userStateManager = new UserStateManager();
 
 export const useCurrentUser = (): CurrentUserState => {
   // Track hook usage for debugging

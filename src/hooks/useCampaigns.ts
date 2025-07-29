@@ -34,7 +34,7 @@ export const useCampaigns = () => {
     await loadCampaigns();
   };
 
-  const _pauseCampaign = async (campaignId: string) => {
+  const pauseCampaign = async (campaignId: string) => {
     try {
       const updatedCampaign = await campaignService.pauseCampaign(campaignId);
       setCampaigns(prev =>

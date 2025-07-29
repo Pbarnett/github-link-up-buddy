@@ -140,8 +140,8 @@ export class MultiRegionAWSManager {
   /**
    * Create KMS clients for all regions
    */
-  createKMSClients(): Map<string, KMSClient> {
-    const clients = new Map<string, KMSClient>();
+  createKMSClients(): Map<string, any> {
+    const clients = new Map<string, any>();
 
     this.config.regions
       .filter(region => region.enabled)
@@ -163,8 +163,8 @@ export class MultiRegionAWSManager {
   /**
    * Create S3 clients for all regions
    */
-  createS3Clients(): Map<string, S3Client> {
-    const clients = new Map<string, S3Client>();
+  createS3Clients(): Map<string, any> {
+    const clients = new Map<string, any>();
 
     this.config.regions
       .filter(region => region.enabled)
@@ -186,8 +186,8 @@ export class MultiRegionAWSManager {
   /**
    * Create DynamoDB clients for all regions
    */
-  createDynamoDBClients(): Map<string, DynamoDBClient> {
-    const clients = new Map<string, DynamoDBClient>();
+  createDynamoDBClients(): Map<string, any> {
+    const clients = new Map<string, any>();
 
     this.config.regions
       .filter(region => region.enabled)
@@ -309,7 +309,7 @@ export class MultiRegionAWSManager {
 
     return this.executeWithFailover(
       'kms',
-      async (client: KMSClient) => {
+      async (client: any) => {
         const command = new EncryptCommand({
           KeyId: keyId,
           Plaintext:
@@ -335,7 +335,7 @@ export class MultiRegionAWSManager {
 
     return this.executeWithFailover(
       'kms',
-      async (client: KMSClient) => {
+      async (client: any) => {
         const command = new DecryptCommand({
           CiphertextBlob: ciphertextBlob,
           EncryptionContext: encryptionContext,
@@ -354,7 +354,7 @@ export class MultiRegionAWSManager {
 
     return this.executeWithFailover(
       'kms',
-      async (client: KMSClient) => {
+      async (client: any) => {
         const command = new DescribeKeyCommand({ KeyId: keyId });
         return await client.send(command);
       },

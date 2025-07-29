@@ -10,7 +10,7 @@ import {
   FlightFilter,
   FlightOffer,
   FilterContext,
-  _ValidationResult,
+  ValidationResult,
 } from '../core/types';
 
 export class AirlineFilter implements FlightFilter {

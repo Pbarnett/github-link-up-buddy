@@ -38,7 +38,7 @@ class LaunchDarklyService {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const result = await operation()();
+        const result = await operation();
         this.recordSuccess();
         return { success: true, data: result, attempts: attempt };
       } catch (error) {
@@ -52,7 +52,7 @@ class LaunchDarklyService {
           return { success: false, error: error as Error, attempts: attempt };
         }
 
-        const _delay = Math.min(
+        const delay = Math.min(
           initialDelay * Math.pow(backoffMultiplier, attempt - 1),
           maxDelay
         );

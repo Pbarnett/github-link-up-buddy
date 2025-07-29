@@ -48,6 +48,7 @@ export interface PersonalizationEvent {
     variant?: string;
     hasPersonalData?: boolean;
     interactionType?: string;
+    abTestVariant?: string;
   };
   timestamp: Date;
   userId: string;

@@ -1,6 +1,7 @@
 import { LDContext } from 'launchdarkly-js-client-sdk';
 import * as React from 'react';
 import { ReactNode } from 'react';
+import { LDProvider } from 'launchdarkly-react-client-sdk';
 import { LaunchDarklyContextManager } from './context-manager';
 interface LaunchDarklyProviderProps {
   children: ReactNode;

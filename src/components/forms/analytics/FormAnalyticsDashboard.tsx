@@ -92,12 +92,12 @@ export const FormAnalyticsDashboard: FC = () => {
       const startDateStr = startDate.toISOString().split('T')[0];
       const endDateStr = endDate.toISOString().split('T')[0];
       
-      const { data: analyticsData, error: analyticsError } = await supabase
+const { data: analyticsData, error: analyticsError } = await (supabase
         .from('form_completion_analytics')
         .select('*')
         .gte('date', startDateStr)
         .lte('date', endDateStr)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false }) as any);
 
       if (analyticsError) throw analyticsError;
 

@@ -430,7 +430,7 @@ export const validateFormValuesEnhanced = (
     // Apply localized error map if specified
     if (options?.locale) {
       const localizedErrorMap = createLocalizedErrorMap(options.locale);
-      schema._def.errorMap = localizedErrorMap;
+      (schema as any)._def.errorMap = localizedErrorMap;
     }
 
     schema.parse(values);
@@ -475,7 +475,7 @@ export const createFormSchema = (
 
   const schemaMetadata: GlobalMeta = {
     id: `form_${configuration.id || 'unnamed'}`,
-    title: configuration.title || 'Form Schema',
+    title: configuration.name || 'Form Schema',
     description:
       configuration.description || 'Generated form validation schema',
     category: 'form',

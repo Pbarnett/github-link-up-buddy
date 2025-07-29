@@ -155,7 +155,7 @@ export const useDuffelFlights = (
       const { supabase } = await import('@/integrations/supabase/client');
 
       // Debug: Check current user
-      const _userResult = await supabase.auth.getUser();
+      const userResult = await supabase.auth.getUser();
       const {
         data: { user },
       } = userResult;

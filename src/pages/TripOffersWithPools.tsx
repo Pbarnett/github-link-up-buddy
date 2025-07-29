@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import PoolLayout from '@/components/trip/Pools/PoolLayout';
 import PoolOfferControls from '@/components/trip/PoolOfferControls';
 import TripOfferDetailsCard from '@/components/trip/TripOfferDetailsCard';

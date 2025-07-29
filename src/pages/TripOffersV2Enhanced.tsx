@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { FC } from 'react';
 import { useEffect, useMemo, use } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Filter } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { AlertCircle, Filter, Terminal } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';

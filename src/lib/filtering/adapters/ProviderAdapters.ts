@@ -10,7 +10,7 @@ import {
   FlightOffer,
   ProviderAdapter,
   FilterContext,
-  __ValidationResult,
+  ValidationResult,
   Itinerary,
   Segment,
   Airport,

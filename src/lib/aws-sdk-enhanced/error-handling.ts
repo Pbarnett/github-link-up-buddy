@@ -622,10 +622,10 @@ export class EnhancedAWSErrorHandler {
         const _delay = Math.min(baseDelay + jitter, config.maxDelayMs);
 
         console.warn(
-          `Attempt ${attempt} failed for ${service}${operationName ? `.${operationName}` : ''}: ${enhancedError.message}. Retrying in ${delay}ms...`
+          `Attempt ${attempt} failed for ${service}${operationName ? `.${operationName}` : ''}: ${enhancedError.message}. Retrying in ${_delay}ms...`
         );
 
-        await this.sleep(delay);
+        await this.sleep(_delay);
       }
     }
 
@@ -734,5 +734,3 @@ export const withSecretsManagerErrorHandling = <T>(
     operationName
   );
 
-// Export types for external use
-export type { EnhancedError, RetryConfig };

@@ -14,7 +14,7 @@ vi.mock('redis', () => ({
   createClient: vi.fn(() => mockRedisClient),
 }));
 
-import { RedisLock, acquireLock, releaseLock } from '../redis-lock.ts';
+import { RedisLockManager, acquireMonitorLock, acquireOfferLock } from '../../lib/redis-lock.ts';
 
 describe('Redis Lock Module', () => {
   beforeEach(() => {
@@ -26,20 +26,27 @@ describe('Redis Lock Module', () => {
     vi.clearAllMocks();
   });
 
-  describe('RedisLock class', () => {
+  describe('RedisLockManager class', () => {
     it('should acquire lock successfully with NX+EX semantics', async () => {
-      mockRedisClient.set.mockResolvedValue('OK');
+      // Mock fetch response for Upstash Redis REST API
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ result: 'OK' })
+      });
       
-      const lock = new RedisLock('test-key', 30);
-      const result = await lock.acquire();
+      const lockManager = new RedisLockManager();
+      const result = await lockManager.acquireLock({ key: 'test-key', ttlSeconds: 30 });
 
-      expect(result).toBe(true);
-      expect(mockRedisClient.set).toHaveBeenCalledWith(
-        'locks:test-key',
-        expect.any(String),
-        'NX',
-        'EX',
-        30
+      expect(result.acquired).toBe(true);
+      expect(result.lockId).toBeDefined();
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/set/test-key/'),
+        expect.objectContaining({
+          method: 'GET',
+          headers: expect.objectContaining({
+            'Authorization': expect.stringContaining('Bearer')
+          })
+        })
       );
     });
 
@@ -141,6 +148,32 @@ describe('Redis Lock Module', () => {
         'EX',
         1
       );
+    });
+  });
+
+  // Test case for extending TTL of the Redis lock
+  describe('RedisLockManager extendLock', () => {
+    it('should extend lock TTL successfully if owned', async () => {
+      mockRedisClient.get.mockResolvedValue('lock-token');
+      mockRedisClient.set.mockResolvedValue('OK');
+      
+      const lockManager = new RedisLockManager();
+      const result = await lockManager.extendLock('test-key', 'lock-token', 60);
+
+      expect(result).toBe(true);
+      expect(mockRedisClient.get).toHaveBeenCalledWith('locks:test-key');
+      expect(mockRedisClient.set).toHaveBeenCalledWith('locks:test-key', 'lock-token', 'XX', 'EX', 60);
+    });
+
+    it('should fail to extend lock TTL if not owned', async () => {
+      mockRedisClient.get.mockResolvedValue('different-token');
+      
+      const lockManager = new RedisLockManager();
+      const result = await lockManager.extendLock('test-key', 'lock-token', 60);
+
+      expect(result).toBe(false);
+      expect(mockRedisClient.get).toHaveBeenCalledWith('locks:test-key');
+      expect(mockRedisClient.set).not.toHaveBeenCalled();
     });
   });
 
