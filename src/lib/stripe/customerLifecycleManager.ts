@@ -27,6 +27,7 @@ interface CustomerLifecycleAudit {
   reason: string;
   metadata: Record<string, unknown>;
   performed_at: string;
+  [key: string]: unknown; // Add index signature for Supabase compatibility
 }
 
 interface InactiveCustomer {
@@ -258,7 +259,7 @@ export class StripeCustomerLifecycleManager {
       } catch (error) {
         logger.error('Error processing customer for inactivity check', {
           operation: 'lifecycle_inactivity_check_failed',
-          customerId: customer.stripe_customer_id,
+          customerId: customer.stripe_customer_id as string | undefined,
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
@@ -562,7 +563,7 @@ export class StripeCustomerLifecycleManager {
         totalCustomers: totalCustomers || 0,
         inactiveCustomers: inactiveCustomers || 0,
         anonymizedCustomers: anonymizedCustomers || 0,
-        recentActions: recentActions || [],
+        recentActions: (recentActions || []) as CustomerLifecycleAudit[],
       };
     } catch (error) {
       logger.error('Failed to get lifecycle stats', {

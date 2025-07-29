@@ -199,6 +199,109 @@ export interface Database {
           created_at?: string;
         };
       };
+      traveler_profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          firstName: string;
+          lastName: string;
+          dateOfBirth: string;
+          nationality: string;
+          passportNumber?: string | null;
+          passportExpiry?: string | null;
+          preferredSeat?: string | null;
+          dietaryRestrictions?: string | null;
+          medicalInfo?: string | null;
+          emergencyContact?: string | null;
+          is_default: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          firstName: string;
+          lastName: string;
+          dateOfBirth: string;
+          nationality: string;
+          passportNumber?: string | null;
+          passportExpiry?: string | null;
+          preferredSeat?: string | null;
+          dietaryRestrictions?: string | null;
+          medicalInfo?: string | null;
+          emergencyContact?: string | null;
+          is_default?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          firstName?: string;
+          lastName?: string;
+          dateOfBirth?: string;
+          nationality?: string;
+          passportNumber?: string | null;
+          passportExpiry?: string | null;
+          preferredSeat?: string | null;
+          dietaryRestrictions?: string | null;
+          medicalInfo?: string | null;
+          emergencyContact?: string | null;
+          is_default?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      payment_methods: {
+        Row: {
+          id: string;
+          user_id: string;
+          stripe_payment_method_id: string;
+          type: 'card' | 'bank_account' | 'wallet';
+          card_brand?: string | null;
+          card_last4?: string | null;
+          card_exp_month?: number | null;
+          card_exp_year?: number | null;
+          billing_address?: Json | null;
+          is_default: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          stripe_payment_method_id: string;
+          type: 'card' | 'bank_account' | 'wallet';
+          card_brand?: string | null;
+          card_last4?: string | null;
+          card_exp_month?: number | null;
+          card_exp_year?: number | null;
+          billing_address?: Json | null;
+          is_default?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          stripe_payment_method_id?: string;
+          type?: 'card' | 'bank_account' | 'wallet';
+          card_brand?: string | null;
+          card_last4?: string | null;
+          card_exp_month?: number | null;
+          card_exp_year?: number | null;
+          billing_address?: Json | null;
+          is_default?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -270,3 +373,15 @@ export interface Database {
     };
   };
 }
+
+// Export utility types for easier access
+export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
+export type TablesInsert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert'];
+export type TablesUpdate<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update'];
+
+// Export table names as a union type
+export type TableName = keyof Database['public']['Tables'];
+
+// Export enum types
+export type ConnectionStatus = Database['public']['Enums']['connection_status'];
+export type ProficiencyLevel = Database['public']['Enums']['proficiency_level'];
