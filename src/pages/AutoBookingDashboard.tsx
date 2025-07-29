@@ -192,7 +192,7 @@ function AutoBookingDashboard() {
                       key={campaign.id}
                       campaign={campaign}
                       onEdit={() => handleEditCampaign(campaign.id)}
-                      onPause={() => handlePauseCampaign(campaign.id)}
+                      onPause={() => console.log('Pause campaign:', campaign.id)}
                       onResume={() => handleResumeCampaign(campaign.id)}
                       onDelete={() => handleDeleteCampaign(campaign.id)}
                     />
@@ -215,7 +215,7 @@ function AutoBookingDashboard() {
                       key={campaign.id}
                       campaign={campaign}
                       onEdit={() => handleEditCampaign(campaign.id)}
-                      onPause={() => handlePauseCampaign(campaign.id)}
+                      onPause={() => console.log('Pause campaign:', campaign.id)}
                       onResume={() => handleResumeCampaign(campaign.id)}
                       onDelete={() => handleDeleteCampaign(campaign.id)}
                     />
@@ -238,7 +238,7 @@ function AutoBookingDashboard() {
                       key={campaign.id}
                       campaign={campaign}
                       onEdit={() => handleEditCampaign(campaign.id)}
-                      onPause={() => handlePauseCampaign(campaign.id)}
+                      onPause={() => console.log('Pause campaign:', campaign.id)}
                       onResume={() => handleResumeCampaign(campaign.id)}
                       onDelete={() => handleDeleteCampaign(campaign.id)}
                     />

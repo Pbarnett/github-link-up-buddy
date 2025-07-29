@@ -8,7 +8,7 @@ export default async function setupPlaywrightTests() {
       NODE_ENV: 'test',
       SUPABASE_URL: process.env.SUPABASE_URL || 'http://localhost:54321',
       SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || 'test-anon-key',
-      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || 'sk_test_REMOVED_FROM_GIT',
+      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || 'process.env.STRIPE_TEST_KEY || "sk_test_PLACEHOLDER"',
       LAUNCHDARKLY_SDK_KEY: process.env.LAUNCHDARKLY_SDK_KEY || 'sdk-demo-key',
     },
     configurable: true,

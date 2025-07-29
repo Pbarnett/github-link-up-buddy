@@ -122,7 +122,7 @@ export function createDenoEnvironmentStub(envVars: Record<string, string> = {}) 
     AMADEUS_CLIENT_SECRET: 'test-amadeus-secret',
     AMADEUS_BASE_URL: 'https://test.api.amadeus.com',
     RESEND_API_KEY: 'test-resend-key',
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || 'sk_test_REMOVED_FROM_GIT',
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || 'process.env.STRIPE_TEST_KEY || "sk_test_PLACEHOLDER"',
     TWILIO_ACCOUNT_SID: 'test-twilio-sid',
     ...envVars,
   };

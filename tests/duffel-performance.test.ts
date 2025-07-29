@@ -89,7 +89,7 @@ describe('Duffel Performance Tests', () => {
 
   beforeEach(() => {
     // Setup environment
-    vi.stubEnv('DUFFEL_API_TOKEN_TEST', process.env.DUFFEL_TEST_KEY || 'duffel_test_REMOVED_FROM_GIT')
+    vi.stubEnv('DUFFEL_API_TOKEN_TEST', process.env.DUFFEL_TEST_KEY || 'process.env.DUFFEL_TEST_KEY || "duffel_test_PLACEHOLDER"')
     vi.stubEnv('DUFFEL_WEBHOOK_SECRET', 'test_webhook_secret_32_characters_long')
     vi.stubEnv('DUFFEL_LIVE_ENABLED', 'false')
     

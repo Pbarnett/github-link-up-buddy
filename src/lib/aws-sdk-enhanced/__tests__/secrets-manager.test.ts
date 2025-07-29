@@ -58,7 +58,7 @@ describe('AWS Secrets Manager Integration', () => {
       // Arrange
       const secretId = 'prod/api/stripe-key';
       const region = 'us-west-2';
-      const expectedSecretValue = 'sk_test_123456789';
+      const expectedSecretValue = 'process.env.STRIPE_TEST_KEY || "sk_test_PLACEHOLDER"';
 
       mockSecretsManagerClient.send.mockResolvedValue({
         SecretString: expectedSecretValue,

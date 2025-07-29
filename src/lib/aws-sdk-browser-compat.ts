@@ -23,7 +23,7 @@ export class MockSecretsManagerClient {
           value: 'pk_test_51234567890abcdefghijklmnopqrstuvwxyz',
         },
         'development/payments/stripe-secret-key': {
-          value: 'sk_test_51234567890abcdefghijklmnopqrstuvwxyz',
+          value: 'process.env.STRIPE_TEST_KEY || "sk_test_PLACEHOLDER"',
         },
         'development/payments/stripe-webhook-secret': {
           value: 'whsec_1234567890abcdefghijklmnopqrstuvwxyz',

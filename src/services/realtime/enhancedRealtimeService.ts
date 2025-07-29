@@ -191,18 +191,18 @@ export class RealtimeService {
     }
 
     this.connectionState.connectionAttempts++;
-    const delay = Math.min(
+    const retryDelay = Math.min(
       this.connectionState.connectionAttempts * 1000,
       30000
     );
 
     console.log(
-      `🔄 Attempting to reconnect ${channelName} in ${delay}ms (attempt ${this.connectionState.connectionAttempts})`
+      `🔄 Attempting to reconnect ${channelName} in ${retryDelay}ms (attempt ${this.connectionState.connectionAttempts})`
     );
 
-    this.reconnectTimer = setTimeout(() => {
+    setTimeout(() => {
       this.subscribe(channelName, options, callback);
-    }, delay);
+    }, retryDelay);
   }
 
   /**

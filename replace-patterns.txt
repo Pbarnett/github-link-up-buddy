@@ -1,0 +1,11 @@
+# Stripe test keys
+sk_test_4eC39HqLyjWDarjtT1zdp7dc==>sk_test_REMOVED_FROM_GIT
+sk_test_26PHem9AhJZvU37CIAQTlSjqHT9GiI4gK1==>sk_test_REMOVED_FROM_GIT
+
+# Google OAuth credentials
+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==>your_google_secret
+209526864602-jduhp99h8gk165rdpkt1kjsk7o3lso70.apps.googleusercontent.com==>your_google_client_id
+
+# Twilio Account SIDs and tokens (common test examples)
+ACabc123456789012345678901234567890==>ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+SKabc123456789012345678901234567890==>SKXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX

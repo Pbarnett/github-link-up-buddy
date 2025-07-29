@@ -32,7 +32,7 @@ SUPABASE_ANON_KEY=placeholder_supabase_anon_key_here
 
 # Stripe Configuration (TEST KEYS ONLY!)
 # Replace with actual test key starting with sk_test_
-STRIPE_SECRET_KEY=sk_test_placeholder_stripe_key_here
+STRIPE_SECRET_KEY=process.env.STRIPE_TEST_KEY || "sk_test_PLACEHOLDER"
 
 # LaunchDarkly Configuration  
 # Replace with actual SDK key starting with sdk-

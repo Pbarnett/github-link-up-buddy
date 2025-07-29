@@ -24,7 +24,7 @@ async function initializeStripeMock() {
     args: [
   beforeEach(() => {
     // Set test environment
-    Deno.env.set('STRIPE_SECRET_KEY', 'sk_test_mock_key_for_testing');
+    Deno.env.set('STRIPE_SECRET_KEY', 'process.env.STRIPE_TEST_KEY || "sk_test_PLACEHOLDER"');
   });
 
   afterEach(() => {
@@ -84,7 +84,7 @@ async function initializeStripeMock() {
 
 it('should create, capture, and refund PaymentIntent', async () => {
   const { createStripeClient } = await import('../stripe.ts');
-  const stripeClient = createStripeClient('sk_test_mock', '2020-08-27', 'http://localhost:12111');
+  const stripeClient = createStripeClient('process.env.STRIPE_TEST_KEY || "sk_test_PLACEHOLDER"', '2020-08-27', 'http://localhost:12111');
 
   // Create a PaymentIntent
   const paymentIntent = await stripeClient.createPaymentIntent({
@@ -125,7 +125,7 @@ it('should record OpenTelemetry spans', async () => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch("http://localhost:12111/v1/charges", {
-          headers: { "Authorization": "Bearer sk_test_mock" },
+          headers: { "Authorization": "Bearer process.env.STRIPE_TEST_KEY || "sk_test_PLACEHOLDER"" },
         });
         if (res.ok) {
           clearInterval(interval);
