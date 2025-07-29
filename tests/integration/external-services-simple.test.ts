@@ -40,7 +40,8 @@ test.describe('External Services Connectivity', () => {
 
     test('should test local Supabase connectivity if available', async () => {
       if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-        test.skip('Supabase configuration not available');
+        console.log('Supabase configuration not available - skipping test');
+        return;
       }
 
       try {

@@ -61,7 +61,7 @@ vi.mock('@supabase/supabase-js', () => ({
 
 
 // --- Test Suite ---
-describe.skip('Payment Flow Integration Tests', { timeout: 60_000 }, () => {
+describe('Payment Flow Integration Tests', { timeout: 60_000 }, () => {
   let createBookingRequestHandler: (req: Request) => Promise<Response>;
   let processBookingHandler: (req: Request) => Promise<Response>;
   let consoleLogSpy: SpyInstance, consoleErrorSpy: SpyInstance, consoleWarnSpy: SpyInstance;

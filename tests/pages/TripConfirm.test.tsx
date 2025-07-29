@@ -133,7 +133,7 @@ describe('TripConfirm Page', () => {
     });
   });
 
-  it.skip('should call toast on booking status update to "done"', async () => {
+  it('should call toast on booking status update to "done"', async () => {
     // Get the global toast mock from setupTests.ts
     const mockToastFn = vi.mocked(useToast)().toast;
     console.log('mockToastFn:', mockToastFn);
