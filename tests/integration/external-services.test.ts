@@ -18,7 +18,7 @@ test.describe('External Services Integration', () => {
 
     test.beforeAll(() => {
       if (!STRIPE_SECRET_KEY) {
-        console.log('STRIPE_SECRET_KEY not configured - skipping'); return;
+        throw new Error('STRIPE_SECRET_KEY not configured - set it in .env.test');
       }
       stripe = new Stripe(STRIPE_SECRET_KEY, {
         apiVersion: '2023-10-16',
@@ -93,7 +93,7 @@ test.describe('External Services Integration', () => {
 
     test.beforeAll(async () => {
       if (!LAUNCHDARKLY_SDK_KEY) {
-        console.log('LAUNCHDARKLY_SDK_KEY not configured - skipping'); return;
+        throw new Error('LAUNCHDARKLY_SDK_KEY not configured - set it in .env.test');
       }
       
       ldClient = LaunchDarkly.init(LAUNCHDARKLY_SDK_KEY);
@@ -177,7 +177,7 @@ test.describe('External Services Integration', () => {
 
     test.beforeAll(() => {
       if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-        console.log('Supabase configuration not available - skipping'); return;
+        throw new Error('Supabase configuration not available - set SUPABASE_URL and SUPABASE_ANON_KEY in .env.test');
       }
       
       supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

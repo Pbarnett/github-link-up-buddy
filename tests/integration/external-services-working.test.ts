@@ -11,10 +11,9 @@ test.setTimeout(30000);
 
 test.describe('External Services Integration - Working', () => {
   test.describe('Stripe Integration', () => {
-    test.beforeEach(({ }, testInfo) => {
+    test.beforeEach(() => {
       if (!STRIPE_SECRET_KEY) {
-        console.log('⚠️ Skipping Stripe tests: STRIPE_SECRET_KEY not configured');
-        testInfo.annotations.push({ type: 'issue', description: 'STRIPE_SECRET_KEY not configured' });
+        throw new Error('STRIPE_SECRET_KEY not configured - set it in .env.test');
       }
     });
 
@@ -87,10 +86,9 @@ test.describe('External Services Integration - Working', () => {
   });
 
   test.describe('LaunchDarkly Integration', () => {
-    test.beforeEach(({ }, testInfo) => {
+    test.beforeEach(() => {
       if (!LAUNCHDARKLY_SDK_KEY) {
-        console.log('⚠️ Skipping LaunchDarkly tests: LAUNCHDARKLY_SDK_KEY not configured');
-        testInfo.annotations.push({ type: 'issue', description: 'LAUNCHDARKLY_SDK_KEY not configured' });
+        throw new Error('LAUNCHDARKLY_SDK_KEY not configured - set it in .env.test');
       }
     });
 
@@ -156,10 +154,9 @@ test.describe('External Services Integration - Working', () => {
   });
 
   test.describe('Supabase Integration', () => {
-    test.beforeEach(({ }, testInfo) => {
+    test.beforeEach(() => {
       if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-        console.log('⚠️ Skipping Supabase tests: Configuration not available');
-        testInfo.annotations.push({ type: 'issue', description: 'Supabase configuration not available' });
+        throw new Error('Supabase configuration not available - set SUPABASE_URL and SUPABASE_ANON_KEY in .env.test');
       }
     });
 
