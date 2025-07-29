@@ -1,6 +1,6 @@
 import * as React from 'react';
+import { ReactNode } from 'react';
 import { BusinessRulesProvider } from '@/hooks/useBusinessRules';
-
 interface TestWrapperProps {
   children: ReactNode;
   initialEntries?: string[];

@@ -5,11 +5,11 @@ import * as React from 'react';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { logAuditEvent } from './auditService';
-
 // Initialize Stripe with proper error handling
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-06-30.basil',
   typescript: true,
+  maxNetworkRetries: 3,
 });
 
 const supabase = createClient(

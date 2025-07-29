@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { trackComponentRender } from '@/utils/debugUtils';
-
 interface CurrentUserState {
   user: User | null;
   userId: string | null;
@@ -31,7 +30,7 @@ export const useCurrentUser = (): CurrentUserState => {
 
       setState(prev => {
         // Only update if something actually changed
-        const userId = newState.user?.id || null;
+        const _userId = newState.user?.id || null;
         if (
           prev.user?.id === userId &&
           prev.loading === (newState.loading ?? prev.loading) &&

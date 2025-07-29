@@ -1,6 +1,6 @@
-type FC<T = {}> = React.FC<T>;
-
-import React, { useEffect } from 'react';
+import * as React from 'react';
+import { FC } from 'react';
+import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import {
   GreetingBannerProps,
@@ -9,7 +9,6 @@ import {
 import { usePersonalization } from '@/contexts/PersonalizationContext';
 import { getGreeting } from '@/lib/personalization/voiceAndTone';
 import { useAnalytics } from '@/hooks/useAnalytics';
-
 interface GreetingBannerComponentProps extends GreetingBannerProps {
   onClick?: () => void;
   showIcon?: boolean;

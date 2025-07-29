@@ -7,11 +7,6 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const TYPES_DIR = path.join(PROJECT_ROOT, 'src', 'types');
 
@@ -19,7 +14,6 @@ const TYPES_DIR = path.join(PROJECT_ROOT, 'src', 'types');
 const POSTGREST_TYPES = `// Type definitions for PostgREST responses and builders
 // Based on Supabase PostgrestBuilder patterns and TypeScript best practices
 
-export interface PostgrestResponse<T> {
   data: T | null;
   error: PostgrestError | null;
   count?: number | null;
@@ -27,17 +21,14 @@ export interface PostgrestResponse<T> {
   statusText: string;
 }
 
-export interface PostgrestResponseSuccess<T> extends PostgrestResponse<T> {
   data: T;
   error: null;
 }
 
-export interface PostgrestResponseFailure extends PostgrestResponse<never> {
   data: null;
   error: PostgrestError;
 }
 
-export interface PostgrestError {
   message: string;
   details: string;
   hint: string;
@@ -89,8 +80,6 @@ export interface PostgrestBuilder<T, R = any> {
 export type PostgrestFilterBuilder<T> = PostgrestBuilder<T>;
 
 // Re-export for backward compatibility
-export type { PostgrestResponse as SupabaseResponse };
-export type { PostgrestError as SupabaseError };
 `;
 
 // Stripe enhanced type declarations
@@ -100,13 +89,11 @@ const STRIPE_TYPES = `// Enhanced Stripe type definitions
 import type { Stripe, StripeElements, StripeCardElement } from '@stripe/stripe-js';
 
 // Enhanced Stripe Hook Types
-export interface StripeHookResult {
   stripe: Stripe | null;
   elements: StripeElements | null;
 }
 
 // Payment Method Types
-export interface PaymentMethodData {
   id: string;
   type: 'card' | 'bank_account' | 'sepa_debit' | 'ideal';
   card?: {
@@ -137,7 +124,6 @@ export interface PaymentMethodData {
 }
 
 // Setup Intent Types
-export interface SetupIntentResult {
   setupIntent?: {
     id: string;
     client_secret: string;
@@ -155,7 +141,6 @@ export interface SetupIntentResult {
 }
 
 // Payment Intent Types  
-export interface PaymentIntentResult {
   paymentIntent?: {
     id: string;
     amount: number;
@@ -174,7 +159,6 @@ export interface PaymentIntentResult {
 }
 
 // Custom Element Options
-export interface CustomCardElementOptions {
   style?: {
     base?: {
       fontSize?: string;
@@ -197,14 +181,12 @@ export interface CustomCardElementOptions {
 }
 
 // Wallet Provider Types
-export interface WalletState {
   paymentMethods: PaymentMethodData[];
   defaultPaymentMethod: PaymentMethodData | null;
   isLoading: boolean;
   error: string | null;
 }
 
-export interface WalletActions {
   addPaymentMethod: (idempotencyKey: string) => Promise<string>;
   removePaymentMethod: (paymentMethodId: string) => Promise<void>;
   setDefaultPaymentMethod: (paymentMethodId: string) => Promise<void>;
@@ -212,20 +194,17 @@ export interface WalletActions {
 }
 
 // Form Integration Types
-export interface StripeFormData {
   name: string;
   email?: string;
   saveForFuture?: boolean;
 }
 
-export interface StripeFormError {
   field?: string;
   message: string;
   code?: string;
 }
 
 // Re-export Stripe core types for convenience
-export type { Stripe, StripeElements, StripeCardElement };
 `;
 
 // React Hook Form enhanced types
@@ -274,7 +253,6 @@ export interface FormComponentProps<TFieldValues extends FieldValues = FieldValu
 }
 
 // Form submission types
-export interface FormSubmissionState {
   isSubmitting: boolean;
   isSubmitted: boolean;
   isValid: boolean;
@@ -292,7 +270,6 @@ export interface FormSubmissionResult<TData = any> {
 export type ValidationRule<TValue = any> = {
   value: TValue;
   message: string;
-};
 
 export type ValidationRules = {
   required?: string | ValidationRule<boolean>;
@@ -302,7 +279,6 @@ export type ValidationRules = {
   maxLength?: ValidationRule<number>;
   pattern?: ValidationRule<RegExp>;
   validate?: Record<string, (value: any) => boolean | string>;
-};
 
 // Form schema types (for use with resolvers like Zod)
 export interface FormSchema<TFieldValues extends FieldValues = FieldValues> {
@@ -314,11 +290,10 @@ export interface FormSchema<TFieldValues extends FieldValues = FieldValues> {
 // Controller component enhanced props
 export interface ControlledFieldProps<TFieldValues extends FieldValues = FieldValues>
   extends FormComponentProps<TFieldValues> {
-  render: ({ field, fieldState, formState }: any) => React.ReactElement;
+  render: ({ field, fieldState, formState }: any) => React.ReactElement
 }
 
 // Re-export commonly used types from react-hook-form
-export type {
   UseFormReturn,
   Control,
   RegisterOptions,
@@ -333,61 +308,51 @@ const AMBIENT_DECLARATIONS = `// Global ambient module declarations
 // For libraries without proper TypeScript support
 
 declare module 'murmurhash-js' {
-  export function murmur3(key: string, seed?: number): number;
-  export function murmur2(key: string, seed?: number): number;
 }
 
 declare module 'input-otp' {
   import { ComponentProps } from 'react';
   
-  export interface OTPInputProps extends Omit<ComponentProps<'input'>, 'onChange' | 'value'> {
     value: string;
     onChange: (value: string) => void;
     numInputs?: number;
-    separator?: React.ReactNode;
+    separator?: React.ReactNode
     isDisabled?: boolean;
     hasErrored?: boolean;
     isInputNum?: boolean;
     isInputSecure?: boolean;
-    containerStyle?: React.CSSProperties;
-    inputStyle?: React.CSSProperties;
-    focusStyle?: React.CSSProperties;
-    disabledStyle?: React.CSSProperties;
-    errorStyle?: React.CSSProperties;
+    containerStyle?: React.CSSProperties
+    inputStyle?: React.CSSProperties
+    focusStyle?: React.CSSProperties
+    disabledStyle?: React.CSSProperties
+    errorStyle?: React.CSSProperties
     shouldAutoFocus?: boolean;
   }
   
-  export const OTPInput: React.FC<OTPInputProps>;
 }
 
 declare module '*.svg' {
   const content: React.FunctionComponent<React.SVGProps<SVGElement>>;
-  export default content;
 }
 
 declare module '*.png' {
   const content: string;
-  export default content;
 }
 
 declare module '*.jpg' {
   const content: string;
-  export default content;
 }
 
 declare module '*.jpeg' {
   const content: string;
-  export default content;
 }
 
 declare module '*.gif' {
   const content: string;
-  export default content;
 }
 
 declare module '*.webp' {
   const content: string;
-  export default content;
 }
 
 // Environment variables
@@ -440,10 +405,6 @@ async function createIndexFile() {
   const indexContent = `// Type definitions index
 // Auto-generated type exports
 
-export * from './postgrest';
-export * from './stripe';
-export * from './react-hook-form';
-export * from './ambient';
 `;
   
   await createTypeFile('index.ts', indexContent);

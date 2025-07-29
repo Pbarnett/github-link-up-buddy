@@ -256,7 +256,7 @@ test.describe('Enhanced Trip Request Form', () => {
           
           // Verify focus is visible (not just programmatic)
           const focusStyle = await control.evaluate(el => {
-            const computed = window.getComputedStyle(el);
+            const computed = /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.getComputedStyle(el);
             return {
               outline: computed.outline,
               boxShadow: computed.boxShadow

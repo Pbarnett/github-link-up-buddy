@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { Calendar, Search, CheckCircle } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-
 const steps = [
   {
     icon: Calendar,

@@ -225,7 +225,7 @@ class CredentialManager {
         Object.entries(data).forEach(([key, record]) => {
           this.credentials.set(key, record as CredentialRecord);
         });
-      } catch (error) {
+      } catch {
         console.error('Failed to load credential vault:', error);
       }
     }
@@ -242,7 +242,6 @@ class CredentialManager {
     await this.audit('create', 'system', 'system', true, 'Credential manager initialized');
   }
 
-  async setCredential(
     name: string,
     value: string,
     metadata: CredentialMetadata,
@@ -264,8 +263,8 @@ class CredentialManager {
 
       if (shouldEncrypt) {
         const encrypted = this.encrypt(value);
-        storedValue = encrypted.encrypted;
-        iv = encrypted.iv;
+        storedValue = encrypted.encrypted
+        iv = encrypted.iv
       }
 
       const record: CredentialRecord = {
@@ -308,7 +307,7 @@ class CredentialManager {
       record.lastAccessed = new Date().toISOString();
       record.accessCount++;
 
-      let value = record.value;
+      let value = record.value
       if (record.encrypted && value.startsWith('encrypted:')) {
         const [, iv, encrypted] = value.split(':');
         value = this.decrypt(encrypted, iv);
@@ -497,12 +496,11 @@ Examples:
         if (args.length < 3) {
           console.error('Usage: set <name> <value>');
           process.exit(1);
-        }
         // This would typically be interactive for security
         console.log('Use interactive setup script for security');
         break;
 
-      case 'get':
+      case 'get': {
         if (args.length < 2) {
           console.error('Usage: get <name>');
           process.exit(1);
@@ -510,22 +508,26 @@ Examples:
         const value = await manager.getCredential(args[1]);
         console.log(value || 'Credential not found');
         break;
+      }
 
-      case 'list':
+      case 'list': {
         const credentials = await manager.listCredentials();
         console.table(credentials);
         break;
+      }
 
-      case 'report':
+      case 'report': {
         const report = await manager.generateSecurityReport();
         console.log(report);
         break;
+      }
 
-      case 'audit':
+      case 'audit': {
         const days = args.includes('--days') ? parseInt(args[args.indexOf('--days') + 1]) : 30;
         const auditLog = await manager.exportAuditLog(days);
         console.log(auditLog);
         break;
+      }
 
       case 'lockdown':
         if (args.length < 2) {
@@ -549,4 +551,4 @@ if (require.main === module) {
   main().catch(console.error);
 }
 
-export { CredentialManager };
+module.exports = { CredentialManager };

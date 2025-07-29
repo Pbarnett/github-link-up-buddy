@@ -5,7 +5,6 @@ import {
   PostgrestMaybeSingleResponse,
 } from '@supabase/supabase-js';
 import { toast } from '@/components/ui/use-toast';
-
 // Type for the result object
 interface QueryResult<T> {
   data: T | null;

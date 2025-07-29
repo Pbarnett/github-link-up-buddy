@@ -5,7 +5,7 @@
  * Verifies flag targeting and user segmentation
  */
 
-import { getLaunchDarklyServerClient } from '../src/lib/launchdarkly/server-client';
+import '../src/lib/launchdarkly/server-client';
 
 const testUserContexts = [
   {
@@ -71,7 +71,7 @@ async function testLaunchDarklyContexts() {
         try {
           const flagValue = await client.variation(flagKey, context, false);
           flagResults[flagKey] = flagValue;
-        } catch (error) {
+        } catch {
           console.warn(`   ⚠️  Error evaluating flag ${flagKey}:`, error);
           flagResults[flagKey] = 'ERROR';
         }
@@ -89,7 +89,7 @@ async function testLaunchDarklyContexts() {
     
     console.log('✅ User context testing completed successfully');
     
-  } catch (error) {
+  } catch {
     console.error('❌ Error testing LaunchDarkly contexts:', error);
     process.exit(1);
   } finally {

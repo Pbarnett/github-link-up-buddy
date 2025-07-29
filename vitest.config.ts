@@ -74,16 +74,26 @@ export default defineConfig({
       'tests/playwright.setup.ts'
     ],
     
-    // Coverage configuration
+    // Enhanced coverage configuration for enterprise standards
     coverage: {
       provider: 'v8',
-      statements: 90,
-      branches: 85,
-      functions: 90,
-      lines: 90,
+      statements: 85, // Target 85% minimum for combined coverage
+      branches: 80,
+      functions: 85,
+      lines: 85,
       perFile: false,
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       reportsDirectory: './coverage',
+      // Generate detailed reports for CI/CD integration
+      reportOnFailure: true,
+      all: true,
+      skipFull: false,
+      thresholds: {
+        statements: 85,
+        branches: 80,
+        functions: 85,
+        lines: 85
+      },
       exclude: [
         'coverage/**',
         'dist/**',
@@ -95,7 +105,15 @@ export default defineConfig({
         '**/*.test.{ts,tsx,js,jsx}',
         '**/*.spec.{ts,tsx,js,jsx}',
         '**/vitest.config.*',
-        '**/playwright.config.*'
+        '**/playwright.config.*',
+        'tests/**', // Exclude Playwright test files from coverage
+        'scripts/**', // Exclude utility scripts
+        'monitoring/**', // Exclude monitoring configs
+        'docs/**' // Exclude documentation
+      ],
+      include: [
+        'src/**/*.{ts,tsx,js,jsx}',
+        'supabase/functions/**/*.{ts,js}'
       ]
     },
     

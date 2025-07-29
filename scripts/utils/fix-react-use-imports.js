@@ -1,8 +1,19 @@
 #!/usr/bin/env node
 
-import fs from 'fs';
-import path from 'path';
+const path = require('path');
+
 import { glob } from 'glob';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+const fs = require('fs');
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 // Find all .tsx and .ts files
 const files = glob.sync('src/**/*.{ts,tsx}', { absolute: true });

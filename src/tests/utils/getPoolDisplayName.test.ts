@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { getPoolDisplayName } from '@/utils/getPoolDisplayName';
-
 describe('getPoolDisplayName', () => {
   it('returns correct names for manual mode', () => {
     expect(getPoolDisplayName('manual', 1)).toBe('Best Value');

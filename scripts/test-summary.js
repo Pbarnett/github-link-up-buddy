@@ -1,17 +1,14 @@
 #!/usr/bin/env node
 
+const path = require('path');
+
 /**
  * MVP Test Summary Generator
  * Provides a quick overview of test coverage and quality metrics
  */
 
-import fs from 'fs';
-import path from 'path';
 import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
+const fs = require('fs');
 console.log('🧪 MVP Test Quality Summary\n');
 
 // 1. Run test coverage and capture output
@@ -29,7 +26,7 @@ try {
   if (coverageLine) {
     console.log('✅ Coverage:', coverageLine.trim());
   }
-} catch (error) {
+} catch {
   console.log('⚠️  Coverage analysis failed - tests may have errors');
 }
 
@@ -49,10 +46,9 @@ const findTestFiles = (dir) => {
         testFiles.push(fullPath);
       }
     });
-  } catch (error) {
+  } catch {
     // Skip directories we can't read
   }
-};
 
 findTestFiles('./src');
 console.log(`✅ Found ${testFiles.length} test files`);
@@ -70,8 +66,8 @@ testFiles.forEach(file => {
     const content = fs.readFileSync(file, 'utf8');
     
     // Count describe blocks and test cases
-    const describes = (content.match(/describe\(/g) || []).length;
-    const tests = (content.match(/it\(/g) || []).length;
+    const describes = (content.match(/describe\(/g) || []).length
+    const tests = (content.match(/it\(/g) || []).length
     
     totalDescribeBlocks += describes;
     totalTestCases += tests;
@@ -84,7 +80,7 @@ testFiles.forEach(file => {
     if (content.includes('aria-') || content.includes('accessibility') || content.includes('a11y')) {
       hasAccessibilityTests = true;
     }
-  } catch (error) {
+  } catch {
     // Skip files we can't read
   }
 });
@@ -99,7 +95,7 @@ console.log('\n🔍 Code Quality Check...');
 try {
   execSync('npm run lint -- --max-warnings 0', { stdio: 'pipe' });
   console.log('✅ Linting: Passed');
-} catch (error) {
+} catch {
   console.log('⚠️  Linting: Has warnings/errors');
 }
 
@@ -120,7 +116,7 @@ const checks = [
   hasAccessibilityTests
 ];
 
-const passedChecks = checks.filter(Boolean).length;
+const passedChecks = checks.filter(Boolean).length
 const readinessScore = Math.round((passedChecks / checks.length) * 100);
 
 console.log(`📈 Overall Score: ${readinessScore}%`);

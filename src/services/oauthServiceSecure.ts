@@ -7,7 +7,6 @@ import * as React from 'react';
  */
 
 import { secretCache } from '@/lib/aws-sdk-enhanced/examples/secrets-manager-usage';
-
 // Environment configuration
 const ENVIRONMENT = process.env.NODE_ENV || 'development';
 const AWS_REGION = process.env.AWS_REGION || 'us-west-2';
@@ -93,7 +92,7 @@ export class OAuthSecureConfig {
     provider: string,
     credentials: any
   ): OAuthProvider {
-    const baseRedirectUri = `${window.location.origin}/auth/callback`;
+    const baseRedirectUri = `${/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.origin}/auth/callback`;
 
     switch (provider) {
       case 'google':
@@ -316,7 +315,7 @@ export class OAuthServiceSecure {
         throw new Error(`Failed to fetch user info: ${response.status}`);
       }
 
-      const userData = await response.json();
+      const _userData = await response.json();
 
       // Map provider-specific user data to standardized format
       return this.mapUserData(provider, userData);

@@ -4,7 +4,7 @@
  * Test script to verify your friend-test greetings are working
  */
 
-import { getGreeting } from '../src/lib/personalization/voiceAndTone';
+import '../src/lib/personalization/voiceAndTone';
 
 console.log('🎯 Testing Your Friend-Test Greetings\n');
 
@@ -44,9 +44,7 @@ const testScenarios = [
     name: 'Anonymous user',
     context: 'dashboard' as const,
     personalizationData: null,
-  },
-];
-
+  }]
 console.log('📝 Your Friend-Test Greeting Variations:\n');
 
 testScenarios.forEach((scenario, index) => {

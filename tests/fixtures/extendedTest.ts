@@ -76,7 +76,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         };
         
         // Mock Supabase client globally
-        window.mockSupabaseAuth = {
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.mockSupabaseAuth = {
           getSession: async () => ({ data: { session: mockSession }, error: null }),
           onAuthStateChange: (callback) => {
             // Immediately call with signed in state
@@ -92,13 +92,13 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         };
         
         // Override module resolution for Supabase
-        if (typeof window.require !== 'undefined') {
-          const originalRequire = window.require;
-          window.require = (id) => {
+        if (typeof /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.require !== 'undefined') {
+          const originalRequire = /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.require;
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.require = (id) => {
             if (id.includes('supabase')) {
               return {
                 supabase: {
-                  auth: window.mockSupabaseAuth
+                  auth: /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.mockSupabaseAuth
                 }
               };
             }

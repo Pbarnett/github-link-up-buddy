@@ -4,15 +4,12 @@
  */
 
 import * as React from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import {
   fetchDuffelFlights,
   DuffelSearchResponse,
 } from '@/services/api/duffelSearchApi';
 import logger from '@/lib/logger';
-import { useState } from 'react';
-import { useEffect } from 'react';
-import { useCallback } from 'react';
-
 export interface DuffelSearchOptions {
   maxPrice?: number;
   cabinClass?: 'economy' | 'premium_economy' | 'business' | 'first';
@@ -158,7 +155,7 @@ export const useDuffelFlights = (
       const { supabase } = await import('@/integrations/supabase/client');
 
       // Debug: Check current user
-      const userResult = await supabase.auth.getUser();
+      const _userResult = await supabase.auth.getUser();
       const {
         data: { user },
       } = userResult;

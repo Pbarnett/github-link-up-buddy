@@ -7,7 +7,6 @@ import * as React from 'react';
  */
 
 import { z } from 'zod';
-
 // Schema version for backward compatibility
 export const SCHEMA_VERSION = '1.0.0';
 

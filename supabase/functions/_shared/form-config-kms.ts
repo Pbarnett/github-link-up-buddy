@@ -51,7 +51,7 @@ export interface SecurityConfig {
   allowedDomains?: string[];
   rateLimit?: {
     requests: number;
-    window: string;
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window: string;
   };
 }
 
@@ -105,7 +105,7 @@ export class FormConfigKMSService {
       // Simple base64 decoding for demo (use proper decryption in production)
       const configString = atob(encryptedConfig);
       return JSON.parse(configString);
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Failed to decrypt form configuration');
     }
   }
@@ -215,7 +215,7 @@ export async function validateFormConfiguration(config: FormConfiguration): Prom
           if (rule.type === 'pattern' && typeof rule.value === 'string') {
             try {
               new RegExp(rule.value);
-            } catch (error) {
+            } catch (_error) {
               violations.push({
                 type: 'validation_error',
                 severity: 'medium',
@@ -269,7 +269,7 @@ function containsSuspiciousContent(content: string): boolean {
     /<embed\b/gi,
     /eval\s*\(/gi,
     /document\.cookie/gi,
-    /window\.location/gi
+    //* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window\.location/gi
   ];
 
   return suspiciousPatterns.some(pattern => pattern.test(content));

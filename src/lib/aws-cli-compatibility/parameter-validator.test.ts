@@ -2,8 +2,8 @@ import * as React from 'react';
 import { describe, it, expect } from 'vitest';
 import {
   AWSCLIParameterValidator,
-  _ValidationResult,
-  KeyIdValidationResult,
+  __ValidationResult,
+  KeyId_ValidationResult,
 } from './parameter-validator';
 
 describe('AWSCLIParameterValidator', () => {

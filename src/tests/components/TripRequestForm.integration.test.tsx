@@ -9,7 +9,6 @@ import {
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TripRequestForm from '../../components/trip/TripRequestForm';
-
 // Mock the hooks and services that TripRequestForm depends on
 vi.mock('../../hooks/useBusinessRules', () => ({
   useBusinessRules: vi.fn(() => ({
@@ -235,7 +234,7 @@ describe('TripRequestForm - Integration Tests', () => {
       await user.tab();
 
       // Check that focus moves to form elements
-      const focusedElement = document.activeElement;
+      const _focusedElement = document.activeElement;
       expect(focusedElement).toBeTruthy();
       expect(focusedElement?.tagName.toLowerCase()).toMatch(
         /input|button|select/

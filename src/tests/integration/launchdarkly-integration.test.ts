@@ -4,7 +4,6 @@ import { initialize } from 'launchdarkly-js-client-sdk';
 import LaunchDarklyService from '@/lib/featureFlags/launchDarklyService';
 import { LaunchDarklyFallbackManager } from '@/lib/launchdarkly/fallback-manager';
 import { LaunchDarklyContextManager } from '@/lib/launchdarkly/context-manager';
-
 // Mock the LaunchDarkly SDK for testing
 vi.mock('launchdarkly-js-client-sdk');
 
@@ -141,14 +140,15 @@ describe('LaunchDarkly Integration Tests', () => {
     });
 
     it('should create valid user context from attributes', () => {
-      const userAttributes = {
+      const _userAttributes = {
         userId: 'user-123',
         email: 'test@example.com',
         name: 'Test User',
         subscription: 'premium' as const,
       };
 
-      const context = LaunchDarklyContextManager.createContext(userAttributes);
+      const context =
+        LaunchDarklyContextManager.React.createContext(userAttributes);
 
       expect(context.kind).toBe('user');
       expect(context.key).toBe('user-123');
@@ -165,14 +165,14 @@ describe('LaunchDarkly Integration Tests', () => {
         LaunchDarklyContextManager.createAnonymousContext();
       await LaunchDarklyService.initializeClient(initialContext);
 
-      const userAttributes = {
+      const _userAttributes = {
         userId: 'user-123',
         email: 'test@example.com',
         name: 'Test User',
       };
 
       const newContext =
-        LaunchDarklyContextManager.createContext(userAttributes);
+        LaunchDarklyContextManager.React.createContext(userAttributes);
       await LaunchDarklyService.updateContext(newContext);
 
       expect(mockClient.identify).toHaveBeenCalledWith(newContext);
@@ -252,10 +252,14 @@ describe('LaunchDarkly Integration Tests', () => {
         setItem: vi.fn(),
         removeItem: vi.fn(),
       };
-      Object.defineProperty(window, 'localStorage', {
-        value: mockLocalStorage,
-        writable: true,
-      });
+      Object.defineProperty(
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
+        'localStorage',
+        {
+          value: mockLocalStorage,
+          writable: true,
+        }
+      );
 
       mockLocalStorage.getItem.mockReturnValue('true');
 
@@ -273,10 +277,14 @@ describe('LaunchDarkly Integration Tests', () => {
         removeItem: vi.fn(),
         getItem: vi.fn(),
       };
-      Object.defineProperty(window, 'localStorage', {
-        value: mockLocalStorage,
-        writable: true,
-      });
+      Object.defineProperty(
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
+        'localStorage',
+        {
+          value: mockLocalStorage,
+          writable: true,
+        }
+      );
 
       LaunchDarklyService.setDeveloperOverride('test_flag', true);
       expect(mockLocalStorage.setItem).toHaveBeenCalledWith(

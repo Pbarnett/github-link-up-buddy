@@ -7,7 +7,6 @@ import * as React from 'react';
  */
 
 import { secretCache } from '@/lib/aws-sdk-enhanced/examples/secrets-manager-usage';
-
 // Environment configuration
 const ENVIRONMENT = process.env.NODE_ENV || 'development';
 const AWS_REGION = process.env.AWS_REGION || 'us-west-2';
@@ -394,7 +393,7 @@ export class FlightSearchServiceSecure {
           default:
             throw new Error(`Unsupported flight search provider: ${provider}`);
         }
-      } catch (error) {
+      } catch (_error) {
         console.warn(`Flight search failed for provider ${provider}:`, error);
         throw error;
       }

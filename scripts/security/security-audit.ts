@@ -328,7 +328,7 @@ class SecurityAuditor {
           try {
             const content = readFileSync(filePath, 'utf8');
             issues.push(...this.scanFileForSecrets(content, relativeFile));
-          } catch (error) {
+          } catch {
             // Skip files that can't be read
           }
         }
@@ -470,9 +470,9 @@ class SecurityAuditor {
     checks.pci_access_logging = existsSync(join(this.rootDir, '.security', 'setup.log'));
 
     // HIPAA Compliance
-    checks.hipaa_encryption = checks.sox_encryption_at_rest;
-    checks.hipaa_audit_trails = checks.sox_audit_logging;
-    checks.hipaa_access_controls = checks.sox_access_controls;
+    checks.hipaa_encryption = checks.sox_encryption_at_rest
+    checks.hipaa_audit_trails = checks.sox_audit_logging
+    checks.hipaa_access_controls = checks.sox_access_controls
 
     // General Security Best Practices
     checks.secure_defaults = this.checkSecureDefaults();
@@ -566,7 +566,7 @@ class SecurityAuditor {
       low: issues.filter(i => i.severity === 'low').length
     };
 
-    const complianceScore = Object.values(complianceChecks).filter(Boolean).length / Object.keys(complianceChecks).length;
+    const complianceScore = Object.values(complianceChecks).filter(Boolean).length / Object.keys(complianceChecks).length
 
     return {
       totalIssues: issues.length,
@@ -697,4 +697,4 @@ if (require.main === module) {
   main().catch(console.error);
 }
 
-export { SecurityAuditor };
+module.exports = { SecurityAuditor };

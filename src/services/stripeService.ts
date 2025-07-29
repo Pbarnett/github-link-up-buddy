@@ -1,9 +1,9 @@
+import { Slot } from '@radix-ui/react-slot';
 import * as React from 'react';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { createClient } from '@supabase/supabase-js';
 import StripeServerModule from 'stripe';
 import { rateLimiter, exponentialBackoff } from '../../packages/shared/stripe';
-
 // Initialize Stripe
 let stripePromise: Promise<Stripe | null>;
 
@@ -314,10 +314,11 @@ export class StripeService {
         throw new Error('Payment verification failed. Please try again.');
       }
 
-      // Step 2: Confirm payment with Stripe
+      // Step 2: Confirm payment with Stripe, enforce 3DS
       const confirmResult = await this.stripe.confirmCardPayment(clientSecret, {
         payment_method: paymentMethod as any,
         return_url: returnUrl,
+        setup_future_usage: 'off_session',
       });
 
       if (confirmResult.error) {
@@ -426,7 +427,10 @@ export class StripeService {
     signature: string,
     endpointSecret: string
   ) {
-    const stripe = new StripeServerModule(process.env.STRIPE_SECRET_KEY!);
+    const stripe = new StripeServerModule(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2025-06-30.basil',
+      maxNetworkRetries: 3,
+    });
 
     try {
       const event = stripe.webhooks.constructEvent(
@@ -524,12 +528,34 @@ export class StripeService {
           };
 
         case 'idempotency_error':
-          // Handle idempotency errors
+        case 'StripeIdempotencyError':
+          // Handle idempotency errors - per API reference lines 509-510
           return {
             success: false,
-            error: 'Duplicate request detected',
+            error:
+              'Duplicate request detected. Please use a new idempotency key.',
             retryable: false,
             errorType: 'idempotency_error',
+          };
+
+        case 'StripePermissionError':
+        case 'permission_error':
+          // Handle permission errors
+          return {
+            success: false,
+            error: 'Insufficient permissions for this operation',
+            retryable: false,
+            errorType: 'permission_error',
+          };
+
+        case 'StripeSignatureVerificationError':
+        case 'signature_verification_error':
+          // Handle webhook signature verification errors
+          return {
+            success: false,
+            error: 'Webhook signature verification failed',
+            retryable: false,
+            errorType: 'signature_verification_error',
           };
 
         default:

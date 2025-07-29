@@ -13,11 +13,10 @@ import type {
   FormConfigurationRecord,
   FormDeployment,
   FormUsageAnalytics,
-  Security_ValidationResult,
+  Security__ValidationResult,
   DeploymentOptions,
 } from '@/types/dynamic-forms';
 import { formConfigService } from '@/services/form-config.service';
-
 interface FormStore {
   // Configuration state
   configurations: Map<string, FormConfiguration>;

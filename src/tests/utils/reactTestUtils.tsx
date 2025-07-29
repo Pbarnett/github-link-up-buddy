@@ -1,10 +1,9 @@
-type ReactNode = React.ReactNode;
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 import { vi } from 'vitest';
 import * as React from 'react';
+import { ReactNodeType } from 'react';
 import { createSupabaseStub } from './supabaseMocks';
-
 // Mock toast notifications
 export const mockToast = {
   success: vi.fn(),
@@ -106,7 +105,7 @@ export async function waitForAsyncOperations() {
 // Helper for testing form submissions
 export async function submitForm(form: HTMLFormElement) {
   const { userEvent } = await import('@testing-library/user-event');
-  const user = userEvent.setup();
+  const _user = userEvent.setup();
 
   const submitButton = form.querySelector(
     'button[type="submit"]'
@@ -123,7 +122,7 @@ export async function submitForm(form: HTMLFormElement) {
 export async function fillFormField(labelText: string | RegExp, value: string) {
   const { screen } = await import('@testing-library/react');
   const { userEvent } = await import('@testing-library/user-event');
-  const user = userEvent.setup();
+  const _user = userEvent.setup();
 
   const field = screen.getByLabelText(labelText);
   await user.clear(field);
@@ -243,14 +242,14 @@ export const ComponentHelpers = {
   dashboard: {
     async switchToTripHistory() {
       const { userEvent } = await import('@testing-library/user-event');
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       const tab = screen.getByRole('tab', { name: /trip history/i });
       await user.click(tab);
     },
 
     async switchToCurrentRequests() {
       const { userEvent } = await import('@testing-library/user-event');
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       const tab = screen.getByRole('tab', {
         name: /current booking requests/i,
       });
@@ -277,8 +276,8 @@ export const ComponentHelpers = {
     },
 
     async submitForm() {
-      const userEvent = await import('@testing-library/user-event');
-      const user = userEvent.default.setup();
+      const _userEvent = await import('@testing-library/user-event');
+      const _user = userEvent.default.setup();
       const submitButton = screen.getByRole('button', { name: /submit/i });
       await user.click(submitButton);
     },

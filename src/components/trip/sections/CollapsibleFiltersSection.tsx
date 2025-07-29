@@ -5,7 +5,6 @@ import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TripDurationInputs from './TripDurationInputs';
 import FilterTogglesSection from './FilterTogglesSection';
-
 // Collapsible filters form data interface
 interface CollapsibleFiltersFormData {
   minDuration?: number;

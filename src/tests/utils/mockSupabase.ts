@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { vi } from 'vitest';
-
 // Enhanced Supabase mock that properly handles method chaining
 export function createMockSupabaseClient(
   customMocks: Record<string, any> = {}

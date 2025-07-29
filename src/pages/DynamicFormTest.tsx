@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { DynamicFormRenderer } from '@/components/forms/DynamicFormRenderer';
 import type { FormConfiguration } from '@/types/dynamic-forms';
-
 // Sample form configuration for testing
 const sampleFormConfig: FormConfiguration = {
   id: 'test-form-1',

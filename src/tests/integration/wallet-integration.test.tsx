@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import Wallet from '@/pages/Wallet';
-
 // Mocking WalletContext and CurrentUser context
 vi.mock('@/contexts/WalletContext', () => ({
   useWallet: () => ({

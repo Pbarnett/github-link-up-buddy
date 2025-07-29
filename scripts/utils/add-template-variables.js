@@ -1,6 +1,15 @@
 #!/usr/bin/env node
 
 import axios from 'axios';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const GRAFANA_URL = 'http://localhost:3001';
 const USERNAME = 'admin';
@@ -9,7 +18,6 @@ const PASSWORD = 'admin';
 const auth = {
   username: USERNAME,
   password: PASSWORD
-};
 
 // Template variables to add to dashboards
 const templateVariables = [
@@ -135,8 +143,8 @@ async function getDashboards() {
 async function getDashboard(uid) {
   try {
     const response = await axios.get(`${GRAFANA_URL}/api/dashboards/uid/${uid}`, { auth });
-    return response.data;
-  } catch (error) {
+    return response.data
+  } catch {
     console.error(`Error fetching dashboard ${uid}:`, error.message);
     return null;
   }
@@ -150,7 +158,7 @@ async function updateDashboard(dashboardData) {
         'Content-Type': 'application/json'
       }
     });
-    return response.data;
+    return response.data
   } catch (error) {
     console.error('Error updating dashboard:', error.message);
     return null;
@@ -174,7 +182,7 @@ async function addTemplateVariables() {
       continue;
     }
     
-    const dashboard = dashboardData.dashboard;
+    const dashboard = dashboardData.dashboard
     
     // Initialize templating if it doesn't exist
     if (!dashboard.templating) {

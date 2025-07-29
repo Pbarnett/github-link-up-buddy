@@ -6,7 +6,6 @@
 import * as React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-
 // Mock the component - needs to be at top level for Vitest hoisting
 vi.mock('@/components/profile/ProfileCompletenessIndicator', () => ({
   default: ({ completion, profile }: any) => {
@@ -67,7 +66,6 @@ vi.mock('@/components/profile/ProfileCompletenessIndicator', () => ({
 
 // Import the component (it will be replaced by the mock)
 import ProfileCompletenessIndicator from '@/components/profile/ProfileCompletenessIndicator';
-
 type TravelerProfile = {
   id: string;
   user_id: string;

@@ -9,7 +9,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-
 // Define the allowed field names as an enum for better extensibility
 export enum TripNumberFieldName {
   MaxPrice = 'max_price',

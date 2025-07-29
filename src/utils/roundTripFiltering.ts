@@ -10,7 +10,6 @@ import * as React from 'react';
  */
 
 import { LegacyFilterAdapter } from '@/lib/filtering/FilterFactory';
-
 export interface FlightOffer {
   id: string;
   itineraries?: Array<{

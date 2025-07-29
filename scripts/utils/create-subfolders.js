@@ -1,6 +1,15 @@
 #!/usr/bin/env node
 
 import axios from 'axios';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const GRAFANA_URL = 'http://localhost:3001';
 const USERNAME = 'admin';
@@ -9,7 +18,6 @@ const PASSWORD = 'admin';
 const auth = {
   username: USERNAME,
   password: PASSWORD
-};
 
 // Subfolder structure to create
 const subfolderStructure = [
@@ -50,7 +58,7 @@ const subfolderStructure = [
 async function getExistingFolders() {
   try {
     const response = await axios.get(`${GRAFANA_URL}/api/folders`, { auth });
-    return response.data;
+    return response.data
   } catch (error) {
     console.error('Error fetching folders:', error.message);
     return [];
@@ -71,8 +79,8 @@ async function createFolder(title, parentUid = null) {
       }
     });
 
-    return response.data;
-  } catch (error) {
+    return response.data
+  } catch {
     console.error(`Error creating folder "${title}":`, error.response?.data?.message || error.message);
     return null;
   }

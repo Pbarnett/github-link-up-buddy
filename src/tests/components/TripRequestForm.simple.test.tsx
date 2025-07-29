@@ -10,7 +10,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import * as React from 'react';
 import TripRequestForm from '@/components/trip/TripRequestForm';
-
 // Mock all the hooks and services
 vi.mock('@/hooks/useCurrentUser', () => ({
   useCurrentUser: () => ({ userId: 'test-user' }),

@@ -1,14 +1,12 @@
-type ReactNode = React.ReactNode;
-
+import * as React from 'react';
+import { ReactNode } from 'react';
+import { createElement, use } from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, FormProvider } from 'react-hook-form';
 import { MemoryRouter } from 'react-router-dom';
 import { expect } from 'vitest';
-import * as React from 'react';
-import { createElement } from 'react';
-
 /**
  * Form testing utilities implementing 2024 best practices for react-day-picker testing.
  *
@@ -598,7 +596,7 @@ export const fillFormWithDates = async (
         if (value) {
           fireEvent.change(input, { target: { value } });
         }
-      } catch (e) {
+      } catch (_e) {
         // Skip inputs that can't be focused
       }
     });

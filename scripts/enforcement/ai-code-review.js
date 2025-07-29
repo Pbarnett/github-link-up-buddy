@@ -1,22 +1,25 @@
 #!/usr/bin/env node
 
+const path = require('path');
+
 import fs from 'fs/promises';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import EnforcementOpenAIClient from './shared/openai-client.js';
 import ConfidenceGating from './shared/confidence-gating.js';
+// Utility functions
+// Removed unused error function
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const execAsync = promisify(exec);
 
 class AICodeReviewEnforcement {
   constructor() {
     this.client = new EnforcementOpenAIClient();
     this.gating = new ConfidenceGating();
-    this.reportDir = path.join(__dirname, '../../reports/ai-code-review');
+    this.reportDir = path.join(__'../../reports/ai-code-review');
     this.results = {
       totalFiles: 0,
       reviewedFiles: 0,
@@ -91,7 +94,7 @@ class AICodeReviewEnforcement {
       
       const { stdout } = await execAsync(command);
       return stdout;
-    } catch (error) {
+    } catch {
       console.warn(`⚠️ Could not get diff for ${filePath}:`, error.message);
       return '';
     }
@@ -100,7 +103,7 @@ class AICodeReviewEnforcement {
   async getFileContent(filePath) {
     try {
       return await fs.readFile(filePath, 'utf-8');
-    } catch (error) {
+    } catch {
       console.error(`❌ Error reading ${filePath}:`, error.message);
       return '';
     }
@@ -160,7 +163,7 @@ class AICodeReviewEnforcement {
       let reviewData;
       try {
         reviewData = JSON.parse(response.content);
-      } catch (parseError) {
+      } catch (_parseError) {
         console.warn(`⚠️ Could not parse structured response for ${filePath}`);
         reviewData = this.createFallbackFromText(response.content);
       }
@@ -178,15 +181,15 @@ class AICodeReviewEnforcement {
       };
 
       // Count issues
-      const criticalCount = (reviewData.blocking_issues || []).filter(i => i.severity === 'critical').length;
-      const highCount = (reviewData.blocking_issues || []).filter(i => i.severity === 'high').length;
-      const mediumCount = (reviewData.blocking_issues || []).filter(i => i.severity === 'medium').length;
+      const criticalCount = (reviewData.blocking_issues || []).filter(i => i.severity === 'critical').length
+      const highCount = (reviewData.blocking_issues || []).filter(i => i.severity === 'high').length
+      const mediumCount = (reviewData.blocking_issues || []).filter(i => i.severity === 'medium').length
       
       this.results.criticalIssues += criticalCount;
       this.results.highIssues += highCount;
       this.results.mediumIssues += mediumCount;
-      this.results.suggestions += (reviewData.suggestions || []).length;
-      this.results.totalCost += response.cost;
+      this.results.suggestions += (reviewData.suggestions || []).length
+      this.results.totalCost += response.cost
 
       // Determine if this should block the PR
       if (criticalCount > 0 || (highCount > 0 && assessment.confidence > 0.8)) {
@@ -199,7 +202,7 @@ class AICodeReviewEnforcement {
 
       return fileReview;
 
-    } catch (error) {
+    } catch {
       console.error(`❌ Failed to review ${filePath}:`, error.message);
       return this.createErrorReview(filePath, error.message);
     }
@@ -292,7 +295,7 @@ class AICodeReviewEnforcement {
       await this.init();
       
       const changedFiles = await this.getChangedFiles();
-      this.results.totalFiles = changedFiles.length;
+      this.results.totalFiles = changedFiles.length
       
       if (changedFiles.length === 0) {
         console.log('✅ No relevant files to review.');
@@ -337,4 +340,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   reviewer.run();
 }
 
-export default AICodeReviewEnforcement;
+module.exports = AICodeReviewEnforcement;

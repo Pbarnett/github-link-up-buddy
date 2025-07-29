@@ -535,7 +535,7 @@ export async function cancelAmadeusOrder(
       console.error(`[AmadeusLib] Failed to cancel Amadeus order ${orderId}: ${response.status}`, errorText);
       return { success: false, error: `Failed to cancel Amadeus order: ${response.status} ${errorText}` };
     }
-  } catch (cancelError) {
+  } catch (_cancelError) {
     console.error(`[AmadeusLib] Network error during Amadeus order cancellation for order ID ${orderId}:`, cancelError);
     return { success: false, error: cancelError.message || "Network error during cancellation" };
   }

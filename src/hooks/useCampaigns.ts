@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { Campaign } from '@/types/campaign';
 import { campaignService } from '@/services/campaignService';
 import { useCurrentUser } from './useCurrentUser';
-
 export const useCampaigns = () => {
   const { userId } = useCurrentUser();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -35,7 +34,7 @@ export const useCampaigns = () => {
     await loadCampaigns();
   };
 
-  const pauseCampaign = async (campaignId: string) => {
+  const _pauseCampaign = async (campaignId: string) => {
     try {
       const updatedCampaign = await campaignService.pauseCampaign(campaignId);
       setCampaigns(prev =>

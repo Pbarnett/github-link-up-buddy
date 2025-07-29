@@ -1,11 +1,10 @@
 import * as React from 'react';
-
+import { ReactNode } from 'react';
 /**
  * React-specific testing utilities
  */
 
 // Enhanced render utilities with modern providers
-type ReactNode = React.ReactNode;
 
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   initialEntries?: string[];

@@ -1,124 +1,119 @@
 import * as React from 'react';
-
-
-type HTMLAttributes<T extends React.ElementType> = React.HTMLAttributes<T>;
-type HTMLAttributes<T> = React.HTMLAttributes<T>;
-
 import { cn } from '@/lib/utils';
-
-export interface ModernScrollAreaProps extends HTMLAttributes<HTMLDivElement> {
+export interface ModernScrollAreaProps
+  extends React.HTMLAttributes<HTMLDivElement> {
   variant?: 'default' | 'snap-x' | 'snap-y' | 'snap-both';
   snapType?: 'mandatory' | 'proximity' | 'none';
   scrollBehavior?: 'auto' | 'smooth';
   touchOptimized?: boolean;
   hideScrollbar?: boolean;
   scrollPadding?: 'none' | 'sm' | 'md' | 'lg';
+  ref?: React.Ref<HTMLDivElement>;
 }
 
-const ModernScrollArea = React.forwardRef<HTMLDivElement, ModernScrollAreaProps>(
-  (
-    {
-      className,
-      variant = 'default',
-      snapType = 'none',
-      scrollBehavior = 'smooth',
-      touchOptimized = true,
-      hideScrollbar = false,
-      scrollPadding = 'none',
-      children,
-      ...props
-    },
-    ref
-  ) => {
-    return (
-      <div
-        className={cn(
-          // Base styles
-          'relative overflow-auto',
+const ModernScrollArea = ({
+  className,
+  variant = 'default',
+  snapType = 'none',
+  scrollBehavior = 'smooth',
+  touchOptimized = true,
+  hideScrollbar = false,
+  scrollPadding = 'none',
+  children,
+  ref,
+  ...props
+}: ModernScrollAreaProps) => {
+  return (
+    <div
+      className={cn(
+        // Base styles
+        'relative overflow-auto',
 
-          // Scroll behavior
-          scrollBehavior === 'smooth' && 'scroll-smooth',
+        // Scroll behavior
+        scrollBehavior === 'smooth' && 'scroll-smooth',
 
-          // Touch optimizations
-          touchOptimized && [
-            'touch-pan-x touch-pan-y',
-            'overscroll-contain',
-            '-webkit-overflow-scrolling: touch',
-          ],
+        // Touch optimizations
+        touchOptimized && [
+          'touch-pan-x touch-pan-y',
+          'overscroll-contain',
+          '-webkit-overflow-scrolling: touch',
+        ],
 
-          // Scroll snap variants
-          variant === 'snap-x' && 'snap-x overflow-x-auto overflow-y-hidden',
-          variant === 'snap-y' && 'snap-y overflow-y-auto overflow-x-hidden',
-          variant === 'snap-both' && 'snap-both',
+        // Scroll snap variants
+        variant === 'snap-x' && 'snap-x overflow-x-auto overflow-y-hidden',
+        variant === 'snap-y' && 'snap-y overflow-y-auto overflow-x-hidden',
+        variant === 'snap-both' && 'snap-both',
 
-          // Snap strictness
-          snapType === 'mandatory' && 'snap-mandatory',
-          snapType === 'proximity' && 'snap-proximity',
+        // Snap strictness
+        snapType === 'mandatory' && 'snap-mandatory',
+        snapType === 'proximity' && 'snap-proximity',
 
-          // Scroll padding variants
-          scrollPadding === 'sm' && 'scroll-p-2',
-          scrollPadding === 'md' && 'scroll-p-4',
-          scrollPadding === 'lg' && 'scroll-p-6',
+        // Scroll padding variants
+        scrollPadding === 'sm' && 'scroll-p-2',
+        scrollPadding === 'md' && 'scroll-p-4',
+        scrollPadding === 'lg' && 'scroll-p-6',
 
-          // Hide scrollbar when requested
-          hideScrollbar && [
-            'scrollbar-none',
-            // Fallback for browsers that don't support scrollbar-none
-            '[&::-webkit-scrollbar]:hidden',
-            '[-ms-overflow-style:none]',
-            '[scrollbar-width:none]',
-          ],
+        // Hide scrollbar when requested
+        hideScrollbar && [
+          'scrollbar-none',
+          // Fallback for browsers that don't support scrollbar-none
+          '[&::-webkit-scrollbar]:hidden',
+          '[-ms-overflow-style:none]',
+          '[scrollbar-width:none]',
+        ],
 
-          className
-        )}
-        ref={ref}
-        {...props}
-      >
-        {children}
-      </div>
-    );
-  }
-);
+        className
+      )}
+      ref={ref}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
 
 ModernScrollArea.displayName = 'ModernScrollArea';
 
 // Scroll item component for snap containers
-export interface ScrollItemProps extends HTMLAttributes<HTMLDivElement> {
+export interface ScrollItemProps extends React.HTMLAttributes<HTMLDivElement> {
   snapAlign?: 'start' | 'center' | 'end' | 'none';
   snapStop?: 'always' | 'normal';
+  ref?: React.Ref<HTMLDivElement>;
 }
 
-const ScrollItem = React.forwardRef<HTMLDivElement, ScrollItemProps>(
-  (
-    { className, snapAlign = 'start', snapStop = 'normal', children, ...props },
-    ref
-  ) => {
-    return (
-      <div
-        className={cn(
-          // Flex shrink prevention for horizontal scrolling
-          'flex-shrink-0',
+const ScrollItem = ({
+  className,
+  snapAlign = 'start',
+  snapStop = 'normal',
+  children,
+  ref,
+  ...props
+}: ScrollItemProps) => {
+  return (
+    <div
+      className={cn(
+        // Flex shrink prevention for horizontal scrolling
+        'flex-shrink-0',
 
-          // Snap alignment
-          snapAlign === 'start' && 'snap-start',
-          snapAlign === 'center' && 'snap-center',
-          snapAlign === 'end' && 'snap-end',
-          snapAlign === 'none' && 'snap-align-none',
+        // Snap alignment
+        snapAlign === 'start' && 'snap-start',
+        snapAlign === 'center' && 'snap-center',
+        snapAlign === 'end' && 'snap-end',
+        snapAlign === 'none' && 'snap-align-none',
 
-          // Snap stop behavior
-          snapStop === 'always' && 'snap-always',
-          snapStop === 'normal' && 'snap-normal',
+        // Snap stop behavior
+        snapStop === 'always' && 'snap-always',
+        snapStop === 'normal' && 'snap-normal',
 
-          className
-        )}
-        ref={ref}
-        {...props}
-      >
-        {children}
-      </div>
-    );
-  }
-);
+        className
+      )}
+      ref={ref}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
 
 ScrollItem.displayName = 'ScrollItem';
 

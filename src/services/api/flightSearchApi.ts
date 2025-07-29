@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import logger from '@/lib/logger';
-
+import { retryFlightSearch, retryApiCall } from '@/lib/resilience/retry-system';
+import { getEnhancedErrorMessage } from '@/lib/validation/error-messages';
 export interface ScoredOffer {
   id: string;
   score: number;
@@ -35,33 +36,53 @@ export interface FlightSearchRequestBody {
 }
 
 /**
- * Invoke flight search - triggers the flight search process
+ * Invoke flight search - triggers the flight search process with retry logic
  */
 export async function invokeFlightSearch(
   payload: FlightSearchRequestBody
 ): Promise<FlightSearchResponse> {
-  try {
-    logger.info('[FlightSearchApi] Invoking flight search', payload);
+  const operationId = `flight_search_${payload.tripRequestId}`;
+  
+  return retryFlightSearch(
+    operationId,
+    async () => {
+      logger.info('[FlightSearchApi] Invoking flight search', payload);
 
-    // Call the flight search edge function
-    const { data, error } = await supabase.functions.invoke(
-      'flight-search-v2',
-      {
-        body: payload,
+      // Call the flight search edge function
+      const { data, error } = await supabase.functions.invoke(
+        'flight-search-v2',
+        {
+          body: payload,
+        }
+      );
+
+      if (error) {
+        logger.error('[FlightSearchApi] Error from edge function:', error);
+        // Create contextual error for better user feedback
+        const contextualError = new Error(`Flight search failed: ${error.message}`);
+        contextualError.name = 'FlightSearchError';
+        throw contextualError;
       }
-    );
 
-    if (error) {
-      logger.error('[FlightSearchApi] Error from edge function:', error);
-      throw new Error(`Flight search failed: ${error.message}`);
+      logger.info('[FlightSearchApi] Flight search completed successfully');
+      return data as FlightSearchResponse;
+    },
+    {
+      // Custom retry config for flight search
+      onRetry: (attempt, error, nextDelay) => {
+        logger.warn(
+          `Flight search retry attempt ${attempt} for trip ${payload.tripRequestId}. Next retry in ${nextDelay}ms`,
+          { error: error.message }
+        );
+      },
+      onMaxRetriesReached: (error) => {
+        logger.error(
+          `Flight search failed after all retries for trip ${payload.tripRequestId}`,
+          { error: error.message }
+        );
+      },
     }
-
-    logger.info('[FlightSearchApi] Flight search completed successfully');
-    return data as FlightSearchResponse;
-  } catch (error) {
-    logger.error('[FlightSearchApi] invokeFlightSearch error:', error);
-    throw error;
-  }
+  );
 }
 
 /**

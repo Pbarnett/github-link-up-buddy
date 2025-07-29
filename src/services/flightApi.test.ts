@@ -2,7 +2,6 @@ import * as React from 'react';
 // Attempting to address CI issues. Further clarification may be needed.
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { transformAmadeusToOffers } from './flightApi.client';
-
 describe('flightApi', () => {
   test('transformAmadeusToOffers maps correctly', () => {
     const mockResponse = {

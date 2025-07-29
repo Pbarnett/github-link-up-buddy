@@ -1,7 +1,6 @@
-import React, { Fragment } from 'react';
-
-type FC<T = {}> = React.FC<T>;
-
+import * as React from 'react';
+import { FC } from 'react';
+import { Fragment } from 'react';
 const steps = [
   {
     icon: '🛠️',

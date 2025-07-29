@@ -16,7 +16,6 @@ const enableLocalOverride = () => {
   console.log('Add this to your browser console or use the FlagOverridePanel:');
   console.log(`localStorage.setItem('launchDarkly_override_personalization_greeting', 'true');`);
   console.log('Then refresh your app.\n');
-};
 
 // Method 2: Check current LaunchDarkly flag status
 const checkCurrentStatus = async () => {
@@ -27,10 +26,9 @@ const checkCurrentStatus = async () => {
     const { execSync } = await import('child_process');
     const result = execSync('npx tsx scripts/verify-launchdarkly.ts', { encoding: 'utf8' });
     console.log(result);
-  } catch (error) {
+  } catch {
     console.error('Error checking LaunchDarkly status:', error);
   }
-};
 
 // Method 3: Instructions for LaunchDarkly dashboard
 const dashboardInstructions = () => {
@@ -39,19 +37,16 @@ const dashboardInstructions = () => {
   console.log('2. Find the "personalization_greeting" flag');
   console.log('3. Set it to "true" for your environment');
   console.log('4. Save the changes\n');
-};
 
 // Method 4: Test with temporary override in code
 const codeOverrideInstructions = () => {
   console.log('🧪 Method 4: Temporary Code Override');
   console.log('In src/lib/personalization/featureFlags.ts, temporarily return true:');
   console.log(`
-export function enablePersonalizationForTesting(): boolean {
   return true; // ← Temporarily enable for testing
 }
   `);
   console.log('Remember to revert this change before production!\n');
-};
 
 const main = async () => {
   enableLocalOverride();
@@ -67,6 +62,5 @@ const main = async () => {
   console.log('   - "Glad you\'re here, [firstName]. Let\'s pick somewhere fun."');
   console.log('   - "You\'re back, [firstName]. Let\'s browse a few options."');
   console.log('\n🎉 Your personalized messaging vision is ready to go live!');
-};
 
 main().catch(console.error);

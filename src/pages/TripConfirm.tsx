@@ -1,8 +1,16 @@
+import * as React from 'react';
+import { useState, useEffect, use } from 'react';
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import * as React from 'react';
-import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  AlertCircle,
+  Calendar,
+  Clock,
+  Loader2,
+  PlaneTakeoff,
+  X,
+} from 'lucide-react';
 import {
   Card,
   CardHeader,
@@ -21,52 +29,6 @@ import TravelerDataForm, { TravelerData } from '@/components/TravelerDataForm';
 import { TablesInsert } from '@/integrations/supabase/types';
 import { toJsonSafe } from '@/utils/toJsonSafe';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 const TripConfirm = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -112,7 +74,10 @@ const TripConfirm = () => {
         });
 
         setTimeout(() => {
-          window.open(offerData.booking_url, '_blank');
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open(
+            offerData.booking_url,
+            '_blank'
+          );
           navigate('/trip/offers');
         }, 1000);
 
@@ -516,7 +481,8 @@ const TripConfirm = () => {
         '[TripConfirm] Redirecting to Stripe checkout:',
         res.data.url
       );
-      window.location.href = res.data.url;
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.href =
+        res.data.url;
     } catch (err: unknown) {
       console.error('[TripConfirm] Exception during confirmation:', err);
       const errorMessage =

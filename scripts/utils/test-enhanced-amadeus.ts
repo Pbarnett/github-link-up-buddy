@@ -220,7 +220,7 @@ async function testCO2EmissionsIntegration() {
       });
       
       // Calculate average CO2 emissions
-      const avgEmissions = ecoResults.co2Emissions.reduce((sum, e) => sum + e.weight, 0) / ecoResults.co2Emissions.length;
+      const avgEmissions = ecoResults.co2Emissions.reduce((sum, e) => sum + e.weight, 0) / ecoResults.co2Emissions.length
       console.log(`\n   📊 Average CO2 per flight: ${Math.round(avgEmissions)}g`);
       
     } else {
@@ -250,12 +250,11 @@ testEnhancedAmadeusIntegration()
     console.log('7. ✅ Proper token caching and management');
     console.log('8. ✅ Stale offer handling (422 errors)');
   })
-  .catch((error) => {
+  .catch((_error) => {
     console.error('❌ Test suite failed:', error);
   });
 
 // Export for use in other modules
-export {
+module.exports = {
   testEnhancedAmadeusIntegration,
   testCO2EmissionsIntegration
-};

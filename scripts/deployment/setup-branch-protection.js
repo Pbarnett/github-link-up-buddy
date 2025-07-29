@@ -8,6 +8,13 @@
  */
 
 import { execSync } from 'child_process';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// const fs = require('fs'); // Unused import removed
 
 // Color codes for console output
 const colors = {
@@ -18,17 +25,11 @@ const colors = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   cyan: '\x1b[36m'
-};
 
-const log = (message, color = 'reset') => {
-  console.log(`${colors[color]}${message}${colors.reset}`);
 };
+// Removed unused log function
 
-const success = (message) => log(`✅ ${message}`, 'green');
-const warning = (message) => log(`⚠️  ${message}`, 'yellow');
-const error = (message) => log(`❌ ${message}`, 'red');
-const info = (message) => log(`ℹ️  ${message}`, 'blue');
-const step = (message) => log(`🔧 ${message}`, 'cyan');
+const step = (message) => console.log(`🔧 ${message}`, 'cyan');
 
 const BRANCH_PROTECTION_CONFIG = {
   // Main production branch
@@ -77,11 +78,10 @@ const BRANCH_PROTECTION_CONFIG = {
     allow_force_pushes: false,
     allow_deletions: false
   }
-};
 
 class BranchProtectionSetup {
   constructor() {
-    this.githubToken = process.env.GITHUB_TOKEN;
+    this.githubToken = process.env.GITHUB_TOKEN
     this.repoOwner = process.env.GITHUB_REPOSITORY?.split('/')[0];
     this.repoName = process.env.GITHUB_REPOSITORY?.split('/')[1];
     
@@ -89,12 +89,12 @@ class BranchProtectionSetup {
     if (!this.repoOwner || !this.repoName) {
       try {
         const remoteUrl = execSync('git remote get-url origin', { encoding: 'utf-8' }).trim();
-        const match = remoteUrl.match(/github\.com[\/:]([^\/]+)\/([^\/]+?)(?:\.git)?$/);
+        const match = remoteUrl.match(/github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?$/);
         if (match) {
           this.repoOwner = match[1];
           this.repoName = match[2];
         }
-      } catch (err) {
+      } catch (error) {
         // Will handle in validation
       }
     }
@@ -102,8 +102,8 @@ class BranchProtectionSetup {
 
   async setup() {
     try {
-      log('🛡️  Setting up Professional Branch Protection Rules', 'bright');
-      log('='.repeat(60), 'blue');
+      console.log('🛡️  Setting up Professional Branch Protection Rules', 'bright');
+      console.log('='.repeat(60), 'blue');
       
       this.validateEnvironment();
       
@@ -114,16 +114,16 @@ class BranchProtectionSetup {
       await this.setupCodeowners();
       await this.validateSetup();
       
-      success('🎉 Branch protection rules configured successfully!');
+      console.log('🎉 Branch protection rules configured successfully!');
       
     } catch (err) {
-      error(`Branch protection setup failed: ${err.message}`);
+      console.error(`Branch protection setup failed: ${err.message}`);
       process.exit(1);
     }
   }
 
   validateEnvironment() {
-    step('Validating environment...');
+    console.log('Validating environment...');
     
     if (!this.githubToken) {
       throw new Error('GITHUB_TOKEN environment variable is required');
@@ -133,11 +133,11 @@ class BranchProtectionSetup {
       throw new Error('Could not determine repository owner/name. Set GITHUB_REPOSITORY or run from git repo.');
     }
     
-    info(`Repository: ${this.repoOwner}/${this.repoName}`);
+    console.info(`Repository: ${this.repoOwner}/${this.repoName}`);
   }
 
   async setupBranchProtection(branch, config) {
-    step(`Setting up protection for ${branch} branch...`);
+    console.log(`Setting up protection for ${branch} branch...`);
     
     const apiUrl = `https://api.github.com/repos/${this.repoOwner}/${this.repoName}/branches/${branch}/protection`;
     
@@ -157,26 +157,26 @@ class BranchProtectionSetup {
       
       if (response.message) {
         if (response.message.includes('Branch not found')) {
-          warning(`Branch ${branch} does not exist yet - protection will apply when created`);
+          console.warn(`Branch ${branch} does not exist yet - protection will apply when created`);
         } else if (response.message.includes('Required status check')) {
-          warning(`Some status checks for ${branch} may not exist yet`);
+          console.warn(`Some status checks for ${branch} may not exist yet`);
         } else {
           throw new Error(response.message);
         }
       } else {
-        success(`Branch protection configured for ${branch}`);
+        console.log(`✅ Branch protection configured for ${branch}`);
       }
     } catch (err) {
       if (err.message.includes('Branch not found')) {
-        warning(`Branch ${branch} does not exist yet`);
+        console.warn(`Branch ${branch} does not exist yet`);
       } else {
-        throw new Error(`Failed to setup protection for ${branch}: ${err.message}`);
+        throw new Error(`Failed to setup protection for ${branch}: ${error.message}`);
       }
     }
   }
 
   async setupCodeowners() {
-    step('Setting up CODEOWNERS file...');
+    console.log('Setting up CODEOWNERS file...');
     
     const codeownersContent = `# Global code ownership
 # These owners will be requested for review when anyone opens a pull request.
@@ -215,14 +215,14 @@ package-lock.json @${this.repoOwner}
       }
       
       fs.writeFileSync('.github/CODEOWNERS', codeownersContent);
-      success('CODEOWNERS file created');
+      console.log('CODEOWNERS file created');
     } catch (err) {
-      warning(`Could not create CODEOWNERS file: ${err.message}`);
+      console.warn(`Could not create CODEOWNERS file: ${err.message}`);
     }
   }
 
   async validateSetup() {
-    step('Validating branch protection setup...');
+    console.log('Validating branch protection setup...');
     
     for (const branch of Object.keys(BRANCH_PROTECTION_CONFIG)) {
       try {
@@ -231,15 +231,15 @@ package-lock.json @${this.repoOwner}
         const protection = JSON.parse(result);
         
         if (protection.required_status_checks) {
-          success(`${branch}: Status checks configured (${protection.required_status_checks.contexts.length} checks)`);
+          console.log(`✅ ${branch}: Status checks configured (${protection.required_status_checks.contexts.length} checks)`);
         }
         
         if (protection.required_pull_request_reviews) {
-          success(`${branch}: PR reviews required (${protection.required_pull_request_reviews.required_approving_review_count} approvals)`);
+          console.log(`✅ ${branch}: PR reviews required (${protection.required_pull_request_reviews.required_approving_review_count} approvals)`);
         }
         
-      } catch (err) {
-        warning(`Could not validate protection for ${branch}`);
+      } catch (error) {
+        console.warn(`Could not validate protection for ${branch}`);
       }
     }
   }
@@ -249,9 +249,9 @@ package-lock.json @${this.repoOwner}
 if (import.meta.url === `file://${process.argv[1]}`) {
   const setup = new BranchProtectionSetup();
   setup.setup().catch(err => {
-    console.error(`❌ Branch protection setup failed: ${err.message}`);
+    console.error(`❌ Branch protection setup failed: ${error.message}`);
     process.exit(1);
   });
 }
 
-export default BranchProtectionSetup;
+module.exports = BranchProtectionSetup;

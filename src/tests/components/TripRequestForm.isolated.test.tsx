@@ -6,7 +6,6 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { toast } from '@/components/ui/use-toast';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTravelerInfoCheck } from '@/hooks/useTravelerInfoCheck';
-
 // Mock dependencies
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {

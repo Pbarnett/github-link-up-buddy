@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { trackComponentRender } from '@/utils/debugUtils';
-
 interface CurrentUserState {
   user: User | null;
   userId: string | null;
@@ -115,7 +114,7 @@ class UserStateManager {
 }
 
 // Singleton instance
-const userStateManager = new UserStateManager();
+const _userStateManager = new UserStateManager();
 
 export const useCurrentUser = (): CurrentUserState => {
   // Track hook usage for debugging

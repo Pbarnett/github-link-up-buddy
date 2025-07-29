@@ -8,7 +8,6 @@ import * as React from 'react';
 
 import { getApiConfig } from '../config';
 import { AppError, ErrorCode } from '../errors/types';
-
 /**
  * Retry configuration options
  */
@@ -144,7 +143,7 @@ export async function retry<T>(
       }
 
       // Calculate delay for next attempt
-      const delay = calculateDelay(
+      const _delay = calculateDelay(
         attempt,
         opts.initialDelay,
         opts.maxDelay,

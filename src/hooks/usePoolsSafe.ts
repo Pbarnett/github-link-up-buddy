@@ -1,9 +1,9 @@
 import * as React from 'react';
+import { useState, useEffect, use } from 'react';
 import { toast } from '@/hooks/use-toast';
 import logger from '@/lib/logger';
 import { ScoredOffer } from '@/types/offer';
 import { useTripOffers, UseTripOffersReturn } from './useTripOffersLegacy';
-import { useState, useEffect } from 'react';
 import {
   useTripOffersPools,
   clearUnifiedCache,

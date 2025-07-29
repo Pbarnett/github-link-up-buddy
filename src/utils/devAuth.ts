@@ -2,7 +2,6 @@
 // This file provides easy authentication for development and testing
 
 import { supabase } from '@/integrations/supabase/client';
-
 export const signInTestUser = async () => {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -47,8 +46,14 @@ export const getCurrentUser = async () => {
 };
 
 // Auto-sign in for development (call this from console)
-if (typeof window !== 'undefined') {
-  (window as any).devAuth = {
+if (
+  typeof (
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+  ) !== 'undefined'
+) {
+  /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (
+    window as any
+  ).devAuth = {
     signIn: signInTestUser,
     signOut,
     getCurrentUser,

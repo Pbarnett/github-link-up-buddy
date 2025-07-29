@@ -7,7 +7,6 @@ import * as React from 'react';
 import { describe, it, expect } from 'vitest';
 import { FilterFactory, createFilterContext } from '@/lib/filtering';
 import type { FlightOffer } from '@/lib/filtering';
-
 // Interface for raw offers from different providers
 interface RawOffer {
   id: string;

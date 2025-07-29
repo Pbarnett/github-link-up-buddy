@@ -12,9 +12,13 @@
  */
 
 import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
+const fs = require('fs');
 const colors = {
   reset: '\x1b[0m',
   bright: '\x1b[1m', 
@@ -24,17 +28,11 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m'
-};
 
-const log = (message, color = 'reset') => {
-  console.log(`${colors[color]}${message}${colors.reset}`);
 };
+// Removed unused log function
 
-const success = (message) => log(`✅ ${message}`, 'green');
-const warning = (message) => log(`⚠️  ${message}`, 'yellow');
-const error = (message) => log(`❌ ${message}`, 'red');
-const info = (message) => log(`ℹ️  ${message}`, 'blue');
-const step = (message) => log(`🔍 ${message}`, 'cyan');
+const step = (message) => console.log(`🔍 ${message}`, 'cyan');
 
 class EnterpriseCodeQuality {
   constructor() {
@@ -48,8 +46,8 @@ class EnterpriseCodeQuality {
   }
 
   async runAll() {
-    log('🏗️  Enterprise Code Quality Enforcement', 'bright');
-    log('='.repeat(50), 'blue');
+    console.log('🏗️  Enterprise Code Quality Enforcement', 'bright');
+    console.log('='.repeat(50), 'blue');
 
     await this.checkComplexity();
     await this.detectDeadCode();
@@ -66,15 +64,15 @@ class EnterpriseCodeQuality {
 
     const hasFailures = this.results.failed.length > 0;
     if (hasFailures) {
-      error(`❌ Code Quality Failed: ${this.results.failed.length} critical issues`);
+      console.error(`❌ Code Quality Failed: ${this.results.failed.length} critical issues`);
       process.exit(1);
     } else {
-      success(`🎉 Enterprise Code Quality Standards Met!`);
+      console.log(`✅ 🎉 Enterprise Code Quality Standards Met!`);
     }
   }
 
   async checkComplexity() {
-    step('Analyzing cyclomatic complexity...');
+    console.log('Analyzing cyclomatic complexity...');
     
     try {
       // Use existing TypeScript compiler to analyze complexity
@@ -100,7 +98,7 @@ class EnterpriseCodeQuality {
       } else {
         this.results.failed.push(`Too many high complexity files: ${highComplexityFiles}`);
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Complexity analysis failed');
     }
   }
@@ -122,14 +120,14 @@ class EnterpriseCodeQuality {
     let complexity = 1; // Base complexity
     patterns.forEach(pattern => {
       const matches = code.match(pattern);
-      if (matches) complexity += matches.length;
+      if (matches) complexity += matches.length
     });
     
     return complexity;
   }
 
   async detectDeadCode() {
-    step('Detecting dead code...');
+    console.log('Detecting dead code...');
     
     try {
       // Check for unused exports using TypeScript compiler
@@ -140,7 +138,7 @@ class EnterpriseCodeQuality {
         line.includes('is defined but never used')
       );
       
-      this.results.metrics.unusedDeclarations = unusedLines.length;
+      this.results.metrics.unusedDeclarations = unusedLines.length
       
       if (unusedLines.length === 0) {
         this.results.passed.push('No unused declarations detected');
@@ -149,13 +147,13 @@ class EnterpriseCodeQuality {
       } else {
         this.results.failed.push(`Too many unused declarations: ${unusedLines.length}`);
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Dead code detection failed');
     }
   }
 
   async checkArchitecturalViolations() {
-    step('Checking architectural violations...');
+    console.log('Checking architectural violations...');
     
     try {
       const violations = [];
@@ -182,20 +180,20 @@ class EnterpriseCodeQuality {
         }
       }
       
-      this.results.metrics.architecturalViolations = violations.length;
+      this.results.metrics.architecturalViolations = violations.length
       
       if (violations.length === 0) {
         this.results.passed.push('No architectural violations detected');
       } else {
         violations.forEach(v => this.results.warnings.push(v));
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Architectural analysis failed');
     }
   }
 
   async detectPerformanceAntiPatterns() {
-    step('Detecting performance anti-patterns...');
+    console.log('Detecting performance anti-patterns...');
     
     try {
       const antiPatterns = [];
@@ -222,7 +220,7 @@ class EnterpriseCodeQuality {
         }
       }
       
-      this.results.metrics.performanceAntiPatterns = antiPatterns.length;
+      this.results.metrics.performanceAntiPatterns = antiPatterns.length
       
       if (antiPatterns.length === 0) {
         this.results.passed.push('No performance anti-patterns detected');
@@ -231,13 +229,13 @@ class EnterpriseCodeQuality {
       } else {
         this.results.failed.push(`Too many performance anti-patterns: ${antiPatterns.length}`);
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Performance anti-pattern detection failed');
     }
   }
 
   async detectSecurityAntiPatterns() {
-    step('Detecting security anti-patterns...');
+    console.log('Detecting security anti-patterns...');
     
     try {
       const securityIssues = [];
@@ -261,26 +259,26 @@ class EnterpriseCodeQuality {
           securityIssues.push(`document.write usage in ${file}`);
         }
         
-        // Check for window.open without noopener
-        if (content.includes('window.open') && !content.includes('noopener')) {
-          securityIssues.push(`Unsafe window.open in ${file}`);
+        // Check for /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open without noopener
+        if (content.includes('/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open') && !content.includes('noopener')) {
+          securityIssues.push(`Unsafe /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open in ${file}`);
         }
       }
       
-      this.results.metrics.securityAntiPatterns = securityIssues.length;
+      this.results.metrics.securityAntiPatterns = securityIssues.length
       
       if (securityIssues.length === 0) {
         this.results.passed.push('No security anti-patterns detected');
       } else {
         securityIssues.forEach(issue => this.results.failed.push(issue));
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Security anti-pattern detection failed');
     }
   }
 
   async checkCodeDuplication() {
-    step('Checking for code duplication...');
+    console.log('Checking for code duplication...');
     
     try {
       // Simple duplication check using similar function signatures
@@ -302,7 +300,7 @@ class EnterpriseCodeQuality {
         });
       }
       
-      this.results.metrics.duplicatedFunctions = duplicates.length;
+      this.results.metrics.duplicatedFunctions = duplicates.length
       
       if (duplicates.length === 0) {
         this.results.passed.push('No code duplication detected');
@@ -311,13 +309,13 @@ class EnterpriseCodeQuality {
       } else {
         this.results.failed.push(`Excessive code duplication: ${duplicates.length} cases`);
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Code duplication analysis failed');
     }
   }
 
   async validateImportStructure() {
-    step('Validating import structure...');
+    console.log('Validating import structure...');
     
     try {
       const importIssues = [];
@@ -342,20 +340,20 @@ class EnterpriseCodeQuality {
         });
       }
       
-      this.results.metrics.importStructureIssues = importIssues.length;
+      this.results.metrics.importStructureIssues = importIssues.length
       
       if (importIssues.length === 0) {
         this.results.passed.push('Import structure is clean');
       } else {
         importIssues.forEach(issue => this.results.warnings.push(issue));
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Import structure validation failed');
     }
   }
 
   async checkFunctionLength() {
-    step('Checking function length...');
+    console.log('Checking function length...');
     
     try {
       const longFunctions = [];
@@ -372,7 +370,7 @@ class EnterpriseCodeQuality {
         });
       }
       
-      this.results.metrics.longFunctions = longFunctions.length;
+      this.results.metrics.longFunctions = longFunctions.length
       
       if (longFunctions.length === 0) {
         this.results.passed.push('All functions are appropriately sized');
@@ -381,7 +379,7 @@ class EnterpriseCodeQuality {
       } else {
         this.results.failed.push(`Too many long functions: ${longFunctions.length}`);
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Function length analysis failed');
     }
   }
@@ -401,9 +399,9 @@ class EnterpriseCodeQuality {
           startLine: index,
           lines: 0
         };
-        braceCount = (line.match(/{/g) || []).length - (line.match(/}/g) || []).length;
+        braceCount = (line.match(/{/g) || []).length - (line.match(/}/g) || []).length
       } else if (currentFunction) {
-        braceCount += (line.match(/{/g) || []).length - (line.match(/}/g) || []).length;
+        braceCount += (line.match(/{/g) || []).length - (line.match(/}/g) || []).length
         currentFunction.lines++;
         
         if (braceCount === 0) {
@@ -417,7 +415,7 @@ class EnterpriseCodeQuality {
   }
 
   async validateNamingConventions() {
-    step('Validating naming conventions...');
+    console.log('Validating naming conventions...');
     
     try {
       const namingIssues = [];
@@ -449,20 +447,20 @@ class EnterpriseCodeQuality {
         }
       }
       
-      this.results.metrics.namingConventionIssues = namingIssues.length;
+      this.results.metrics.namingConventionIssues = namingIssues.length
       
       if (namingIssues.length === 0) {
         this.results.passed.push('Naming conventions followed');
       } else {
         namingIssues.forEach(issue => this.results.warnings.push(issue));
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Naming convention validation failed');
     }
   }
 
   async checkTypeScriptStrictness() {
-    step('Checking TypeScript strictness...');
+    console.log('Checking TypeScript strictness...');
     
     try {
       const tsConfig = JSON.parse(fs.readFileSync('tsconfig.json', 'utf-8'));
@@ -498,7 +496,7 @@ class EnterpriseCodeQuality {
         this.results.failed.push(`Excessive any usage: ${anyCount} occurrences`);
       }
       
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('TypeScript strictness check failed');
     }
   }
@@ -510,13 +508,13 @@ class EnterpriseCodeQuality {
         .split('\n')
         .filter(f => f && fs.existsSync(f));
       return files;
-    } catch (err) {
+    } catch (error) {
       return [];
     }
   }
 
   async generateReport() {
-    step('Generating enterprise code quality report...');
+    console.log('Generating enterprise code quality report...');
     
     const report = {
       timestamp: new Date().toISOString(),
@@ -533,32 +531,32 @@ class EnterpriseCodeQuality {
     fs.writeFileSync('enterprise-code-quality-report.json', JSON.stringify(report, null, 2));
     
     // Console output
-    log('\n📊 Enterprise Code Quality Summary:', 'blue');
-    log('='.repeat(50), 'blue');
+    console.log('\n📊 Enterprise Code Quality Summary:', 'blue');
+    console.log('='.repeat(50), 'blue');
     
     if (this.results.passed.length > 0) {
-      log(`\n✅ Passed (${this.results.passed.length}):`, 'green');
-      this.results.passed.forEach(item => log(`   • ${item}`, 'green'));
+      console.log(`\n✅ Passed (${this.results.passed.length}):`, 'green');
+      this.results.passed.forEach(item => console.log(`   • ${item}`, 'green'));
     }
     
     if (this.results.warnings.length > 0) {
-      log(`\n⚠️  Warnings (${this.results.warnings.length}):`, 'yellow');
-      this.results.warnings.forEach(item => log(`   • ${item}`, 'yellow'));
+      console.log(`\n⚠️  Warnings (${this.results.warnings.length}):`, 'yellow');
+      this.results.warnings.forEach(item => console.log(`   • ${item}`, 'yellow'));
     }
     
     if (this.results.failed.length > 0) {
-      log(`\n❌ Failed (${this.results.failed.length}):`, 'red');
-      this.results.failed.forEach(item => log(`   • ${item}`, 'red'));
+      console.log(`\n❌ Failed (${this.results.failed.length}):`, 'red');
+      this.results.failed.forEach(item => console.log(`   • ${item}`, 'red'));
     }
     
     if (Object.keys(this.results.metrics).length > 0) {
-      log('\n📈 Quality Metrics:', 'cyan');
+      console.log('\n📈 Quality Metrics:', 'cyan');
       Object.entries(this.results.metrics).forEach(([key, value]) => {
-        log(`   • ${key}: ${value}`, 'cyan');
+        console.log(`   • ${key}: ${value}`, 'cyan');
       });
     }
     
-    log(`\nReport saved to: enterprise-code-quality-report.json`, 'blue');
+    console.log(`\nReport saved to: enterprise-code-quality-report.json`, 'blue');
   }
 }
 
@@ -566,9 +564,9 @@ class EnterpriseCodeQuality {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const enforcer = new EnterpriseCodeQuality();
   enforcer.runAll().catch(err => {
-    console.error(`❌ Enterprise code quality check failed: ${err.message}`);
+    console.error(`❌ Enterprise code quality check failed: ${error.message}`);
     process.exit(1);
   });
 }
 
-export default EnterpriseCodeQuality;
+module.exports = EnterpriseCodeQuality;

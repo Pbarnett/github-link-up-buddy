@@ -7,7 +7,6 @@ import {
   FormLabel,
 } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
-
 // Auto-booking form data interface
 interface AutoBookingFormData {
   auto_book_enabled?: boolean;

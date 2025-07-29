@@ -10,7 +10,6 @@ import {
 import userEvent from '@testing-library/user-event';
 import { FlightRuleForm } from './FlightRuleForm';
 import { UnifiedFlightRuleForm } from './FlightRuleForm';
-
 describe('FlightRuleForm', () => {
   const mockOnSubmit = vi.fn();
 
@@ -37,7 +36,7 @@ describe('FlightRuleForm', () => {
   });
 
   it('displays validation errors for empty required fields', async () => {
-    const user = userEvent.setup();
+    const _user = userEvent.setup();
     render(<FlightRuleForm onSubmit={mockOnSubmit} />);
 
     // Get inputs
@@ -105,7 +104,7 @@ describe('FlightRuleForm', () => {
   });
 
   it('validates return date is after outbound date', async () => {
-    const user = userEvent.setup(); // real timers
+    const _user = userEvent.setup(); // real timers
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -167,7 +166,7 @@ describe('FlightRuleForm', () => {
   });
 
   it('validates budget is within acceptable range', async () => {
-    const user = userEvent.setup();
+    const _user = userEvent.setup();
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -252,7 +251,7 @@ describe('FlightRuleForm', () => {
   });
 
   it('prevents submission with dates in the past', async () => {
-    const user = userEvent.setup();
+    const _user = userEvent.setup();
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);

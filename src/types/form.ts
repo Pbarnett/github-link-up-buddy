@@ -40,43 +40,43 @@ export const tripFormSchema = z
   .object({
     earliestDeparture: z
       .date({
-        required_error: 'Earliest departure date is required',
+        required_error: 'dates.earliestDepartureRequired',
       })
       .refine(date => date > new Date(), {
-        message: 'Earliest departure date must be in the future',
+        message: 'dates.earliestDepartureInPast',
       }),
     latestDeparture: z
       .date({
-        required_error: 'Latest departure date is required',
+        required_error: 'dates.latestDepartureRequired',
       })
       .refine(date => date > new Date(), {
-        message: 'Latest departure date must be in the future',
+        message: 'dates.latestDepartureInPast',
       }),
     min_duration: z.coerce
       .number()
       .int()
       .min(1, {
-        message: 'Minimum duration must be at least 1 day',
+        message: 'duration.minDurationTooShort',
       })
       .max(30, {
-        message: 'Minimum duration cannot exceed 30 days',
+        message: 'duration.maxDurationTooLong',
       }),
     max_duration: z.coerce
       .number()
       .int()
       .min(1, {
-        message: 'Maximum duration must be at least 1 day',
+        message: 'duration.minDurationTooShort',
       })
       .max(30, {
-        message: 'Maximum duration cannot exceed 30 days',
+        message: 'duration.maxDurationTooLong',
       }),
     max_price: z.coerce
       .number()
       .min(100, {
-        message: 'Maximum price must be at least $100',
+        message: 'pricing.budgetTooLow',
       })
       .max(10000, {
-        message: 'Maximum price cannot exceed $10,000',
+        message: 'pricing.budgetTooHigh',
       })
       .optional(),
     nyc_airports: z.array(z.string()).optional(),
@@ -98,7 +98,7 @@ export const tripFormSchema = z
     if (data.latestDeparture <= data.earliestDeparture) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Latest departure date must be after earliest departure date',
+        message: 'dates.dateRangeInvalid',
         path: ['latestDeparture'],
       });
     }
@@ -110,9 +110,10 @@ export const tripFormSchema = z
     if (daysDiff > 60) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          'Date range cannot exceed 60 days. For longer searches, please create multiple trips.',
+        message: 'dates.dateRangeTooWide',
         path: ['latestDeparture'],
+        // Pass additional context for the error message
+        params: { daysDiff },
       });
     }
 
@@ -120,8 +121,7 @@ export const tripFormSchema = z
     if (data.max_duration < data.min_duration) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          'Maximum duration must be greater than or equal to minimum duration',
+        message: 'duration.durationRangeInvalid',
         path: ['max_duration'],
       });
     }
@@ -132,7 +132,7 @@ export const tripFormSchema = z
     if (!hasNycAirports && !hasOtherAirport) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'At least one departure airport must be selected',
+        message: 'location.departureAirportRequired',
         path: ['nyc_airports'],
       });
     }
@@ -141,7 +141,7 @@ export const tripFormSchema = z
     if (!data.destination_airport && !data.destination_other) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Please select a destination or enter a custom one',
+        message: 'location.destinationRequired',
         path: ['destination_airport'],
       });
     }
@@ -152,14 +152,14 @@ export const tripFormSchema = z
         ctx.addIssue({
           path: ['max_price'],
           code: z.ZodIssueCode.custom,
-          message: 'Maximum price is required when auto-booking is enabled',
+          message: 'autoBooking.maxPriceRequired',
         });
       }
       if (!data.preferred_payment_method_id) {
         ctx.addIssue({
           path: ['preferred_payment_method_id'],
           code: z.ZodIssueCode.custom,
-          message: 'Payment method is required when auto-booking is enabled',
+          message: 'autoBooking.paymentMethodRequired',
         });
       }
 
@@ -168,7 +168,7 @@ export const tripFormSchema = z
         ctx.addIssue({
           path: ['auto_book_consent'],
           code: z.ZodIssueCode.custom,
-          message: 'You must authorize auto-booking to continue',
+          message: 'autoBooking.consentRequired',
         });
       }
     }

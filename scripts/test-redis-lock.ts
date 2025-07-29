@@ -6,7 +6,7 @@
  */
 
 // Import the Redis lock manager
-import { RedisLockManager, acquireMonitorLock, acquireOfferLock } from '../supabase/functions/lib/redis-lock.ts'
+import '../supabase/functions/lib/redis-lock.ts'
 
 // Set environment variables (these would normally be set by the environment)
 Deno.env.set('UPSTASH_REDIS_REST_URL', 'https://summary-shepherd-52906.upstash.io')
@@ -160,8 +160,8 @@ async function testRedisConnection() {
     
     return true
     
-  } catch (error) {
-    console.error('❌ Redis test failed:', error)
+  } catch {
+    console.error('❌ Redis test failed:', error);
     return false
   }
 }
@@ -191,8 +191,8 @@ async function testFailureScenarios() {
     
     console.log('✅ Failure scenario testing completed')
     
-  } catch (error) {
-    console.error('❌ Failure scenario test error:', error)
+  } catch {
+    console.error('❌ Failure scenario test error:', error);
   }
 }
 

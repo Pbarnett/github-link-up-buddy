@@ -6,12 +6,12 @@
  */
 
 import * as React from 'react';
+import { FC } from 'react';
 import { useState, useCallback } from 'react';
 import { FlightOffer } from '@/services/flightSearchSecure';
 import { stripeServiceSecure } from '@/services/stripeServiceSecure';
 import SecureFlightSearch from '@/components/flights/SecureFlightSearch';
 import { useSecureOAuth } from '@/components/auth/SecureOAuthLogin';
-
 // Booking flow steps
 type BookingStep =
   | 'search'

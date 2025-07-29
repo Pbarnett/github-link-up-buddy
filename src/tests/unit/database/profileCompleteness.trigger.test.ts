@@ -7,7 +7,6 @@ import * as React from 'react';
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
 // Mock database functions that would be called via RPC
 const mockDatabase = {
   rpc: vi.fn(),

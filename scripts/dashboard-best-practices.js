@@ -15,7 +15,9 @@ import fs from 'fs/promises';
 import axios from 'axios';
 import { performance } from 'perf_hooks';
 import { execSync } from 'child_process';
-
+// Utility functions
+// Removed unused error function
+// Utility functions
 const GRAFANA_URL = 'http://localhost:3001';
 const GRAFANA_ADMIN_USER = 'admin';
 const GRAFANA_ADMIN_PASSWORD = 'admin';
@@ -112,7 +114,7 @@ class DashboardBestPracticesImplementer {
         });
 
         if (dashboardResponse.status === 200) {
-          const dashboard = dashboardResponse.data.dashboard;
+          const dashboard = dashboardResponse.data.dashboard
           
           // Create purpose documentation panel
           const purposePanel = {
@@ -205,7 +207,7 @@ ${config.keyQuestions.map(q => `- ${q}`).join('\n')}
         });
 
         if (dashboardResponse.status === 200) {
-          const dashboard = dashboardResponse.data.dashboard;
+          const dashboard = dashboardResponse.data.dashboard
 
           // Add descriptions to panels based on their content
           if (dashboard.panels) {
@@ -327,7 +329,7 @@ ${config.keyQuestions.map(q => `- ${q}`).join('\n')}
 
             await this.log('success', `✅ Exported ${dashboard.title} to version control`);
 
-          } catch (error) {
+          } catch {
             await this.log('warn', `⚠️ Could not export ${dashboard.title}: ${error.message}`);
           }
         }
@@ -405,14 +407,14 @@ echo "Location: ./monitoring/grafana/backups/"
         (d.tags && d.tags.includes('parker-flight'))
       );
 
-      reviewResults.parkerFlightDashboards = parkerFlightDashboards.length;
+      reviewResults.parkerFlightDashboards = parkerFlightDashboards.length
 
       // Check for test dashboards
       const testDashboards = allDashboards.data.filter(d => 
         d.title.toLowerCase().startsWith('test:') ||
         d.title.toLowerCase().includes('test')
       );
-      reviewResults.testDashboards = testDashboards.length;
+      reviewResults.testDashboards = testDashboards.length
 
       // Check for potential duplicates (similar titles)
       const titles = allDashboards.data.map(d => d.title.toLowerCase());
@@ -680,7 +682,7 @@ echo "Location: ./monitoring/grafana/backups/"
       const duration = ((endTime - startTime) / 1000).toFixed(2);
       await this.log('info', `🏁 Best practices implementation '${command}' completed in ${duration}s`);
 
-    } catch (error) {
+    } catch {
       await this.log('error', `Best practices implementation '${command}' failed: ${error.message}`);
       process.exit(1);
     }
@@ -718,4 +720,4 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   });
 }
 
-export { DashboardBestPracticesImplementer };
+module.exports = { DashboardBestPracticesImplementer };

@@ -317,7 +317,7 @@ test.describe('Secure Flight Booking Flow', () => {
     test('should work with JavaScript disabled', async ({ page }) => {
       // Disable JavaScript
       await page.context().addInitScript(() => {
-        Object.defineProperty(window, 'fetch', {
+        Object.defineProperty(/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window, 'fetch', {
           value: undefined,
           writable: false,
         });

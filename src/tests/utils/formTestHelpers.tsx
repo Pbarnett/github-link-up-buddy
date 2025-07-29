@@ -2,7 +2,6 @@ import * as React from 'react';
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect } from 'vitest';
-
 // Test date utilities (moved here to resolve import issue)
 export const getTestDates = () => {
   const today = new Date();
@@ -90,7 +89,7 @@ export const selectDestination = async (
       name: new RegExp(destinationCode, 'i'),
     });
     await userEvent.click(option);
-  } catch (error) {
+  } catch (_error) {
     if (fallbackToCustom) {
       // Fallback: use the custom destination input
       console.warn('Destination select failed, using custom input fallback');

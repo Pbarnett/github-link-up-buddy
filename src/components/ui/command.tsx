@@ -2,64 +2,14 @@ import * as React from 'react';
 import { Command as CommandPrimitive } from 'cmdk';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
+import { Search } from 'lucide-react';
 
+interface CommandProps
+  extends React.ComponentPropsWithoutRef<typeof CommandPrimitive> {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive>>;
+}
 
-type ElementRef<T extends React.ElementType> = React.ElementRef<T>;
-type ComponentPropsWithoutRef<T extends React.ElementType> =
-  React.ComponentPropsWithoutRef<T>;
-
-type HTMLAttributes<T extends React.ElementType> = React.HTMLAttributes<T>;
-type HTMLAttributes<T> = React.HTMLAttributes<T>;
-
-const Command = React.forwardRef<
-  ElementRef<typeof CommandPrimitive>,
-  ComponentPropsWithoutRef<typeof CommandPrimitive>
->(({ className, ...props }, ref) => (
+const Command = ({ className, ref, ...props }: CommandProps) => (
   <CommandPrimitive
     ref={ref}
     className={cn(
@@ -68,10 +18,10 @@ const Command = React.forwardRef<
     )}
     {...props}
   />
-));
+);
 Command.displayName = CommandPrimitive.displayName;
 
-type CommandDialogProps = DialogProps;
+type CommandDialogProps = React.ComponentProps<typeof Dialog>;
 
 const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   return (
@@ -85,10 +35,12 @@ const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   );
 };
 
-const CommandInput = React.forwardRef<
-  ElementRef<typeof CommandPrimitive.Input>,
-  ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
->(({ className, ...props }, ref) => (
+interface CommandInputProps
+  extends React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input> {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive.Input>>;
+}
+
+const CommandInput = ({ className, ref, ...props }: CommandInputProps) => (
   <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
     <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
     <CommandPrimitive.Input
@@ -100,40 +52,46 @@ const CommandInput = React.forwardRef<
       {...props}
     />
   </div>
-));
+);
 
 CommandInput.displayName = CommandPrimitive.Input.displayName;
 
-const CommandList = React.forwardRef<
-  ElementRef<typeof CommandPrimitive.List>,
-  ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({ className, ...props }, ref) => (
+interface CommandListProps
+  extends React.ComponentPropsWithoutRef<typeof CommandPrimitive.List> {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive.List>>;
+}
+
+const CommandList = ({ className, ref, ...props }: CommandListProps) => (
   <CommandPrimitive.List
     ref={ref}
     className={cn('max-h-[300px] overflow-y-auto overflow-x-hidden', className)}
     {...props}
   />
-));
+);
 
 CommandList.displayName = CommandPrimitive.List.displayName;
 
-const CommandEmpty = React.forwardRef<
-  ElementRef<typeof CommandPrimitive.Empty>,
-  ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
->((props, ref) => (
+interface CommandEmptyProps
+  extends React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty> {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive.Empty>>;
+}
+
+const CommandEmpty = ({ ref, ...props }: CommandEmptyProps) => (
   <CommandPrimitive.Empty
     ref={ref}
     className="py-6 text-center text-sm"
     {...props}
   />
-));
+);
 
 CommandEmpty.displayName = CommandPrimitive.Empty.displayName;
 
-const CommandGroup = React.forwardRef<
-  ElementRef<typeof CommandPrimitive.Group>,
-  ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
->(({ className, ...props }, ref) => (
+interface CommandGroupProps
+  extends React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group> {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive.Group>>;
+}
+
+const CommandGroup = ({ className, ref, ...props }: CommandGroupProps) => (
   <CommandPrimitive.Group
     ref={ref}
     className={cn(
@@ -142,26 +100,34 @@ const CommandGroup = React.forwardRef<
     )}
     {...props}
   />
-));
+);
 
 CommandGroup.displayName = CommandPrimitive.Group.displayName;
 
-const CommandSeparator = React.forwardRef<
-  ElementRef<typeof CommandPrimitive.Separator>,
-  ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>
->(({ className, ...props }, ref) => (
+interface CommandSeparatorProps
+  extends React.ComponentPropsWithoutRef<typeof CommandPrimitive.Separator> {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive.Separator>>;
+}
+
+const CommandSeparator = ({
+  className,
+  ref,
+  ...props
+}: CommandSeparatorProps) => (
   <CommandPrimitive.Separator
     ref={ref}
     className={cn('-mx-1 h-px bg-border', className)}
     {...props}
   />
-));
+);
 CommandSeparator.displayName = CommandPrimitive.Separator.displayName;
 
-const CommandItem = React.forwardRef<
-  ElementRef<typeof CommandPrimitive.Item>,
-  ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, ...props }, ref) => (
+interface CommandItemProps
+  extends React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item> {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive.Item>>;
+}
+
+const CommandItem = ({ className, ref, ...props }: CommandItemProps) => (
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
@@ -170,14 +136,14 @@ const CommandItem = React.forwardRef<
     )}
     {...props}
   />
-));
+);
 
 CommandItem.displayName = CommandPrimitive.Item.displayName;
 
 const CommandShortcut = ({
   className,
   ...props
-}: HTMLAttributes<HTMLSpanElement>) => {
+}: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
     <span
       className={cn(

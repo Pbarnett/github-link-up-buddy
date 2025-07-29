@@ -6,11 +6,9 @@
  */
 
 import * as React from 'react';
+import { FC } from 'react';
 import { useMemo, useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
-
-type FC<T = {}> = React.FC<T>;
-
 import {
   FormField,
   FormItem,
@@ -47,7 +45,6 @@ import { AirportAutocompleteField } from './AirportAutocompleteField';
 import { CountrySelectField } from './CountrySelectField';
 import { PhoneInputField } from './PhoneInputField';
 import { AddressGroupField } from './AddressGroupField';
-
 export interface DynamicFieldRendererProps {
   /** Field configuration */
   field: FieldConfiguration;
@@ -163,7 +160,9 @@ export const DynamicFieldRenderer: FC<DynamicFieldRendererProps> = ({
         return (
           <Textarea
             value={(value as string) || ''}
-            onChange={e => handleChange((e.target as HTMLInputElement).value)}
+            onChange={e =>
+              handleChange((e.target as HTMLTextAreaElement).value)
+            }
             onBlur={onBlur}
             disabled={fieldState.isDisabled}
             className={cn(

@@ -10,7 +10,7 @@ import {
   FlightFilter,
   FlightOffer,
   FilterContext,
-  ValidationResult,
+  _ValidationResult,
 } from '../core/types';
 
 export class CarryOnFilter implements FlightFilter {
@@ -102,7 +102,7 @@ export class CarryOnFilter implements FlightFilter {
         `[CarryOnFilter] Offer ${offer.id}: Carry-on not included or has fee`
       );
       return false;
-    } catch (error) {
+    } catch (_error) {
       console.warn(
         `[CarryOnFilter] Error checking carry-on for offer ${offer.id}:`,
         error

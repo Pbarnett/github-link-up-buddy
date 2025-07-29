@@ -5,51 +5,15 @@
  */
 
 import * as React from 'react';
+import { FC } from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import {
-  AlertCircle,
   AlertTriangle,
-  ArrowRight,
-  Bell,
   Calendar,
-  CalendarIcon,
   CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
   Clock,
-  CreditCard,
-  DollarSign,
-  Download,
   Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
   RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
   BarChart3,
   Target,
 } from 'lucide-react';
@@ -65,9 +29,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
-
-type FC<T = {}> = React.FC<T>;
-
 interface FormAnalytics {
   form_name: string;
   total_views: number;
@@ -75,6 +36,17 @@ interface FormAnalytics {
   completion_rate: number;
   abandonment_rate: number;
   avg_completion_time_ms: number;
+  date: string;
+}
+
+// Database row type that matches the actual database schema
+interface FormAnalyticsRow {
+  form_name: string;
+  total_views: number | null;
+  total_submissions: number | null;
+  completion_rate: number | null;
+  abandonment_rate: number | null;
+  avg_completion_time_ms: number | null;
   date: string;
 }
 
@@ -117,20 +89,21 @@ export const FormAnalyticsDashboard: FC = () => {
       }
 
       // Fetch analytics data
-      const queryResult = supabase
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+      
+      const { data: analyticsData, error: analyticsError } = await supabase
         .from('form_completion_analytics')
         .select('*')
-        .gte('date', startDate.toISOString().split('T')[0])
-        .lte('date', endDate.toISOString().split('T')[0])
+        .gte('date', startDateStr)
+        .lte('date', endDateStr)
         .order('date', { ascending: false });
-
-      const { data: analyticsData, error: analyticsError } = await queryResult;
 
       if (analyticsError) throw analyticsError;
 
-      // Aggregate data by form
-      const formAnalytics = (analyticsData || []).reduce(
-        (acc: Record<string, FormAnalytics>, curr: FormAnalytics) => {
+      // Aggregate data by form, treating the data as FormAnalyticsRow
+      const formAnalytics = (analyticsData as FormAnalyticsRow[] || []).reduce(
+        (acc: Record<string, FormAnalytics>, curr: FormAnalyticsRow) => {
           const key = curr.form_name;
           if (!acc[key]) {
             acc[key] = {

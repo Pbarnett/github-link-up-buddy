@@ -194,7 +194,7 @@ test.describe('JSON Security Tests', () => {
     // Test that the application handles potentially malicious inputs
     await page.evaluate(() => {
       // Test JSON bomb protection (deeply nested objects)
-      const testRunner = (window as any).testRunner;
+      const testRunner = (/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window as any).testRunner;
       
       // This should not crash the browser
       try {
@@ -210,7 +210,7 @@ test.describe('JSON Security Tests', () => {
         
         JSON.parse(maliciousJson);
         testRunner.log('Deep nesting test completed safely', 'pass');
-      } catch (e) {
+      } catch (_e) {
         testRunner.log('Deep nesting properly rejected', 'pass');
       }
     });
@@ -221,7 +221,7 @@ test.describe('JSON Security Tests', () => {
 
   test('should prevent script injection via JSON', async () => {
     await page.evaluate(() => {
-      const testRunner = (window as any).testRunner;
+      const testRunner = (/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window as any).testRunner;
       
       try {
         // Test that script injection attempts are safely handled
@@ -233,7 +233,7 @@ test.describe('JSON Security Tests', () => {
           typeof parsed.script === 'string',
           'Script injection properly neutralized'
         );
-      } catch (e) {
+      } catch (_e) {
         testRunner.log('Script injection test failed', 'fail');
       }
     });

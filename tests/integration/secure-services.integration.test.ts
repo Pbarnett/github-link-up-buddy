@@ -337,7 +337,7 @@ describe('Secure Services Integration Tests', () => {
     try {
       const { SupabaseSecureConfig } = await import('@/services/stripeServiceSecure');
       (SupabaseSecureConfig as any).supabaseClient = null;
-    } catch (e) {
+    } catch (_e) {
       // Module may not be available in some contexts
     }
     
@@ -348,7 +348,7 @@ describe('Secure Services Integration Tests', () => {
       (amadeusInstance as any).accessToken = null;
       (amadeusInstance as any).tokenExpiry = 0;
       flightSearchServiceSecure.clearCaches();
-    } catch (e) {
+    } catch (_e) {
       // Module may not be available in some contexts
     }
   });

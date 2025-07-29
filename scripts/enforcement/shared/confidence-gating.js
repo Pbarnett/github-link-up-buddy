@@ -1,3 +1,8 @@
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
+
 #!/usr/bin/env node
 
 class ConfidenceGating {
@@ -43,36 +48,36 @@ class ConfidenceGating {
       let parsedContent = content;
       try {
         parsedContent = JSON.parse(content);
-      } catch (e) {
+      } catch (_e) {
         // Not JSON, continue with string analysis
       }
       
       // Length-based indicators
       if (content.length < 100) {
-        confidence += this.qualityIndicators.too_short;
+        confidence += this.qualityIndicators.too_short
         reasons.push('Response too short');
       }
       
       if (content.length > 500) {
-        confidence += this.qualityIndicators.detailed_explanation;
+        confidence += this.qualityIndicators.detailed_explanation
         reasons.push('Detailed response provided');
       }
       
       // Structure-based indicators
       if (typeof parsedContent === 'object' && parsedContent !== null) {
-        confidence += this.qualityIndicators.structured_response;
+        confidence += this.qualityIndicators.structured_response
         reasons.push('Structured JSON response');
         
         // Check for required fields in structured response
         if (parsedContent.issues && Array.isArray(parsedContent.issues)) {
           if (parsedContent.issues.length > 1) {
-            confidence += this.qualityIndicators.multiple_issues_found;
+            confidence += this.qualityIndicators.multiple_issues_found
             reasons.push('Multiple issues identified');
           }
         }
         
         if (parsedContent.suggestions && parsedContent.suggestions.length > 0) {
-          confidence += this.qualityIndicators.specific_suggestions;
+          confidence += this.qualityIndicators.specific_suggestions
           reasons.push('Specific suggestions provided');
         }
       }
@@ -83,7 +88,7 @@ class ConfidenceGating {
       // Check for code examples
       if (lowerContent.includes('```') || lowerContent.includes('function') || 
           lowerContent.includes('const ') || lowerContent.includes('let ')) {
-        confidence += this.qualityIndicators.code_examples;
+        confidence += this.qualityIndicators.code_examples
         reasons.push('Code examples included');
       }
       
@@ -98,10 +103,10 @@ class ConfidenceGating {
       
       const genericCount = genericPhrases.filter(phrase => 
         lowerContent.includes(phrase)
-      ).length;
+      ).length
       
       if (genericCount > 2) {
-        confidence += this.qualityIndicators.generic_response;
+        confidence += this.qualityIndicators.generic_response
         reasons.push('Generic language detected');
       }
       
@@ -111,7 +116,7 @@ class ConfidenceGating {
       // Clamp confidence between 0 and 1
       confidence = Math.max(0, Math.min(1, confidence));
       
-      const threshold = this.thresholds[taskType] || 0.7;
+      const threshold = this.thresholds[taskType] || 0.7
       const shouldEscalate = confidence < threshold;
       
       return {
@@ -123,7 +128,7 @@ class ConfidenceGating {
         qualityLevel: this.getQualityLevel(confidence)
       };
       
-    } catch (error) {
+    } catch {
       console.error('Error assessing confidence:', error);
       return {
         confidence: 0.3,
@@ -144,49 +149,51 @@ class ConfidenceGating {
       case 'code_review':
         // Check for security-related findings
         if (lowerContent.includes('security') || lowerContent.includes('vulnerability')) {
-          adjustment += 0.1;
+          adjustment += 0.1
         }
         
         // Check for performance insights
         if (lowerContent.includes('performance') || lowerContent.includes('optimization')) {
-          adjustment += 0.1;
+          adjustment += 0.1
         }
         
         // Check for architectural feedback
         if (lowerContent.includes('architecture') || lowerContent.includes('design pattern')) {
-          adjustment += 0.15;
+          adjustment += 0.15
         }
         break;
         
-      case 'test_generation':
+      case 'test_generation': {
         // Check for edge cases
         if (lowerContent.includes('edge case') || lowerContent.includes('boundary')) {
-          adjustment += 0.2;
+          adjustment += 0.2
         }
         
         // Check for multiple test scenarios
-        const testCount = (content.match(/it\(|test\(|describe\(/g) || []).length;
+        const testCount = (content.match(/it\(|test\(|describe\(/g) || []).length
         if (testCount > 3) {
-          adjustment += 0.15;
+          adjustment += 0.15
         }
         break;
+      }
         
-      case 'security_analysis':
+      case 'security_analysis': {
         // Check for specific vulnerability types
         const vulnTypes = ['xss', 'sql injection', 'csrf', 'authentication', 'authorization'];
-        const vulnMatches = vulnTypes.filter(vuln => lowerContent.includes(vuln)).length;
-        adjustment += vulnMatches * 0.1;
+        const vulnMatches = vulnTypes.filter(vuln => lowerContent.includes(vuln)).length
+        adjustment += vulnMatches * 0.1
         break;
+      }
         
       case 'bug_detection':
         // Check for root cause analysis
         if (lowerContent.includes('root cause') || lowerContent.includes('because')) {
-          adjustment += 0.15;
+          adjustment += 0.15
         }
         
         // Check for fix suggestions
         if (lowerContent.includes('fix') || lowerContent.includes('solution')) {
-          adjustment += 0.1;
+          adjustment += 0.1
         }
         break;
     }
@@ -195,7 +202,7 @@ class ConfidenceGating {
   }
 
   getRecommendation(confidence, taskType) {
-    const threshold = this.thresholds[taskType] || 0.7;
+    const threshold = this.thresholds[taskType] || 0.7
     
     if (confidence >= threshold + 0.1) {
       return 'accept';
@@ -242,7 +249,7 @@ class ConfidenceGating {
     try {
       JSON.parse(content);
       return true;
-    } catch (e) {
+    } catch (_e) {
       return false;
     }
   }
@@ -258,4 +265,4 @@ class ConfidenceGating {
   }
 }
 
-export default ConfidenceGating;
+module.exports = ConfidenceGating;

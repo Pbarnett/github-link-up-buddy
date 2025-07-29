@@ -1,4 +1,11 @@
 import fetch from 'node-fetch';
+// Utility functions
+const info = (msg) => console.log(`ℹ️  ${msg}`);
+const warning = (msg) => console.log(`⚠️  ${msg}`);
+const error = (msg) => console.log(`❌ ${msg}`);
+const success = (msg) => console.log(`✅ ${msg}`);
+
+
 
 async function testHealthEndpoint() {
   try {

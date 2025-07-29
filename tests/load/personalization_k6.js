@@ -44,7 +44,7 @@ export default function () {
       try {
         const data = JSON.parse(r.body);
         return data.hasOwnProperty('firstName');
-      } catch (e) {
+      } catch (_e) {
         return false;
       }
     },
@@ -52,7 +52,7 @@ export default function () {
       try {
         const data = JSON.parse(r.body);
         return data.hasOwnProperty('nextTripCity');
-      } catch (e) {
+      } catch (_e) {
         return false;
       }
     },
@@ -60,7 +60,7 @@ export default function () {
       try {
         const data = JSON.parse(r.body);
         return data.hasOwnProperty('personalizationEnabled');
-      } catch (e) {
+      } catch (_e) {
         return false;
       }
     },

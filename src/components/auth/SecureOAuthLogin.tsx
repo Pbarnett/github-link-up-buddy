@@ -6,12 +6,12 @@
  */
 
 import * as React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { FC } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import { oauthServiceSecure, OAuthUtils } from '@/services/oauthServiceSecure';
 import { supabaseClient } from '@/lib/supabase';
 import { AuthErrorHandler } from '@/services/authErrorHandler';
 import { AuthResilience, SessionManager } from '@/services/authResilience';
-
 // OAuth provider icons (you can replace with actual icons)
 const ProviderIcons = {
   google: '🔍',
@@ -83,7 +83,7 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
         callbackUrl.searchParams.set('state', state);
         callbackUrl.searchParams.set(
           'redirect_uri',
-          `${window.location.origin}/auth/callback`
+          `${/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.origin}/auth/callback`
         );
 
         if (codeVerifier) {
@@ -91,13 +91,14 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
         }
 
         const response = await AuthResilience.withRetry(
-          () => fetch(callbackUrl.toString(), {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-              'Content-Type': 'application/json',
-            },
-          }),
+          () =>
+            fetch(callbackUrl.toString(), {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+              },
+            }),
           'oauth-callback-fetch',
           { maxRetries: 3, baseDelay: 1000 }
         );
@@ -145,20 +146,27 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
         onSuccess?.(result.user, result.session);
 
         // Clean up URL parameters
-        window.history.replaceState(
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.history.replaceState(
           {},
           document.title,
-          window.location.pathname
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+            .location.pathname
         );
 
         // Redirect to dashboard or specified URL
-        if (redirectTo && redirectTo !== window.location.pathname) {
-          window.location.href = redirectTo;
+        if (
+          redirectTo &&
+          redirectTo !==
+            /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+              .location.pathname
+        ) {
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.href =
+            redirectTo;
         }
       } catch (error) {
         AuthErrorHandler.handleAuthError(error, {
           component: 'SecureOAuthLogin',
-          flow: 'completeOAuthFlow'
+          flow: 'completeOAuthFlow',
         });
         const errorMessage =
           error instanceof Error
@@ -181,7 +189,9 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
    * Handle OAuth callback from URL parameters
    */
   const handleOAuthCallback = useCallback(async () => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.search
+    );
     const code = urlParams.get('code');
     const state = urlParams.get('state');
     const provider = urlParams.get('provider');
@@ -232,12 +242,13 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
       sessionStorage.setItem('oauth_provider', provider);
 
       // Redirect to OAuth provider
-      window.location.href = url;
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.href =
+        url;
     } catch (error) {
       AuthErrorHandler.handleAuthError(error, {
         component: 'SecureOAuthLogin',
         flow: 'initiateOAuthLogin',
-        provider
+        provider,
       });
       const errorMessage =
         error instanceof Error ? error.message : 'OAuth initiation failed';
@@ -352,7 +363,7 @@ export const SecureOAuthLogin: React.FC<OAuthLoginProps> = ({
 // Simple user type for authentication (matches Supabase User)
 interface AuthUser {
   id: string;
-  email: string;
+  email?: string;
   email_verified?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -374,7 +385,10 @@ export const useSecureOAuth = () => {
   const checkExistingSession = useCallback(async () => {
     try {
       // Check for test auth override first
-      const testAuthOverride = (window as any).__TEST_AUTH_OVERRIDE__;
+      const testAuthOverride =
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (
+          window as any
+        ).__TEST_AUTH_OVERRIDE__;
       if (testAuthOverride) {
         setAuthState({
           user: testAuthOverride.user,
@@ -387,12 +401,12 @@ export const useSecureOAuth = () => {
 
       // Validate session with recovery capability
       const sessionValid = await SessionManager.validateAndRecoverSession();
-      
+
       if (!sessionValid) {
         setAuthState(prev => ({ ...prev, loading: false }));
         return;
       }
-      
+
       const {
         data: { session },
         error,
@@ -451,7 +465,7 @@ export const useSecureOAuth = () => {
 
   const handleAuthSuccess = (user: unknown, session: unknown) => {
     setAuthState({
-      user,
+      user: user as AuthUser,
       session,
       loading: false,
       error: null,

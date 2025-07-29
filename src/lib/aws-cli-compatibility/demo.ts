@@ -1,13 +1,11 @@
 #!/usr/bin/env tsx
 import * as React from 'react';
-
 /**
  * Demo script showing AWS CLI Parameter Validator usage
  * Run with: tsx src/lib/aws-cli-compatibility/demo.ts
  */
 
 import { AWSCLIParameterValidator } from './parameter-validator';
-
 console.log('🔐 AWS CLI Parameter Validator Demo\n');
 
 // Demo 1: Key ID Validation

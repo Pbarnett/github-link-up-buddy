@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { FlightOfferV2DbRow } from '@/flightSearchV2/types';
 import { Tables } from '@/integrations/supabase/types';
 import { invokeEdgeFn } from '@/lib/invokeEdgeFn';
-
 // Legacy flight offer type from flight_offers table
 type LegacyFlightOffer = Tables<'flight_offers'>;
 

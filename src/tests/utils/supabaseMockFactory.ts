@@ -1,5 +1,4 @@
 import { vi } from 'vitest';
-
 // Mock factory for creating a Supabase client with a full query chain mocked.
 export function createMockSupabaseClient() {
   const mockFunction = vi.fn().mockReturnThis();

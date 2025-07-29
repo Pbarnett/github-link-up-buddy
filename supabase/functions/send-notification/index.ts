@@ -379,7 +379,7 @@ export const handler = async (req: Request): Promise<Response> => {
             }
             
             console.log(`[SendNotification] Email sent successfully to ${userEmail} via Resend for user ${user_id}. Email ID: ${emailResult.data?.id}`);
-          } catch (emailError) {
+          } catch (_emailError) {
             console.error(`[SendNotification] Error sending email via Resend for user ${user_id}: ${emailError.message}`, emailError);
             // Error handling for email failure - deliveryRecord will be null here if it was in try block
           }
@@ -490,7 +490,7 @@ export const handler = async (req: Request): Promise<Response> => {
               console.warn(`[SendNotification] No phone number available for user ${user_id}, skipping SMS.`);
             }
           }
-        } catch (smsError) {
+        } catch (_smsError) {
           console.error(`[SendNotification] Failed to send SMS to user ${user_id}:`, smsError);
           
           // Log SMS failure

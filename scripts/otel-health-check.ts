@@ -50,7 +50,7 @@ class OtelHealthChecker {
     await this.checkSemanticConventions();
 
     this.printSummary();
-    return this.results;
+    return this.results
   }
 
   private async checkConfiguration() {
@@ -193,7 +193,7 @@ class OtelHealthChecker {
       } else {
         this.addResult('span_lifecycle', 'fail', 'Span lifecycle issues', { 
           issues: result.message,
-          missingSpans: result.missingSpans 
+          missingSpans: result.missingSpans
         });
       }
 
@@ -265,7 +265,7 @@ class OtelHealthChecker {
         });
       }
 
-    } catch (error) {
+    } catch {
       // This is expected - we're testing error handling
       this.addResult('error_handling', 'pass', 'Error handling working correctly');
     }
@@ -377,9 +377,9 @@ class OtelHealthChecker {
   }
 
   private printSummary() {
-    const passed = this.results.filter(r => r.status === 'pass').length;
-    const warned = this.results.filter(r => r.status === 'warn').length;
-    const failed = this.results.filter(r => r.status === 'fail').length;
+    const passed = this.results.filter(r => r.status === 'pass').length
+    const warned = this.results.filter(r => r.status === 'warn').length
+    const failed = this.results.filter(r => r.status === 'fail').length
     
     console.log('📋 HEALTH CHECK SUMMARY');
     console.log('========================');
@@ -415,6 +415,6 @@ if (import.meta.main) {
   const results = await checker.runAllChecks();
   
   // Exit with appropriate code
-  const failed = results.filter(r => r.status === 'fail').length;
+  const failed = results.filter(r => r.status === 'fail').length
   Deno.exit(failed > 0 ? 1 : 0);
 }

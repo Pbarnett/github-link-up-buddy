@@ -175,7 +175,7 @@ export class DuffelServiceAdvanced {
       });
 
       return services.data || [];
-    } catch (error) {
+    } catch (_error) {
       console.warn(
         `[DuffelAdvanced] Failed to get services for offer ${offerId}:`,
         error

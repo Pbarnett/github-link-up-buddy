@@ -14,6 +14,7 @@
 import fs from 'fs/promises';
 import axios from 'axios';
 import { performance } from 'perf_hooks';
+// Removed unused utility functions
 
 const GRAFANA_URL = 'http://localhost:3001';
 const GRAFANA_ADMIN_USER = 'admin';
@@ -228,7 +229,7 @@ class AdvancedMonitoringOptimizer {
           }
         }
 
-      } catch (error) {
+      } catch {
         await this.log('error', `Failed to create folder structure for ${parentFolder}: ${error.message}`);
       }
     }
@@ -347,7 +348,7 @@ class AdvancedMonitoringOptimizer {
         });
 
         if (dashboardResponse.status === 200) {
-          const dashboard = dashboardResponse.data.dashboard;
+          const dashboard = dashboardResponse.data.dashboard
           
           // Add data source variable as first variable (most frequently used)
           const dataSourceVariable = {
@@ -404,8 +405,8 @@ class AdvancedMonitoringOptimizer {
           await this.log('success', `✅ Advanced optimization applied to ${dashboardUid}`);
         }
 
-      } catch (error) {
-        await this.log('warn', `⚠️ Could not optimize ${dashboardUid}: ${error.response?.status === 404 ? 'Dashboard not found' : error.message}`);
+      } catch {
+        await this.log('warn', `⚠️ Could not optimize ${dashboardUid}: ${_error.response?.status === 404 ? 'Dashboard not found' : _error.message}`);
       }
     }
   }
@@ -544,7 +545,7 @@ class AdvancedMonitoringOptimizer {
       const duration = ((endTime - startTime) / 1000).toFixed(2);
       await this.log('info', `🏁 Advanced optimization '${command}' completed in ${duration}s`);
 
-    } catch (error) {
+    } catch {
       await this.log('error', `Advanced optimization '${command}' failed: ${error.message}`);
       process.exit(1);
     }
@@ -581,4 +582,4 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   });
 }
 
-export { AdvancedMonitoringOptimizer };
+module.exports = { AdvancedMonitoringOptimizer };

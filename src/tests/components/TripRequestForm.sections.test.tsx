@@ -1,3 +1,6 @@
+import * as React from 'react';
+import { FC, ReactNode, ErrorInfo } from 'react';
+import { use } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   render,
@@ -10,14 +13,11 @@ import userEvent, { UserEvent } from '@testing-library/user-event';
 import { FormProvider, useForm, Control } from 'react-hook-form';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-import React, { ReactNode } from 'react';
-
 // Import the components we're testing
 import DateRangeSection from '../../components/trip/sections/DateRangeSection';
 import DestinationSection from '../../components/trip/sections/DestinationSection';
 import BudgetSection from '../../components/trip/sections/BudgetSection';
 import FilterTogglesSection from '../../components/trip/sections/FilterTogglesSection';
-
 // Type definitions for better type safety
 interface TripFormData {
   earliestDeparture?: Date | string;

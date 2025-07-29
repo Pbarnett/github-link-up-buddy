@@ -1,14 +1,11 @@
 import * as React from 'react';
-type ReactNode = React.ReactNode;
-type FC<T = {}> = React.FC<T>;
-
+import { FC, ReactNode } from 'react';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import PoolHeader from './PoolHeader';
-
 interface PoolSectionProps {
   name: string;
   count: number;

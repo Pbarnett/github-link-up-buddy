@@ -1,5 +1,15 @@
 import * as React from 'react';
+import { FC } from 'react';
 import { useState, useEffect, useCallback } from 'react';
+import {
+  AlertTriangle,
+  Download,
+  Info,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Upload,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,54 +31,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import LaunchDarklyService from '@/lib/featureFlags/launchDarklyService';
-
-type FC<T = {}> = React.FC<T>;
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 // Known flag definitions for development
 const KNOWN_FLAGS = {
   // Core feature flags
@@ -148,7 +110,12 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({
 
   const loadOverrides = useCallback(() => {
     const savedOverrides: FlagOverride[] = [];
-    if (typeof window !== 'undefined' && window.localStorage) {
+    if (
+      typeof (
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+      ) !== 'undefined' &&
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.localStorage
+    ) {
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('launchDarkly_override_')) {
           const flagKey = key.replace('launchDarkly_override_', '');
@@ -237,25 +204,39 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({
   };
 
   const exportOverrides = () => {
-    const exportData = overrides.reduce(
-      (acc, override) => {
-        acc[override.key] = override.value;
-        return acc;
-      },
-      {} as Record<string, FlagValue>
-    );
+    try {
+      const exportData = overrides.reduce(
+        (acc, override) => {
+          acc[override.key] = override.value;
+          return acc;
+        },
+        {} as Record<string, FlagValue>
+      );
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'flag-overrides.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+
+      // Create and handle anchor element with proper DOM types
+      const anchor: HTMLAnchorElement = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'flag-overrides.json';
+      anchor.style.display = 'none'; // Hide the element
+
+      // Ensure we have a valid body element before appending
+      const bodyElement = document.body;
+      if (bodyElement) {
+        bodyElement.appendChild(anchor);
+        anchor.click();
+        bodyElement.removeChild(anchor);
+      }
+
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting overrides:', error);
+      alert('Failed to export overrides. Please try again.');
+    }
   };
 
   const importOverrides = () => {
@@ -515,7 +496,7 @@ export const FlagOverridePanel: FC<FlagOverridePanelProps> = ({
                     placeholder='{"flag_key": true, "another_flag": "value"}'
                     value={importData}
                     onChange={e =>
-                      setImportData((e.target as HTMLInputElement).value)
+                      setImportData((e.target as HTMLTextAreaElement).value)
                     }
                     className="h-20 text-sm font-mono"
                   />

@@ -1,10 +1,8 @@
 import * as React from 'react';
-type FC<T = {}> = React.FC<T>;
-
+import { FC } from 'react';
 import { format as formatDate } from 'date-fns';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { TripDetails } from '@/hooks/useTripOffers'; // Import TripDetails
-
 // Remove local TripDetails definition
 
 interface TripOfferDetailsCardProps {

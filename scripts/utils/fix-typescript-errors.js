@@ -1,8 +1,19 @@
 #!/usr/bin/env node
 
-import fs from 'fs';
-import path from 'path';
+const path = require('path');
+
 import { glob } from 'glob';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+const fs = require('fs');
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 // Priority files to fix first (highest error count)
 const priorityFiles = [
@@ -95,10 +106,10 @@ function fixTypeScriptErrors(filePath) {
           }
         });
         
-        const insertIndex = reactImportMatch.index + reactImportMatch[1].length;
+        const insertIndex = reactImportMatch.index + reactImportMatch[1].length
         newContent = newContent.slice(0, insertIndex) + typeDefinitions + newContent.slice(insertIndex);
         modified = true;
-        totalIssues += needsReactTypes.length;
+        totalIssues += needsReactTypes.length
       }
     }
 

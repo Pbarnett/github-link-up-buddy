@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { vi, type MockedFunction, expect } from 'vitest';
-
 /**
  * Modern Vitest utilities for enhanced testing experience (non-JSX)
  */

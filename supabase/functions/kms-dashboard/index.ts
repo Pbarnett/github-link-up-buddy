@@ -280,7 +280,7 @@ serve(async (req) => {
             next_actions: [
               "Begin using encrypt-user-data function for new profiles",
               "Run legacy-data-migration assessment",
-              "Schedule migration maintenance window",
+              "Schedule migration maintenance /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window",
               "Set up performance monitoring"
             ]
           };

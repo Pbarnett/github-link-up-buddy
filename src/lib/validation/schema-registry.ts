@@ -7,7 +7,6 @@ import * as React from 'react';
  */
 
 import { ZodSchema, ZodType } from 'zod';
-
 /**
  * Global metadata interface for schemas
  */

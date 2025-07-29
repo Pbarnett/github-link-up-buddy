@@ -12,7 +12,6 @@ import { BudgetFilter, SimpleCurrencyConverter } from '../filters/BudgetFilter';
 import { RoundTripFilter } from '../filters/RoundTripFilter';
 import { NonstopFilter } from '../filters/NonstopFilter';
 import { FlightOffer, FilterContext } from '../core/types';
-
 // Mock flight offers for testing
 const createMockAmadeusOffer = (
   id: string,

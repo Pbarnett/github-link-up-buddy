@@ -6,7 +6,6 @@ import ConstraintChips, {
   formatDateRange,
 } from '@/components/trip/ConstraintChips';
 import { renderWithProviders } from '@/tests/__helpers';
-
 describe('ConstraintChips (Refactored)', () => {
   const defaultProps = {
     dateRange: { from: '2024-01-15', to: '2024-01-20' },
@@ -92,7 +91,7 @@ describe('ConstraintChips (Refactored)', () => {
 
   describe('User interactions', () => {
     it('should call onToggleNonStop when non-stop button is clicked', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       const mockToggle = vi.fn();
 
       renderWithProviders(
@@ -106,7 +105,7 @@ describe('ConstraintChips (Refactored)', () => {
     });
 
     it('should toggle non-stop using getByRole for accessibility testing', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       const mockToggle = vi.fn();
 
       renderWithProviders(
@@ -123,7 +122,7 @@ describe('ConstraintChips (Refactored)', () => {
     });
 
     it('should handle keyboard interactions', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       const mockToggle = vi.fn();
 
       renderWithProviders(

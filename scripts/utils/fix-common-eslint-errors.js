@@ -1,14 +1,24 @@
 #!/usr/bin/env node
 
+const path = require('path');
+
 /**
  * Batch fix common ESLint errors across the codebase
  */
 
 import fs from 'fs/promises';
-import path from 'path';
 import { execSync } from 'child_process';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
-const fixes = [
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
+
+const eslintFixes = [
   // Fix import/order errors by removing empty lines between import groups
   {
     name: 'Remove empty lines between import groups',
@@ -116,7 +126,7 @@ async function fixFile(filePath) {
   let content = await fs.readFile(filePath, 'utf8');
   let modified = false;
   
-  for (const fix of fixes) {
+for (const fix of eslintFixes) {
     const originalContent = content;
     content = content.replace(fix.pattern, fix.replacement);
     if (content !== originalContent) {

@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { useEffect, useRef } from 'react';
-
 // Analytics event types for the trip/new page optimization
 
 export interface CTAClickEvent {

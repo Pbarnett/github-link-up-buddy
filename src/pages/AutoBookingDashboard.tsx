@@ -1,4 +1,6 @@
 import * as React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plane, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,53 +12,6 @@ import { useCampaigns } from '@/hooks/useCampaigns';
 import { CampaignCard } from '@/components/autobooking/CampaignCard';
 import PageWrapper from '@/components/layout/PageWrapper';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
-import { useNavigate } from 'react-router-dom';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 function AutoBookingDashboard() {
   const navigate = useNavigate();
   const { userId, loading } = useCurrentUser();
@@ -79,7 +34,7 @@ function AutoBookingDashboard() {
     navigate(`/auto-booking/edit/${campaignId}`);
   };
 
-  const handlePauseCampaign = async (campaignId: string) => {
+  const _handlePauseCampaign = async (campaignId: string) => {
     try {
       await pauseCampaign(campaignId);
       toast({
@@ -113,7 +68,7 @@ function AutoBookingDashboard() {
 
   const handleDeleteCampaign = async (campaignId: string) => {
     if (
-      window.confirm(
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.confirm(
         'Are you sure you want to delete this campaign? This action cannot be undone.'
       )
     ) {
@@ -136,7 +91,7 @@ function AutoBookingDashboard() {
   const activeCampaigns =
     campaigns?.filter(c => c.status === 'active' || c.status === 'watching') ||
     [];
-  const pausedCampaigns = campaigns?.filter(c => c.status === 'paused') || [];
+  const _pausedCampaigns = campaigns?.filter(c => c.status === 'paused') || [];
   const completedCampaigns =
     campaigns?.filter(c => c.status === 'booked' || c.status === 'completed') ||
     [];

@@ -2,7 +2,6 @@ import * as React from 'react';
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import PoolSection from '../PoolSection';
-
 describe('PoolSection', () => {
   it('renders children when count > 0 and section is expanded', async () => {
     render(

@@ -5,7 +5,6 @@
  */
 
 import * as React from 'react';
-type FormEvent = React.FormEvent;
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 export interface FormConfiguration {
   id: string;

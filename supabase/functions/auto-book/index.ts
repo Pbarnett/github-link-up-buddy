@@ -468,7 +468,7 @@ Deno.serve(async (req: Request) => {
                         console.log(`[AutoBook] No 'data' property in seat map JSON response or fetch failed for trip ID: ${trip.id}.`);
                     }
                 }
-            } catch (fetchErr) {
+            } catch (_fetchErr) {
                 console.warn(`[AutoBook] Error during seat map fetch or processing for trip ID ${trip.id}:`, fetchErr.message);
             }
         }
@@ -569,7 +569,7 @@ Deno.serve(async (req: Request) => {
         
         console.log(`[AutoBook] Offer ${selectedOffer.id} validated and still available`);
         
-    } catch (duffelSearchError) {
+    } catch (_duffelSearchError) {
         console.error(`[AutoBook] Duffel search/offer selection failed for trip ID: ${trip.id}:`, duffelSearchError.message);
         
         // Update booking attempt with search failure
@@ -623,7 +623,7 @@ Deno.serve(async (req: Request) => {
                 console.log(`[AutoBook] Successfully updated payment_captured for booking_request ID: ${associatedBookingRequestId}.`);
             }
         }
-    } catch (stripeError) {
+    } catch (_stripeError) {
         // Enhanced error handling for Stripe capture failure
         console.error(`[AutoBook] Stripe payment capture failed for PI: ${paymentIntentId}, Trip ID: ${trip.id}. Error: ${stripeError.message}`, stripeError);
 
@@ -635,7 +635,7 @@ Deno.serve(async (req: Request) => {
                     reason: 'application_error'
                 });
                 console.log(`[AutoBook] Stripe payment ${paymentIntentId} refunded successfully after capture failure.`);
-            } catch (refundErr) {
+            } catch (_refundErr) {
                 console.error(`[AutoBook] CRITICAL: Refund attempt for ${paymentIntentId} failed after capture failure. Manual intervention likely required. Refund Error:`, refundErr.message);
             }
         }
@@ -707,7 +707,7 @@ Deno.serve(async (req: Request) => {
         if (tripRequestUpdateError) throw new Error(`Failed to update 'trip_requests' table: ${tripRequestUpdateError.message}`);
 
         console.log(`[AutoBook] Database records updated successfully for Trip ID: ${trip.id}.`);
-    } catch (dbUpdateError) {
+    } catch (_dbUpdateError) {
         console.error(`[AutoBook] Database update failed for Trip ID: ${trip.id}. Error: ${dbUpdateError.message}`);
         // This is critical. Booking and payment done, but DB update failed.
         // The main catch won't rollback Amadeus here as payment was successful. Manual reconciliation needed.
@@ -787,7 +787,7 @@ Deno.serve(async (req: Request) => {
                 } else {
                      console.error(`[AutoBook] CRITICAL: Cannot cancel Amadeus booking ${flightOrderIdForRollback} as accessToken could not be retrieved.`);
                 }
-            } catch (cancelError) {
+            } catch (_cancelError) {
                 console.error(`[AutoBook] CRITICAL: Exception during Amadeus booking cancellation for ${flightOrderIdForRollback} via HTTP. Error:`, cancelError.message, cancelError.stack);
             }
         } else if (error.message.includes('No priceable flight offers found') || error.message.includes('Amadeus flight search failed')) {
@@ -809,7 +809,7 @@ Deno.serve(async (req: Request) => {
                 reason: 'application_error',
             });
             console.log(`[AutoBook] Stripe payment ${trip.payment_intent_id} for trip ID ${trip.id} refunded successfully due to post-capture error.`);
-        } catch (refundError) {
+        } catch (_refundError) {
             console.error(`[AutoBook] CRITICAL: Failed to refund Stripe payment ${trip.payment_intent_id} for trip ID ${trip.id} after a post-capture error. Manual intervention required. Refund Error:`, refundError.message);
         }
     }
@@ -828,7 +828,7 @@ Deno.serve(async (req: Request) => {
           })
           .eq('id', trip.id);
         console.log(`[AutoBook] trip_requests status updated to 'failed' for trip ID: ${trip.id}`);
-      } catch (dbError) {
+      } catch (_dbError) {
         console.error(`[AutoBook] CRITICAL: Failed to update trip_requests status to 'failed' for trip ID: ${trip.id}. DB Error:`, dbError.message);
       }
 
@@ -888,7 +888,7 @@ Deno.serve(async (req: Request) => {
           })
           .eq('id', bookingAttemptId);
         console.log(`[AutoBook] Booking attempt ${bookingAttemptId} status updated to: ${attemptStatus} for trip ID: ${trip?.id}`);
-      } catch (finalUpdateError) {
+      } catch (_finalUpdateError) {
         console.error(`[AutoBook] CRITICAL: Failed to update booking_attempts table for attempt ID ${bookingAttemptId}. Error:`, finalUpdateError.message);
       }
     }

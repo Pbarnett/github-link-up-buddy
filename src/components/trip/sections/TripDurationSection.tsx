@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { Control } from 'react-hook-form';
 import TripNumberField from '../TripNumberField';
-
 // Trip duration form data interface
 interface TripDurationFormData {
   min_duration?: number;

@@ -4,11 +4,11 @@
  * Renders a searchable country selector
  */
 
-type _Component<P = {}, S = {}> = React.Component<P, S>;
-type FC<T = {}> = React.FC<T>;
-
 import * as React from 'react';
+import { FC } from 'react';
 import { useState } from 'react';
+type _Component<P = {}, S = {}> = React.Component<P, S>;
+
 import { Globe, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

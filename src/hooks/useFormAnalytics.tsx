@@ -1,8 +1,6 @@
 import * as React from 'react';
-import { useCallback } from 'react';
-
-type ReactNode = React.ReactNode;
-
+import { ReactNode } from 'react';
+import { useCallback, useContext } from 'react';
 export interface FormAnalyticsEvent {
   eventType:
     | 'form_start'
@@ -22,7 +20,7 @@ interface FormAnalyticsContextType {
   isEnabled: boolean;
 }
 
-const FormAnalyticsContext = createContext<
+const FormAnalyticsContext = React.createContext<
   FormAnalyticsContextType | undefined
 >(undefined);
 

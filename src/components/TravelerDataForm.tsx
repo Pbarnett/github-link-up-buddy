@@ -1,6 +1,8 @@
-type FormEvent = React.FormEvent;
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, use } from 'react';
+type FormEvent<T = Element> = React.FormEvent<T>;
+
+import { Calendar, FileText, User } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,63 +17,19 @@ import {
 import {
   travelerProfileServiceKMS,
   TravelerProfileKMS,
+  TravelerProfileCreateData,
 } from '@/services/travelerProfileServiceKMS';
 // Legacy import for fallback
 import {
   travelerProfileService,
   TravelerProfile as _TravelerProfile,
 } from '@/services/travelerProfileService';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-type TravelerData = TravelerProfileKMS;
+type TravelerData = TravelerProfileCreateData;
 
 interface TravelerDataFormProps {
   onSubmit: (data: TravelerData) => void;
   isLoading?: boolean;
-  initialData?: Partial<TravelerData>;
+  initialData?: Partial<TravelerData & { id?: string }>;
   mode?: 'create' | 'edit';
   useKMS?: boolean; // Option to use KMS encryption
 }

@@ -6,9 +6,8 @@
  */
 
 import * as React from 'react';
-type ReactNode = React.ReactNode;
+import { FC, ReactNode } from 'react';
 type ChangeEvent<T = Element> = React.ChangeEvent<T>;
-type FC<T = {}> = React.FC<T>;
 
 import { cn } from '@/lib/utils';
 import {
@@ -29,7 +28,6 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-
 interface BaseFieldProps {
   label?: string;
   description?: string;
@@ -41,65 +39,62 @@ interface BaseFieldProps {
 /**
  * Enhanced Text Input with better accessibility and validation states
  */
-interface TextFieldProps extends BaseFieldPropsProps<typeof Input> {
+interface TextFieldProps
+  extends BaseFieldProps,
+    React.ComponentProps<typeof Input> {
   value?: string;
   onValueChange?: (value: string) => void;
+  ref?: React.Ref<HTMLInputElement>;
 }
 
-export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
-  (
-    {
-      label,
-      description,
-      required,
-      error,
-      className,
-      value,
-      onValueChange,
-      onChange,
-      ...props
-    },
-    ref
-  ) => {
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-      onChange?.(e);
-      onValueChange?.((e.target as HTMLInputElement).value);
-    };
+export const TextField = ({
+  label,
+  description,
+  required,
+  error,
+  className,
+  value,
+  onValueChange,
+  onChange,
+  ref,
+  ...props
+}: TextFieldProps) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    onChange?.(e);
+    onValueChange?.((e.target as HTMLInputElement).value);
+  };
 
-    return (
-      <FormItem className={className}>
-        {label && (
-          <FormLabel
-            className={cn(
-              required &&
-                "after:content-['*'] after:ml-0.5 after:text-destructive"
-            )}
-          >
-            {label}
-          </FormLabel>
-        )}
-        <FormControl>
-          <Input
-            ref={ref}
-            value={value}
-            onChange={handleChange}
-            aria-invalid={!!error}
-            aria-describedby={
-              description ? `${props.id}-description` : undefined
-            }
-            {...props}
-          />
-        </FormControl>
-        {description && (
-          <FormDescription id={`${props.id}-description`}>
-            {description}
-          </FormDescription>
-        )}
-        {error && <FormMessage>{error}</FormMessage>}
-      </FormItem>
-    );
-  }
-);
+  return (
+    <FormItem className={className}>
+      {label && (
+        <FormLabel
+          className={cn(
+            required &&
+              "after:content-['*'] after:ml-0.5 after:text-destructive"
+          )}
+        >
+          {label}
+        </FormLabel>
+      )}
+      <FormControl>
+        <Input
+          ref={ref}
+          value={value}
+          onChange={handleChange}
+          aria-invalid={!!error}
+          aria-describedby={description ? `${props.id}-description` : undefined}
+          {...props}
+        />
+      </FormControl>
+      {description && (
+        <FormDescription id={`${props.id}-description`}>
+          {description}
+        </FormDescription>
+      )}
+      {error && <FormMessage>{error}</FormMessage>}
+    </FormItem>
+  );
+};
 TextField.displayName = 'TextField';
 
 /**
@@ -110,127 +105,118 @@ interface SelectFieldProps extends BaseFieldProps {
   onValueChange?: (value: string) => void;
   placeholder?: string;
   options: Array<{ value: string; label: string; disabled?: boolean }>;
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
-export const SelectField = forwardRef<HTMLButtonElement, SelectFieldProps>(
-  (
-    {
-      label,
-      description,
-      required,
-      error,
-      className,
-      value,
-      onValueChange,
-      placeholder,
-      options,
-      ...props
-    },
-    ref
-  ) => {
-    return (
-      <FormItem className={className}>
-        {label && (
-          <FormLabel
-            className={cn(
-              required &&
-                "after:content-['*'] after:ml-0.5 after:text-destructive"
-            )}
-          >
-            {label}
-          </FormLabel>
-        )}
-        <Select value={value} onValueChange={onValueChange}>
-          <FormControl>
-            <SelectTrigger ref={ref} aria-invalid={!!error} {...props}>
-              <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-          </FormControl>
-          <SelectContent>
-            {options.map(option => (
-              <SelectItem
-                key={option.value}
-                value={option.value}
-                disabled={option.disabled}
-              >
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {description && <FormDescription>{description}</FormDescription>}
-        {error && <FormMessage>{error}</FormMessage>}
-      </FormItem>
-    );
-  }
-);
+export const SelectField = ({
+  label,
+  description,
+  required,
+  error,
+  className,
+  value,
+  onValueChange,
+  placeholder,
+  options,
+  ref,
+  ...props
+}: SelectFieldProps) => {
+  return (
+    <FormItem className={className}>
+      {label && (
+        <FormLabel
+          className={cn(
+            required &&
+              "after:content-['*'] after:ml-0.5 after:text-destructive"
+          )}
+        >
+          {label}
+        </FormLabel>
+      )}
+      <Select value={value} onValueChange={onValueChange}>
+        <FormControl>
+          <SelectTrigger ref={ref} aria-invalid={!!error} {...props}>
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+        </FormControl>
+        <SelectContent>
+          {options.map(option => (
+            <SelectItem
+              key={option.value}
+              value={option.value}
+              disabled={option.disabled}
+            >
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {description && <FormDescription>{description}</FormDescription>}
+      {error && <FormMessage>{error}</FormMessage>}
+    </FormItem>
+  );
+};
 SelectField.displayName = 'SelectField';
 
 /**
  * Enhanced Textarea Field
  */
-interface TextareaFieldProps extends BaseFieldPropsProps<typeof Textarea> {
+interface TextareaFieldProps
+  extends BaseFieldProps,
+    React.ComponentProps<typeof Textarea> {
   value?: string;
   onValueChange?: (value: string) => void;
+  ref?: React.Ref<HTMLTextAreaElement>;
 }
 
-export const TextareaField = forwardRef<
-  HTMLTextAreaElement,
-  TextareaFieldProps
->(
-  (
-    {
-      label,
-      description,
-      required,
-      error,
-      className,
-      value,
-      onValueChange,
-      onChange,
-      ...props
-    },
-    ref
-  ) => {
-    const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-      onChange?.(e);
-      onValueChange?.((e.target as HTMLInputElement).value);
-    };
+export const TextareaField = ({
+  label,
+  description,
+  required,
+  error,
+  className,
+  value,
+  onValueChange,
+  onChange,
+  ref,
+  ...props
+}: TextareaFieldProps) => {
+  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    onChange?.(e);
+    onValueChange?.((e.target as HTMLTextAreaElement).value);
+  };
 
-    return (
-      <FormItem className={className}>
-        {label && (
-          <FormLabel
-            className={cn(
-              required &&
-                "after:content-['*'] after:ml-0.5 after:text-destructive"
-            )}
-          >
-            {label}
-          </FormLabel>
-        )}
-        <FormControl>
-          <Textarea
-            ref={ref}
-            value={value}
-            onChange={handleChange}
-            aria-invalid={!!error}
-            aria-describedby={
-              description ? `${props.id}-description` : undefined
-            }
-            {...props}
-          />
-        </FormControl>
-        {description && (
-          <FormDescription id={`${props.id}-description`}>
-            {description}
-          </FormDescription>
-        )}
-        {error && <FormMessage>{error}</FormMessage>}
-      </FormItem>
-    );
-  }
-);
+  return (
+    <FormItem className={className}>
+      {label && (
+        <FormLabel
+          className={cn(
+            required &&
+              "after:content-['*'] after:ml-0.5 after:text-destructive"
+          )}
+        >
+          {label}
+        </FormLabel>
+      )}
+      <FormControl>
+        <Textarea
+          ref={ref}
+          value={value}
+          onChange={handleChange}
+          aria-invalid={!!error}
+          aria-describedby={description ? `${props.id}-description` : undefined}
+          {...props}
+        />
+      </FormControl>
+      {description && (
+        <FormDescription id={`${props.id}-description`}>
+          {description}
+        </FormDescription>
+      )}
+      {error && <FormMessage>{error}</FormMessage>}
+    </FormItem>
+  );
+};
 TextareaField.displayName = 'TextareaField';
 
 /**
@@ -240,65 +226,59 @@ interface CheckboxFieldProps extends BaseFieldProps {
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   id?: string;
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
-export const CheckboxField = forwardRef<HTMLButtonElement, CheckboxFieldProps>(
-  (
-    {
-      label,
-      description,
-      required,
-      error,
-      className,
-      checked,
-      onCheckedChange,
-      id,
-      ...props
-    },
-    ref
-  ) => {
-    return (
-      <FormItem
-        className={cn(
-          'flex flex-row items-start space-x-3 space-y-0',
-          className
+export const CheckboxField = ({
+  label,
+  description,
+  required,
+  error,
+  className,
+  checked,
+  onCheckedChange,
+  id,
+  ref,
+  ...props
+}: CheckboxFieldProps) => {
+  return (
+    <FormItem
+      className={cn('flex flex-row items-start space-x-3 space-y-0', className)}
+    >
+      <FormControl>
+        <Checkbox
+          ref={ref}
+          id={id}
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+          aria-invalid={!!error}
+          aria-describedby={description ? `${id}-description` : undefined}
+          {...props}
+        />
+      </FormControl>
+      <div className="space-y-1 leading-none">
+        {label && (
+          <FormLabel
+            htmlFor={id}
+            className={cn(
+              'text-sm font-normal cursor-pointer',
+              required &&
+                "after:content-['*'] after:ml-0.5 after:text-destructive"
+            )}
+          >
+            {label}
+          </FormLabel>
         )}
-      >
-        <FormControl>
-          <Checkbox
-            ref={ref}
-            id={id}
-            checked={checked}
-            onCheckedChange={onCheckedChange}
-            aria-invalid={!!error}
-            aria-describedby={description ? `${id}-description` : undefined}
-            {...props}
-          />
-        </FormControl>
-        <div className="space-y-1 leading-none">
-          {label && (
-            <FormLabel
-              htmlFor={id}
-              className={cn(
-                'text-sm font-normal cursor-pointer',
-                required &&
-                  "after:content-['*'] after:ml-0.5 after:text-destructive"
-              )}
-            >
-              {label}
-            </FormLabel>
-          )}
-          {description && (
-            <FormDescription id={`${id}-description`}>
-              {description}
-            </FormDescription>
-          )}
-        </div>
-        {error && <FormMessage>{error}</FormMessage>}
-      </FormItem>
-    );
-  }
-);
+        {description && (
+          <FormDescription id={`${id}-description`}>
+            {description}
+          </FormDescription>
+        )}
+      </div>
+      {error && <FormMessage>{error}</FormMessage>}
+    </FormItem>
+  );
+};
 CheckboxField.displayName = 'CheckboxField';
 
 /**
@@ -308,65 +288,62 @@ interface SwitchFieldProps extends BaseFieldProps {
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   id?: string;
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
-export const SwitchField = forwardRef<HTMLButtonElement, SwitchFieldProps>(
-  (
-    {
-      label,
-      description,
-      required,
-      error,
-      className,
-      checked,
-      onCheckedChange,
-      id,
-      ...props
-    },
-    ref
-  ) => {
-    return (
-      <FormItem
-        className={cn(
-          'flex flex-row items-center justify-between rounded-lg border p-4',
-          className
+export const SwitchField = ({
+  label,
+  description,
+  required,
+  error,
+  className,
+  checked,
+  onCheckedChange,
+  id,
+  ref,
+  ...props
+}: SwitchFieldProps) => {
+  return (
+    <FormItem
+      className={cn(
+        'flex flex-row items-center justify-between rounded-lg border p-4',
+        className
+      )}
+    >
+      <div className="space-y-0.5">
+        {label && (
+          <FormLabel
+            htmlFor={id}
+            className={cn(
+              'text-base cursor-pointer',
+              required &&
+                "after:content-['*'] after:ml-0.5 after:text-destructive"
+            )}
+          >
+            {label}
+          </FormLabel>
         )}
-      >
-        <div className="space-y-0.5">
-          {label && (
-            <FormLabel
-              htmlFor={id}
-              className={cn(
-                'text-base cursor-pointer',
-                required &&
-                  "after:content-['*'] after:ml-0.5 after:text-destructive"
-              )}
-            >
-              {label}
-            </FormLabel>
-          )}
-          {description && (
-            <FormDescription id={`${id}-description`}>
-              {description}
-            </FormDescription>
-          )}
-        </div>
-        <FormControl>
-          <Switch
-            ref={ref}
-            id={id}
-            checked={checked}
-            onCheckedChange={onCheckedChange}
-            aria-invalid={!!error}
-            aria-describedby={description ? `${id}-description` : undefined}
-            {...props}
-          />
-        </FormControl>
-        {error && <FormMessage>{error}</FormMessage>}
-      </FormItem>
-    );
-  }
-);
+        {description && (
+          <FormDescription id={`${id}-description`}>
+            {description}
+          </FormDescription>
+        )}
+      </div>
+      <FormControl>
+        <Switch
+          ref={ref}
+          id={id}
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+          aria-invalid={!!error}
+          aria-describedby={description ? `${id}-description` : undefined}
+          {...props}
+        />
+      </FormControl>
+      {error && <FormMessage>{error}</FormMessage>}
+    </FormItem>
+  );
+};
 SwitchField.displayName = 'SwitchField';
 
 /**

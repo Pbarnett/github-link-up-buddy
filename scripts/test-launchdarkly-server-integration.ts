@@ -37,14 +37,10 @@ class LaunchDarklyServerIntegrationTest {
     
     const headers: Record<string, string> = {
       'Authorization': `Bearer ${this.authToken}`,
-      'Content-Type': 'application/json',
-    };
-
+      'Content-Type': 'application/json'}
     const requestConfig: RequestInit = {
       method,
-      headers,
-    };
-
+      headers}
     if (body) {
       requestConfig.body = JSON.stringify(body);
     }
@@ -92,9 +88,7 @@ class LaunchDarklyServerIntegrationTest {
         },
         flagKey,
         defaultValue,
-        includeReason: true,
-      };
-
+        includeReason: true}
       const response = await this.makeRequest('POST', request);
       
       if (!response.ok) {
@@ -130,9 +124,7 @@ class LaunchDarklyServerIntegrationTest {
       { key: 'profile_ui_revamp', defaultValue: false },
       { key: 'personalization_greeting', defaultValue: false },
       { key: 'sample-feature', defaultValue: false },
-      { key: 'unknown-flag-test', defaultValue: 'default-fallback' },
-    ];
-
+      { key: 'unknown-flag-test', defaultValue: 'default-fallback' }]
     let allPassed = true;
 
     for (const flag of flags) {
@@ -140,9 +132,7 @@ class LaunchDarklyServerIntegrationTest {
         email: 'integration-test@example.com',
         name: 'Integration Test User',
         testFlag: flag.key,
-        timestamp: new Date().toISOString(),
-      };
-
+        timestamp: new Date().toISOString()}
       const success = await this.testFlagEvaluation(flag.key, userContext, flag.defaultValue);
       if (!success) {
         allPassed = false;
@@ -185,9 +175,7 @@ class LaunchDarklyServerIntegrationTest {
           platform: 'ios',
           version: '16.0',
         },
-      },
-    ];
-
+      }]
     let allPassed = true;
 
     for (const { name, context } of contexts) {
@@ -197,9 +185,7 @@ class LaunchDarklyServerIntegrationTest {
         context,
         flagKey: 'wallet_ui',
         defaultValue: false,
-        includeReason: true,
-      };
-
+        includeReason: true}
       try {
         const response = await this.makeRequest('POST', request);
         
@@ -253,9 +239,7 @@ class LaunchDarklyServerIntegrationTest {
           },
           defaultValue: false,
         },
-      },
-    ];
-
+      }]
     let allPassed = true;
 
     for (const { name, request } of errorTests) {
@@ -365,7 +349,7 @@ process.on('SIGTERM', () => {
 });
 
 // Run the tests
-main().catch((error) => {
+main().catch((_error) => {
   console.error('❌ Unhandled error:', error);
   process.exit(1);
 });

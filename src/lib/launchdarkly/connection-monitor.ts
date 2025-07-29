@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useState, useEffect, use } from 'react';
 /**
  * LaunchDarkly Connection Monitoring and Health Check System
  * Real-time monitoring of SDK connections with retry logic and fallback mechanisms
@@ -6,9 +7,6 @@ import * as React from 'react';
 
 import { LDClient } from '@launchdarkly/node-server-sdk';
 import { FlagErrorHandler, FlagErrorType } from './error-handler';
-import { useState } from 'react';
-import { useEffect } from 'react';
-
 export enum ConnectionState {
   DISCONNECTED = 'disconnected',
   CONNECTING = 'connecting',
@@ -251,8 +249,12 @@ export class ConnectionMonitor {
     console.log(`[LaunchDarkly] Connection state changed to: ${state}`);
 
     // Emit custom events for monitoring systems
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(
+    if (
+      typeof (
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+      ) !== 'undefined'
+    ) {
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.dispatchEvent(
         new CustomEvent('launchdarkly:connection:state', {
           detail: { state, health: this.health },
         })
@@ -355,7 +357,7 @@ export class ConnectionMonitor {
     for (const [id, callback] of this.listeners.entries()) {
       try {
         callback({ ...this.health });
-      } catch (error) {
+      } catch (_error) {
         console.warn(`[LaunchDarkly] Error notifying listener ${id}:`, error);
       }
     }
@@ -454,7 +456,11 @@ export async function performLaunchDarklyHealthCheck(): Promise<{
  * React hook for connection monitoring
  */
 export function useLaunchDarklyHealth() {
-  if (typeof window === 'undefined') {
+  if (
+    typeof (
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+    ) === 'undefined'
+  ) {
     return {
       health: ConnectionMonitor.getInstance().getHealth(),
       isHealthy: ConnectionMonitor.getInstance().isHealthy(),

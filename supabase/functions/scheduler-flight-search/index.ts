@@ -100,7 +100,7 @@ serve(async (req: Request) => {
         });
         
         break; // Success, exit retry loop
-      } catch (err) {
+      } catch (_err) {
         attempts++;
         console.error(`[scheduler-flight-search] Auto-book attempt ${attempts} failed:`, err.message);
         

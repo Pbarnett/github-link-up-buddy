@@ -6,7 +6,9 @@
  */
 
 import * as React from 'react';
+import { FC } from 'react';
 import { useState, useCallback, useEffect } from 'react';
+type FormEvent<T = Element> = React.FormEvent<T>;
 import {
   flightSearchServiceSecure,
   FlightSearchRequest,
@@ -86,7 +88,10 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
    * Handle form input changes
    */
   const handleInputChange = useCallback(
-    (field: keyof FlightSearchFormData, value: string | number | boolean) => {
+    (
+      field: keyof FlightSearchFormData,
+      value: string | number | boolean | undefined
+    ) => {
       setFormData(prev => ({ ...prev, [field]: value }));
 
       // Clear return date if switching to one-way
@@ -490,14 +495,14 @@ export const SecureFlightSearch: React.FC<SecureFlightSearchProps> = ({
             step="50"
             placeholder="e.g., 1000"
             value={formData.maxPrice || ''}
-            onChange={e =>
+            onChange={e => {
+              const value = (e.target as HTMLInputElement).value;
+              const numValue = value ? parseInt(value) : undefined;
               handleInputChange(
                 'maxPrice',
-                (e.target as HTMLSelectElement).value
-                  ? parseInt((e.target as HTMLInputElement).value)
-                  : undefined
-              )
-            }
+                numValue && !isNaN(numValue) ? numValue : undefined
+              );
+            }}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>

@@ -1,4 +1,20 @@
-import * as React from 'react';
+import React from 'react';
+import type {
+  ChangeEvent,
+  FormEvent,
+  MouseEvent,
+  KeyboardEvent,
+  FocusEvent,
+  ElementType,
+  CSSProperties,
+  ReactNode,
+  FC,
+  HTMLAttributes,
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ComponentProps,
+} from 'react';
+
 // Common React type imports to reduce repetition across components
 
 // Event handler types for common use cases
@@ -17,17 +33,18 @@ export type FocusEventHandler<T = HTMLElement> = (event: FocusEvent<T>) => void;
 // Re-export common types
 export type {
   ChangeEvent,
-  _FormEvent,
+  FormEvent,
   MouseEvent,
   KeyboardEvent,
-  FocusEventType,
+  FocusEvent,
   ElementType,
   CSSProperties,
   ReactNode,
   FC,
   HTMLAttributes,
   ButtonHTMLAttributes,
-  InputHTMLAttributesProps,
+  InputHTMLAttributes,
+  ComponentProps,
 };
 
 // Common component prop patterns
@@ -44,7 +61,7 @@ export interface BaseFormFieldProps extends BaseComponentProps {
   error?: string;
 }
 
-// Helper for creating properly typed forwardRef components
+// Helper for creating properly typed React.forwardRef components
 export type ForwardRefComponent<T, P = {}> = React.ForwardRefExoticComponent<
   React.PropsWithoutRef<P> & React.RefAttributes<T>
 >;

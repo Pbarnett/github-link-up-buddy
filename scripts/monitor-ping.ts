@@ -143,7 +143,7 @@ async function checkMetrics(): Promise<boolean> {
       return false;
     }
     
-  } catch (error) {
+  } catch {
     console.error('❌ Failed to fetch metrics:', error);
     return false;
   }
@@ -157,7 +157,7 @@ async function checkPrometheusConnection(): Promise<boolean> {
     const data = await response.json();
     
     if (response.ok && data.status === 'success') {
-      const targets = data.data.activeTargets;
+      const targets = data.data.activeTargets
       const parkerFlightTarget = targets.find((target: PrometheusTarget) => 
         target.labels.job === 'parker-flight-api'
       );
@@ -219,14 +219,14 @@ async function main(): Promise<void> {
       process.exit(1);
     }
     
-  } catch (error) {
+  } catch {
     console.error('❌ Monitor ping failed:', error);
     process.exit(1);
   }
 }
 
 // Export for testing, run if executed directly
-export { hitEndpoints, checkMetrics };
+module.exports = { hitEndpoints, checkMetrics };
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   main();

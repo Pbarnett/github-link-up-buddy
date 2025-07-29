@@ -13,7 +13,6 @@ import {
   getAvailableAirlinesFromOffers,
 } from '../filters/AirlineFilter';
 import { FlightOffer, FilterContext, UserPreferences } from '../core/types';
-
 // Mock logger for testing
 const mockLogger = {
   log: vi.fn(),

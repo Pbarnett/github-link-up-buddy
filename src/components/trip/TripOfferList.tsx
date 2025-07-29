@@ -1,11 +1,9 @@
 import * as React from 'react';
-type FC<T = {}> = React.FC<T>;
-
+import { FC } from 'react';
 import { Offer } from '@/services/tripOffersService';
 import TripOfferCard from '@/components/trip/TripOfferCard';
 import TripOffersLoading from '@/components/trip/TripOffersLoading';
 import { Card } from '@/components/ui/card';
-
 interface TripOfferListProps {
   offers: Offer[];
   isLoading: boolean;

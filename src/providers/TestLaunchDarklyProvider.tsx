@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useMemo } from 'react';
-
 // Mock flag values for testing
+import * as React from 'react';
+import { ComponentType } from 'react';
+import { createContext, useContext, useMemo } from 'react';
+type ComponentType<P = {}> = React.ComponentType<P>;
 const DEFAULT_TEST_FLAGS = {
   wallet_ui: true,
   profile_ui_revamp: true,
@@ -17,7 +19,9 @@ interface MockLDContextType {
   error: null;
 }
 
-const MockLDContext = createContext<MockLDContextType | undefined>(undefined);
+const MockLDContext = React.createContext<MockLDContextType | undefined>(
+  undefined
+);
 
 // Mock hooks that mimic LaunchDarkly React SDK
 export const useFlags = () => {

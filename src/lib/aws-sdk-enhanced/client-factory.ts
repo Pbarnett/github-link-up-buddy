@@ -1,3 +1,4 @@
+import https from 'https';
 import * as React from 'react';
 /**
  * Enhanced AWS SDK Client Factory
@@ -6,11 +7,10 @@ import * as React from 'react';
  * from AWS SDK Developer Guide and Tools Reference Guide.
  */
 
-import https from 'https';
 import {
   IS_MOCK_MODE,
   MockKMSClient,
-  MockSecretsManagerClient,
+  Mock_SecretsManagerClient,
   MockS3Client,
   MockDynamoDBClient,
   MockSTSClient,
@@ -423,7 +423,7 @@ export class EnhancedAWSClientFactory {
 
       results.services.sts = true;
       results.latency.sts = Date.now() - startTime;
-    } catch (error) {
+    } catch (_error) {
       results.services.sts = false;
       results.healthy = false;
       results.latency.sts = -1;

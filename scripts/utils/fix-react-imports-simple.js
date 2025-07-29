@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
-import fs from 'fs';
-import path from 'path';
 import { glob } from 'glob';
+const fs = require('fs');
 
 // Function to fix React imports in a file
 function fixReactImports(filePath) {

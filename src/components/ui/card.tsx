@@ -1,39 +1,39 @@
 import * as React from 'react';
-
 import { cn } from '@/lib/utils';
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  ref?: React.Ref<HTMLDivElement>;
+}
 
-
-type HTMLAttributes<T> = React.HTMLAttributes<T>;
-
-const Card = React.forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        'rounded-lg border bg-card text-card-foreground shadow-sm',
-        className
-      )}
-      {...props}
-    />
-  )
+const Card = ({ className, ref, ...props }: CardProps) => (
+  <div
+    ref={ref}
+    className={cn(
+      'rounded-lg border bg-card text-card-foreground shadow-sm',
+      className
+    )}
+    {...props}
+  />
 );
 Card.displayName = 'Card';
 
-const CardHeader = React.forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn('flex flex-col space-y-1.5 p-6', className)}
-      {...props}
-    />
-  )
+interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  ref?: React.Ref<HTMLDivElement>;
+}
+
+const CardHeader = ({ className, ref, ...props }: CardHeaderProps) => (
+  <div
+    ref={ref}
+    className={cn('flex flex-col space-y-1.5 p-6', className)}
+    {...props}
+  />
 );
 CardHeader.displayName = 'CardHeader';
 
-const CardTitle = React.forwardRef<
-  HTMLParagraphElement,
-  HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
+interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  ref?: React.Ref<HTMLParagraphElement>;
+}
+
+const CardTitle = ({ className, ref, ...props }: CardTitleProps) => (
   <h3
     ref={ref}
     className={cn(
@@ -42,47 +42,59 @@ const CardTitle = React.forwardRef<
     )}
     {...props}
   />
-));
+);
 CardTitle.displayName = 'CardTitle';
 
-const CardDescription = React.forwardRef<
-  HTMLParagraphElement,
-  HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => (
+interface CardDescriptionProps
+  extends React.HTMLAttributes<HTMLParagraphElement> {
+  ref?: React.Ref<HTMLParagraphElement>;
+}
+
+const CardDescription = ({
+  className,
+  ref,
+  ...props
+}: CardDescriptionProps) => (
   <p
     ref={ref}
     className={cn('text-sm text-muted-foreground', className)}
     {...props}
   />
-));
+);
 CardDescription.displayName = 'CardDescription';
 
-const CardContent = React.forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
-  )
+interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  ref?: React.Ref<HTMLDivElement>;
+}
+
+const CardContent = ({ className, ref, ...props }: CardContentProps) => (
+  <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
 );
 CardContent.displayName = 'CardContent';
 
-const CardFooter = React.forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn('flex items-center p-6 pt-0', className)}
-      {...props}
-    />
-  )
+interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {
+  ref?: React.Ref<HTMLDivElement>;
+}
+
+const CardFooter = ({ className, ref, ...props }: CardFooterProps) => (
+  <div
+    ref={ref}
+    className={cn('flex items-center p-6 pt-0', className)}
+    {...props}
+  />
 );
 CardFooter.displayName = 'CardFooter';
 
-const CardAction = React.forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn('flex items-center justify-end gap-2 px-6 pb-6', className)}
-      {...props}
-    />
-  )
+interface CardActionProps extends React.HTMLAttributes<HTMLDivElement> {
+  ref?: React.Ref<HTMLDivElement>;
+}
+
+const CardAction = ({ className, ref, ...props }: CardActionProps) => (
+  <div
+    ref={ref}
+    className={cn('flex items-center justify-end gap-2 px-6 pb-6', className)}
+    {...props}
+  />
 );
 CardAction.displayName = 'CardAction';
 

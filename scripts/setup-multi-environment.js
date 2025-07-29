@@ -13,6 +13,15 @@
 import fs from 'fs/promises';
 import axios from 'axios';
 import { performance } from 'perf_hooks';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const GRAFANA_URL = 'http://localhost:3001';
 const GRAFANA_ADMIN_USER = 'admin';
@@ -1206,7 +1215,7 @@ class MultiEnvironmentManager {
       }
     }
 
-    const successful = deploymentResults.filter(r => r.status === 'success').length;
+    const successful = deploymentResults.filter(r => r.status === 'success').length
     await this.log('success', `🎉 Deployed ${successful}/${dashboards.length} multi-environment dashboards`);
 
     return deploymentResults;
@@ -1264,7 +1273,7 @@ class MultiEnvironmentManager {
       const duration = ((endTime - startTime) / 1000).toFixed(2);
       await this.log('info', `🏁 Command '${command}' completed in ${duration}s`);
 
-    } catch (error) {
+    } catch {
       await this.log('error', `Command '${command}' failed: ${error.message}`);
       process.exit(1);
     }
@@ -1305,4 +1314,4 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   });
 }
 
-export { MultiEnvironmentManager };
+module.exports = { MultiEnvironmentManager };

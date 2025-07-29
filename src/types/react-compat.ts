@@ -1,21 +1,26 @@
-import * as React from 'react';
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useId,
-  useTransition,
-  useDeferredValue,
-  forwardRef,
-  memo,
-  createContext,
-  Fragment,
-  Suspense,
-  createElement,
+import React from 'react';
+import type {
+  ReactNode,
+  ReactElement,
+  FC,
+  HTMLAttributes,
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ChangeEvent,
+  FormEvent,
+  MouseEvent,
+  KeyboardEvent,
+  FocusEvent,
+  CSSProperties,
+  Ref,
+  RefObject,
+  MutableRefObject,
+  ElementType,
+  ElementRef,
+  ComponentProps,
+  ComponentPropsWithoutRef,
 } from 'react';
+
 /**
  * React Types Compatibility Helper
  *
@@ -30,37 +35,33 @@ export type {
   ReactNode,
   ReactElement,
   FC,
+  ElementType,
+  ElementRef,
+  ComponentProps,
+  ComponentPropsWithoutRef,
   HTMLAttributes,
   ButtonHTMLAttributes,
   InputHTMLAttributes,
   ChangeEvent,
+  FormEvent,
   MouseEvent,
   KeyboardEvent,
-  FormEvent,
   FocusEvent,
   CSSProperties,
   Ref,
   RefObject,
   MutableRefObject,
-} from 'react';
+};
 
-// React utilities
+// React utilities re-exports
 export const {
   forwardRef,
   memo,
   createContext,
   createElement,
   Fragment,
-  useCallback,
-  useContext,
-  useEffect,
   useId,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
   useDeferredValue,
-  Suspense,
 } = React;
 
 // Type-safe event handler creators

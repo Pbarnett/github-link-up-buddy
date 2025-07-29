@@ -47,12 +47,74 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
 const endpointSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";
 
 // Initialize Supabase client
-const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 // Initialize Sentry for this function
 initSentryForFunction('stripe-webhook');
+
+// Helper function to log audit events for PCI compliance
+async function logAuditEvent(
+  eventType: string,
+  userId: string | null,
+  customerId: string | null,
+  action: string,
+  metadata: Record<string, unknown> = {}
+) {
+  try {
+    await supabase
+      .from('traveler_data_audit')
+      .insert({
+        user_id: userId,
+        action: action,
+        table_name: 'stripe_events',
+        record_id: eventType,
+        old_data: null,
+        new_data: {
+          event_type: eventType,
+          customer_id: customerId,
+          timestamp: new Date().toISOString(),
+          ...metadata
+        },
+        created_at: new Date().toISOString(),
+      });
+      
+    logger.info('Audit event logged', {
+      operation: 'audit_event_logged',
+      eventType,
+      userId,
+      action
+    });
+  } catch (error) {
+    logger.error('Failed to log audit event', {
+      operation: 'audit_event_log_failed',
+      eventType,
+      userId,
+      action,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}
+
+// Helper function to update customer last payment timestamp
+async function updateCustomerLastPayment(customerId: string) {
+  try {
+    await supabase
+      .from('stripe_customers')
+      .update({ last_payment_at: new Date().toISOString() })
+      .eq('stripe_customer_id', customerId);
+      
+    logger.info('Customer last payment timestamp updated', {
+      operation: 'customer_last_payment_updated',
+      customerId
+    });
+  } catch (error) {
+    logger.error('Failed to update customer last payment timestamp', {
+      operation: 'customer_last_payment_update_failed',
+      customerId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}
 
 // Helper function to create notifications
 async function createNotification(
@@ -72,9 +134,27 @@ async function createNotification(
       
     if (error) {
       console.error("Error creating notification:", error);
+      logger.error('Failed to create notification', {
+        operation: 'notification_creation_failed',
+        userId,
+        type,
+        error: error.message
+      });
+    } else {
+      logger.info('Notification created', {
+        operation: 'notification_created',
+        userId,
+        type
+      });
     }
   } catch (err) {
     console.error("Exception creating notification:", err);
+    logger.error('Exception creating notification', {
+      operation: 'notification_creation_exception',
+      userId,
+      type,
+      error: err instanceof Error ? err.message : 'Unknown error'
+    });
   }
 }
 
@@ -275,6 +355,21 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
           break;
         }
 
+        // Log audit event for payment method creation
+        await logAuditEvent(
+          'setup_intent.succeeded',
+          userId,
+          setupIntent.customer as string,
+          'PAYMENT_METHOD_ADDED',
+          {
+            payment_method_id: pm.id,
+            setup_intent_id: setupIntent.id,
+            brand: pm.card?.brand,
+            last4: pm.card?.last4,
+            is_default: isFirstMethod
+          }
+        );
+
         // Create notification
         await createNotification(userId, "payment_method_added", {
           paymentMethodId: insertedMethod.id,
@@ -323,6 +418,25 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
             bookingId: booking.id,
             paymentIntentId: paymentIntent.id
           });
+          
+          // Update customer last payment timestamp for lifecycle tracking
+          if (paymentIntent.customer) {
+            await updateCustomerLastPayment(paymentIntent.customer as string);
+          }
+          
+          // Log audit event for successful payment
+          await logAuditEvent(
+            'payment_intent.succeeded',
+            booking.user_id,
+            paymentIntent.customer as string,
+            'PAYMENT_SUCCEEDED',
+            {
+              payment_intent_id: paymentIntent.id,
+              booking_id: booking.id,
+              amount: paymentIntent.amount,
+              currency: paymentIntent.currency
+            }
+          );
           
           recordStripeCaptureSuccess(paymentIntent.id, paymentIntent.currency);
           // Create notification for successful payment

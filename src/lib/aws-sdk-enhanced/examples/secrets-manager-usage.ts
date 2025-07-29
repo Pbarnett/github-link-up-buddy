@@ -7,7 +7,6 @@ import * as React from 'react';
  */
 
 import { getSecretValue } from '../secrets-manager';
-
 /**
  * Example 1: Retrieve Stripe API Keys
  * Common pattern for payment processing applications
@@ -198,7 +197,7 @@ export async function getSecretWithRegionalFallback(
     if (secret) {
       return { secret, region: primaryRegion };
     }
-  } catch (error) {
+  } catch (_error) {
     console.warn(`Primary region ${primaryRegion} failed:`, error);
   }
 
@@ -210,7 +209,7 @@ export async function getSecretWithRegionalFallback(
       if (secret) {
         return { secret, region };
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn(`Fallback region ${region} failed:`, error);
     }
   }
@@ -343,7 +342,7 @@ export async function getSecretWithRotationSupport(
           setTimeout(resolve, Math.pow(2, attempt) * 1000)
         );
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn(`Attempt ${attempt} failed for secret ${secretId}:`, error);
 
       if (attempt === maxRetries) {

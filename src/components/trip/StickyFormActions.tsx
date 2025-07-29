@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect, use } from 'react';
 import { useWatch, Control } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
-
 interface StickyFormActionsFormData {
   nyc_airports?: string[];
   other_departure_airport?: string;
@@ -46,18 +46,27 @@ const StickyFormActions = ({
       if (!formElement) return;
 
       const formRect = formElement.getBoundingClientRect();
-      const shouldBeSticky = formRect.bottom < window.innerHeight;
+      const shouldBeSticky =
+        formRect.bottom <
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.innerHeight;
       setIsSticky(shouldBeSticky);
     };
 
-    window.addEventListener('scroll', handleScroll);
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.addEventListener(
+      'scroll',
+      handleScroll
+    );
     handleScroll(); // Check initially
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () =>
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.removeEventListener(
+        'scroll',
+        handleScroll
+      );
   }, [isMobile]);
 
   const renderSummaryChips = () => {
-    const chips = [];
+    const chips: React.JSX.Element[] = [];
 
     // Origin → Destination chip
     const origin =

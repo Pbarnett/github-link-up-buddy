@@ -4,7 +4,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import * as React from 'react';
 import { GreetingBanner } from '@/components/personalization/GreetingBanner';
-
 // Mock dependencies
 vi.mock('@/contexts/PersonalizationContext', async importOriginal => {
   const actual =
@@ -75,7 +74,7 @@ vi.mock('@/lib/personalization/voiceAndTone', () => ({
 }));
 
 vi.mock('@/hooks/useAnalytics', () => {
-  const useAnalytics = vi.fn(() => ({ track: vi.fn() }));
+  const _useAnalytics = vi.fn(() => ({ track: vi.fn() }));
   return { useAnalytics };
 });
 

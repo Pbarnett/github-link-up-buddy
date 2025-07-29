@@ -2,6 +2,7 @@
 // Day 4: Payments & Wallet System
 
 import * as React from 'react';
+import { FC, ReactNode } from 'react';
 import {
   createContext,
   useContext,
@@ -9,10 +10,6 @@ import {
   useEffect,
   useCallback,
 } from 'react';
-
-type ReactNode = React.ReactNode;
-type FC<T = {}> = React.FC<T>;
-
 import {
   createSetupIntent,
   getUserPaymentMethods,
@@ -29,21 +26,23 @@ interface WalletContextType {
   setDefault: (paymentMethodId: string) => Promise<void>;
 }
 
-const WalletContext = createContext<WalletContextType | undefined>(undefined);
+const WalletContext = React.createContext<WalletContextType | undefined>(
+  undefined
+);
 
 export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
   const fetchPaymentMethods = useCallback(async () => {
     // Assume user's ID is available via context/session
-    const userId = 'user-id'; // Replace with context/session retrieval
+    const _userId = 'user-id'; // Replace with context/session retrieval
     const methods = await getUserPaymentMethods(userId);
     setPaymentMethods(methods);
   }, []);
 
   const addPaymentMethod = useCallback(async (idempotencyKey: string) => {
     // Assume user's ID is available via context/session
-    const userId = 'user-id'; // Replace with context/session retrieval
+    const _userId = 'user-id'; // Replace with context/session retrieval
     const setupIntent = await createSetupIntent(
       { id: userId, email: `${userId}@example.com` },
       { idempotencyKey }
@@ -54,7 +53,7 @@ export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const removePaymentMethod = useCallback(
     async (paymentMethodId: string) => {
       // Assume user's ID is available via context/session
-      const userId = 'user-id'; // Replace with context/session retrieval
+      const _userId = 'user-id'; // Replace with context/session retrieval
       await deletePaymentMethod(userId, paymentMethodId);
       await fetchPaymentMethods();
     },
@@ -64,7 +63,7 @@ export const WalletProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const setDefault = useCallback(
     async (paymentMethodId: string) => {
       // Assume user's ID is available via context/session
-      const userId = 'user-id'; // Replace with context/session retrieval
+      const _userId = 'user-id'; // Replace with context/session retrieval
       await setDefaultPaymentMethod(userId, paymentMethodId);
       await fetchPaymentMethods();
     },

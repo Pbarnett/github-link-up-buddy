@@ -9,7 +9,6 @@ import * as React from 'react';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { profileCompletenessService } from '@/services/profileCompletenessService';
 import type { TravelerProfile } from '@/hooks/useTravelerProfile';
-
 // Mock Supabase client
 const mockSupabase = {
   from: vi.fn(),
@@ -63,7 +62,10 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         passport_expiry: '2030-12-31',
         known_traveler_number: 'KTN123',
         is_verified: true,
-        travel_preferences: { seat_preference: 'window' },
+        travel_preferences: {
+          seat_preference:
+            '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window',
+        },
         notification_preferences: { email: true, sms: true },
       };
 
@@ -259,7 +261,10 @@ describe('ProfileCompletenessService Enhanced Tests', () => {
         passport_country: 'US',
         passport_expiry: '2030-12-31',
         is_verified: true,
-        travel_preferences: { seat_preference: 'window' },
+        travel_preferences: {
+          seat_preference:
+            '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window',
+        },
         notification_preferences: { email: true, sms: true },
       };
 

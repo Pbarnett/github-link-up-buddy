@@ -10,11 +10,19 @@
  */
 
 import * as React from 'react';
+import { FC } from 'react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Settings, CheckCircle, AlertCircle, User, Mail, Lock } from 'lucide-react';
+import {
+  Settings,
+  CheckCircle,
+  AlertCircle,
+  User,
+  Mail,
+  Lock,
+} from 'lucide-react';
 import {
   Card,
   CardHeader,
@@ -43,8 +51,6 @@ import {
   ModeToggle,
   useShadCNTheme,
 } from '@/components/providers/ShadCNThemeProvider';
-
-type FC<T = {}> = React.FC<T>;
 
 // Icons
 

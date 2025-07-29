@@ -1,10 +1,8 @@
-type FC<T = {}> = React.FC<T>;
-
 import * as React from 'react';
+import { FC } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Offer } from '@/services/tripOffersService'; // Assuming Offer type is needed for offers.length
-import { Link } from 'react-router-dom';
-
 interface TripOfferControlsProps {
   onRefreshOffers: () => void;
   onRelaxCriteria: () => void;

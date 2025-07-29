@@ -3,14 +3,13 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
+import { useNavigate } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTravelerInfoCheck } from '@/hooks/useTravelerInfoCheck';
-
 // Import our new best-practice testing utilities
 import {
   // setFormDatesDirectly,

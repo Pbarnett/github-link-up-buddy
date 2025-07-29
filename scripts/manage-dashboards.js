@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+const path = require('path');
+
 /**
  * Dashboard Management Script for Parker Flight
  * 
@@ -11,9 +13,17 @@
  */
 
 import fs from 'fs/promises';
-import path from 'path';
 import axios from 'axios';
 import { performance } from 'perf_hooks';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const GRAFANA_URL = 'http://localhost:3001';
 const GRAFANA_ADMIN_USER = 'admin';
@@ -83,7 +93,7 @@ class DashboardManager {
             auth: this.auth
           });
 
-          const dashboardData = dashboardResponse.data;
+          const dashboardData = dashboardResponse.data
           
           // Clean up dashboard for export (remove runtime fields)
           const cleanDashboard = {
@@ -108,7 +118,7 @@ class DashboardManager {
 
           await this.log('success', `✅ Exported: ${dashboard.title} → ${filename}`);
 
-        } catch (error) {
+        } catch {
           await this.log('error', `Failed to export dashboard ${dashboard.title}: ${error.message}`);
         }
       }
@@ -163,7 +173,7 @@ class DashboardManager {
         };
       }
 
-    } catch (error) {
+    } catch {
       await this.log('error', `Failed to import dashboard from ${filePath}: ${error.message}`);
       return {
         success: false,
@@ -190,8 +200,8 @@ class DashboardManager {
         results.push(result);
       }
 
-      const successful = results.filter(r => r.success).length;
-      const failed = results.filter(r => !r.success).length;
+      const successful = results.filter(r => r.success).length
+      const failed = results.filter(r => !r.success).length
 
       await this.log('success', `🎉 Import complete: ${successful} successful, ${failed} failed`);
       return results;
@@ -272,8 +282,8 @@ class DashboardManager {
         }
       }
 
-      const valid = validationResults.filter(r => r.valid).length;
-      const invalid = validationResults.filter(r => !r.valid).length;
+      const valid = validationResults.filter(r => r.valid).length
+      const invalid = validationResults.filter(r => !r.valid).length
 
       await this.log('info', `📊 Validation complete: ${valid} valid, ${invalid} invalid dashboards`);
       return validationResults;
@@ -398,7 +408,7 @@ class DashboardManager {
       const duration = ((endTime - startTime) / 1000).toFixed(2);
       await this.log('info', `🏁 Command '${command}' completed in ${duration}s`);
 
-    } catch (error) {
+    } catch {
       await this.log('error', `Command '${command}' failed: ${error.message}`);
       process.exit(1);
     }
@@ -439,4 +449,4 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   });
 }
 
-export { DashboardManager };
+module.exports = { DashboardManager };

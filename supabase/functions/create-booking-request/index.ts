@@ -118,7 +118,7 @@ serve(async (req) => {
             try {
                 await stripe.paymentIntents.cancel(paymentIntent.id);
                 console.log(`[CreateBookingRequest] Successfully cancelled PaymentIntent ${paymentIntent.id} due to DB update failure.`);
-            } catch (cancelPiError) {
+            } catch (_cancelPiError) {
                 console.error(`[CreateBookingRequest] CRITICAL: Failed to cancel PaymentIntent ${paymentIntent.id} after DB update failure. Manual reconciliation needed. Error:`, cancelPiError.message);
             }
             throw new Error(`Failed to update booking request with PaymentIntent ID: ${updateError.message}. PaymentIntent has been cancelled if possible.`);

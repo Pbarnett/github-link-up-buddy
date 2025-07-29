@@ -1,3 +1,6 @@
+import * as React from 'react';
+import { ReactNode, memo } from 'react';
+import { useEffect } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -37,10 +40,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import DynamicFormTest from './pages/DynamicFormTest';
 import SimpleTestBooking from './pages/SimpleTestBooking';
 import NotFound from './pages/NotFound';
-import React, { useEffect } from 'react';
-import { memo } from '@/types/react-compat';
-
-type ReactNode = React.ReactNode;
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

@@ -12,7 +12,6 @@ import {
 } from '@tanstack/react-query';
 import { trackEvent } from '@/utils/monitoring';
 import { useNetworkStatus } from './useNetworkStatus';
-
 interface OptimizedQueryOptions<T>
   extends Omit<UseQueryOptions<T>, 'queryKey' | 'queryFn'> {
   // Custom options for optimization
@@ -116,7 +115,7 @@ export const useOptimizedQuery = <T>(
         ? 'offlineFirst'
         : 'online',
 
-    // Refetch on window focus only if online
+    // Refetch on /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window focus only if online
     refetchOnWindowFocus: isOnline,
 
     // Disable background refetch on slow connections

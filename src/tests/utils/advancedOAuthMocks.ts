@@ -1,6 +1,6 @@
+import * as React from 'react';
+import { createElement, use } from 'react';
 import { vi, beforeEach, afterEach } from 'vitest';
-import { createElement } from 'react';
-
 /**
  * Advanced OAuth Mocking Utilities
  *
@@ -46,34 +46,37 @@ export function createOAuthTestEnvironment() {
     vi.stubGlobal('google', mockGoogleIdentityServices);
 
     // Mock browser APIs with proper OAuth behavior
-    vi.stubGlobal('window', {
-      ...globalThis.window,
-      location: {
-        origin: 'https://localhost:3000',
-        href: 'https://localhost:3000',
-        hostname: 'localhost',
-        port: '3000',
-        protocol: 'https:',
-        search: '',
-        hash: '',
-        pathname: '/',
-        reload: vi.fn(),
-        assign: vi.fn(),
-        replace: vi.fn(),
-      },
-      // OAuth popup handling
-      open: vi.fn().mockReturnValue({
-        close: vi.fn(),
-        closed: false,
-        postMessage: vi.fn(),
+    vi.stubGlobal(
+      '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window',
+      {
+        ...globalThis./* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
+        location: {
+          origin: 'https://localhost:3000',
+          href: 'https://localhost:3000',
+          hostname: 'localhost',
+          port: '3000',
+          protocol: 'https:',
+          search: '',
+          hash: '',
+          pathname: '/',
+          reload: vi.fn(),
+          assign: vi.fn(),
+          replace: vi.fn(),
+        },
+        // OAuth popup handling
+        open: vi.fn().mockReturnValue({
+          close: vi.fn(),
+          closed: false,
+          postMessage: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+        }),
+        // OAuth postMessage handling
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
-      }),
-      // OAuth postMessage handling
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      postMessage: vi.fn(),
-    });
+        postMessage: vi.fn(),
+      }
+    );
 
     // Mock FedCM API for privacy-compliant OAuth
     vi.stubGlobal(

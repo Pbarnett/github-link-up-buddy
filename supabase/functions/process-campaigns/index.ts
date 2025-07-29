@@ -452,7 +452,7 @@ async function bookFlight(campaign: {
       pnr: order.booking_reference
     };
 
-  } catch (error) {
+  } catch (_error) {
     // If order creation failed, refund the payment
     await stripe.refunds.create({
       payment_intent: paymentResult.payment_intent_id

@@ -3,14 +3,14 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   PlaneTakeoff,
-  Home,
-  Calendar,
   User,
   CreditCard,
   LogOut,
   Menu,
   ChevronDown,
   Loader2,
+  Home,
+  Calendar,
   Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,6 @@ import {
 } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-
 interface User {
   id: string;
   email?: string;
@@ -205,123 +204,123 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
               </Button>
             )}
 
-          {/* Mobile menu button */}
-          <Popover open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 mr-4" align="end">
-              <div className="space-y-4">
-                {/* Mobile navigation items */}
-                <div className="space-y-2">
-                  {primaryNavItems.map(item => {
-                    const Icon = item.icon;
-                    const active = isActive(item.href);
-                    return (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={cn(
-                          'flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full',
-                          active
-                            ? 'bg-primary/10 text-primary border border-primary/20'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                        )}
-                      >
-                        <Icon className="h-5 w-5" />
-                        <span>{item.name}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-
-                {/* Mobile Find Flights CTA */}
-                <Button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    handleFindFlights();
-                  }}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3"
-                  disabled={isNavigating}
-                >
-                  {isNavigating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    'Find Flights'
-                  )}
+            {/* Mobile menu button */}
+            <Popover open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
                 </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          {/* User dropdown */}
-          {user && !isLoading ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="relative h-9 w-9 rounded-full"
-                >
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage
-                      src={user.user_metadata?.avatar_url}
-                      alt={
-                        user.user_metadata?.full_name || user.email || 'User'
-                      }
-                    />
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                      {getUserInitials()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <ChevronDown className="h-3 w-3 absolute -bottom-1 -right-1 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {user.user_metadata?.full_name || 'User'}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
-                    </p>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 mr-4" align="end">
+                <div className="space-y-4">
+                  {/* Mobile navigation items */}
+                  <div className="space-y-2">
+                    {primaryNavItems.map(item => {
+                      const Icon = item.icon;
+                      const active = isActive(item.href);
+                      return (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={cn(
+                            'flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full',
+                            active
+                              ? 'bg-primary/10 text-primary border border-primary/20'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                          )}
+                        >
+                          <Icon className="h-5 w-5" />
+                          <span>{item.name}</span>
+                        </Link>
+                      );
+                    })}
                   </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
-                  Profile & Settings
-                </DropdownMenuLabel>
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/wallet" className="flex items-center">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    <span>Payment Methods</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                  onClick={handleSignOut}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
-          )}
+
+                  {/* Mobile Find Flights CTA */}
+                  <Button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleFindFlights();
+                    }}
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3"
+                    disabled={isNavigating}
+                  >
+                    {isNavigating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Find Flights'
+                    )}
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* User dropdown */}
+            {user && !isLoading ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="relative h-9 w-9 rounded-full"
+                  >
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage
+                        src={user.user_metadata?.avatar_url}
+                        alt={
+                          user.user_metadata?.full_name || user.email || 'User'
+                        }
+                      />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {getUserInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <ChevronDown className="h-3 w-3 absolute -bottom-1 -right-1 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {user.user_metadata?.full_name || 'User'}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                    Profile & Settings
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/wallet" className="flex items-center">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      <span>Payment Methods</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+const path = require('path');
+
 /**
  * Wallet Integration Verification Script
  * 
@@ -7,17 +9,16 @@
  * in the production build by checking key integration points.
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const fs = require('fs');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 console.log('🔍 Verifying Wallet Integration...\n');
 
 // Check if production build exists
-const distPath = path.join(__dirname, 'dist');
+const distPath = path.join(__'dist');
 if (!fs.existsSync(distPath)) {
   console.error('❌ Production build not found. Run `npm run build` first.');
   process.exit(1);

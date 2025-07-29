@@ -1,3 +1,4 @@
+import * as React from 'react';
 /**
  * Theme configuration for Radix Themes integration
  * This file configures the theme settings for GitHub Link-Up Buddy
@@ -8,7 +9,6 @@
  */
 
 import type { ThemeProps } from '@radix-ui/themes';
-
 // Define the base theme configuration
 export const themeConfig: ThemeProps = {
   // Primary accent color - using blue to match the brand

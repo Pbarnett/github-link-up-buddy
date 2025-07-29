@@ -14,14 +14,12 @@
  */
 
 import * as React from 'react';
-type ReactNode = React.ReactNode;
+import { FC, ReactNode } from 'react';
 type _Component<P = {}, S = {}> = React.Component<P, S>;
-type FC<T = {}> = React.FC<T>;
 
 import { Theme } from '@radix-ui/themes';
 import { useTheme } from 'next-themes';
 import { themeConfig } from '@/lib/theme';
-
 interface RadixThemeProviderProps {
   children: ReactNode;
   /**

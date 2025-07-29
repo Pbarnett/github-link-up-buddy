@@ -14,7 +14,9 @@ import { DashboardManager } from './manage-dashboards.js';
 import { DataRetentionOptimizer } from './optimize-data-retention.js';
 import { SecurityManager } from './setup-security.js';
 import { performance } from 'perf_hooks';
-
+// Utility functions
+// Removed unused error function
+// Utility functions
 class Phase2Deployer {
   constructor() {
     this.dashboardManager = new DashboardManager();
@@ -265,8 +267,8 @@ class Phase2Deployer {
     const duration = ((endTime - startTime) / 1000).toFixed(2);
 
     // Final summary
-    const successful = results.filter(r => r.status === 'deployed').length;
-    const failed = results.filter(r => r.status === 'failed').length;
+    const successful = results.filter(r => r.status === 'deployed').length
+    const failed = results.filter(r => r.status === 'failed').length
 
     console.log('\n🎯 PHASE 2 DEPLOYMENT SUMMARY');
     console.log('=' .repeat(60));
@@ -323,4 +325,4 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   });
 }
 
-export { Phase2Deployer };
+module.exports = { Phase2Deployer };

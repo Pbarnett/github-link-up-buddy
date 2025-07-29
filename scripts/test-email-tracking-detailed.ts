@@ -11,7 +11,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL!
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY!
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY')
+  console.error('❌ Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
   process.exit(1)
 }
 
@@ -35,7 +35,7 @@ async function getDetailedErrorInfo(error: unknown): Promise<string> {
         return errorText
       }
     }
-  } catch {
+  } catch (error) {
     // Ignore parsing errors
   }
   if (error && typeof error === 'object' && 'message' in error) {
@@ -179,7 +179,7 @@ const testUserId = uuidv4()
     } else {
       console.log('❌ No templates found or error occurred')
     }
-  } catch {
+  } catch (error) {
     console.log('❌ Template check failed')
   }
 
@@ -196,7 +196,7 @@ const testUserId = uuidv4()
 
   for (const table of tables) {
     try {
-      const { error } = await supabase
+      const { error: _error } = await supabase
         .from(table)
         .select('*')
         .limit(1)
@@ -212,7 +212,7 @@ const testUserId = uuidv4()
       })
 
       console.log(`   ${table}: ${tableExists ? '✅ Exists' : '❌ Missing'}`)
-    } catch {
+    } catch (error) {
       console.log(`   ${table}: ❌ Error checking`)
     }
   }
@@ -296,7 +296,6 @@ const testUserId = uuidv4()
   
   const successCount = results.filter(r => r.success).length
   const totalCount = results.length
-  
   console.log(`Overall Success Rate: ${successCount}/${totalCount} (${Math.round(successCount/totalCount*100)}%)`)
   console.log('\nDetailed Results:')
   

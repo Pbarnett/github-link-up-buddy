@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { FC, ReactNode } from 'react';
 /**
  * @file Frontend Integration Tests for Phase 3: Advanced Filter Controls
  *
@@ -13,7 +14,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useFilterState } from '@/hooks/useFilterState';
 import { ScoredOffer } from '@/types/offer';
 import AdvancedFilterControls, { FilterState } from '../AdvancedFilterControls';
-
 // Mock ResizeObserver for JSDOM compatibility
 class MockResizeObserver {
   observe() {}
@@ -22,12 +22,20 @@ class MockResizeObserver {
 }
 
 // Only define ResizeObserver if it doesn't exist
-if (!window.ResizeObserver) {
-  Object.defineProperty(window, 'ResizeObserver', {
-    writable: true,
-    configurable: true,
-    value: MockResizeObserver,
-  });
+if (
+  !(
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.ResizeObserver
+  )
+) {
+  Object.defineProperty(
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
+    'ResizeObserver',
+    {
+      writable: true,
+      configurable: true,
+      value: MockResizeObserver,
+    }
+  );
   global.ResizeObserver = MockResizeObserver;
 }
 
@@ -132,9 +140,13 @@ const mockLocalStorage = {
   clear: vi.fn(),
 };
 
-Object.defineProperty(window, 'localStorage', {
-  value: mockLocalStorage,
-});
+Object.defineProperty(
+  /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
+  'localStorage',
+  {
+    value: mockLocalStorage,
+  }
+);
 
 // Test data
 const mockOffers: ScoredOffer[] = [

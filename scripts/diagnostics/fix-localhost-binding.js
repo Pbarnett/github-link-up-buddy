@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
+const path = require('path');
+
 /**
  * Automated Fix Script for Localhost Binding Issues
  * Applies IPv4 binding fixes to Vite and Express configurations
  */
 
-import fs from 'fs';
-import path from 'path';
+// Utility functions
+// Removed unused log function
 
 class LocalhostBindingFixer {
   constructor() {
@@ -15,7 +18,7 @@ class LocalhostBindingFixer {
     this.backups = [];
   }
 
-  log(message, type = 'info') {
+  console.log(message, type = 'info') {
     const colors = {
       info: '\x1b[36m',
       warn: '\x1b[33m',
@@ -35,7 +38,7 @@ class LocalhostBindingFixer {
       this.backups.push({ original: filePath, backup: backupPath });
       this.log(`Created backup: ${path.basename(backupPath)}`);
       return backupPath;
-    } catch (error) {
+    } catch {
       this.log(`Failed to create backup for ${filePath}: ${error.message}`, 'error');
       throw error;
     }
@@ -232,7 +235,7 @@ async function startDevelopment() {
   try {
     await diagnostics.runDiagnostics();
     console.log('✅ Localhost binding checks passed!');
-  } catch (error) {
+  } catch {
     console.error('❌ Localhost binding issues detected. Please run: npm run fix-localhost-binding');
     process.exit(1);
   }
@@ -305,7 +308,7 @@ startDevelopment().catch(error => {
         fs.copyFileSync(backup.backup, backup.original);
         fs.unlinkSync(backup.backup);
         this.log(`Restored ${backup.original}`);
-      } catch (error) {
+      } catch {
         this.log(`Failed to restore ${backup.original}: ${error.message}`, 'error');
       }
     });
@@ -321,4 +324,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   });
 }
 
-export default LocalhostBindingFixer;
+module.exports = LocalhostBindingFixer;

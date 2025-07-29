@@ -213,7 +213,7 @@ export function isUserInVariant(
   experimentId: string,
   variantId: string
 ): boolean {
-  const userVariant = getUserVariant(userId, experimentId);
+  const _userVariant = getUserVariant(userId, experimentId);
   return userVariant === variantId;
 }
 
@@ -223,7 +223,7 @@ export function getExperimentConfig(
   experimentId: string
 ): Record<string, unknown> | null {
   const experiment = PERSONALIZATION_AB_TESTS[experimentId];
-  const userVariant = getUserVariant(userId, experimentId);
+  const _userVariant = getUserVariant(userId, experimentId);
 
   if (!experiment || !userVariant) {
     return null;

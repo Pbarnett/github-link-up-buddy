@@ -1,5 +1,7 @@
-type FormEvent = React.FormEvent;
 import * as React from 'react';
+import { useState, useEffect, use } from 'react';
+type FormEvent<T = Element> = React.FormEvent<T>;
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,9 +14,6 @@ import {
 } from '@/components/ui/card';
 import { useProfile } from '@/hooks/useProfile';
 import { useProfileKMS } from '@/hooks/useProfileKMS';
-import { useState } from 'react';
-import { useEffect } from 'react';
-
 interface ProfileFormProps {
   useKMS?: boolean;
 }
@@ -24,39 +23,70 @@ export function ProfileForm({ useKMS = false }: ProfileFormProps = {}) {
   const kmsProfile = useProfileKMS();
 
   // Choose which profile service to use
+  const profileService = useKMS ? kmsProfile : legacyProfile;
   const {
     profile,
     isLoading,
     updateProfile,
-    isUpdating,
     error: _error,
-  } = useKMS ? kmsProfile : legacyProfile;
+  } = profileService;
+  
+  // Handle isUpdating property which may not exist on KMS profile
+  const isUpdating = 'isUpdating' in profileService ? profileService.isUpdating : false;
   const [encryptionEnabled] = useState(useKMS);
 
   console.log(
     `ProfileForm: Using ${useKMS ? 'KMS-encrypted' : 'legacy'} profile service`
   );
 
+  // Helper functions to normalize profile data between different interfaces
+  const getFirstName = (prof: any) => {
+    if (!prof) return '';
+    return prof.first_name || prof.firstName || '';
+  };
+  
+  const getLastName = (prof: any) => {
+    if (!prof) return '';
+    return prof.last_name || prof.lastName || '';
+  };
+  
+  const getPhone = (prof: any) => {
+    if (!prof) return '';
+    return prof.phone || '';
+  };
+
   const [formData, setFormData] = useState({
-    first_name: profile?.first_name || '',
-    last_name: profile?.last_name || '',
-    phone: profile?.phone || '',
+    first_name: getFirstName(profile),
+    last_name: getLastName(profile),
+    phone: getPhone(profile),
   });
 
   // Update form data when profile loads
   useEffect(() => {
     if (profile) {
       setFormData({
-        first_name: profile.first_name || '',
-        last_name: profile.last_name || '',
-        phone: profile.phone || '',
+        first_name: getFirstName(profile),
+        last_name: getLastName(profile),
+        phone: getPhone(profile),
       });
     }
   }, [profile]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    updateProfile(formData);
+    
+    // Transform form data to match the expected interface for each service
+    if (useKMS) {
+      // KMS service expects camelCase properties
+      updateProfile({
+        firstName: formData.first_name,
+        lastName: formData.last_name,
+        phone: formData.phone,
+      });
+    } else {
+      // Legacy service expects snake_case properties
+      updateProfile(formData);
+    }
   };
 
   const handleChange = (field: string, value: string) => {

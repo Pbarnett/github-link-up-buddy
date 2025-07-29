@@ -1,5 +1,7 @@
-type FC<T = {}> = React.FC<T>;
 import * as React from 'react';
+import { FC } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { DollarSign, Filter, Plane, RefreshCw, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,55 +16,6 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import AirlineSelector from './AirlineSelector';
-import { useState } from 'react';
-import { useEffect } from 'react';
-import { useCallback } from 'react';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 /**
  * Filter options that integrate with the backend FilterFactory system
  */
@@ -127,7 +80,7 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
 
   // Debounced filter updates to avoid excessive API calls
   const debouncedUpdate = useCallback(
-    debounce((options: FilterOptions) => {
+    createDebounce((options: FilterOptions) => {
       onFiltersChange(options);
     }, 300),
     [onFiltersChange]
@@ -460,6 +413,18 @@ const AdvancedFilterControls: FC<AdvancedFilterControlsProps> = ({
     </Card>
   );
 };
+
+// Create a debounce function specifically for FilterOptions
+function createDebounce(
+  func: (options: FilterOptions) => void,
+  wait: number
+): (options: FilterOptions) => void {
+  let timeout: NodeJS.Timeout | null = null;
+  return (options: FilterOptions) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(options), wait);
+  };
+}
 
 // Utility function for debouncing
 function debounce<T extends (...args: unknown[]) => unknown>(

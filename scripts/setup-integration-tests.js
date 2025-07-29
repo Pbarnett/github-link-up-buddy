@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+const path = require('path');
+
 /**
  * Setup Script for External Services Integration Tests
  * 
@@ -7,20 +9,24 @@
  * integration tests for Stripe, LaunchDarkly, and Supabase.
  */
 
-import fs from 'fs';
-import path from 'path';
 import readline from 'readline';
-import { fileURLToPath } from 'url';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require('fs');
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
 
-const ENV_TEST_FILE = path.join(__dirname, '..', '.env.test');
+const ENV_TEST_FILE = path.join(__'..', '.env.test');
 
 console.log('🔧 External Services Integration Test Setup\n');
 console.log('This script will help you configure environment variables for integration testing.');
@@ -142,7 +148,7 @@ NODE_ENV=test
 }
 
 // Main execution
-setupEnvironment().catch((error) => {
+setupEnvironment().catch((_error) => {
   console.error('❌ Setup failed:', error.message);
   rl.close();
   process.exit(1);

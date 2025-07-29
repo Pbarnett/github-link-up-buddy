@@ -91,7 +91,7 @@ async function processBookingRequest(bookingRequest: Record<string, unknown>) {
           .eq("id", newBookingRecordId);
         console.log(`[ProcessBooking] Booking ID ${newBookingRecordId} status updated to 'ticketed' after Stripe capture for BR ID: ${bookingRequest.id}.`);
 
-      } catch (captureError) {
+      } catch (_captureError) {
         console.error(`[ProcessBooking] Error during Stripe capture for PI ${bookingRequest.payment_intent_id} (BR ID: ${bookingRequest.id}): ${captureError.message}. Attempting Amadeus rollback for Order ID: ${amadeusOrderId}.`);
         if (amadeusOrderId) {
           try {
@@ -101,7 +101,7 @@ async function processBookingRequest(bookingRequest: Record<string, unknown>) {
             await supabase.from("bookings")
               .update({ status: "canceled_payment_failed", error_message: `Stripe capture failed: ${captureError.message}`, updated_at: new Date().toISOString() })
               .eq("id", newBookingRecordId);
-          } catch (cancelAmadeusError) {
+          } catch (_cancelAmadeusError) {
             console.error(`[ProcessBooking] CRITICAL: Failed to cancel Amadeus order ${amadeusOrderId} (BR ID: ${bookingRequest.id}) after Stripe capture failure. Error: ${cancelAmadeusError.message}`);
             await supabase.from("bookings")
               .update({ status: "booked_payment_failed_rollback_failed", error_message: `Stripe capture failed, Amadeus rollback also failed: ${cancelAmadeusError.message}`, updated_at: new Date().toISOString() })

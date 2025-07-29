@@ -10,6 +10,11 @@ import { promisify } from 'util';
 import net from 'net';
 import dns from 'dns';
 import os from 'os';
+// Utility functions
+// Removed unused error function
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const dnsLookup = promisify(dns.lookup);
 
@@ -26,7 +31,7 @@ class LocalhostDiagnostics {
     };
   }
 
-  log(message, type = 'info') {
+  console.log(message, type = 'info') {
     const colors = {
       info: '\x1b[36m',    // cyan
       warn: '\x1b[33m',    // yellow
@@ -219,4 +224,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   });
 }
 
-export default LocalhostDiagnostics;
+module.exports = LocalhostDiagnostics;

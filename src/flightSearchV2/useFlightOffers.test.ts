@@ -5,7 +5,6 @@ import * as featureFlagHook from '@/hooks/useFeatureFlag';
 import * as serverActions from '@/serverActions/getFlightOffers';
 import { useFlightOffers, mapFlightOfferDbRowToV2 } from './useFlightOffers'; // mapFlightOfferDbRowToV2 is also exported here
 import type { FlightOfferV2, FlightOfferV2DbRow } from './types';
-
 // Mock dependencies
 vi.mock('@/hooks/useFeatureFlag');
 vi.mock('@/serverActions/getFlightOffers');

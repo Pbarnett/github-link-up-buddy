@@ -5,7 +5,6 @@ import * as React from 'react';
 import { useWallet } from '@/contexts/WalletContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
 export function WalletTestComponent() {
   const { paymentMethods, loading, error } = useWallet();
 

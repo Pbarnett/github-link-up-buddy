@@ -1,3 +1,4 @@
+const fs = require('fs');
 // Deployment configuration for production
 export const deployConfig = {
   // Build settings
@@ -44,11 +45,11 @@ export const deployConfig = {
       'Referrer-Policy': 'strict-origin-when-cross-origin',
       'Content-Security-Policy': `
         default-src 'self';
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' *.supabase.co *.launchdarkly.com;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' *.supabase.co *.launchdarkly.com
         style-src 'self' 'unsafe-inline';
-        img-src 'self' data: blob: *.supabase.co;
+        img-src 'self' data: blob: *.supabase.co
         font-src 'self' data:;
-        connect-src 'self' *.supabase.co *.launchdarkly.com *.duffel.com api.twilio.com api.resend.com;
+        connect-src 'self' *.supabase.co *.launchdarkly.com *.duffel.com api.twilio.com api.resend.com
       `.replace(/\s+/g, ' ').trim()
     }
   },
@@ -61,10 +62,8 @@ export const deployConfig = {
       status: 200
     }
   ]
-};
 
 // Deployment validation function
-export function validateDeployment() {
   const errors = [];
   const warnings = [];
 
@@ -77,12 +76,12 @@ export function validateDeployment() {
 
   // Check build directory exists
   try {
-    const fs = require('fs');
     if (!fs.existsSync(deployConfig.build.directory)) {
       errors.push(`Build directory does not exist: ${deployConfig.build.directory}`);
     }
   } catch (err) {
-    warnings.push('Could not validate build directory existence');
+    warnings.push(`Could not validate build directory existence: ${err.message}`);
+    console.debug('Build directory check error:', err);
   }
 
   return {
@@ -92,4 +91,4 @@ export function validateDeployment() {
   };
 }
 
-export default deployConfig;
+module.exports = deployConfig;

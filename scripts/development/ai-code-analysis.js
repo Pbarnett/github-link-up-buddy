@@ -14,13 +14,13 @@
  */
 
 import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const fs = require('fs');
 
 // Color codes for console output
 const colors = {
@@ -32,17 +32,11 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m'
-};
 
-const log = (message, color = 'reset') => {
-  console.log(`${colors[color]}${message}${colors.reset}`);
 };
+// Removed unused log function
 
-const success = (message) => log(`✅ ${message}`, 'green');  
-const warning = (message) => log(`⚠️  ${message}`, 'yellow');
-const error = (message) => log(`❌ ${message}`, 'red');
-const info = (message) => log(`ℹ️  ${message}`, 'blue');
-const step = (message) => log(`🤖 ${message}`, 'cyan');
+const step = (message) => console.log(`🤖 ${message}`, 'cyan');
 
 // Advanced code analysis patterns
 const CODE_QUALITY_PATTERNS = {
@@ -133,7 +127,6 @@ const CODE_QUALITY_PATTERNS = {
       suggestion: 'Ensure all dependencies are included or use ESLint rule'
     }
   ]
-};
 
 // Automated refactoring rules
 const REFACTORING_RULES = [
@@ -182,8 +175,8 @@ class AICodeAnalyzer {
 
   async analyze() {
     try {
-      log('🤖 AI-Powered Code Analysis Starting', 'bright');
-      log('='.repeat(60), 'blue');
+      console.log('🤖 AI-Powered Code Analysis Starting', 'bright');
+      console.log('='.repeat(60), 'blue');
 
       await this.scanSourceFiles();
       await this.analyzeCodeComplexity();
@@ -191,40 +184,40 @@ class AICodeAnalyzer {
       await this.suggestRefactoring();
       await this.generateAIReport();
 
-      const totalIssues = this.results.issuesFound.length;
+      const totalIssues = this.results.issuesFound.length
       if (totalIssues === 0) {
-        success('🎉 No code quality issues detected!');
+        console.log('🎉 No code quality issues detected!');
       } else {
-        warning(`Found ${totalIssues} code quality issues`);
+        console.warn(`Found ${totalIssues} code quality issues`);
         if (this.autoFix) {
           await this.applyAutomatedFixes();
         }
       }
 
     } catch (err) {
-      error(`AI code analysis failed: ${err.message}`);
+      console.error(`AI code analysis failed: ${err.message}`);
       process.exit(1);
     }
   }
 
   async scanSourceFiles() {
-    step('Scanning source files for analysis...');
+    console.log('Scanning source files for analysis...');
 
     const sourceFiles = this.getSourceFiles();
-    this.results.filesAnalyzed = sourceFiles.length;
+    this.results.filesAnalyzed = sourceFiles.length
 
     for (const file of sourceFiles) {
       await this.analyzeFile(file);
     }
 
-    success(`Analyzed ${this.results.filesAnalyzed} source files`);
+    console.log(`✅ Analyzed ${this.results.filesAnalyzed} source files`);
   }
 
   getSourceFiles() {
     try {
       const result = execSync(`find src -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" | head -50`, { encoding: 'utf-8' });
       return result.trim().split('\n').filter(f => f.length > 0);
-    } catch (err) {
+    } catch (error) {
       return [];
     }
   }
@@ -233,7 +226,7 @@ class AICodeAnalyzer {
     if (!fs.existsSync(filePath)) return;
 
     const content = fs.readFileSync(filePath, 'utf-8');
-    const fileSize = content.length;
+    const fileSize = content.length
     
     // Skip very large files
     if (fileSize > 50000) {
@@ -272,7 +265,7 @@ class AICodeAnalyzer {
   }
 
   async analyzeCodeComplexity() {
-    step('Analyzing code complexity metrics...');
+    console.log('Analyzing code complexity metrics...');
 
     try {
       // Use TypeScript compiler API for advanced analysis
@@ -295,9 +288,9 @@ class AICodeAnalyzer {
         }
       }
       
-      success('Code complexity analysis completed');
-    } catch (err) {
-      warning('Code complexity analysis failed');
+      console.log('Code complexity analysis completed');
+    } catch (error) {
+      console.warn('Code complexity analysis failed');
     }
   }
 
@@ -319,7 +312,7 @@ class AICodeAnalyzer {
     for (const pattern of complexityPatterns) {
       const matches = code.match(pattern);
       if (matches) {
-        complexity += matches.length;
+        complexity += matches.length
       }
     }
 
@@ -327,7 +320,7 @@ class AICodeAnalyzer {
   }
 
   async detectCodeSmells() {
-    step('Detecting code smells and anti-patterns...');
+    console.log('Detecting code smells and anti-patterns...');
 
     const sourceFiles = this.getSourceFiles();
     
@@ -355,11 +348,11 @@ class AICodeAnalyzer {
       }
     }
 
-    success('Code smell detection completed');
+    console.log('Code smell detection completed');
   }
 
   async suggestRefactoring() {
-    step('Generating refactoring suggestions...');
+    console.log('Generating refactoring suggestions...');
 
     const sourceFiles = this.getSourceFiles();
     
@@ -380,11 +373,11 @@ class AICodeAnalyzer {
       }
     }
 
-    success(`Generated ${this.results.refactoringSuggestions.length} refactoring suggestions`);
+    console.log(`✅ Generated ${this.results.refactoringSuggestions.length} refactoring suggestions`);
   }
 
   async applyAutomatedFixes() {
-    step('Applying safe automated fixes...');
+    console.log('Applying safe automated fixes...');
 
     let fixesApplied = 0;
     
@@ -398,17 +391,17 @@ class AICodeAnalyzer {
             fs.writeFileSync(suggestion.file, content);
             fixesApplied++;
           }
-        } catch (err) {
-          warning(`Failed to apply fix to ${suggestion.file}: ${err.message}`);
+        } catch (error) {
+          console.warn(`Failed to apply fix to ${suggestion.file}: ${error.message}`);
         }
       }
     }
 
-    success(`Applied ${fixesApplied} automated fixes`);
+    console.log(`✅ Applied ${fixesApplied} automated fixes`);
   }
 
   async generateAIReport() {
-    step('Generating AI analysis report...');
+    console.log('Generating AI analysis report...');
 
     const report = {
       timestamp: new Date().toISOString(),
@@ -434,38 +427,38 @@ class AICodeAnalyzer {
     fs.writeFileSync('ai-code-analysis-report.json', JSON.stringify(report, null, 2));
 
     // Console output
-    log('\n🤖 AI Code Analysis Summary:', 'blue');
-    log('='.repeat(50), 'blue');
+    console.log('\n🤖 AI Code Analysis Summary:', 'blue');
+    console.log('='.repeat(50), 'blue');
     
     if (report.summary.criticalIssues > 0) {
-      error(`🚨 Critical Issues: ${report.summary.criticalIssues}`);
+      console.error(`🚨 Critical Issues: ${report.summary.criticalIssues}`);
     }
     if (report.summary.highIssues > 0) {
-      warning(`⚠️  High Priority: ${report.summary.highIssues}`);
+      console.warn(`⚠️  High Priority: ${report.summary.highIssues}`);
     }
     if (report.summary.mediumIssues > 0) {
-      info(`📊 Medium Priority: ${report.summary.mediumIssues}`);
+      console.info(`📊 Medium Priority: ${report.summary.mediumIssues}`);
     }
     if (report.summary.lowIssues > 0) {
-      log(`💡 Low Priority: ${report.summary.lowIssues}`, 'cyan');
+      console.log(`💡 Low Priority: ${report.summary.lowIssues}`, 'cyan');
     }
 
-    log('\n📈 Category Breakdown:', 'cyan');
+    console.log('\n📈 Category Breakdown:', 'cyan');
     Object.entries(report.categories).forEach(([category, count]) => {
       if (count > 0) {
-        log(`   • ${category}: ${count} issues`, count > 5 ? 'red' : count > 2 ? 'yellow' : 'green');
+        console.log(`   • ${category}: ${count} issues`, count > 5 ? 'red' : count > 2 ? 'yellow' : 'green');
       }
     });
 
-    log(`\n📄 Full report saved to: ai-code-analysis-report.json`, 'blue');
+    console.log(`\n📄 Full report saved to: ai-code-analysis-report.json`, 'blue');
   }
 
   generateRecommendations() {
     const recommendations = [];
     
-    const criticalCount = this.results.issuesFound.filter(i => i.severity === 'critical').length;
-    const securityCount = this.results.issuesFound.filter(i => i.type === 'security').length;
-    const performanceCount = this.results.issuesFound.filter(i => i.type === 'performance').length;
+    const criticalCount = this.results.issuesFound.filter(i => i.severity === 'critical').length
+    const securityCount = this.results.issuesFound.filter(i => i.type === 'security').length
+    const performanceCount = this.results.issuesFound.filter(i => i.type === 'performance').length
 
     if (criticalCount > 0) {
       recommendations.push({
@@ -505,9 +498,9 @@ class AICodeAnalyzer {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const analyzer = new AICodeAnalyzer();
   analyzer.analyze().catch(err => {
-    console.error(`❌ AI code analysis failed: ${err.message}`);
+    console.error(`❌ AI code analysis failed: ${error.message}`);
     process.exit(1);
   });
 }
 
-export default AICodeAnalyzer;
+module.exports = AICodeAnalyzer;

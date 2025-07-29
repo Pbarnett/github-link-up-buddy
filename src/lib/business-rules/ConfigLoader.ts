@@ -1,6 +1,4 @@
-import * as React from 'react';
 import { BusinessRulesConfigSchema, type BusinessRulesConfig } from './schema';
-
 class ConfigLoader {
   private cache: Map<string, BusinessRulesConfig> = new Map();
   private cacheTimeout = 5 * 60 * 1000; // 5 minutes
@@ -18,7 +16,13 @@ class ConfigLoader {
     // In development, skip API call and use fallback config directly
     if (environment === 'development' || import.meta.env.DEV) {
       console.log('🔧 Using fallback business rules config for development');
-      return this.getFallbackConfig(environment);
+      const fallbackConfig = this.getFallbackConfig(environment);
+
+      // Cache the fallback config
+      this.cache.set(cacheKey, fallbackConfig);
+      setTimeout(() => this.cache.delete(cacheKey), this.cacheTimeout);
+
+      return fallbackConfig;
     }
 
     try {
@@ -47,7 +51,13 @@ class ConfigLoader {
         'Failed to load business rules config, using fallback:',
         error
       );
-      return this.getFallbackConfig(environment);
+      const fallbackConfig = this.getFallbackConfig(environment);
+
+      // Cache the fallback config
+      this.cache.set(cacheKey, fallbackConfig);
+      setTimeout(() => this.cache.delete(cacheKey), this.cacheTimeout);
+
+      return fallbackConfig;
     }
   }
 

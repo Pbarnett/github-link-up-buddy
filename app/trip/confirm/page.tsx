@@ -4,7 +4,7 @@
 
 import * as React from 'react';
 const { useState, useEffect } = React;
-import { useRouter, useSearchParams } from "next/navigation";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,8 @@ type Tables<T extends keyof Database['public']['Tables']> = Database['public']['
 type TablesInsert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert'];
 import { safeQuery } from "@/lib/supabaseUtils";
 const TripConfirm = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [offer, setOffer] = useState<OfferProps | null>(null);
   const [hasError, setHasError] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
@@ -66,7 +66,7 @@ const TripConfirm = () => {
   }, [searchParams]);
 
   const handleCancel = () => {
-    router.push('/trip/offers');
+    navigate('/trip/offers');
   };
 
   const handleConfirm = async () => {
@@ -130,7 +130,7 @@ const TripConfirm = () => {
       });
 
       // Redirect to dashboard
-      router.push('/dashboard');
+      navigate('/dashboard');
 
     } catch (error: unknown) {
       console.error("Error creating booking:", error);

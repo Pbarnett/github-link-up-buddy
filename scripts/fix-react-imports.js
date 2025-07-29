@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
+const path = require('path');
+
 /**
  * Script to fix React import patterns for TypeScript compatibility
+const fs = require('fs');
  * Based on React 19 documentation and TypeScript best practices
  * 
  * This script will:
@@ -10,14 +13,7 @@
  * 3. Ensure FC imports are correct
  */
 
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const PROJECT_ROOT = path.resolve(__dirname, '..');
+const PROJECT_ROOT = path.resolve(__'..');
 
 // React hooks that commonly need to be imported
 const REACT_HOOKS = [
@@ -57,7 +53,7 @@ async function findTsxFiles(dir) {
           files.push(fullPath);
         }
       }
-    } catch (error) {
+    } catch {
       console.warn(`Warning: Could not read directory ${currentDir}:`, error.message);
     }
   }

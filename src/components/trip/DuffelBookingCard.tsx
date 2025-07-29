@@ -3,9 +3,10 @@
  * Battle-tested component that integrates with validated backend
  */
 
-type FC<T = {}> = React.FC<T>;
-
 import * as React from 'react';
+import { FC } from 'react';
+import { useState, use } from 'react';
+import { AlertCircle, CheckCircle2, Loader2, PlaneTakeoff } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -25,53 +26,6 @@ import {
 import { airportNames } from '@/data/airportLookup';
 import { airlineNames } from '@/data/airlineLookup';
 import OfferExpirationTimer from './OfferExpirationTimer';
-import { useState } from 'react';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 export interface DuffelFlightOffer {
   id: string;
   price: number;

@@ -12,13 +12,13 @@
  */
 
 import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const fs = require('fs');
+import {} from 'path';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
 // Color codes for console output
 const colors = {
@@ -30,17 +30,11 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m'
-};
 
-const log = (message, color = 'reset') => {
-  console.log(`${colors[color]}${message}${colors.reset}`);
 };
+// Removed unused log function
 
-const success = (message) => log(`✅ ${message}`, 'green');
-const warning = (message) => log(`⚠️  ${message}`, 'yellow');
-const error = (message) => log(`❌ ${message}`, 'red');
-const info = (message) => log(`ℹ️  ${message}`, 'blue');
-const step = (message) => log(`🧪 ${message}`, 'cyan');
+const step = (message) => console.log(`🧪 ${message}`, 'cyan');
 
 // Test quality thresholds
 const TEST_THRESHOLDS = {
@@ -54,7 +48,6 @@ const TEST_THRESHOLDS = {
   MAX_TEST_DURATION: 30000, // 30 seconds
   MAX_FLAKY_TESTS: 5,
   MIN_ASSERTIONS_PER_TEST: 1
-};
 
 // Mutation operators for mutation testing
 const MUTATION_OPERATORS = [
@@ -101,8 +94,8 @@ class AdvancedTestRunner {
 
   async runAdvancedTests() {
     try {
-      log('🧪 Advanced Test Architecture - Starting Comprehensive Testing', 'bright');
-      log('='.repeat(70), 'blue');
+      console.log('🧪 Advanced Test Architecture - Starting Comprehensive Testing', 'bright');
+      console.log('='.repeat(70), 'blue');
 
       await this.runStandardTests();
       await this.analyzeCoverage();
@@ -121,21 +114,21 @@ class AdvancedTestRunner {
 
       const qualityScore = this.calculateTestQualityScore();
       if (qualityScore >= 80) {
-        success(`🎉 Excellent test quality score: ${qualityScore}%`);
+        console.log(`✅ 🎉 Excellent test quality score: ${qualityScore}%`);
       } else if (qualityScore >= 60) {
-        warning(`⚠️  Good test quality score: ${qualityScore}% - room for improvement`);
+        console.warn(`⚠️  Good test quality score: ${qualityScore}% - room for improvement`);
       } else {
-        error(`❌ Poor test quality score: ${qualityScore}% - significant improvements needed`);
+        console.error(`❌ Poor test quality score: ${qualityScore}% - significant improvements needed`);
       }
 
     } catch (err) {
-      error(`Advanced test execution failed: ${err.message}`);
+      console.error(`Advanced test execution failed: ${err.message}`);
       process.exit(1);
     }
   }
 
   async runStandardTests() {
-    step('Running standard test suite...');
+    console.log('Running standard test suite...');
 
     try {
       // Run unit tests with coverage
@@ -162,9 +155,9 @@ class AdvancedTestRunner {
         { type: 'e2e', result: this.parseTestResult(e2eResult) }
       ];
 
-      success('Standard test suite completed');
+      console.log('Standard test suite completed');
     } catch (err) {
-      error(`Standard tests failed: ${err.message}`);
+      console.error(`Standard tests failed: ${err.message}`);
       throw err;
     }
   }
@@ -178,7 +171,7 @@ class AdvancedTestRunner {
         numFailedTests: jsonOutput.numFailedTests || 0,
         testResults: jsonOutput.testResults || []
       };
-    } catch (err) {
+    } catch (error) {
       return {
         numTotalTests: 0,
         numPassedTests: 0,
@@ -189,7 +182,7 @@ class AdvancedTestRunner {
   }
 
   async analyzeCoverage() {
-    step('Analyzing test coverage...');
+    console.log('Analyzing test coverage...');
 
     try {
       // Generate detailed coverage report
@@ -217,13 +210,13 @@ class AdvancedTestRunner {
         });
 
         if (coverageIssues.length > 0) {
-          warning(`Coverage below thresholds: ${coverageIssues.join(', ')}`);
+          console.warn(`Coverage below thresholds: ${coverageIssues.join(', ')}`);
         } else {
-          success('All coverage thresholds met');
+          console.log('All coverage thresholds met');
         }
       }
     } catch (err) {
-      warning(`Coverage analysis failed: ${err.message}`);
+      console.warn(`Coverage analysis failed: ${err.message}`);
     }
   }
 
@@ -232,13 +225,13 @@ class AdvancedTestRunner {
     try {
       const summary = coverageData.coverageMap?.getCoverageSummary?.() || {};
       return summary[metric]?.pct || 0;
-    } catch {
+    } catch (error) {
       return 0;
     }
   }
 
   async runPropertyBasedTests() {
-    step('Running property-based tests...');
+    console.log('Running property-based tests...');
 
     try {
       // Check if property-based tests exist
@@ -248,17 +241,17 @@ class AdvancedTestRunner {
 
       if (propertyTestFiles) {
         execSync(`npm test -- ${propertyTestFiles}`, { stdio: 'pipe' });
-        success('Property-based tests completed');
+        console.log('Property-based tests completed');
       } else {
-        info('No property-based tests found');
+        console.info('No property-based tests found');
       }
     } catch (err) {
-      warning(`Property-based tests failed: ${err.message}`);
+      console.warn(`Property-based tests failed: ${err.message}`);
     }
   }
 
   async runMutationTesting() {
-    step('Running mutation testing...');
+    console.log('Running mutation testing...');
 
     try {
       // Simple mutation testing implementation
@@ -268,7 +261,7 @@ class AdvancedTestRunner {
 
       for (const file of sourceFiles.slice(0, 5)) { // Limit for demo
         const mutants = await this.generateMutants(file);
-        totalMutants += mutants.length;
+        totalMutants += mutants.length
 
         for (const mutant of mutants) {
           const wasKilled = await this.testMutant(mutant);
@@ -281,13 +274,13 @@ class AdvancedTestRunner {
       this.results.mutationScore = totalMutants > 0 ? Math.round((killedMutants / totalMutants) * 100) : 0;
 
       if (this.results.mutationScore >= TEST_THRESHOLDS.MUTATION_SCORE) {
-        success(`Mutation score: ${this.results.mutationScore}% - tests are effective`);
+        console.log(`✅ Mutation score: ${this.results.mutationScore}% - tests are effective`);
       } else {
-        warning(`Mutation score: ${this.results.mutationScore}% - tests may miss edge cases`);
+        console.warn(`Mutation score: ${this.results.mutationScore}% - tests may miss edge cases`);
       }
 
     } catch (err) {
-      warning(`Mutation testing failed: ${err.message}`);
+      console.warn(`Mutation testing failed: ${err.message}`);
     }
   }
 
@@ -297,7 +290,7 @@ class AdvancedTestRunner {
         encoding: 'utf-8' 
       });
       return result.trim().split('\n').filter(f => f.length > 0);
-    } catch {
+    } catch (error) {
       return [];
     }
   }
@@ -322,7 +315,7 @@ class AdvancedTestRunner {
           }
         }
       }
-    } catch (err) {
+    } catch (error) {
       // Skip files that can't be processed
     }
 
@@ -358,20 +351,20 @@ class AdvancedTestRunner {
       try {
         execSync('npm run test:unit -- --silent', { stdio: 'pipe', timeout: 30000 });
         return false; // Tests passed, mutant survived (bad)
-      } catch {
+      } catch (error) {
         return true; // Tests failed, mutant was killed (good)
       } finally {
         // Restore original file
         fs.writeFileSync(mutant.file, originalContent);
         fs.unlinkSync(`${mutant.file}.backup`);
       }
-    } catch {
+    } catch (error) {
       return false; // Assume mutant survived if we can't test it
     }
   }
 
   async detectFlakyTests() {
-    step('Detecting flaky tests...');
+    console.log('Detecting flaky tests...');
 
     try {
       const testRuns = 5; // Run tests multiple times to detect flakiness
@@ -384,7 +377,7 @@ class AdvancedTestRunner {
             stdio: 'pipe'
           });
           testResults.push(this.parseTestResult(result));
-        } catch (err) {
+        } catch (error) {
           testResults.push({ numTotalTests: 0, numPassedTests: 0, numFailedTests: 0 });
         }
       }
@@ -394,13 +387,13 @@ class AdvancedTestRunner {
       this.results.flakyTests = flakyTests;
 
       if (flakyTests.length > 0) {
-        warning(`Found ${flakyTests.length} potentially flaky tests`);
+        console.warn(`Found ${flakyTests.length} potentially flaky tests`);
       } else {
-        success('No flaky tests detected');
+        console.log('No flaky tests detected');
       }
 
     } catch (err) {
-      warning(`Flaky test detection failed: ${err.message}`);
+      console.warn(`Flaky test detection failed: ${err.message}`);
     }
   }
 
@@ -427,13 +420,13 @@ class AdvancedTestRunner {
   calculateVariance(numbers) {
     if (numbers.length === 0) return 0;
     
-    const mean = numbers.reduce((a, b) => a + b, 0) / numbers.length;
+    const mean = numbers.reduce((a, b) => a + b, 0) / numbers.length
     const squaredDiffs = numbers.map(n => Math.pow(n - mean, 2));
-    return squaredDiffs.reduce((a, b) => a + b, 0) / numbers.length;
+    return squaredDiffs.reduce((a, b) => a + b, 0) / numbers.length
   }
 
   async analyzeTestPerformance() {
-    step('Analyzing test performance...');
+    console.log('Analyzing test performance...');
 
     try {
       // Measure test execution times
@@ -450,13 +443,13 @@ class AdvancedTestRunner {
       };
 
       if (unitTestTime > TEST_THRESHOLDS.MAX_TEST_DURATION) {
-        warning(`Test suite is slow (${unitTestTime}ms > ${TEST_THRESHOLDS.MAX_TEST_DURATION}ms)`);
+        console.warn(`Test suite is slow (${unitTestTime}ms > ${TEST_THRESHOLDS.MAX_TEST_DURATION}ms)`);
       } else {
-        success(`Test performance is good (${unitTestTime}ms)`);
+        console.log(`✅ Test performance is good (${unitTestTime}ms)`);
       }
 
     } catch (err) {
-      warning(`Test performance analysis failed: ${err.message}`);
+      console.warn(`Test performance analysis failed: ${err.message}`);
     }
   }
 
@@ -478,34 +471,34 @@ class AdvancedTestRunner {
 
     // Coverage score (40% weight)
     if (this.results.coverage.statements) {
-      score += Math.min(this.results.coverage.statements, 100) * 0.4;
+      score += Math.min(this.results.coverage.statements, 100) * 0.4
       factors += 40;
     }
 
     // Mutation score (30% weight)
     if (this.results.mutationScore > 0) {
-      score += this.results.mutationScore * 0.3;
+      score += this.results.mutationScore * 0.3
       factors += 30;
     }
 
     // Performance score (20% weight)
     if (this.results.performanceMetrics.performanceGrade) {
       const gradeValues = { 'A': 100, 'B': 80, 'C': 60, 'D': 40, 'F': 20 };
-      score += gradeValues[this.results.performanceMetrics.performanceGrade] * 0.2;
+      score += gradeValues[this.results.performanceMetrics.performanceGrade] * 0.2
       factors += 20;
     }
 
     // Flakiness penalty (10% weight)
     const flakyPenalty = Math.min(this.results.flakyTests.length * 10, 100);
-    score += (100 - flakyPenalty) * 0.1;
+    score += (100 - flakyPenalty) * 0.1
     factors += 10;
 
     this.results.qualityScore = factors > 0 ? Math.round(score / factors * 100) : 0;
-    return this.results.qualityScore;
+    return this.results.qualityScore
   }
 
   async generateAdvancedReport() {
-    step('Generating advanced test report...');
+    console.log('Generating advanced test report...');
 
     const report = {
       timestamp: new Date().toISOString(),
@@ -531,30 +524,30 @@ class AdvancedTestRunner {
     fs.writeFileSync('advanced-test-report.json', JSON.stringify(report, null, 2));
 
     // Console output
-    log('\n🧪 Advanced Test Analysis Summary:', 'blue');
-    log('='.repeat(50), 'blue');
+    console.log('\n🧪 Advanced Test Analysis Summary:', 'blue');
+    console.log('='.repeat(50), 'blue');
     
-    log(`\n📊 Overall Quality Score: ${report.summary.qualityScore}%`, 
+    console.log(`\n📊 Overall Quality Score: ${report.summary.qualityScore}%`, 
          report.summary.qualityScore >= 80 ? 'green' : 
          report.summary.qualityScore >= 60 ? 'yellow' : 'red');
 
     if (this.results.coverage.statements) {
-      log(`📈 Coverage: ${this.results.coverage.statements}% statements, ${this.results.coverage.branches}% branches`, 'cyan');
+      console.log(`📈 Coverage: ${this.results.coverage.statements}% statements, ${this.results.coverage.branches}% branches`, 'cyan');
     }
 
     if (this.results.mutationScore > 0) {
-      log(`🧬 Mutation Score: ${this.results.mutationScore}%`, 'cyan');
+      console.log(`🧬 Mutation Score: ${this.results.mutationScore}%`, 'cyan');
     }
 
     if (this.results.performanceMetrics.performanceGrade) {
-      log(`⚡ Performance Grade: ${this.results.performanceMetrics.performanceGrade}`, 'cyan');
+      console.log(`⚡ Performance Grade: ${this.results.performanceMetrics.performanceGrade}`, 'cyan');
     }
 
     if (this.results.flakyTests.length > 0) {
-      warning(`🔄 Flaky Tests: ${this.results.flakyTests.length} detected`);
+      console.warn(`🔄 Flaky Tests: ${this.results.flakyTests.length} detected`);
     }
 
-    log(`\n📄 Full report saved to: advanced-test-report.json`, 'blue');
+    console.log(`\n📄 Full report saved to: advanced-test-report.json`, 'blue');
   }
 
   generateTestRecommendations() {
@@ -604,9 +597,9 @@ class AdvancedTestRunner {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const runner = new AdvancedTestRunner();
   runner.runAdvancedTests().catch(err => {
-    console.error(`❌ Advanced test execution failed: ${err.message}`);
+    console.error(`❌ Advanced test execution failed: ${error.message}`);
     process.exit(1);
   });
 }
 
-export default AdvancedTestRunner;
+module.exports = AdvancedTestRunner;

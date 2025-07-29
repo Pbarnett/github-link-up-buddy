@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useState, useEffect, useCallback, useMemo, use } from 'react';
 import {
   FilterOptions,
   FilterState,
@@ -6,11 +7,6 @@ import {
 import { ScoredOffer } from '@/types/offer';
 import { toast } from '@/components/ui/use-toast';
 import logger from '@/lib/logger';
-import { useState } from 'react';
-import { useEffect } from 'react';
-import { useCallback } from 'react';
-import { useMemo } from 'react';
-
 /**
  * Filter persistence options
  */
@@ -82,7 +78,12 @@ export const useFilterState = (
 
   // Load persisted filters if enabled
   const loadPersistedFilters = useCallback((): FilterOptions => {
-    if (!persist || typeof window === 'undefined') {
+    if (
+      !persist ||
+      typeof (
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+      ) === 'undefined'
+    ) {
       return { ...DEFAULT_FILTER_OPTIONS, ...initialOptions };
     }
 
@@ -108,7 +109,13 @@ export const useFilterState = (
   // Persist filters when they change
   const persistFilters = useCallback(
     (options: FilterOptions) => {
-      if (!persist || typeof window === 'undefined') return;
+      if (
+        !persist ||
+        typeof (
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        ) === 'undefined'
+      )
+        return;
 
       try {
         localStorage.setItem(storageKey, JSON.stringify(options));

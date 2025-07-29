@@ -2,15 +2,13 @@
 // Replaces deprecated gapi.auth2 library
 
 import * as React from 'react';
-import { createElement } from 'react';
-
+import { createElement, use } from 'react';
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 import { supabase } from '@/integrations/supabase/client';
 import { authSecurityMonitor } from './authSecurityMonitor';
 import { AuthErrorHandler } from './authErrorHandler';
 import { AuthResilience } from './authResilience';
-
 interface GoogleAuthConfig {
   clientId: string;
   scopes: string[];
@@ -87,14 +85,21 @@ class ModernGoogleAuthService {
 
     try {
       // Check if running in browser
-      if (typeof window === 'undefined') {
+      if (
+        typeof (
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        ) === 'undefined'
+      ) {
         throw new Error(
           'Google Auth can only be initialized in browser environment'
         );
       }
 
       // Load Google Identity Services script if not already loaded with retry logic
-      if (!window.google?.accounts) {
+      if (
+        !/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+          .google?.accounts
+      ) {
         await AuthResilience.withRetry(
           () => this.loadGoogleIdentityScript(),
           'modern-google-script-load',
@@ -103,15 +108,17 @@ class ModernGoogleAuthService {
       }
 
       // Initialize Google Identity Services
-      window.google.accounts.id.initialize({
-        client_id: this.config.clientId,
-        callback: this.handleCredentialResponse.bind(this),
-        auto_select: this.config.autoSelect,
-        cancel_on_tap_outside: this.config.cancelOnTapOutside,
-        // Enhanced security and privacy settings
-        use_fedcm_for_prompt: true, // Use FedCM when available
-        itp_support: true, // Enable Intelligent Tracking Prevention support
-      });
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google.accounts.id.initialize(
+        {
+          client_id: this.config.clientId,
+          callback: this.handleCredentialResponse.bind(this),
+          auto_select: this.config.autoSelect,
+          cancel_on_tap_outside: this.config.cancelOnTapOutside,
+          // Enhanced security and privacy settings
+          use_fedcm_for_prompt: true, // Use FedCM when available
+          itp_support: true, // Enable Intelligent Tracking Prevention support
+        }
+      );
 
       this.isInitialized = true;
       console.log('✅ Modern Google Auth Service initialized');
@@ -119,7 +126,7 @@ class ModernGoogleAuthService {
       AuthErrorHandler.handleAuthError(error, {
         component: 'ModernGoogleAuthService',
         flow: 'initialize',
-        provider: 'google'
+        provider: 'google',
       });
       throw error;
     }
@@ -158,81 +165,88 @@ class ModernGoogleAuthService {
   ): Promise<void> {
     try {
       // Use resilience wrapper for token processing
-      await AuthResilience.withRetry(async () => {
-        const userProfile = parseJWT(response.credential);
+      await AuthResilience.withRetry(
+        async () => {
+          const _userProfile = parseJWT(response.credential);
 
-        if (!userProfile) {
-          authSecurityMonitor.logTokenValidationFailure({
-            reason: 'Invalid credential response - failed to parse JWT',
-            tokenClaims: null,
+          if (!userProfile) {
+            authSecurityMonitor.logTokenValidationFailure({
+              reason: 'Invalid credential response - failed to parse JWT',
+              tokenClaims: null,
+            });
+            throw new Error('Invalid credential response');
+          }
+
+          // Validate token claims
+          if (!this.validateTokenClaims(userProfile)) {
+            authSecurityMonitor.logTokenValidationFailure({
+              reason: 'Token validation failed',
+              tokenClaims: userProfile,
+              expectedAudience: this.config.clientId,
+            });
+            throw new Error('Token validation failed');
+          }
+
+          // Sign in with Supabase using the ID token with retry logic
+          const { data, error } = await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: response.credential,
           });
-          throw new Error('Invalid credential response');
-        }
 
-        // Validate token claims
-        if (!this.validateTokenClaims(userProfile)) {
-          authSecurityMonitor.logTokenValidationFailure({
-            reason: 'Token validation failed',
-            tokenClaims: userProfile,
-            expectedAudience: this.config.clientId,
-          });
-          throw new Error('Token validation failed');
-        }
+          if (error) {
+            console.error('❌ Supabase auth error:', error);
+            authSecurityMonitor.logAuthFailure({
+              authMethod: 'one_tap',
+              errorCode: error.message,
+              errorMessage: error.message,
+            });
+            throw error;
+          }
 
-        // Sign in with Supabase using the ID token with retry logic
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: 'google',
-          token: response.credential,
-        });
+          console.log(
+            '✅ Successfully signed in with Google:',
+            data.user?.email
+          );
 
-        if (error) {
-          console.error('❌ Supabase auth error:', error);
-          authSecurityMonitor.logAuthFailure({
+          // Log successful authentication
+          const privacyMode = await this.handlePrivacySettings();
+          authSecurityMonitor.logAuthSuccess({
+            userId: data.user!.id,
+            sessionId: data.session!.access_token,
             authMethod: 'one_tap',
-            errorCode: error.message,
-            errorMessage: error.message,
+            privacyMode: privacyMode,
+            tokenClaims: userProfile,
           });
-          throw error;
-        }
 
-        console.log('✅ Successfully signed in with Google:', data.user?.email);
-
-        // Log successful authentication
-        const privacyMode = await this.handlePrivacySettings();
-        authSecurityMonitor.logAuthSuccess({
-          userId: data.user!.id,
-          sessionId: data.session!.access_token,
-          authMethod: 'one_tap',
-          privacyMode: privacyMode,
-          tokenClaims: userProfile,
-        });
-
-        // Trigger custom event for components to listen to
-        window.dispatchEvent(
-          new CustomEvent('googleAuthSuccess', {
-            detail: {
-              user: data.user,
-              session: data.session,
-            },
-          })
-        );
-      }, 'modern-google-credential-response', { maxRetries: 2, baseDelay: 1000 });
+          // Trigger custom event for components to listen to
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.dispatchEvent(
+            new CustomEvent('googleAuthSuccess', {
+              detail: {
+                user: data.user,
+                session: data.session,
+              },
+            })
+          );
+        },
+        'modern-google-credential-response',
+        { maxRetries: 2, baseDelay: 1000 }
+      );
     } catch (error) {
       // Use enterprise error handler
       const authError = AuthErrorHandler.handleAuthError(error, {
         component: 'ModernGoogleAuthService',
         flow: 'handleCredentialResponse',
-        provider: 'google'
+        provider: 'google',
       });
-      
+
       console.error('❌ Google auth error:', error);
-      window.dispatchEvent(
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.dispatchEvent(
         new CustomEvent('googleAuthError', {
           detail: {
             error: authError.userMessage,
             errorId: authError.id,
             category: authError.category,
-            retryable: authError.retryable
+            retryable: authError.retryable,
           },
         })
       );
@@ -285,16 +299,18 @@ class ModernGoogleAuthService {
     }
 
     try {
-      window.google.accounts.id.prompt(notification => {
-        if (notification.isNotDisplayed()) {
-          console.log(
-            'One Tap not displayed:',
-            notification.getNotDisplayedReason()
-          );
-        } else if (notification.isSkippedMoment()) {
-          console.log('One Tap skipped:', notification.getSkippedReason());
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google.accounts.id.prompt(
+        notification => {
+          if (notification.isNotDisplayed()) {
+            console.log(
+              'One Tap not displayed:',
+              notification.getNotDisplayedReason()
+            );
+          } else if (notification.isSkippedMoment()) {
+            console.log('One Tap skipped:', notification.getSkippedReason());
+          }
         }
-      });
+      );
 
       this.oneTapDisplayed = true;
     } catch (error) {
@@ -312,93 +328,104 @@ class ModernGoogleAuthService {
 
     return new Promise((resolve, reject) => {
       // Check for popup blockers
-      const popupTest = window.open('', '_blank', 'width=1,height=1');
+      const popupTest =
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open(
+          '',
+          '_blank',
+          'width=1,height=1'
+        );
       if (!popupTest || popupTest.closed) {
-        const error = new Error('Popup blocked. Please allow popups for this site and try again.');
-        
+        const error = new Error(
+          'Popup blocked. Please allow popups for this site and try again.'
+        );
+
         // Log popup blocking with enterprise error handler
         AuthErrorHandler.handleAuthError(error, {
           component: 'ModernGoogleAuthService',
           flow: 'signInWithPopup',
-          provider: 'google'
+          provider: 'google',
         });
-        
+
         resolve({
           success: false,
-          error: 'Popup blocked. Please allow popups for this site and try again.',
+          error:
+            'Popup blocked. Please allow popups for this site and try again.',
         });
         return;
       }
       popupTest.close();
 
       // Use OAuth 2.0 token client for popup flow
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: this.config.clientId,
-        scope: this.config.scopes.join(' '),
-        callback: async (response: any) => {
-          try {
-            if (response.error) {
-              const error = new Error(response.error);
-              AuthErrorHandler.handleAuthError(error, {
+      const client =
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google.accounts.oauth2.initTokenClient(
+          {
+            client_id: this.config.clientId,
+            scope: this.config.scopes.join(' '),
+            callback: async (response: any) => {
+              try {
+                if (response.error) {
+                  const error = new Error(response.error);
+                  AuthErrorHandler.handleAuthError(error, {
+                    component: 'ModernGoogleAuthService',
+                    flow: 'signInWithPopup-callback',
+                    provider: 'google',
+                  });
+
+                  resolve({
+                    success: false,
+                    error: response.error,
+                  });
+                  return;
+                }
+
+                // Exchange access token for user info with retry logic
+                const _userInfo = await AuthResilience.withRetry(
+                  () => this.getUserInfo(response.access_token),
+                  'modern-google-userinfo',
+                  { maxRetries: 3, baseDelay: 1000 }
+                );
+
+                // Log successful popup authentication
+                authSecurityMonitor.logAuthSuccess({
+                  userId: userInfo.id,
+                  sessionId: response.access_token,
+                  authMethod: 'popup',
+                  privacyMode: await this.handlePrivacySettings(),
+                  tokenClaims: userInfo,
+                });
+
+                resolve({
+                  success: true,
+                  user: userInfo,
+                  token: response.access_token,
+                });
+              } catch (error) {
+                const authError = AuthErrorHandler.handleAuthError(error, {
+                  component: 'ModernGoogleAuthService',
+                  flow: 'signInWithPopup-callback',
+                  provider: 'google',
+                });
+
+                resolve({
+                  success: false,
+                  error: authError.userMessage,
+                });
+              }
+            },
+            error_callback: (error: any) => {
+              const authError = AuthErrorHandler.handleAuthError(error, {
                 component: 'ModernGoogleAuthService',
-                flow: 'signInWithPopup-callback',
-                provider: 'google'
+                flow: 'signInWithPopup-error',
+                provider: 'google',
               });
-              
+
               resolve({
                 success: false,
-                error: response.error,
+                error: authError.userMessage || 'Authentication cancelled',
               });
-              return;
-            }
-
-            // Exchange access token for user info with retry logic
-            const userInfo = await AuthResilience.withRetry(
-              () => this.getUserInfo(response.access_token),
-              'modern-google-userinfo',
-              { maxRetries: 3, baseDelay: 1000 }
-            );
-
-            // Log successful popup authentication
-            authSecurityMonitor.logAuthSuccess({
-              userId: userInfo.id,
-              sessionId: response.access_token,
-              authMethod: 'popup',
-              privacyMode: await this.handlePrivacySettings(),
-              tokenClaims: userInfo,
-            });
-
-            resolve({
-              success: true,
-              user: userInfo,
-              token: response.access_token,
-            });
-          } catch (error) {
-            const authError = AuthErrorHandler.handleAuthError(error, {
-              component: 'ModernGoogleAuthService',
-              flow: 'signInWithPopup-callback',
-              provider: 'google'
-            });
-            
-            resolve({
-              success: false,
-              error: authError.userMessage,
-            });
+            },
           }
-        },
-        error_callback: (error: any) => {
-          const authError = AuthErrorHandler.handleAuthError(error, {
-            component: 'ModernGoogleAuthService',
-            flow: 'signInWithPopup-error',
-            provider: 'google'
-          });
-          
-          resolve({
-            success: false,
-            error: authError.userMessage || 'Authentication cancelled',
-          });
-        },
-      });
+        );
 
       // Request access token
       client.requestAccessToken({
@@ -416,11 +443,13 @@ class ModernGoogleAuthService {
     );
 
     if (!response.ok) {
-      const error = new Error(`Failed to fetch user information: ${response.status} ${response.statusText}`);
+      const error = new Error(
+        `Failed to fetch user information: ${response.status} ${response.statusText}`
+      );
       AuthErrorHandler.handleAuthError(error, {
         component: 'ModernGoogleAuthService',
         flow: 'getUserInfo',
-        provider: 'google'
+        provider: 'google',
       });
       throw error;
     }
@@ -437,8 +466,11 @@ class ModernGoogleAuthService {
       await supabase.auth.signOut();
 
       // Revoke Google tokens if available
-      if (window.google?.accounts?.id) {
-        window.google.accounts.id.disableAutoSelect();
+      if (
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+          .google?.accounts?.id
+      ) {
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google.accounts.id.disableAutoSelect();
       }
 
       // Clear One Tap state
@@ -447,7 +479,9 @@ class ModernGoogleAuthService {
       console.log('✅ Successfully signed out');
 
       // Trigger sign out event
-      window.dispatchEvent(new CustomEvent('googleAuthSignOut'));
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.dispatchEvent(
+        new CustomEvent('googleAuthSignOut')
+      );
     } catch (error) {
       console.error('❌ Sign out error:', error);
       throw error;
@@ -487,7 +521,10 @@ class ModernGoogleAuthService {
     let detectedMode: 'fedcm' | 'redirect' | 'standard';
 
     // Check if FedCM is available
-    if ('IdentityCredential' in window) {
+    if (
+      'IdentityCredential' in
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+    ) {
       detectedMode = 'fedcm';
     } else {
       // Check if third-party cookies are blocked (simplified check)
@@ -536,7 +573,7 @@ class ModernGoogleAuthService {
 
     const buttonOptions = { ...defaultOptions, ...options };
 
-    window.google.accounts.id.renderButton(
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google.accounts.id.renderButton(
       document.getElementById(containerId),
       buttonOptions
     );
@@ -552,7 +589,11 @@ export type { GoogleUser, AuthResult, GoogleAuthConfig };
 // Utility function to check if Google Identity Services is loaded
 export function isGoogleIdentityLoaded(): boolean {
   return (
-    typeof window !== 'undefined' && window.google?.accounts?.id !== undefined
+    typeof (
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+    ) !== 'undefined' &&
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+      .google?.accounts?.id !== undefined
   );
 }
 

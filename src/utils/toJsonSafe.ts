@@ -1,6 +1,5 @@
 import * as React from 'react';
 import type { Json } from '@/integrations/supabase/types';
-
 /**
  * Recursively convert any Date properties to ISO strings,
  * and ensure the entire structure is valid for a JSONB column.

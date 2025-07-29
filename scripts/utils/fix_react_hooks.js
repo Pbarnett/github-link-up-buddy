@@ -1,5 +1,14 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { glob } from 'glob';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 // Find all TypeScript files that might use createContext or other React hooks
 const files = glob.sync('src/**/*.{ts,tsx}');

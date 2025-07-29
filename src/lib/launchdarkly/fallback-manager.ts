@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { LDFlagValue } from 'launchdarkly-js-client-sdk';
-
 export interface FallbackConfig {
   [flagKey: string]: {
     defaultValue: LDFlagValue;

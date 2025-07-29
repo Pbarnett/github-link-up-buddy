@@ -7,7 +7,6 @@
 
 // Import FilterFactory for use in convenience functions
 import FilterFactoryClass from './FilterFactory';
-
 // Main factory for creating filtering pipelines
 export { default as FilterFactory, LegacyFilterAdapter } from './FilterFactory';
 
@@ -40,7 +39,7 @@ export type {
   FilterConfig,
   UserPreferences,
   PerformanceLogger,
-  _ValidationResult,
+  __ValidationResult,
   ProviderAdapter,
   CurrencyConverter,
   BagageeFeeProvider,

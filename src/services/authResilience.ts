@@ -1,10 +1,10 @@
 import * as React from 'react';
 /**
  * Authentication Resilience Service
- * 
+ *
  * Provides retry logic, circuit breaker patterns, and session recovery
  * for enterprise-grade authentication stability.
- * 
+ *
  * Features:
  * - Exponential backoff retry with jitter
  * - Circuit breaker to prevent cascade failures
@@ -15,7 +15,6 @@ import * as React from 'react';
 
 import { supabase } from '@/integrations/supabase/client';
 import { AuthErrorHandler } from './authErrorHandler';
-
 export interface RetryOptions {
   maxRetries?: number;
   baseDelay?: number;
@@ -54,16 +53,18 @@ export class AuthResilience {
       baseDelay = 1000,
       maxDelay = 10000,
       jitter = true,
-      exponentialBase = 2
+      exponentialBase = 2,
     } = options;
 
     const operationKey = `${context}_${Date.now()}`;
-    
+
     // Check circuit breaker
     if (this.isCircuitBreakerOpen(context)) {
       const circuitBreaker = this.circuitBreakers.get(context);
-      const timeUntilReset = circuitBreaker ? circuitBreaker.nextAttemptTime - Date.now() : 0;
-      
+      const timeUntilReset = circuitBreaker
+        ? circuitBreaker.nextAttemptTime - Date.now()
+        : 0;
+
       throw new Error(
         `Circuit breaker open for ${context}. Retry in ${Math.ceil(timeUntilReset / 1000)} seconds.`
       );
@@ -86,7 +87,7 @@ export class AuthResilience {
         return result;
       } catch (error) {
         lastError = error as Error;
-        
+
         // Record failure for circuit breaker
         this.recordFailure(context);
 
@@ -101,9 +102,11 @@ export class AuthResilience {
           baseDelay * Math.pow(exponentialBase, attempt),
           maxDelay
         );
-        
-        const jitterAmount = jitter ? Math.random() * 0.3 * exponentialDelay : 0;
-        const delay = exponentialDelay + jitterAmount;
+
+        const jitterAmount = jitter
+          ? Math.random() * 0.3 * exponentialDelay
+          : 0;
+        const _delay = exponentialDelay + jitterAmount;
 
         // Log retry attempt
         console.warn(
@@ -125,13 +128,13 @@ export class AuthResilience {
    */
   private static isCircuitBreakerOpen(context: string): boolean {
     const circuitBreaker = this.circuitBreakers.get(context);
-    
+
     if (!circuitBreaker) {
       return false;
     }
 
     const now = Date.now();
-    
+
     // If timeout has passed, move to half-open state
     if (circuitBreaker.isOpen && now >= circuitBreaker.nextAttemptTime) {
       circuitBreaker.isOpen = false;
@@ -154,7 +157,7 @@ export class AuthResilience {
         isOpen: false,
         failureCount: 0,
         lastFailureTime: now,
-        nextAttemptTime: now
+        nextAttemptTime: now,
       };
       this.circuitBreakers.set(context, circuitBreaker);
     }
@@ -166,7 +169,7 @@ export class AuthResilience {
     if (circuitBreaker.failureCount >= this.CIRCUIT_BREAKER_THRESHOLD) {
       circuitBreaker.isOpen = true;
       circuitBreaker.nextAttemptTime = now + this.CIRCUIT_BREAKER_TIMEOUT;
-      
+
       console.warn(
         `🚨 Circuit breaker OPENED for ${context} after ${circuitBreaker.failureCount} failures`
       );
@@ -184,8 +187,11 @@ export class AuthResilience {
    */
   private static resetCircuitBreaker(context: string): void {
     const circuitBreaker = this.circuitBreakers.get(context);
-    
-    if (circuitBreaker && (circuitBreaker.isOpen || circuitBreaker.failureCount > 0)) {
+
+    if (
+      circuitBreaker &&
+      (circuitBreaker.isOpen || circuitBreaker.failureCount > 0)
+    ) {
       console.log(`✅ Circuit breaker RESET for ${context}`);
       circuitBreaker.isOpen = false;
       circuitBreaker.failureCount = 0;
@@ -197,11 +203,11 @@ export class AuthResilience {
    */
   static getCircuitBreakerStatus(): Record<string, CircuitBreakerState> {
     const status: Record<string, CircuitBreakerState> = {};
-    
+
     for (const [context, state] of this.circuitBreakers.entries()) {
       status[context] = { ...state };
     }
-    
+
     return status;
   }
 
@@ -210,12 +216,12 @@ export class AuthResilience {
    */
   static resetCircuitBreakerManually(context: string): boolean {
     const circuitBreaker = this.circuitBreakers.get(context);
-    
+
     if (circuitBreaker) {
       this.resetCircuitBreaker(context);
       return true;
     }
-    
+
     return false;
   }
 
@@ -241,25 +247,25 @@ export class SessionManager {
   static async validateAndRecoverSession(): Promise<boolean> {
     try {
       const { data: session, error } = await supabase.auth.getSession();
-      
+
       if (error) {
         console.warn('Session validation error:', error.message);
         return this.attemptSessionRecovery('session-error');
       }
-      
+
       // Check if session is expired
       if (session?.expires_at && session.expires_at < Date.now() / 1000) {
         console.log('Session expired, attempting refresh...');
         return this.refreshSession();
       }
-      
+
       return !!session;
     } catch (error) {
       AuthErrorHandler.handleAuthError(error, {
         component: 'SessionManager',
-        flow: 'validateAndRecoverSession'
+        flow: 'validateAndRecoverSession',
       });
-      
+
       return this.attemptSessionRecovery('validation-error');
     }
   }
@@ -270,20 +276,20 @@ export class SessionManager {
   private static async refreshSession(): Promise<boolean> {
     try {
       const { data, error } = await supabase.auth.refreshSession();
-      
+
       if (error) {
         console.warn('Session refresh failed:', error.message);
         return this.attemptSessionRecovery('refresh-failed');
       }
-      
+
       console.log('✅ Session refreshed successfully');
       return !!data.session;
     } catch (error) {
       AuthErrorHandler.handleAuthError(error, {
         component: 'SessionManager',
-        flow: 'refreshSession'
+        flow: 'refreshSession',
       });
-      
+
       return false;
     }
   }
@@ -291,7 +297,9 @@ export class SessionManager {
   /**
    * Attempt to recover from corrupted or invalid session state
    */
-  private static async attemptSessionRecovery(reason: string): Promise<boolean> {
+  private static async attemptSessionRecovery(
+    reason: string
+  ): Promise<boolean> {
     const recoveryKey = `${reason}_${Date.now()}`;
     const attemptCount = this.recoveryAttempts.get(reason) || 0;
 
@@ -303,14 +311,16 @@ export class SessionManager {
     this.recoveryAttempts.set(reason, attemptCount + 1);
 
     try {
-      console.log(`🔄 Attempting session recovery (${attemptCount + 1}/${this.MAX_RECOVERY_ATTEMPTS})...`);
+      console.log(
+        `🔄 Attempting session recovery (${attemptCount + 1}/${this.MAX_RECOVERY_ATTEMPTS})...`
+      );
 
       // Clear potentially corrupted auth state
       await this.clearCorruptedAuthState();
 
       // Try to get fresh session state
       const { data: session, error } = await supabase.auth.getSession();
-      
+
       if (!error && session) {
         console.log('✅ Session recovery successful');
         this.recoveryAttempts.delete(reason);
@@ -323,9 +333,9 @@ export class SessionManager {
       AuthErrorHandler.handleAuthError(error, {
         component: 'SessionManager',
         flow: 'attemptSessionRecovery',
-        attemptNumber: attemptCount + 1
+        attemptNumber: attemptCount + 1,
       });
-      
+
       return false;
     }
   }
@@ -337,10 +347,10 @@ export class SessionManager {
     console.log('🧹 Clearing potentially corrupted auth state...');
 
     // Clear localStorage auth keys
-    const authKeys = Object.keys(localStorage).filter(key => 
-      key.startsWith('supabase.auth.') || key.includes('sb-')
+    const authKeys = Object.keys(localStorage).filter(
+      key => key.startsWith('supabase.auth.') || key.includes('sb-')
     );
-    
+
     authKeys.forEach(key => {
       console.log(`Removing corrupted key: ${key}`);
       localStorage.removeItem(key);
@@ -348,10 +358,10 @@ export class SessionManager {
 
     // Clear sessionStorage auth keys
     try {
-      const sessionKeys = Object.keys(sessionStorage).filter(key =>
-        key.startsWith('supabase.auth.') || key.includes('sb-')
+      const sessionKeys = Object.keys(sessionStorage).filter(
+        key => key.startsWith('supabase.auth.') || key.includes('sb-')
       );
-      
+
       sessionKeys.forEach(key => {
         console.log(`Removing corrupted session key: ${key}`);
         sessionStorage.removeItem(key);
@@ -374,15 +384,15 @@ export class SessionManager {
 
       // Check if we have any stored auth tokens we can use
       const storedSession = localStorage.getItem('supabase.auth.token');
-      
+
       if (storedSession) {
         try {
           const parsedSession = JSON.parse(storedSession);
-          
+
           if (parsedSession.refresh_token) {
             const { data, error } = await supabase.auth.setSession({
               access_token: parsedSession.access_token,
-              refresh_token: parsedSession.refresh_token
+              refresh_token: parsedSession.refresh_token,
             });
 
             if (!error && data.session) {
@@ -396,14 +406,16 @@ export class SessionManager {
       }
 
       // If silent reauth fails, we need user interaction
-      console.log('❌ Silent re-authentication failed - user interaction required');
+      console.log(
+        '❌ Silent re-authentication failed - user interaction required'
+      );
       return false;
     } catch (error) {
       AuthErrorHandler.handleAuthError(error, {
         component: 'SessionManager',
-        flow: 'attemptSilentReauth'
+        flow: 'attemptSilentReauth',
       });
-      
+
       return false;
     }
   }
@@ -413,11 +425,11 @@ export class SessionManager {
    */
   static getRecoveryStats(): Record<string, number> {
     const stats: Record<string, number> = {};
-    
+
     for (const [reason, attempts] of this.recoveryAttempts.entries()) {
       stats[reason] = attempts;
     }
-    
+
     return stats;
   }
 
@@ -438,11 +450,7 @@ export const withAuthResilience = <T extends any[], R>(
   options?: RetryOptions
 ) => {
   return async (...args: T): Promise<R> => {
-    return AuthResilience.withRetry(
-      () => fn(...args),
-      context,
-      options
-    );
+    return AuthResilience.withRetry(() => fn(...args), context, options);
   };
 };
 
@@ -474,7 +482,7 @@ export const useAuthResilience = () => {
     withRetry,
     validateSession,
     getCircuitBreakerStatus,
-    getRecoveryStats
+    getRecoveryStats,
   };
 };
 

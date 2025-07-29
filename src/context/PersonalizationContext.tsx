@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { ReactNode } from 'react';
 import {
   useState,
   useEffect,
@@ -8,11 +9,6 @@ import {
   createContext,
 } from 'react';
 import { usePersonalization } from '@/hooks/usePersonalization';
-import { useCallback } from 'react';
-import { useMemo } from 'react';
-
-type ReactNode = React.ReactNode;
-
 interface PersonalizationData {
   firstName?: string;
   nextTripCity?: string;
@@ -27,9 +23,8 @@ interface PersonalizationContextType {
   refetch: () => void;
 }
 
-const PersonalizationContext = createContext<PersonalizationContextType | null>(
-  null
-);
+const PersonalizationContext =
+  React.createContext<PersonalizationContextType | null>(null);
 
 export interface PersonalizationProviderProps {
   children: ReactNode;

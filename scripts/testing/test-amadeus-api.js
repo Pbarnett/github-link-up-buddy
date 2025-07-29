@@ -1,3 +1,8 @@
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
+
 // Test script to validate Amadeus API connection
 const TEST_AMADEUS_API = async () => {
   console.log('🔍 Testing Amadeus API Connection...');
@@ -112,10 +117,9 @@ const TEST_AMADEUS_API = async () => {
     
     console.log('\n🎉 All Amadeus API tests passed!');
     
-  } catch (error) {
+  } catch {
     console.error('❌ Test failed with error:', error);
   }
-};
 
 // Run the test
 TEST_AMADEUS_API();

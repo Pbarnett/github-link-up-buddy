@@ -2,4 +2,4 @@
 export const stub = () => {
   console.warn('Stub for ./WalletNickname called.');
 };
-export default stub;
+module.exports = stub;

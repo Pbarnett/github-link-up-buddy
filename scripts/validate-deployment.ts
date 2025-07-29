@@ -87,7 +87,7 @@ class DeploymentValidator {
             if (typeof file === 'string' && file.endsWith('.js')) {
               const filePath = path.join(distPath, file);
               const stats = await fs.stat(filePath);
-              totalSize += stats.size;
+              totalSize += stats.size
             }
           }
           
@@ -233,7 +233,7 @@ class DeploymentValidator {
     }
     
     console.log('\n' + '='.repeat(50));
-    console.log(result.passed 
+    console.log(result.passed
       ? '🎉 Deployment validation PASSED!' 
       : '💥 Deployment validation FAILED!'
     );
@@ -259,4 +259,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }
 
-export { DeploymentValidator };
+module.exports = { DeploymentValidator };

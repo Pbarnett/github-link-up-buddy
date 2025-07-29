@@ -1,8 +1,33 @@
 import * as React from 'react';
-import { Suspense } from 'react';
-import { Fragment } from 'react';
-import { createElement } from 'react';
+import {
+  Suspense,
+  Fragment,
+  createElement,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useContext,
+  useReducer,
+  useLayoutEffect,
+  useImperativeHandle,
+  useInsertionEffect,
+  useDeferredValue,
+  useTransition,
+  startTransition,
+  useSyncExternalStore,
+  useId,
+  use,
+  lazy,
+} from 'react';
 
+type FormEvent<T = Element> = React.FormEvent<T>;
+type ChangeEvent<T = Element> = React.ChangeEvent<T>;
+type ComponentType<P = {}> = React.ComponentType<P>;
+type ElementType = React.ElementType;
+
+type CSSProperties = React.CSSProperties;
 /**
  * React 19 Compatibility Layer
  *
@@ -70,11 +95,11 @@ export type FC<P = {}> = ComponentType<P>;
 
 // Create a temporary div element to extract React's actual event types from JSX.IntrinsicElements
 type ReactDivProps = React.DetailedHTMLProps<
-  HTMLAttributes<HTMLDivElement>,
+  React.HTMLAttributes<HTMLDivElement>,
   HTMLDivElement
 >;
 type ReactInputProps = React.DetailedHTMLProps<
-  InputHTMLAttributes<HTMLInputElement>,
+  React.InputHTMLAttributes<HTMLInputElement>,
   HTMLInputElement
 >;
 

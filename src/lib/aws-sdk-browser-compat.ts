@@ -113,7 +113,11 @@ export const fromIni = () => {
 
 // Check if we're in a browser environment
 export const isBrowserEnvironment = () => {
-  return typeof window !== 'undefined' && typeof document !== 'undefined';
+  return (
+    typeof (
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+    ) !== 'undefined' && typeof document !== 'undefined'
+  );
 };
 
 // Factory function to create appropriate clients based on environment

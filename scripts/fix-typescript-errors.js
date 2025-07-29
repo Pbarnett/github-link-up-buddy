@@ -1,18 +1,25 @@
 #!/usr/bin/env node
 
+const path = require('path');
+
 /**
  * Master script to fix TypeScript errors systematically
  * Based on comprehensive analysis of React Hook Form, React 19, and TypeScript docs
  */
 
 import { execSync } from 'child_process';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const fs = require('fs');
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = path.resolve(__dirname, '..');
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
+
+const PROJECT_ROOT = path.resolve(__'..');
 
 function runCommand(command, description) {
   console.log(`\n🔧 ${description}...`);
@@ -27,7 +34,7 @@ function runCommand(command, description) {
       console.log(output);
     }
     return true;
-  } catch (error) {
+  } catch {
     console.error(`❌ ${description} failed:`, error.message);
     if (error.stdout) console.log(error.stdout);
     if (error.stderr) console.error(error.stderr);
@@ -60,8 +67,7 @@ async function checkCurrentErrors() {
     });
     return { hasErrors: false, output };
   } catch (error) {
-    const errorOutput = error.stdout || error.stderr || '';
-    const errorCount = (errorOutput.match(/error TS\d+:/g) || []).length;
+    const errorCount = (errorOutput.match(/error TS\d+:/g) || []).length
     console.log(`Found ${errorCount} TypeScript errors`);
     return { hasErrors: true, errorCount, output: errorOutput };
   }
@@ -149,7 +155,7 @@ function displayFixSummary(beforeErrors, afterErrors) {
   
   if (afterErrors.hasErrors) {
     console.log(`Remaining errors: ${afterErrors.errorCount}`);
-    const fixed = beforeErrors.errorCount - afterErrors.errorCount;
+    const fixed = beforeErrors.errorCount - afterErrors.errorCount
     if (fixed > 0) {
       console.log(`✅ Fixed: ${fixed} errors`);
     }

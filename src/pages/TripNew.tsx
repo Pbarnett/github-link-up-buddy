@@ -1,4 +1,7 @@
 import * as React from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { Check, Search, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,55 +17,6 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ActiveBookingsPill } from '@/components/ActiveBookingsPill';
 import ThreeStepExplainer from '@/components/ThreeStepExplainer';
 import SimplifiedSocialProof from '@/components/SimplifiedSocialProof';
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  Check,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 const TripNew = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();

@@ -126,7 +126,7 @@ export class SupabaseErrorHandler {
       PGRST204: 'No rows found',
     };
 
-    const userFriendlyMessage = commonErrors[error.code] || error.message;
+    const _userFriendlyMessage = commonErrors[error.code] || error.message;
 
     return {
       name: 'SupabaseError',

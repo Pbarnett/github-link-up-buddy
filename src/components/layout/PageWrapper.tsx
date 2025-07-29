@@ -1,9 +1,6 @@
 import * as React from 'react';
-type ReactNode = React.ReactNode;
-type FC<T = {}> = React.FC<T>;
-
+import { FC, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-
 interface PageWrapperProps {
   children: ReactNode;
   className?: string;

@@ -1,8 +1,5 @@
 import * as React from 'react';
-import { useState } from 'react';
-import { useMemo } from 'react';
-import { useDeferredValue } from 'react';
-
+import { useState, useMemo, useDeferredValue } from 'react';
 /**
  * Custom hook that provides deferred search functionality for better performance.
  * Uses React 19's useDeferredValue to defer expensive search operations.

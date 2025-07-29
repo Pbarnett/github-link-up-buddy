@@ -6,6 +6,7 @@
  */
 
 import * as React from 'react';
+import { FC } from 'react';
 import { useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,10 +23,8 @@ import type {
 import { useFormConfiguration } from '@/hooks/useFormConfiguration';
 import { useFormState } from '@/hooks/useFormState';
 import { generateZodSchema } from '@/lib/form-validation';
+import { useFormAnalytics } from '@/hooks/useFormAnalytics';
 import { FormSection } from './FormSection';
-
-type FC<T = {}> = React.FC<T>;
-
 export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
   configId,
   configName,
@@ -121,6 +120,24 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
     isFieldEnabled,
   } = useFormState(configuration, form);
 
+  // Analytics tracking
+  const sessionId = useMemo(() => `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, []);
+  const analytics = useFormAnalytics({
+    formConfig: configuration!,
+    sessionId,
+    userId: undefined, // Could be passed as prop if user context is available
+  });
+
+  // Track field interactions
+  const trackFieldInteraction = (fieldId: string, fieldType: string) => {
+    analytics?.trackFieldInteraction(fieldId, fieldType);
+  };
+
+  // Track field errors
+  const trackFieldError = (fieldId: string, fieldType: string, error: string) => {
+    analytics?.trackFieldError(fieldId, fieldType, error);
+  };
+
   // Handle field changes
   const handleFieldChange = (fieldId: string, value: unknown) => {
     setValue(fieldId, value);
@@ -136,6 +153,20 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
   const handleSubmit = form.handleSubmit(async data => {
     try {
       if (!validateForm()) {
+        // Track validation errors
+        Object.entries(errors).forEach(([fieldId, error]) => {
+          const field = configuration?.sections
+            .flatMap(s => s.fields)
+            .find(f => f.id === fieldId);
+          if (field) {
+            const errorMessage =
+              error && typeof error === 'object' && 'message' in error
+                ? (error as { message?: string }).message
+                : 'Invalid value';
+            trackFieldError(fieldId, field.type, errorMessage || 'Invalid value');
+          }
+        });
+
         onValidationError?.(
           Object.fromEntries(
             Object.entries(errors).map(([key, error]) => {
@@ -149,6 +180,9 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
         );
         return;
       }
+
+      // Track form submission
+      analytics?.trackFormSubmit(data as Record<string, unknown>);
 
       // Create FormSubmissionData if onSubmit expects it
       if (onSubmit) {
@@ -221,6 +255,8 @@ export const DynamicFormRenderer: FC<DynamicFormRendererProps> = ({
                 isFieldVisible={isFieldVisible}
                 isFieldEnabled={isFieldEnabled}
                 disabled={disabled}
+                onFieldInteraction={trackFieldInteraction}
+                onFieldError={trackFieldError}
               />
             ))}
 

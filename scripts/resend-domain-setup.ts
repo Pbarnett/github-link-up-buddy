@@ -171,7 +171,7 @@ class ResendDomainManager {
  * Interactive domain setup process
  */
 async function setupDomain() {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY
   
   if (!apiKey) {
     console.error('❌ RESEND_API_KEY environment variable is required');
@@ -276,4 +276,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   setupDomain().catch(console.error);
 }
 
-export { ResendDomainManager, setupDomain };
+module.exports = { ResendDomainManager, setupDomain };

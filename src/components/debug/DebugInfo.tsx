@@ -2,7 +2,6 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-
 interface DebugInfoProps {
   tripId?: string | null;
 }
@@ -17,7 +16,7 @@ export default function DebugInfo({ tripId }: DebugInfoProps) {
   const [offersCount, setOffersCount] = useState<number>(0);
 
   // Current feature flags being used
-  const useNewPoolsUI = useFeatureFlag('use_new_pools_ui', false);
+  const _useNewPoolsUI = useFeatureFlag('use_new_pools_ui', false);
   const flightSearchV2Flag = import.meta.env.VITE_FLAG_FS_V2 === 'true';
 
   useEffect(() => {
@@ -90,7 +89,7 @@ export default function DebugInfo({ tripId }: DebugInfoProps) {
       SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
     });
     console.log('🔍 [DEBUG-INFO] React Feature Flags:', {
-      use_new_pools_ui: useNewPoolsUI,
+      use_new_pools_ui: _useNewPoolsUI,
       VITE_FLAG_FS_V2: flightSearchV2Flag,
     });
     console.log('🔍 [DEBUG-INFO] Current Trip:', {
@@ -99,13 +98,13 @@ export default function DebugInfo({ tripId }: DebugInfoProps) {
       offersCount,
     });
     console.log('🔍 [DEBUG-INFO] Active Implementation:', {
-      usingPools: useNewPoolsUI,
+      usingPools: _useNewPoolsUI,
       usingV2Search: flightSearchV2Flag,
     });
     console.log(
       '🔍 [DEBUG-INFO] ======================================================='
     );
-  }, [useNewPoolsUI, flightSearchV2Flag, tripId, tripData, offersCount]);
+  }, [_useNewPoolsUI, flightSearchV2Flag, tripId, tripData, offersCount]);
 
   // Only render in development
   if (import.meta.env.NODE_ENV === 'production') {
@@ -115,7 +114,7 @@ export default function DebugInfo({ tripId }: DebugInfoProps) {
   return (
     <div className="fixed bottom-4 left-4 bg-black text-white text-xs p-2 rounded max-w-xs opacity-80 z-50">
       <div className="font-bold">🔍 DEBUG INFO</div>
-      <div>Pools UI: {useNewPoolsUI ? '✅' : '❌'}</div>
+      <div>Pools UI: {_useNewPoolsUI ? '✅' : '❌'}</div>
       <div>FS-V2: {flightSearchV2Flag ? '✅' : '❌'}</div>
       <div>Trip: {tripId?.slice(0, 8)}...</div>
       <div>Offers: {offersCount}</div>

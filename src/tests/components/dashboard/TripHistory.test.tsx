@@ -13,11 +13,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import * as React from 'react';
 import TripHistory from '@/components/dashboard/TripHistory'; // Adjust path if needed
-
 // Use global Supabase mock from setupTests.ts
 // Access the global mock for test-specific behavior
 import { supabase } from '@/integrations/supabase/client';
-
 // This variable will hold the mock promise resolver/rejecter for the final 'order' call
 let mockSupabaseQueryResolver: {
   resolve: (value: unknown) => void;

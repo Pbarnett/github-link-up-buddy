@@ -97,7 +97,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log('🔧 Ready for Day 2: Secrets rotation and Twilio setup');
       process.exit(0);
     })
-    .catch((error) => {
+    .catch((_error) => {
       console.error('Failed to log AI activity:', error);
       process.exit(1);
     });

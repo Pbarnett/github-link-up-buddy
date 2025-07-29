@@ -1,56 +1,11 @@
 import * as React from 'react';
+import { AlertTriangle } from 'lucide-react';
 import PoolLayout from '@/components/trip/Pools/PoolLayout';
 import PoolOfferControls from '@/components/trip/PoolOfferControls';
 import TripOfferDetailsCard from '@/components/trip/TripOfferDetailsCard';
 import { TripDetails } from '@/hooks/useTripOffers';
 import { usePoolsSafe } from '@/hooks/usePoolsSafe';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 export default function TripOffersWithPools() {
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get('id');

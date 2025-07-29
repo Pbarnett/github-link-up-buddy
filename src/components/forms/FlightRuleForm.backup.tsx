@@ -1,8 +1,9 @@
-type FC<T = {}> = React.FC<T>;
-
+import * as React from 'react';
+import { FC } from 'react';
+import { useEffect, use } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import * as React from 'react';
+import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -20,9 +21,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Form } from '@/components/ui/form';
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-
 // Define schema directly here since it's not exported from types/form
 const unifiedFlightFormSchema = z
   .object({

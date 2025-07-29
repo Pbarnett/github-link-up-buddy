@@ -212,7 +212,7 @@ class RateLimiter {
   async waitForSlot(): Promise<void> {
     const now = Date.now();
     
-    // Remove old requests outside the time window
+    // Remove old requests outside the time /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
     this.requests = this.requests.filter(time => now - time < this.timeWindow);
     
     // If we're at the limit, wait

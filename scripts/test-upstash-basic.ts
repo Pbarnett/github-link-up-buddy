@@ -115,8 +115,8 @@ async function testBasicOperations() {
     
     console.log('\n✅ Basic Upstash Redis operations completed')
     
-  } catch (error) {
-    console.error('❌ Error:', error)
+  } catch {
+    console.error('❌ Error:', error);
   }
 }
 

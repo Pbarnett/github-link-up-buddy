@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import * as React from 'react';
+import { useEffect } from 'react';
 import { useFormContext, useWatch, Control } from 'react-hook-form';
 import { Settings, DollarSign, CreditCard, Shield } from 'lucide-react';
 import {
@@ -20,7 +21,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-
 interface AutoBookingSectionProps {
   control: Control<FormValues>;
   mode?: 'manual' | 'auto';

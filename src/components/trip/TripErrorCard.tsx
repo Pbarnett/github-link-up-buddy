@@ -1,4 +1,12 @@
 import * as React from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  AlertTriangle,
+  Filter,
+  PlaneTakeoff,
+  RefreshCw,
+  Settings,
+} from 'lucide-react';
 import {
   Card,
   CardHeader,
@@ -7,53 +15,6 @@ import {
   CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 type TripErrorCardProps = {
   message?: string;
   onOverrideSearch?: () => void;
@@ -119,7 +80,9 @@ export default function TripErrorCard({
             New Trip
           </Button>
           <Button
-            onClick={() => window.location.reload()}
+            onClick={() =>
+              /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.reload()
+            }
             variant="outline"
             className="flex items-center gap-2"
           >

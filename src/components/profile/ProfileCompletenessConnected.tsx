@@ -1,63 +1,17 @@
-type FC<T = {}> = React.FC<T>;
-
 import * as React from 'react';
+import { FC } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
 import { DatabaseOperations } from '@/lib/supabase/database-operations';
-import { useUser } from '@/lib/auth/hooks';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useState, useEffect, useCallback } from 'react';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
 import {
   ProfileCompletenessIndicator,
   ProfileCompletenessData,
   ProfileField,
 } from './ProfileCompletenessIndicator';
-
+import { useUser } from '@/lib/auth/hooks';
 interface ProfileCompletenessConnectedProps {
   onFieldClick?: (fieldId: string) => void;
   showFieldList?: boolean;
@@ -186,7 +140,7 @@ export const ProfileCompletenessConnected: FC<
   autoRefresh = false,
   refreshInterval = 30000, // 30 seconds
 }) => {
-  const user = useUser();
+  const _user = useUser();
   const [profileData, setProfileData] =
     useState<ProfileCompletenessData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -321,7 +275,7 @@ export const ProfileCompletenessConnected: FC<
       const targetUrl = navigationMap[metadata.category];
       if (targetUrl) {
         // Add field parameter to highlight specific field
-        window.location.href = `${targetUrl}?field=${fieldId}`;
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.href = `${targetUrl}?field=${fieldId}`;
       }
     },
     [onFieldClick]

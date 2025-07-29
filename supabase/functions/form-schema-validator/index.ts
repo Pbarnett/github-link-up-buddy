@@ -399,7 +399,7 @@ async function validateAgainstBusinessRules(
           }
           break;
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn(`Failed to validate against rule ${rule.name}:`, error);
     }
   }

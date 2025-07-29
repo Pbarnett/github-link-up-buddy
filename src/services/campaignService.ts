@@ -7,7 +7,6 @@ import {
   UpdateCampaignRequest,
 } from '@/types/campaign';
 import { Tables } from '@/integrations/supabase/types';
-
 type AutoBookingRequestRow = Tables<'auto_booking_requests'>;
 
 class CampaignService {

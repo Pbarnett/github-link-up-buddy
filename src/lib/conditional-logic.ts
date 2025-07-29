@@ -7,7 +7,6 @@ import * as React from 'react';
  */
 
 import type { ConditionalRule, ConditionalLogic } from '../types/dynamic-forms';
-
 /**
  * Evaluate a single conditional rule against form data
  */

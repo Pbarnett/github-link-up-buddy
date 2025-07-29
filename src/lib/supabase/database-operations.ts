@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database, Tables, TablesInsert, TablesUpdate } from '@/types/database';
 import { performanceMonitor } from '@/services/monitoring/performanceMonitor';
 import { SupabaseErrorHandler, withRetry } from './error-handler';
-
 // Connection health monitoring
 class ConnectionMonitor {
   private lastHealthCheck = 0;
@@ -23,11 +22,12 @@ class ConnectionMonitor {
 
     try {
       // Simple health check - query feature flags table
+      const controller = new AbortController();
       const { error } = await supabase
         .from('feature_flags')
         .select('id')
         .limit(1)
-        .abortSignal(AbortSignal.timeout(5000));
+        .abortSignal(controller.signal);
 
       this.isHealthy = !error;
 
@@ -466,11 +466,12 @@ export class DatabaseOperations {
     const startTime = Date.now();
 
     try {
+      const controller = new AbortController();
       const { error } = await supabase
         .from('feature_flags')
         .select('id')
         .limit(1)
-        .abortSignal(AbortSignal.timeout(5000));
+        .abortSignal(controller.signal);
 
       const latency = Date.now() - startTime;
 

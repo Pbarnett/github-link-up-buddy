@@ -45,7 +45,7 @@ async function authenticate(): Promise<string> {
     throw new Error(`Authentication failed: ${error?.message}`);
   }
 
-  return data.session.access_token;
+  return data.session.access_token
 }
 
 async function makeAuthenticatedRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
@@ -53,9 +53,7 @@ async function makeAuthenticatedRequest(endpoint: string, options: RequestInit =
   
   const defaultHeaders = {
     'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  };
-
+    'Content-Type': 'application/json'}
   const response = await fetch(`${SUPABASE_URL}/functions/v1/${endpoint}`, {
     ...options,
     headers: {
@@ -218,7 +216,7 @@ async function runFullMigration(): Promise<void> {
       result.errors.forEach((error: string) => console.log(`     • ${error}`));
     }
 
-    totalMigrated += result.migratedProfiles + result.migratedPaymentMethods;
+    totalMigrated += result.migratedProfiles + result.migratedPaymentMethods
     
     // Check if migration is complete
     const currentStatus = await getMigrationStatus();
@@ -274,7 +272,7 @@ async function setupKeyRotation(): Promise<void> {
 }
 
 async function main() {
-  const args = Deno.args;
+  const args = Deno.args
   const command = args[0];
 
   console.log("🔒 GitHub Link-Up Buddy - Encryption Management\n");

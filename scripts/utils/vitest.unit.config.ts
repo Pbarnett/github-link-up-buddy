@@ -6,7 +6,7 @@ import { loadEnv } from 'vite'
  * Vitest configuration specifically for unit tests in the tests/ directory
  * This is separate from the main Vitest config to avoid conflicts with Playwright
  */
-export default defineConfig({
+module.exports = defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -69,7 +69,7 @@ export default defineConfig({
     restoreMocks: true,
     
     // Better error reporting
-    reporters: process.env.CI 
+    reporters: process.env.CI
       ? ['default', 'junit', 'json']
       : ['default', 'verbose'],
       

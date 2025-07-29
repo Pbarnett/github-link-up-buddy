@@ -3,17 +3,15 @@
  * Provides targeted subscriptions, connection monitoring, and specialized methods
  */
 
+import * as React from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import {
   SupabaseClient,
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
-import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database, Tables } from '@/types/database';
-import { useState } from 'react';
-import { useEffect } from 'react';
-
 interface SubscriptionOptions {
   schema?: string;
   table?: string;
@@ -51,17 +49,30 @@ export class RealtimeService {
    * Setup connection monitoring
    */
   private setupConnectionMonitoring(): void {
-    if (typeof window === 'undefined') return; // Skip on server-side
+    if (
+      typeof (
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+      ) === 'undefined'
+    )
+      return; // Skip on server-side
 
-    window.addEventListener('online', () => {
-      console.log('🌐 Network online - attempting to reconnect realtime');
-      this.reconnectAll();
-    });
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.addEventListener(
+      'online',
+      () => {
+        console.log('🌐 Network online - attempting to reconnect realtime');
+        this.reconnectAll();
+      }
+    );
 
-    window.addEventListener('offline', () => {
-      console.log('🌐 Network offline - realtime connections may be affected');
-      this.connectionState.isConnected = false;
-    });
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.addEventListener(
+      'offline',
+      () => {
+        console.log(
+          '🌐 Network offline - realtime connections may be affected'
+        );
+        this.connectionState.isConnected = false;
+      }
+    );
   }
 
   /**

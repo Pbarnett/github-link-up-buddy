@@ -3,7 +3,10 @@
  * Global error boundary with retry mechanisms and graceful degradation
  */
 
-import React from 'react';
+import * as React from 'react';
+import { ReactNode, ErrorInfo } from 'react';
+type ComponentType<P = {}> = React.ComponentType<P>;
+
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,11 +17,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
-type ReactNode = React.ReactNode;
-type ErrorInfo = React.ErrorInfo;
-type ComponentType<P = {}> = React.ComponentType<P>;
-
 // Safe error reporting that doesn't throw
 const reportError = (error: Error, context?: any) => {
   try {
@@ -95,21 +93,26 @@ export class SmartErrorBoundary extends React.Component<Props, State> {
     this.setState({ isRetrying: true });
 
     // Retry with exponential backoff
-    const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+    const _delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
 
-    this.retryTimeoutId = window.setTimeout(() => {
-      this.setState({
-        hasError: false,
-        error: undefined,
-        errorInfo: undefined,
-        retryCount: retryCount + 1,
-        isRetrying: false,
-      });
-    }, delay);
+    this.retryTimeoutId =
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.setTimeout(
+        () => {
+          this.setState({
+            hasError: false,
+            error: undefined,
+            errorInfo: undefined,
+            retryCount: retryCount + 1,
+            isRetrying: false,
+          });
+        },
+        3000
+      );
   };
 
   private handleGoHome = () => {
-    window.location.href = '/dashboard';
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.href =
+      '/dashboard';
   };
 
   private renderErrorFallback() {

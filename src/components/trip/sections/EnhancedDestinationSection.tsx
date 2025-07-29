@@ -24,7 +24,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { POPULAR_DESTINATIONS } from '@/data/airports';
-
 interface EnhancedDestinationSectionProps {
   control: Control<Record<string, unknown>>;
   watch: UseFormWatch<Record<string, unknown>>;

@@ -1,9 +1,20 @@
+import * as React from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
-import * as React from 'react';
+import {
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Eye,
+  Plane,
+  RefreshCw,
+  XCircle,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -26,54 +37,6 @@ import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import TripHistory from '@/components/dashboard/TripHistory'; // Added import
 import { DashboardGreeting } from '@/components/personalization/GreetingBanner';
-import { useState } from 'react';
-import { useEffect } from 'react';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 interface BookingRequest {
   id: string;
   status: string;
@@ -103,7 +66,7 @@ const Dashboard = () => {
   const [, setSelectedError] = useState<string | null>(null);
 
   // Track previous statuses for smart toast notifications
-  const prevStatuses = useRef<Record<string, string>>({});
+  const _prevStatuses = useRef<Record<string, string>>({});
 
   useEffect(() => {
     const getUser = async () => {
@@ -491,7 +454,10 @@ const Dashboard = () => {
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <Button
-              onClick={() => (window.location.href = '/trip/new')}
+              onClick={() =>
+                /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (window.location.href =
+                  '/trip/new')
+              }
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-8 py-3 text-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
@@ -528,7 +494,10 @@ const Dashboard = () => {
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                 <Button
-                  onClick={() => (window.location.href = '/trip/new?mode=auto')}
+                  onClick={() =>
+                    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (window.location.href =
+                      '/trip/new?mode=auto')
+                  }
                   size="lg"
                   className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 >
@@ -536,7 +505,10 @@ const Dashboard = () => {
                   Set up Auto-Booking
                 </Button>
                 <Button
-                  onClick={() => (window.location.href = '/trip/new')}
+                  onClick={() =>
+                    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (window.location.href =
+                      '/trip/new')
+                  }
                   variant="ghost"
                   className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-medium"
                 >
@@ -706,7 +678,8 @@ const Dashboard = () => {
                           {statusFilter === 'all' && (
                             <Button
                               onClick={() =>
-                                (window.location.href = '/trip/new')
+                                /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (window.location.href =
+                                  '/trip/new')
                               }
                               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                               size="lg"

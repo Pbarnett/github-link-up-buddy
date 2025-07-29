@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { Control } from 'react-hook-form';
 import TripDateField from '../TripDateField';
-
 // Date range form data interface
 interface DateRangeFormData {
   earliestDeparture?: Date;

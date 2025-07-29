@@ -9,7 +9,6 @@ import * as React from 'react';
 import { IS_MOCK_MODE } from '../aws-sdk-browser-compat';
 import { EnhancedAWSClientFactory, Environment } from './client-factory';
 import { EnhancedAWSErrorHandler, ErrorCategory } from './error-handling';
-
 // Conditionally import AWS SDK commands based on environment
 let KMSClient: any, S3Client: any, DynamoDBClient: any;
 let EncryptCommand: any, DecryptCommand: any, DescribeKeyCommand: any;
@@ -537,7 +536,7 @@ export class MultiRegionAWSManager {
             healthResult.healthy,
             latencyMs
           );
-        } catch (error) {
+        } catch (_error) {
           this.updateRegionHealth(regionConfig.region, false, 0);
         }
       });

@@ -73,7 +73,7 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 }));
 
 // Mock matchMedia for responsive components
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation(query => ({
     matches: false,
@@ -168,7 +168,6 @@ export const mockAnalytics = {
   trackFieldInteraction: vi.fn(),
   trackFieldError: vi.fn(),
   trackFormSubmit: vi.fn(),
-};
 
 /**
  * Form-analytics hook (test stub)

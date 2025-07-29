@@ -27,8 +27,8 @@ interface SuccessResponse<T = any> {
 }
 
 interface RateLimitConfig {
-  windowMs: number; // Time window in milliseconds
-  maxRequests: number; // Maximum requests per window
+  windowMs: number; // Time /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window in milliseconds
+  maxRequests: number; // Maximum requests per /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
   keyGenerator?: (req: Request) => string; // Custom key generator
 }
 
@@ -106,7 +106,7 @@ export function checkRateLimit(req: Request, config: RateLimitConfig): void {
   }
   
   if (entry.resetTime < now) {
-    // Reset window
+    // Reset /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
     entry.count = 1;
     entry.resetTime = now + config.windowMs;
     return;
@@ -228,7 +228,7 @@ export async function parseJsonBody<T = any>(req: Request): Promise<T> {
   try {
     const body = await req.json();
     return body as T;
-  } catch (error) {
+  } catch (_error) {
     throw new Error('Invalid JSON body');
   }
 }

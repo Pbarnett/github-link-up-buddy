@@ -2,11 +2,10 @@
 // Day 4: Payments & Wallet System
 
 import * as React from 'react';
+import { FC } from 'react';
 import { Button } from '../components/ui/button';
 import { useWallet } from '../context/WalletProvider';
-
 type _Component<P = {}, S = {}> = React.Component<P, S>;
-type FC<T = {}> = React.FC<T>;
 
 export const PaymentMethodList: FC = () => {
   const { paymentMethods, setDefault, removePaymentMethod } = useWallet();

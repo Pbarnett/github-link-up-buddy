@@ -1,13 +1,12 @@
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { LDContext } from 'launchdarkly-js-client-sdk';
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
-import * as React from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { LaunchDarklyContextManager, UserAttributes } from './context-manager';
-import { useState } from 'react';
-import { useEffect } from 'react';
-
+import { useLaunchDarkly } from '../../providers/LaunchDarklyProvider';
 export function LaunchDarklyAuthSync() {
-  const ldClient = useLDClient();
+  const { client: ldClient } = useLaunchDarkly();
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -179,7 +178,7 @@ export function LaunchDarklyAuthSync() {
 
 // Hook for manually updating user context (e.g., when subscription changes)
 export function useLaunchDarklyContextUpdate() {
-  const ldClient = useLDClient();
+  const { client: ldClient } = useLaunchDarkly();
 
   const updateSubscription = async (
     subscription: 'free' | 'premium' | 'enterprise'

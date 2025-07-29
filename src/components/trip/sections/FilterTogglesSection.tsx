@@ -1,11 +1,9 @@
 import * as React from 'react';
+import { FC } from 'react';
 import { Control, useController } from 'react-hook-form';
 import { Plane, Package } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-
-type FC<T = {}> = React.FC<T>;
-
 // Form data interface for filter toggles
 interface FilterToggleFormData {
   nonstop_required?: boolean;

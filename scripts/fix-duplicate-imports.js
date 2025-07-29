@@ -1,12 +1,22 @@
 #!/usr/bin/env node
 
+const path = require('path');
+
 /**
  * Fix duplicate React imports created by the previous script
  */
 
 import fs from 'fs/promises';
-import path from 'path';
 import { glob } from 'glob';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const PROJECT_ROOT = process.cwd();
 

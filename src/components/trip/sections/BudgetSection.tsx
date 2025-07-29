@@ -9,7 +9,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-
 // Budget form data interface
 interface BudgetFormData {
   budget?: number;

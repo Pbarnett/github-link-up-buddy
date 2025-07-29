@@ -1,12 +1,10 @@
-type FC<T = {}> = React.FC<T>;
-
 import * as React from 'react';
+import { FC } from 'react';
+import { useState, use } from 'react';
 import { useTripOffersPools } from '@/hooks/useTripOffers';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import ConstraintChips from './ConstraintChips';
-import { useState } from 'react';
-
 interface PoolOfferControlsProps {
   tripId: string;
 }

@@ -1,9 +1,7 @@
-type FC<T = {}> = React.FC<T>;
-
 import { Lock, ToggleRight, ToggleLeft } from 'lucide-react';
 import * as React from 'react';
+import { FC } from 'react';
 import { Badge } from '@/components/ui/badge';
-
 interface ConstraintChipsProps {
   dateRange: { from: string; to: string };
   nonStopOnly: boolean;

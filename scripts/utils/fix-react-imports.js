@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const path = require('path');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require('fs');
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 function fixReactImports(filePath) {
   try {
@@ -16,7 +17,7 @@ function fixReactImports(filePath) {
     if (content.includes("import { forwardRef } from 'react';")) {
       content = content.replace(
         /import { forwardRef } from 'react';/g,
-        "import * as React from 'react';"
+        "import ';"
       );
       modified = true;
     }

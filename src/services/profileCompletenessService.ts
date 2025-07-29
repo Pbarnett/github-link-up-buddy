@@ -7,7 +7,6 @@ import * as React from 'react';
 
 // import { supabase } from '@/integrations/supabase/client';
 import { TravelerProfile } from '@/hooks/useTravelerProfile';
-
 export interface ProfileCompletenessScore {
   overall: number; // 0-100
   categories: {
@@ -93,7 +92,11 @@ export interface ChannelPreferences {
 export interface TravelPreferences {
   preferred_airports?: string[];
   preferred_airlines?: string[];
-  seat_preference?: 'window' | 'aisle' | 'middle' | 'any';
+  seat_preference?:
+    | '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window'
+    | 'aisle'
+    | 'middle'
+    | 'any';
   meal_preference?: string;
   accessibility_needs?: string[];
   frequent_flyer_programs?: Array<{

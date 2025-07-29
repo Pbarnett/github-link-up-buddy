@@ -12,12 +12,13 @@
  */
 
 import { execSync } from 'child_process';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const fs = require('fs');
+import {} from 'path';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
 const colors = {
   reset: '\x1b[0m',
@@ -28,17 +29,11 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m'
-};
 
-const log = (message, color = 'reset') => {
-  console.log(`${colors[color]}${message}${colors.reset}`);
 };
+// Removed unused log function
 
-const success = (message) => log(`✅ ${message}`, 'green');
-const warning = (message) => log(`⚠️  ${message}`, 'yellow');
-const error = (message) => log(`❌ ${message}`, 'red');
-const info = (message) => log(`ℹ️  ${message}`, 'blue');
-const step = (message) => log(`🔍 ${message}`, 'cyan');
+const step = (message) => console.log(`🔍 ${message}`, 'cyan');
 
 class DeploymentVerification {
   constructor() {
@@ -53,10 +48,10 @@ class DeploymentVerification {
   }
 
   async verifyAll() {
-    log('🚀 Enterprise Deployment Verification', 'bright');
-    log('='.repeat(50), 'blue');
-    log(`Environment: ${this.environment}`, 'cyan');
-    log(`Base URL: ${this.baseUrl}`, 'cyan');
+    console.log('🚀 Enterprise Deployment Verification', 'bright');
+    console.log('='.repeat(50), 'blue');
+    console.log(`Environment: ${this.environment}`, 'cyan');
+    console.log(`Base URL: ${this.baseUrl}`, 'cyan');
 
     await this.verifyBuildArtifacts();
     await this.verifyHealthEndpoints();
@@ -71,15 +66,15 @@ class DeploymentVerification {
 
     const hasFailures = this.results.failed.length > 0;
     if (hasFailures) {
-      error(`❌ Deployment Verification Failed: ${this.results.failed.length} critical issues`);
+      console.error(`❌ Deployment Verification Failed: ${this.results.failed.length} critical issues`);
       process.exit(1);
     } else {
-      success(`🎉 Deployment Verification Passed!`);
+      console.log(`✅ 🎉 Deployment Verification Passed!`);
     }
   }
 
   async verifyBuildArtifacts() {
-    step('Verifying build artifacts...');
+    console.log('Verifying build artifacts...');
     
     try {
       // Check if build directory exists and has content
@@ -130,7 +125,7 @@ class DeploymentVerification {
       if (stat.isDirectory()) {
         size += this.calculateDirectorySize(filePath);
       } else {
-        size += stat.size;
+        size += stat.size
       }
     }
     
@@ -138,7 +133,7 @@ class DeploymentVerification {
   }
 
   async verifyHealthEndpoints() {
-    step('Verifying health endpoints...');
+    console.log('Verifying health endpoints...');
     
     try {
       // Start the application in background for testing
@@ -165,8 +160,8 @@ class DeploymentVerification {
           } else {
             this.results.warnings.push(`Health endpoint ${endpoint} returned ${statusCode}`);
           }
-        } catch (err) {
-          this.results.warnings.push(`Health check failed for ${endpoint}: ${err.message}`);
+        } catch (error) {
+          this.results.warnings.push(`Health check failed for ${endpoint}: ${error.message}`);
         }
       }
     } catch (err) {
@@ -175,7 +170,7 @@ class DeploymentVerification {
   }
 
   async verifyCriticalPaths() {
-    step('Verifying critical application paths...');
+    console.log('Verifying critical application paths...');
     
     try {
       // Test critical routes that should exist
@@ -205,7 +200,7 @@ class DeploymentVerification {
           } else {
             this.results.warnings.push(`Path ${path} returned ${statusCode}`);
           }
-        } catch (err) {
+        } catch (error) {
           this.results.warnings.push(`Critical path test failed for ${path}`);
         }
       }
@@ -222,7 +217,7 @@ class DeploymentVerification {
   }
 
   async verifyDatabaseConnectivity() {
-    step('Verifying database connectivity...');
+    console.log('Verifying database connectivity...');
     
     try {
       // Check if database connection scripts exist and run them
@@ -267,7 +262,7 @@ class DeploymentVerification {
   }
 
   async verifyFeatureFlags() {
-    step('Verifying feature flag configuration...');
+    console.log('Verifying feature flag configuration...');
     
     try {
       // Check LaunchDarkly or other feature flag configurations
@@ -285,7 +280,7 @@ class DeploymentVerification {
               timeout: 10000 
             });
             this.results.passed.push('Feature flag service connectivity verified');
-          } catch (err) {
+          } catch (error) {
             this.results.warnings.push('Feature flag service test failed');
           }
         }
@@ -299,7 +294,7 @@ class DeploymentVerification {
   }
 
   async verifyPerformanceBaseline() {
-    step('Verifying performance baseline...');
+    console.log('Verifying performance baseline...');
     
     try {
       // Use existing build to check bundle sizes
@@ -312,13 +307,13 @@ class DeploymentVerification {
         
         jsFiles.forEach(file => {
           if (fs.existsSync(file)) {
-            totalJsSize += fs.statSync(file).size;
+            totalJsSize += fs.statSync(file).size
           }
         });
         
         cssFiles.forEach(file => {
           if (fs.existsSync(file)) {
-            totalCssSize += fs.statSync(file).size;
+            totalCssSize += fs.statSync(file).size
           }
         });
         
@@ -347,7 +342,7 @@ class DeploymentVerification {
         } else {
           this.results.warnings.push(`Slow response time: ${responseTime}ms`);
         }
-      } catch (err) {
+      } catch (error) {
         this.results.warnings.push('Could not measure response time');
       }
 
@@ -357,7 +352,7 @@ class DeploymentVerification {
   }
 
   async verifySecurityHeaders() {
-    step('Verifying security headers...');
+    console.log('Verifying security headers...');
     
     try {
       const result = execSync(`curl -I -s ${this.baseUrl}/ || echo "FAILED"`, { 
@@ -398,7 +393,7 @@ class DeploymentVerification {
   }
 
   async verifyEnvironmentConfig() {
-    step('Verifying environment configuration...');
+    console.log('Verifying environment configuration...');
     
     try {
       // Check for required environment variables
@@ -420,7 +415,7 @@ class DeploymentVerification {
       const missingVars = envVarsToCheck.filter(env => !process.env[env]);
       const presentVars = envVarsToCheck.filter(env => process.env[env]);
       
-      this.results.metrics.environmentVariables = presentVars.length;
+      this.results.metrics.environmentVariables = presentVars.length
       
       if (missingVars.length === 0) {
         this.results.passed.push(`All required environment variables present (${presentVars.length})`);
@@ -446,7 +441,7 @@ class DeploymentVerification {
             if (count > 0) {
               foundDevArtifacts += count;
             }
-          } catch (err) {
+          } catch (error) {
             // Ignore grep errors
           }
         }
@@ -464,7 +459,7 @@ class DeploymentVerification {
   }
 
   async generateReport() {
-    step('Generating deployment verification report...');
+    console.log('Generating deployment verification report...');
     
     const report = {
       timestamp: new Date().toISOString(),
@@ -483,32 +478,32 @@ class DeploymentVerification {
     fs.writeFileSync('deployment-verification-report.json', JSON.stringify(report, null, 2));
     
     // Console output
-    log('\n📊 Deployment Verification Summary:', 'blue');
-    log('='.repeat(50), 'blue');
+    console.log('\n📊 Deployment Verification Summary:', 'blue');
+    console.log('='.repeat(50), 'blue');
     
     if (this.results.passed.length > 0) {
-      log(`\n✅ Passed (${this.results.passed.length}):`, 'green');
-      this.results.passed.forEach(item => log(`   • ${item}`, 'green'));
+      console.log(`\n✅ Passed (${this.results.passed.length}):`, 'green');
+      this.results.passed.forEach(item => console.log(`   • ${item}`, 'green'));
     }
     
     if (this.results.warnings.length > 0) {
-      log(`\n⚠️  Warnings (${this.results.warnings.length}):`, 'yellow');
-      this.results.warnings.forEach(item => log(`   • ${item}`, 'yellow'));
+      console.log(`\n⚠️  Warnings (${this.results.warnings.length}):`, 'yellow');
+      this.results.warnings.forEach(item => console.log(`   • ${item}`, 'yellow'));
     }
     
     if (this.results.failed.length > 0) {
-      log(`\n❌ Failed (${this.results.failed.length}):`, 'red');
-      this.results.failed.forEach(item => log(`   • ${item}`, 'red'));
+      console.log(`\n❌ Failed (${this.results.failed.length}):`, 'red');
+      this.results.failed.forEach(item => console.log(`   • ${item}`, 'red'));
     }
     
     if (Object.keys(this.results.metrics).length > 0) {
-      log('\n📈 Deployment Metrics:', 'cyan');
+      console.log('\n📈 Deployment Metrics:', 'cyan');
       Object.entries(this.results.metrics).forEach(([key, value]) => {
-        log(`   • ${key}: ${value}`, 'cyan');
+        console.log(`   • ${key}: ${value}`, 'cyan');
       });
     }
     
-    log(`\nReport saved to: deployment-verification-report.json`, 'blue');
+    console.log(`\nReport saved to: deployment-verification-report.json`, 'blue');
   }
 }
 
@@ -516,9 +511,9 @@ class DeploymentVerification {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const verifier = new DeploymentVerification();
   verifier.verifyAll().catch(err => {
-    console.error(`❌ Deployment verification failed: ${err.message}`);
+    console.error(`❌ Deployment verification failed: ${error.message}`);
     process.exit(1);    
   });
 }
 
-export default DeploymentVerification;
+module.exports = DeploymentVerification;

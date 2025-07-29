@@ -3,9 +3,9 @@ import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import * as React from 'react';
+import { ReactNode } from 'react';
 import type { ReactNode } from 'react';
 import TripRequestForm from '@/components/trip/TripRequestForm';
-
 // Mock react-router-dom
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');

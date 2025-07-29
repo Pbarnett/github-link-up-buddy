@@ -62,7 +62,7 @@ export const selectDestination = async (destinationCode: string, fallbackToCusto
     const option = screen.getByRole('option', { name: new RegExp(destinationCode, 'i') });
     await userEvent.click(option);
     
-  } catch (error) {
+  } catch (_error) {
     if (fallbackToCustom) {
       // Fallback: use the custom destination input
       console.warn('Destination select failed, using custom input fallback');

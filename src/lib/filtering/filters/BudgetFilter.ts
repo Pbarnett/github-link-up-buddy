@@ -10,7 +10,7 @@ import {
   FlightOffer,
   FlightFilter,
   FilterContext,
-  _ValidationResult,
+  __ValidationResult,
   CurrencyConverter,
 } from '../core/types';
 

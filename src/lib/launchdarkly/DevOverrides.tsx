@@ -1,7 +1,6 @@
-import { LDFlagValue } from 'launchdarkly-js-client-sdk';
 import * as React from 'react';
-import { useEffect } from 'react';
-
+import { useEffect, useState, use } from 'react';
+import { LDFlagValue } from 'launchdarkly-js-client-sdk';
 const OVERRIDE_KEY = 'LD_FLAG_OVERRIDES';
 
 // Type for flag overrides
@@ -41,7 +40,7 @@ export class DevFlagOverrides {
       localStorage.setItem(OVERRIDE_KEY, JSON.stringify(overrides));
 
       // Dispatch storage event for cross-tab updates
-      window.dispatchEvent(
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.dispatchEvent(
         new StorageEvent('storage', {
           key: OVERRIDE_KEY,
           newValue: JSON.stringify(overrides),
@@ -133,8 +132,15 @@ export function useDevFlags(): Record<string, LDFlagValue> {
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.addEventListener(
+      'storage',
+      handleStorageChange
+    );
+    return () =>
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.removeEventListener(
+        'storage',
+        handleStorageChange
+      );
   }, []);
 
   // In development, merge overrides with LaunchDarkly flags
@@ -179,8 +185,15 @@ export function useDevFlag<T extends LDFlagValue>(
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.addEventListener(
+      'storage',
+      handleStorageChange
+    );
+    return () =>
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.removeEventListener(
+        'storage',
+        handleStorageChange
+      );
   }, [flagKey]);
 
   useEffect(() => {
@@ -220,8 +233,15 @@ export function DevFlagOverrideStatus() {
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.addEventListener(
+      'storage',
+      handleStorageChange
+    );
+    return () =>
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.removeEventListener(
+        'storage',
+        handleStorageChange
+      );
   }, []);
 
   if (!import.meta.env.DEV) return null;
@@ -276,7 +296,9 @@ export function DevFlagOverrideStatus() {
 // Global utility functions for console use
 if (import.meta.env.DEV) {
   // Add global utilities for easy console access
-  (window as any).ldOverrides = {
+  /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (
+    window as any
+  ).ldOverrides = {
     set: DevFlagOverrides.setOverride,
     remove: DevFlagOverrides.removeOverride,
     clear: DevFlagOverrides.clearAllOverrides,

@@ -5,7 +5,9 @@
  */
 
 import * as React from 'react';
+import { FC } from 'react';
 import { useState } from 'react';
+import { ChevronDown, ChevronRight, Settings, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,58 +21,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
 import type {
   FormSection,
   FieldConfiguration,
   ValidationRules,
 } from '@/types/dynamic-forms';
-
-type FC<T = {}> = React.FC<T>;
 
 interface SectionEditorProps {
   section: FormSection;
@@ -145,7 +100,9 @@ export const SectionEditor: FC<SectionEditorProps> = ({
               id="section-description"
               value={section.description || ''}
               onChange={e =>
-                onUpdate({ description: (e.target as HTMLInputElement).value })
+                onUpdate({
+                  description: (e.target as HTMLTextAreaElement).value,
+                })
               }
               placeholder="Enter section description"
               disabled={readonly}
@@ -260,7 +217,7 @@ export const SectionEditor: FC<SectionEditorProps> = ({
                             value={field.description || ''}
                             onChange={e =>
                               onUpdateField(field.id, {
-                                description: (e.target as HTMLInputElement)
+                                description: (e.target as HTMLTextAreaElement)
                                   .value,
                               })
                             }

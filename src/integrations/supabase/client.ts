@@ -2,12 +2,23 @@ import * as React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+// Environment variable utility function for proper type handling
+const getEnvVar = (key: string, viteKey: string) => {
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env[key] || process.env[viteKey];
+  }
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env[viteKey];
+  }
+  return undefined;
+};
 
-// Get environment variables with fallbacks for development
-const SUPABASE_URL =
-  process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY =
-  process.env.SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Get environment variables with proper fallbacks
+const SUPABASE_URL = getEnvVar('SUPABASE_URL', 'VITE_SUPABASE_URL');
+const SUPABASE_ANON_KEY = getEnvVar(
+  'SUPABASE_ANON_KEY',
+  'VITE_SUPABASE_ANON_KEY'
+);
 
 // Log for debugging
 console.log('🔍 Supabase client initialization:', {
@@ -24,10 +35,13 @@ let supabaseClient: SupabaseClient<Database> | MockSupabaseClient;
 // Connection pooler configuration for different environments
 const getConnectionConfig = () => {
   const isProduction = import.meta.env.PROD;
-  const isServerSide = typeof window === 'undefined';
+  const isServerSide =
+    typeof (
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+    ) === 'undefined';
 
   if (isServerSide && isProduction) {
-    // Use pooler for server-side production (session mode for persistent connections)
+    // Server-side production settings
     return {
       db: {
         schema: 'public',
@@ -36,23 +50,33 @@ const getConnectionConfig = () => {
         autoRefreshToken: false,
         persistSession: false,
       },
+      realtime: {
+        params: {
+          eventsPerSecond: 100,
+          log_level: import.meta.env.DEV ? 'info' : 'error',
+        },
+      },
       global: {
         headers: {
           'x-client-info': 'github-link-up-buddy@1.0.0',
-          Connection: 'close', // Prevent connection pooling issues
+          Connection: 'close',
         },
       },
     };
   }
 
-  // Client-side configuration or development
+  // Client-side or development settings
   return {
     auth: {
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      flowType: 'pkce', // Use PKCE for better security
+      storage:
+        typeof (
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        ) !== 'undefined'
+          ? /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.localStorage
+          : undefined,
     },
     global: {
       headers: {
@@ -67,10 +91,6 @@ const getConnectionConfig = () => {
         eventsPerSecond: 100,
         log_level: import.meta.env.DEV ? 'info' : 'error',
       },
-      heartbeatIntervalMs: 30000,
-      reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000),
-      broadcastEnabled: true,
-      presenceEnabled: true,
     },
   };
 };
@@ -256,7 +276,10 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.log('✅ Supabase client initialized successfully', {
       mode: import.meta.env.MODE,
       isProduction: import.meta.env.PROD,
-      isServerSide: typeof window === 'undefined',
+      isServerSide:
+        typeof (
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        ) === 'undefined',
       authConfig: config.auth ? 'configured' : 'default',
     });
   } catch (error) {

@@ -8,6 +8,9 @@
 const { spawn } = require('child_process');
 const LocalhostDiagnostics = require('./diagnostics/localhost-binding-check');
 
+// Utility functions
+// Removed unused log function
+
 async function startDevelopment() {
   console.log('🚀 Starting development environment with localhost binding checks...');
   
@@ -18,7 +21,8 @@ async function startDevelopment() {
     await diagnostics.runDiagnostics();
     console.log('✅ Localhost binding checks passed!');
   } catch (error) {
-    console.error('❌ Localhost binding issues detected. Please run: npm run fix-localhost-binding');
+    console.error('❌ Localhost binding issues detected:', error.message);
+    console.error('Please run: npm run fix-localhost-binding');
     process.exit(1);
   }
   

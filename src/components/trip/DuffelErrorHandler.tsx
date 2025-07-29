@@ -3,57 +3,11 @@
  * Provides user-friendly error messages and recovery options
  */
 
-type FC<T = {}> = React.FC<T>;
-
 import * as React from 'react';
+import { FC } from 'react';
+import { AlertCircle, Clock, CreditCard, RefreshCw, Wifi } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 export interface DuffelError {
   type: 'search' | 'booking' | 'payment' | 'network' | 'api' | 'validation';
   message: string;
@@ -146,7 +100,7 @@ export const DuffelErrorHandler: FC<DuffelErrorHandlerProps> = ({
   };
 
   const getRecoveryActions = () => {
-    const actions = [];
+    const actions: React.JSX.Element[] = [];
 
     if (error.retryable !== false && onRetry) {
       actions.push(
@@ -169,7 +123,9 @@ export const DuffelErrorHandler: FC<DuffelErrorHandlerProps> = ({
           key="newsearch"
           variant="outline"
           size="sm"
-          onClick={() => window.location.reload()}
+          onClick={() =>
+            /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.reload()
+          }
           className="flex items-center gap-2"
         >
           New Search

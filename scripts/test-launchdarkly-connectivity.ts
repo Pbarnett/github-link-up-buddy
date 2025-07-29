@@ -18,7 +18,6 @@ const DEFAULT_CONFIG: TestConfig = {
   retryAttempts: 3,
   simulateNetworkIssues: false,
   verbose: false
-};
 
 // Known feature flags to test
 const KNOWN_FLAGS = [
@@ -49,7 +48,7 @@ class LaunchDarklyConnectivityTest {
     };
   }
 
-  private log(message: string, level: 'info' | 'warn' | 'error' = 'info') {
+  private console.log(message: string, level: 'info' | 'warn' | 'error' = 'info') {
     if (!this.config.verbose && level === 'info') return;
     
     const timestamp = new Date().toISOString();
@@ -84,7 +83,7 @@ class LaunchDarklyConnectivityTest {
     this.log('🔄 Testing LaunchDarkly initialization...');
     
     try {
-      const clientId = process.env.VITE_LD_CLIENT_ID;
+      const clientId = process.env.VITE_LD_CLIENT_ID
       if (!clientId) {
         throw new Error('VITE_LD_CLIENT_ID is missing from environment variables');
       }
@@ -122,8 +121,7 @@ class LaunchDarklyConnectivityTest {
           this.results.initialization = true;
           return true;
           
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
+        } catch {
           this.log(`Attempt ${attempt} failed: ${errorMessage}`, 'warn');
           this.results.errors.push(`Init attempt ${attempt}: ${errorMessage}`);
           
@@ -141,7 +139,6 @@ class LaunchDarklyConnectivityTest {
       return false;
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       this.log(`❌ Initialization failed: ${errorMessage}`, 'error');
       this.results.errors.push(`Initialization: ${errorMessage}`);
       return false;
@@ -160,8 +157,7 @@ class LaunchDarklyConnectivityTest {
         results[flagKey] = flagValue;
         this.log(`  ${flagKey}: ${JSON.stringify(flagValue)}`);
         
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+      } catch {
         this.log(`  ${flagKey}: ERROR - ${errorMessage}`, 'error');
         results[flagKey] = { error: errorMessage };
         this.results.errors.push(`Flag ${flagKey}: ${errorMessage}`);
@@ -173,8 +169,7 @@ class LaunchDarklyConnectivityTest {
       const unknownFlag = client.variation('unknown_test_flag_' + Date.now(), 'default');
       results['unknown_flag_test'] = unknownFlag;
       this.log(`  unknown_flag_test: ${JSON.stringify(unknownFlag)}`);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+    } catch {
       results['unknown_flag_test'] = { error: errorMessage };
     }
     
@@ -209,7 +204,6 @@ class LaunchDarklyConnectivityTest {
       return true;
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       this.log(`❌ Context update failed: ${errorMessage}`, 'error');
       this.results.errors.push(`Context update: ${errorMessage}`);
       return false;
@@ -240,7 +234,6 @@ class LaunchDarklyConnectivityTest {
       return true;
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       this.log(`❌ Event tracking failed: ${errorMessage}`, 'error');
       this.results.errors.push(`Event tracking: ${errorMessage}`);
       return false;
@@ -335,7 +328,7 @@ class LaunchDarklyConnectivityTest {
     
     // Exit with appropriate code
     const hasErrors = this.results.errors.length > 0;
-    const allTestsPassed = this.results.initialization && this.results.contextUpdates;
+    const allTestsPassed = this.results.initialization && this.results.contextUpdates
     
     if (hasErrors || !allTestsPassed) {
       console.log('\n❌ Some tests failed - check the report above');
@@ -357,10 +350,10 @@ async function main() {
     const arg = args[i];
     switch (arg) {
       case '--timeout':
-        config.timeout = parseInt(args[++i]) || DEFAULT_CONFIG.timeout;
+        config.timeout = parseInt(args[++i]) || DEFAULT_CONFIG.timeout
         break;
       case '--retries':
-        config.retryAttempts = parseInt(args[++i]) || DEFAULT_CONFIG.retryAttempts;
+        config.retryAttempts = parseInt(args[++i]) || DEFAULT_CONFIG.retryAttempts
         break;
       case '--simulate-network-issues':
         config.simulateNetworkIssues = true;
@@ -387,7 +380,6 @@ Environment Variables:
 Examples:
   # Basic test
   npx tsx scripts/test-launchdarkly-connectivity.ts
-  
   # Test with network simulation
   npx tsx scripts/test-launchdarkly-connectivity.ts --simulate-network-issues --verbose
   
@@ -414,7 +406,7 @@ process.on('SIGTERM', () => {
 });
 
 // Run the tests
-main().catch((error) => {
+main().catch((_error) => {
   console.error('❌ Unhandled error:', error);
   process.exit(1);
 });

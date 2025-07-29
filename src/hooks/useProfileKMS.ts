@@ -1,11 +1,8 @@
 import * as React from 'react';
+import { useState, useEffect, useCallback } from 'react';
 // Hook for useProfile with KMS encryption
 
 import { profileServiceKMS, UserProfile } from '@/services/api/profileApiKMS';
-import { useState } from 'react';
-import { useEffect } from 'react';
-import { useCallback } from 'react';
-
 export interface UseProfileKMSReturn {
   profile: UserProfile | null;
   isLoading: boolean;
@@ -25,7 +22,7 @@ export const useProfileKMS = (): UseProfileKMSReturn => {
       setIsLoading(true);
       setError(undefined);
 
-      const userProfile = await profileServiceKMS.getProfile();
+      const _userProfile = await profileServiceKMS.getProfile();
       setProfile(userProfile);
     } catch (err) {
       console.error('Error fetching profile:', err);

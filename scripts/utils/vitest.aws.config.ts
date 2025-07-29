@@ -1,7 +1,7 @@
 import path from 'path'
 import { defineConfig } from 'vitest/config'
 
-export default defineConfig({
+module.exports = defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

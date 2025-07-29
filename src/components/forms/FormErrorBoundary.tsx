@@ -5,60 +5,14 @@
  * following best practices for error handling and user experience
  */
 
-type ReactNode = React.ReactNode;
-type ErrorInfo = React.ErrorInfo;
-type ComponentType<P = {}> = ComponentType<P>;
-
 import * as React from 'react';
+import { ReactNode, ErrorInfo } from 'react';
+import { useCallback } from 'react';
+type ComponentType<P = {}> = React.ComponentType<P>;
+
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useCallback } from 'react';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
@@ -157,7 +111,7 @@ export class FormErrorBoundary extends React.Component<Props, State> {
   };
 
   private handleReload = () => {
-    window.location.reload();
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.reload();
   };
 
   public render() {

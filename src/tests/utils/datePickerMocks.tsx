@@ -2,7 +2,6 @@
 
 // Mock Calendar component that allows easy date setting
 import * as React from 'react';
-
 export const MockCalendar = ({
   onSelect,
 }: {

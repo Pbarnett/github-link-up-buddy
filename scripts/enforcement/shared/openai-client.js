@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 
-import OpenAI from 'openai';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const path = require('path');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import OpenAI from 'openai';
+const fs = require('fs');
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 class EnforcementOpenAIClient {
   constructor() {
@@ -28,7 +34,7 @@ class EnforcementOpenAIClient {
   async init() {
     try {
       // Load model configuration
-      const configPath = path.join(__dirname, '../config/models.json');
+      const configPath = path.join(__'../config/models.json');
       const configData = await fs.readFile(configPath, 'utf-8');
       this.config = JSON.parse(configData);
       
@@ -42,7 +48,7 @@ class EnforcementOpenAIClient {
 
   async loadCostTracker() {
     try {
-      const trackerPath = path.join(__dirname, '../config/cost-tracker.json');
+      const trackerPath = path.join(__'../config/cost-tracker.json');
       const data = await fs.readFile(trackerPath, 'utf-8');
       this.costTracker = JSON.parse(data);
       
@@ -53,7 +59,7 @@ class EnforcementOpenAIClient {
         this.costTracker.lastReset = today;
         await this.saveCostTracker();
       }
-    } catch (error) {
+    } catch {
       // File doesn't exist, start fresh
       await this.saveCostTracker();
     }
@@ -61,7 +67,7 @@ class EnforcementOpenAIClient {
 
   async saveCostTracker() {
     try {
-      const trackerPath = path.join(__dirname, '../config/cost-tracker.json');
+      const trackerPath = path.join(__'../config/cost-tracker.json');
       await fs.writeFile(trackerPath, JSON.stringify(this.costTracker, null, 2));
     } catch (error) {
       console.error('⚠️ Failed to save cost tracker:', error.message);
@@ -72,21 +78,21 @@ class EnforcementOpenAIClient {
     const model = this.config.models[modelKey];
     if (!model) return 0;
 
-    let inputCost = model.input_cost;
+    let inputCost = model.input_cost
     if (useCache && model.cached_input_cost) {
-      inputCost = model.cached_input_cost;
+      inputCost = model.cached_input_cost
     } else if (useFlex && model.flex_input_cost) {
-      inputCost = model.flex_input_cost;
+      inputCost = model.flex_input_cost
     }
 
     const outputCost = useFlex && model.flex_output_cost ? 
-      model.flex_output_cost : model.output_cost;
+      model.flex_output_cost : model.output_cost
 
     return ((inputTokens * inputCost) + (outputTokens * outputCost)) / 1000000;
   }
 
   checkBudget(estimatedCost) {
-    const controls = this.config.cost_controls;
+    const controls = this.config.cost_controls
     
     if (this.costTracker.daily + estimatedCost > controls.daily_budget) {
       return { allowed: false, reason: 'daily_budget_exceeded' };
@@ -101,7 +107,7 @@ class EnforcementOpenAIClient {
 
   async getPromptTemplate(taskType, cacheKey = null) {
     try {
-      const promptPath = path.join(__dirname, `../config/prompts/${taskType}.md`);
+      const promptPath = path.join(__`../config/prompts/${taskType}.md`);
       
       // Check cache first
       if (cacheKey && this.promptCache.has(cacheKey)) {
@@ -116,7 +122,7 @@ class EnforcementOpenAIClient {
       }
       
       return prompt;
-    } catch (error) {
+    } catch {
       console.error(`⚠️ Failed to load prompt template for ${taskType}:`, error.message);
       return null;
     }
@@ -128,13 +134,13 @@ class EnforcementOpenAIClient {
       throw new Error(`No routing configuration found for task type: ${taskType}`);
     }
 
-    let selectedModel = routing.primary;
+    let selectedModel = routing.primary
     const modelConfig = this.config.models[selectedModel];
     
     // Check if context size exceeds model limits
     if (contextSize > modelConfig.context_window) {
       console.warn(`⚠️ Context size (${contextSize}) exceeds ${selectedModel} limit. Falling back.`);
-      selectedModel = routing.escalation_model || routing.fallback;
+      selectedModel = routing.escalation_model || routing.fallback
     }
 
     return {
@@ -241,4 +247,4 @@ class EnforcementOpenAIClient {
   }
 }
 
-export default EnforcementOpenAIClient;
+module.exports = EnforcementOpenAIClient;

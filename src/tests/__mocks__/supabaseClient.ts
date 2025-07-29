@@ -1,5 +1,4 @@
 import { vi } from 'vitest';
-
 export function buildSupabaseMock({
   tripId = 'trip-123',
   locationCode = 'BOS',

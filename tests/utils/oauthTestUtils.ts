@@ -24,7 +24,7 @@ export async function signInWithGoogle(page: Page, opts: OAuthOptions = {}) {
   }
   
   if (opts.simulatePopupBlock) {
-    await page.evaluate(() => window.open = () => null);
+    await page.evaluate(() => /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open = () => null);
   }
 
   // Wait for page to load and find the Google sign-in button
@@ -98,8 +98,8 @@ export async function assertSupabaseSession(page: Page) {
   
   // Method 3: Check for session via global Supabase client (if available)
   const globalSession = await page.evaluate(() => {
-    if (typeof window !== 'undefined' && (window as any).supabase) {
-      return (window as any).supabase.auth.getSession();
+    if (typeof /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window !== 'undefined' && (/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window as any).supabase) {
+      return (/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window as any).supabase.auth.getSession();
     }
     return null;
   }).catch(() => null);

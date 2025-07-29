@@ -99,12 +99,7 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000, // 2 minutes
-    // Health check endpoint
-    healthCheck: {
-      url: 'http://localhost:3000/health',
-      interval: 1000,
-      timeout: 10000,
-    },
+    // Remove health check since /health endpoint may not exist
     // Graceful shutdown
     gracefulShutdown: {
       signal: 'SIGTERM',

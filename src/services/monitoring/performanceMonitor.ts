@@ -4,10 +4,8 @@
  */
 
 import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { DatabaseOperations } from '@/lib/supabase/database-operations';
-import { useState } from 'react';
-import { useEffect } from 'react';
-
 interface PerformanceMetric {
   operation: string;
   duration: number;

@@ -6,7 +6,6 @@ import { readFileSync, existsSync } from 'fs';
  * Loads environment variables from .env files
  * Follows the priority order: .env.local > .env.production > .env
  */
-export function loadEnvironmentVariables(): void {
   const envFiles = [
     '.env.local',
     '.env.production', 
@@ -41,7 +40,7 @@ export function loadEnvironmentVariables(): void {
           }
         }
         
-      } catch (error) {
+      } catch {
         console.warn(`⚠️  Failed to load ${envFile}: ${error}`);
       }
     }
@@ -53,7 +52,6 @@ export function loadEnvironmentVariables(): void {
 /**
  * Validates that all required environment variables are present
  */
-export function validateRequiredEnvVars(): boolean {
   const required = [
     'VITE_SUPABASE_URL',
     'VITE_SUPABASE_ANON_KEY', 
@@ -70,7 +68,7 @@ export function validateRequiredEnvVars(): boolean {
 
   if (missing.length > 0) {
     console.error('❌ Missing required environment variables:');
-    missing.forEach(var_ => console.error(`   - ${var_}`));
+    missing.forEach(var_ => console.error(`   - ${var_}`););
     return false;
   }
 
@@ -80,7 +78,6 @@ export function validateRequiredEnvVars(): boolean {
 /**
  * Sets default values for optional environment variables
  */
-export function setDefaults(): void {
   const defaults = {
     'AWS_REGION': 'us-east-1',
     'NODE_ENV': 'development'

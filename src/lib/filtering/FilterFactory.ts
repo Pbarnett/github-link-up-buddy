@@ -23,7 +23,6 @@ import { RoundTripFilter } from './filters/RoundTripFilter';
 import { CarryOnFilter } from './filters/CarryOnFilter';
 import { NonstopFilter } from './filters/NonstopFilter';
 import { AirlineFilter } from './filters/AirlineFilter';
-
 /**
  * Pre-configured filter pipeline factory
  */

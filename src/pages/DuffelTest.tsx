@@ -3,12 +3,11 @@
  * Battle-tested approach: Build and test incrementally
  */
 
-import type { User } from '@supabase/supabase-js';
 import * as React from 'react';
+import { FC } from 'react';
 import { useState, useEffect } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { TestTube, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-
-type FC<T = {}> = React.FC<T>;
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +22,6 @@ import DuffelErrorHandler, {
 } from '@/components/trip/DuffelErrorHandler';
 import { DuffelTraveler } from '@/services/api/duffelBookingApi';
 import { supabase } from '@/integrations/supabase/client';
-
 const DuffelTest: FC = () => {
   // Authentication state
   const [, setUser] = useState<User | null>(null);

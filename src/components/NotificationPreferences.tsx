@@ -1,10 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
 import * as React from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import { PhoneNumberSetup } from './PhoneNumberSetup';
-import { useState } from 'react';
-import { useEffect } from 'react';
-import { useCallback } from 'react';
-
 interface NotificationPreferences {
   booking_confirmations: { email: boolean; sms: boolean };
   booking_failures: { email: boolean; sms: boolean };
@@ -80,9 +77,9 @@ export function NotificationPreferences() {
       } = await supabase.auth.getUser();
       if (user) {
         // Load preferences from user metadata
-        const userPrefs = user.user_metadata?.notification_preferences;
-        if (userPrefs) {
-          setPreferences({ ...DEFAULT_PREFERENCES, ...userPrefs });
+        const _userPrefs = user.user_metadata?.notification_preferences;
+        if (_userPrefs) {
+          setPreferences({ ...DEFAULT_PREFERENCES, ..._userPrefs });
         }
 
         // Check phone number status

@@ -425,7 +425,7 @@ serve(async (req: Request) => {
           // Call fetchToken function that's now properly imported
           token = await fetchToken();
           console.log(`[flight-search] Fetched OAuth token: ${token?.substring(0, 10)}...`);
-        } catch (tokenError) {
+        } catch (_tokenError) {
           console.error(`[flight-search] Token fetch error for ${request.id}: ${tokenError.message}`);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `Token error: ${tokenError.message}` });
           continue;
@@ -436,7 +436,7 @@ serve(async (req: Request) => {
           // Use the enhanced API to get flight offers with multiple search strategies
           offers = await searchOffers(searchParams, request.id);
           console.log(`[flight-search] Request ${request.id}: Found ${offers.length} transformed offers from API (exact destination only)`);
-        } catch (apiError) {
+        } catch (_apiError) {
           console.error(`[flight-search] Amadeus error for ${request.id}: ${apiError.message}`);
           details.push({ tripRequestId: request.id, matchesFound: 0, error: `API error: ${apiError.message}` });
           continue;
@@ -594,7 +594,7 @@ serve(async (req: Request) => {
         });
         
         console.log(`[flight-search] Request ${request.id}: fetched ${offers.length} offers → ${exactDestinationOffers.length} exact destination → ${priceFilteredOffers.length} price filtered → ${finalFilteredOffers.length} after all filters → ${newInserts} new matches`);
-      } catch (requestError) {
+      } catch (_requestError) {
         // Catch any errors in processing this specific trip request
         console.error(`[flight-search] Failed to process request ${request.id}: ${requestError.message}`);
         details.push({ 

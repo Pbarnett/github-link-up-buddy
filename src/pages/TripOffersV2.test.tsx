@@ -20,7 +20,6 @@ import { MemoryRouter } from 'react-router-dom';
 import * as useFlightOffersHook from '@/flightSearchV2/useFlightOffers';
 import { FlightOfferV2 } from '@/flightSearchV2/types';
 import TripOffersV2 from './TripOffersV2';
-
 // Mock the useFlightOffers hook
 vi.mock('@/flightSearchV2/useFlightOffers');
 

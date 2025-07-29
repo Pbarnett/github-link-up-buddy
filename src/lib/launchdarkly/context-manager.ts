@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { LDContext } from 'launchdarkly-js-client-sdk';
-
 export interface UserAttributes {
   userId?: string;
   email?: string;

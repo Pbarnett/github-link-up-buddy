@@ -1,11 +1,9 @@
 import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getFlightOffers } from '@/serverActions/getFlightOffers';
 import { mapFlightOfferDbRowToV2 } from './utils/mapFlightOfferDbRowToV2';
 import type { FlightOfferV2, FlightOfferV2DbRow } from './types';
-import { useState } from 'react';
-import { useEffect } from 'react';
-
 export interface UseFlightOffersOptions {
   // If false, the hook will not run the fetch operation.
   enabled?: boolean;
@@ -86,13 +84,13 @@ export function useFlightOffers(
 
         const mappedOffers = dbRows.map(mapFlightOfferDbRowToV2);
         setOffers(mappedOffers);
-      } catch (e) {
+      } catch (error) {
         if (abortController.signal.aborted) {
           return;
         }
-        console.error('Error fetching or processing flight offers v2:', e);
+        console.error('Error fetching or processing flight offers v2:', error);
         setError(
-          e instanceof Error ? e : new Error('An unknown error occurred')
+          error instanceof Error ? error : new Error('An unknown error occurred')
         );
         setOffers([]);
       } finally {

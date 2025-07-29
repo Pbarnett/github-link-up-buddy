@@ -7,12 +7,11 @@
  * It shows the structure needed for external services integration tests.
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const fs = require('fs');
+const path = require('path');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Utility functions
+// Removed unused log function
 
 const ENV_TEST_FILE = path.join(__dirname, '..', '.env.test');
 

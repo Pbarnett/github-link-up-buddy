@@ -1,7 +1,17 @@
 #!/usr/bin/env node
 
-import fs from 'fs';
 import { execSync } from 'child_process';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+const fs = require('fs');
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 // Get all TypeScript and JavaScript files that need fixing
 function getFilesWithImportIssues() {
@@ -21,7 +31,7 @@ function getFilesWithImportIssues() {
     });
     
     return Array.from(filesWithEmptyLineIssues);
-  } catch {
+  } catch (error) {
     // If JSON parsing fails, fall back to a list of known problematic files
     return [
       'app/trip/confirm/page.tsx',
@@ -112,7 +122,7 @@ function main() {
   try {
     execSync('npm run lint -- --max-warnings 0', { stdio: 'pipe' });
     console.log('All import issues resolved!');
-  } catch {
+  } catch (error) {
     console.log('Some issues remain, but progress made');
   }
 }

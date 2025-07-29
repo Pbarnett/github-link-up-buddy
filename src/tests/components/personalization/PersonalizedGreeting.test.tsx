@@ -3,7 +3,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import * as React from 'react';
 import PersonalizedGreeting from '@/components/personalization/PersonalizedGreeting';
-
 // Mock the analytics tracking
 vi.mock('@/scripts/analytics/personalization-tracking', () => ({
   trackGreetingDisplay: vi.fn(),

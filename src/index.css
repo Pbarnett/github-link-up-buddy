@@ -763,7 +763,7 @@
   }
 
   /* Comprehensive text contrast improvements */
-  
+
   /* Target all possible light text variations */
   .text-neutral-400,
   .text-neutral-500,
@@ -802,10 +802,10 @@
   }
 
   /* Override any remaining faint text */
-  [class*="text-gray-"],
-  [class*="text-slate-"],
-  [class*="text-zinc-"],
-  [class*="text-neutral-"] {
+  [class*='text-gray-'],
+  [class*='text-slate-'],
+  [class*='text-zinc-'],
+  [class*='text-neutral-'] {
     color: #374151 !important;
   }
 
@@ -841,7 +841,7 @@
   }
 
   /* Ultra-aggressive text contrast fixes for maximum readability */
-  
+
   /* Target any remaining light text with broad selectors */
   p,
   span,
@@ -874,7 +874,7 @@
 
   /* Force readability on common UI patterns */
   [data-state],
-  [data-disabled="false"],
+  [data-disabled='false'],
   .disabled\:text-muted-foreground:not(:disabled) {
     color: #374151 !important;
   }
@@ -887,9 +887,9 @@
   }
 
   /* React components with faint text */
-  [class*="text-"][class*="muted"],
-  [class*="text-"][class*="subtle"],
-  [class*="color-"][class*="muted"] {
+  [class*='text-'][class*='muted'],
+  [class*='text-'][class*='subtle'],
+  [class*='color-'][class*='muted'] {
     color: #374151 !important;
   }
 
@@ -899,12 +899,12 @@
   }
 
   /* Catch-all for any remaining faint text */
-  *[style*="color: rgb(156"],
-  *[style*="color: rgb(148"],
-  *[style*="color: rgb(100"],
-  *[style*="color: #9"],
-  *[style*="color: #a"],
-  *[style*="color: #b"] {
+  *[style*='color: rgb(156'],
+  *[style*='color: rgb(148'],
+  *[style*='color: rgb(100'],
+  *[style*='color: #9'],
+  *[style*='color: #a'],
+  *[style*='color: #b'] {
     color: #374151 !important;
   }
 
@@ -928,15 +928,15 @@
   }
 
   /* Specific fixes for form elements */
-  input[type="text"],
-  input[type="email"],
-  input[type="tel"],
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
   textarea {
     color: #374151 !important;
   }
 
   /* Button text fixes */
-  button:not(.btn-primary):not([class*="bg-blue"]):not([class*="bg-green"]) {
+  button:not(.btn-primary):not([class*='bg-blue']):not([class*='bg-green']) {
     color: #374151 !important;
   }
 }

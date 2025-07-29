@@ -4,7 +4,6 @@ import * as React from 'react';
  */
 
 import { User } from '@supabase/supabase-js';
-
 // Mock implementation for testing purposes
 export class FeatureFlagManager {
   private static instance: FeatureFlagManager;

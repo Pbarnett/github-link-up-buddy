@@ -16,11 +16,6 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // Color codes for console output
 const colors = {
@@ -32,18 +27,15 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m'
-};
 
+};
 // Utility functions
-const log = (message, color = 'reset') => {
-  console.log(`${colors[color]}${message}${colors.reset}`);
-};
+// Removed unused log function
 
-const success = (message) => log(`✅ ${message}`, 'green');
-const warning = (message) => log(`⚠️  ${message}`, 'yellow');
-const error = (message) => log(`❌ ${message}`, 'red');
-const info = (message) => log(`ℹ️  ${message}`, 'blue');
-const step = (message) => log(`🔍 ${message}`, 'cyan');
+// Removed unused error function
+// Removed unused success function
+
+const step = (message) => console.log(`🔍 ${message}`, 'cyan');
 
 // Quality gate thresholds
 const QUALITY_THRESHOLDS = {
@@ -65,7 +57,6 @@ const QUALITY_THRESHOLDS = {
     MAX_MEDIUM_VULNERABILITIES: 5,
     MAX_OUTDATED_DEPENDENCIES: 10
   }
-};
 
 class QualityGates {
   constructor() {
@@ -82,8 +73,8 @@ class QualityGates {
 
   async runAll() {
     try {
-      log('🏗️  Professional Quality Gates - Starting Comprehensive Checks', 'bright');
-      log('='.repeat(70), 'blue');
+      console.log('🏗️  Professional Quality Gates - Starting Comprehensive Checks', 'bright');
+      console.log('='.repeat(70), 'blue');
       
       // Core quality checks
       await this.checkCodeQuality();
@@ -99,26 +90,26 @@ class QualityGates {
       
       const hasFailures = this.results.failed.length > 0;
       if (hasFailures) {
-        error(`❌ Quality Gates Failed: ${this.results.failed.length} issues found`);
+        console.error(`❌ Quality Gates Failed: ${this.results.failed.length} issues found`);
         process.exit(1);
       } else {
-        success(`🎉 All Quality Gates Passed! (${this.results.passed.length} checks)`);
+        console.log(`✅ 🎉 All Quality Gates Passed! (${this.results.passed.length} checks)`);
       }
       
     } catch (err) {
-      error(`Quality gates execution failed: ${err.message}`);
+      console.error(`Quality gates execution failed: ${err.message}`);
       process.exit(1);
     }
   }
 
   async checkCodeQuality() {
-    step('Checking code quality and formatting...');
+    console.log('Checking code quality and formatting...');
     
     try {
       // TypeScript compilation check
       execSync('npx tsc --noEmit --skipLibCheck', { stdio: 'pipe' });
       this.results.passed.push('TypeScript compilation');
-    } catch (err) {
+    } catch (error) {
       this.results.failed.push('TypeScript compilation errors found');
     }
 
@@ -134,7 +125,7 @@ class QualityGates {
       } else {
         this.results.failed.push(`ESLint found ${totalErrors} errors`);
       }
-    } catch (err) {
+    } catch (error) {
       this.results.failed.push('ESLint check failed');
     }
 
@@ -142,12 +133,12 @@ class QualityGates {
       // Prettier check
       execSync('npx prettier --check "src/**/*.{js,jsx,ts,tsx,json,css,md}"', { stdio: 'pipe' });
       this.results.passed.push('Code formatting (Prettier)');
-    } catch (err) {
+    } catch (error) {
       if (!this.skipFix) {
         try {
           execSync('npx prettier --write "src/**/*.{js,jsx,ts,tsx,json,css,md}"', { stdio: 'pipe' });
           this.results.passed.push('Code formatting (auto-fixed)');
-        } catch (fixErr) {
+        } catch (error) {
           this.results.failed.push('Code formatting issues could not be auto-fixed');
         }
       } else {
@@ -163,13 +154,13 @@ class QualityGates {
       } else {
         this.results.passed.push('No console statements in production code');
       }
-    } catch (err) {
+    } catch (error) {
       // Ignore grep errors
     }
   }
 
   async checkSecurity() {
-    step('Running security vulnerability scans...');
+    console.log('Running security vulnerability scans...');
     
     try {
       // npm audit
@@ -191,7 +182,7 @@ class QualityGates {
       } else {
         this.results.failed.push(`Security vulnerabilities exceed threshold (${highVulns} high, ${mediumVulns} medium)`);
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Security audit could not be completed');
     }
 
@@ -213,7 +204,7 @@ class QualityGates {
             secretsFound = true;
             break;
           }
-        } catch (err) {
+        } catch (error) {
           // Continue checking other patterns
         }
       }
@@ -223,13 +214,13 @@ class QualityGates {
       } else {
         this.results.failed.push('Potential hardcoded secrets found');
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Secret detection scan failed');
     }
   }
 
   async checkTestCoverage() {
-    step('Analyzing test coverage...');
+    console.log('Analyzing test coverage...');
     
     try {
       // Run tests with coverage
@@ -259,7 +250,7 @@ class QualityGates {
       } else {
         this.results.warnings.push('Coverage report not generated');
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Test coverage analysis failed');
     }
 
@@ -273,13 +264,13 @@ class QualityGates {
       } else {
         this.results.failed.push('No test files found');
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Could not count test files');
     }
   }
 
   async checkPerformance() {
-    step('Checking performance budgets...');
+    console.log('Checking performance budgets...');
     
     try {
       // Build and analyze bundle size
@@ -299,7 +290,7 @@ class QualityGates {
           this.results.failed.push(`Bundle size exceeds budget (JS: ${Math.round(jsSize)}KB, CSS: ${Math.round(cssSize)}KB)`);
         }
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Performance budget check failed');
     }
 
@@ -324,7 +315,7 @@ class QualityGates {
           walkDir(filePath);
         } else {
           const ext = path.extname(file).toLowerCase();
-          const size = stat.size;
+          const size = stat.size
           
           switch (ext) {
             case '.js':
@@ -349,13 +340,13 @@ class QualityGates {
   }
 
   async checkDependencies() {
-    step('Analyzing dependencies...');
+    console.log('Analyzing dependencies...');
     
     try {
       // Check for outdated dependencies
       const outdatedResult = execSync('npm outdated --json || true', { encoding: 'utf-8' });
       const outdatedData = outdatedResult ? JSON.parse(outdatedResult) : {};
-      const outdatedCount = Object.keys(outdatedData).length;
+      const outdatedCount = Object.keys(outdatedData).length
       
       this.results.metrics.outdatedDependencies = outdatedCount;
       
@@ -364,7 +355,7 @@ class QualityGates {
       } else {
         this.results.warnings.push(`${outdatedCount} dependencies are outdated`);
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Dependency analysis failed');
     }
 
@@ -388,13 +379,13 @@ class QualityGates {
         }
       });
       
-    } catch (err) {
+    } catch (error) {
       this.results.failed.push('package.json validation failed');
     }
   }
 
   async checkDocumentation() {
-    step('Validating documentation completeness...');
+    console.log('Validating documentation completeness...');
     
     const requiredDocs = [
       'README.md',
@@ -429,19 +420,19 @@ class QualityGates {
         }
       });
       
-      const commentRatio = commentedFiles / tsFiles.length;
+      const commentRatio = commentedFiles / tsFiles.length
       if (commentRatio >= 0.5) {
         this.results.passed.push(`Code documentation (${Math.round(commentRatio * 100)}% of sampled files)`);
       } else {
         this.results.warnings.push('Low code documentation coverage');
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Code documentation analysis failed');
     }
   }
 
   async checkConfiguration() {
-    step('Validating configuration files...');
+    console.log('Validating configuration files...');
     
     const configFiles = [
       { file: 'tsconfig.json', name: 'TypeScript configuration' },
@@ -468,7 +459,7 @@ class QualityGates {
   }
 
   async checkAccessibility() {
-    step('Checking accessibility configuration...');
+    console.log('Checking accessibility configuration...');
     
     // Check for axe integration in tests
     try {
@@ -478,13 +469,13 @@ class QualityGates {
       } else {
         this.results.warnings.push('No accessibility testing found');
       }
-    } catch (err) {
+    } catch (error) {
       this.results.warnings.push('Could not check accessibility configuration');
     }
   }
 
   async generateReport() {
-    step('Generating quality gates report...');
+    console.log('Generating quality gates report...');
     
     const report = {
       timestamp: new Date().toISOString(),
@@ -502,32 +493,32 @@ class QualityGates {
     fs.writeFileSync('quality-gates-report.json', JSON.stringify(report, null, 2));
     
     // Console output
-    log('\n📊 Quality Gates Summary:', 'blue');
-    log('='.repeat(50), 'blue');
+    console.log('\n📊 Quality Gates Summary:', 'blue');
+    console.log('='.repeat(50), 'blue');
     
     if (this.results.passed.length > 0) {
-      log(`\n✅ Passed (${this.results.passed.length}):`, 'green');
-      this.results.passed.forEach(item => log(`   • ${item}`, 'green'));
+      console.log(`\n✅ Passed (${this.results.passed.length}):`, 'green');
+      this.results.passed.forEach(item => console.log(`   • ${item}`, 'green'));
     }
     
     if (this.results.warnings.length > 0) {
-      log(`\n⚠️  Warnings (${this.results.warnings.length}):`, 'yellow');
-      this.results.warnings.forEach(item => log(`   • ${item}`, 'yellow'));
+      console.log(`\n⚠️  Warnings (${this.results.warnings.length}):`, 'yellow');
+      this.results.warnings.forEach(item => console.log(`   • ${item}`, 'yellow'));
     }
     
     if (this.results.failed.length > 0) {
-      log(`\n❌ Failed (${this.results.failed.length}):`, 'red');
-      this.results.failed.forEach(item => log(`   • ${item}`, 'red'));
+      console.log(`\n❌ Failed (${this.results.failed.length}):`, 'red');
+      this.results.failed.forEach(item => console.log(`   • ${item}`, 'red'));
     }
     
     if (Object.keys(this.results.metrics).length > 0) {
-      log('\n📈 Metrics:', 'cyan');
+      console.log('\n📈 Metrics:', 'cyan');
       Object.entries(this.results.metrics).forEach(([key, value]) => {
-        log(`   • ${key}: ${JSON.stringify(value)}`, 'cyan');
+        console.log(`   • ${key}: ${JSON.stringify(value)}`, 'cyan');
       });
     }
     
-    log(`\nReport saved to: quality-gates-report.json`, 'blue');
+    console.log(`\nReport saved to: quality-gates-report.json`, 'blue');
   }
 }
 
@@ -535,9 +526,9 @@ class QualityGates {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const gates = new QualityGates();
   gates.runAll().catch(err => {
-    console.error(`❌ Quality gates failed: ${err.message}`);
+    console.error(`❌ Quality gates failed: ${error.message}`);
     process.exit(1);
   });
 }
 
-export default QualityGates;
+module.exports = QualityGates;

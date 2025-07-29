@@ -2,7 +2,6 @@ import * as React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ConstraintChips from '@/components/trip/ConstraintChips';
-
 describe('ConstraintChips', () => {
   const mockProps = {
     dateRange: { from: '2024-06-15', to: '2024-06-22' },

@@ -6,7 +6,6 @@ import * as React from 'react';
 
 import { LDContext } from '@launchdarkly/node-server-sdk';
 import { UAParser } from 'ua-parser-js';
-
 export interface UserContext {
   key: string;
   email?: string;
@@ -135,15 +134,31 @@ export class ContextBuilder {
       browser: result.browser.name,
       browserVersion: result.browser.version,
       screenResolution:
-        typeof window !== 'undefined'
-          ? `${window.screen.width}x${window.screen.height}`
+        typeof (
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        ) !== 'undefined'
+          ? `${/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.screen.width}x${/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.screen.height}`
           : undefined,
       colorDepth:
-        typeof window !== 'undefined' ? window.screen.colorDepth : undefined,
+        typeof (
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        ) !== 'undefined'
+          ? /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+              .screen.colorDepth
+          : undefined,
       pixelRatio:
-        typeof window !== 'undefined' ? window.devicePixelRatio : undefined,
+        typeof (
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        ) !== 'undefined'
+          ? /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.devicePixelRatio
+          : undefined,
       touchSupported:
-        typeof window !== 'undefined' ? 'ontouchstart' in window : undefined,
+        typeof (
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        ) !== 'undefined'
+          ? 'ontouchstart' in
+            /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+          : undefined,
       language:
         typeof navigator !== 'undefined' ? navigator.language : undefined,
       userAgent: userAgent,
@@ -364,9 +379,16 @@ export class ContextBuilder {
   }
 
   private static extractUTMParams(): SessionContext['utm'] {
-    if (typeof window === 'undefined') return {};
+    if (
+      typeof (
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+      ) === 'undefined'
+    )
+      return {};
 
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.search
+    );
     return {
       source: params.get('utm_source') || undefined,
       medium: params.get('utm_medium') || undefined,

@@ -1,13 +1,23 @@
 #!/usr/bin/env node
 
+const path = require('path');
+
 /**
  * Fix React 19 imports - use default import + named imports pattern
+const fs = require('fs');
  * For React 19, we need: import React, { useState, useEffect } from 'react'
  */
 
-import fs from 'fs/promises';
-import path from 'path';
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
+
 import { glob } from 'glob';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
 const PROJECT_ROOT = process.cwd();
 

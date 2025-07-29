@@ -12,15 +12,14 @@
  */
 
 import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
+const fs = require('fs');
 // Color codes for console output
 const colors = {
   reset: '\x1b[0m',
@@ -31,18 +30,12 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m'
-};
 
+};
 // Utility functions
-const log = (message, color = 'reset') => {
-  console.log(`${colors[color]}${message}${colors.reset}`);
-};
+// Removed unused log function
 
-const success = (message) => log(`✅ ${message}`, 'green');
-const warning = (message) => log(`⚠️  ${message}`, 'yellow');
-const error = (message) => log(`❌ ${message}`, 'red');
-const info = (message) => log(`ℹ️  ${message}`, 'blue');
-const step = (message) => log(`🚀 ${message}`, 'cyan');
+const step = (message) => console.log(`🚀 ${message}`, 'cyan');
 
 // Configuration
 const PRODUCTION_ENV_FILE = '.env.production';
@@ -74,8 +67,8 @@ class ProductionDeployer {
 
   async deploy() {
     try {
-      log('🌟 Parker Flight - Production Deployment Starting', 'bright');
-      log('=' .repeat(60), 'blue');
+      console.log('🌟 Parker Flight - Production Deployment Starting', 'bright');
+      console.log("=".repeat(60));
       
       await this.validateEnvironment();
       await this.setupAWS();
@@ -87,21 +80,21 @@ class ProductionDeployer {
       await this.generateDeploymentReport();
       
       const duration = ((Date.now() - this.startTime) / 1000).toFixed(2);
-      success(`🎉 Production deployment completed successfully in ${duration}s`);
+      console.log(`✅ 🎉 Production deployment completed successfully in ${duration}s`);
       
     } catch (err) {
-      error(`Deployment failed: ${err.message}`);
+      console.error(`Deployment failed: ${err.message}`);
       process.exit(1);
     }
   }
 
   async validateEnvironment() {
-    step('Validating production environment configuration...');
+    console.log('Validating production environment configuration...');
     
     // Check if production environment file exists
     if (!fs.existsSync(PRODUCTION_ENV_FILE)) {
-      error(`Production environment file ${PRODUCTION_ENV_FILE} not found`);
-      info('Please copy .env.production.template to .env.production and configure it');
+      console.error(`Production environment file ${PRODUCTION_ENV_FILE} not found`);
+      console.info('Please copy .env.production.template to .env.production and configure it');
       throw new Error('Production environment not configured');
     }
     
@@ -111,34 +104,34 @@ class ProductionDeployer {
     
     // Validate NODE_ENV
     if (process.env.NODE_ENV !== 'production') {
-      error('NODE_ENV must be set to "production"');
+      console.error('NODE_ENV must be set to "production"');
       throw new Error('Invalid environment configuration');
     }
     
     // Check required environment variables
     const missing = REQUIRED_ENV_VARS.filter(varName => !process.env[varName]);
     if (missing.length > 0) {
-      error(`Missing required environment variables: ${missing.join(', ')}`);
+      console.error(`Missing required environment variables: ${missing.join(', ')}`);
       throw new Error('Incomplete environment configuration');
     }
     
     // Validate Stripe is in live mode
     if (!process.env.STRIPE_SECRET_KEY.startsWith('sk_live_')) {
-      error('STRIPE_SECRET_KEY must be a live key (sk_live_...) for production');
+      console.error('STRIPE_SECRET_KEY must be a live key (sk_live_...); for production');
       throw new Error('Invalid Stripe configuration');
     }
     
     // Validate LaunchDarkly is production SDK
     if (!process.env.LAUNCHDARKLY_SDK_KEY.includes('prod')) {
-      warning('LaunchDarkly SDK key does not appear to be for production environment');
+      console.warn('LaunchDarkly SDK key does not appear to be for production environment');
     }
     
     this.checks.environment = true;
-    success('Environment validation completed');
+    console.log('Environment validation completed');
   }
 
   async setupAWS() {
-    step('Setting up AWS configuration...');
+    console.log('Setting up AWS configuration...');
     
     try {
       // Check AWS CLI is available
@@ -148,25 +141,25 @@ class ProductionDeployer {
       const identity = execSync('aws sts get-caller-identity', { encoding: 'utf-8' });
       const accountInfo = JSON.parse(identity);
       
-      info(`AWS Account: ${accountInfo.Account}`);
-      info(`AWS User/Role: ${accountInfo.Arn}`);
+      console.info(`AWS Account: ${accountInfo.Account}`);
+      console.info(`AWS User/Role: ${accountInfo.Arn}`);
       
       // Verify region configuration
-      const region = process.env.AWS_REGION;
+      const region = process.env.AWS_REGION
       execSync(`aws configure set region ${region}`, { stdio: 'pipe' });
       
       this.checks.aws = true;
-      success('AWS configuration validated');
+      console.log('AWS configuration validated');
       
     } catch (err) {
-      error('AWS CLI not available or not configured');
-      info('Please install AWS CLI and configure credentials');
+      console.error('AWS CLI not available or not configured');
+      console.info('Please install AWS CLI and configure credentials');
       throw err;
     }
   }
 
   async setupKMS() {
-    step('Setting up AWS KMS keys...');
+    console.log('Setting up AWS KMS keys...');
     
     const keyAliases = [
       process.env.KMS_GENERAL_ALIAS,
@@ -184,15 +177,15 @@ class ProductionDeployer {
         
         const key = JSON.parse(keyInfo);
         if (key.KeyMetadata.KeyState !== 'Enabled') {
-          error(`KMS key ${alias} is not enabled`);
+          console.error(`KMS key ${alias} is not enabled`);
           throw new Error(`KMS key not available: ${alias}`);
         }
         
-        info(`✓ KMS key validated: ${alias}`);
+        console.info(`✓ KMS key validated: ${alias}`);
         
       } catch (err) {
         if (err.message.includes('NotFoundException')) {
-          warning(`KMS key ${alias} not found, creating...`);
+          console.warn(`KMS key ${alias} not found, creating...`);
           await this.createKMSKey(alias);
         } else {
           throw err;
@@ -220,19 +213,19 @@ class ProductionDeployer {
         throw new Error('KMS encryption/decryption test failed');
       }
       
-      success('KMS encryption test passed');
+      console.log('KMS encryption test passed');
       
     } catch (err) {
-      error('KMS functionality test failed');
+      console.error('KMS functionality test failed');
       throw err;
     }
     
     this.checks.kms = true;
-    success('KMS setup completed');
+    console.log('KMS setup completed');
   }
 
   async createKMSKey(alias) {
-    step(`Creating KMS key: ${alias}`);
+    console.log(`Creating KMS key: ${alias}`);
     
     // Determine key policy based on alias
     const keyType = alias.includes('pii') ? 'PII' : 
@@ -280,80 +273,83 @@ class ProductionDeployer {
     });
     
     const keyInfo = JSON.parse(createKeyResult);
-    const keyId = keyInfo.KeyMetadata.KeyId;
+    const keyId = keyInfo.KeyMetadata.KeyId
     
     // Create the alias
     execSync(`aws kms create-alias --alias-name "${alias}" --target-key-id "${keyId}"`);
     
-    success(`Created KMS key: ${alias} (${keyId})`);
+    console.log(`✅ Created KMS key: ${alias} (${keyId})`);
   }
 
   async deploySupabase() {
-    step('Deploying Supabase configuration...');
+    console.log('Deploying Supabase configuration...');
     
     try {
       // Check Supabase CLI
       execSync('npx supabase --version', { stdio: 'pipe' });
       
       // Link to production project
-      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseUrl = process.env.SUPABASE_URL
       const projectId = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)[1];
       
-      info(`Linking to Supabase project: ${projectId}`);
+      console.info(`Linking to Supabase project: ${projectId}`);
       
       // First try to pull remote migrations to sync local state
       try {
-        info('Syncing local migrations with remote database...');
+        console.info('Syncing local migrations with remote database...');
         execSync('npx supabase db pull', { stdio: 'pipe' });
-        success('✓ Local migrations synced with remote');
+        console.log('✓ Local migrations synced with remote');
       } catch (pullErr) {
-        warning('Failed to sync migrations, attempting to repair...');
+        console.warn('Failed to sync migrations, attempting to repair...');
+        console.debug('Pull error:', pullErr.message);
         
         try {
           // Attempt to repair migration history
           execSync('npx supabase migration repair --status reverted 20250524 20250610 20250622 20250704 20250709235000 20250710 20250711', { stdio: 'pipe' });
-          success('✓ Migration history repaired');
+          console.log('✓ Migration history repaired');
           
           // Try pulling again after repair
           execSync('npx supabase db pull', { stdio: 'pipe' });
-          success('✓ Local migrations synced after repair');
+          console.log('✓ Local migrations synced after repair');
         } catch (repairErr) {
-          warning('Migration repair failed, skipping database migration step');
-          info('Database may already be up to date or requires manual intervention');
+          console.warn('Migration repair failed, skipping database migration step');
+          console.info('Database may already be up to date or requires manual intervention');
+          console.debug('Repair error:', repairErr.message);
         }
       }
       
       // Attempt to deploy migrations if sync was successful
       try {
-        info('Deploying database migrations...');
+        console.info('Deploying database migrations...');
         execSync('npx supabase db push --linked', { stdio: 'inherit' });
-        success('✓ Database migrations deployed');
+        console.log('✓ Database migrations deployed');
       } catch (pushErr) {
-        warning('Migration deployment failed, continuing with other checks');
-        info('Database schema may already be current');
+        console.warn('Migration deployment failed, continuing with other checks');
+        console.info('Database schema may already be current');
+        console.debug('Push error:', pushErr.message);
       }
       
       this.checks.supabase = true;
-      success('Supabase configuration completed');
+      console.log('Supabase configuration completed');
       
     } catch (err) {
-      error('Supabase deployment failed');
+      console.error('Supabase deployment failed');
       throw err;
     }
   }
 
   async deployEdgeFunctions() {
-    step('Deploying Edge Functions...');
+    console.log('Deploying Edge Functions...');
     
     const functions = ['encrypt-data', 'create-payment-method'];
     
     for (const functionName of functions) {
       try {
-        info(`Deploying function: ${functionName}`);
+        console.info(`Deploying function: ${functionName}`);
         execSync(`npx supabase functions deploy ${functionName}`, { stdio: 'inherit' });
-        success(`✓ Deployed: ${functionName}`);
+        console.log(`✅ ✓ Deployed: ${functionName}`);
       } catch (err) {
-        error(`Failed to deploy function: ${functionName}`);
+        console.error(`Failed to deploy function: ${functionName}`);
         throw err;
       }
     }
@@ -362,16 +358,16 @@ class ProductionDeployer {
     await this.testEdgeFunctions();
     
     this.checks.edgeFunctions = true;
-    success('Edge Functions deployment completed');
+    console.log('Edge Functions deployment completed');
   }
 
   async testEdgeFunctions() {
-    step('Testing Edge Functions...');
+    console.log('Testing Edge Functions...');
     
     // Check if service role key is properly configured
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY.includes('placeholder')) {
-      warning('Service role key not configured, skipping Edge Function tests');
-      info('Edge Functions have been deployed but cannot be tested without proper service role key');
+      console.warn('Service role key not configured, skipping Edge Function tests');
+      console.info('Edge Functions have been deployed but cannot be tested without proper service role key');
       return;
     }
     
@@ -393,28 +389,28 @@ class ProductionDeployer {
       
       if (!response.ok) {
         const errorText = await response.text();
-        warning(`Edge Function test failed: HTTP ${response.status} - ${errorText}`);
-        info('Edge Functions are deployed but may need proper authentication configuration');
+        console.warn(`Edge Function test failed: HTTP ${response.status} - ${errorText}`);
+        console.info('Edge Functions are deployed but may need proper authentication configuration');
         return;
       }
       
       const result = await response.json();
       if (!result.success) {
-        warning('Edge Function test returned unsuccessful result');
-        info('Function is deployed but may need configuration or debugging');
+        console.warn('Edge Function test returned unsuccessful result');
+        console.info('Function is deployed but may need configuration or debugging');
         return;
       }
       
-      success('✓ encrypt-data function test passed');
+      console.log('✓ encrypt-data function test passed');
       
     } catch (err) {
-      warning(`Edge Function test failed: ${err.message}`);
-      info('Edge Functions are deployed but testing failed - this may be due to configuration issues');
+      console.warn(`Edge Function test failed: ${err.message}`);
+      console.info('Edge Functions are deployed but testing failed - this may be due to configuration issues');
     }
   }
 
   async setupMonitoring() {
-    step('Setting up production monitoring...');
+    console.log('Setting up production monitoring...');
     
     try {
       // Deploy monitoring configuration
@@ -429,16 +425,16 @@ class ProductionDeployer {
       await this.setupAlerts();
       
       this.checks.monitoring = true;
-      success('Monitoring setup completed');
+      console.log('Monitoring setup completed');
       
-    } catch (err) {
-      warning('Monitoring setup failed - continuing deployment');
-      info('Please set up monitoring manually after deployment');
+    } catch (error) {
+      console.warn('Monitoring setup failed - continuing deployment');
+      console.info('Please set up monitoring manually after deployment');
     }
   }
 
   async setupCloudWatch() {
-    step('Configuring CloudWatch dashboards...');
+    console.log('Configuring CloudWatch dashboards...');
     
     const dashboardConfig = {
       widgets: [
@@ -461,14 +457,14 @@ class ProductionDeployer {
     
     try {
       execSync(`aws cloudwatch put-dashboard --dashboard-name "ParkerFlight-Production" --dashboard-body '${JSON.stringify(dashboardConfig)}'`);
-      success('CloudWatch dashboard created');
-    } catch (err) {
-      warning('CloudWatch dashboard creation failed');
+      console.log('CloudWatch dashboard created');
+    } catch (error) {
+      console.warn('CloudWatch dashboard creation failed');
     }
   }
 
   async setupAlerts() {
-    step('Configuring production alerts...');
+    console.log('Configuring production alerts...');
     
     const alertConfigs = [
       {
@@ -493,15 +489,15 @@ class ProductionDeployer {
       try {
         const command = `aws cloudwatch put-metric-alarm --alarm-name "${alert.name}" --alarm-description "${alert.description}" --metric-name Duration --namespace "${alert.metric}" --statistic "${alert.statistic}" --threshold ${alert.threshold} --comparison-operator "${alert.comparison}" --evaluation-periods 2`;
         execSync(command);
-        success(`✓ Alert configured: ${alert.name}`);
-      } catch (err) {
-        warning(`Failed to create alert: ${alert.name}`);
+        console.log(`✅ ✓ Alert configured: ${alert.name}`);
+      } catch (error) {
+        console.warn(`Failed to create alert: ${alert.name}`);
       }
     }
   }
 
   async runHealthChecks() {
-    step('Running production health checks...');
+    console.log('Running production health checks...');
     
     const healthChecks = [
       { name: 'Supabase Connection', check: this.checkSupabase },
@@ -514,15 +510,15 @@ class ProductionDeployer {
     for (const { name, check } of healthChecks) {
       try {
         await check.call(this);
-        success(`✓ Health check passed: ${name}`);
-      } catch (err) {
-        error(`✗ Health check failed: ${name} - ${err.message}`);
+        console.log(`✅ ✓ Health check passed: ${name}`);
+      } catch (error) {
+        console.error(`✗ Health check failed: ${name} - ${error.message}`);
         throw new Error(`Critical health check failed: ${name}`);
       }
     }
     
     this.checks.healthCheck = true;
-    success('All health checks passed');
+    console.log('All health checks passed');
   }
 
   async checkSupabase() {
@@ -559,7 +555,7 @@ class ProductionDeployer {
   }
 
   async generateDeploymentReport() {
-    step('Generating deployment report...');
+    console.log('Generating deployment report...');
     
     const report = {
       timestamp: new Date().toISOString(),
@@ -583,21 +579,21 @@ class ProductionDeployer {
     const reportPath = `deployment-report-${Date.now()}.json`;
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
     
-    success(`Deployment report saved: ${reportPath}`);
+    console.log(`✅ Deployment report saved: ${reportPath}`);
     
     // Display summary
-    log('\n' + '='.repeat(60), 'blue');
-    log('🎉 PRODUCTION DEPLOYMENT SUMMARY', 'bright');
-    log('='.repeat(60), 'blue');
-    log(`Environment: ${report.environment}`);
-    log(`Duration: ${report.duration}`);
-    log(`Version: ${report.version}`);
-    log(`Timestamp: ${report.timestamp}`);
-    log('\nChecks Status:');
+    console.log('\n' + '='.repeat(60), 'blue');
+    console.log('🎉 PRODUCTION DEPLOYMENT SUMMARY', 'bright');
+    console.log('='.repeat(60), 'blue');
+    console.log(`Environment: ${report.environment}`);
+    console.log(`Duration: ${report.duration}`);
+    console.log(`Version: ${report.version}`);
+    console.log(`Timestamp: ${report.timestamp}`);
+    console.log('\nChecks Status:');
     Object.entries(this.checks).forEach(([check, status]) => {
-      log(`  ${status ? '✅' : '❌'} ${check}`, status ? 'green' : 'red');
+      console.log(`  ${status ? '✅' : '❌'} ${check}`, status ? 'green' : 'red');
     });
-    log('='.repeat(60), 'blue');
+    console.log('='.repeat(60), 'blue');
   }
 }
 
@@ -605,9 +601,9 @@ class ProductionDeployer {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const deployer = new ProductionDeployer();
   deployer.deploy().catch(err => {
-    error(`Deployment failed: ${err.message}`);
+    console.error(`Deployment failed: ${error.message}`);
     process.exit(1);
   });
 }
 
-export default ProductionDeployer;
+module.exports = ProductionDeployer;

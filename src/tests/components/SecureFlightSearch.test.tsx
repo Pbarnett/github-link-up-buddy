@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { SecureFlightSearch } from '@/components/flights/SecureFlightSearch';
-
 // Mock the necessary APIs or components
 vi.mock('@/services/flightSearchSecure', () => ({
   flightSearchServiceSecure: {
@@ -35,8 +34,9 @@ it('renders flight search form correctly', () => {
   expect(screen.getByPlaceholderText(/lax, new york, etc./i)).toBeVisible();
   expect(screen.getByPlaceholderText(/jfk, london, etc./i)).toBeVisible();
 
-  // Check for departure date input by looking for the date input with min attribute
-  const departureInput = screen.getByDisplayValue('2025-07-24');
+  // Check for departure date input by looking for the date input with today's date
+  const today = new Date().toISOString().split('T')[0];
+  const departureInput = screen.getByDisplayValue(today);
   expect(departureInput).toBeVisible();
   expect(departureInput.getAttribute('type')).toBe('date');
 

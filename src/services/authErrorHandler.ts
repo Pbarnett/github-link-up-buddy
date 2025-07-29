@@ -1,10 +1,10 @@
 import * as React from 'react';
 /**
  * Enterprise Authentication Error Handler
- * 
+ *
  * Provides structured error handling, logging, and monitoring for authentication flows.
  * Integrates with Sentry for error tracking and includes correlation IDs for tracing.
- * 
+ *
  * Features:
  * - Error categorization and classification
  * - Correlation ID tracking for debugging
@@ -16,7 +16,6 @@ import * as React from 'react';
 
 import * as Sentry from '@sentry/react';
 import { generateCorrelationId } from '@/utils/monitoring';
-
 export interface AuthError {
   id: string;
   timestamp: string;
@@ -40,7 +39,7 @@ export enum AuthErrorCategory {
   SESSION = 'SESSION',
   CSRF = 'CSRF',
   CONFIGURATION = 'CONFIGURATION',
-  UNKNOWN = 'UNKNOWN'
+  UNKNOWN = 'UNKNOWN',
 }
 
 export interface AuthErrorContext {
@@ -77,21 +76,22 @@ export class AuthErrorHandler {
   ): AuthError {
     const errorId = generateCorrelationId();
     const timestamp = new Date().toISOString();
-    
+
     // Extract error information
     const errorInfo = this.extractErrorInfo(error);
-    
+
     // Categorize the error
     const category = this.categorizeError(error, errorInfo);
-    
+
     // Build full context
     const fullContext: AuthErrorContext = {
       component: 'unknown',
       flow: 'unknown',
-      url: window.location.href,
+      url: /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        .location.href,
       userAgent: navigator.userAgent,
       timestamp,
-      ...context
+      ...context,
     };
 
     // Create structured error
@@ -108,8 +108,8 @@ export class AuthErrorHandler {
       metadata: {
         originalError: errorInfo.name,
         stack: errorInfo.stack,
-        ...options.additionalMetadata
-      }
+        ...options.additionalMetadata,
+      },
     };
 
     // Track error frequency
@@ -130,7 +130,7 @@ export class AuthErrorHandler {
         category,
         message: authError.message,
         context: fullContext,
-        retryable: authError.retryable
+        retryable: authError.retryable,
       });
     }
 
@@ -149,34 +149,37 @@ export class AuthErrorHandler {
       return {
         message: error.message,
         name: error.name,
-        stack: error.stack
+        stack: error.stack,
       };
     }
 
     if (typeof error === 'string') {
       return {
         message: error,
-        name: 'StringError'
+        name: 'StringError',
       };
     }
 
     if (error && typeof error === 'object' && 'message' in error) {
       return {
         message: String((error as any).message),
-        name: (error as any).name || 'ObjectError'
+        name: (error as any).name || 'ObjectError',
       };
     }
 
     return {
       message: 'Unknown error occurred',
-      name: 'UnknownError'
+      name: 'UnknownError',
     };
   }
 
   /**
    * Categorize errors based on their characteristics
    */
-  private static categorizeError(error: unknown, errorInfo: any): AuthErrorCategory {
+  private static categorizeError(
+    error: unknown,
+    errorInfo: any
+  ): AuthErrorCategory {
     const message = errorInfo.message.toLowerCase();
 
     // Network-related errors
@@ -275,7 +278,10 @@ export class AuthErrorHandler {
   /**
    * Generate error codes for categorized errors
    */
-  private static getErrorCode(category: AuthErrorCategory, errorInfo: any): string {
+  private static getErrorCode(
+    category: AuthErrorCategory,
+    errorInfo: any
+  ): string {
     const prefix = category.substring(0, 3);
     const timestamp = Date.now().toString().slice(-6);
     return `${prefix}_${timestamp}`;
@@ -284,35 +290,38 @@ export class AuthErrorHandler {
   /**
    * Get user-friendly error messages
    */
-  private static getUserFriendlyMessage(category: AuthErrorCategory, errorInfo: any): string {
+  private static getUserFriendlyMessage(
+    category: AuthErrorCategory,
+    errorInfo: any
+  ): string {
     switch (category) {
       case AuthErrorCategory.NETWORK:
         return 'Network connection issue. Please check your internet connection and try again.';
-      
+
       case AuthErrorCategory.POPUP_BLOCKED:
         return 'Pop-up blocked. Please allow pop-ups for this site and try again.';
-      
+
       case AuthErrorCategory.TOKEN:
         return 'Authentication session expired. Please sign in again.';
-      
+
       case AuthErrorCategory.AUTHENTICATION:
         return 'Sign in failed. Please try again or contact support if the issue persists.';
-      
+
       case AuthErrorCategory.AUTHORIZATION:
         return 'Access denied. Please check your permissions or contact support.';
-      
+
       case AuthErrorCategory.CSRF:
         return 'Security validation failed. Please refresh the page and try again.';
-      
+
       case AuthErrorCategory.SESSION:
         return 'Session error occurred. Please sign in again.';
-      
+
       case AuthErrorCategory.CONFIGURATION:
         return 'Configuration error. Please contact support.';
-      
+
       case AuthErrorCategory.BROWSER_COMPATIBILITY:
         return 'Browser compatibility issue. Please try using a different browser or update your current one.';
-      
+
       default:
         return 'An unexpected error occurred. Please try again or contact support.';
     }
@@ -321,26 +330,29 @@ export class AuthErrorHandler {
   /**
    * Determine if an error is retryable
    */
-  private static isRetryable(category: AuthErrorCategory, errorInfo: any): boolean {
+  private static isRetryable(
+    category: AuthErrorCategory,
+    errorInfo: any
+  ): boolean {
     switch (category) {
       case AuthErrorCategory.NETWORK:
       case AuthErrorCategory.TOKEN:
       case AuthErrorCategory.SESSION:
         return true;
-      
+
       case AuthErrorCategory.POPUP_BLOCKED:
       case AuthErrorCategory.BROWSER_COMPATIBILITY:
       case AuthErrorCategory.CSRF:
         return false;
-      
+
       case AuthErrorCategory.AUTHENTICATION:
       case AuthErrorCategory.AUTHORIZATION:
         // Retryable if it's a temporary issue, not retryable if it's a permanent access issue
         return !errorInfo.message.toLowerCase().includes('access_denied');
-      
+
       case AuthErrorCategory.CONFIGURATION:
         return false;
-      
+
       default:
         return true; // Default to retryable for unknown errors
     }
@@ -349,25 +361,28 @@ export class AuthErrorHandler {
   /**
    * Get error severity level
    */
-  private static getSeverity(category: AuthErrorCategory, errorInfo: any): AuthError['severity'] {
+  private static getSeverity(
+    category: AuthErrorCategory,
+    errorInfo: any
+  ): AuthError['severity'] {
     switch (category) {
       case AuthErrorCategory.CONFIGURATION:
         return 'critical';
-      
+
       case AuthErrorCategory.CSRF:
       case AuthErrorCategory.AUTHORIZATION:
         return 'high';
-      
+
       case AuthErrorCategory.AUTHENTICATION:
       case AuthErrorCategory.TOKEN:
       case AuthErrorCategory.SESSION:
         return 'medium';
-      
+
       case AuthErrorCategory.NETWORK:
       case AuthErrorCategory.POPUP_BLOCKED:
       case AuthErrorCategory.BROWSER_COMPATIBILITY:
         return 'low';
-      
+
       default:
         return 'medium';
     }
@@ -376,8 +391,11 @@ export class AuthErrorHandler {
   /**
    * Log error to Sentry with structured context
    */
-  private static logToSentry(authError: AuthError, originalError: unknown): void {
-    Sentry.withScope((scope) => {
+  private static logToSentry(
+    authError: AuthError,
+    originalError: unknown
+  ): void {
+    Sentry.withScope(scope => {
       // Set context
       scope.setTag('error_category', authError.category);
       scope.setTag('error_code', authError.code);
@@ -388,12 +406,12 @@ export class AuthErrorHandler {
         component: authError.context.component,
         flow: authError.context.flow,
         provider: authError.context.provider,
-        userMessage: authError.userMessage
+        userMessage: authError.userMessage,
       });
       scope.setContext('browser_info', {
         userAgent: authError.context.userAgent,
         url: authError.context.url,
-        timestamp: authError.timestamp
+        timestamp: authError.timestamp,
       });
 
       // Set correlation ID for tracing
@@ -411,15 +429,20 @@ export class AuthErrorHandler {
   /**
    * Track error frequency for pattern detection
    */
-  private static trackErrorFrequency(component: string, category: AuthErrorCategory): void {
+  private static trackErrorFrequency(
+    component: string,
+    category: AuthErrorCategory
+  ): void {
     const key = `${component}:${category}`;
     const count = this.errorCount.get(key) || 0;
     this.errorCount.set(key, count + 1);
 
     // Alert if error frequency is high
     if (count > 5) {
-      console.warn(`🚨 High error frequency detected: ${key} (${count + 1} times)`);
-      
+      console.warn(
+        `🚨 High error frequency detected: ${key} (${count + 1} times)`
+      );
+
       // Send alert to Sentry
       Sentry.captureMessage(
         `High authentication error frequency: ${key}`,
@@ -432,14 +455,14 @@ export class AuthErrorHandler {
    * Store recent errors for pattern analysis
    */
   private static storeRecentError(component: string, error: AuthError): void {
-    const errors = this.lastErrors.get(component) || [];
+    const _errors = this.lastErrors.get(component) || [];
     errors.push(error);
-    
+
     // Keep only last 10 errors per component
     if (errors.length > 10) {
       errors.shift();
     }
-    
+
     this.lastErrors.set(component, errors);
   }
 
@@ -471,21 +494,25 @@ export class AuthErrorHandler {
     errorsByComponent: Record<string, number>;
     errorsByCategory: Record<string, number>;
   } {
-    const totalErrors = Array.from(this.errorCount.values()).reduce((sum, count) => sum + count, 0);
-    
+    const totalErrors = Array.from(this.errorCount.values()).reduce(
+      (sum, count) => sum + count,
+      0
+    );
+
     const errorsByComponent: Record<string, number> = {};
     const errorsByCategory: Record<string, number> = {};
-    
+
     for (const [key, count] of this.errorCount.entries()) {
       const [component, category] = key.split(':');
-      errorsByComponent[component] = (errorsByComponent[component] || 0) + count;
+      errorsByComponent[component] =
+        (errorsByComponent[component] || 0) + count;
       errorsByCategory[category] = (errorsByCategory[category] || 0) + count;
     }
 
     return {
       totalErrors,
       errorsByComponent,
-      errorsByCategory
+      errorsByCategory,
     };
   }
 }
@@ -512,7 +539,7 @@ export const useAuthErrorHandler = (component: string) => {
   return {
     handleError,
     getRecentErrors,
-    clearHistory
+    clearHistory,
   };
 };
 

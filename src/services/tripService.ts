@@ -4,7 +4,6 @@ import { TablesInsert, Tables } from '@/integrations/supabase/types';
 import { ExtendedTripFormValues, TripRequestResult } from '@/types/form';
 import { safeQuery } from '@/lib/supabaseUtils';
 import { toast } from '@/hooks/use-toast';
-
 /**
  * Create a new trip request in the database
  * @param userId User ID creating the trip

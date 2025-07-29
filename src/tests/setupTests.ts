@@ -1,21 +1,25 @@
 // Test setup file for Vitest
-import '@testing-library/jest-dom';
+import * as React from 'react';
 import { Fragment } from 'react';
-
+import '@testing-library/jest-dom';
 // Global test setup
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => {},
-  }),
-});
+Object.defineProperty(
+  /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
+  'matchMedia',
+  {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => {},
+    }),
+  }
+);
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
@@ -121,7 +125,7 @@ if (!global.Range) {
   };
 }
 
-// Mock window.getSelection with complete Selection interface
+// Mock /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.getSelection with complete Selection interface
 const createMockSelection = () => ({
   removeAllRanges: () => {},
   addRange: () => {},
@@ -147,10 +151,14 @@ const createMockSelection = () => ({
   type: 'None',
 });
 
-Object.defineProperty(window, 'getSelection', {
-  value: createMockSelection,
-  writable: true,
-});
+Object.defineProperty(
+  /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
+  'getSelection',
+  {
+    value: createMockSelection,
+    writable: true,
+  }
+);
 
 Object.defineProperty(document, 'getSelection', {
   value: createMockSelection,

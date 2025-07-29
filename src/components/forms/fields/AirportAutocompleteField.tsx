@@ -4,11 +4,11 @@
  * Renders an airport search input with autocomplete functionality
  */
 
-type FC<T = {}> = React.FC<T>;
+import * as React from 'react';
+import { FC } from 'react';
+import { useState, useEffect } from 'react';
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import * as React from 'react';
-import { useState, useEffect } from 'react';
 import { Plane } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -26,7 +26,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import type { APIIntegration } from '@/types/dynamic-forms';
-
 interface Airport {
   code: string;
   name: string;

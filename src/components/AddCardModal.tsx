@@ -2,6 +2,7 @@
 // Day 4: Payments & Wallet System
 
 import * as React from 'react';
+import { FC } from 'react';
 import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
@@ -12,9 +13,7 @@ import {
 } from '@stripe/react-stripe-js';
 import { useWallet } from '@/contexts/WalletContext';
 import { Button } from '@/components/ui/button';
-
-type FC<T = {}> = React.FC<T>;
-type FormEvent = React.FormEvent;
+type FormEvent<T = Element> = React.FormEvent<T>;
 
 // Load Stripe Object
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!);

@@ -120,7 +120,7 @@ allValid &= validateChange("Profile.tsx cleaned up from local WalletProvider", (
   
   if (walletTabMatch) {
     const beforeWalletTab = profileContent.substring(0, walletTabMatch.index);
-    const afterWalletTabIndex = walletTabMatch.index + walletTabMatch[0].length;
+    const afterWalletTabIndex = walletTabMatch.index + walletTabMatch[0].length
     const afterWalletTab = profileContent.substring(afterWalletTabIndex, afterWalletTabIndex + 200);
     
     // Check that there's no WalletProvider wrapper around WalletTab

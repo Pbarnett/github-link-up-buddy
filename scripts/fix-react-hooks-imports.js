@@ -1,13 +1,23 @@
 #!/usr/bin/env node
 
+const path = require('path');
+
 /**
  * Fix React hooks imports for React 19 compatibility
  * This script converts old-style React hook imports to new automatic JSX runtime style
  */
 
 import fs from 'fs/promises';
-import path from 'path';
 import { glob } from 'glob';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const PROJECT_ROOT = process.cwd();
 
@@ -20,7 +30,6 @@ const REACT_HOOKS = [
   'Component', 'PureComponent', 'createElement', 'cloneElement', 'createRef',
   'forwardRef', 'lazy', 'Suspense', 'memo', 'Fragment'
 ];
-
 
 async function findTSXFiles() {
   const patterns = [

@@ -14,6 +14,15 @@ import fs from 'fs/promises';
 import crypto from 'crypto';
 import axios from 'axios';
 import { performance } from 'perf_hooks';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const GRAFANA_URL = 'http://localhost:3001';
 const GRAFANA_ADMIN_USER = 'admin';
@@ -122,8 +131,8 @@ class SecurityManager {
         }, { auth: this.auth });
 
         if (createResponse.status === 200) {
-          const folderId = createResponse.data.id;
-          const folderUid = createResponse.data.uid;
+          const folderId = createResponse.data.id
+          const folderUid = createResponse.data.uid
 
           createdFolders.push({
             title: folder.title,
@@ -133,8 +142,6 @@ class SecurityManager {
           });
 
           await this.log('success', `✅ Created folder: ${folder.title}`);
-
-        }
 
       } catch (error) {
         if (error.response?.status === 409) {
@@ -181,7 +188,7 @@ class SecurityManager {
         }, { auth: this.auth });
 
         if (createResponse.status === 201) {
-          const serviceAccountId = createResponse.data.id;
+          const serviceAccountId = createResponse.data.id
 
           // Generate API token for service account
           const tokenResponse = await axios.post(`${GRAFANA_URL}/api/serviceaccounts/${serviceAccountId}/tokens`, {
@@ -189,7 +196,7 @@ class SecurityManager {
             secondsToLive: 31536000 // 1 year
           }, { auth: this.auth });
 
-          const apiToken = tokenResponse.data.key;
+          const apiToken = tokenResponse.data.key
 
           createdAccounts.push({
             name: account.name,
@@ -200,8 +207,6 @@ class SecurityManager {
           });
 
           await this.log('success', `✅ Created service account: ${account.name}`);
-
-        }
 
       } catch (error) {
         if (error.response?.status === 409) {
@@ -590,7 +595,7 @@ CI_CD_API_KEY=${secrets.api_keys.ci_cd_service}
       const duration = ((endTime - startTime) / 1000).toFixed(2);
       await this.log('info', `🏁 Command '${command}' completed in ${duration}s`);
 
-    } catch (error) {
+    } catch {
       await this.log('error', `Command '${command}' failed: ${error.message}`);
       process.exit(1);
     }
@@ -633,4 +638,4 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   });
 }
 
-export { SecurityManager };
+module.exports = { SecurityManager };

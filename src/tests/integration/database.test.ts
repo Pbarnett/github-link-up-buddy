@@ -1,7 +1,6 @@
 import { describe, beforeAll, afterAll, it, expect } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import { testEnvironment } from '../testcontainers/setup';
-
 describe('Database Integration Tests', () => {
   beforeAll(async () => {
     try {

@@ -17,7 +17,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { POPULAR_DESTINATIONS } from '@/data/airports';
-
 interface DestinationSectionProps {
   control: Control<Record<string, unknown>>;
   watch: UseFormWatch<Record<string, unknown>>;

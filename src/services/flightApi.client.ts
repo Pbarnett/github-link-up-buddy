@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { TablesInsert } from '@/integrations/supabase/types';
-
 export interface FlightSearchParams {
   origin: string[];
   destination: string | null;

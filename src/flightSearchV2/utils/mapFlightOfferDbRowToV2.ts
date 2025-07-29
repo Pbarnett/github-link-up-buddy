@@ -1,5 +1,4 @@
 import { FlightOfferV2, FlightOfferV2DbRow } from '../types';
-
 /**
  * Maps a snake_case database row object to a camelCase FlightOfferV2 object.
  * This function is pure and easily memoizable.

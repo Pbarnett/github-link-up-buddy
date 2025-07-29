@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useEffect } from 'react';
+import { useEffect, use } from 'react';
 import { useFlags } from 'launchdarkly-react-client-sdk';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
@@ -7,7 +7,6 @@ import {
   isFeatureEnabled as isEnabled,
 } from '@/shared/featureFlag';
 import { trackPersonalizationSeen } from '../services/launchDarklyService';
-
 // New LaunchDarkly-powered hook with tracking
 export const useFeatureFlag = (
   flagName: string,
@@ -17,12 +16,21 @@ export const useFeatureFlag = (
 
   // Check for test environment or preset flags from tests first
   let flagValue = defaultValue;
-  if (typeof window !== 'undefined') {
+  if (
+    typeof (
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+    ) !== 'undefined'
+  ) {
     // Check if we're in a test environment (playwright sets this)
     const isTestEnv =
-      window.location.hostname === 'localhost' &&
-      (window.navigator.userAgent.includes('HeadlessChrome') ||
-        window.navigator.userAgent.includes('Playwright'));
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        .location.hostname === 'localhost' &&
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (window.navigator.userAgent.includes(
+        'HeadlessChrome'
+      ) ||
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.navigator.userAgent.includes(
+          'Playwright'
+        ));
 
     // Also check for explicit environment variables set by Playwright
     const isPlaywrightTest = import.meta.env.VITE_PLAYWRIGHT_TEST === 'true';
@@ -74,6 +82,8 @@ export const useFeatureFlag = (
 
       return () => clearTimeout(timeoutId);
     }
+    // Explicitly return undefined for other cases
+    return undefined;
   }, [flagName, flagValue]);
 
   // Return object similar to useQuery for backward compatibility

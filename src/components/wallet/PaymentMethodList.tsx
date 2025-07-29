@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { CreditCard, Plus, Trash2 } from 'lucide-react';
 import {
   Card,
@@ -15,7 +15,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PaymentMethodListProps, CARD_BRANDS } from '@/types/wallet';
 import { useToast } from '@/hooks/use-toast';
 import { WalletNickname } from './WalletNickname';
-
 export function PaymentMethodList({
   paymentMethods,
   loading,

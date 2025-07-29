@@ -527,8 +527,8 @@ async function main() {
     
     // Exit with appropriate code
     process.exit(report.overallScore >= 95 ? 0 : 1)
-  } catch (error) {
-    console.error('❌ Validation failed:', error)
+  } catch {
+    console.error('❌ Validation failed:', error);
     process.exit(1)
   }
 }
@@ -538,4 +538,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main()
 }
 
-export default DuffelComplianceValidator
+module.exports = DuffelComplianceValidator

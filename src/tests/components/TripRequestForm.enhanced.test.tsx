@@ -1,4 +1,5 @@
-import React from 'react';
+import * as React from 'react';
+import { use } from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -7,7 +8,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // Enhanced test imports for comprehensive testing
 
 import TripRequestForm from '../../components/trip/TripRequestForm';
-
 // Mock React Hook Form
 vi.mock('react-hook-form', () => ({
   useForm: () => ({
@@ -268,7 +268,7 @@ describe('TripRequestForm - Enhanced Tests', () => {
 
   describe('Form Validation', () => {
     it('should validate required fields before submission', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
 
       renderWithProviders(<TripRequestForm onSubmit={mockOnSubmit} />);
 

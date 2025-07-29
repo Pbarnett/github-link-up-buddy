@@ -22,7 +22,7 @@ const checks = [
   {
     name: 'Node.js Version',
     test: () => {
-      const version = process.version;
+      const version = process.version
       console.log(`✅ Node.js: ${version}`);
       return true;
     }
@@ -102,7 +102,7 @@ try {
   console.log('🔄 Testing TypeScript compilation...');
   execSync('npx tsc --version', { stdio: 'pipe' });
   console.log('✅ TypeScript compiler available');
-} catch {
+} catch (error) {
   console.log('❌ TypeScript compiler not available');
 }
 
@@ -114,7 +114,7 @@ try {
     encoding: 'utf8'
   });
   console.log('✅ Unit tests passed');
-} catch {
+} catch (error) {
   console.log('⚠️  Unit tests had issues (this is expected with current state)');
 }
 

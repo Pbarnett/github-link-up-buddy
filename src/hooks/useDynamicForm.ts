@@ -11,6 +11,7 @@
 
 import * as React from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
+type FormEvent<T = Element> = React.FormEvent<T>;
 import { useForm } from 'react-hook-form';
 import type { UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,8 +19,6 @@ import type {
   FormSubmissionData,
   FieldConfiguration,
 } from '@/types/dynamic-forms';
-
-type FormEvent = React.FormEvent;
 
 // Type aliases to handle missing exports
 type DynamicFormConfig = any;
@@ -357,7 +356,7 @@ export const useDynamicForm = (
     // Since UseFormConfigurationReturn doesn't have reloadConfiguration,
     // we'll just trigger a re-render by updating the configuration
     if (configId || configName) {
-      window.location.reload();
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.reload();
     }
   }, [configId, configName]);
 
@@ -456,7 +455,7 @@ export const useDynamicForm = (
 
     // Analytics
     trackFieldInteraction,
-    track_FormEvent,
+    trackFormEvent,
 
     // Utility
     getFieldConfig,

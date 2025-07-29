@@ -13,6 +13,15 @@
 import fs from 'fs/promises';
 import axios from 'axios';
 import { performance } from 'perf_hooks';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const PROMETHEUS_URL = 'http://localhost:9090';
 const RECORDING_RULES_DIR = './monitoring/prometheus/rules';
@@ -64,7 +73,7 @@ class DataRetentionOptimizer {
     try {
       // Get all unique metric names by querying the metrics
       const seriesResponse = await axios.get(`${PROMETHEUS_URL}/api/v1/label/__name__/values`);
-      const allMetrics = seriesResponse.data.data;
+      const allMetrics = seriesResponse.data.data
 
       await this.log('info', `Found ${allMetrics.length} unique metrics`);
 
@@ -88,7 +97,7 @@ class DataRetentionOptimizer {
             params: { query: `group by (__name__)({__name__="${metric}"})` }
           });
 
-          const cardinality = queryResponse.data.data.result.length;
+          const cardinality = queryResponse.data.data.result.length
 
           // Determine retention category
           let category = 'debug';
@@ -107,7 +116,7 @@ class DataRetentionOptimizer {
             recommendedRetention: this.retentionPolicies[category].retention
           });
 
-        } catch (error) {
+        } catch {
           await this.log('warn', `Failed to analyze metric ${metric}: ${error.message}`);
         }
       }
@@ -477,7 +486,7 @@ class DataRetentionOptimizer {
       const duration = ((endTime - startTime) / 1000).toFixed(2);
       await this.log('info', `🏁 Command '${command}' completed in ${duration}s`);
 
-    } catch (error) {
+    } catch {
       await this.log('error', `Command '${command}' failed: ${error.message}`);
       process.exit(1);
     }
@@ -518,4 +527,4 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   });
 }
 
-export { DataRetentionOptimizer };
+module.exports = { DataRetentionOptimizer };

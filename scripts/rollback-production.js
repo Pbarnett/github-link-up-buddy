@@ -12,13 +12,13 @@
  */
 
 import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const fs = require('fs');
+import {} from 'path';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
 // Color codes for console output
 const colors = {
@@ -30,19 +30,13 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m'
-};
 
+};
 // Utility functions
-const log = (message, color = 'reset') => {
-  console.log(`${colors[color]}${message}${colors.reset}`);
-};
+// Removed unused log function
 
-const success = (message) => log(`✅ ${message}`, 'green');
-const warning = (message) => log(`⚠️  ${message}`, 'yellow');
-const error = (message) => log(`❌ ${message}`, 'red');
-const info = (message) => log(`ℹ️  ${message}`, 'blue');
-const step = (message) => log(`🔄 ${message}`, 'cyan');
-const emergency = (message) => log(`🚨 ${message}`, 'red');
+const step = (message) => console.log(`🔄 ${message}`, 'cyan');
+const emergency = (message) => console.log(`🚨 ${message}`, 'red');
 
 // Configuration
 const PRODUCTION_ENV_FILE = '.env.production';
@@ -73,10 +67,10 @@ class ProductionRollback {
   async execute() {
     try {
       emergency('🚨 PRODUCTION ROLLBACK INITIATED');
-      log('=' .repeat(70), 'red');
+      console.log('=' .repeat(70), 'red');
       
       if (this.dryRun) {
-        warning('DRY RUN MODE - No actual changes will be made');
+        console.warn('DRY RUN MODE - No actual changes will be made');
       }
       
       await this.preRollbackChecks();
@@ -87,17 +81,17 @@ class ProductionRollback {
       await this.generateRollbackReport();
       
       const duration = ((Date.now() - this.startTime) / 1000).toFixed(2);
-      success(`🎉 Rollback completed successfully in ${duration}s`);
+      console.log(`✅ 🎉 Rollback completed successfully in ${duration}s`);
       
     } catch (err) {
-      error(`Rollback failed: ${err.message}`);
+      console.error(`Rollback failed: ${err.message}`);
       await this.handleRollbackFailure(err);
       process.exit(1);
     }
   }
 
   async preRollbackChecks() {
-    step('Performing pre-rollback safety checks...');
+    console.log('Performing pre-rollback safety checks...');
     
     // Load current environment
     if (fs.existsSync(PRODUCTION_ENV_FILE)) {
@@ -108,10 +102,10 @@ class ProductionRollback {
     // Check current deployment status
     try {
       const currentStatus = await this.getCurrentDeploymentStatus();
-      this.currentDeploymentId = currentStatus.deployment_id;
-      info(`Current deployment: ${this.currentDeploymentId}`);
-    } catch (err) {
-      warning('Could not determine current deployment status');
+      this.currentDeploymentId = currentStatus.deployment_id
+      console.info(`Current deployment: ${this.currentDeploymentId}`);
+    } catch (error) {
+      console.warn('Could not determine current deployment status');
     }
     
     // Verify rollback permissions
@@ -123,7 +117,7 @@ class ProductionRollback {
     await this.checkSystemHealth();
     
     this.checks.preRollback = true;
-    success('Pre-rollback checks completed');
+    console.log('Pre-rollback checks completed');
   }
 
   async getCurrentDeploymentStatus() {
@@ -136,7 +130,7 @@ class ProductionRollback {
           if (reports.length > 0) {
             const latest = reports.sort().pop();
             const report = JSON.parse(fs.readFileSync(latest, 'utf8'));
-            return report.version;
+            return report.version
           }
         }
         return null;
@@ -145,7 +139,7 @@ class ProductionRollback {
         try {
           const gitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
           return `git-${gitHash}`;
-        } catch {
+        } catch (error) {
           return null;
         }
       }
@@ -162,13 +156,13 @@ class ProductionRollback {
   }
 
   async verifyRollbackPermissions() {
-    step('Verifying rollback permissions...');
+    console.log('Verifying rollback permissions...');
     
     // Check AWS permissions
     try {
       execSync('aws sts get-caller-identity', { stdio: 'pipe' });
-      success('✓ AWS permissions verified');
-    } catch (err) {
+      console.log('✓ AWS permissions verified');
+    } catch (error) {
       throw new Error('AWS permissions not available for rollback');
     }
     
@@ -179,16 +173,16 @@ class ProductionRollback {
           headers: { 'apikey': process.env.SUPABASE_ANON_KEY }
         });
         if (response.ok) {
-          success('✓ Supabase permissions verified');
+          console.log('✓ Supabase permissions verified');
         }
-      } catch (err) {
-        warning('Supabase permissions could not be verified');
+      } catch (error) {
+        console.warn('Supabase permissions could not be verified');
       }
     }
   }
 
   async checkSystemHealth() {
-    step('Checking current system health...');
+    console.log('Checking current system health...');
     
     const healthChecks = [
       {
@@ -197,7 +191,7 @@ class ProductionRollback {
           const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/`, {
             headers: { 'apikey': process.env.SUPABASE_ANON_KEY }
           });
-          return response.ok;
+          return response.ok
         }
       },
       {
@@ -206,7 +200,7 @@ class ProductionRollback {
           try {
             execSync('aws kms describe-key --key-id "alias/parker-flight-general-production"', { stdio: 'pipe' });
             return true;
-          } catch {
+          } catch (error) {
             return false;
           }
         }
@@ -217,21 +211,21 @@ class ProductionRollback {
       try {
         const healthy = await check();
         if (healthy) {
-          info(`✓ ${name}: Healthy`);
+          console.info(`✓ ${name}: Healthy`);
         } else {
-          warning(`⚠ ${name}: Degraded`);
+          console.warn(`⚠ ${name}: Degraded`);
         }
-      } catch (err) {
-        warning(`⚠ ${name}: Check failed - ${err.message}`);
+      } catch (error) {
+        console.warn(`⚠ ${name}: Check failed - ${error.message}`);
       }
     }
   }
 
   async identifyRollbackTarget() {
-    step('Identifying rollback target...');
+    console.log('Identifying rollback target...');
     
     if (this.targetCommit) {
-      info(`Using specified target commit: ${this.targetCommit}`);
+      console.info(`Using specified target commit: ${this.targetCommit}`);
       return;
     }
     
@@ -240,15 +234,15 @@ class ProductionRollback {
       const gitLog = execSync('git log --oneline -10', { encoding: 'utf8' });
       const commits = gitLog.split('\n').filter(line => line.trim());
       
-      info('Recent commits:');
+      console.info('Recent commits:');
       commits.slice(0, 5).forEach((commit, idx) => {
-        info(`  ${idx === 0 ? '→' : ' '} ${commit}`);
+        console.info(`  ${idx === 0 ? '→' : ' '} ${commit}`);
       });
       
       // Use previous commit as rollback target
       if (commits.length > 1) {
         this.targetCommit = commits[1].split(' ')[0];
-        info(`Selected rollback target: ${this.targetCommit}`);
+        console.info(`Selected rollback target: ${this.targetCommit}`);
       } else {
         throw new Error('No previous commit found for rollback');
       }
@@ -259,7 +253,7 @@ class ProductionRollback {
   }
 
   async createRollbackPlan() {
-    step('Creating rollback execution plan...');
+    console.log('Creating rollback execution plan...');
     
     this.rollbackSteps = [
       {
@@ -288,50 +282,50 @@ class ProductionRollback {
       }
     ];
     
-    info('Rollback plan created:');
+    console.info('Rollback plan created:');
     this.rollbackSteps.forEach((step, idx) => {
       const criticalFlag = step.critical ? '🔴' : '🟡';
-      info(`  ${idx + 1}. ${criticalFlag} ${step.name}: ${step.description}`);
+      console.info(`  ${idx + 1}. ${criticalFlag} ${step.name}: ${step.description}`);
     });
     
     if (!this.dryRun && !this.emergencyMode) {
-      warning('Rollback will execute in 10 seconds. Press Ctrl+C to abort.');
+      console.warn('Rollback will execute in 10 seconds. Press Ctrl+C to abort.');
       await new Promise(resolve => setTimeout(resolve, 10000));
     }
   }
 
   async executeRollbackPlan() {
-    step('Executing rollback plan...');
+    console.log('Executing rollback plan...');
     
     for (let i = 0; i < this.rollbackSteps.length; i++) {
       const stepInfo = this.rollbackSteps[i];
       
       try {
-        step(`Step ${i + 1}/${this.rollbackSteps.length}: ${stepInfo.name}`);
+        console.log(`Step ${i + 1}/${this.rollbackSteps.length}: ${stepInfo.name}`);
         
         if (this.dryRun) {
-          info(`[DRY RUN] Would execute: ${stepInfo.description}`);
+          console.info(`[DRY RUN] Would execute: ${stepInfo.description}`);
           await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate execution time
         } else {
           await stepInfo.execute();
         }
         
-        success(`✓ ${stepInfo.name} completed`);
+        console.log(`✅ ✓ ${stepInfo.name} completed`);
         
-      } catch (err) {
-        error(`✗ ${stepInfo.name} failed: ${err.message}`);
+      } catch (error) {
+        console.error(`✗ ${stepInfo.name} failed: ${error.message}`);
         
         if (stepInfo.critical) {
           throw new Error(`Critical rollback step failed: ${stepInfo.name}`);
         } else {
-          warning(`Non-critical step failed, continuing rollback`);
+          console.warn(`Non-critical step failed, continuing rollback`);
         }
       }
     }
   }
 
   async rollbackGit() {
-    step('Executing Git rollback...');
+    console.log('Executing Git rollback...');
     
     if (!this.targetCommit) {
       throw new Error('No target commit specified for rollback');
@@ -340,18 +334,18 @@ class ProductionRollback {
     // Create backup branch of current state
     const backupBranch = `backup-before-rollback-${Date.now()}`;
     execSync(`git checkout -b ${backupBranch}`, { stdio: 'pipe' });
-    info(`Created backup branch: ${backupBranch}`);
+    console.info(`Created backup branch: ${backupBranch}`);
     
     // Switch back to main and rollback
     execSync('git checkout main', { stdio: 'pipe' });
     execSync(`git reset --hard ${this.targetCommit}`, { stdio: 'pipe' });
     
     this.checks.gitRollback = true;
-    success('Git rollback completed');
+    console.log('Git rollback completed');
   }
 
   async rollbackDatabase() {
-    step('Executing database rollback...');
+    console.log('Executing database rollback...');
     
     try {
       // Get current migration state
@@ -360,47 +354,47 @@ class ProductionRollback {
         stdio: 'pipe'
       });
       
-      info('Current migration status:');
-      info(migrationStatus);
+      console.info('Current migration status:');
+      console.info(migrationStatus);
       
       // For production rollback, we'll be conservative and not automatically
       // rollback migrations unless specifically configured
-      warning('Database migration rollback requires manual intervention for safety');
-      info('Current database state preserved - no automatic schema rollback performed');
+      console.warn('Database migration rollback requires manual intervention for safety');
+      console.info('Current database state preserved - no automatic schema rollback performed');
       
       this.checks.databaseRollback = true;
       
     } catch (err) {
-      warning(`Database rollback check failed: ${err.message}`);
-      warning('Proceeding with other rollback steps');
+      console.warn(`Database rollback check failed: ${err.message}`);
+      console.warn('Proceeding with other rollback steps');
       this.checks.databaseRollback = true; // Don't fail rollback for this
     }
   }
 
   async rollbackEdgeFunctions() {
-    step('Rolling back Edge Functions...');
+    console.log('Rolling back Edge Functions...');
     
     const functions = ['encrypt-data', 'create-payment-method'];
     
     for (const functionName of functions) {
       try {
-        info(`Redeploying function: ${functionName}`);
+        console.info(`Redeploying function: ${functionName}`);
         execSync(`npx supabase functions deploy ${functionName}`, { 
           stdio: 'inherit' 
         });
-        success(`✓ Redeployed: ${functionName}`);
-      } catch (err) {
-        error(`Failed to redeploy function: ${functionName}`);
+        console.log(`✅ ✓ Redeployed: ${functionName}`);
+      } catch (error) {
+        console.error(`Failed to redeploy function: ${functionName}`);
         throw err;
       }
     }
     
     this.checks.edgeFunctionRollback = true;
-    success('Edge Functions rollback completed');
+    console.log('Edge Functions rollback completed');
   }
 
   async restoreInfrastructure() {
-    step('Restoring infrastructure state...');
+    console.log('Restoring infrastructure state...');
     
     try {
       // Restore monitoring dashboards
@@ -410,17 +404,17 @@ class ProductionRollback {
       await this.validateKMSKeys();
       
       this.checks.infrastructureRestore = true;
-      success('Infrastructure restore completed');
+      console.log('Infrastructure restore completed');
       
     } catch (err) {
-      warning(`Infrastructure restore had issues: ${err.message}`);
+      console.warn(`Infrastructure restore had issues: ${err.message}`);
       // Don't fail rollback for infrastructure issues
       this.checks.infrastructureRestore = true;
     }
   }
 
   async restoreMonitoring() {
-    step('Restoring monitoring configuration...');
+    console.log('Restoring monitoring configuration...');
     
     try {
       // Recreate CloudWatch dashboard
@@ -444,14 +438,14 @@ class ProductionRollback {
         stdio: 'pipe'
       });
       
-      success('Monitoring dashboards restored');
-    } catch (err) {
-      warning('Monitoring restore failed, continuing');
+      console.log('Monitoring dashboards restored');
+    } catch (error) {
+      console.warn('Monitoring restore failed, continuing');
     }
   }
 
   async validateKMSKeys() {
-    step('Validating KMS keys accessibility...');
+    console.log('Validating KMS keys accessibility...');
     
     const keyAliases = [
       'alias/parker-flight-general-production',
@@ -462,15 +456,15 @@ class ProductionRollback {
     for (const alias of keyAliases) {
       try {
         execSync(`aws kms describe-key --key-id "${alias}"`, { stdio: 'pipe' });
-        info(`✓ KMS key accessible: ${alias}`);
-      } catch (err) {
-        warning(`KMS key issue: ${alias}`);
+        console.info(`✓ KMS key accessible: ${alias}`);
+      } catch (error) {
+        console.warn(`KMS key issue: ${alias}`);
       }
     }
   }
 
   async validateRollback() {
-    step('Validating rollback success...');
+    console.log('Validating rollback success...');
     
     const validationChecks = [
       {
@@ -487,7 +481,7 @@ class ProductionRollback {
           const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/`, {
             headers: { 'apikey': process.env.SUPABASE_ANON_KEY }
           });
-          return response.ok;
+          return response.ok
         }
       },
       {
@@ -517,26 +511,26 @@ class ProductionRollback {
       try {
         const passed = await check();
         if (passed) {
-          success(`✓ ${name}`);
+          console.log(`✅ ✓ ${name}`);
           passedChecks++;
         } else {
-          warning(`⚠ ${name}: Failed`);
+          console.warn(`⚠ ${name}: Failed`);
         }
-      } catch (err) {
-        warning(`⚠ ${name}: Error - ${err.message}`);
+      } catch (error) {
+        console.warn(`⚠ ${name}: Error - ${error.message}`);
       }
     }
     
     if (passedChecks >= validationChecks.length - 1) {
       this.checks.postRollbackValidation = true;
-      success('Rollback validation completed successfully');
+      console.log('Rollback validation completed successfully');
     } else {
-      warning('Some validation checks failed - manual review required');
+      console.warn('Some validation checks failed - manual review required');
     }
   }
 
   async generateRollbackReport() {
-    step('Generating rollback report...');
+    console.log('Generating rollback report...');
     
     const report = {
       rollback_id: `rollback-${Date.now()}`,
@@ -564,31 +558,31 @@ class ProductionRollback {
     const reportPath = `rollback-report-${Date.now()}.json`;
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
     
-    success(`Rollback report saved: ${reportPath}`);
+    console.log(`✅ Rollback report saved: ${reportPath}`);
     
     // Display summary
-    log('\n' + '='.repeat(70), 'red');
-    log('🔄 ROLLBACK SUMMARY', 'bright');
-    log('='.repeat(70), 'red');
-    log(`Rollback ID: ${report.rollback_id}`);
-    log(`Duration: ${report.duration}`);
-    log(`Reason: ${report.reason}`);
-    log(`Target: ${report.target_commit}`);
-    log(`Mode: ${report.emergency_mode ? 'EMERGENCY' : 'STANDARD'}`);
-    log('\nRollback Checks Status:');
+    console.log('\n' + '='.repeat(70), 'red');
+    console.log('🔄 ROLLBACK SUMMARY', 'bright');
+    console.log('='.repeat(70), 'red');
+    console.log(`Rollback ID: ${report.rollback_id}`);
+    console.log(`Duration: ${report.duration}`);
+    console.log(`Reason: ${report.reason}`);
+    console.log(`Target: ${report.target_commit}`);
+    console.log(`Mode: ${report.emergency_mode ? 'EMERGENCY' : 'STANDARD'}`);
+    console.log('\nRollback Checks Status:');
     Object.entries(this.checks).forEach(([check, status]) => {
-      log(`  ${status ? '✅' : '❌'} ${check}`, status ? 'green' : 'red');
+      console.log(`  ${status ? '✅' : '❌'} ${check}`, status ? 'green' : 'red');
     });
-    log('='.repeat(70), 'red');
+    console.log('='.repeat(70), 'red');
   }
 
   async handleRollbackFailure(err) {
     emergency('🚨 ROLLBACK FAILURE DETECTED');
-    error(`Rollback failed after ${this.rollbackAttempt} attempt(s)`);
-    error(`Error: ${err.message}`);
+    console.error(`Rollback failed after ${this.rollbackAttempt} attempt(s);`);
+    console.error(`Error: ${error.message}`);
     
     if (this.rollbackAttempt < MAX_ROLLBACK_ATTEMPTS && !this.emergencyMode) {
-      warning(`Attempting rollback retry (${this.rollbackAttempt + 1}/${MAX_ROLLBACK_ATTEMPTS})...`);
+      console.warn(`Attempting rollback retry (${this.rollbackAttempt + 1}/${MAX_ROLLBACK_ATTEMPTS})...`);
       this.rollbackAttempt++;
       
       // Reset checks for retry
@@ -603,7 +597,7 @@ class ProductionRollback {
         await this.execute();
         return;
       } catch (retryErr) {
-        error(`Retry failed: ${retryErr.message}`);
+        console.error(`Retry failed: ${retryErr.message}`);
       }
     }
     
@@ -680,9 +674,9 @@ Examples:
   
   const rollback = new ProductionRollback(options);
   rollback.execute().catch(err => {
-    console.error(`❌ Rollback failed: ${err.message}`);
+    console.error(`❌ Rollback failed: ${error.message}`);
     process.exit(1);
   });
 }
 
-export default ProductionRollback;
+module.exports = ProductionRollback;

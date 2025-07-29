@@ -10,9 +10,10 @@
  * - Cost: ~$0.003 per PR review (~2K tokens)
  */
 
-const fs = require('fs');
-const path = require('path');
 const { execSync } = require('child_process');
+const fs = require('fs');
+// Utility functions
+// Removed unused log function
 
 // Configuration
 const CONFIG = {
@@ -20,7 +21,6 @@ const CONFIG = {
   maxTokens: 4000,
   temperature: 0.1, // Low temperature for consistent code analysis
   apiEndpoint: 'https://api.openai.com/v1/chat/completions'
-};
 
 /**
  * Main AI Code Review Function
@@ -61,8 +61,7 @@ async function runAICodeReview(options = {}) {
     console.log(`📊 Report saved to: ai-code-review-report.json`);
     
     return { success: true, reviews, report };
-    
-  } catch (error) {
+} catch (error) {
     console.error('❌ AI Code Review failed:', error.message);
     return { success: false, error: error.message };
   }
@@ -101,9 +100,8 @@ function getChangedFiles(options) {
     });
     
     return relevantFiles;
-    
-  } catch (error) {
-    console.warn('⚠️ Could not get git diff, using current staged files');
+} catch (error) {
+    console.warn('⚠️ Could not get git diff, using current staged files:', error.message);
     
     // Fallback: get staged files
     try {
@@ -117,7 +115,7 @@ function getChangedFiles(options) {
       ) : [];
       
     } catch (fallbackError) {
-      console.warn('⚠️ Could not get staged files either');
+      console.warn('⚠️ Could not get staged files either:', fallbackError.message);
       return [];
     }
   }
@@ -143,7 +141,7 @@ async function reviewFileBatch(files) {
     return files.map(file => ({
       file,
       success: false,
-      error: error.message,
+      error: _error.message,
       issues: [],
       suggestions: []
     }));
@@ -163,7 +161,7 @@ function getFileContent(filePath) {
     }
     
     return content;
-  } catch (error) {
+} catch (error) {
     return `// Error reading file: ${error.message}`;
   }
 }
@@ -184,8 +182,8 @@ function getFileDiff(filePath) {
     }
     
     return diff;
-  } catch (error) {
-    return '// No diff available';
+} catch (error) {
+    return `// No diff available: ${error.message}`;
   }
 }
 
@@ -258,12 +256,12 @@ ${filesText}`;
  * Call OpenAI API
  */
 async function callOpenAI(prompt) {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY environment variable is required');
   }
   
-  const fetch = (await import('node-fetch')).default;
+  const fetch = (await import('node-fetch')).default
   
   const response = await fetch(CONFIG.apiEndpoint, {
     method: 'POST',
@@ -294,7 +292,7 @@ async function callOpenAI(prompt) {
   }
   
   const data = await response.json();
-  return data.choices[0].message.content;
+  return data.choices[0].message.content
 }
 
 /**
@@ -324,8 +322,7 @@ function parseReviewResponse(response, files) {
         estimatedCost: calculateCost(response.length)
       };
     });
-    
-  } catch (error) {
+} catch (error) {
     console.warn('⚠️ Failed to parse AI response, using fallback');
     return files.map(file => ({
       file,
@@ -351,8 +348,8 @@ function calculateCost(responseLength) {
  * Generate review report
  */
 function generateReviewReport(reviews) {
-  const totalFiles = reviews.length;
-  const filesWithIssues = reviews.filter(r => r.issues?.length > 0).length;
+  const totalFiles = reviews.length
+  const filesWithIssues = reviews.filter(r => r.issues?.length > 0).length
   const totalIssues = reviews.reduce((sum, r) => sum + (r.issues?.length || 0), 0);
   const criticalIssues = reviews.reduce((sum, r) => 
     sum + (r.issues?.filter(i => i.severity === 'HIGH').length || 0), 0

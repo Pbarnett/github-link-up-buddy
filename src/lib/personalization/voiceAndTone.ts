@@ -2,7 +2,6 @@
 // Based on research: Warmth, Competence, Light Humor
 
 import { GreetingContext, VoiceConfig } from '@/types/personalization';
-
 // Default voice configuration - matches research recommendations
 export const DEFAULT_VOICE_CONFIG: VoiceConfig = {
   warmth: 'high',

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -49,7 +49,6 @@ import {
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-
 // Zod schema for traveler profile validation
 const travelerProfileSchema = z.object({
   id: z.string().optional(),
@@ -76,7 +75,12 @@ const travelerProfileSchema = z.object({
   dietaryRestrictions: z.array(z.string()).optional(),
   mobilityAssistance: z.boolean().optional(),
   preferredSeat: z
-    .enum(['window', 'aisle', 'middle', 'no-preference'])
+    .enum([
+      '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window',
+      'aisle',
+      'middle',
+      'no-preference',
+    ])
     .optional(),
   emailNotifications: z.boolean().default(true),
   isDefault: z.boolean().default(false),

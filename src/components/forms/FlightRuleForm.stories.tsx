@@ -3,7 +3,6 @@ import type { Meta, StoryObj } from '@storybook/react';
 // Simple mock function for stories
 const mockFn = () => {};
 import { FlightRuleForm } from './FlightRuleForm';
-
 const meta: Meta<typeof FlightRuleForm> = {
   title: 'Forms/FlightRuleForm',
   component: FlightRuleForm,

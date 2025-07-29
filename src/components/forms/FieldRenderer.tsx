@@ -6,6 +6,7 @@
  */
 
 import * as React from 'react';
+import { FC } from 'react';
 import { useFormContext } from 'react-hook-form';
 import {
   FormField,
@@ -15,8 +16,6 @@ import {
   FormDescription,
   FormMessage,
 } from '@/components/ui/form';
-
-type FC<T = {}> = React.FC<T>;
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -44,7 +43,6 @@ import { AirportAutocompleteField } from './fields/AirportAutocompleteField';
 import { CountrySelectField } from './fields/CountrySelectField';
 import { PhoneInputField } from './fields/PhoneInputField';
 import { AddressGroupField } from './fields/AddressGroupField';
-
 interface FieldRendererInternalProps
   extends Omit<FieldRendererProps, 'onChange'> {
   fieldIndex: number;
@@ -210,7 +208,7 @@ const FieldInput: FC<FieldInputProps> = ({
           value={typeof value === 'string' ? value : ''}
           placeholder={field.placeholder}
           disabled={disabled}
-          onChange={e => handleChange((e.target as HTMLInputElement).value)}
+          onChange={e => handleChange((e.target as HTMLTextAreaElement).value)}
           className={cn(error && 'border-destructive')}
           rows={4}
         />

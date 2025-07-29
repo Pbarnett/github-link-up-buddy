@@ -2,7 +2,6 @@ import * as React from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
-
 // Mock Supabase client with proper typing
 type MockSupabaseClient = {
   rpc: ReturnType<typeof vi.fn>;
@@ -56,9 +55,13 @@ const localStorageMock = (() => {
 const flushPromises = () =>
   new Promise(resolve => queueMicrotask(() => resolve(undefined)));
 
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
+Object.defineProperty(
+  /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
+  'localStorage',
+  {
+    value: localStorageMock,
+  }
+);
 
 describe('useFormAnalytics', () => {
   const mockFormConfig = {

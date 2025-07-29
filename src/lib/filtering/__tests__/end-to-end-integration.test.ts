@@ -11,7 +11,6 @@ import { FilterFactory } from '../FilterFactory';
 import { normalizeOffers } from '../index';
 import { AmadeusAdapter, DuffelAdapter } from '../adapters/ProviderAdapters';
 import type { FilterContext } from '../core/types';
-
 describe('End-to-End Filtering Integration', () => {
   let mockAmadeusOffer: Record<string, unknown>;
   let mockDuffelOffer: Record<string, unknown>;

@@ -3,10 +3,10 @@
  * Tests the integration between ProfileCompletenessIndicator and Profile page
  */
 
+import * as React from 'react';
+import { createElement, use } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import Profile from '@/pages/Profile';
-import { createElement } from 'react';
-
 // Mock the required hooks and components
 vi.mock('@/hooks/useCurrentUser', () => ({
   useCurrentUser: () => ({

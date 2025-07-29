@@ -1,10 +1,9 @@
 import * as React from 'react';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useDeferredValue } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import PageWrapper from '@/components/layout/PageWrapper';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
 // Lazy load the campaign wizard and demo components
 const CampaignWizard = lazy(
   () => import('@/components/autobooking/CampaignWizard/CampaignWizard')

@@ -5,7 +5,9 @@
  */
 
 import * as React from 'react';
+import { FC } from 'react';
 import { useState, useEffect } from 'react';
+import { AlertCircle, Eye, Plus, Save, Settings, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,51 +16,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
 import type {
   FormConfiguration,
   FormBuilderProps,
@@ -69,13 +26,11 @@ import type {
   SecurityViolation,
 } from '@/types/dynamic-forms';
 
-type FC<T = {}> = React.FC<T>;
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 import { useFormStore } from '@/stores/useFormStore';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
 import { FieldTemplateLibrary } from './FieldTemplateLibrary';
 import { SectionEditor } from './SectionEditor';
-
 export const FormBuilder: FC<FormBuilderProps> = ({
   initialConfiguration,
   onSave,

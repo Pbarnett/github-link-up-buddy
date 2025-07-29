@@ -619,7 +619,7 @@ export class EnhancedAWSErrorHandler {
         const baseDelay =
           config.baseDelayMs * Math.pow(config.backoffMultiplier, attempt - 1);
         const jitter = baseDelay * config.jitterFactor * Math.random();
-        const delay = Math.min(baseDelay + jitter, config.maxDelayMs);
+        const _delay = Math.min(baseDelay + jitter, config.maxDelayMs);
 
         console.warn(
           `Attempt ${attempt} failed for ${service}${operationName ? `.${operationName}` : ''}: ${enhancedError.message}. Retrying in ${delay}ms...`

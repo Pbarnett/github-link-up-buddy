@@ -10,7 +10,7 @@ import {
   FlightOffer,
   FlightFilter,
   FilterContext,
-  ValidationResult,
+  _ValidationResult,
 } from '../core/types';
 
 export class NonstopFilter implements FlightFilter {
@@ -137,7 +137,7 @@ export class NonstopFilter implements FlightFilter {
   ): FlightOffer[] {
     console.log(`[${this.name}] Starting layover-aware filtering`);
 
-    const userPrefs = context.userPrefs;
+    const _userPrefs = context.userPrefs;
     const maxLayoverMinutes = userPrefs.maxLayoverMinutes;
 
     // If nonstop is required, use standard nonstop filtering

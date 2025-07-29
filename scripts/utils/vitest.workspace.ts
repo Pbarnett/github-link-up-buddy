@@ -1,7 +1,7 @@
-import { defineWorkspace } from 'vitest/config'
 import path from 'path'
+import { defineWorkspace } from 'vitest/config'
 
-export default defineWorkspace([
+module.exports = defineWorkspace([
   // Unit tests (React components, utilities, pure functions)
   {
     extends: './vitest.config.ts',

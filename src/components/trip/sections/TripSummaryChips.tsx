@@ -4,7 +4,6 @@ import { useWatch, Control } from 'react-hook-form';
 import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-
 // Trip form data interface
 interface TripFormData {
   destination_airport?: string;
@@ -54,7 +53,7 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
   }
 
   // Origin chip
-  const origins = [];
+  const origins: string[] = [];
   if (watchedFields.nyc_airports && watchedFields.nyc_airports.length > 0) {
     origins.push(...watchedFields.nyc_airports);
   }

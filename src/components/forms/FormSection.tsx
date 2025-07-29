@@ -5,8 +5,7 @@
  */
 
 import * as React from 'react';
-type _Component<P = {}, S = {}> = React.Component<P, S>;
-type FC<T = {}> = React.FC<T>;
+import { FC } from 'react';
 
 import {
   Card,
@@ -23,7 +22,6 @@ import type {
   FormState,
 } from '@/types/dynamic-forms';
 import { FieldRenderer } from './FieldRenderer';
-
 interface FormSectionProps {
   section: FormSectionType;
   sectionIndex: number;
@@ -32,6 +30,8 @@ interface FormSectionProps {
   isFieldVisible: (field: FieldConfiguration) => boolean;
   isFieldEnabled: (field: FieldConfiguration) => boolean;
   disabled?: boolean;
+  onFieldInteraction?: (fieldId: string, fieldType: string) => void;
+  onFieldError?: (fieldId: string, fieldType: string, error: string) => void;
 }
 
 export const FormSection: FC<FormSectionProps> = ({
@@ -42,6 +42,8 @@ export const FormSection: FC<FormSectionProps> = ({
   isFieldVisible,
   isFieldEnabled,
   disabled = false,
+  onFieldInteraction,
+  onFieldError,
 }) => {
   // Get visible fields for this section
   const visibleFields = section.fields.filter(field => isFieldVisible(field));

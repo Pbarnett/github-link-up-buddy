@@ -6,8 +6,20 @@ import importPlugin from 'eslint-plugin-import';
 import globals from 'globals';
 
 export default tseslint.config(
-  // Global ignores - use proper glob patterns
-  { ignores: ['**/dist/**', '**/build/**', '**/coverage/**', '**/node_modules/**', '**/src/components/ui/**'] },
+  // Global ignores - use proper glob patterns according to ESLint v9+ flat config
+  { 
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**', 
+      '**/build/**', 
+      '**/coverage/**', 
+      '**/playwright-report/**',
+      '**/.next/**',
+      '**/src/components/ui/**',
+      '**/*.min.js', 
+      '**/*.bundle.js'
+    ] 
+  },
   
   // JavaScript files configuration - Browser context
   {

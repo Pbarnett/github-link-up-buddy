@@ -4,12 +4,12 @@
  * Renders a date range picker with optional flexible dates
  */
 
+import * as React from 'react';
+import { FC } from 'react';
+import { useState } from 'react';
 type _Component<P = {}, S = {}> = React.Component<P, S>;
-type FC<T = {}> = React.FC<T>;
 
 import { format } from 'date-fns';
-import * as React from 'react';
-import { useState } from 'react';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

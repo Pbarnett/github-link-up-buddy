@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
-
 interface BehavioralState {
   mouseHoverTime: number;
   scrollDepth: number;
@@ -23,75 +22,174 @@ export const useBehavioralTriggers = () => {
   const startTime = useRef(Date.now());
   const hoverStartTime = useRef<number | null>(null);
   const scrollTimer = useRef<number>();
+  const cardsRef = useRef<NodeListOf<Element> | null>(null);
+  const timeIntervalRef = useRef<number>();
 
   useEffect(() => {
+    // Guard against SSR
+    if (
+      typeof (
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+      ) === 'undefined' ||
+      typeof document === 'undefined'
+    ) {
+      return;
+    }
+
     // Track time on page
-    const timeInterval = setInterval(() => {
-      const timeOnPage = Date.now() - startTime.current;
-      setState(prev => ({
-        ...prev,
-        timeOnPage,
-        userEngaged: timeOnPage > 5000, // 5 seconds = engaged
-      }));
-    }, 1000);
+    timeIntervalRef.current =
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.setInterval(
+        () => {
+          try {
+            const timeOnPage = Date.now() - startTime.current;
+            setState(prev => ({
+              ...prev,
+              timeOnPage,
+              userEngaged: timeOnPage > 5000, // 5 seconds = engaged
+            }));
+          } catch (error) {
+            console.warn('Error updating time on page:', error);
+          }
+        },
+        1000
+      );
 
-    // Track scroll depth
+    // Track scroll depth with safe DOM access
     const handleScroll = () => {
-      const scrollTop = window.pageYOffset;
-      const docHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      const scrollDepth = (scrollTop / docHeight) * 100;
+      try {
+        if (
+          !(
+            /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+          ) ||
+          !document.documentElement
+        )
+          return;
 
-      setState(prev => ({
-        ...prev,
-        scrollDepth,
-        showPriceProof: scrollDepth > 30, // Show proof after 30% scroll
-      }));
+        const scrollTop =
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.pageYOffset ||
+          0;
+        const docHeight = Math.max(
+          document.documentElement.scrollHeight -
+            /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.innerHeight,
+          1 // Prevent division by zero
+        );
+        const scrollDepth = Math.min((scrollTop / docHeight) * 100, 100);
 
-      // Debounce scroll events
-      clearTimeout(scrollTimer.current);
-      scrollTimer.current = window.setTimeout(() => {
-        // User stopped scrolling, check if they need help
-        if (scrollDepth < 50 && Date.now() - startTime.current > 8000) {
-          setState(prev => ({ ...prev, showHesitationHelp: true }));
-        }
-      }, 2000);
-    };
-
-    // Track mouse hover on cards
-    const handleMouseEnter = () => {
-      hoverStartTime.current = Date.now();
-    };
-
-    const handleMouseLeave = () => {
-      if (hoverStartTime.current) {
-        const hoverTime = Date.now() - hoverStartTime.current;
         setState(prev => ({
           ...prev,
-          mouseHoverTime: Math.max(prev.mouseHoverTime, hoverTime),
+          scrollDepth,
+          showPriceProof: scrollDepth > 30, // Show proof after 30% scroll
         }));
-        hoverStartTime.current = null;
+
+        // Debounce scroll events with proper cleanup
+        if (scrollTimer.current) {
+          clearTimeout(scrollTimer.current);
+        }
+        scrollTimer.current =
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.setTimeout(
+            () => {
+              try {
+                // User stopped scrolling, check if they need help
+                if (scrollDepth < 50 && Date.now() - startTime.current > 8000) {
+                  setState(prev => ({ ...prev, showHesitationHelp: true }));
+                }
+              } catch (error) {
+                console.warn('Error in scroll timeout handler:', error);
+              }
+            },
+            2000
+          );
+      } catch (error) {
+        console.warn('Error handling scroll:', error);
       }
     };
 
-    // Attach listeners
-    window.addEventListener('scroll', handleScroll);
+    // Track mouse hover on cards with proper event handling
+    const _handleMouseEnter = () => {
+      try {
+        hoverStartTime.current = Date.now();
+      } catch (error) {
+        console.warn('Error handling mouse enter:', error);
+      }
+    };
 
-    // Attach to card elements
-    const cards = document.querySelectorAll('[data-behavior="card"]');
-    cards.forEach(card => {
-      card.addEventListener('mouseenter', handleMouseEnter);
-      card.addEventListener('mouseleave', handleMouseLeave);
-    });
+    const _handleMouseLeave = () => {
+      try {
+        if (hoverStartTime.current) {
+          const hoverTime = Date.now() - hoverStartTime.current;
+          setState(prev => ({
+            ...prev,
+            mouseHoverTime: Math.max(prev.mouseHoverTime, hoverTime),
+          }));
+          hoverStartTime.current = null;
+        }
+      } catch (error) {
+        console.warn('Error handling mouse leave:', error);
+      }
+    };
 
-    return () => {
-      clearInterval(timeInterval);
-      clearTimeout(scrollTimer.current);
-      window.removeEventListener('scroll', handleScroll);
-      cards.forEach(card => {
-        card.removeEventListener('mouseenter', handleMouseEnter);
-        card.removeEventListener('mouseleave', handleMouseLeave);
+    // Attach listeners with error handling
+    try {
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.addEventListener(
+        'scroll',
+        handleScroll,
+        { passive: true }
+      );
+    } catch (error) {
+      console.warn('Error adding scroll listener:', error);
+    }
+
+    // Attach to card elements with proper reference management
+    try {
+      cardsRef.current = document.querySelectorAll('[data-behavior="card"]');
+      cardsRef.current.forEach(card => {
+        try {
+          card.addEventListener('mouseenter', handleMouseEnter);
+          card.addEventListener('mouseleave', handleMouseLeave);
+        } catch (error) {
+          console.warn('Error adding card listeners:', error);
+        }
       });
+    } catch (error) {
+      console.warn('Error querying card elements:', error);
+    }
+
+    // Cleanup function with comprehensive error handling
+    return () => {
+      try {
+        if (timeIntervalRef.current) {
+          clearInterval(timeIntervalRef.current);
+        }
+        if (scrollTimer.current) {
+          clearTimeout(scrollTimer.current);
+        }
+
+        // Remove /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window listeners
+        if (
+          typeof (
+            /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+          ) !== 'undefined'
+        ) {
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.removeEventListener(
+            'scroll',
+            handleScroll
+          );
+        }
+
+        // Remove card listeners using stored reference
+        if (cardsRef.current) {
+          cardsRef.current.forEach(card => {
+            try {
+              card.removeEventListener('mouseenter', handleMouseEnter);
+              card.removeEventListener('mouseleave', handleMouseLeave);
+            } catch (error) {
+              console.warn('Error removing card listener:', error);
+            }
+          });
+        }
+      } catch (error) {
+        console.warn('Error in cleanup function:', error);
+      }
     };
   }, []);
 

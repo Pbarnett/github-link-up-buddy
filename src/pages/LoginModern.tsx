@@ -1,4 +1,6 @@
 import * as React from 'react';
+import { useState, useEffect, use } from 'react';
+import { AlertTriangle, Loader2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -10,11 +12,12 @@ import {
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { UserInitializationService } from '@/services/userInitialization';
-import { useState, useEffect } from 'react';
 import { AuthErrorHandler } from '@/services/authErrorHandler';
 import { AuthResilience, SessionManager } from '@/services/authResilience';
-import { authMigrationService, getMigrationStatus } from '@/services/authMigrationService';
-import { AlertCircle, AlertTriangle, ArrowRight, Bell, Calendar, CalendarIcon, CheckCircle, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Circle, Clock, CreditCard, DollarSign, Download, Eye, FileText, Filter, Globe, HelpCircle, Info, Loader2, Lock, Mail, MapPin, Package, Phone, Plane, PlaneTakeoff, Plus, RefreshCw, Save, Search, Settings, Shield, Trash2, Upload, User, Wifi, X, XCircle, Zap } from 'lucide-react';
+import {
+  authMigrationService,
+  getMigrationStatus,
+} from '@/services/authMigrationService';
 import {
   modernGoogleAuth,
   type AuthResult,
@@ -49,10 +52,10 @@ const LoginModern = () => {
     try {
       // Validate session with recovery capability
       const sessionValid = await SessionManager.validateAndRecoverSession();
-      
+
       if (sessionValid) {
         const { data, error } = await supabase.auth.getSession();
-        
+
         if (!error && data.session) {
           console.log('✅ User already authenticated');
           setIsAuthenticated(true);
@@ -69,7 +72,7 @@ const LoginModern = () => {
       // Initialize authentication using migration service
       if (migrationStatus.userInMigration) {
         console.log('🚀 Initializing Modern Google Auth via Migration Service');
-        
+
         // Initialize modern Google Auth
         await modernGoogleAuth.initialize();
 
@@ -88,7 +91,7 @@ const LoginModern = () => {
     } catch (error) {
       AuthErrorHandler.handleAuthError(error, {
         component: 'LoginModern',
-        flow: 'initializeAuth'
+        flow: 'initializeAuth',
       });
       setIsAuthenticated(false);
     }
@@ -110,13 +113,25 @@ const LoginModern = () => {
     });
 
     // Listen for Google Auth events
-    window.addEventListener('googleAuthSuccess', handleGoogleAuthSuccess);
-    window.addEventListener('googleAuthError', handleGoogleAuthError);
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.addEventListener(
+      'googleAuthSuccess',
+      handleGoogleAuthSuccess
+    );
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.addEventListener(
+      'googleAuthError',
+      handleGoogleAuthError
+    );
 
     return () => {
       subscription.unsubscribe();
-      window.removeEventListener('googleAuthSuccess', handleGoogleAuthSuccess);
-      window.removeEventListener('googleAuthError', handleGoogleAuthError);
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.removeEventListener(
+        'googleAuthSuccess',
+        handleGoogleAuthSuccess
+      );
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.removeEventListener(
+        'googleAuthError',
+        handleGoogleAuthError
+      );
     };
   };
 
@@ -125,7 +140,7 @@ const LoginModern = () => {
 
     try {
       setOneTapAttempted(true);
-      
+
       // Use migration service for One Tap
       await authMigrationService.displayOneTap();
     } catch (error) {
@@ -153,11 +168,12 @@ const LoginModern = () => {
 
     try {
       // Check for popup blockers first
-      const popupTest = window.open(
-        'about:blank',
-        '_blank',
-        'width=1,height=1'
-      );
+      const popupTest =
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open(
+          'about:blank',
+          '_blank',
+          'width=1,height=1'
+        );
       if (!popupTest) {
         toast({
           title: 'Popup Blocked',
@@ -181,7 +197,7 @@ const LoginModern = () => {
     } catch (error) {
       AuthErrorHandler.handleAuthError(error, {
         component: 'LoginModern',
-        flow: 'handleGoogleSignIn'
+        flow: 'handleGoogleSignIn',
       });
       setLoading(false);
 
@@ -205,7 +221,7 @@ const LoginModern = () => {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/login`,
+            redirectTo: `${/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.origin}/login`,
             queryParams: {
               access_type: 'offline',
               prompt: 'consent',
@@ -241,7 +257,11 @@ const LoginModern = () => {
       description: 'Authentication data cleared. Page will reload.',
     });
 
-    setTimeout(() => window.location.reload(), 1000);
+    setTimeout(
+      () =>
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.reload(),
+      1000
+    );
   };
 
   if (isAuthenticated) {
@@ -263,23 +283,36 @@ const LoginModern = () => {
           <div className="flex items-center justify-center gap-2 mt-2 text-xs text-gray-500">
             <Shield size={14} />
             <span>
-              {migrationStatus.userInMigration && authMode === 'fedcm' && 'Enhanced Privacy Mode (Modern)'}
-              {migrationStatus.userInMigration && authMode === 'standard' && 'Standard Security Mode (Modern)'}
-              {migrationStatus.userInMigration && authMode === 'redirect' && 'Compatibility Mode (Modern)'}
+              {migrationStatus.userInMigration &&
+                authMode === 'fedcm' &&
+                'Enhanced Privacy Mode (Modern)'}
+              {migrationStatus.userInMigration &&
+                authMode === 'standard' &&
+                'Standard Security Mode (Modern)'}
+              {migrationStatus.userInMigration &&
+                authMode === 'redirect' &&
+                'Compatibility Mode (Modern)'}
               {!migrationStatus.userInMigration && 'Legacy Authentication Mode'}
             </span>
           </div>
-          
+
           {/* Migration Status Indicator */}
           {import.meta.env.DEV && (
             <div className="mt-2 text-xs text-center">
-              <span className={`px-2 py-1 rounded text-white ${
-                migrationStatus.userInMigration ? 'bg-green-500' : 'bg-blue-500'
-              }`}>
-                {migrationStatus.userInMigration ? '🚀 Modern Auth' : '🔄 Legacy Auth'}
+              <span
+                className={`px-2 py-1 rounded text-white ${
+                  migrationStatus.userInMigration
+                    ? 'bg-green-500'
+                    : 'bg-blue-500'
+                }`}
+              >
+                {migrationStatus.userInMigration
+                  ? '🚀 Modern Auth'
+                  : '🔄 Legacy Auth'}
               </span>
               <div className="mt-1 text-gray-400">
-                Phase: {migrationStatus.phase} | Rollout: {migrationStatus.rolloutPercentage}%
+                Phase: {migrationStatus.phase} | Rollout:{' '}
+                {migrationStatus.rolloutPercentage}%
               </div>
             </div>
           )}
@@ -323,10 +356,9 @@ const LoginModern = () => {
               <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
                 <AlertTriangle size={14} />
                 <span>
-                  {migrationStatus.userInMigration 
+                  {migrationStatus.userInMigration
                     ? 'Using compatibility mode for enhanced privacy browsers'
-                    : 'Using legacy authentication for compatibility'
-                  }
+                    : 'Using legacy authentication for compatibility'}
                 </span>
               </div>
 
@@ -339,17 +371,21 @@ const LoginModern = () => {
                 {loading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
-                {migrationStatus.userInMigration ? 'Alternative Sign In Method' : 'Legacy Sign In Method'}
+                {migrationStatus.userInMigration
+                  ? 'Alternative Sign In Method'
+                  : 'Legacy Sign In Method'}
               </Button>
             </div>
           )}
 
           {/* One Tap Status */}
-          {!oneTapAttempted && authMode !== 'redirect' && migrationStatus.userInMigration && (
-            <div className="text-xs text-center text-gray-500">
-              Looking for seamless sign-in options...
-            </div>
-          )}
+          {!oneTapAttempted &&
+            authMode !== 'redirect' &&
+            migrationStatus.userInMigration && (
+              <div className="text-xs text-center text-gray-500">
+                Looking for seamless sign-in options...
+              </div>
+            )}
 
           {/* Emergency Reset */}
           <div className="pt-4 border-t border-gray-200">

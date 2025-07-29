@@ -7,7 +7,6 @@ import * as React from 'react';
  */
 
 import { DuffelAPIError } from '../errors/duffelErrors';
-
 export interface OfferValidationResult {
   isValid: boolean;
   timeRemaining: number; // milliseconds

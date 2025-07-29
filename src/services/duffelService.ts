@@ -85,15 +85,15 @@ export interface DuffelOrderRequest {
 }
 
 // Environment configuration
-const DUFFEL_API_URL = 'https://api.duffel.com/air';
-const DUFFEL_VERSION = 'v2';
+const DUFFEL_API_URL = 'https://api.duffel.com';
+const DUFFEL_VERSION = 'v1';
 
 function getDuffelToken(): string {
   // Check for live vs test mode via environment or feature flag
   const isLive = process.env.DUFFEL_LIVE_ENABLED === 'true';
   const token = isLive
-    ? process.env.DUFFEL_LIVE_TOKEN
-    : process.env.DUFFEL_TEST_TOKEN;
+    ? process.env.DUFFEL_API_TOKEN_LIVE
+    : process.env.DUFFEL_API_TOKEN_TEST;
 
   if (!token) {
     throw new Error(
@@ -262,7 +262,7 @@ export async function createOfferRequest(
   request: DuffelOfferRequest
 ): Promise<DuffelOffer[]> {
   const response = await duffelRequest<{ data: { offers: DuffelOffer[] } }>(
-    '/offer_requests?return_offers=true',
+    '/air/offer_requests?return_offers=true',
     {
       method: 'POST',
       body: JSON.stringify({ data: request }),
@@ -299,7 +299,7 @@ export async function createOrder(
     `[DuffelService] Creating order for offer ${orderRequest.offer_id} with idempotency key ${idempotencyKey}`
   );
 
-  const response = await duffelRequest<{ data: DuffelOrder }>('/orders', {
+  const response = await duffelRequest<{ data: DuffelOrder }>('/air/orders', {
     method: 'POST',
     body: JSON.stringify({ data: orderRequest }),
     idempotencyKey,
@@ -316,7 +316,7 @@ export async function createOrder(
  */
 export async function getOrder(orderId: string): Promise<DuffelOrder> {
   const response = await duffelRequest<{ data: DuffelOrder }>(
-    `/orders/${orderId}`
+    `/air/orders/${orderId}`
   );
 
   return response.data;
@@ -327,7 +327,7 @@ export async function getOrder(orderId: string): Promise<DuffelOrder> {
  */
 export async function cancelOrder(orderId: string): Promise<DuffelOrder> {
   const response = await duffelRequest<{ data: DuffelOrder }>(
-    `/orders/${orderId}/actions/cancel`,
+    `/air/orders/${orderId}/actions/cancel`,
     { method: 'POST' }
   );
 

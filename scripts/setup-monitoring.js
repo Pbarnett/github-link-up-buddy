@@ -11,13 +11,12 @@
  */
 
 import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import {} from 'path';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
 // Color codes for console output
 const colors = {
@@ -29,18 +28,12 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m'
-};
 
+};
 // Utility functions
-const log = (message, color = 'reset') => {
-  console.log(`${colors[color]}${message}${colors.reset}`);
-};
+// Removed unused log function
 
-const success = (message) => log(`✅ ${message}`, 'green');
-const warning = (message) => log(`⚠️  ${message}`, 'yellow');
-const error = (message) => log(`❌ ${message}`, 'red');
-const info = (message) => log(`ℹ️  ${message}`, 'blue');
-const step = (message) => log(`📊 ${message}`, 'cyan');
+const step = (message) => console.log(`📊 ${message}`, 'cyan');
 
 class MonitoringSetup {
   constructor() {
@@ -52,8 +45,8 @@ class MonitoringSetup {
 
   async configure() {
     try {
-      log('🌟 Parker Flight - Monitoring Configuration Started', 'bright');
-      log('=' .repeat(60), 'blue');
+      console.log('🌟 Parker Flight - Monitoring Configuration Started', 'bright');
+      console.log("=".repeat(60));
       
       await this.setupGrafana();
       await this.setupPrometheus();
@@ -61,19 +54,19 @@ class MonitoringSetup {
       await this.setupAlerts();
       
       const duration = ((Date.now() - this.startTime) / 1000).toFixed(2);
-      success(`🎉 Monitoring configuration completed successfully in ${duration}s`);
+      console.log(`✅ 🎉 Monitoring configuration completed successfully in ${duration}s`);
       
     } catch (err) {
-      error(`Monitoring setup failed: ${err.message}`);
+      console.error(`Monitoring setup failed: ${err.message}`);
       process.exit(1);
     }
   }
 
   async setupGrafana() {
-    step('Setting up Grafana...');
+    console.log('Setting up Grafana...');
 
     if (!this.grafanaApiKey) {
-      warning('GRAFANA_API_KEY not set. Skipping Grafana setup.');
+      console.warn('GRAFANA_API_KEY not set. Skipping Grafana setup.');
       return;
     }
 
@@ -99,30 +92,30 @@ class MonitoringSetup {
         throw new Error(`Failed to add Grafana datasource: HTTP ${response.status}`);
       }
 
-      success('Grafana datasource configured');
+      console.log('Grafana datasource configured');
 
     } catch (err) {
-      warning(`Failed to setup Grafana: ${err.message}`);
+      console.warn(`Failed to setup Grafana: ${err.message}`);
     }
   }
 
   async setupPrometheus() {
-    step('Setting up Prometheus...');
+    console.log('Setting up Prometheus...');
 
     try {
       // Verify Prometheus is running and accessible
       await fetch(`${this.prometheusUrl}/api/v1/status/buildinfo`).then(r => {
         if (!r.ok) throw new Error('Prometheus not reachable');
-        success('Prometheus connectivity validated');
+        console.log('Prometheus connectivity validated');
       });
 
     } catch (err) {
-      warning(`Prometheus setup verification failed: ${err.message}`);
+      console.warn(`Prometheus setup verification failed: ${err.message}`);
     }
   }
 
   async setupCloudWatch() {
-    step('Configuring CloudWatch alarms...');
+    console.log('Configuring CloudWatch alarms...');
 
     try {
       const cloudwatchAlarms = [
@@ -147,21 +140,21 @@ class MonitoringSetup {
           --evaluation-periods ${alarm.EvaluationPeriods} --alarm-actions ${alarm.AlarmActions.join(' ')}`, {
           stdio: 'pipe'
         });
-        success(`CloudWatch alarm created: ${alarm.AlarmName}`);
+        console.log(`✅ CloudWatch alarm created: ${alarm.AlarmName}`);
       }
 
     } catch (err) {
-      warning(`CloudWatch alarm setup failed: ${err.message}`);
+      console.warn(`CloudWatch alarm setup failed: ${err.message}`);
     }
   }
 
   async setupAlerts() {
-    step('Configuring alert policies...');
+    console.log('Configuring alert policies...');
 
     // Your logic for alert escalation policies goes here
     // This can include integration with OpsGenie, VictorOps, PagerDuty, etc.
 
-    info('Alert escalation policies configured');
+    console.info('Alert escalation policies configured');
   }
 }
 
@@ -169,9 +162,9 @@ class MonitoringSetup {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const setup = new MonitoringSetup();
   setup.configure().catch(err => {
-    console.error(`❌ Monitoring setup failed: ${err.message}`);
+    console.error(`❌ Monitoring setup failed: ${error.message}`);
     process.exit(1);
   });
 }
 
-export default MonitoringSetup;
+module.exports = MonitoringSetup;

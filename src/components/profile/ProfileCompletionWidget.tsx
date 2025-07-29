@@ -1,14 +1,5 @@
 import * as React from 'react';
-import {
-  User,
-  Phone,
-  FileText,
-  Settings,
-  Shield,
-  AlertTriangle,
-  TrendingUp,
-  Target,
-} from 'lucide-react';
+import { AlertTriangle, TrendingUp, Target, User, Phone, FileText, Settings, Shield } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -20,7 +11,6 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ProfileCompletenessScore } from '@/services/profileCompletenessService';
-
 interface ProfileCompletionWidgetProps {
   completeness: ProfileCompletenessScore;
   onCategoryClick?: (category: string) => void;

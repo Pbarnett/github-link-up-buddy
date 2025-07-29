@@ -1,5 +1,4 @@
 import { format, parseISO, isValid, parse } from 'date-fns';
-
 /**
  * Safe date formatting utility that prevents RangeError for invalid dates
  * Used in tests and components to handle malformed date strings gracefully

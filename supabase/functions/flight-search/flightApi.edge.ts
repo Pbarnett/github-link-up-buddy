@@ -294,7 +294,7 @@ export async function searchOffers(
   // It's the logic that was present when flightApi.edge.ts was last correctly modified for PR #8.
   // This includes:
   // - Iterating origin codes
-  // - Iterating search strategies (max-duration, min-duration, mid-window)
+  // - Iterating search strategies (max-duration, min-duration, mid-/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window)
   // - Building payload for Amadeus
   // - Calling Amadeus API via withRetry and fetchWithTimeout
   // - Handling responses and pushing to allRawAmadeusOffers

@@ -16,7 +16,7 @@ const KNOWN_FLAGS = [
 
 async function main() {
   try {
-    const sdkKey = process.env.LAUNCHDARKLY_SDK_KEY;
+    const sdkKey = process.env.LAUNCHDARKLY_SDK_KEY
     if (!sdkKey) {
       throw new Error("LAUNCHDARKLY_SDK_KEY is missing from environment variables");
     }
@@ -50,7 +50,7 @@ async function main() {
       try {
         const flagValue = await client.variation(flagKey, userContext, false);
         console.log(`  ${flagKey}: ${flagValue}`);
-      } catch (error) {
+      } catch {
         console.log(`  ${flagKey}: ERROR - ${error.message}`);
       }
     }
@@ -95,7 +95,7 @@ async function main() {
     console.error('  - Check if LaunchDarkly project is configured correctly');
     console.error('  - Make sure you\'re using a server-side SDK key, not a client-side ID');
     console.error('\n🔧 Debug information:');
-    console.error(`  SDK Key: ${process.env.LAUNCHDARKLY_SDK_KEY ? process.env.LAUNCHDARKLY_SDK_KEY.substring(0, 8) + '...' : 'undefined'}`);
+    console.error(`  SDK Key: ${process.env.LAUNCHDARKLY_SDK_KEY ? process.env.LAUNCHDARKLY_SDK_KEY.substring(0, 8); + '...' : 'undefined'}`);
     console.error(`  Error type: ${error.constructor.name}`);
     console.error(`  Error stack: ${error.stack}`);
     process.exit(1);
@@ -113,7 +113,7 @@ process.on('SIGTERM', () => {
   process.exit(0);
 });
 
-main().catch((error) => {
+main().catch((_error) => {
   console.error('Unhandled error:', error);
   process.exit(1);
 });

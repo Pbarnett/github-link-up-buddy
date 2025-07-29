@@ -158,7 +158,7 @@ serve(async (req) => {
       migrationStatus.nextSteps = [
         "Run backup procedures",
         "Test KMS integration thoroughly", 
-        "Plan maintenance window",
+        "Plan maintenance /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window",
         "Execute migration in batches",
         "Verify data integrity post-migration"
       ];

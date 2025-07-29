@@ -1,6 +1,5 @@
 // src/types/offer.ts
 import { Offer as BaseOffer } from '@/services/tripOffersService';
-
 export interface FlightPricing {
   base: number;
   carryOnFee: number;

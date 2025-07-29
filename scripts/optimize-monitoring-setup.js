@@ -14,6 +14,15 @@
 import fs from 'fs/promises';
 import axios from 'axios';
 import { performance } from 'perf_hooks';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const GRAFANA_URL = 'http://localhost:3001';
 const GRAFANA_ADMIN_USER = 'admin';
@@ -115,7 +124,7 @@ class MonitoringOptimizer {
           await this.log('info', `📁 Folder already exists: ${folderName}`);
         }
 
-      } catch (error) {
+      } catch {
         await this.log('error', `Failed to create folder ${folderName}: ${error.message}`);
       }
     }
@@ -145,8 +154,8 @@ class MonitoringOptimizer {
         });
 
         if (dashboardResponse.status === 200) {
-          const dashboard = dashboardResponse.data.dashboard;
-          dashboard.refresh = config.refresh;
+          const dashboard = dashboardResponse.data.dashboard
+          dashboard.refresh = config.refresh
 
           // Update dashboard
           const updatePayload = {
@@ -163,7 +172,7 @@ class MonitoringOptimizer {
           await this.log('success', `✅ Optimized refresh rate for ${dashboardUid}: ${config.refresh}`);
         }
 
-      } catch (error) {
+      } catch {
         await this.log('warn', `⚠️ Could not optimize ${dashboardUid}: ${error.response?.status === 404 ? 'Dashboard not found' : error.message}`);
       }
     }
@@ -291,7 +300,7 @@ class MonitoringOptimizer {
 
       if (response.status === 200) {
         await this.log('success', `✅ Created Dashboard of Dashboards: ${GRAFANA_URL}${response.data.url}`);
-        return response.data;
+        return response.data
       }
 
     } catch (error) {
@@ -494,7 +503,7 @@ class MonitoringOptimizer {
       const duration = ((endTime - startTime) / 1000).toFixed(2);
       await this.log('info', `🏁 Optimization '${command}' completed in ${duration}s`);
 
-    } catch (error) {
+    } catch {
       await this.log('error', `Optimization '${command}' failed: ${error.message}`);
       process.exit(1);
     }
@@ -532,4 +541,4 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   });
 }
 
-export { MonitoringOptimizer };
+module.exports = { MonitoringOptimizer };

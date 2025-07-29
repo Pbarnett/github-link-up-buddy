@@ -1,7 +1,7 @@
 import * as React from 'react';
+import { FC, ReactNode, memo } from 'react';
 import { useMemo } from 'react';
 import { UseFormReturn, FormProvider } from 'react-hook-form';
-
 /**
  * Optimized FormProvider Component
  *
@@ -9,8 +9,6 @@ import { UseFormReturn, FormProvider } from 'react-hook-form';
  * to prevent unnecessary re-renders in complex form applications.
  */
 
-type ReactNode = React.ReactNode;
-type FC<T = {}> = React.FC<T>;
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 interface OptimizedFormProviderProps {

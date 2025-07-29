@@ -6,7 +6,7 @@ config({ path: '.env.local' });
 
 async function main() {
   try {
-    const apiToken = process.env.LAUNCHDARKLY_API_TOKEN;
+    const apiToken = process.env.LAUNCHDARKLY_API_TOKEN
     if (!apiToken) {
       throw new Error("LAUNCHDARKLY_API_TOKEN is missing from environment variables");
     }
@@ -37,7 +37,7 @@ async function main() {
 
     // Test getting feature flags for the first project
     if (projects.items.length > 0) {
-      const projectKey = projects.items[0].key;
+      const projectKey = projects.items[0].key
       console.log(`\n🚩 Testing feature flags for project: ${projectKey}`);
 
       const flagsResponse = await fetch(`https://app.launchdarkly.com/api/v2/flags/${projectKey}`, {
@@ -74,13 +74,13 @@ async function main() {
     console.error('  - Check network connectivity to LaunchDarkly API');
     console.error('  - Ensure API token is not expired');
     console.error('\n🔧 Debug information:');
-    console.error(`  API Token: ${process.env.LAUNCHDARKLY_API_TOKEN ? process.env.LAUNCHDARKLY_API_TOKEN.substring(0, 8) + '...' : 'undefined'}`);
+    console.error(`  API Token: ${process.env.LAUNCHDARKLY_API_TOKEN ? process.env.LAUNCHDARKLY_API_TOKEN.substring(0, 8); + '...' : 'undefined'}`);
     console.error(`  Error type: ${error.constructor.name}`);
     process.exit(1);
   }
 }
 
-main().catch((error) => {
+main().catch((_error) => {
   console.error('Unhandled error:', error);
   process.exit(1);
 });

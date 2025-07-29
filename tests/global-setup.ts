@@ -171,7 +171,7 @@ async function testServiceConnectivity() {
         } else {
           console.log(`  ⚠️  ${service.name} connectivity failed - some tests may fail`);
         }
-      } catch (error) {
+      } catch (_error) {
         console.log(`  ⚠️  ${service.name} connectivity test failed:`, (error as Error).message);
       }
     } else {

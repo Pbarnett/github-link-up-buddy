@@ -11,6 +11,15 @@
 
 import axios from 'axios';
 import { performance } from 'perf_hooks';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const PROMETHEUS_URL = 'http://localhost:9090';
 const ALERTMANAGER_URL = 'http://localhost:9093';
@@ -60,9 +69,7 @@ class AlertRuleTester {
       // Generate synthetic error metrics
       const errorMetrics = {
         'parker_flight_requests_total{status="500",method="GET",endpoint="/api/flights"}': 50,
-        'parker_flight_requests_total{status="200",method="GET",endpoint="/api/flights"}': 100,
-      };
-
+        'parker_flight_requests_total{status="200",method="GET",endpoint="/api/flights"}': 100}
       // Push metrics to metrics server
       for (const [metric, value] of Object.entries(errorMetrics)) {
         await axios.post(`${METRICS_SERVER_URL}/api/test-metrics`, {
@@ -219,7 +226,7 @@ class AlertRuleTester {
     try {
       // Get current alerts from AlertManager
       const response = await axios.get(`${ALERTMANAGER_URL}/api/v1/alerts`);
-      const alerts = response.data.data;
+      const alerts = response.data.data
 
       await this.log('info', `Found ${alerts.length} active alerts in AlertManager`);
 
@@ -264,9 +271,9 @@ class AlertRuleTester {
   }
 
   async generateReport() {
-    const passed = this.testResults.filter(r => r.status === 'PASS').length;
-    const failed = this.testResults.filter(r => r.status === 'FAIL').length;
-    const pending = this.testResults.filter(r => r.status === 'PENDING').length;
+    const passed = this.testResults.filter(r => r.status === 'PASS').length
+    const failed = this.testResults.filter(r => r.status === 'FAIL').length
+    const pending = this.testResults.filter(r => r.status === 'PENDING').length
 
     console.log('\n📊 ALERT RULE TESTING REPORT');
     console.log('=' .repeat(50));
@@ -339,4 +346,4 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   });
 }
 
-export { AlertRuleTester };
+module.exports = { AlertRuleTester };

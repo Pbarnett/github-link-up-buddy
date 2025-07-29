@@ -16,7 +16,7 @@ const fixPatterns = [
   { pattern: /const { useTransition } = React;/g, replace: 'const { useTransition: _useTransition } = React;' },
   
   // Error variables in catch blocks
-  { pattern: /} catch \(error\) {/g, replace: '} catch (_error) {' },
+  { pattern: /} catch \(error\) {/g, replace: '} catch (error) {' },
   { pattern: /\(error\) => {[^}]*console\.error/g, replace: (match) => match.replace('(error)', '(_error)') },
   
   // Function parameters that are unused
@@ -35,9 +35,7 @@ const fixPatterns = [
   // Destructuring assignments
   { pattern: /const { error } =/g, replace: 'const { error: _error } =' },
   { pattern: /const { execSync } =/g, replace: 'const { execSync: _execSync } =' },
-  { pattern: /const { result } =/g, replace: 'const { result: _result } =' },
-];
-
+  { pattern: /const { result } =/g, replace: 'const { result: _result } =' }]
 function fixFile(filePath) {
   try {
     let content = fs.readFileSync(filePath, 'utf8');

@@ -12,7 +12,6 @@ import {
 } from '@launchdarkly/node-server-sdk';
 import { FlagErrorHandler } from './error-handler';
 import { FlagAnalytics } from './analytics';
-
 export interface FlagEvaluationOptions {
   timeout?: number;
   trackEvents?: boolean;

@@ -1,7 +1,23 @@
 import * as React from 'react';
-import { useEffect } from 'react';
-import { Suspense } from 'react';
-import { useTransition } from 'react';
+import {
+  useEffect,
+  Suspense,
+  useTransition,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useContext,
+  useReducer,
+  useLayoutEffect,
+  useImperativeHandle,
+  startTransition,
+  lazy,
+} from 'react';
+
+type FormEvent<T = Element> = React.FormEvent<T>;
+type ChangeEvent<T = Element> = React.ChangeEvent<T>;
+type ComponentType<P = {}> = React.ComponentType<P>;
 
 // React 19 compatibility fixes
 declare module 'react' {
@@ -63,9 +79,6 @@ declare module 'react' {
   export type ReactNode = React.ReactNode;
   export type FC<P = {}> = React.FC<P>;
   export type Component<P = {}, S = {}, SS = any> = React.Component<P, S, SS>;
-  export type FormEvent<T = Element> = React.FormEvent<T>;
-  export type ChangeEvent<T = Element> = React.ChangeEvent<T>;
-  export type ComponentType<P = {}> = React.ComponentType<P>;
   export type ErrorInfo = React.ErrorInfo;
 
   // Re-export Component class properly for React 19

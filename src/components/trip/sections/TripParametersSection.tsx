@@ -5,7 +5,6 @@ import BudgetSection from './BudgetSection';
 import TripDurationSection from './TripDurationSection';
 import DepartureAirportsSection from './DepartureAirportsSection';
 import DestinationSection from './DestinationSection';
-
 interface TripParametersSectionProps {
   control: Control<Record<string, unknown>>;
   watch: UseFormWatch<Record<string, unknown>>;

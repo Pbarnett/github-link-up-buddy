@@ -194,7 +194,7 @@ test.describe('Accessibility (WCAG 2.2 AA)', () => {
           
           // Check focus indicator exists and is visible
           const focusOutline = await element.evaluate(el => {
-            const computed = window.getComputedStyle(el);
+            const computed = /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.getComputedStyle(el);
             return {
               outlineWidth: computed.outlineWidth,
               outlineStyle: computed.outlineStyle,
@@ -398,7 +398,7 @@ test.describe('Accessibility (WCAG 2.2 AA)', () => {
         
         if (await element.isVisible()) {
           const animations = await element.evaluate(el => {
-            const computed = window.getComputedStyle(el);
+            const computed = /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.getComputedStyle(el);
             return {
               animationDuration: computed.animationDuration,
               transitionDuration: computed.transitionDuration

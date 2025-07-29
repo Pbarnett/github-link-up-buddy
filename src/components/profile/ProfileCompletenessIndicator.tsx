@@ -1,15 +1,7 @@
 import * as React from 'react';
-import { ComponentType } from 'react';
-import {
-  CheckCircle2,
-  AlertCircle,
-  User,
-  CreditCard,
-  Phone,
-  MapPin,
-  FileText,
-  Award,
-} from 'lucide-react';
+import { ComponentType as ReactComponentType } from 'react';
+type ComponentType<P = {}> = React.ComponentType<P>;
+import { CheckCircle2, AlertCircle, Award, User, Phone, MapPin, CreditCard, FileText } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import {
   Card,
@@ -21,7 +13,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
 export interface ProfileField {
   id: string;
   label: string;

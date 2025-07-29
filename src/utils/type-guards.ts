@@ -10,7 +10,7 @@ import type {
   EmailAddress,
   ISODateString,
   Result,
-  _ValidationResult,
+  __ValidationResult,
   ValidationError,
   ApiResponse,
   AsyncState,

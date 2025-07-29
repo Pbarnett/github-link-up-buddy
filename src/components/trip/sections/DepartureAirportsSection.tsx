@@ -11,7 +11,6 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { NYC_AIRPORTS } from '@/data/airports';
-
 // Departure airports form data interface
 interface DepartureAirportsFormData {
   nyc_airports?: string[];

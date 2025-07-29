@@ -10,7 +10,6 @@ import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { createClient } from '@supabase/supabase-js';
 import { getSecretValue } from '@/lib/aws-sdk-enhanced/secrets-manager';
 import { secretCache } from '@/lib/aws-sdk-enhanced/examples/secrets-manager-usage';
-
 // Environment configuration
 const ENVIRONMENT = process.env.NODE_ENV || 'development';
 const AWS_REGION = process.env.AWS_REGION || 'us-west-2';
@@ -90,9 +89,24 @@ export class StripeSecureConfig {
         );
       }
 
-      // Validate key format
-      if (!key.startsWith('pk_')) {
-        throw new Error('Invalid Stripe publishable key format');
+      // Validate key format per API reference documentation
+      if (!key.startsWith('pk_test_') && !key.startsWith('pk_live_')) {
+        throw new Error(
+          'Invalid Stripe publishable key format. Must start with pk_test_ or pk_live_'
+        );
+      }
+
+      // Environment validation
+      if (ENVIRONMENT === 'production' && key.startsWith('pk_test_')) {
+        throw new Error(
+          'Cannot use test publishable key in production environment'
+        );
+      }
+
+      if (ENVIRONMENT !== 'production' && key.startsWith('pk_live_')) {
+        console.warn(
+          '⚠️ Using live publishable key in non-production environment'
+        );
       }
 
       return key;
@@ -116,9 +130,20 @@ export class StripeSecureConfig {
         );
       }
 
-      // Validate key format
-      if (!key.startsWith('sk_')) {
-        throw new Error('Invalid Stripe secret key format');
+      // Validate key format per API reference documentation
+      if (!key.startsWith('sk_test_') && !key.startsWith('sk_live_')) {
+        throw new Error(
+          'Invalid Stripe secret key format. Must start with sk_test_ or sk_live_'
+        );
+      }
+
+      // Environment validation
+      if (ENVIRONMENT === 'production' && key.startsWith('sk_test_')) {
+        throw new Error('Cannot use test secret key in production environment');
+      }
+
+      if (ENVIRONMENT !== 'production' && key.startsWith('sk_live_')) {
+        console.warn('⚠️ Using live secret key in non-production environment');
       }
 
       return key;
@@ -281,7 +306,8 @@ export class StripeServiceSecure {
       );
 
       if (error) {
-        throw new Error(error.message || 'Failed to create payment intent');
+        const handledError = StripeServiceSecure.handleStripeError(error);
+        throw new Error(handledError.error);
       }
 
       return {
@@ -293,7 +319,8 @@ export class StripeServiceSecure {
       };
     } catch (error) {
       console.error('Error creating secure payment intent:', error);
-      throw error;
+      const handledError = StripeServiceSecure.handleStripeError(error);
+      throw new Error(handledError.error);
     }
   }
 
@@ -313,13 +340,17 @@ export class StripeServiceSecure {
       });
 
       if (result?.error) {
-        throw new Error(result.error.message || 'Payment confirmation failed');
+        const handledError = StripeServiceSecure.handleStripeError(
+          result.error
+        );
+        throw new Error(handledError.error);
       }
 
       return result?.paymentIntent || result;
     } catch (error) {
       console.error('Error confirming payment:', error);
-      throw error;
+      const handledError = StripeServiceSecure.handleStripeError(error);
+      throw new Error(handledError.error);
     }
   }
 
@@ -338,13 +369,15 @@ export class StripeServiceSecure {
       );
 
       if (error) {
-        throw new Error(error.message || 'Failed to create setup intent');
+        const handledError = StripeServiceSecure.handleStripeError(error);
+        throw new Error(handledError.error);
       }
 
       return data;
     } catch (error) {
       console.error('Error creating setup intent:', error);
-      throw error;
+      const handledError = StripeServiceSecure.handleStripeError(error);
+      throw new Error(handledError.error);
     }
   }
 
@@ -363,13 +396,15 @@ export class StripeServiceSecure {
       );
 
       if (error) {
-        throw new Error(error.message || 'Failed to retrieve payment methods');
+        const handledError = StripeServiceSecure.handleStripeError(error);
+        throw new Error(handledError.error);
       }
 
       return data.payment_methods;
     } catch (error) {
       console.error('Error getting payment methods:', error);
-      throw error;
+      const handledError = StripeServiceSecure.handleStripeError(error);
+      throw new Error(handledError.error);
     }
   }
 
@@ -390,6 +425,173 @@ export class StripeServiceSecure {
       console.error('Webhook verification failed:', error);
       return false;
     }
+  }
+
+  /**
+   * Handle Stripe errors according to API reference standards
+   * Maps all documented Stripe error types per API reference
+   */
+  static handleStripeError(error: any): {
+    success: false;
+    error: string;
+    retryable: boolean;
+    errorType: string;
+  } {
+    // Handle different Stripe error types per API reference documentation
+    if (error.type) {
+      switch (error.type) {
+        case 'StripeCardError':
+        case 'card_error':
+          // Handle card-specific errors (declined, insufficient funds, etc.)
+          return {
+            success: false,
+            error: error.message || 'Card was declined',
+            retryable: false,
+            errorType: 'card_error',
+          };
+
+        case 'StripeRateLimitError':
+        case 'rate_limit_error':
+          // Handle rate limiting - should retry with exponential backoff
+          return {
+            success: false,
+            error: 'Too many requests. Please try again shortly.',
+            retryable: true,
+            errorType: 'rate_limit_error',
+          };
+
+        case 'StripeInvalidRequestError':
+        case 'invalid_request_error':
+          // Handle malformed requests - don't retry
+          return {
+            success: false,
+            error: error.message || 'Invalid request parameters',
+            retryable: false,
+            errorType: 'invalid_request_error',
+          };
+
+        case 'StripeAPIError':
+        case 'api_error':
+          // Handle Stripe API errors - can retry
+          return {
+            success: false,
+            error: 'Payment processing temporarily unavailable',
+            retryable: true,
+            errorType: 'api_error',
+          };
+
+        case 'StripeConnectionError':
+        case 'connection_error':
+          // Handle network errors - can retry
+          return {
+            success: false,
+            error: 'Network error. Please check your connection and try again.',
+            retryable: true,
+            errorType: 'connection_error',
+          };
+
+        case 'StripeAuthenticationError':
+        case 'authentication_error':
+          // Handle authentication errors - don't retry
+          return {
+            success: false,
+            error: 'Authentication failed',
+            retryable: false,
+            errorType: 'authentication_error',
+          };
+
+        case 'idempotency_error':
+        case 'StripeIdempotencyError':
+          // Handle idempotency errors - per API reference lines 509-510
+          return {
+            success: false,
+            error:
+              'Duplicate request detected. Please use a new idempotency key.',
+            retryable: false,
+            errorType: 'idempotency_error',
+          };
+
+        case 'StripePermissionError':
+        case 'permission_error':
+          // Handle permission errors
+          return {
+            success: false,
+            error: 'Insufficient permissions for this operation',
+            retryable: false,
+            errorType: 'permission_error',
+          };
+
+        case 'StripeSignatureVerificationError':
+        case 'signature_verification_error':
+          // Handle webhook signature verification errors
+          return {
+            success: false,
+            error: 'Webhook signature verification failed',
+            retryable: false,
+            errorType: 'signature_verification_error',
+          };
+
+        default:
+          return {
+            success: false,
+            error: error.message || 'An unexpected error occurred',
+            retryable: false,
+            errorType: 'unknown_error',
+          };
+      }
+    }
+
+    // Handle HTTP status codes
+    if (error.statusCode) {
+      switch (error.statusCode) {
+        case 400:
+          return {
+            success: false,
+            error: 'Bad request - please check your payment information',
+            retryable: false,
+            errorType: 'bad_request',
+          };
+        case 401:
+          return {
+            success: false,
+            error: 'Authentication failed',
+            retryable: false,
+            errorType: 'unauthorized',
+          };
+        case 429:
+          return {
+            success: false,
+            error: 'Rate limited - please try again shortly',
+            retryable: true,
+            errorType: 'rate_limited',
+          };
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          return {
+            success: false,
+            error: 'Server error - please try again',
+            retryable: true,
+            errorType: 'server_error',
+          };
+        default:
+          return {
+            success: false,
+            error: error.message || 'An unexpected error occurred',
+            retryable: false,
+            errorType: 'unknown_error',
+          };
+      }
+    }
+
+    // Generic error handling
+    return {
+      success: false,
+      error: error.message || 'An unexpected error occurred',
+      retryable: false,
+      errorType: 'generic_error',
+    };
   }
 }
 

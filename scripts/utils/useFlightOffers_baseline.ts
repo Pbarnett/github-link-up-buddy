@@ -4,11 +4,9 @@ import { safeQuery } from '@/lib/supabaseUtils';
 import { useFlightSearchV2Flag } from './useFlightSearchV2Flag';
 import type { FlightOfferV2 } from './types';
 
-export interface UseFlightOffersOptions {
   enabled?: boolean;
 }
 
-export function useFlightOffers(
   tripRequestId: string,
   opts: UseFlightOffersOptions = {}
 ) {
@@ -19,16 +17,15 @@ export function useFlightOffers(
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState<unknown | null>(null);
 
-  // Validation guard for tripRequestId
-  if (!tripRequestId || typeof tripRequestId !== 'string') {
-    // Ensure this structure is returned consistently, even if called during render phase
-    // This immediate return might cause issues if states are expected to be initialized by React first.
-    // A common pattern is to set an error state and return, or handle this within useEffect.
-    // For this implementation, following the spec for immediate return.
-    return { offers: [], isLoading: false, error: new Error('INVALID_ID') };
-  }
-
   useEffect(() => {
+    // Validation guard for tripRequestId
+    if (!tripRequestId || typeof tripRequestId !== 'string') {
+      setError(new Error('INVALID_ID'));
+      setLoading(false);
+      setOffers([]);
+      return;
+    }
+
     // Do not proceed if the v2 flag is still loading, or if the flag is disabled, or the hook instance is disabled via opts
     if (v2FlagLoading || !v2FlagEnabled || !enabled) {
       // If query shouldn't run, ensure loading is false and offers are empty.

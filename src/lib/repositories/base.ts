@@ -15,7 +15,6 @@ import {
 } from '@/integrations/supabase/types';
 import { DatabaseError, type ErrorContext } from '../errors';
 import { retry, RetryDecorators } from '../resilience/retry';
-
 // Type for Supabase query builders
 type SupabaseQuery = any;
 

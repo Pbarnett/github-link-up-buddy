@@ -14,8 +14,13 @@ export const trackPersonalizationEvent = (eventName, properties = {}) => {
   };
 
   // Send to analytics service (replace with actual implementation)
-  if (window.analytics) {
-    window.analytics.track(eventName, baseProperties);
+  if (
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.analytics
+  ) {
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.analytics.track(
+      eventName,
+      baseProperties
+    );
   }
 };
 

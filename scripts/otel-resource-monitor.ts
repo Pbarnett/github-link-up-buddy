@@ -46,7 +46,7 @@ class ResourceMonitor {
       const metricsText = await response.text();
       
       return this.parsePrometheusMetrics(metricsText);
-    } catch (error) {
+    } catch {
       console.error('Failed to fetch collector metrics:', error);
       throw error;
     }
@@ -97,7 +97,7 @@ class ResourceMonitor {
     const recommendations: TuningRecommendation[] = [];
     
     // Queue utilization analysis
-    const queueUtilization = metrics.exporterQueueSize / metrics.exporterQueueCapacity;
+    const queueUtilization = metrics.exporterQueueSize / metrics.exporterQueueCapacity
     if (queueUtilization > this.alertThresholds.queueUtilization) {
       recommendations.push({
         component: 'exporter.sending_queue.queue_size',
@@ -109,7 +109,7 @@ class ResourceMonitor {
     }
     
     // Refused spans analysis
-    const totalSpans = metrics.acceptedSpans + metrics.refusedSpans;
+    const totalSpans = metrics.acceptedSpans + metrics.refusedSpans
     const refusedRatio = totalSpans > 0 ? metrics.refusedSpans / totalSpans : 0;
     if (refusedRatio > this.alertThresholds.refusedSpansRatio) {
       recommendations.push({
@@ -167,8 +167,8 @@ class ResourceMonitor {
       console.log();
       
       // Health status
-      const criticalIssues = recommendations.filter(r => r.priority === 'critical').length;
-      const highIssues = recommendations.filter(r => r.priority === 'high').length;
+      const criticalIssues = recommendations.filter(r => r.priority === 'critical').length
+      const highIssues = recommendations.filter(r => r.priority === 'high').length
       
       if (criticalIssues > 0) {
         console.log('🚨 CRITICAL: Immediate action required!');
@@ -227,7 +227,7 @@ class ResourceMonitor {
         });
       }
       
-    } catch (error) {
+    } catch {
       console.error('❌ Failed to generate resource monitor report:', error);
       Deno.exit(1);
     }
@@ -253,7 +253,7 @@ class ResourceMonitor {
 
 // CLI Interface
 async function main() {
-  const args = Deno.args;
+  const args = Deno.args
   const command = args[0] || 'report';
   const metricsEndpoint = Deno.env.get('OTEL_METRICS_ENDPOINT') || 'http://localhost:8888/metrics';
   
@@ -264,10 +264,11 @@ async function main() {
       await monitor.generateReport();
       break;
       
-    case 'monitor':
+    case 'monitor': {
       const interval = parseInt(args[1]) || 5;
       await monitor.startContinuousMonitoring(interval);
       break;
+    }
       
     case 'help':
       console.log('OpenTelemetry Resource Monitor');

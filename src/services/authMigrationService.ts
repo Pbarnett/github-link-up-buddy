@@ -1,10 +1,10 @@
 import * as React from 'react';
 /**
  * Authentication Migration Service
- * 
- * Manages the transition from deprecated Google Sign-In library to 
+ *
+ * Manages the transition from deprecated Google Sign-In library to
  * modern Google Identity Services (GIS) with enterprise-grade features.
- * 
+ *
  * Features:
  * - Backward compatibility with existing login components
  * - Progressive migration capabilities
@@ -13,11 +13,10 @@ import * as React from 'react';
  * - Migration analytics and monitoring
  */
 
+import { supabase } from '@/integrations/supabase/client';
 import { modernGoogleAuth, AuthResult } from './modernGoogleAuthService';
 import { AuthErrorHandler } from './authErrorHandler';
 import { AuthResilience, SessionManager } from './authResilience';
-import { supabase } from '@/integrations/supabase/client';
-
 export interface MigrationConfig {
   enableModernAuth: boolean;
   fallbackToLegacy: boolean;
@@ -51,7 +50,7 @@ export class AuthMigrationService {
       enableFedCM: true,
       migrationPhase: 'partial',
       rolloutPercentage: 50,
-      ...config
+      ...config,
     };
 
     this.initializeProviders();
@@ -74,9 +73,15 @@ export class AuthMigrationService {
         await modernGoogleAuth.signOut();
       },
       isAvailable: () => {
-        return this.config.enableModernAuth && typeof window !== 'undefined' && 
-               (window.google?.accounts?.id !== undefined);
-      }
+        return (
+          this.config.enableModernAuth &&
+          typeof (
+            /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+          ) !== 'undefined' &&
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+            .google?.accounts?.id !== undefined
+        );
+      },
     });
 
     // Legacy Supabase OAuth Provider (fallback)
@@ -89,7 +94,7 @@ export class AuthMigrationService {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/login`,
+            redirectTo: `${/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.location.origin}/login`,
             skipBrowserRedirect: false,
           },
         });
@@ -105,7 +110,7 @@ export class AuthMigrationService {
       },
       isAvailable: () => {
         return this.config.fallbackToLegacy;
-      }
+      },
     });
   }
 
@@ -114,11 +119,14 @@ export class AuthMigrationService {
    */
   async selectAuthProvider(): Promise<AuthProvider> {
     const shouldUseModern = this.shouldUseMigration();
-    
+
     if (shouldUseModern && this.providers.get('modern-google')?.isAvailable()) {
       this.currentProvider = this.providers.get('modern-google')!;
       console.log('🚀 Using Modern Google Identity Services');
-    } else if (this.config.fallbackToLegacy && this.providers.get('legacy-supabase')?.isAvailable()) {
+    } else if (
+      this.config.fallbackToLegacy &&
+      this.providers.get('legacy-supabase')?.isAvailable()
+    ) {
       this.currentProvider = this.providers.get('legacy-supabase')!;
       console.log('🔄 Falling back to Legacy Supabase OAuth');
     } else {
@@ -137,11 +145,13 @@ export class AuthMigrationService {
         return false;
       case 'testing':
         // Enable for development/testing environments only
-        return import.meta.env.DEV || import.meta.env.VITE_ENVIRONMENT === 'testing';
+        return (
+          import.meta.env.DEV || import.meta.env.VITE_ENVIRONMENT === 'testing'
+        );
       case 'partial':
         // Enable for percentage of users
-        const userHash = this.getUserHash();
-        return (userHash % 100) < this.config.rolloutPercentage;
+        const _userHash = this.getUserHash();
+        return userHash % 100 < this.config.rolloutPercentage;
       case 'complete':
         return true;
       default:
@@ -153,14 +163,15 @@ export class AuthMigrationService {
    * Generate consistent hash for user to ensure stable rollout experience
    */
   private getUserHash(): number {
-    const userIdentifier = localStorage.getItem('user-migration-id') || 
-                          sessionStorage.getItem('user-migration-id') ||
-                          this.generateUserMigrationId();
-    
+    const userIdentifier =
+      localStorage.getItem('user-migration-id') ||
+      sessionStorage.getItem('user-migration-id') ||
+      this.generateUserMigrationId();
+
     let hash = 0;
     for (let i = 0; i < userIdentifier.length; i++) {
       const char = userIdentifier.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash);
@@ -189,10 +200,10 @@ export class AuthMigrationService {
       if (sessionValid) {
         const { data } = await supabase.auth.getSession();
         if (data.session) {
-          return { 
-            success: true, 
+          return {
+            success: true,
             user: data.session.user as any,
-            token: data.session.access_token
+            token: data.session.access_token,
           };
         }
       }
@@ -213,24 +224,24 @@ export class AuthMigrationService {
         provider: provider.name,
         success: result.success,
         migrationPhase: this.config.migrationPhase,
-        rolloutPercentage: this.config.rolloutPercentage
+        rolloutPercentage: this.config.rolloutPercentage,
       });
 
       return result;
     } catch (error) {
       const authError = AuthErrorHandler.handleAuthError(error, {
         component: 'AuthMigrationService',
-        flow: 'signIn'
+        flow: 'signIn',
       });
 
       this.logMigrationEvent('sign_in_error', {
         error: authError.category,
-        migrationPhase: this.config.migrationPhase
+        migrationPhase: this.config.migrationPhase,
       });
 
       return {
         success: false,
-        error: authError.userMessage
+        error: authError.userMessage,
       };
     }
   }
@@ -255,15 +266,15 @@ export class AuthMigrationService {
       if (modernProvider?.isAvailable()) {
         await modernProvider.initialize();
         await modernGoogleAuth.displayOneTap();
-        
+
         this.logMigrationEvent('one_tap_displayed', {
-          migrationPhase: this.config.migrationPhase
+          migrationPhase: this.config.migrationPhase,
         });
       }
     } catch (error) {
       AuthErrorHandler.handleAuthError(error, {
         component: 'AuthMigrationService',
-        flow: 'displayOneTap'
+        flow: 'displayOneTap',
       });
     }
   }
@@ -278,18 +289,24 @@ export class AuthMigrationService {
       } else {
         // Fallback: sign out from all possible providers
         await supabase.auth.signOut();
-        if (typeof window !== 'undefined' && window.google?.accounts?.id) {
-          window.google.accounts.id.disableAutoSelect();
+        if (
+          typeof (
+            /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+          ) !== 'undefined' &&
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+            .google?.accounts?.id
+        ) {
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google.accounts.id.disableAutoSelect();
         }
       }
 
       this.logMigrationEvent('sign_out', {
-        provider: this.currentProvider?.name || 'unknown'
+        provider: this.currentProvider?.name || 'unknown',
       });
     } catch (error) {
       AuthErrorHandler.handleAuthError(error, {
         component: 'AuthMigrationService',
-        flow: 'signOut'
+        flow: 'signOut',
       });
       throw error;
     }
@@ -310,9 +327,15 @@ export class AuthMigrationService {
       phase: this.config.migrationPhase,
       rolloutPercentage: this.config.rolloutPercentage,
       currentProvider: this.currentProvider?.name || null,
-      modernAuthAvailable: this.providers.get('modern-google')?.isAvailable() || false,
-      fedcmSupported: typeof window !== 'undefined' && 'IdentityCredential' in window,
-      userInMigration: this.shouldUseMigration()
+      modernAuthAvailable:
+        this.providers.get('modern-google')?.isAvailable() || false,
+      fedcmSupported:
+        typeof (
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        ) !== 'undefined' &&
+        'IdentityCredential' in
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
+      userInMigration: this.shouldUseMigration(),
     };
   }
 
@@ -322,10 +345,10 @@ export class AuthMigrationService {
   updateMigrationConfig(newConfig: Partial<MigrationConfig>): void {
     this.config = { ...this.config, ...newConfig };
     console.log('🔄 Migration config updated:', this.config);
-    
+
     this.logMigrationEvent('config_updated', {
       newPhase: this.config.migrationPhase,
-      newRollout: this.config.rolloutPercentage
+      newRollout: this.config.rolloutPercentage,
     });
   }
 
@@ -338,15 +361,28 @@ export class AuthMigrationService {
     recommendations: string[];
   } {
     const features = {
-      googleIdentityServices: typeof window !== 'undefined' && window.google?.accounts?.id !== undefined,
-      fedcm: typeof window !== 'undefined' && 'IdentityCredential' in window,
+      googleIdentityServices:
+        typeof (
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        ) !== 'undefined' &&
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+          .google?.accounts?.id !== undefined,
+      fedcm:
+        typeof (
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        ) !== 'undefined' &&
+        'IdentityCredential' in
+          /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
       localStorage: typeof localStorage !== 'undefined',
       fetch: typeof fetch !== 'undefined',
-      promises: typeof Promise !== 'undefined'
+      promises: typeof Promise !== 'undefined',
     };
 
-    const compatible = features.googleIdentityServices && features.localStorage && 
-                      features.fetch && features.promises;
+    const compatible =
+      features.googleIdentityServices &&
+      features.localStorage &&
+      features.fetch &&
+      features.promises;
 
     const recommendations: string[] = [];
     if (!features.googleIdentityServices) {
@@ -356,7 +392,9 @@ export class AuthMigrationService {
       recommendations.push('Browser does not support FedCM (use fallback)');
     }
     if (!features.localStorage) {
-      recommendations.push('localStorage not available (sessions may not persist)');
+      recommendations.push(
+        'localStorage not available (sessions may not persist)'
+      );
     }
 
     return { compatible, features, recommendations };
@@ -365,15 +403,25 @@ export class AuthMigrationService {
   /**
    * Log migration events for analytics and monitoring
    */
-  private logMigrationEvent(eventName: string, data: Record<string, any>): void {
+  private logMigrationEvent(
+    eventName: string,
+    data: Record<string, any>
+  ): void {
     const event = {
       event: `auth_migration_${eventName}`,
       timestamp: new Date().toISOString(),
       data: {
         ...data,
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-        url: typeof window !== 'undefined' ? window.location.href : 'unknown'
-      }
+        userAgent:
+          typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+        url:
+          typeof (
+            /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+          ) !== 'undefined'
+            ? /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+                .location.href
+            : 'unknown',
+      },
     };
 
     // Log to console in development
@@ -383,8 +431,17 @@ export class AuthMigrationService {
 
     // Send to analytics service (implement based on your needs)
     // Example: send to PostHog, Google Analytics, or custom analytics
-    if (typeof window !== 'undefined' && (window as any).analytics) {
-      (window as any).analytics.track(event.event, event.data);
+    if (
+      typeof (
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+      ) !== 'undefined' &&
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (
+        window as any
+      ).analytics
+    ) {
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (
+        window as any
+      ).analytics.track(event.event, event.data);
     }
   }
 
@@ -403,7 +460,7 @@ export class AuthMigrationService {
       totalEvents: 0,
       successRate: 0,
       modernUsageRate: this.config.rolloutPercentage,
-      commonErrors: []
+      commonErrors: [],
     };
   }
 }

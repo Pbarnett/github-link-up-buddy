@@ -1,16 +1,13 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
-
 // Lookups
 import { airportNames } from '@/data/airportLookup';
 import { airlineNames } from '@/data/airlineLookup';
-
 // Utils
 import { combineDateTime } from '@/utils/combineDateTime';
 import { formatLocalDateTime } from '@/utils/formatDateTime';
 import { parseDuration } from '@/utils/parseDuration';
-
 export interface OfferProps {
   id: string;
   price: number;
@@ -107,7 +104,10 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
 
       // Redirect immediately to the airline website for external bookings
       setTimeout(() => {
-        window.open(offer.booking_url, '_blank');
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open(
+          offer.booking_url,
+          '_blank'
+        );
       }, 500);
 
       return;

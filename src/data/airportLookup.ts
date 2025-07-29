@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { NYC_AIRPORTS, MAJOR_AIRPORTS, POPULAR_DESTINATIONS } from './airports';
-
 // Combine all airports into a single array
 const allAirports = [
   ...NYC_AIRPORTS,

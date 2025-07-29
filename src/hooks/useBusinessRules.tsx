@@ -1,10 +1,8 @@
 import * as React from 'react';
+import { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
 import { configLoader } from '../lib/business-rules/ConfigLoader';
 import { BusinessRulesConfig } from '../lib/business-rules/schema';
-
-type ReactNode = React.ReactNode;
-
 interface BusinessRulesContextType {
   config: BusinessRulesConfig | null;
   loading: boolean;
@@ -12,7 +10,7 @@ interface BusinessRulesContextType {
   refetch: () => Promise<void>;
 }
 
-const BusinessRulesContext = createContext<
+const BusinessRulesContext = React.createContext<
   BusinessRulesContextType | undefined
 >(undefined);
 

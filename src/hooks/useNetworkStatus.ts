@@ -1,12 +1,11 @@
 import * as React from 'react';
+import { useState, useEffect } from 'react';
 /**
  * Network Status Hook
  * Monitors online/offline state and connection quality
  */
 
-import { useState, useEffect } from 'react';
 import { trackEvent } from '@/utils/monitoring';
-
 interface NetworkStatus {
   isOnline: boolean;
   isSlowConnection: boolean;
@@ -15,62 +14,116 @@ interface NetworkStatus {
 }
 
 export const useNetworkStatus = (): NetworkStatus => {
-  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>({
-    isOnline: navigator.onLine,
-    isSlowConnection: false,
-    lastOnlineAt: navigator.onLine ? new Date() : null,
-    connectionType: 'unknown',
+  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>(() => {
+    // Safe initialization for SSR compatibility
+    const isOnline =
+      typeof navigator !== 'undefined' ? navigator.onLine : false;
+    return {
+      isOnline,
+      isSlowConnection: false,
+      lastOnlineAt: isOnline ? new Date() : null,
+      connectionType: 'unknown',
+    };
   });
 
   useEffect(() => {
+    // Guard against SSR and ensure we're in browser environment
+    if (
+      typeof (
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+      ) === 'undefined' ||
+      typeof navigator === 'undefined'
+    ) {
+      return;
+    }
+
     const updateOnlineStatus = () => {
-      const isOnline = navigator.onLine;
+      try {
+        const isOnline = navigator?.onLine ?? false;
 
-      setNetworkStatus(prev => ({
-        ...prev,
-        isOnline,
-        lastOnlineAt: isOnline ? new Date() : prev.lastOnlineAt,
-      }));
+        setNetworkStatus(prev => ({
+          ...prev,
+          isOnline,
+          lastOnlineAt: isOnline ? new Date() : prev.lastOnlineAt,
+        }));
 
-      // Track connectivity events
-      trackEvent(isOnline ? 'network_online' : 'network_offline', {
-        timestamp: new Date().toISOString(),
-        connectionType: getConnectionType(),
-      });
+        // Track connectivity events
+        trackEvent(isOnline ? 'network_online' : 'network_offline', {
+          timestamp: new Date().toISOString(),
+          connectionType: getConnectionType(),
+        });
+      } catch (error) {
+        console.warn('Error updating online status:', error);
+      }
     };
 
     const updateConnectionType = () => {
-      const connection = getConnectionInfo();
-      const isSlowConnection = connection?.effectiveType
-        ? ['slow-2g', '2g'].includes(connection.effectiveType)
-        : false;
+      try {
+        const connection = getConnectionInfo();
+        const isSlowConnection = connection?.effectiveType
+          ? ['slow-2g', '2g'].includes(connection.effectiveType)
+          : false;
 
-      setNetworkStatus(prev => ({
-        ...prev,
-        isSlowConnection,
-        connectionType: getConnectionType(),
-      }));
+        setNetworkStatus(prev => ({
+          ...prev,
+          isSlowConnection,
+          connectionType: getConnectionType(),
+        }));
+      } catch (error) {
+        console.warn('Error updating connection type:', error);
+      }
     };
 
-    // Listen for online/offline events
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
+    // Listen for online/offline events with error handling
+    try {
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.addEventListener(
+        'online',
+        updateOnlineStatus
+      );
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.addEventListener(
+        'offline',
+        updateOnlineStatus
+      );
+    } catch (error) {
+      console.warn(
+        'Error adding /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window event listeners:',
+        error
+      );
+    }
 
     // Listen for connection changes (if supported)
-    const connection = getConnectionInfo();
-    if (connection && connection.addEventListener) {
-      connection.addEventListener('change', updateConnectionType);
+    let connection: ConnectionInfo | undefined;
+    try {
+      connection = getConnectionInfo();
+      if (connection && typeof connection.addEventListener === 'function') {
+        connection.addEventListener('change', updateConnectionType);
+      }
+    } catch (error) {
+      console.warn('Error setting up connection listener:', error);
     }
 
     // Initial connection type detection
     updateConnectionType();
 
     return () => {
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
+      try {
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.removeEventListener(
+          'online',
+          updateOnlineStatus
+        );
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.removeEventListener(
+          'offline',
+          updateOnlineStatus
+        );
 
-      if (connection && connection.removeEventListener) {
-        connection.removeEventListener('change', updateConnectionType);
+        if (
+          connection &&
+          typeof connection.removeEventListener === 'function'
+        ) {
+          connection.removeEventListener('change', updateConnectionType);
+        }
+      } catch (error) {
+        console.warn('Error cleaning up event listeners:', error);
       }
     };
   }, []);

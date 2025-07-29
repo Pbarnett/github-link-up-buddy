@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
 /**
  * Service for handling user initialization after authentication
  */

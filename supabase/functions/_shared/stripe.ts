@@ -10,6 +10,19 @@ import { logger, withTiming, getLogContext } from './logger.ts';
 import { captureException } from './sentry.ts';
 import { withSpan, tracer, getCurrentTraceContext, injectTraceContext } from './otel.ts';
 
+// Import idempotency key generator
+/**
+ * Generate idempotency key for payment operations
+ * Uses V4 UUID as recommended by Stripe API reference
+ */
+const generateIdempotencyKey = (userId: string, operation: string): string => {
+  // Generate V4 UUID as recommended by Stripe API documentation
+  const uuid = crypto.randomUUID();
+  const timestamp = new Date().toISOString().slice(0, 10);
+  // Ensure key is under 255 characters and includes context for debugging
+  return `${operation}_${userId}_${timestamp}_${uuid}`.slice(0, 255);
+};
+
 let stripeClient: Stripe | null = null;
 
 /**
@@ -22,10 +35,28 @@ function getStripeClient(): Stripe {
     if (!secretKey) {
       throw new Error('STRIPE_SECRET_KEY environment variable is required');
     }
+    
+    // Validate key format per API reference documentation
+    if (!secretKey.startsWith('sk_test_') && !secretKey.startsWith('sk_live_')) {
+      throw new Error('Invalid Stripe secret key format. Must start with sk_test_ or sk_live_');
+    }
+    
+    // Environment validation
+    const isProduction = Deno.env.get('NODE_ENV') === 'production';
+    if (isProduction && secretKey.startsWith('sk_test_')) {
+      throw new Error('Cannot use test secret key in production environment');
+    }
+    
+    if (!isProduction && secretKey.startsWith('sk_live_')) {
+      logger.warn('Using live secret key in non-production environment', {
+        operation: 'stripe_key_validation_warning'
+      });
+    }
 
     stripeClient = new Stripe(secretKey, {
-      apiVersion: '2023-10-16',
+      apiVersion: '2025-06-30.basil',
       httpClient: Stripe.createFetchHttpClient(),
+      maxNetworkRetries: 3,
     });
 
     logger.info('Stripe client initialized', {
@@ -88,7 +119,7 @@ export async function createPaymentIntent(
  */
 export async function capturePaymentIntent(
   paymentIntentId: string,
-  idempotencyKey: string,
+  idempotencyKey = generateIdempotencyKey('', 'capturePaymentIntent'),
   context: { userId?: string; tripRequestId?: string; bookingAttemptId?: string } = {}
 ): Promise<Stripe.PaymentIntent> {
   return withSpan(
@@ -187,7 +218,7 @@ export async function refundPaymentIntent({
     'stripe.refund_payment_intent',
     async (span) => {
       const stripe = getStripeClient();
-      const idempotencyKey = `refund-${paymentIntentId}`;
+  const idempotencyKey = generateIdempotencyKey(paymentIntentId, 'refundPaymentIntent');
       
       span.attributes['stripe.payment_intent_id'] = paymentIntentId;
       span.attributes['stripe.refund_amount'] = amount || 0;
@@ -315,8 +346,11 @@ export async function retrievePaymentIntent(
  */
 export function handleStripeError(error: any, context: Record<string, any> = {}): never {
   if (error.type) {
-    // This is a Stripe error
+    // This is a Stripe error - handle per API reference documentation
     const stripeError = error as Stripe.StripeError;
+    
+    // Enhanced error logging with classification per API reference
+    const errorClassification = classifyStripeError(stripeError.type);
     
     logger.error('Stripe API error', {
       operation: 'stripe_error',
@@ -324,12 +358,15 @@ export function handleStripeError(error: any, context: Record<string, any> = {})
       errorCode: stripeError.code,
       errorMessage: stripeError.message,
       requestId: stripeError.request_id,
+      classification: errorClassification,
+      retryable: errorClassification.retryable,
       ...context
     });
 
     captureException(error, {
       stripeErrorType: stripeError.type,
       stripeErrorCode: stripeError.code,
+      stripeErrorClassification: errorClassification.category,
       ...context
     });
   } else {
@@ -344,6 +381,39 @@ export function handleStripeError(error: any, context: Record<string, any> = {})
   }
 
   throw error;
+}
+
+/**
+ * Classify Stripe errors per API reference documentation
+ * Lines 462-467 define error type categories
+ */
+function classifyStripeError(errorType: string): {
+  category: string;
+  retryable: boolean;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+} {
+  switch (errorType) {
+    case 'card_error':
+      return { category: 'card_error', retryable: false, severity: 'medium' };
+    case 'rate_limit_error':
+      return { category: 'rate_limit_error', retryable: true, severity: 'low' };
+    case 'invalid_request_error':
+      return { category: 'invalid_request_error', retryable: false, severity: 'high' };
+    case 'api_error':
+      return { category: 'api_error', retryable: true, severity: 'medium' };
+    case 'connection_error':
+      return { category: 'connection_error', retryable: true, severity: 'low' };
+    case 'authentication_error':
+      return { category: 'authentication_error', retryable: false, severity: 'critical' };
+    case 'idempotency_error':
+      return { category: 'idempotency_error', retryable: false, severity: 'medium' };
+    case 'permission_error':
+      return { category: 'permission_error', retryable: false, severity: 'high' };
+    case 'signature_verification_error':
+      return { category: 'signature_verification_error', retryable: false, severity: 'critical' };
+    default:
+      return { category: 'unknown_error', retryable: false, severity: 'high' };
+  }
 }
 
 /**

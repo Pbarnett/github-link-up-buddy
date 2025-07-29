@@ -5,8 +5,9 @@
  * or other problematic dependencies. Used specifically for e2e testing.
  */
 
-import React, { useState } from 'react';
-
+import * as React from 'react';
+import { useState, use } from 'react';
+type FormEvent<T = Element> = React.FormEvent<T>;
 interface FlightSearchFormData {
   origin: string;
   destination: string;
@@ -83,7 +84,7 @@ const SimpleTestBooking: React.FC = () => {
       alert(
         `Flight search completed for ${formData.origin} to ${formData.destination}`
       );
-    } catch (err) {
+    } catch (_err) {
       setError('Flight search failed. Please try again.');
     } finally {
       setLoading(false);

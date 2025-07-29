@@ -5,7 +5,6 @@ import * as React from 'react';
  */
 
 import { LDContext } from '@launchdarkly/node-server-sdk';
-
 export interface FlagEvaluationEvent {
   flagKey: string;
   value: any;
@@ -306,15 +305,24 @@ export class FlagAnalytics {
    */
   private static sendToExternalAnalytics(event: FlagEvaluationEvent): void {
     // Integration with Google Analytics
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'launchdarkly_flag_evaluation', {
+    if (
+      typeof (
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+      ) !== 'undefined' &&
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (
+        window as any
+      ).gtag
+    ) {
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (
+        window as any
+      ).gtag('event', 'launchdarkly_flag_evaluation', {
         flag_key: event.flagKey,
         flag_value: String(event.value),
         evaluation_time: event.evaluationTime,
         custom_map: {
           timestamp: event.timestamp,
           variation: event.variation,
-          context_kind: event.context.kind,
+          context_kind: (event.context as any).kind,
         },
       });
     }
@@ -334,7 +342,7 @@ export class FlagAnalytics {
             value: event.value,
             timestamp: event.timestamp,
             evaluationTime: event.evaluationTime,
-            contextType: event.context.kind,
+            contextType: (event.context as any).kind,
           },
         }),
       }).catch(error => {

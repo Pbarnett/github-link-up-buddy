@@ -1,9 +1,7 @@
-type ReactNode = React.ReactNode;
-
 import { LDContext } from 'launchdarkly-js-client-sdk';
 import * as React from 'react';
+import { ReactNode } from 'react';
 import { LaunchDarklyContextManager } from './context-manager';
-
 interface LaunchDarklyProviderProps {
   children: ReactNode;
   initialContext?: LDContext;

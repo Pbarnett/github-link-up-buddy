@@ -6,7 +6,6 @@
 import * as React from 'react';
 import { useEffect } from 'react';
 import { SecureFlightBooking } from '@/components/booking/SecureFlightBooking';
-
 // Mock the useSecureOAuth hook for testing
 const mockAuthData = {
   user: {
@@ -33,10 +32,16 @@ const TestBooking: React.FC = () => {
   // Mock Supabase auth for testing
   useEffect(() => {
     // Override the useSecureOAuth hook globally for this component tree
-    (window as any).__TEST_AUTH_OVERRIDE__ = mockAuthData;
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (
+      window as any
+    ).__TEST_AUTH_OVERRIDE__ = mockAuthData;
 
     return () => {
-      delete (window as any).__TEST_AUTH_OVERRIDE__;
+      delete (
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (
+          window as any
+        ).__TEST_AUTH_OVERRIDE__
+      );
     };
   }, []);
 

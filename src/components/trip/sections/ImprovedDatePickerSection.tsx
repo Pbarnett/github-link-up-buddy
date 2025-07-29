@@ -18,7 +18,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import NightsRangeSection from './NightsRangeSection';
-
 // Date picker form data interface
 interface DatePickerFormData {
   earliestDeparture?: Date;

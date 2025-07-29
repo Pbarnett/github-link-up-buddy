@@ -1,10 +1,32 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { createTwilioService, SMSTemplateRenderer } from '../lib/twilio.ts'
+import { createClient, User } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createTwilioService, SMSTemplateRenderer, validateTwilioConfig } from '../lib/twilio.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-twilio-signature',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+// Rate limiting: simple in-memory store (in production, use Redis/database)
+const requestCounts = new Map<string, { count: number; resetTime: number }>()
+const RATE_LIMIT_PER_HOUR = 30 // Following auth.rate_limit.sms_sent from config
+const RATE_LIMIT_WINDOW = 3600000 // 1 hour in ms
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now()
+  const current = requestCounts.get(identifier)
+  
+  if (!current || now > current.resetTime) {
+    requestCounts.set(identifier, { count: 1, resetTime: now + RATE_LIMIT_WINDOW })
+    return true
+  }
+  
+  if (current.count >= RATE_LIMIT_PER_HOUR) {
+    return false
+  }
+  
+  current.count++
+  return true
 }
 
 Deno.serve(async (req: Request) => {
@@ -13,10 +35,43 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // Validate Twilio configuration first
+    const configValidation = validateTwilioConfig()
+    if (!configValidation.isValid) {
+      console.error('[SMS] Twilio configuration errors:', configValidation.errors)
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Twilio configuration invalid',
+        details: configValidation.errors
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Log configuration warnings
+    if (configValidation.warnings.length > 0) {
+      console.warn('[SMS] Twilio configuration warnings:', configValidation.warnings)
+    }
+
     const { user_id, type, data, phone_number } = await req.json()
     
     if (!user_id || !type) {
       throw new Error('Missing required fields: user_id, type')
+    }
+
+    // Rate limiting check
+    const rateLimitId = phone_number || user_id
+    if (!checkRateLimit(rateLimitId)) {
+      console.warn(`[SMS] Rate limit exceeded for ${rateLimitId}`)
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Rate limit exceeded. Maximum 30 SMS per hour.',
+        retry_after: 3600
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
     const supabase = createClient(
@@ -25,7 +80,7 @@ Deno.serve(async (req: Request) => {
     )
 
     // Get user info (optional for testing)
-    let user = null
+    let user: User | null = null
     if (user_id !== 'test-user' && user_id !== '550e8400-e29b-41d4-a716-446655440000') {
       const { data: userData, error: userError } = await supabase.auth.admin.getUserById(user_id)
       if (userError || !userData.user) {

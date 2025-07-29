@@ -1,8 +1,19 @@
 #!/usr/bin/env node
 
-import fs from 'fs';
-import path from 'path';
+const path = require('path');
+
 import { glob } from 'glob';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+const fs = require('fs');
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 // Find all UI component files
 const files = glob.sync('src/components/ui/**/*.{ts,tsx}', { absolute: true });
@@ -29,7 +40,6 @@ files.forEach(filePath => {
         // React hooks and functions that can be destructured
         if (['useState', 'useEffect', 'useCallback', 'useMemo', 'useContext', 'useReducer', 'useRef', 'useLayoutEffect', 'useImperativeHandle', 'useDebugValue', 'forwardRef', 'createContext', 'memo', 'lazy', 'Suspense', 'Fragment'].includes(item)) {
           hooks.push(item);
-        } 
         // React types that should be type aliases
         else if (['FC', 'Component', 'ReactNode', 'FormEvent', 'ChangeEvent', 'MouseEvent', 'KeyboardEvent', 'SyntheticEvent', 'ElementRef', 'ComponentPropsWithoutRef', 'ComponentRef', 'HTMLAttributes', 'SVGAttributes', 'PropsWithChildren', 'PropsWithRef', 'RefObject', 'MutableRefObject'].includes(item)) {
           types.push(item);

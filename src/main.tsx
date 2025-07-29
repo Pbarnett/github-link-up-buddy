@@ -1,11 +1,10 @@
-import React from 'react';
+import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 import * as Sentry from '@sentry/react';
 import { ThemeProvider } from 'next-themes';
 import App from './App.tsx';
 import {} from './components/ErrorBoundary';
 import './index.css';
-
 // Conditionally import LaunchDarkly providers
 const isTestMode =
   import.meta.env.VITE_PLAYWRIGHT_TEST === 'true' ||

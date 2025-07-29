@@ -11,7 +11,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL!
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY!
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY')
+  console.error('❌ Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
   process.exit(1)
 }
 
@@ -82,7 +82,7 @@ async function testEmailTracking() {
   })
 
   if (sendError) {
-    console.error('❌ Error invoking send-notification function:', sendError)
+    console.error('❌ Error invoking send-notification function:', sendError);
     console.log('📝 This might be expected if the function requires authentication or if there are missing environment variables.')
   } else {
     console.log('✅ Send-notification function responded:', sendResult)
@@ -112,7 +112,7 @@ async function testEmailTracking() {
   })
 
   if (webhookError) {
-    console.error('❌ Webhook endpoint error:', webhookError)
+    console.error('❌ Webhook endpoint error:', webhookError);
   } else {
     console.log('✅ Webhook endpoint accessible:', webhookResult)
   }
@@ -137,7 +137,7 @@ async function testEmailTracking() {
   })
 
   if (smsError) {
-    console.error('❌ SMS function error:', smsError)
+    console.error('❌ SMS function error:', smsError);
     console.log('📝 This might be expected if Twilio credentials are not configured.')
   } else {
     console.log('✅ SMS function responded:', smsResult)

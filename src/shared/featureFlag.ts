@@ -8,7 +8,6 @@ import * as React from 'react';
 // Import MurmurHash3 for consistent user bucketing
 // @ts-expect-error - murmurhash-js doesn't have types but we know the API
 import murmur from 'murmurhash-js';
-
 export interface FeatureFlag {
   name: string;
   enabled: boolean;
@@ -56,7 +55,7 @@ export const isFeatureEnabled = (
 
   // Simple rollout percentage check
   if (flag.rolloutPercentage !== undefined) {
-    const userHash = userContext?.id
+    const _userHash = userContext?.id
       ? hashString(userContext.id)
       : Math.random();
     return userHash * 100 < flag.rolloutPercentage;
@@ -72,7 +71,7 @@ export const isEnabled = (flag: FeatureFlag, userId: string): boolean => {
   // Check both property names for rollout percentage
   const rolloutPercentage = flag.rolloutPercentage ?? flag.rollout_percentage;
   if (rolloutPercentage !== undefined) {
-    const userHash = hashString(userId);
+    const _userHash = hashString(userId);
     return userHash * 100 < rolloutPercentage;
   }
 

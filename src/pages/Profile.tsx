@@ -1,8 +1,7 @@
+import * as React from 'react';
+import { useState, useMemo, use } from 'react';
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 
-import { User, Phone, MapPin, FileText } from 'lucide-react';
-import * as React from 'react';
-import { useState, useMemo } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import { ProfileForm } from '@/components/ProfileForm';
 import { NotificationPreferences } from '@/components/NotificationPreferences';
@@ -36,7 +35,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useWallet } from '@/contexts/WalletContext';
 import { PaymentMethodList } from '@/components/wallet/PaymentMethodList';
 import { AddCardModal } from '@/components/wallet/AddCardModal';
-
 // Utility function to convert ProfileCompletenessScore to ProfileCompletenessData
 function convertToIndicatorData(
   completenessScore: ProfileCompletenessScore,

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useMemo, use } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useTravelerProfile } from '@/hooks/useTravelerProfile';
 import { useMultiTravelerProfiles } from '@/hooks/useMultiTravelerProfiles';
@@ -20,8 +21,6 @@ import {
 import { MultiTravelerManager } from './MultiTravelerManager';
 import { ProfileCompletionWidget } from './ProfileCompletionWidget';
 import { SimpleProfileStatus } from './SimpleProfileStatus';
-import { useMemo } from 'react';
-
 // Enhanced ProfileV2 Component
 export function ProfileV2() {
   const { profile, completion, calculateCompleteness, isLoading } =
@@ -30,9 +29,9 @@ export function ProfileV2() {
 
   // Calculate completeness from profile data if completion tracking is not available
   const completenessData: ProfileCompletenessScore = useMemo(() => {
-    if (completion) {
+    if (completion && typeof completion === 'object' && 'completion_percentage' in completion) {
       return {
-        overall: completion.completion_percentage,
+        overall: (completion as any).completion_percentage || 0,
         categories: {
           basic_info: 0,
           contact_info: 0,
@@ -40,8 +39,8 @@ export function ProfileV2() {
           preferences: 0,
           verification: 0,
         },
-        missing_fields: completion.missing_fields || [],
-        recommendations: (completion.recommendations || []).map(rec => ({
+        missing_fields: (completion as any).missing_fields || [],
+        recommendations: ((completion as any).recommendations || []).map((rec: any) => ({
           category: rec.category || 'general',
           priority: rec.priority || 'medium',
           title: rec.title || '',
@@ -52,8 +51,8 @@ export function ProfileV2() {
       };
     }
 
-    if (profile) {
-      return calculateCompleteness(profile) as ProfileCompletenessScore;
+    if (profile && typeof profile === 'object') {
+      return calculateCompleteness(profile as any) as ProfileCompletenessScore;
     }
 
     return {
@@ -63,7 +62,6 @@ export function ProfileV2() {
         contact_info: 0,
         travel_documents: 0,
         preferences: 0,
-        verification: 0,
       },
       missing_fields: [],
       recommendations: [],
@@ -200,15 +198,23 @@ export function ProfileV2() {
                     Family & Additional Travelers
                   </h3>
                   <Badge variant="outline">
-                    {multiTravelerProfiles.travelers.length} travelers
+                    {Array.isArray(multiTravelerProfiles.travelers) ? multiTravelerProfiles.travelers.length : 0} travelers
                   </Badge>
                 </div>
                 <MultiTravelerManager
-                  travelers={multiTravelerProfiles.travelers}
-                  onAddTraveler={multiTravelerProfiles.addTraveler}
-                  onUpdateTraveler={multiTravelerProfiles.updateTraveler}
-                  onDeleteTraveler={multiTravelerProfiles.deleteTraveler}
-                  onSetDefault={multiTravelerProfiles.setDefaultTraveler}
+                  travelers={Array.isArray(multiTravelerProfiles.travelers) ? multiTravelerProfiles.travelers : []}
+                  onAddTraveler={async (traveler: any) => {
+                    await multiTravelerProfiles.addTraveler(traveler);
+                  }}
+                  onUpdateTraveler={async (id: string, traveler: any) => {
+                    await multiTravelerProfiles.updateTraveler(id, traveler);
+                  }}
+                  onDeleteTraveler={async (id: string) => {
+                    await multiTravelerProfiles.deleteTraveler(id);
+                  }}
+                  onSetDefault={async (id: string) => {
+                    await multiTravelerProfiles.setDefaultTraveler(id);
+                  }}
                   loading={
                     multiTravelerProfiles.isLoading ||
                     multiTravelerProfiles.isAddingTraveler ||

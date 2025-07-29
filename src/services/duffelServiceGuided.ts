@@ -253,7 +253,7 @@ export class DuffelServiceGuided {
         ...params.metadata,
         idempotency_key: params.idempotencyKey,
         created_by: 'parker-flight-guided',
-        integration_version: 'v2.0.0',
+        integration_version: 'v1.0.0',
       },
     };
 

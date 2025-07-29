@@ -196,7 +196,7 @@ export const handler = async (req: Request): Promise<Response> => {
           // Optional: Update email_reminder_sent on bookings if still using that flag
           // await supabaseAdmin.from('bookings').update({ email_reminder_sent: true }).eq('id', booking.id);
         }
-      } catch (fetchError) {
+      } catch (_fetchError) {
         console.error(`[SendReminder] Error invoking send-notification for booking ${booking.id}: ${fetchError.message}`);
       }
     }

@@ -1,9 +1,6 @@
 import * as React from 'react';
-import { useState } from 'react';
-import { useEffect } from 'react';
-
-type FC<T = {}> = React.FC<T>;
-
+import { FC } from 'react';
+import { useState, useEffect } from 'react';
 interface SimplifiedSocialProofProps {
   className?: string;
 }

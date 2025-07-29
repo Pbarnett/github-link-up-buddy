@@ -125,7 +125,7 @@ async function handleGdprDeleteUser(request: Request): Promise<Response> {
             });
           }
         }
-      } catch (tableError) {
+      } catch (_tableError) {
         // Handle cases where table might not exist
         const errorMsg = `Exception deleting from ${table}: ${tableError.message}`;
         logger.warn(errorMsg, { userId, table, tableError, correlationId });

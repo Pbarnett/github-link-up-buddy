@@ -1,3 +1,4 @@
+import { Slot } from '@radix-ui/react-slot';
 /**
  * Radix Themes Demo Component
  *
@@ -13,7 +14,9 @@
  */
 
 import * as React from 'react';
+import { FC } from 'react';
 import { useState, useEffect } from 'react';
+type ChangeEvent<T = Element> = React.ChangeEvent<T>;
 import {
   Box,
   Flex,
@@ -52,9 +55,6 @@ import {
   PlusIcon,
 } from '@radix-ui/react-icons';
 import { ThemeToggle } from '../providers/RadixThemeProvider';
-
-type FC<T = {}> = React.FC<T>;
-
 export const RadixThemeDemo: FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState('overview');

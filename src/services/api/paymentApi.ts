@@ -6,7 +6,6 @@ import * as React from 'react';
  */
 
 import { supabase } from '@/integrations/supabase/client';
-
 export interface PaymentIntent {
   id: string;
   amount: number;

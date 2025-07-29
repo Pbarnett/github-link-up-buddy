@@ -1,7 +1,7 @@
+import * as React from 'react';
+import { useState, useEffect, use } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { parseISO } from 'date-fns';
-import * as React from 'react';
-import { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Search } from 'lucide-react';
@@ -39,7 +39,6 @@ import CollapsibleFiltersSection from './sections/CollapsibleFiltersSection';
 import LiveBookingSummary from './LiveBookingSummary';
 import TripSummaryChips from './sections/TripSummaryChips';
 import AutoBookingSection from './sections/AutoBookingSection';
-
 // import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface TripRequestFormProps {
@@ -337,7 +336,9 @@ const LegacyTripRequestForm = ({
     setCurrentStep(2);
 
     // Scroll to top and focus on max price field
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.scrollTo(
+      { top: 0, behavior: 'smooth' }
+    );
 
     // Give DOM time to paint, then move focus
     requestAnimationFrame(() => {

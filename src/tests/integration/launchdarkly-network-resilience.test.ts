@@ -4,7 +4,6 @@ import { initialize } from 'launchdarkly-js-client-sdk';
 import LaunchDarklyService from '@/lib/featureFlags/launchDarklyService';
 import { LaunchDarklyFallbackManager } from '@/lib/launchdarkly/fallback-manager';
 import { LaunchDarklyContextManager } from '@/lib/launchdarkly/context-manager';
-
 // Mock the LaunchDarkly SDK for testing
 vi.mock('launchdarkly-js-client-sdk');
 

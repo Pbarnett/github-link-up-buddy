@@ -138,7 +138,7 @@ export function isDuffelErrorRetryable(errorType: string): boolean {
  * Determines if an error requires user action
  */
 export function isDuffelErrorUserActionRequired(errorType: string): boolean {
-  const userActionErrors = [
+  const _userActionErrors = [
     DuffelErrorType.OFFER_EXPIRED,
     DuffelErrorType.VALIDATION_ERROR,
     DuffelErrorType.IDENTITY_DOCUMENTS_REQUIRED,

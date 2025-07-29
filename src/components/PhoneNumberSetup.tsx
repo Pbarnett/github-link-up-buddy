@@ -1,9 +1,6 @@
-import { createBrowserClient } from '@supabase/ssr';
 import * as React from 'react';
-import { useState } from 'react';
-import { useEffect } from 'react';
-import { useCallback } from 'react';
-
+import { useState, useEffect, useCallback } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
 interface PhoneNumberSetupProps {
   userId?: string;
   onPhoneVerified?: () => void;

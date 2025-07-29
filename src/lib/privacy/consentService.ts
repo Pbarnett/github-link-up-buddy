@@ -3,7 +3,6 @@ import * as React from 'react';
 // Based on GDPR/CCPA requirements and research recommendations
 
 import { ConsentPreferences } from '@/components/privacy/ConsentManager';
-
 const CONSENT_STORAGE_KEY = 'parker_flight_consent';
 const CONSENT_VERSION = '1.0';
 
@@ -80,7 +79,7 @@ export function saveConsent(
     });
 
     // Trigger personalization update
-    window.dispatchEvent(
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.dispatchEvent(
       new CustomEvent('consentUpdated', {
         detail: preferences,
       })
@@ -110,7 +109,7 @@ export function withdrawConsent(): void {
     });
 
     // Trigger personalization update
-    window.dispatchEvent(
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.dispatchEvent(
       new CustomEvent('consentUpdated', {
         detail: null,
       })
@@ -285,10 +284,13 @@ export function initializeConsentService(): void {
   }
 
   // Set up consent listener
-  window.addEventListener('consentUpdated', (event: Event) => {
-    const customEvent = event as CustomEvent;
-    console.log('🔒 Consent updated:', customEvent.detail);
-  });
+  /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.addEventListener(
+    'consentUpdated',
+    (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log('🔒 Consent updated:', customEvent.detail);
+    }
+  );
 }
 
 // Default export

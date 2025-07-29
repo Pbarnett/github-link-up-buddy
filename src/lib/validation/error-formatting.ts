@@ -7,7 +7,6 @@ import * as React from 'react';
  */
 
 import { ZodError, ZodIssue } from 'zod';
-
 /**
  * Tree structure for nested error representation
  */

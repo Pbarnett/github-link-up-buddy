@@ -1,5 +1,7 @@
 import * as React from 'react';
+import { FC } from 'react';
 import { useState, useEffect, useCallback } from 'react';
+type FormEvent<T = Element> = React.FormEvent<T>;
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -8,9 +10,6 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 import { createClient } from '@supabase/supabase-js';
-
-type FC<T = {}> = React.FC<T>;
-type FormEvent = React.FormEvent;
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!);
 

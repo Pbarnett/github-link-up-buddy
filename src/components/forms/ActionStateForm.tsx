@@ -1,59 +1,13 @@
-type FormEvent = React.FormEvent;
 import * as React from 'react';
+import { useState, useEffect, useCallback } from 'react';
+type FormEvent<T = Element> = React.FormEvent<T>;
+
+import { AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useState } from 'react';
-import { useEffect } from 'react';
-import { useCallback } from 'react';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 interface FormState {
   success?: boolean;
   error?: string;
@@ -146,7 +100,7 @@ export function ActionStateForm({
       event.preventDefault();
       setIsPending(true);
 
-      const formData = new FormData(event.currentTarget);
+      const formData = new FormData(event.currentTarget as HTMLFormElement);
       const result = await searchFlights(state, formData);
 
       setState(result);

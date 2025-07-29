@@ -82,7 +82,7 @@ export const developmentChecks = {
    * Check if external services are reachable
    */
   checkExternalServices: async () => {
-    const services = [];
+    const services: Array<{ name: string; status: string; message: string }> = [];
 
     // Check Supabase
     try {
@@ -152,7 +152,11 @@ export const initializeDevelopmentEnvironment = async () => {
   await developmentChecks.runAllChecks();
 
   // Set up development-specific configurations
-  if (typeof window !== 'undefined') {
+  if (
+    typeof (
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+    ) !== 'undefined'
+  ) {
     // Browser environment
     console.info('🌍 Browser environment detected');
     console.info('🔧 Mock services will be used for AWS operations');

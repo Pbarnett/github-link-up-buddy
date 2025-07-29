@@ -1,6 +1,5 @@
 // Authentication testing utility
 import { supabase } from '@/integrations/supabase/client';
-
 export const testAuth = async () => {
   console.log('🔍 Testing authentication setup...');
 
@@ -46,6 +45,12 @@ export const testAuth = async () => {
 };
 
 // Make it available globally for testing
-if (typeof window !== 'undefined') {
-  (window as any).testAuth = testAuth;
+if (
+  typeof (
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+  ) !== 'undefined'
+) {
+  /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ (
+    window as any
+  ).testAuth = testAuth;
 }

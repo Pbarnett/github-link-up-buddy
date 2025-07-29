@@ -78,7 +78,7 @@ export interface UserPreferences {
     preferredClass: 'economy' | 'premium_economy' | 'business' | 'first';
     preferredAirlines: string[];
     seatPreferences: {
-      window: boolean;
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window: boolean;
       aisle: boolean;
       extra_legroom: boolean;
     };

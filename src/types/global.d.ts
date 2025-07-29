@@ -85,25 +85,6 @@ declare module 'next/navigation' {
   export function usePathname(): string;
 }
 
-// Vite environment variables
-interface ImportMetaEnv {
-  readonly VITE_API_BASE_URL?: string;
-  readonly VITE_DUFFEL_ENABLED?: string;
-  readonly VITE_AMADEUS_ENABLED?: string;
-  readonly VITE_AUTO_BOOKING_ENABLED?: string;
-  readonly VITE_SUPABASE_URL?: string;
-  readonly VITE_SUPABASE_ANON_KEY?: string;
-  readonly VITE_LD_CLIENT_ID?: string;
-  readonly VITE_SENTRY_DSN?: string;
-  readonly VITE_ENVIRONMENT?: string;
-  readonly VITE_PLAYWRIGHT_TEST?: string;
-  readonly VITE_WALLET_UI_ENABLED?: string;
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
-}
-
 // Process environment variables (for Node.js environments)
 declare namespace NodeJS {
   interface ProcessEnv {

@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useCurrentUser } from './useCurrentUser';
-
 export interface MultiTravelerProfile {
   id?: string;
   user_id?: string;
@@ -18,7 +17,11 @@ export interface MultiTravelerProfile {
   redressNumber?: string;
   dietaryRestrictions?: string[];
   mobilityAssistance?: boolean;
-  preferredSeat?: 'window' | 'aisle' | 'middle' | 'no-preference';
+  preferredSeat?:
+    | '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window'
+    | 'aisle'
+    | 'middle'
+    | 'no-preference';
   emailNotifications: boolean;
   isDefault: boolean;
   isActive: boolean;

@@ -1,3 +1,4 @@
+import { Slot } from '@radix-ui/react-slot';
 import * as React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
@@ -6,7 +7,6 @@ import {
   rateLimiter,
 } from '../../packages/shared/stripe';
 import { buildPaymentMetadata } from './stripeService';
-
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL!,
   import.meta.env.VITE_SUPABASE_ANON_KEY!

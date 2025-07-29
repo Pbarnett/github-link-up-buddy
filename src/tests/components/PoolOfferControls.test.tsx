@@ -1,10 +1,10 @@
 import * as React from 'react';
+import { ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import PoolOfferControls from '@/components/trip/PoolOfferControls';
-
 // Mock the hook
 vi.mock('@/hooks/useTripOffers', () => ({
   useTripOffersPools: vi.fn(),
@@ -17,7 +17,6 @@ vi.mock('@/components/ui/use-toast', () => ({
 
 import { useTripOffersPools } from '@/hooks/useTripOffers';
 import { toast } from '@/components/ui/use-toast';
-
 describe('PoolOfferControls', () => {
   const mockHookData = {
     budget: 1000,

@@ -5,7 +5,8 @@
  */
 
 import * as React from 'react';
-import { useState } from 'react';
+import { FC, useState } from 'react';
+type ComponentType<P = {}> = React.ComponentType<P>;
 import {
   Type,
   Mail,
@@ -27,14 +28,13 @@ import {
 } from 'lucide-react';
 
 type _Component<P = {}, S = {}> = React.Component<P, S>;
-type FC<T = {}> = React.FC<T>;
+
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { FieldTemplate } from '@/types/dynamic-forms';
-
 interface FieldTemplateLibraryProps {
   onFieldSelect: (template: FieldTemplate) => void;
   disabled?: boolean;

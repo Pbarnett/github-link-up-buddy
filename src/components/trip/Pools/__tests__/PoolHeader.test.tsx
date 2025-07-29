@@ -2,7 +2,6 @@ import * as React from 'react';
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import PoolHeader from '../PoolHeader';
-
 describe('PoolHeader', () => {
   it('renders pool name and count', () => {
     render(<PoolHeader name="Best Value" count={5} />);

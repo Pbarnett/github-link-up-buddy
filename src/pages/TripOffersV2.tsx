@@ -1,7 +1,6 @@
-type FC<T = {}> = React.FC<T>;
-
 import { format } from 'date-fns';
 import * as React from 'react';
+import { FC } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Terminal, AlertCircle } from 'lucide-react';
 import { useFlightOffers } from '@/flightSearchV2/useFlightOffers';
@@ -11,7 +10,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import TripOffersV2Skeleton from '@/components/TripOffersV2Skeleton';
 import { toast } from '@/components/ui/use-toast';
-
 // Placeholder for a component to show when the feature flag is disabled
 const FlagDisabledPlaceholder: FC = () => (
   <Alert variant="destructive">
@@ -193,7 +191,10 @@ const TripOffersV2: FC = () => {
 
       // Redirect to the airline website for external bookings (like Google Flights)
       setTimeout(() => {
-        window.open(offer.bookingUrl as string, '_blank');
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open(
+          offer.bookingUrl as string,
+          '_blank'
+        );
       }, 500);
 
       return;

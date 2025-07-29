@@ -16,15 +16,14 @@ import {
   fireEvent,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useNavigate } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm';
 import { TestWrapper, renderWithProviders } from '@/tests/utils/TestWrapper';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { useTravelerInfoCheck } from '@/hooks/useTravelerInfoCheck';
-
 // Import our new testing utilities
 import {
   fillBaseFormFieldsWithDates,
@@ -32,7 +31,6 @@ import {
   waitForButtonEnabledAndClick,
 } from '@/tests/utils/formTestHelpers';
 import { TripRequestRepository } from '@/lib/repositories';
-
 // Mock the Calendar component to provide test-friendly date selection
 vi.mock('@/components/ui/calendar', () => {
   return {
@@ -414,7 +412,7 @@ describe('TripRequestForm - Submission Logic', () => {
       error: null,
     });
 
-    const user = userEvent.setup();
+    const _user = userEvent.setup();
     const { wrapper } = renderWithProviders(<TripRequestForm />);
     render(<TripRequestForm />, { wrapper });
 
@@ -828,7 +826,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
       error: null,
     });
 
-    const user = userEvent.setup();
+    const _user = userEvent.setup();
     const { wrapper } = renderWithProviders(<TripRequestForm />);
     render(<TripRequestForm />, { wrapper });
 
@@ -947,7 +945,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
       }
     });
 
-    const user = userEvent.setup();
+    const _user = userEvent.setup();
     const { wrapper } = renderWithProviders(<TripRequestForm />);
     render(<TripRequestForm />, { wrapper });
 

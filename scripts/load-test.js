@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+const path = require('path');
+
 /**
  * Parker Flight - Load Testing Script
  * 
@@ -11,12 +13,12 @@
 
 import { execSync } from 'child_process';
 import { writeFileSync } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import {} from 'path';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
 // Color codes for console output
 const colors = {
@@ -28,17 +30,12 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m'
-};
 
+};
 // Utility function for logging
-const log = (message, color = 'reset') => {
-  console.log(`${colors[color]}${message}${colors.reset}`);
-};
+// Removed unused log function
 
-const success = (message) => log(`✅ ${message}`, 'green');
-const warning = (message) => log(`⚠️  ${message}`, 'yellow');
-const error = (message) => log(`❌ ${message}`, 'red');
-const step = (message) => log(`🚀 ${message}`, 'cyan');
+const step = (message) => console.log(`🚀 ${message}`, 'cyan');
 
 // Endpoints to test
 const endpoints = [
@@ -52,8 +49,8 @@ const concurrency = 50;
 const requestsPerEndpoint = 200;
 
 // API Key
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.SUPABASE_URL
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
 
 class LoadTester {
   constructor() {
@@ -62,11 +59,11 @@ class LoadTester {
   }
 
   async run() {
-    step('Starting load testing...');
+    console.log('Starting load testing...');
 
     for (const endpoint of endpoints) {
       const fullUrl = `${supabaseUrl}${endpoint}`;
-      log(`Testing endpoint: ${fullUrl}`, 'blue');
+      console.log(`Testing endpoint: ${fullUrl}`, 'blue');
 
       try {
         const abResult = execSync(
@@ -75,10 +72,10 @@ class LoadTester {
         );
 
         this.results[endpoint] = this.parseAbResult(abResult);
-        success(`Load test completed for ${endpoint}`);
+        console.log(`✅ Load test completed for ${endpoint}`);
 
-      } catch (err) {
-        error(`Error testing ${endpoint}: ${err.message}`);
+      } catch (error) {
+        console.error(`Error testing ${endpoint}: ${error.message}`);
       }
     }
 
@@ -106,7 +103,7 @@ class LoadTester {
 
   generateReport() {
     const duration = ((Date.now() - this.startTime) / 1000).toFixed(2);
-    const reportPath = path.join(__dirname, `load-test-report-${Date.now()}.json`);
+    const reportPath = path.join(__`load-test-report-${Date.now()}.json`);
 
     writeFileSync(reportPath, JSON.stringify({
       timestamp: new Date().toISOString(),
@@ -116,7 +113,7 @@ class LoadTester {
       results: this.results
     }, null, 2));
 
-    success(`Load test report generated: ${reportPath}`);
+    console.log(`✅ Load test report generated: ${reportPath}`);
   }
 }
 
@@ -126,5 +123,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   tester.run();
 }
 
-export default LoadTester;
+module.exports = LoadTester;
 

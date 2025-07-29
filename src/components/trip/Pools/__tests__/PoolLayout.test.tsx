@@ -4,7 +4,6 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { usePoolsSafe } from '@/hooks/usePoolsSafe';
 import PoolLayout from '../PoolLayout';
-
 // Mock the hook
 vi.mock('@/hooks/usePoolsSafe', () => ({
   usePoolsSafe: vi.fn(() => ({

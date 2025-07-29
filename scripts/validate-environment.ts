@@ -177,7 +177,7 @@ async function runValidationTests(): Promise<void> {
       });
       const duration = Date.now() - startTime;
       console.log(`✅ ${test.name} passed (${duration}ms)`);
-    } catch (error) {
+    } catch {
       console.log(`❌ ${test.name} failed`);
       console.log(`   Error: ${error}`);
       
@@ -208,10 +208,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     .then(() => {
       console.log('\n🎉 Final validation complete! Application is ready for deployment.');
     })
-    .catch((error) => {
+    .catch((_error) => {
       console.error('\n💥 Validation failed:', error);
       process.exit(1);
     });
 }
 
-export { validateEnvironment, runValidationTests };
+module.exports = { validateEnvironment, runValidationTests };

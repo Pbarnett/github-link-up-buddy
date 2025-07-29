@@ -1,12 +1,6 @@
-import React, { createElement } from 'react';
-import {
-  CheckCircle,
-  AlertTriangle,
-  TrendingUp,
-  Phone,
-  FileText,
-  Shield,
-} from 'lucide-react';
+import * as React from 'react';
+import { createElement } from 'react';
+import { CheckCircle, AlertTriangle, Phone, FileText, Shield, TrendingUp } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -19,7 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ProfileCompletenessScore } from '@/services/profileCompletenessService';
-
 interface SimpleProfileStatusProps {
   completeness: ProfileCompletenessScore;
   onActionClick?: (action: string) => void;

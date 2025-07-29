@@ -13,6 +13,8 @@
 import fs from 'fs/promises';
 import axios from 'axios';
 import { performance } from 'perf_hooks';
+// Utility functions
+// Removed unused utility functions
 
 const GRAFANA_URL = 'http://localhost:3001';
 const GRAFANA_ADMIN_USER = 'admin';
@@ -1116,7 +1118,7 @@ class BusinessDashboardCreator {
       }
     }
 
-    const successful = deploymentResults.filter(r => r.status === 'success').length;
+    const successful = deploymentResults.filter(r => r.status === 'success').length
     await this.log('success', `🎉 Deployed ${successful}/${dashboards.length} business dashboards`);
 
     return deploymentResults;
@@ -1169,7 +1171,7 @@ class BusinessDashboardCreator {
       const duration = ((endTime - startTime) / 1000).toFixed(2);
       await this.log('info', `🏁 Command '${command}' completed in ${duration}s`);
 
-    } catch (error) {
+    } catch {
       await this.log('error', `Command '${command}' failed: ${error.message}`);
       process.exit(1);
     }
@@ -1209,4 +1211,4 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   });
 }
 
-export { BusinessDashboardCreator };
+module.exports = { BusinessDashboardCreator };

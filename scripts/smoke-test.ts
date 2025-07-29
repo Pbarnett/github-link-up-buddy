@@ -31,7 +31,6 @@ const config: SmokeTestConfig = {
   timeout: 10000, // 10 second timeout
   userId: 'smoke-tester@example.com',
   flagName: 'ENABLE_CONFIG_DRIVEN_FORMS'
-};
 
 /**
  * Validate AWS credentials using STS GetCallerIdentity
@@ -46,7 +45,7 @@ async function validateAWSCredentials(): Promise<void> {
   
   if (missing.length > 0) {
     console.error('❌ Missing required AWS environment variables:');
-    missing.forEach(env => console.error(`   - ${env}`));
+    missing.forEach(env => console.error(`   - ${env}`););
     console.error('');
     console.error('💡 Please set: export AWS_REGION=us-east-1');
     throw new Error('AWS environment not configured');
@@ -64,7 +63,7 @@ async function validateAWSCredentials(): Promise<void> {
     
   } catch (error: unknown) {
     console.error('❌ AWS credential validation failed:');
-    console.error(`   ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`   ${error instanceof Error ? error.message : String(error);}`);
     console.error('');
     console.error('💡 Please configure AWS credentials:');
     console.error('   - Set environment variables: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY');
@@ -96,7 +95,7 @@ async function makeRequest(url: string, options: RequestInit = {}): Promise<{ st
       const text = await response.text();
       data = JSON.parse(text);
       jsonValid = true;
-    } catch {
+    } catch (error) {
       data = { error: 'Invalid JSON response', rawResponse: data };
       jsonValid = false;
     }
@@ -197,8 +196,8 @@ async function runSmokeTests(): Promise<SmokeTestResult> {
     ]);
     
     // Step 3: Evaluate results
-    const configOK = configResult.status === 200 && configResult.jsonValid;
-    const flagOK = flagResult.status === 200 && flagResult.jsonValid;
+    const configOK = configResult.status === 200 && configResult.jsonValid
+    const flagOK = flagResult.status === 200 && flagResult.jsonValid
     const passed = configOK && flagOK;
     
     // Step 4: Print summary
@@ -237,7 +236,7 @@ async function runSmokeTests(): Promise<SmokeTestResult> {
     };
     
   } catch (error: unknown) {
-    console.error('❌ Smoke test failed with error:', error instanceof Error ? error.message : String(error));
+    console.error('❌ Smoke test failed with error:', error instanceof Error ? error.message : String(error););
     throw error;
   }
 }
@@ -265,13 +264,13 @@ async function main(): Promise<void> {
   try {
     const result = await runSmokeTests();
     process.exit(result.passed ? 0 : 1);
-  } catch {
+  } catch (error) {
     process.exit(1);
   }
 }
 
 // Export for testing, run if executed directly
-export { runSmokeTests, validateAWSCredentials };
+module.exports = { runSmokeTests, validateAWSCredentials };
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   main();

@@ -51,7 +51,7 @@ function interceptFetch() {
       }
       
       return response;
-    } catch (error) {
+    } catch (_error) {
       const duration = (Date.now() - startTime) / 1000;
       
       // Track failed request
@@ -195,7 +195,7 @@ function interceptAxios() {
     );
     
     console.log('🔍 Axios interceptor initialized for service dependency tracking');
-  } catch (error) {
+  } catch (_error) {
     // Axios not installed, skip
     console.log('ℹ️  Axios not available, skipping axios interceptor');
   }

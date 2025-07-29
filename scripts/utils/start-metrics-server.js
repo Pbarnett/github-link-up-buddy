@@ -1,3 +1,5 @@
+const express = require('express');
+const client = require('prom-client');
 
 const app = express();
 
@@ -104,5 +106,4 @@ const port = 5001;
 app.listen(port, '127.0.0.1', () => {
   console.log(`✅ Metrics server running on http://127.0.0.1:${port}`);
   console.log(`📊 Metrics: http://127.0.0.1:${port}/metrics`);
-  console.log(`🧪 Test data: http://127.0.0.1:${port}/api/test-dependencies`);
 });

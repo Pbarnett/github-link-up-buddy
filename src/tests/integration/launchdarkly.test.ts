@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { User } from '@supabase/supabase-js';
 import { FeatureFlagManager } from '@/lib/feature-flags/manager';
 import { FeatureFlagClient } from '@/lib/feature-flags/client';
-
 describe('LaunchDarkly Integration Tests', () => {
   let featureFlagManager: FeatureFlagManager;
   let featureFlagClient: FeatureFlagClient;

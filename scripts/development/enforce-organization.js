@@ -7,13 +7,13 @@
  * REPOSITORY_ORGANIZATION_GUIDELINES.md and suggests corrections.
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const fs = require('fs');
+const path = require('path');
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
 
 // Color codes for console output
 const colors = {
@@ -25,18 +25,11 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m'
-};
 
-// Utility functions
-const log = (message, color = 'reset') => {
-  console.log(`${colors[color]}${message}${colors.reset}`);
 };
+// Removed unused log function
 
-const success = (message) => log(`✅ ${message}`, 'green');
-const warning = (message) => log(`⚠️  ${message}`, 'yellow');
-const error = (message) => log(`❌ ${message}`, 'red');
-const info = (message) => log(`ℹ️  ${message}`, 'blue');
-const step = (message) => log(`🔍 ${message}`, 'cyan');
+const step = (message) => console.log(`🔍 ${message}`, 'cyan');
 
 // File placement rules based on REPOSITORY_ORGANIZATION_GUIDELINES.md
 const PLACEMENT_RULES = {
@@ -104,7 +97,6 @@ const PLACEMENT_RULES = {
     '*analytics*.js': 'scripts/analytics/',
     '*credential*.ts': 'scripts/security/'
   }
-};
 
 class OrganizationEnforcer {
   constructor() {
@@ -116,33 +108,33 @@ class OrganizationEnforcer {
 
   async enforce() {
     try {
-      log('🌟 Repository Organization Enforcement Started', 'bright');
-      log('='.repeat(60), 'blue');
+      console.log('🌟 Repository Organization Enforcement Started', 'bright');
+      console.log('='.repeat(60), 'blue');
       
       await this.scanRootDirectory();
       await this.validateFileStructure();
       await this.generateReport();
       
-      const issueCount = this.issues.length;
+      const issueCount = this.issues.length
       if (issueCount === 0) {
-        success('🎉 Repository organization is perfect!');
+        console.log('🎉 Repository organization is perfect!');
       } else {
-        warning(`Found ${issueCount} organization issues`);
+        console.warn(`Found ${issueCount} organization issues`);
         if (this.autoFix) {
           await this.applyFixes();
         } else {
-          info('Run with --fix to automatically correct issues');
+          console.info('Run with --fix to automatically correct issues');
         }
       }
       
     } catch (err) {
-      error(`Organization enforcement failed: ${err.message}`);
+      console.error(`Organization enforcement failed: ${err.message}`);
       process.exit(1);
     }
   }
 
   async scanRootDirectory() {
-    step('Scanning root directory for misplaced files...');
+    console.log('Scanning root directory for misplaced files...');
     
     const rootFiles = fs.readdirSync('.');
     
@@ -227,7 +219,7 @@ class OrganizationEnforcer {
   }
 
   async validateFileStructure() {
-    step('Validating overall file structure...');
+    console.log('Validating overall file structure...');
     
     // Check for proper directory structure
     const requiredDirs = [
@@ -261,28 +253,28 @@ class OrganizationEnforcer {
   }
 
   async generateReport() {
-    step('Generating organization report...');
+    console.log('Generating organization report...');
     
     if (this.issues.length === 0) {
-      success('No organization issues found!');
+      console.log('No organization issues found!');
       return;
     }
     
-    log('\n📋 Organization Issues Found:', 'yellow');
-    log('='.repeat(40), 'yellow');
+    console.log('\n📋 Organization Issues Found:', 'yellow');
+    console.log('='.repeat(40), 'yellow');
     
     this.issues.forEach((issue, index) => {
-      log(`\n${index + 1}. ${issue.type.replace(/_/g, ' ').toUpperCase()}`, 'red');
+      console.log(`\n${index + 1}. ${issue.type.replace(/_/g, ' ').toUpperCase()}`, 'red');
       if (issue.current) {
-        info(`   Current: ${issue.current}`);
+        console.info(`   Current: ${issue.current}`);
       }
-      info(`   Suggested: ${issue.suggested}`);
-      log(`   Reason: ${issue.reason}`, 'magenta');
+      console.info(`   Suggested: ${issue.suggested}`);
+      console.log(`   Reason: ${issue.reason}`, 'magenta');
     });
     
     if (this.verbose) {
-      log('\n📁 Recommended Directory Structure:', 'blue');
-      log('='.repeat(40), 'blue');
+      console.log('\n📁 Recommended Directory Structure:', 'blue');
+      console.log('='.repeat(40), 'blue');
       this.showRecommendedStructure();
     }
   }
@@ -307,18 +299,18 @@ class OrganizationEnforcer {
 └── infra/                  # Infrastructure as code
     `;
     
-    log(structure, 'cyan');
+    console.log(structure, 'cyan');
   }
 
   async applyFixes() {
-    step('Applying automatic fixes...');
+    console.log('Applying automatic fixes...');
     
     for (const issue of this.issues) {
       try {
         await this.applyFix(issue);
-        success(`Fixed: ${issue.current} → ${issue.suggested}`);
-      } catch (err) {
-        error(`Failed to fix ${issue.current}: ${err.message}`);
+        console.log(`✅ Fixed: ${issue.current} → ${issue.suggested}`);
+      } catch (error) {
+        console.error(`Failed to fix ${issue.current}: ${error.message}`);
       }
     }
     
@@ -360,27 +352,27 @@ class OrganizationEnforcer {
       try {
         // The src/tests directory should be consolidated into root tests/
         // Since both exist, we need to warn that manual consolidation may be needed
-        warning(`Both src/tests and tests directories exist.`);
-        info(`Please manually review and consolidate test files as needed.`);
-        info(`Consider removing src/tests after moving any unique files to tests/.`);
-      } catch (err) {
-        error(`Failed to consolidate ${source}: ${err.message}`);
+        console.warn(`Both src/tests and tests directories exist.`);
+        console.info(`Please manually review and consolidate test files as needed.`);
+        console.info(`Consider removing src/tests after moving any unique files to tests/.`);
+      } catch (error) {
+        console.error(`Failed to consolidate ${source}: ${error.message}`);
       }
     } else {
-      warning(`Manual intervention required for: ${source} → ${destination}`);
+      console.warn(`Manual intervention required for: ${source} → ${destination}`);
     }
   }
 
   async updateReferences() {
-    step('Updating file references...');
+    console.log('Updating file references...');
     
     // This would scan package.json, imports, etc. and update paths
     // For now, just warn about manual updates needed
-    warning('Please manually update any references to moved files in:');
-    info('  - package.json scripts');
-    info('  - Import statements');
-    info('  - Configuration files');
-    info('  - Documentation links');
+    console.warn('Please manually update any references to moved files in:');
+    console.info('  - package.json scripts');
+    console.info('  - Import statements');
+    console.info('  - Configuration files');
+    console.info('  - Documentation links');
   }
 }
 
@@ -388,9 +380,9 @@ class OrganizationEnforcer {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const enforcer = new OrganizationEnforcer();
   enforcer.enforce().catch(err => {
-    console.error(`❌ Organization enforcement failed: ${err.message}`);
+    console.error(`❌ Organization enforcement failed: ${error.message}`);
     process.exit(1);
   });
 }
 
-export default OrganizationEnforcer;
+module.exports = OrganizationEnforcer;

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { FC, ReactNode } from 'react';
 import {
   useState,
   useEffect,
@@ -7,6 +8,7 @@ import {
   useCallback,
   useRef,
   createContext,
+  use,
 } from 'react';
 import {
   PersonalizationData,
@@ -26,9 +28,6 @@ import {
   analyzeHookDependencies,
 } from '@/utils/debugUtils';
 
-type ReactNode = React.ReactNode;
-type FC<T = {}> = React.FC<T>;
-
 interface PersonalizationContextType {
   personalizationData: PersonalizationData | null;
   loading: boolean;
@@ -44,7 +43,7 @@ interface PersonalizationContextType {
   ) => Promise<void>;
 }
 
-const PersonalizationContext = createContext<
+const PersonalizationContext = React.createContext<
   PersonalizationContextType | undefined | null
 >(null);
 
@@ -255,7 +254,7 @@ export const PersonalizationProvider: FC<PersonalizationProviderProps> = ({
 // Custom hook to use personalization context
 export const usePersonalization = (): PersonalizationContextType => {
   const context = useContext(PersonalizationContext);
-  if (context === undefined) {
+  if (context === undefined || context === null) {
     throw new Error(
       'usePersonalization must be used within a PersonalizationProvider'
     );

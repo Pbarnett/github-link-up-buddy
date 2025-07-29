@@ -14,6 +14,15 @@
 import fs from 'fs/promises';
 import axios from 'axios';
 import { performance } from 'perf_hooks';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 const GRAFANA_URL = 'http://localhost:3001';
 const GRAFANA_ADMIN_USER = 'admin';
@@ -82,10 +91,10 @@ class FinalValidator {
               auth: this.auth
             });
 
-            const dash = dashboardData.data.dashboard;
+            const dash = dashboardData.data.dashboard
 
             if (dash.templating && dash.templating.list) {
-              const variables = dash.templating.list;
+              const variables = dash.templating.list
 
               // Check for data source variables
               const hasDataSourceVar = variables.some(v => v.type === 'datasource');
@@ -121,7 +130,7 @@ class FinalValidator {
               }
             }
 
-          } catch (error) {
+          } catch {
             this.validationResults.templateVariableOptimization.details.push(
               `❌ ${dashboard.title}: Error validating - ${error.message}`
             );
@@ -130,7 +139,7 @@ class FinalValidator {
       }
 
       // Calculate score
-      const totalDashboards = dashboards.data.filter(d => d.type === 'dash-db').length;
+      const totalDashboards = dashboards.data.filter(d => d.type === 'dash-db').length
       if (totalDashboards > 0) {
         this.validationResults.templateVariableOptimization.score = Math.round(
           ((dataSourceVariableCount * 15) + (optimizedVariableOrderCount * 10) + (minimizedVariableScopeCount * 5)) / totalDashboards
@@ -539,4 +548,4 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   });
 }
 
-export { FinalValidator };
+module.exports = { FinalValidator };

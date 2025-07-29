@@ -4,15 +4,14 @@
  * Based on Supabase real-time documentation best practices
  */
 
+import * as React from 'react';
+import { useEffect, useState, use } from 'react';
 import {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
-import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/types/database';
-import { useEffect } from 'react';
-
 type Tables = Database['public']['Tables'];
 type TableName = keyof Tables;
 

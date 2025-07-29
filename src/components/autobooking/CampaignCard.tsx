@@ -20,7 +20,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Campaign } from '@/types/campaign';
-
 interface CampaignCardProps {
   campaign: Campaign;
   onEdit: () => void;
@@ -51,7 +50,7 @@ export const CampaignCard = ({
     }
   };
 
-  const isPaused = campaign.status === 'paused';
+  const _isPaused = campaign.status === 'paused';
   const isCompleted =
     campaign.status === 'booked' || campaign.status === 'completed';
 
@@ -87,7 +86,7 @@ export const CampaignCard = ({
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </DropdownMenuItem>
-                  {isPaused ? (
+                  {_isPaused ? (
                     <DropdownMenuItem onClick={onResume}>
                       <Play className="h-4 w-4 mr-2" />
                       Resume

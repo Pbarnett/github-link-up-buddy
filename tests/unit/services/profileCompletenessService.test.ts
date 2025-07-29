@@ -49,7 +49,7 @@ describe('ProfileCompletenessService', () => {
         known_traveler_number: 'KTN123456',
         is_verified: true,
         notification_preferences: { email: true, sms: true },
-        travel_preferences: { seat_preference: 'window' },
+        travel_preferences: { seat_preference: '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window' },
       });
 
       const result = profileCompletenessService.calculateCompleteness(completeProfile);
@@ -157,7 +157,7 @@ describe('ProfileCompletenessService', () => {
         known_traveler_number: 'KTN123456',
         is_verified: true,
         notification_preferences: { email: true, sms: true },
-        travel_preferences: { seat_preference: 'window' },
+        travel_preferences: { seat_preference: '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window' },
       });
 
       const nextAction = profileCompletenessService.getNextAction(completeProfile);
@@ -233,7 +233,7 @@ describe('ProfileCompletenessService', () => {
           transactional: { booking_confirmations: { email: true, sms: true } }
         },
         travel_preferences: { 
-          seat_preference: 'window',
+          seat_preference: '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window',
           preferred_airports: ['LAX', 'JFK']
         },
       });

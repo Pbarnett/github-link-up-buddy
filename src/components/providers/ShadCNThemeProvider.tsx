@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { useEffect } from 'react';
-
+import { FC, ReactNode } from 'react';
+import { useEffect, useState, createContext, useContext } from 'react';
 /**
  * ShadCN Theme Provider Component
  *
@@ -16,8 +16,6 @@ import { useEffect } from 'react';
  * - CSS variable theming support
  */
 
-type ReactNode = React.ReactNode;
-type FC<T = {}> = React.FC<T>;
 type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 type Theme = 'dark' | 'light' | 'system';
@@ -38,7 +36,8 @@ const initialState: ThemeProviderState = {
   setTheme: () => null,
 };
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+const ThemeProviderContext =
+  React.createContext<ThemeProviderState>(initialState);
 
 export function ShadCNThemeProvider({
   children,
@@ -51,15 +50,19 @@ export function ShadCNThemeProvider({
   );
 
   useEffect(() => {
-    const root = window.document.documentElement;
+    const root =
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+        .document.documentElement;
 
     root.classList.remove('light', 'dark');
 
     if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
-        .matches
-        ? 'dark'
-        : 'light';
+      const systemTheme =
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.matchMedia(
+          '(prefers-color-scheme: dark)'
+        ).matches
+          ? 'dark'
+          : 'light';
 
       root.classList.add(systemTheme);
       return;

@@ -8,7 +8,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-
 // Trip duration form data interface
 interface TripDurationFormData {
   min_duration?: number;

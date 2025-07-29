@@ -3,8 +3,8 @@
 
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { describe, it, beforeEach, afterEach } from "https://deno.land/std@0.208.0/testing/bdd.ts";
-import { handleStripeWebhook } from "../stripe-webhook/index.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { handleStripeWebhook } from "../stripe-webhook/index.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";

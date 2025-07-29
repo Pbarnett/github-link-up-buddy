@@ -1,5 +1,14 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { glob } from 'glob';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 async function fixAllReactImports() {
   console.log('Fixing all React import issues...');
@@ -60,7 +69,7 @@ async function fixAllReactImports() {
       }
       
       // Build the new import statements
-      let imports = 'import * as React from \'react\';';
+      let import ';
       
       if (typesToImport.size > 0) {
         imports += `\nimport type { ${[...typesToImport].join(', ')} } from 'react';`;

@@ -1,6 +1,8 @@
-type FC<T = {}> = React.FC<T>;
-
 import * as React from 'react';
+import { FC } from 'react';
+import { useEffect, useMemo, use } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -12,55 +14,6 @@ import AdvancedFilterControls, {
 import { useFilterState } from '@/hooks/useFilterState';
 import { useTripOffersPools } from '@/hooks/useTripOffers';
 import { toast } from '@/components/ui/use-toast';
-import { useEffect } from 'react';
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  Calendar,
-  CalendarIcon,
-  CheckCircle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Circle,
-  Clock,
-  CreditCard,
-  DollarSign,
-  Download,
-  Eye,
-  FileText,
-  Filter,
-  Globe,
-  HelpCircle,
-  Info,
-  Loader2,
-  Lock,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Plane,
-  PlaneTakeoff,
-  Plus,
-  RefreshCw,
-  Save,
-  Search,
-  Settings,
-  Shield,
-  Trash2,
-  Upload,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  Zap,
-} from 'lucide-react';
-
 const EmptyStateCard: FC = () => (
   <Card className="shadow-lg">
     <CardHeader>

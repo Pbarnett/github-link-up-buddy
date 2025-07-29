@@ -436,7 +436,7 @@ class AuthSecurityMonitor {
   }
 
   private getBrowserInfo(): BrowserInfo {
-    const userAgent = navigator.userAgent;
+    const _userAgent = navigator.userAgent;
 
     return {
       name: this.getBrowserName(userAgent),
@@ -445,7 +445,9 @@ class AuthSecurityMonitor {
       isMobile: /Mobi|Android/i.test(userAgent),
       cookiesEnabled: navigator.cookieEnabled,
       thirdPartyCookiesBlocked: this.detectThirdPartyCookieBlocking(),
-      fedcmSupported: 'IdentityCredential' in window,
+      fedcmSupported:
+        'IdentityCredential' in
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
     };
   }
 

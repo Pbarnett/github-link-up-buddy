@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
 interface HealthCheck {
   status: 'healthy' | 'degraded' | 'unhealthy';
   timestamp: string;

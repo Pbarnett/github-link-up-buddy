@@ -1,7 +1,17 @@
 #!/usr/bin/env node
 
-import fs from 'fs';
 import { execSync } from 'child_process';
+// Utility functions
+// Removed unused info function
+// Removed unused warning function
+// Removed unused error function
+// Removed unused success function
+
+const fs = require('fs');
+
+// Utility functions
+// Removed unused log function
+  console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
 /**
  * Fix import order violations by removing empty lines between import groups
@@ -64,7 +74,7 @@ function fixImportOrder(filePath) {
     }
     
     return false;
-  } catch (error) {
+  } catch {
     console.error(`Error processing ${filePath}:`, error.message);
     return false;
   }

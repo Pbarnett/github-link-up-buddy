@@ -5,6 +5,7 @@
  */
 
 import * as React from 'react';
+import { FC } from 'react';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
@@ -16,8 +17,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-
-type FC<T = {}> = React.FC<T>;
 
 interface DateFieldProps {
   value?: string;

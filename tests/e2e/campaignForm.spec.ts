@@ -224,7 +224,7 @@ test.describe('CampaignForm Analytics Integration E2E', () => {
   test('should enforce config-driven business rules validation', async ({ page }) => {
     // Mock business rules configuration
     await page.addInitScript(() => {
-      (window as unknown as { mockBusinessRules: unknown }).mockBusinessRules = {
+      (/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window as unknown as { mockBusinessRules: unknown }).mockBusinessRules = {
         flightSearch: {
           minPriceUSD: 100,
           maxPriceUSD: 5000,
@@ -264,7 +264,7 @@ test.describe('CampaignForm Analytics Integration E2E', () => {
       submitBtn.addEventListener('click', (e) => {
         e.preventDefault();
         const price = parseInt(priceInput.value);
-        const config = (window as unknown as { mockBusinessRules: { flightSearch: { minPriceUSD: number; maxPriceUSD: number } } }).mockBusinessRules;
+        const config = (/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window as unknown as { mockBusinessRules: { flightSearch: { minPriceUSD: number; maxPriceUSD: number } } }).mockBusinessRules;
         
         errorDiv.style.display = 'none';
         

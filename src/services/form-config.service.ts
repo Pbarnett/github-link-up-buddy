@@ -7,7 +7,6 @@ import * as React from 'react';
 
 import { supabase } from '@/integrations/supabase/client';
 import type { FormConfiguration } from '@/types/dynamic-forms';
-
 export interface FormConfigurationService {
   getConfiguration(id: string): Promise<{
     success: boolean;

@@ -13,7 +13,6 @@ import * as React from 'react';
 import { Duffel } from '@duffel/api';
 import type { PaymentIntent, PaymentIntentCreate } from '@duffel/api/types';
 import Stripe from 'stripe';
-
 interface PaymentResult {
   success: boolean;
   paymentId: string;
