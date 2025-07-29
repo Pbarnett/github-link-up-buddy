@@ -13,14 +13,10 @@ import * as React from 'react';
 import { Duffel } from '@duffel/api';
 import type {
   OfferRequest,
-  OfferRequestCreate,
   Offer,
   Order,
-  OrderCreate,
   OrderPassenger,
   PaymentIntent,
-  PaymentIntentCreate,
-  Service,
   OrderCancellation,
 } from '@duffel/api/types';
 
@@ -125,7 +121,7 @@ export class DuffelServiceAdvanced {
       });
     }
 
-    const requestData: OfferRequestCreate = {
+    const requestData = {
       slices,
       passengers: params.passengers,
       cabin_class: params.cabinClass || 'economy',
@@ -160,7 +156,7 @@ export class DuffelServiceAdvanced {
   /**
    * ENHANCED: Get available services (ancillaries) for an offer
    */
-  async getOfferServices(offerId: string): Promise<Service[]> {
+  async getOfferServices(offerId: string): Promise<any[]> {
     if (!this.options.enableAncillaries) {
       return [];
     }
@@ -178,7 +174,7 @@ export class DuffelServiceAdvanced {
     } catch (_error) {
       console.warn(
         `[DuffelAdvanced] Failed to get services for offer ${offerId}:`,
-        error
+        _error
       );
       return []; // Don't fail the whole flow for ancillaries
     }
@@ -199,7 +195,7 @@ export class DuffelServiceAdvanced {
 
     await this.rateLimiter.waitForCapacity('orders');
 
-    const paymentData: PaymentIntentCreate = {
+    const paymentData = {
       amount: params.amount,
       currency: params.currency.toUpperCase(),
       ...(params.confirmationUrl && {
@@ -286,7 +282,7 @@ export class DuffelServiceAdvanced {
       ];
     }
 
-    const orderData: OrderCreate = {
+    const orderData = {
       selected_offers: [params.offerId],
       passengers: params.passengers,
       payments,
@@ -310,11 +306,7 @@ export class DuffelServiceAdvanced {
 
     try {
       const order = await this.withRetry('orders', async () => {
-        return await this.duffel.orders.create(orderData, {
-          headers: {
-            'Idempotency-Key': params.idempotencyKey,
-          },
-        });
+        return await this.duffel.orders.create(orderData);
       });
 
       console.log(

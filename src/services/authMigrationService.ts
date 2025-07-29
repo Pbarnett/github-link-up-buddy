@@ -150,7 +150,7 @@ export class AuthMigrationService {
         );
       case 'partial':
         // Enable for percentage of users
-        const _userHash = this.getUserHash();
+        const userHash = this.getUserHash();
         return userHash % 100 < this.config.rolloutPercentage;
       case 'complete':
         return true;

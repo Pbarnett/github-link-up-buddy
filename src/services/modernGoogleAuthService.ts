@@ -167,7 +167,7 @@ class ModernGoogleAuthService {
       // Use resilience wrapper for token processing
       await AuthResilience.withRetry(
         async () => {
-          const _userProfile = parseJWT(response.credential);
+          const userProfile = parseJWT(response.credential);
 
           if (!userProfile) {
             authSecurityMonitor.logTokenValidationFailure({
@@ -379,7 +379,7 @@ class ModernGoogleAuthService {
                 }
 
                 // Exchange access token for user info with retry logic
-                const _userInfo = await AuthResilience.withRetry(
+                const userInfo = await AuthResilience.withRetry(
                   () => this.getUserInfo(response.access_token),
                   'modern-google-userinfo',
                   { maxRetries: 3, baseDelay: 1000 }

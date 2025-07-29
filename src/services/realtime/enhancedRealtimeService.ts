@@ -191,7 +191,7 @@ export class RealtimeService {
     }
 
     this.connectionState.connectionAttempts++;
-    const _delay = Math.min(
+    const delay = Math.min(
       this.connectionState.connectionAttempts * 1000,
       30000
     );

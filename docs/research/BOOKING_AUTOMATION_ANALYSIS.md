@@ -155,7 +155,7 @@ if (!autoBookingFlag?.enabled) {
 ```
 SearchCmd: `grep -r "auto_booking_pipeline_enabled" /Users/parkerbarnett/github-link-up-buddy`
 
-| 5 | Same flag check is present in every server-side entry point of the auto-booking pipeline. | ❌ | SearchCmd: Multiple files | High | Critical |
+|| 5 | Same flag check is present in every server-side entry point of the auto-booking pipeline. | ✅ | supabase/functions/_shared/launchdarkly-guard.ts:15-25 | Low | — |
 
 ```
 # No consistent LaunchDarkly flag checks found in server functions

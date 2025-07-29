@@ -455,7 +455,7 @@ export class AuthErrorHandler {
    * Store recent errors for pattern analysis
    */
   private static storeRecentError(component: string, error: AuthError): void {
-    const _errors = this.lastErrors.get(component) || [];
+    const errors = this.lastErrors.get(component) || [];
     errors.push(error);
 
     // Keep only last 10 errors per component

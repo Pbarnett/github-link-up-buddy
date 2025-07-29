@@ -125,7 +125,7 @@ async function flushQueuedOperations() {
         trackEvent('queued_operation_failure', {
           operation_type: operation.type,
           retry_count: operation.retryCount,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: _error instanceof Error ? _error.message : 'Unknown error',
         });
       }
     }

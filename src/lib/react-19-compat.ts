@@ -15,7 +15,11 @@ export const Fragment = React.Fragment;
 export type ComponentType<P = {}> = React.ComponentType<P>;
 export type ComponentPropsWithoutRef<T extends React.ElementType> = React.ComponentPropsWithoutRef<T>;
 export type ComponentProps<T extends React.ElementType> = React.ComponentProps<T>;
-export type ElementRef<T extends React.ElementType> = React.ElementRef<T>;
+export type ElementRef<T extends React.ElementType> = T extends keyof React.JSX.IntrinsicElements
+  ? React.ComponentRef<T>
+  : T extends React.ComponentType<infer P>
+  ? React.ComponentRef<T>
+  : never;
 export type HTMLAttributes<T> = React.HTMLAttributes<T>;
 export type CSSProperties = React.CSSProperties;
 export type ReactElement = React.ReactElement;

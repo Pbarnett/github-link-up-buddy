@@ -138,67 +138,11 @@ export function getValidatedDuffelConfig(): DuffelEnvironmentConfig {
 }
 
 /**
- * Environment validation for Edge Functions (Deno)
+ * Environment validation for server-side environments
  */
-export function validateDuffelEnvironmentDeno(): ValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
-  // Check for required environment variables in Deno
-  const requiredVars = {
-    DUFFEL_API_TOKEN_TEST: (typeof globalThis !== 'undefined' && 'Deno' in globalThis ? (globalThis as any).Deno.env.get('DUFFEL_API_TOKEN_TEST') : process.env.DUFFEL_API_TOKEN_TEST),
-    DUFFEL_WEBHOOK_SECRET: (typeof globalThis !== 'undefined' && 'Deno' in globalThis ? (globalThis as any).Deno.env.get('DUFFEL_WEBHOOK_SECRET') : process.env.DUFFEL_WEBHOOK_SECRET),
-  };
-
-  const optionalVars = {
-    DUFFEL_API_TOKEN_LIVE: (typeof globalThis !== 'undefined' && 'Deno' in globalThis ? (globalThis as any).Deno.env.get('DUFFEL_API_TOKEN_LIVE') : process.env.DUFFEL_API_TOKEN_LIVE),
-    DUFFEL_LIVE_ENABLED: (typeof globalThis !== 'undefined' && 'Deno' in globalThis ? (globalThis as any).Deno.env.get('DUFFEL_LIVE_ENABLED') : process.env.DUFFEL_LIVE_ENABLED),
-  };
-
-  // Check required variables
-  Object.entries(requiredVars).forEach(([key, value]) => {
-    if (!value) {
-      errors.push(`Missing required environment variable: ${key}`);
-    }
-  });
-
-  // Validate token formats
-  const testToken = requiredVars.DUFFEL_API_TOKEN_TEST;
-  const liveToken = optionalVars.DUFFEL_API_TOKEN_LIVE;
-
-  if (testToken && !isValidDuffelToken(testToken)) {
-    errors.push('DUFFEL_API_TOKEN_TEST has invalid format');
-  }
-
-  if (liveToken && !isValidDuffelToken(liveToken)) {
-    errors.push('DUFFEL_API_TOKEN_LIVE has invalid format');
-  }
-
-  // Check live mode configuration
-  const liveEnabled = optionalVars.DUFFEL_LIVE_ENABLED === 'true';
-
-  if (liveEnabled && !liveToken) {
-    errors.push('Live mode enabled but no live token provided');
-  }
-
-  const mode: 'LIVE' | 'TEST' = liveEnabled ? 'LIVE' : 'TEST';
-  const apiToken = liveEnabled ? liveToken || '' : testToken || '';
-
-  const config: DuffelEnvironmentConfig = {
-    mode,
-    apiToken,
-    webhookSecret: requiredVars.DUFFEL_WEBHOOK_SECRET,
-    liveEnabled,
-    hasLiveToken: !!liveToken,
-    hasTestToken: !!testToken,
-  };
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-    warnings,
-    config,
-  };
+export function validateDuffelEnvironmentServer(): ValidationResult {
+  // Use the same logic as the main validation function
+  return validateDuffelEnvironment();
 }
 
 /**
@@ -232,6 +176,6 @@ export function validateDuffelOnStartup(): void {
 export default {
   validateDuffelEnvironment,
   getValidatedDuffelConfig,
-  validateDuffelEnvironmentDeno,
+  validateDuffelEnvironmentServer,
   validateDuffelOnStartup,
 };

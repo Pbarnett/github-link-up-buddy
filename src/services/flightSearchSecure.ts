@@ -225,7 +225,7 @@ export class AmadeusFlightSearch {
       this.accessToken = tokenData.access_token;
       this.tokenExpiry = Date.now() + tokenData.expires_in * 1000 - 60000; // 1 minute buffer
 
-      return this.accessToken;
+      return this.accessToken!;
     } catch (error) {
       console.error('Failed to get Amadeus access token:', error);
       throw error;
@@ -393,7 +393,7 @@ export class FlightSearchServiceSecure {
           default:
             throw new Error(`Unsupported flight search provider: ${provider}`);
         }
-      } catch (_error) {
+      } catch (error) {
         console.warn(`Flight search failed for provider ${provider}:`, error);
         throw error;
       }

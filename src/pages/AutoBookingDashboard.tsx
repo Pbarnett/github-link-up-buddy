@@ -34,7 +34,7 @@ function AutoBookingDashboard() {
     navigate(`/auto-booking/edit/${campaignId}`);
   };
 
-  const _handlePauseCampaign = async (campaignId: string) => {
+  const handlePauseCampaign = async (campaignId: string) => {
     try {
       await pauseCampaign(campaignId);
       toast({
@@ -91,7 +91,7 @@ function AutoBookingDashboard() {
   const activeCampaigns =
     campaigns?.filter(c => c.status === 'active' || c.status === 'watching') ||
     [];
-  const _pausedCampaigns = campaigns?.filter(c => c.status === 'paused') || [];
+  const pausedCampaigns = campaigns?.filter(c => c.status === 'paused') || [];
   const completedCampaigns =
     campaigns?.filter(c => c.status === 'booked' || c.status === 'completed') ||
     [];

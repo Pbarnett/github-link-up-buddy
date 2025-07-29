@@ -436,7 +436,7 @@ class AuthSecurityMonitor {
   }
 
   private getBrowserInfo(): BrowserInfo {
-    const _userAgent = navigator.userAgent;
+    const userAgent = navigator.userAgent;
 
     return {
       name: this.getBrowserName(userAgent),

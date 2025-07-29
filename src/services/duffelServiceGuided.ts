@@ -15,12 +15,9 @@ import * as React from 'react';
 import { Duffel } from '@duffel/api';
 import type {
   OfferRequest,
-  OfferRequestCreate,
   Offer,
-  Order,
-  OrderCreate,
   OrderPassenger,
-  CreatePayment,
+  Order,
 } from '@duffel/api/types';
 
 // Rate Limiting Configuration per Implementation Guide
@@ -139,11 +136,11 @@ export class DuffelServiceGuided {
       });
     }
 
-    const requestData: OfferRequestCreate = {
+    const requestData = {
       slices,
       passengers: params.passengers,
       cabin_class: params.cabinClass || 'economy',
-      max_connections: params.maxConnections || 1,
+      max_connections: params.maxConnections === 0 ? 0 : params.maxConnections === 1 ? 1 : params.maxConnections === 2 ? 2 : 1,
     };
 
     try {

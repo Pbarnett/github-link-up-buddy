@@ -110,12 +110,12 @@ export class AuthResilience {
 
         // Log retry attempt
         console.warn(
-          `🔄 Retry attempt ${attempt + 1}/${maxRetries} for ${context} in ${Math.round(delay)}ms`,
+          `🔄 Retry attempt ${attempt + 1}/${maxRetries} for ${context} in ${Math.round(_delay)}ms`,
           { error: lastError.message }
         );
 
         // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise(resolve => setTimeout(resolve, _delay));
       }
     }
 

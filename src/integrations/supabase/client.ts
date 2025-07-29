@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from './types';
+import type { Database } from '@/types/database';
 // Environment variable utility function for proper type handling
 const getEnvVar = (key: string, viteKey: string) => {
   if (typeof process !== 'undefined' && process.env) {

@@ -112,7 +112,7 @@ Each supports a different use case. stripe login is the easiest and recommended 
 
 Using stripe config allows you to set persistent keys manually:
 
-stripe config --set test_mode_api_key sk_test_123
+stripe config --set test_mode_api_key sk_test_REMOVED_FROM_GIT
 
 --api-key is a global flag that overrides your local configuration if you need to run one-off commands with a specific API key.
 

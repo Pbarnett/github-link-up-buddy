@@ -255,11 +255,154 @@ export interface Database {
           updated_at?: string;
         };
       };
+      bookings: {
+        Row: {
+          id: string;
+          trip_id: string;
+          passenger_id: string;
+          status: 'confirmed' | 'pending' | 'cancelled';
+          booked_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          trip_id: string;
+          passenger_id: string;
+          status?: 'confirmed' | 'pending' | 'cancelled';
+          booked_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          trip_id?: string;
+          passenger_id?: string;
+          status?: 'confirmed' | 'pending' | 'cancelled';
+          booked_at?: string;
+          updated_at?: string;
+        };
+      };
+      trip_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          origin: string;
+          destination: string;
+          departure_date: string;
+          return_date: string;
+          status: 'requested' | 'approved' | 'denied';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          origin: string;
+          destination: string;
+          departure_date: string;
+          return_date: string;
+          status?: 'requested' | 'approved' | 'denied';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          origin?: string;
+          destination?: string;
+          departure_date?: string;
+          return_date?: string;
+          status?: 'requested' | 'approved' | 'denied';
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          message: string;
+          type: string;
+          read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          message: string;
+          type: string;
+          read?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          message?: string;
+          type?: string;
+          read?: boolean;
+          created_at?: string;
+        };
+      };
+      flight_offers_v2: {
+        Row: {
+          id: string;
+          user_id: string;
+          offer_data: Json;
+          price: number;
+          currency: string;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          offer_data: Json;
+          price: number;
+          currency: string;
+          created_at?: string;
+          expires_at: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          offer_data?: Json;
+          price?: number;
+          currency?: string;
+          created_at?: string;
+          expires_at?: string;
+        };
+      };
+      booking_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          flight_offer_id: string;
+          status: 'pending' | 'confirmed' | 'failed';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          flight_offer_id: string;
+          status?: 'pending' | 'confirmed' | 'failed';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          flight_offer_id?: string;
+          status?: 'pending' | 'confirmed' | 'failed';
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       payment_methods: {
         Row: {
           id: string;
           user_id: string;
           stripe_payment_method_id: string;
+          stripe_customer_id?: string | null;
           type: 'card' | 'bank_account' | 'wallet';
           card_brand?: string | null;
           card_last4?: string | null;
@@ -275,6 +418,7 @@ export interface Database {
           id?: string;
           user_id: string;
           stripe_payment_method_id: string;
+          stripe_customer_id?: string | null;
           type: 'card' | 'bank_account' | 'wallet';
           card_brand?: string | null;
           card_last4?: string | null;
@@ -290,6 +434,7 @@ export interface Database {
           id?: string;
           user_id?: string;
           stripe_payment_method_id?: string;
+          stripe_customer_id?: string | null;
           type?: 'card' | 'bank_account' | 'wallet';
           card_brand?: string | null;
           card_last4?: string | null;
@@ -298,6 +443,134 @@ export interface Database {
           billing_address?: Json | null;
           is_default?: boolean;
           is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      stripe_customers: {
+        Row: {
+          id: string;
+          user_id: string;
+          stripe_customer_id: string;
+          email?: string | null;
+          name?: string | null;
+          created_at: string;
+          updated_at: string;
+          last_payment_at?: string | null;
+          anonymized_at?: string | null;
+          anonymization_reason?: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          stripe_customer_id: string;
+          email?: string | null;
+          name?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          last_payment_at?: string | null;
+          anonymized_at?: string | null;
+          anonymization_reason?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          stripe_customer_id?: string;
+          email?: string | null;
+          name?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          last_payment_at?: string | null;
+          anonymized_at?: string | null;
+          anonymization_reason?: string | null;
+        };
+      };
+      customer_lifecycle_audit: {
+        Row: {
+          id: string;
+          customer_id: string;
+          user_id?: string | null;
+          action: 'identified_inactive' | 'anonymized' | 'deleted' | 'retained';
+          reason: string;
+          metadata: Json | null;
+          performed_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          customer_id: string;
+          user_id?: string | null;
+          action: 'identified_inactive' | 'anonymized' | 'deleted' | 'retained';
+          reason: string;
+          metadata?: Json | null;
+          performed_at: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          customer_id?: string;
+          user_id?: string | null;
+          action?: 'identified_inactive' | 'anonymized' | 'deleted' | 'retained';
+          reason?: string;
+          metadata?: Json | null;
+          performed_at?: string;
+          created_at?: string;
+        };
+      };
+      customer_deletion_archive: {
+        Row: {
+          id: string;
+          customer_id: string;
+          user_id?: string | null;
+          deletion_date: string;
+          charges_count: number;
+          total_amount_processed: number;
+          last_charge_date?: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          customer_id: string;
+          user_id?: string | null;
+          deletion_date: string;
+          charges_count: number;
+          total_amount_processed: number;
+          last_charge_date?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          customer_id?: string;
+          user_id?: string | null;
+          deletion_date?: string;
+          charges_count?: number;
+          total_amount_processed?: number;
+          last_charge_date?: number | null;
+          created_at?: string;
+        };
+      };
+      feature_flags: {
+        Row: {
+          id: string;
+          name: string;
+          enabled: boolean;
+          description?: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          enabled?: boolean;
+          description?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          enabled?: boolean;
+          description?: string | null;
           created_at?: string;
           updated_at?: string;
         };

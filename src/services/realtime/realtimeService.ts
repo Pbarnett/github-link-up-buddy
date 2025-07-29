@@ -312,7 +312,7 @@ class RealtimeService {
     }
 
     this.reconnectAttempts++;
-    const _delay =
+    const delay =
       this.baseReconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
 
     console.log(

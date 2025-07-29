@@ -315,7 +315,7 @@ export class OAuthServiceSecure {
         throw new Error(`Failed to fetch user info: ${response.status}`);
       }
 
-      const _userData = await response.json();
+      const userData = await response.json();
 
       // Map provider-specific user data to standardized format
       return this.mapUserData(provider, userData);

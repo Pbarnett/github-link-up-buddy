@@ -168,20 +168,19 @@ export class StripeCustomerLifecycleManager {
     );
 
     // Query local database for customer activity
-    const { data: customers, error } = await this.supabase
-      .from('stripe_customers')
-      .select(
+      const { data: customers, error } = await this.supabase
+        .from('stripe_customers')
+        .select(
+          `
+          stripe_customer_id,
+          user_id,
+          created_at,
+          last_payment_at
         `
-        stripe_customer_id,
-        user_id,
-        created_at,
-        last_payment_at,
-        payment_methods!inner(count)
-      `
-      )
-      .lt('last_payment_at', cutoffDate.toISOString())
-      .order('last_payment_at', { ascending: true })
-      .limit(this.config.batchSize * 2); // Get more than batch size for filtering
+        )
+        .lt('last_payment_at', cutoffDate.toISOString())
+        .order('last_payment_at', { ascending: true })
+        .limit(this.config.batchSize * 2); // Get more than batch size for filtering
 
     if (error) {
       throw new Error(`Failed to query inactive customers: ${error.message}`);
