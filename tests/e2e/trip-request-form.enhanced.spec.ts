@@ -214,8 +214,7 @@ test.describe('Enhanced Trip Request Form', () => {
       if (await configIndicator.isVisible()) {
         console.log('✅ Config-driven form detected');
       } else {
-        console.log('⚠️ Skipping config-driven test: Config-driven form not present');
-        return;
+        throw new Error('Config-driven form indicator not found - test requires config-driven form to be present');
       }
     });
 

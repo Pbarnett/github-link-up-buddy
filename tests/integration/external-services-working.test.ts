@@ -264,8 +264,7 @@ test.describe('External Services Integration - Working', () => {
   test.describe('Cross-Service Integration', () => {
     test('should validate Stripe + Supabase payment flow', async () => {
       if (!STRIPE_SECRET_KEY || !SUPABASE_URL) {
-        console.log('⚠️ Skipping Stripe + Supabase integration test: Missing configuration');
-        return;
+        throw new Error('Missing required environment variables: STRIPE_SECRET_KEY or SUPABASE_URL not configured');
       }
 
       // Dynamic imports
@@ -336,8 +335,7 @@ test.describe('External Services Integration - Working', () => {
 
     test('should validate LaunchDarkly + UI feature toggle', async () => {
       if (!LAUNCHDARKLY_SDK_KEY) {
-        console.log('⚠️ Skipping LaunchDarkly + UI integration test: LAUNCHDARKLY_SDK_KEY not configured');
-        return;
+        throw new Error('Missing required environment variable: LAUNCHDARKLY_SDK_KEY not configured');
       }
 
       const LaunchDarkly = await import('@launchdarkly/node-server-sdk');
