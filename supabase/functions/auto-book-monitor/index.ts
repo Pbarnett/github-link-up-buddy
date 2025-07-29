@@ -15,6 +15,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { evaluateFlag, createUserContext } from '../_shared/launchdarkly.ts'
+import { checkAutoBookingFlags } from '../_shared/launchdarkly-guard.ts'
 import { acquireMonitorLock, acquireOfferLock, RedisLockManager } from '../lib/redis-lock.ts'
 import { createDuffelClient } from '../lib/duffel.ts'
 import { withSpan } from '../_shared/otel.ts'
@@ -60,6 +61,12 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  // Critical: Check LaunchDarkly flags before any processing
+  const flagCheck = await checkAutoBookingFlags(req, 'auto-book-monitor');
+  if (!flagCheck.canProceed) {
+    return flagCheck.response!;
+  }
+
   return withSpan(
     'auto_book_monitor.run',
     async (span) => {
@@ -92,29 +99,7 @@ Deno.serve(async (req: Request) => {
 
     console.log(`[AutoBookMonitor] Starting monitor cycle - maxOffers: ${maxOffers}, dryRun: ${dryRun}`)
 
-    // Step 1: Check LaunchDarkly flag for auto-booking pipeline
-    const systemContext = createUserContext('system', {
-      service: 'auto-book-monitor',
-      environment: Deno.env.get('SUPABASE_ENV') || 'development'
-    })
-
-    const pipelineEnabled = await evaluateFlag(
-      'auto_booking_pipeline_enabled',
-      systemContext,
-      false
-    )
-
-    if (!pipelineEnabled.value) {
-      console.log('[AutoBookMonitor] Auto-booking pipeline disabled by feature flag')
-      return new Response(JSON.stringify({
-        success: true,
-        message: 'Auto-booking pipeline is disabled',
-        processed: 0,
-        skipped: 'feature_flag_disabled'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
+    // Auto-booking flags already checked at function entry
 
     // Step 2: Acquire global monitor lock to prevent concurrent executions
     console.log('[AutoBookMonitor] Acquiring global monitor lock...')
@@ -187,22 +172,7 @@ Deno.serve(async (req: Request) => {
         try {
           console.log(`[AutoBookMonitor] Processing trip request: ${tripRequest.id}`)
 
-          // Check LaunchDarkly flag for this specific user
-          const userContext = createUserContext(tripRequest.user_id, {
-            trip_request_id: tripRequest.id
-          })
-
-          const userEnabled = await evaluateFlag(
-            'auto_booking_pipeline_enabled',
-            userContext,
-            false
-          )
-
-          if (!userEnabled.value) {
-            console.log(`[AutoBookMonitor] Auto-booking disabled for user ${tripRequest.user_id}`)
-            results.skipped++
-            continue
-          }
+          // Auto-booking flags already checked at function entry (applies to all users)
 
           // Acquire per-trip lock to prevent concurrent processing
           const tripLockKey = `trip:${tripRequest.id}`

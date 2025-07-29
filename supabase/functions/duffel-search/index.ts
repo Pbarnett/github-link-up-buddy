@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { createDuffelClient, logDuffelOperation } from '../lib/duffel.ts'
 import { evaluateFlag, createUserContext } from '../_shared/launchdarkly.ts'
+import { checkAutoBookingFlags } from '../_shared/launchdarkly-guard.ts'
 
 interface DuffelSearchRequest {
   tripRequestId: string
@@ -33,6 +34,12 @@ serve(async (req) => {
 
   try {
     console.log('🔍 Phase 2: Duffel flight search initiated')
+    
+    // Critical: Check LaunchDarkly flags before any processing
+    const flagCheck = await checkAutoBookingFlags(req, 'duffel-search');
+    if (!flagCheck.canProceed) {
+      return flagCheck.response!;
+    }
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -79,6 +86,8 @@ serve(async (req) => {
     if (tripError || !tripRequest) {
       throw new Error(`Trip request not found: ${tripError?.message}`)
     }
+
+    // Auto-booking flags already checked at function entry
 
     // Check LaunchDarkly flags for enhanced search features
     const userContext = createUserContext(tripRequest.user_id, {

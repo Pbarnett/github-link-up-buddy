@@ -9,6 +9,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { getMetrics } from '../_shared/logger.ts';
 import { logger, initializeLogContext } from '../_shared/logger.ts';
 import { evaluateFlag, createUserContext } from '../_shared/launchdarkly.ts';
+import { checkAutoBookingFlags } from '../_shared/launchdarkly-guard.ts';
 import { withSpan, initializeTraceContext, setGlobalPropagator } from '../_shared/otel.ts';
 
 // Initialize W3C Trace Context Propagator
@@ -22,6 +23,12 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Critical: Check LaunchDarkly flags before any processing
+  const flagCheck = await checkAutoBookingFlags(req, 'metrics');
+  if (!flagCheck.canProceed) {
+    return flagCheck.response!;
+  }
+
   // Initialize tracing and logging context
   const traceContext = initializeTraceContext(req);
   const logContext = initializeLogContext('metrics');
@@ -33,27 +40,7 @@ Deno.serve(async (req: Request) => {
       span.setAttribute('http.url', req.url);
       
       try {
-        // Check LaunchDarkly flag for metrics endpoint
-        const systemContext = createUserContext('system', {
-          service: 'metrics-endpoint',
-          environment: Deno.env.get('SUPABASE_ENV') || 'development'
-        });
-
-        const metricsEnabled = await evaluateFlag(
-          'auto_booking_pipeline_enabled',
-          systemContext,
-          true // Default to enabled for metrics
-        );
-
-        if (!metricsEnabled.value) {
-          logger.warn('Metrics endpoint disabled by feature flag');
-          return new Response(JSON.stringify({
-            error: 'Metrics endpoint disabled'
-          }), {
-            status: 503,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
+        // Auto-booking flags already checked at function entry
 
         // Get current metrics snapshot
         const metrics = getMetrics();

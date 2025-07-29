@@ -23,6 +23,7 @@ import { initSentryForFunction, captureException, addBreadcrumb } from '../_shar
 import { capturePaymentIntent, refundPaymentIntent } from '../_shared/stripe.ts'
 import { recordAutoBookingSuccess, recordAutoBookingFailure, recordStripeCaptureSuccess, recordStripeCaptureFailure, autoBookingFailureTotal } from '../_shared/metrics.ts'
 import { alertBookingSuccess, alertBookingFailure, alertRefundCompleted } from '../_shared/notifications.ts'
+import { checkAutoBookingFlags } from '../_shared/launchdarkly-guard.ts'
 import { 
   createDuffelProductionClient,
   mapTripRequestToDuffelSearch,
@@ -51,6 +52,12 @@ Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Critical: Check LaunchDarkly flags before any processing
+  const flagCheck = await checkAutoBookingFlags(req, 'auto-book-production');
+  if (!flagCheck.canProceed) {
+    return flagCheck.response!;
   }
 
   const supabaseClient = createClient(
@@ -84,10 +91,7 @@ Deno.serve(async (req: Request) => {
 
     console.log(`[AutoBookProduction] Processing trip request: ${tripRequestId}`);
 
-    // Step 1: Check LaunchDarkly feature flags
-    const { evaluateFlag, createUserContext } = await import('../_shared/launchdarkly.ts');
-    
-    // Get user ID from trip request first for proper flag evaluation
+    // Step 1: Get trip request for user ID
     const { data: tripRequest, error: tripError } = await supabaseClient
       .from('trip_requests')
       .select('user_id')
@@ -98,26 +102,7 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Trip request not found: ${tripError?.message}`);
     }
 
-    const userContext = createUserContext(tripRequest.user_id, {
-      trip_request_id: tripRequestId
-    });
-
-    const pipelineEnabled = await evaluateFlag(
-      'auto_booking_pipeline_enabled',
-      userContext,
-      false
-    );
-
-    if (!pipelineEnabled.value) {
-      console.log('[AutoBookProduction] Auto-booking disabled by LaunchDarkly feature flag');
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Auto-booking is currently disabled for this user'
-      }), {
-        status: 503,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    // Auto-booking flags already checked at function entry
 
     // Step 2: Get full trip request details (we already have user_id from Step 1)
     const { data: fullTripRequest, error: fullTripError } = await supabaseClient
