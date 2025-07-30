@@ -1,0 +1,47 @@
+<testsuites id="" name="" tests="1" failures="1" skipped="0" errors="0" time="10.375608">
+<testsuite name="e2e/accessibility.a11y.spec.ts" timestamp="2025-07-29T04:54:48.836Z" hostname="chromium" tests="1" failures="1" skipped="0" time="6.88" errors="0">
+<testcase name="Accessibility (WCAG 2.2 AA) › homepage accessibility audit" classname="e2e/accessibility.a11y.spec.ts" time="6.88">
+<failure message="accessibility.a11y.spec.ts:13:3 homepage accessibility audit" type="FAILURE">
+<![CDATA[  [chromium] › e2e/accessibility.a11y.spec.ts:13:3 › Accessibility (WCAG 2.2 AA) › homepage accessibility audit › Run comprehensive accessibility checks 
+
+    Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'run')
+        at eval (eval at evaluate (:291:30), <anonymous>:2:27)
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at eval (eval at evaluate (:291:30), <anonymous>:2:27)
+        at UtilityScript.evaluate (<anonymous>:293:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:74:31
+        at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:31:71
+        at __awaiter (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:27:12)
+        at getAxeResults (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:73:51)
+        at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:87:52
+        at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:31:71
+        at __awaiter (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:27:12)
+        at getViolations (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:86:51)
+        at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:111:56
+        at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:31:71
+        at __awaiter (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:27:12)
+        at checkA11y (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:109:42)
+        at /Users/parkerbarnett/github-link-up-buddy/tests/e2e/accessibility.a11y.spec.ts:20:13
+        at /Users/parkerbarnett/github-link-up-buddy/tests/e2e/accessibility.a11y.spec.ts:19:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tests/test-results/e2e-accessibility.a11y-Acc-fa2b8-omepage-accessibility-audit-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    tests/test-results/e2e-accessibility.a11y-Acc-fa2b8-omepage-accessibility-audit-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|../test-results/e2e-accessibility.a11y-Acc-fa2b8-omepage-accessibility-audit-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|../test-results/e2e-accessibility.a11y-Acc-fa2b8-omepage-accessibility-audit-chromium/video.webm]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+</testsuites>

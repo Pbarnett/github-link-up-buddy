@@ -1,0 +1,336 @@
+{
+  "config": {
+    "configFile": "/Users/parkerbarnett/github-link-up-buddy/playwright.config.ts",
+    "rootDir": "/Users/parkerbarnett/github-link-up-buddy/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": "/Users/parkerbarnett/github-link-up-buddy/tests/global-setup.ts",
+    "globalTeardown": "/Users/parkerbarnett/github-link-up-buddy/tests/global-teardown.ts",
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "tests/reports/html",
+          "open": "on-failure"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "tests/reports/report.json"
+        }
+      ],
+      [
+        "junit",
+        {
+          "outputFile": "tests/reports/junit.xml"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/parkerbarnett/github-link-up-buddy/tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "integration",
+        "name": "integration",
+        "testDir": "/Users/parkerbarnett/github-link-up-buddy/tests",
+        "testIgnore": [
+          "**/node_modules/**",
+          "**/*.test.{ts,tsx,js,jsx}",
+          "**/vitest.config.ts",
+          "src/**/__tests__/**",
+          "src/tests/setupTests.ts",
+          "**/vitest.*.ts"
+        ],
+        "testMatch": [
+          "**/external-services.test.ts"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/parkerbarnett/github-link-up-buddy/tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/parkerbarnett/github-link-up-buddy/tests",
+        "testIgnore": [
+          "**/external-services.test.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/parkerbarnett/github-link-up-buddy/tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/parkerbarnett/github-link-up-buddy/tests",
+        "testIgnore": [
+          "**/node_modules/**",
+          "**/*.test.{ts,tsx,js,jsx}",
+          "**/vitest.config.ts",
+          "src/**/__tests__/**",
+          "src/tests/setupTests.ts",
+          "**/vitest.*.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/parkerbarnett/github-link-up-buddy/tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/parkerbarnett/github-link-up-buddy/tests",
+        "testIgnore": [
+          "**/node_modules/**",
+          "**/*.test.{ts,tsx,js,jsx}",
+          "**/vitest.config.ts",
+          "src/**/__tests__/**",
+          "src/tests/setupTests.ts",
+          "**/vitest.*.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/parkerbarnett/github-link-up-buddy/tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Chrome",
+        "name": "Mobile Chrome",
+        "testDir": "/Users/parkerbarnett/github-link-up-buddy/tests",
+        "testIgnore": [
+          "**/node_modules/**",
+          "**/*.test.{ts,tsx,js,jsx}",
+          "**/vitest.config.ts",
+          "src/**/__tests__/**",
+          "src/tests/setupTests.ts",
+          "**/vitest.*.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/parkerbarnett/github-link-up-buddy/tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "/Users/parkerbarnett/github-link-up-buddy/tests",
+        "testIgnore": [
+          "**/node_modules/**",
+          "**/*.test.{ts,tsx,js,jsx}",
+          "**/vitest.config.ts",
+          "src/**/__tests__/**",
+          "src/tests/setupTests.ts",
+          "**/vitest.*.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/parkerbarnett/github-link-up-buddy/tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "accessibility",
+        "name": "accessibility",
+        "testDir": "/Users/parkerbarnett/github-link-up-buddy/tests",
+        "testIgnore": [
+          "**/node_modules/**",
+          "**/*.test.{ts,tsx,js,jsx}",
+          "**/vitest.config.ts",
+          "src/**/__tests__/**",
+          "src/tests/setupTests.ts",
+          "**/vitest.*.ts"
+        ],
+        "testMatch": [
+          "/.*\\\\.a11y\\\\.spec\\\\.ts/"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.53.2",
+    "workers": 6,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000,
+      "gracefulShutdown": {
+        "signal": "SIGTERM",
+        "timeout": 5000
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "e2e/accessibility.a11y.spec.ts",
+      "file": "e2e/accessibility.a11y.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Accessibility (WCAG 2.2 AA)",
+          "file": "e2e/accessibility.a11y.spec.ts",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "homepage accessibility audit",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6880,
+                      "error": {
+                        "message": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'run')\n    at eval (eval at evaluate (:291:30), <anonymous>:2:27)\n    at UtilityScript.evaluate (<anonymous>:293:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)",
+                        "stack": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'run')\n    at eval (eval at evaluate (:291:30), <anonymous>:2:27)\n    at UtilityScript.evaluate (<anonymous>:293:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at eval (eval at evaluate (:291:30), <anonymous>:2:27)\n    at UtilityScript.evaluate (<anonymous>:293:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:74:31\n    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:31:71\n    at __awaiter (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:27:12)\n    at getAxeResults (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:73:51)\n    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:87:52\n    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:31:71\n    at __awaiter (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:27:12)\n    at getViolations (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:86:51)\n    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:111:56\n    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:31:71\n    at __awaiter (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:27:12)\n    at checkA11y (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:109:42)\n    at /Users/parkerbarnett/github-link-up-buddy/tests/e2e/accessibility.a11y.spec.ts:20:13\n    at /Users/parkerbarnett/github-link-up-buddy/tests/e2e/accessibility.a11y.spec.ts:19:16",
+                        "location": {
+                          "file": "eval at evaluate (:291:30), <anonymous>",
+                          "column": 27,
+                          "line": 2
+                        }
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "eval at evaluate (:291:30), <anonymous>",
+                            "column": 27,
+                            "line": 2
+                          },
+                          "message": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'run')\n\u001b[2m    at eval (eval at evaluate (:291:30), <anonymous>:2:27)\u001b[22m\n\u001b[2m    at UtilityScript.evaluate (<anonymous>:293:16)\u001b[22m\n\u001b[2m    at UtilityScript.<anonymous> (<anonymous>:1:44)\u001b[22m\n\u001b[2m    at eval (eval at evaluate (:291:30), <anonymous>:2:27)\u001b[22m\n\u001b[2m    at UtilityScript.evaluate (<anonymous>:293:16)\u001b[22m\n\u001b[2m    at UtilityScript.<anonymous> (<anonymous>:1:44)\u001b[22m\n\u001b[2m    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:74:31\u001b[22m\n\u001b[2m    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:31:71\u001b[22m\n\u001b[2m    at __awaiter (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:27:12)\u001b[22m\n\u001b[2m    at getAxeResults (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:73:51)\u001b[22m\n\u001b[2m    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:87:52\u001b[22m\n\u001b[2m    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:31:71\u001b[22m\n\u001b[2m    at __awaiter (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:27:12)\u001b[22m\n\u001b[2m    at getViolations (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:86:51)\u001b[22m\n\u001b[2m    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:111:56\u001b[22m\n\u001b[2m    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:31:71\u001b[22m\n\u001b[2m    at __awaiter (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:27:12)\u001b[22m\n\u001b[2m    at checkA11y (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:109:42)\u001b[22m\n\u001b[2m    at /Users/parkerbarnett/github-link-up-buddy/tests/e2e/accessibility.a11y.spec.ts:20:13\u001b[22m\n\u001b[2m    at /Users/parkerbarnett/github-link-up-buddy/tests/e2e/accessibility.a11y.spec.ts:19:16\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Navigate and inject axe",
+                          "duration": 5956
+                        },
+                        {
+                          "title": "Run comprehensive accessibility checks",
+                          "duration": 7,
+                          "error": {
+                            "message": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'run')\n    at eval (eval at evaluate (:291:30), <anonymous>:2:27)\n    at UtilityScript.evaluate (<anonymous>:293:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)",
+                            "stack": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'run')\n    at eval (eval at evaluate (:291:30), <anonymous>:2:27)\n    at UtilityScript.evaluate (<anonymous>:293:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at eval (eval at evaluate (:291:30), <anonymous>:2:27)\n    at UtilityScript.evaluate (<anonymous>:293:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)\n    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:74:31\n    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:31:71\n    at __awaiter (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:27:12)\n    at getAxeResults (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:73:51)\n    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:87:52\n    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:31:71\n    at __awaiter (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:27:12)\n    at getViolations (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:86:51)\n    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:111:56\n    at /Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:31:71\n    at __awaiter (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:27:12)\n    at checkA11y (/Users/parkerbarnett/github-link-up-buddy/node_modules/axe-playwright/dist/index.js:109:42)\n    at /Users/parkerbarnett/github-link-up-buddy/tests/e2e/accessibility.a11y.spec.ts:20:13\n    at /Users/parkerbarnett/github-link-up-buddy/tests/e2e/accessibility.a11y.spec.ts:19:16",
+                            "location": {
+                              "file": "eval at evaluate (:291:30), <anonymous>",
+                              "column": 27,
+                              "line": 2
+                            }
+                          }
+                        }
+                      ],
+                      "startTime": "2025-07-29T04:54:49.783Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/parkerbarnett/github-link-up-buddy/tests/test-results/e2e-accessibility.a11y-Acc-fa2b8-omepage-accessibility-audit-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/parkerbarnett/github-link-up-buddy/tests/test-results/e2e-accessibility.a11y-Acc-fa2b8-omepage-accessibility-audit-chromium/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "eval at evaluate (:291:30), <anonymous>",
+                        "column": 27,
+                        "line": 2
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "9f4e5fd8a05f1d591683-6a987fee6f3d44a80ef7",
+              "file": "e2e/accessibility.a11y.spec.ts",
+              "line": 13,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-07-29T04:54:46.660Z",
+    "duration": 10375.608,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

@@ -23,8 +23,3 @@ SELECT cron.schedule(
   $$
 );
 
--- Add comments for documentation
-COMMENT ON SELECT cron.schedule('auto_book_monitor', ...) IS 'Runs the auto-book monitor every 10 minutes';
-
--- Grant execution rights if required
-GRANT EXECUTE ON FUNCTION public.manage_auto_book_monitor(text) TO service_role;

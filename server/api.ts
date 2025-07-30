@@ -1,14 +1,53 @@
 import express from 'express';
 import { register } from './metrics.js';
+import { PerformanceObserver, performance } from 'node:perf_hooks';
+import { customDNSResolver } from './dns-resolver.js';
+import { 
+  publishMetrics, 
+  publishAuth, 
+  metricsChannel 
+} from './diagnostics.js';
 
 const app = express();
+
+// Performance Observer to monitor event loop delay
+const obs = new PerformanceObserver((list) => {
+  const entry = list.getEntries()[0];
+  console.log(`Event Loop Delay: ${entry.duration}ms`);
+});
+obs.observe({ entryTypes: ['eventLoopDelay'], buffered: true });
 
 // Middleware
 app.use(express.json());
 
-// Health check endpoint
+// Health check endpoint with enhanced diagnostics
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  const dnsStats = customDNSResolver.getStats();
+  const healthData = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    pid: process.pid,
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    dns: dnsStats
+  };
+  
+  // Publish health check metrics
+  publishMetrics({
+    type: 'gauge',
+    name: 'health_check_memory_used',
+    value: healthData.memory.heapUsed,
+    timestamp: healthData.timestamp
+  });
+  
+  publishMetrics({
+    type: 'gauge',
+    name: 'health_check_uptime_seconds',
+    value: healthData.uptime,
+    timestamp: healthData.timestamp
+  });
+  
+  res.json(healthData);
 });
 
 // Metrics endpoint for Prometheus
@@ -43,10 +82,11 @@ app.get('/api/business-rules/config', (req, res) => {
   });
 });
 
-// Feature flags endpoint
+// Feature flags endpoint with auth diagnostics
 app.get('/api/feature-flags/:flagName', (req, res) => {
   const { flagName } = req.params;
   const userId = req.headers['x-user-id'] as string;
+  const startTime = Date.now();
   
   // Mock feature flag logic
   const featureFlags: Record<string, { enabled: boolean; rolloutPercentage: number }> = {
@@ -72,14 +112,35 @@ app.get('/api/feature-flags/:flagName', (req, res) => {
     userInRollout = Math.abs(hash) % 100 < flag.rolloutPercentage;
   }
   
-  res.json({
+  const response = {
     flagName,
     enabled: flag.enabled && (flag.rolloutPercentage === 100 || userInRollout),
     rolloutPercentage: flag.rolloutPercentage,
     userInRollout,
     userId: userId || null,
     timestamp: new Date().toISOString()
+  };
+  
+  // Publish auth diagnostics for feature flag access
+  publishAuth({
+    operation: 'permission_check',
+    userId: userId || 'anonymous',
+    timestamp: response.timestamp,
+    success: true,
+    ipAddress: req.ip,
+    userAgent: req.get('User-Agent')
   });
+  
+  // Publish performance metrics
+  publishMetrics({
+    type: 'histogram',
+    name: 'feature_flag_response_time_ms',
+    value: Date.now() - startTime,
+    labels: { flagName },
+    timestamp: response.timestamp
+  });
+  
+  res.json(response);
 });
 
 // Trip offers endpoint (for additional testing)
@@ -142,11 +203,15 @@ app.get('/', (req, res) => {
 });
 
 export function startServer(port: number) {
-  const server = app.listen(port, '127.0.0.1', () => {
-    console.log(`Server running on 127.0.0.1:${port}`);
-  });
-  
-  return server;
+    const server = app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+    });
+
+    // Set server timeouts for security
+    server.headersTimeout = 60000; // 60 seconds
+    server.keepAliveTimeout = 5000; // 5 seconds
+
+    return server;
 }
 
 export default app;

@@ -1,9 +1,11 @@
 import * as React from 'react';
+import { getConnectionPool } from '../database/connection-pool';
 import { QueryData, QueryError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Database, Tables, TablesInsert, TablesUpdate } from '@/types/database';
 import { performanceMonitor } from '@/services/monitoring/performanceMonitor';
 import { SupabaseErrorHandler, withRetry } from './error-handler';
+import { databaseAnalytics, withAnalytics } from '../database/analytics';
 // Connection health monitoring
 class ConnectionMonitor {
   private lastHealthCheck = 0;
@@ -73,13 +75,58 @@ export class DatabaseOperations {
       withRetry?: boolean;
       maxRetries?: number;
       timeout?: number;
+      userId?: string;
     } = {}
   ) {
-    const {
-      withRetry: enableRetry = false,
-      maxRetries = 3,
-      timeout = 30000,
+    return withAnalytics(
+      async () => {
+        return this._performSelect(table, query, options);
+      },
+      table,
+      'select',
+      options.userId
+    )();
+  }
+
+  private static async _performSelect<T extends keyof Database['public']['Tables']>(
+    table: T,
+    query?: (builder: ReturnType<typeof supabase.from>) => any,
+    options: {
+      withRetry?: boolean;
+      maxRetries?: number;
+      timeout?: number;
+      userId?: string;
+    } = {}
+  ) {
+    const { 
+      withRetry: enableRetry = false, 
+      maxRetries = 3, 
+      timeout = 30000, 
+      userId 
     } = options;
+
+    const pool = getConnectionPool();
+    if (pool.isEnabled) {
+      // For connection pool, we need to construct raw SQL queries
+      // This is a simplified approach - in practice, you'd want a query builder that outputs SQL
+      const baseQuery = `SELECT * FROM ${table}`;
+      
+      try {
+        const result = await pool.query(baseQuery, [], { 
+          timeout, 
+          userId, 
+          retries: enableRetry ? maxRetries : 1 
+        });
+        
+        return {
+          data: result.rows as Database['public']['Tables'][T]['Row'][],
+          error: null
+        };
+      } catch (error) {
+        const handledError = SupabaseErrorHandler.handle(error as Error);
+        return { data: null, error: handledError };
+      }
+    }
 
     const operation = async () => {
       const controller = new AbortController();
@@ -136,6 +183,28 @@ export class DatabaseOperations {
       returning?: string;
       withRetry?: boolean;
       maxRetries?: number;
+      userId?: string;
+    } = {}
+  ) {
+    return withAnalytics(
+      async () => {
+        return this._performInsert(table, data, options);
+      },
+      table,
+      'insert',
+      options.userId
+    )();
+  }
+
+  private static async _performInsert<T extends keyof Database['public']['Tables']>(
+    table: T,
+    data: TablesInsert<T> | TablesInsert<T>[],
+    options: {
+      onConflict?: string;
+      returning?: string;
+      withRetry?: boolean;
+      maxRetries?: number;
+      userId?: string;
     } = {}
   ) {
     const {
@@ -191,6 +260,28 @@ export class DatabaseOperations {
       returning?: string;
       withRetry?: boolean;
       maxRetries?: number;
+      userId?: string;
+    } = {}
+  ) {
+    return withAnalytics(
+      async () => {
+        return this._performUpdate(table, data, filters, options);
+      },
+      table,
+      'update',
+      options.userId
+    )();
+  }
+
+  private static async _performUpdate<T extends keyof Database['public']['Tables']>(
+    table: T,
+    data: TablesUpdate<T>,
+    filters: Record<string, any>,
+    options: {
+      returning?: string;
+      withRetry?: boolean;
+      maxRetries?: number;
+      userId?: string;
     } = {}
   ) {
     const {
@@ -241,6 +332,27 @@ export class DatabaseOperations {
       returning?: string;
       withRetry?: boolean;
       maxRetries?: number;
+      userId?: string;
+    } = {}
+  ) {
+    return withAnalytics(
+      async () => {
+        return this._performDelete(table, filters, options);
+      },
+      table,
+      'delete',
+      options.userId
+    )();
+  }
+
+  private static async _performDelete<T extends keyof Database['public']['Tables']>(
+    table: T,
+    filters: Record<string, any>,
+    options: {
+      returning?: string;
+      withRetry?: boolean;
+      maxRetries?: number;
+      userId?: string;
     } = {}
   ) {
     const {
@@ -292,6 +404,28 @@ export class DatabaseOperations {
       maxRetries?: number;
       timeout?: number;
       get?: boolean; // For read replicas
+      userId?: string;
+    } = {}
+  ) {
+    return withAnalytics(
+      async () => {
+        return this._performRpc(functionName, args, options);
+      },
+      `rpc_${functionName}`,
+      'rpc',
+      options.userId
+    )();
+  }
+
+  private static async _performRpc<T = any>(
+    functionName: string,
+    args?: Record<string, any>,
+    options: {
+      withRetry?: boolean;
+      maxRetries?: number;
+      timeout?: number;
+      get?: boolean; // For read replicas
+      userId?: string;
     } = {}
   ) {
     const {

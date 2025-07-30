@@ -287,8 +287,14 @@ async function processTripRequest(
     }
   }
 
-  // Step 2: If no selected offer or it's expired, search for new offers
-  if (!selectedOffer || isOfferExpired(selectedOffer)) {
+  // Step 2: Add expires_at guard - skip if selected offer is expired
+  if (selectedOffer && isOfferExpired(selectedOffer)) {
+    console.log(`[ProcessTrip] Selected offer ${selectedOffer.external_offer_id} has expired (expires_at: ${selectedOffer.expires_at}), searching for new offers`)
+    selectedOffer = null // Clear expired offer
+  }
+  
+  // Step 3: If no selected offer or it was expired, search for new offers
+  if (!selectedOffer) {
     console.log(`[ProcessTrip] Searching for new offers for trip ${tripRequest.id}`)
     
     // Trigger fresh search via duffel-search function

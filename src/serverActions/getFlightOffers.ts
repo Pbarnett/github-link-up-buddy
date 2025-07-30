@@ -107,6 +107,7 @@ export interface GetFlightOffersOptions {
  */
 export const getFlightOffers = async (
   options: GetFlightOffersOptions | string, // Support legacy string parameter
+  fetchOptions?: { signal?: AbortSignal },
   deps: GetFlightOffersDeps = defaultDeps
 ): Promise<FlightOfferV2DbRow[]> => {
   // Handle legacy string parameter for backward compatibility
@@ -123,16 +124,20 @@ export const getFlightOffers = async (
     console.error(
       '[ServerAction/getFlightOffers] Supabase client is undefined, using default deps'
     );
-    return getFlightOffers(options, defaultDeps);
+    return getFlightOffers(options, fetchOptions, defaultDeps);
   }
   if (refresh) {
     console.log(
       `[ServerAction/getFlightOffers] Refresh requested for tripRequestId: ${tripRequestId}. Invoking flight-search-v2...`
     );
     // Call the new flight-search-v2 edge function to update offers
-    const edgeResult = await invokeEdgeFn('flight-search-v2', {
-      tripRequestId,
-    });
+    const edgeResult = await invokeEdgeFn(
+      'flight-search-v2',
+      {
+        tripRequestId,
+      },
+      { signal: fetchOptions?.signal }
+    );
 
     if (edgeResult.error) {
       console.error(

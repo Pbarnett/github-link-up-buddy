@@ -129,29 +129,47 @@ Deno.serve(async (req: Request) => {
     // Step 3: Create booking attempt with idempotency
     const idempotencyKey = `auto-book-${tripRequestId}-${Date.now()}`;
     
-    const { data: attemptResult, error: attemptError } = await supabaseClient
-      .rpc('rpc_create_booking_attempt', {
-        p_trip_request_id: tripRequestId,
-        p_idempotency_key: idempotencyKey
-      });
+    // Try to insert booking attempt with idempotency protection
+    const { data: existingAttempt, error: checkError } = await supabaseClient
+      .from('booking_attempts')
+      .select('*')
+      .eq('trip_request_id', tripRequestId)
+      .eq('status', 'processing')
+      .maybeSingle();
 
-    if (attemptError) {
-      throw new Error(`Failed to create booking attempt: ${attemptError.message}`);
+    if (checkError) {
+      throw new Error(`Failed to check existing booking attempts: ${checkError.message}`);
     }
 
-    if (attemptResult.existing) {
-      console.log('[AutoBookProduction] Booking attempt already exists (idempotent)');
+    if (existingAttempt) {
+      console.log('[AutoBookProduction] Booking attempt already in progress (idempotent)');
       return new Response(JSON.stringify({
         success: true,
         message: 'Booking attempt already in progress',
-        attempt: attemptResult.attempt
+        attempt: existingAttempt
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    bookingAttempt = attemptResult.attempt;
+    // Create new booking attempt
+    const { data: newAttempt, error: attemptError } = await supabaseClient
+      .from('booking_attempts')
+      .insert({
+        trip_request_id: tripRequestId,
+        offer_id: '', // Will be updated after offer selection
+        idempotency_key: idempotencyKey,
+        status: 'initiated'
+      })
+      .select()
+      .single();
+
+    if (attemptError) {
+      throw new Error(`Failed to create booking attempt: ${attemptError.message}`);
+    }
+
+    bookingAttempt = newAttempt;
     console.log(`[AutoBookProduction] Created booking attempt: ${bookingAttempt.id}`);
 
     // Step 4: Validate traveler data

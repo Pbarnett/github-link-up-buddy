@@ -142,9 +142,9 @@ export class DuffelServiceAdvanced {
       });
 
       console.log(
-        `[DuffelAdvanced] Offer request created with ${offerRequest.offers?.length || 0} offers`
+        `[DuffelAdvanced] Offer request created with ${offerRequest.data.offers?.length || 0} offers`
       );
-      return offerRequest;
+      return offerRequest.data;
     } catch (error) {
       throw this.handleError(
         error,
@@ -212,9 +212,9 @@ export class DuffelServiceAdvanced {
       });
 
       console.log(
-        `[DuffelAdvanced] Payment intent created: ${paymentIntent.id}`
+        `[DuffelAdvanced] Payment intent created: ${paymentIntent.data.id}`
       );
-      return paymentIntent;
+      return paymentIntent.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to create payment intent');
     }
@@ -231,8 +231,8 @@ export class DuffelServiceAdvanced {
         return await this.duffel.paymentIntents.confirm(paymentIntentId);
       });
 
-      console.log(`[DuffelAdvanced] Payment confirmed: ${confirmedPayment.id}`);
-      return confirmedPayment;
+      console.log(`[DuffelAdvanced] Payment confirmed: ${confirmedPayment.data.id}`);
+      return confirmedPayment.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to confirm payment');
     }
@@ -310,9 +310,9 @@ export class DuffelServiceAdvanced {
       });
 
       console.log(
-        `[DuffelAdvanced] Advanced order created: ${order.id} with ${params.selectedServices?.length || 0} ancillaries`
+        `[DuffelAdvanced] Advanced order created: ${order.data.id} with ${params.selectedServices?.length || 0} ancillaries`
       );
-      return order;
+      return order.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to create advanced order');
     }
@@ -350,7 +350,7 @@ export class DuffelServiceAdvanced {
       });
 
       console.log(
-        `[DuffelAdvanced] Order change request created: ${changeRequest.id}`
+        `[DuffelAdvanced] Order change request created: ${changeRequest.data.id}`
       );
 
       // Get updated order
@@ -379,14 +379,14 @@ export class DuffelServiceAdvanced {
 
       const result = {
         cancellation,
-        refundAmount: cancellation.refund_amount,
-        refundCurrency: cancellation.refund_currency,
+        refundAmount: cancellation.data.refund_amount,
+        refundCurrency: cancellation.data.refund_currency,
       };
 
       console.log(
         `[DuffelAdvanced] Order ${orderId} cancelled with refund: ${result.refundAmount} ${result.refundCurrency}`
       );
-      return result;
+      return { cancellation: cancellation.data, refundAmount: cancellation.data.refund_amount, refundCurrency: cancellation.data.refund_currency };
     } catch (error) {
       throw this.handleError(error, 'Failed to cancel order');
     }

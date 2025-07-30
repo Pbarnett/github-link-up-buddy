@@ -5,6 +5,36 @@ import { createDuffelClient, logDuffelOperation } from '../lib/duffel.ts'
 import { evaluateFlag, createUserContext } from '../_shared/launchdarkly.ts'
 import { checkAutoBookingFlags } from '../_shared/launchdarkly-guard.ts'
 
+// Temporary inline rankOffers utility for edge function use
+function rankOffers(offers: any[]): any[] {
+  const WEIGHTS = { price: 0.6, duration: 0.25, stops: 0.15 };
+  const NORMALIZE = { price: 1000, duration: 1440, stops: 5 };
+  
+  const calculateScore = (offer: any): number => {
+    const price = parseFloat(offer.total_amount);
+    const priceScore = (price / NORMALIZE.price) * WEIGHTS.price;
+    
+    // Calculate total duration
+    const totalDuration = offer.slices?.reduce((total: number, slice: any) => {
+      const duration = slice.duration ? parseInt(slice.duration.replace(/[^0-9]/g, '')) : 0;
+      return total + duration;
+    }, 0) || 0;
+    
+    const durationScore = (totalDuration / NORMALIZE.duration) * WEIGHTS.duration;
+    
+    // Calculate total stops
+    const totalStops = offer.slices?.reduce((total: number, slice: any) => {
+      return total + Math.max(0, (slice.segments?.length || 1) - 1);
+    }, 0) || 0;
+    
+    const stopsScore = (totalStops / NORMALIZE.stops) * WEIGHTS.stops;
+    
+    return priceScore + durationScore + stopsScore;
+  };
+  
+  return [...offers].sort((a, b) => calculateScore(a) - calculateScore(b));
+}
+
 interface DuffelSearchRequest {
   tripRequestId: string
   maxPrice?: number
@@ -218,46 +248,8 @@ serve(async (req) => {
       console.log(`🔍 Advanced filtering reduced to ${filteredOffers.length} offers`)
     }
 
-    // Price optimization ranking if enabled
-    if (priceOptimization.value && filteredOffers.length > 1) {
-      console.log('🔍 Applying price optimization ranking...')
-      
-      filteredOffers.sort((a, b) => {
-        const priceA = parseFloat(a.total_amount)
-        const priceB = parseFloat(b.total_amount)
-        
-        // Calculate duration for ranking
-        const durationA = a.slices?.reduce((total, slice) => {
-          const sliceDuration = slice.duration ? parseInt(slice.duration.replace(/[^0-9]/g, '')) : 0
-          return total + sliceDuration
-        }, 0) || 0
-        
-        const durationB = b.slices?.reduce((total, slice) => {
-          const sliceDuration = slice.duration ? parseInt(slice.duration.replace(/[^0-9]/g, '')) : 0
-          return total + sliceDuration
-        }, 0) || 0
-        
-        // Count stops
-        const stopsA = a.slices?.reduce((total, slice) => {
-          return total + (slice.segments?.length || 1) - 1
-        }, 0) || 0
-        
-        const stopsB = b.slices?.reduce((total, slice) => {
-          return total + (slice.segments?.length || 1) - 1
-        }, 0) || 0
-        
-        // Multi-criteria ranking: price (60%) + duration (25%) + stops (15%)
-        const scoreA = (priceA * 0.6) + (durationA * 0.25) + (stopsA * 50 * 0.15)
-        const scoreB = (priceB * 0.6) + (durationB * 0.25) + (stopsB * 50 * 0.15)
-        
-        return scoreA - scoreB
-      })
-      
-      console.log('🔍 Offers ranked by multi-criteria optimization')
-    } else {
-      // Simple price sorting
-      filteredOffers.sort((a, b) => parseFloat(a.total_amount) - parseFloat(b.total_amount))
-    }
+    // Use the new multi-criteria ranking utility
+    filteredOffers = rankOffers(filteredOffers);
 
     // Limit results using flag-controlled max
     if (filteredOffers.length > effectiveMaxResults) {

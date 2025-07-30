@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react-swc'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  root: '.',
+  publicDir: 'public',
   server: {
     host: '127.0.0.1',
     port: 3000,
@@ -30,12 +32,12 @@ export default defineConfig({
       '@aws-sdk/client-sts',
       '@aws-sdk/client-cloudwatch'
     ],
-    include: [
-      'fast-xml-parser',
-      'mnemonist',
-      'mnemonist/lru-cache'
-    ],
-    force: true
+    force: true,
+    esbuildOptions: {
+      // Handle CommonJS modules properly
+      format: 'esm',
+      target: 'es2022'
+    }
   },
   resolve: {
     alias: {
@@ -50,6 +52,8 @@ export default defineConfig({
       '@/contexts': path.resolve(__dirname, './src/contexts'),
       '@/integrations': path.resolve(__dirname, './src/integrations'),
       '@shared': path.resolve(__dirname, './packages/shared'),
+      // Fix for mnemonist CommonJS to ESM conversion issue
+      'mnemonist/lru-cache': path.resolve(__dirname, './src/lib/mnemonist-lru-cache-wrapper.js'),
     },
   },
   build: {

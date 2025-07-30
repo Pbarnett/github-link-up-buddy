@@ -68,7 +68,8 @@ export function clearLogContext() {
  * Generate a unique request ID
  */
 export function generateRequestId(): string {
-  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  // Use Deno's crypto API for UUID generation
+  return `req_${Date.now()}_${crypto.randomUUID()}`;
 }
 
 /**

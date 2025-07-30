@@ -72,17 +72,23 @@ export function useFlightOffers(
       try {
         // If this is a refetch (fetchTrigger > 0), force refresh to trigger flight search
         const shouldRefresh = fetchTrigger > 0;
-        const dbRows: FlightOfferV2DbRow[] = await getFlightOffers({
-          tripRequestId,
-          refresh: shouldRefresh,
-          useCache: true,
-        });
+        const dbRows: FlightOfferV2DbRow[] = await getFlightOffers(
+          {
+            tripRequestId,
+            refresh: shouldRefresh,
+            useCache: true,
+          },
+          { signal: abortController.signal }
+        );
 
         if (abortController.signal.aborted) {
           return;
         }
 
         const mappedOffers = dbRows.map(mapFlightOfferDbRowToV2);
+        if (abortController.signal.aborted) {
+          return;
+        }
         setOffers(mappedOffers);
       } catch (error) {
         if (abortController.signal.aborted) {
