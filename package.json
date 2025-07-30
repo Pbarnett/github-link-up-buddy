@@ -60,6 +60,7 @@
     "security:audit:report": "tsx scripts/security/security-audit.ts --json --output security-report.json",
     "test:security": "node scripts/security/security-audit.js",
     "test:performance": "k6 run tests/performance/flight-search-load.js",
+    "perf:artillery": "npx artillery run tests/performance/artillery-load.yml",
     "test:smoke": "playwright test tests/e2e/secure-booking-flow.e2e.spec.ts --grep smoke",
     "test:lighthouse": "lhci autorun",
     "test:all": "node scripts/run-all-tests.cjs",
