@@ -23,6 +23,7 @@ import RadixThemeProvider from './components/providers/RadixThemeProvider';
 import { BusinessRulesProvider } from './hooks/useBusinessRules';
 import { FormAnalyticsDashboard } from './components/forms/analytics/FormAnalyticsDashboard';
 import AuthGuard from './components/AuthGuard';
+import AdminAuthGuard from './components/auth/AdminAuthGuard';
 import Breadcrumbs from './components/navigation/Breadcrumbs';
 import TopNavigation from './components/navigation/TopNavigation';
 import Index from './pages/Index';
@@ -36,9 +37,10 @@ import Wallet from './pages/Wallet';
 import DuffelTest from './pages/DuffelTest';
 import AutoBookingDashboard from './pages/AutoBookingDashboard';
 import AutoBookingNew from './pages/AutoBookingNew';
-import AdminDashboard from './pages/AdminDashboard';
+import AdminDashboard from './pages/AdminDashboardNew';
 import DynamicFormTest from './pages/DynamicFormTest';
 import SimpleTestBooking from './pages/SimpleTestBooking';
+import Unauthorized from './pages/Unauthorized';
 import NotFound from './pages/NotFound';
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -240,9 +242,9 @@ const App = () => {
                           <Route
                             path="/admin"
                             element={
-                              <AuthGuard>
+                              <AdminAuthGuard requiredPermissions={['view_dashboard']}>
                                 <AdminDashboard />
-                              </AuthGuard>
+                              </AdminAuthGuard>
                             }
                           />
                           <Route
@@ -272,6 +274,7 @@ const App = () => {
                               )
                             }
                           />
+                          <Route path="/unauthorized" element={<Unauthorized />} />
                           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                           <Route path="*" element={<NotFound />} />
                         </Routes>

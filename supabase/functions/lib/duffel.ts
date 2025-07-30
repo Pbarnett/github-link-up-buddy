@@ -1,4 +1,3 @@
-import * as React from 'react';
 /**
  * Basic Duffel API Client - Phase 1: Foundation
  * 

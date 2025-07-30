@@ -10,11 +10,18 @@ import type {
   EmailAddress,
   ISODateString,
   Result,
-  __ValidationResult,
+  ValidationResult,
   ValidationError,
   ApiResponse,
   AsyncState,
 } from '../types';
+
+// Define AsyncState with proper generic constraints for compatibility
+type AsyncStateCompat<T, E = Error> = {
+  status: 'idle' | 'loading' | 'success' | 'error';
+  data?: T;
+  error?: E;
+};
 
 // ============================================================================
 // PRIMITIVE TYPE GUARDS
@@ -177,10 +184,8 @@ export const validateAndBrand = <T, B>(
       success: false,
       error: [
         {
-          path: [],
           message: errorMessage,
           code: 'INVALID_TYPE',
-          value,
         },
       ],
     };
@@ -277,8 +282,8 @@ export const isErrorApiResponse = (
  * Check if async state is idle
  */
 export const isIdleState = <T, E>(
-  state: AsyncState<T, E>
-): state is Extract<AsyncState<T, E>, { status: 'idle' }> => {
+  state: AsyncStateCompat<T, E>
+): state is Extract<AsyncStateCompat<T, E>, { status: 'idle' }> => {
   return (
     isObject(state) && hasProperty(state, 'status') && state.status === 'idle'
   );
@@ -288,8 +293,8 @@ export const isIdleState = <T, E>(
  * Check if async state is loading
  */
 export const isLoadingState = <T, E>(
-  state: AsyncState<T, E>
-): state is Extract<AsyncState<T, E>, { status: 'loading' }> => {
+  state: AsyncStateCompat<T, E>
+): state is Extract<AsyncStateCompat<T, E>, { status: 'loading' }> => {
   return (
     isObject(state) &&
     hasProperty(state, 'status') &&
@@ -301,8 +306,8 @@ export const isLoadingState = <T, E>(
  * Check if async state is success
  */
 export const isSuccessState = <T, E>(
-  state: AsyncState<T, E>
-): state is Extract<AsyncState<T, E>, { status: 'success' }> => {
+  state: AsyncStateCompat<T, E>
+): state is Extract<AsyncStateCompat<T, E>, { status: 'success' }> => {
   return (
     isObject(state) &&
     hasProperty(state, 'status') &&
@@ -315,8 +320,8 @@ export const isSuccessState = <T, E>(
  * Check if async state is error
  */
 export const isErrorState = <T, E>(
-  state: AsyncState<T, E>
-): state is Extract<AsyncState<T, E>, { status: 'error' }> => {
+  state: AsyncStateCompat<T, E>
+): state is Extract<AsyncStateCompat<T, E>, { status: 'error' }> => {
   return (
     isObject(state) &&
     hasProperty(state, 'status') &&
@@ -360,25 +365,21 @@ export const isErrorResult = <T, E>(
 // ============================================================================
 
 /**
- * Check if validation result is valid
+ * Check if validation result is valid (uses Result interface)
  */
 export const isValidResult = <T>(
   result: ValidationResult<T>
-): result is Extract<ValidationResult<T>, { valid: true }> => {
-  return (
-    isObject(result) && hasProperty(result, 'valid') && result.valid === true
-  );
+): result is Extract<ValidationResult<T>, { success: true }> => {
+  return isSuccessResult(result);
 };
 
 /**
- * Check if validation result is invalid
+ * Check if validation result is invalid (uses Result interface)
  */
 export const isInvalidResult = <T>(
   result: ValidationResult<T>
-): result is Extract<ValidationResult<T>, { valid: false }> => {
-  return (
-    isObject(result) && hasProperty(result, 'valid') && result.valid === false
-  );
+): result is Extract<ValidationResult<T>, { success: false }> => {
+  return isErrorResult(result);
 };
 
 // ============================================================================
@@ -441,10 +442,10 @@ export const validateAll = <T>(
   }
 
   if (errors.length > 0) {
-    return { valid: false, errors };
+    return { success: false, error: errors[0] }; // ValidationResult only supports single error
   }
 
-  return { valid: true, data: value as T };
+  return { success: true, data: value as T };
 };
 
 /**
@@ -457,15 +458,11 @@ export const createSchema = <T>(shape: {
     validate(input: unknown): ValidationResult<T> {
       if (!isObject(input)) {
         return {
-          valid: false,
-          errors: [
-            {
-              path: [],
-              message: 'Expected object',
-              code: 'INVALID_TYPE',
-              value: input,
-            },
-          ],
+          success: false,
+          error: {
+            message: 'Expected object',
+            code: 'INVALID_TYPE',
+          },
         };
       }
 
@@ -477,10 +474,8 @@ export const createSchema = <T>(shape: {
 
         if (!(validator as Function)(value)) {
           errors.push({
-            path: [key],
             message: `Invalid value for field ${key}`,
             code: 'INVALID_FIELD',
-            value,
           });
         } else {
           (result as any)[key] = value;
@@ -488,20 +483,20 @@ export const createSchema = <T>(shape: {
       }
 
       if (errors.length > 0) {
-        return { valid: false, errors };
+        return { success: false, error: errors[0] }; // Return first error
       }
 
-      return { valid: true, data: result as T };
+      return { success: true, data: result as T };
     },
 
     safeParse(input: unknown): Result<T, ValidationError[]> {
       const validation = this.validate(input);
 
       if (isValidResult(validation)) {
-        return { success: true, data: validation.data as T };
+        return { success: true, data: validation.data };
       }
 
-      return { success: false, error: validation.errors };
+      return { success: false, error: [validation.error] };
     },
 
     parse(input: unknown): T {

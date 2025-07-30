@@ -29,16 +29,14 @@ echo "✅ Prerequisites check passed"
 # Step 1: Verify flag is currently OFF
 echo ""
 echo "🔍 Step 1: Verifying flag is currently OFF"
-CURRENT_STATE=$(ldctl flags get auto_booking_pipeline_enabled --project parker-flight --env production --output json)
+CURRENT_STATE=$(ldctl flags get --project default --flag auto_booking_pipeline_enabled --output json)
 echo "Current flag state: $CURRENT_STATE"
 
 # Step 2: Enable 5% rollout
 echo ""
 echo "🎯 Step 2: Enabling 5% rollout"
-ldctl flags update auto_booking_pipeline_enabled \
-  --project parker-flight --env production \
-  --patch '{"fallthrough":{"rollout":{"variations":[{"variation":0,"weight":95000},{"variation":1,"weight":5000}]}}}' \
-  --yes
+ldctl flags update --project default --flag auto_booking_pipeline_enabled \
+  --patch '{"environments":{"production":{"on":true,"fallthrough":{"rollout":{"variations":[{"variation":1,"weight":5000},{"variation":0,"weight":95000}]}}}}}'
 
 echo "✅ Flag updated to 5% rollout"
 echo "🕒 Waiting 5 minutes for traffic to ramp up..."
@@ -61,7 +59,7 @@ if [ $COMPARE_EXIT_CODE -eq 0 ]; then
     echo "✅ Performance comparison passed thresholds"
 else
     echo "❌ Performance comparison failed - rolling back!"
-    ldctl flags update auto_booking_pipeline_enabled --project parker-flight --env production --patch '{"on":false}' --yes
+    ldctl flags update --project default --flag auto_booking_pipeline_enabled --patch '{"environments":{"production":{"on":false}}}'
     echo "🛑 Flag disabled for safety"
     exit 1
 fi
@@ -96,4 +94,4 @@ echo ""
 echo "🚦 Next steps:"
 echo "  1. Monitor dashboards for 1 hour"
 echo "  2. If stable, run: ./scripts/rollout-25-percent.sh"
-echo "  3. If issues occur, run: ldctl flags update auto_booking_pipeline_enabled --project parker-flight --env production --patch '{\"on\":false}' --yes"
+echo "  3. If issues occur, run: ldctl flags update --project default --flag auto_booking_pipeline_enabled --patch '{\"environments\":{\"production\":{\"on\":false}}}'"

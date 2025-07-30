@@ -1,4 +1,4 @@
-import { FlightOffer } from '../../types';
+import { FlightOffer } from '../filtering/core/types';
 
 // Multi-criteria weights for ranking (tune as needed)
 const WEIGHTS = {
@@ -22,12 +22,19 @@ const NORMALIZE = {
  * @returns A numeric score.
  */
 function calculateScore(offer: FlightOffer): number {
-  const priceScore = (offer.price.amount / NORMALIZE.price) * WEIGHTS.price;
+  const priceScore = (offer.totalPriceWithCarryOn / NORMALIZE.price) * WEIGHTS.price;
 
-  const durationMinutes = offer.duration.hours * 60 + offer.duration.minutes;
-  const durationScore = (durationMinutes / NORMALIZE.duration) * WEIGHTS.duration;
+  // Calculate total duration from all itineraries
+  const totalDurationMinutes = offer.itineraries.reduce((total, itinerary) => {
+    // Parse ISO 8601 duration (e.g., "PT2H30M")
+    const match = itinerary.duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+    const hours = parseInt(match?.[1] || '0', 10);
+    const minutes = parseInt(match?.[2] || '0', 10);
+    return total + (hours * 60) + minutes;
+  }, 0);
+  const durationScore = (totalDurationMinutes / NORMALIZE.duration) * WEIGHTS.duration;
 
-  const stopsScore = (offer.stops / NORMALIZE.stops) * WEIGHTS.stops;
+  const stopsScore = (offer.stopsCount / NORMALIZE.stops) * WEIGHTS.stops;
 
   return priceScore + durationScore + stopsScore;
 }

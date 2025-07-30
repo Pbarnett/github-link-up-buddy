@@ -10,7 +10,6 @@ config:
     - duration: 60
       arrivalRate: 50
       name: "Peak load"
-  processor: "./artillery-processor.js"
   variables:
     api_base: "https://bbonngdyfyfjqfhvoljl.supabase.co/functions/v1"
   environments:

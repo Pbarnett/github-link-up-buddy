@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Environment Test</title>
+</head>
+<body>
+    <h1>Supabase Environment Variables Test</h1>
+    <div id="results"></div>
+    
+    <script type="module">
+        console.log('🔍 Testing environment variables...');
+        
+        // Test what's available in import.meta.env
+        console.log('import.meta.env:', import.meta.env);
+        console.log('import.meta.env.VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
+        console.log('import.meta.env.VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY);
+        
+        const results = document.getElementById('results');
+        
+        const hasUrl = !!import.meta.env.VITE_SUPABASE_URL;
+        const hasKey = !!import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        results.innerHTML = `
+            <p><strong>VITE_SUPABASE_URL:</strong> ${hasUrl ? '✅ Present' : '❌ Missing'}</p>
+            <p><strong>VITE_SUPABASE_ANON_KEY:</strong> ${hasKey ? '✅ Present' : '❌ Missing'}</p>
+            <p><strong>URL Value:</strong> ${import.meta.env.VITE_SUPABASE_URL || 'Not found'}</p>
+            <p><strong>Environment Mode:</strong> ${import.meta.env.MODE}</p>
+            <p><strong>Development Mode:</strong> ${import.meta.env.DEV}</p>
+        `;
+        
+        if (hasUrl && hasKey) {
+            // Try to initialize Supabase client
+            import('@supabase/supabase-js').then(({ createClient }) => {
+                try {
+                    const client = createClient(
+                        import.meta.env.VITE_SUPABASE_URL,
+                        import.meta.env.VITE_SUPABASE_ANON_KEY
+                    );
+                    results.innerHTML += '<p><strong>Supabase Client:</strong> ✅ Created successfully</p>';
+                    console.log('✅ Supabase client created successfully:', client);
+                } catch (error) {
+                    results.innerHTML += `<p><strong>Supabase Client:</strong> ❌ Error: ${error.message}</p>`;
+                    console.error('❌ Error creating Supabase client:', error);
+                }
+            }).catch(error => {
+                results.innerHTML += `<p><strong>Supabase Import:</strong> ❌ Error: ${error.message}</p>`;
+                console.error('❌ Error importing Supabase:', error);
+            });
+        }
+    </script>
+</body>
+</html>

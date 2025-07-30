@@ -14,7 +14,8 @@
  */
 
 import { Pool, PoolClient, PoolConfig } from 'pg';
-import { evaluateFlag, createUserContext } from '../../../supabase/functions/_shared/launchdarkly';
+// Import LaunchDarkly utilities for client-side usage
+import { evaluateFlag, createUserContext } from '@/lib/feature-flags/launchdarkly-client';
 import { performanceMonitor } from '@/services/monitoring/performanceMonitor';
 
 // Connection pool configuration interface
@@ -74,7 +75,7 @@ interface PoolMetrics {
  */
 export class PostgreSQLConnectionPool {
   private pool: Pool | null = null;
-  private isEnabled = false;
+  private _isEnabled = false;
   private config: ConnectionPoolConfig;
   private metrics: PoolMetrics;
   private healthStatus: HealthStatus;
@@ -108,7 +109,7 @@ export class PostgreSQLConnectionPool {
         true   // Include reason for debugging
       );
 
-      this.isEnabled = flagResponse.value;
+      this._isEnabled = flagResponse.value;
 
       console.log('🏊‍♂️ Connection Pool Feature Flag Evaluation:', {
         enabled: this.isEnabled,
@@ -117,7 +118,7 @@ export class PostgreSQLConnectionPool {
         timestamp: flagResponse.timestamp
       });
 
-      if (!this.isEnabled) {
+      if (!this._isEnabled) {
         console.log('📴 Connection pooling disabled via feature flag');
         return;
       }
@@ -138,7 +139,7 @@ export class PostgreSQLConnectionPool {
     } catch (error) {
       console.error('❌ Failed to initialize connection pool:', error);
       // Gracefully degrade - disable pooling on initialization failure
-      this.isEnabled = false;
+      this._isEnabled = false;
       throw error;
     }
   }
@@ -159,7 +160,7 @@ export class PostgreSQLConnectionPool {
     const { timeout = 30000, userId, retries = 3 } = options;
 
     // If pooling is disabled, fall back to direct Supabase client
-    if (!this.isEnabled || !this.pool) {
+    if (!this._isEnabled || !this.pool) {
       return this.fallbackQuery(text, params, options);
     }
 
@@ -197,7 +198,7 @@ export class PostgreSQLConnectionPool {
             pooled: true,
             attempt: attempt + 1
           }
-        );
+        ) as { rows: T[]; rowCount: number };
 
         // Update metrics
         this.updateSuccessMetrics(Date.now() - startTime);
@@ -254,7 +255,7 @@ export class PostgreSQLConnectionPool {
     queries: Array<{ text: string; params?: any[] }>,
     options: { userId?: string; timeout?: number } = {}
   ): Promise<T[]> {
-    if (!this.isEnabled || !this.pool) {
+    if (!this._isEnabled || !this.pool) {
       throw new Error('Transaction requires connection pooling to be enabled');
     }
 
@@ -314,7 +315,7 @@ export class PostgreSQLConnectionPool {
    * Get current pool health status
    */
   async getHealthStatus(): Promise<HealthStatus> {
-    if (!this.isEnabled || !this.pool) {
+    if (!this._isEnabled || !this.pool) {
       return {
         ...this.healthStatus,
         healthy: false,
@@ -354,8 +355,36 @@ export class PostgreSQLConnectionPool {
     return {
       ...this.metrics,
       circuitBreakerState: this.circuitBreakerState,
-      isEnabled: this.isEnabled
+      isEnabled: this._isEnabled
     };
+  }
+
+  /**
+   * Get connection pool stats for monitoring dashboard
+   */
+  getStats(): {
+    total: number;
+    active: number;
+    idle: number;
+    waiting: number;
+  } {
+    if (!this.pool) {
+      return { total: 0, active: 0, idle: 0, waiting: 0 };
+    }
+
+    return {
+      total: this.pool.totalCount,
+      active: this.pool.totalCount - this.pool.idleCount,
+      idle: this.pool.idleCount,
+      waiting: this.pool.waitingCount
+    };
+  }
+
+  /**
+   * Check if connection pooling is enabled
+   */
+  get isEnabled(): boolean {
+    return this._isEnabled;
   }
 
   /**

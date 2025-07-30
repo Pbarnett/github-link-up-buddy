@@ -68,7 +68,12 @@ class DatabaseAnalytics {
     }
 
     // Record in performance monitor
-    performanceMonitor.recordMetric(`db_${metrics.operation}_${metrics.table}`, metrics.duration);
+    performanceMonitor.recordMetric(
+      `db_${metrics.operation}_${metrics.table}`, 
+      metrics.duration, 
+      metrics.success, // Use actual success status
+      `table:${metrics.table},op:${metrics.operation}` // metadata as string
+    );
   }
 
   /**

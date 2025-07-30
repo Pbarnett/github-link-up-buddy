@@ -13,7 +13,7 @@ import type {
   FormConfigurationRecord,
   FormDeployment,
   FormUsageAnalytics,
-  Security__ValidationResult,
+  SecurityValidationResult,
   DeploymentOptions,
 } from '@/types/dynamic-forms';
 import { formConfigService } from '@/services/form-config.service';

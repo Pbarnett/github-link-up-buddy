@@ -39,7 +39,7 @@ function formatBytes(bytes) {
 
 function printSummary(testData) {
   const aggregate = testData.aggregate || {};
-  const intermediate = testData.intermediate || [];
+  const latency = aggregate.summaries['http.response_time'] || {};
   
   console.log('\n🚀 LOAD TEST PERFORMANCE SUMMARY\n');
   

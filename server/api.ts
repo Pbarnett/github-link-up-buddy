@@ -7,6 +7,7 @@ import {
   publishAuth, 
   metricsChannel 
 } from './diagnostics.js';
+import adminRouter from './api/admin.js';
 
 const app = express();
 
@@ -19,6 +20,24 @@ obs.observe({ entryTypes: ['eventLoopDelay'], buffered: true });
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// CORS middleware for development
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:3001');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-User-Id');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
+// Admin routes
+app.use('/api/admin', adminRouter);
 
 // Health check endpoint with enhanced diagnostics
 app.get('/health', (req, res) => {
@@ -197,7 +216,15 @@ app.get('/', (req, res) => {
       'GET /api/business-rules/config',
       'GET /api/feature-flags/:flagName',
       'GET /api/trip-offers',
-      'GET /api/test-dependencies'
+      'GET /api/test-dependencies',
+      // Admin endpoints
+      'GET /api/admin/metrics',
+      'GET /api/admin/health',
+      'GET /api/admin/feature-flags',
+      'PATCH /api/admin/feature-flags/:key',
+      'GET /api/admin/audit-logs',
+      'POST /api/admin/audit-logs',
+      'GET /api/admin/stream'
     ]
   });
 });

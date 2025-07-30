@@ -64,18 +64,18 @@ export interface FormSubmissionResult<TData = any> {
 }
 
 // Utility types for form validation
-export type ValidationRule<TValue = any> = {
+export type FormValidationRule<TValue = any> = {
   value: TValue;
   message: string;
 };
 
 export type ValidationRules = {
-  required?: string | ValidationRule<boolean>;
-  min?: ValidationRule<number>;
-  max?: ValidationRule<number>;
-  minLength?: ValidationRule<number>;
-  maxLength?: ValidationRule<number>;
-  pattern?: ValidationRule<RegExp>;
+  required?: string | FormValidationRule<boolean>;
+  min?: FormValidationRule<number>;
+  max?: FormValidationRule<number>;
+  minLength?: FormValidationRule<number>;
+  maxLength?: FormValidationRule<number>;
+  pattern?: FormValidationRule<RegExp>;
   validate?: Record<string, (value: any) => boolean | string>;
 };
 

@@ -113,14 +113,14 @@ class ConditionalValidationBuilder {
     if (typeof rule.is === 'function') {
       if (fieldNames.length === 1) {
         const fieldValue = formData[fieldNames[0]];
-        return rule.is(fieldValue);
+        return rule.is(fieldValue as any);
       } else {
         // Multiple field dependency
         const fieldValues: Record<string, any> = {};
         fieldNames.forEach(fieldName => {
           fieldValues[fieldName] = formData[fieldName];
         });
-        return rule.is(fieldValues);
+        return (rule.is as (values: Record<string, any>) => boolean)(fieldValues);
       }
     }
 
@@ -195,7 +195,7 @@ export class ConditionalFormSchemaGenerator {
   /**
    * Generate form schema with conditional validation
    */
-  generateSchema(): z.ZodObject<any> {
+  generateSchema(): z.ZodTypeAny {
     const schemaFields: Record<string, z.ZodTypeAny> = {};
 
     this.formConfig.sections.forEach(section => {
@@ -206,7 +206,8 @@ export class ConditionalFormSchemaGenerator {
     });
 
     // Create object schema with custom refinement for cross-field validation
-    return z.object(schemaFields).superRefine((data, ctx) => {
+    const objectSchema = z.object(schemaFields);
+    return objectSchema.superRefine((data, ctx) => {
       // Inject form data into context for conditional validation
       (ctx as any).formData = data;
     });
@@ -399,9 +400,9 @@ export const conditionalExamples = {
 
     const companyName = ConditionalSchemaFactory.conditionalString()
       .when('employmentType', {
-        is: 'employed',
+        is: (value: any) => value === 'employed',
         then: schema =>
-          schema.min(1, 'Company name is required for employed individuals'),
+          (schema as z.ZodString).min(1, 'Company name is required for employed individuals'),
         otherwise: schema => schema.optional(),
       })
       .build();
@@ -418,8 +419,8 @@ export const conditionalExamples = {
 
     const zipCode = ConditionalSchemaFactory.conditionalString()
       .when(['country', 'state'], {
-        is: ({ country, state }) => country === 'US' && state === 'CA',
-        then: schema => schema.regex(/^\d{5}$/, 'Must be 5 digits for US/CA'),
+        is: ({ country, state }: Record<string, any>) => country === 'US' && state === 'CA',
+        then: schema => (schema as z.ZodString).regex(/^\d{5}$/, 'Must be 5 digits for US/CA'),
         otherwise: schema => schema.optional(),
       })
       .build();
@@ -437,16 +438,16 @@ export const conditionalExamples = {
 
     const email = ConditionalSchemaFactory.conditionalString()
       .when('step', {
-        is: step => step >= 1,
-        then: schema => schema.email('Valid email required'),
+        is: (step: any) => step >= 1,
+        then: schema => (schema as z.ZodString).email('Valid email required'),
         otherwise: schema => schema.optional(),
       })
       .build();
 
     const password = ConditionalSchemaFactory.conditionalString()
       .when('step', {
-        is: step => step >= 2,
-        then: schema => schema.min(8, 'Password must be at least 8 characters'),
+        is: (step: any) => step >= 2,
+        then: schema => (schema as z.ZodString).min(8, 'Password must be at least 8 characters'),
         otherwise: schema => schema.optional(),
       })
       .build();

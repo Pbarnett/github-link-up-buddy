@@ -3,22 +3,20 @@ import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 // Environment variable utility function for proper type handling
-const getEnvVar = (key: string, viteKey: string) => {
+const getEnvVar = (key: string) => {
   if (typeof process !== 'undefined' && process.env) {
-    return process.env[key] || process.env[viteKey];
-  }
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env[viteKey];
+    // Node.js environment
+    return process.env[key];
+  } else if (typeof import.meta !== 'undefined' && import.meta.env) {
+    // Vite/React environment
+    return import.meta.env[`VITE_${key}`];
   }
   return undefined;
 };
 
 // Get environment variables with proper fallbacks
-const SUPABASE_URL = getEnvVar('SUPABASE_URL', 'VITE_SUPABASE_URL');
-const SUPABASE_ANON_KEY = getEnvVar(
-  'SUPABASE_ANON_KEY',
-  'VITE_SUPABASE_ANON_KEY'
-);
+const SUPABASE_URL = getEnvVar('SUPABASE_URL');
+const SUPABASE_ANON_KEY = getEnvVar('SUPABASE_ANON_KEY');
 
 // Log for debugging
 console.log('🔍 Supabase client initialization:', {
