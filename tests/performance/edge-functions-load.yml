@@ -1,0 +1,26 @@
+config:
+  target: "https://bbonngdyfyfjqfhvoljl.supabase.co/functions/v1"
+  phases:
+    # 100 RPS for 5 min (300 s) → 30k requests
+    - duration: 300
+      arrivalRate: 100
+      name: "Steady 100 RPS"
+  defaults:
+    headers:
+      content-type: application/json
+      authorization: "Bearer {{ $processEnvironment.VITE_SUPABASE_ANON_KEY }}"
+      apikey: "{{ $processEnvironment.VITE_SUPABASE_ANON_KEY }}"
+
+scenarios:
+  - name: "Duffel search"
+    flow:
+      - get:
+          url: "/duffel-search"
+          expect:
+            - statusCode: 200
+  - name: "Auto-book monitor"
+    flow:
+      - get:
+          url: "/auto-book-monitor"
+          expect:
+            - statusCode: 200
