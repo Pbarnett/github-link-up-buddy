@@ -74,3 +74,4 @@ build/
 scripts/**/*.secret.*
 scripts/**/*-with-secrets.*
 .env*
+tmp/
