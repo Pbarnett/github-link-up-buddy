@@ -1,0 +1,33 @@
+config:
+  target: "https://bbonngdyfyfjqfhvoljl.supabase.co/functions/v1"
+  phases:
+    # 100 RPS for 5 min (300s) → 30k requests
+    - duration: 300
+      arrivalRate: 100
+      name: "Steady 100 RPS"
+  defaults:
+    headers:
+      content-type: application/json
+      authorization: "Bearer {{ $processEnvironment.VITE_SUPABASE_ANON_KEY }}"
+      apikey: "{{ $processEnvironment.VITE_SUPABASE_ANON_KEY }}"
+
+scenarios:
+  - name: "Duffel search (POST)"
+    weight: 70
+    flow:
+      - post:
+          url: "/duffel-search"
+          json:
+            tripRequestId: "loadtest-trip-{{ $randomString(8) }}"
+            maxPrice: "{{ $randomInt(500, 2000) }}"
+            cabinClass: "{{ $pick(['economy', 'premium_economy', 'business']) }}"
+            maxResults: "{{ $randomInt(10, 50) }}"
+          expect:
+            - statusCode: [200, 400, 503]
+  - name: "Auto-book monitor (GET)"
+    weight: 30
+    flow:
+      - get:
+          url: "/auto-book-monitor"
+          expect:
+            - statusCode: [200, 503]
