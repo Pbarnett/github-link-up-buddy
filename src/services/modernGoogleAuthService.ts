@@ -108,7 +108,7 @@ class ModernGoogleAuthService {
       }
 
       // Initialize Google Identity Services
-      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google.accounts.id.initialize(
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google?.accounts?.id?.initialize(
         {
           client_id: this.config.clientId,
           callback: this.handleCredentialResponse.bind(this),
@@ -299,7 +299,7 @@ class ModernGoogleAuthService {
     }
 
     try {
-      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google.accounts.id.prompt(
+      /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google?.accounts?.id?.prompt(
         notification => {
           if (notification.isNotDisplayed()) {
             console.log(
@@ -357,7 +357,7 @@ class ModernGoogleAuthService {
 
       // Use OAuth 2.0 token client for popup flow
       const client =
-        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google.accounts.oauth2.initTokenClient(
+        /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google?.accounts?.oauth2?.initTokenClient(
           {
             client_id: this.config.clientId,
             scope: this.config.scopes.join(' '),
@@ -428,7 +428,7 @@ class ModernGoogleAuthService {
         );
 
       // Request access token
-      client.requestAccessToken({
+      client?.requestAccessToken({
         prompt: 'consent',
       });
     });
@@ -573,7 +573,7 @@ class ModernGoogleAuthService {
 
     const buttonOptions = { ...defaultOptions, ...options };
 
-    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google.accounts.id.renderButton(
+    /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.google?.accounts?.id?.renderButton(
       document.getElementById(containerId),
       buttonOptions
     );

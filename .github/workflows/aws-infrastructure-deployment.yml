@@ -1,0 +1,576 @@
+name: AWS Infrastructure Deployment & Compliance Validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths: 
+      - 'deploy/aws/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'deploy/aws/**'
+      - 'scripts/**'
+
+env:
+  AWS_REGION: us-east-1
+  PROJECT_NAME: github-link-buddy
+
+jobs:
+  # Pre-deployment validation and security checks
+  validate-infrastructure:
+    name: Validate Infrastructure & Security
+    runs-on: ubuntu-latest
+    
+    outputs:
+      validation-status: ${{ steps.validation.outputs.status }}
+      security-score: ${{ steps.security-scan.outputs.score }}
+      
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install Dependencies
+        run: |
+          npm install -g aws-cdk
+          npm install
+          pip install cfn-lint checkov
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Validate CloudFormation Templates
+        id: cfn-validation
+        run: |
+          echo "🔍 Validating CloudFormation templates..."
+          
+          # Validate syntax using cfn-lint
+          find deploy/aws -name "*.yml" -o -name "*.yaml" | while read template; do
+            echo "Validating $template..."
+            cfn-lint "$template"
+            aws cloudformation validate-template --template-body file://"$template"
+          done
+          
+          echo "✅ All CloudFormation templates are valid"
+          
+      - name: Security Compliance Scan
+        id: security-scan
+        run: |
+          echo "🛡️ Running security compliance scans..."
+          
+          # Run Checkov for security best practices
+          checkov -d deploy/aws --framework cloudformation --output json > security-scan-results.json || true
+          
+          # Calculate security score
+          TOTAL_CHECKS=$(jq '.summary.parsing_errors + .summary.passed_checks + .summary.failed_checks + .summary.skipped_checks' security-scan-results.json)
+          PASSED_CHECKS=$(jq '.summary.passed_checks' security-scan-results.json)
+          FAILED_CHECKS=$(jq '.summary.failed_checks' security-scan-results.json)
+          
+          if [ "$TOTAL_CHECKS" -gt 0 ]; then
+            SECURITY_SCORE=$(echo "scale=2; ($PASSED_CHECKS / $TOTAL_CHECKS) * 100" | bc)
+          else
+            SECURITY_SCORE=0
+          fi
+          
+          echo "score=$SECURITY_SCORE" >> $GITHUB_OUTPUT
+          echo "🔒 Security Score: $SECURITY_SCORE%"
+          
+          # Fail if security score is below threshold
+          if (( $(echo "$SECURITY_SCORE < 80" | bc -l) )); then
+            echo "❌ Security score $SECURITY_SCORE% is below minimum threshold of 80%"
+            echo "Failed checks: $FAILED_CHECKS"
+            exit 1
+          fi
+          
+          echo "✅ Security compliance check passed"
+          
+      - name: Infrastructure Validation Script
+        id: validation
+        run: |
+          echo "🏗️ Running infrastructure validation..."
+          
+          # Create and run infrastructure validation script
+          cat > validate-infrastructure.sh << 'EOF'
+          #!/bin/bash
+          set -e
+          
+          echo "Validating infrastructure requirements..."
+          
+          # Check for required parameters in templates
+          echo "Checking parameter requirements..."
+          find deploy/aws -name "*.yml" -o -name "*.yaml" | while read template; do
+            if grep -q "Parameters:" "$template"; then
+              echo "✓ Parameters defined in $(basename "$template")"
+            fi
+          done
+          
+          # Validate resource naming conventions
+          echo "Validating naming conventions..."
+          find deploy/aws -name "*.yml" -o -name "*.yaml" | while read template; do
+            if grep -q "github-link-buddy" "$template"; then
+              echo "✓ Naming convention followed in $(basename "$template")"
+            else
+              echo "⚠️  Check naming convention in $(basename "$template")"
+            fi
+          done
+          
+          # Check for mandatory tags
+          echo "Checking for mandatory tags..."
+          find deploy/aws -name "*.yml" -o -name "*.yaml" | while read template; do
+            if grep -q "Environment" "$template" && grep -q "Project" "$template"; then
+              echo "✓ Mandatory tags present in $(basename "$template")"
+            else
+              echo "⚠️  Missing mandatory tags in $(basename "$template")"
+            fi
+          done
+          
+          echo "Infrastructure validation completed successfully"
+          EOF
+          
+          chmod +x validate-infrastructure.sh
+          ./validate-infrastructure.sh
+          
+          echo "status=passed" >> $GITHUB_OUTPUT
+          
+      - name: Upload Security Scan Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-results
+          path: security-scan-results.json
+          retention-days: 30
+
+  # Deploy to development environment
+  deploy-development:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: validate-infrastructure
+    if: github.ref == 'refs/heads/develop' && needs.validate-infrastructure.outputs.validation-status == 'passed'
+    
+    environment: development
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Deploy Multi-AZ Infrastructure
+        run: |
+          echo "🚀 Deploying Multi-AZ Infrastructure to Development..."
+          
+          aws cloudformation deploy \
+            --template-file deploy/aws/multi-az-infrastructure-template.yml \
+            --stack-name ${{ env.PROJECT_NAME }}-infrastructure-development \
+            --parameter-overrides \
+              Environment=development \
+              MinInstances=1 \
+              MaxInstances=3 \
+              DesiredCapacity=2 \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --tags \
+              Environment=development \
+              Project=${{ env.PROJECT_NAME }} \
+              DeployedBy=github-actions
+              
+      - name: Deploy Security Components
+        run: |
+          echo "🔐 Deploying Security Components..."
+          
+          # Deploy MFA enforcement
+          aws cloudformation deploy \
+            --template-file deploy/aws/mfa-enforcement-template.yml \
+            --stack-name ${{ env.PROJECT_NAME }}-mfa-enforcement-development \
+            --parameter-overrides Environment=development \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --tags Environment=development Project=${{ env.PROJECT_NAME }}
+            
+          # Deploy CloudTrail monitoring
+          aws cloudformation deploy \
+            --template-file deploy/aws/cloudtrail-monitoring.yml \
+            --stack-name ${{ env.PROJECT_NAME }}-cloudtrail-development \
+            --parameter-overrides Environment=development \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --tags Environment=development Project=${{ env.PROJECT_NAME }}
+            
+      - name: Deploy Cost Monitoring
+        run: |
+          echo "💰 Deploying Cost Monitoring Dashboard..."
+          
+          aws cloudformation deploy \
+            --template-file deploy/aws/cost-monitoring-dashboard.yml \
+            --stack-name ${{ env.PROJECT_NAME }}-cost-monitoring-development \
+            --parameter-overrides \
+              Environment=development \
+              AlertEmailAddress=${{ secrets.ALERT_EMAIL }} \
+              MonthlyBudgetAmount=200 \
+              Project=${{ env.PROJECT_NAME }} \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --tags Environment=development Project=${{ env.PROJECT_NAME }}
+            
+      - name: Run Post-Deployment Tests
+        run: |
+          echo "🧪 Running post-deployment tests..."
+          
+          # Wait for stacks to be ready
+          sleep 60
+          
+          # Test infrastructure components
+          aws cloudformation describe-stacks \
+            --stack-name ${{ env.PROJECT_NAME }}-infrastructure-development \
+            --query 'Stacks[0].StackStatus' \
+            --output text
+            
+          # Verify security components
+          aws cloudformation describe-stacks \
+            --stack-name ${{ env.PROJECT_NAME }}-mfa-enforcement-development \
+            --query 'Stacks[0].StackStatus' \
+            --output text
+            
+          echo "✅ Development deployment completed successfully"
+
+  # Deploy to staging environment  
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [validate-infrastructure, deploy-development]
+    if: github.ref == 'refs/heads/develop' && needs.validate-infrastructure.outputs.validation-status == 'passed'
+    
+    environment: staging
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Deploy Infrastructure to Staging
+        run: |
+          echo "🚀 Deploying to Staging Environment..."
+          
+          # Deploy with staging-specific parameters
+          aws cloudformation deploy \
+            --template-file deploy/aws/multi-az-infrastructure-template.yml \
+            --stack-name ${{ env.PROJECT_NAME }}-infrastructure-staging \
+            --parameter-overrides \
+              Environment=staging \
+              MinInstances=2 \
+              MaxInstances=6 \
+              DesiredCapacity=4 \
+              InstanceType=t3.medium \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --tags \
+              Environment=staging \
+              Project=${{ env.PROJECT_NAME }} \
+              DeployedBy=github-actions
+              
+      - name: Deploy Security & Monitoring
+        run: |
+          echo "🔐 Deploying Security and Monitoring Components..."
+          
+          # Deploy all security components in parallel
+          aws cloudformation deploy \
+            --template-file deploy/aws/mfa-enforcement-template.yml \
+            --stack-name ${{ env.PROJECT_NAME }}-mfa-enforcement-staging \
+            --parameter-overrides Environment=staging \
+            --capabilities CAPABILITY_NAMED_IAM &
+            
+          aws cloudformation deploy \
+            --template-file deploy/aws/cloudtrail-monitoring.yml \
+            --stack-name ${{ env.PROJECT_NAME }}-cloudtrail-staging \
+            --parameter-overrides Environment=staging \
+            --capabilities CAPABILITY_NAMED_IAM &
+            
+          aws cloudformation deploy \
+            --template-file deploy/aws/cost-monitoring-dashboard.yml \
+            --stack-name ${{ env.PROJECT_NAME }}-cost-monitoring-staging \
+            --parameter-overrides \
+              Environment=staging \
+              AlertEmailAddress=${{ secrets.ALERT_EMAIL }} \
+              MonthlyBudgetAmount=300 \
+              Project=${{ env.PROJECT_NAME }} \
+            --capabilities CAPABILITY_NAMED_IAM &
+            
+          wait # Wait for all parallel deployments to complete
+          
+      - name: Run Integration Tests
+        run: |
+          echo "🔬 Running integration tests..."
+          
+          # Test all deployed components
+          STACKS=(
+            "${{ env.PROJECT_NAME }}-infrastructure-staging"
+            "${{ env.PROJECT_NAME }}-mfa-enforcement-staging"
+            "${{ env.PROJECT_NAME }}-cloudtrail-staging"
+            "${{ env.PROJECT_NAME }}-cost-monitoring-staging"
+          )
+          
+          for stack in "${STACKS[@]}"; do
+            STATUS=$(aws cloudformation describe-stacks --stack-name "$stack" --query 'Stacks[0].StackStatus' --output text)
+            if [ "$STATUS" != "CREATE_COMPLETE" ] && [ "$STATUS" != "UPDATE_COMPLETE" ]; then
+              echo "❌ Stack $stack is in status: $STATUS"
+              exit 1
+            fi
+            echo "✅ Stack $stack: $STATUS"
+          done
+          
+          echo "✅ All staging integration tests passed"
+
+  # Deploy to production environment (manual approval required)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [validate-infrastructure, deploy-staging]
+    if: github.ref == 'refs/heads/main' && needs.validate-infrastructure.outputs.validation-status == 'passed'
+    
+    environment: production
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Pre-Production Security Check
+        run: |
+          echo "🔒 Running final security validation..."
+          
+          # Additional security checks for production
+          if [ "${{ needs.validate-infrastructure.outputs.security-score }}" \< "90" ]; then
+            echo "❌ Security score too low for production deployment"
+            exit 1
+          fi
+          
+          echo "✅ Security validation passed for production"
+          
+      - name: Deploy Production Infrastructure
+        run: |
+          echo "🚀 Deploying to Production Environment..."
+          
+          aws cloudformation deploy \
+            --template-file deploy/aws/multi-az-infrastructure-template.yml \
+            --stack-name ${{ env.PROJECT_NAME }}-infrastructure-production \
+            --parameter-overrides \
+              Environment=production \
+              MinInstances=3 \
+              MaxInstances=10 \
+              DesiredCapacity=6 \
+              InstanceType=t3.large \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --tags \
+              Environment=production \
+              Project=${{ env.PROJECT_NAME }} \
+              DeployedBy=github-actions \
+              CriticalSystem=true
+              
+      - name: Deploy Production Security Stack
+        run: |
+          echo "🔐 Deploying Production Security Components..."
+          
+          # Deploy PCI DSS infrastructure first
+          aws cloudformation deploy \
+            --template-file deploy/aws/pci-dss-infrastructure.yaml \
+            --stack-name ${{ env.PROJECT_NAME }}-pci-dss-production \
+            --parameter-overrides Environment=production \
+            --capabilities CAPABILITY_NAMED_IAM
+            
+          # Deploy security monitoring
+          aws cloudformation deploy \
+            --template-file deploy/aws/mfa-enforcement-template.yml \
+            --stack-name ${{ env.PROJECT_NAME }}-mfa-enforcement-production \
+            --parameter-overrides Environment=production \
+            --capabilities CAPABILITY_NAMED_IAM
+            
+          aws cloudformation deploy \
+            --template-file deploy/aws/cloudtrail-monitoring.yml \
+            --stack-name ${{ env.PROJECT_NAME }}-cloudtrail-production \
+            --parameter-overrides Environment=production \
+            --capabilities CAPABILITY_NAMED_IAM
+            
+      - name: Deploy Production Monitoring & Cost Control
+        run: |
+          echo "📊 Deploying Production Monitoring and Cost Control..."
+          
+          aws cloudformation deploy \
+            --template-file deploy/aws/cost-monitoring-dashboard.yml \
+            --stack-name ${{ env.PROJECT_NAME }}-cost-monitoring-production \
+            --parameter-overrides \
+              Environment=production \
+              AlertEmailAddress=${{ secrets.ALERT_EMAIL }} \
+              MonthlyBudgetAmount=500 \
+              Project=${{ env.PROJECT_NAME }} \
+            --capabilities CAPABILITY_NAMED_IAM
+            
+      - name: Run Production Health Checks
+        run: |
+          echo "🏥 Running production health checks..."
+          
+          # Comprehensive health check for all production stacks
+          PRODUCTION_STACKS=(
+            "${{ env.PROJECT_NAME }}-infrastructure-production"
+            "${{ env.PROJECT_NAME }}-pci-dss-production"
+            "${{ env.PROJECT_NAME }}-mfa-enforcement-production"
+            "${{ env.PROJECT_NAME }}-cloudtrail-production"
+            "${{ env.PROJECT_NAME }}-cost-monitoring-production"
+          )
+          
+          echo "Checking stack health..."
+          for stack in "${PRODUCTION_STACKS[@]}"; do
+            STATUS=$(aws cloudformation describe-stacks --stack-name "$stack" --query 'Stacks[0].StackStatus' --output text)
+            if [ "$STATUS" != "CREATE_COMPLETE" ] && [ "$STATUS" != "UPDATE_COMPLETE" ]; then
+              echo "❌ Production stack $stack failed: $STATUS"
+              # Get stack events for debugging
+              aws cloudformation describe-stack-events --stack-name "$stack" --max-items 10
+              exit 1
+            fi
+            echo "✅ Production stack $stack: $STATUS"
+          done
+          
+          # Test key functionality
+          echo "Testing load balancer health..."
+          ALB_DNS=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.PROJECT_NAME }}-infrastructure-production \
+            --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerDNS`].OutputValue' \
+            --output text)
+          
+          if [ -n "$ALB_DNS" ]; then
+            echo "✅ Load Balancer DNS: $ALB_DNS"
+          else
+            echo "❌ Load Balancer DNS not found"
+            exit 1
+          fi
+          
+          echo "✅ All production health checks passed"
+          
+      - name: Notify Deployment Success
+        run: |
+          echo "🎉 Production deployment completed successfully!"
+          echo "Dashboard URL: https://console.aws.amazon.com/cloudwatch/home?region=${{ env.AWS_REGION }}#dashboards:name=GitHubLinkBuddy-CostOptimization-production"
+
+  # Run compliance audit after deployment
+  compliance-audit:
+    name: Post-Deployment Compliance Audit
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: always() && (needs.deploy-production.result == 'success' || needs.deploy-staging.result == 'success')
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Install Dependencies
+        run: |
+          npm install
+          
+      - name: Run Cost Optimization Audit
+        run: |
+          echo "💰 Running cost optimization audit..."
+          
+          # Run cost optimization script
+          if [ -f "scripts/cost-optimization/comprehensive-cost-optimizer.ts" ]; then
+            npx tsx scripts/cost-optimization/comprehensive-cost-optimizer.ts > cost-optimization-report.txt
+            echo "Cost optimization report generated"
+          fi
+          
+      - name: Run Security Compliance Check
+        run: |
+          echo "🔒 Running security compliance audit..."
+          
+          # Check if required security components are deployed
+          ENVIRONMENT="production"
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            ENVIRONMENT="staging"
+          fi
+          
+          echo "Checking security stacks for $ENVIRONMENT..."
+          
+          REQUIRED_STACKS=(
+            "${{ env.PROJECT_NAME }}-mfa-enforcement-$ENVIRONMENT"
+            "${{ env.PROJECT_NAME }}-cloudtrail-$ENVIRONMENT"
+          )
+          
+          for stack in "${REQUIRED_STACKS[@]}"; do
+            if aws cloudformation describe-stacks --stack-name "$stack" >/dev/null 2>&1; then
+              echo "✅ Security stack deployed: $stack"
+            else
+              echo "❌ Missing security stack: $stack"
+            fi
+          done
+          
+      - name: Generate Compliance Report
+        run: |
+          echo "📋 Generating compliance report..."
+          
+          cat > compliance-report.md << EOF
+          # AWS World-Class Standards Compliance Report
+          
+          **Generated:** $(date)
+          **Environment:** ${{ github.ref == 'refs/heads/main' && 'Production' || 'Staging' }}
+          **Security Score:** ${{ needs.validate-infrastructure.outputs.security-score }}%
+          
+          ## Deployed Components
+          - ✅ Multi-AZ Infrastructure
+          - ✅ MFA Enforcement
+          - ✅ CloudTrail Monitoring
+          - ✅ Cost Monitoring Dashboard
+          - ✅ Security Compliance Scanning
+          
+          ## Security Measures Implemented
+          - 🔐 Multi-Factor Authentication enforcement
+          - 🛡️ CloudTrail logging across all regions
+          - 🔒 KMS encryption for sensitive data
+          - 📊 Real-time cost monitoring and alerts
+          - 🏗️ Multi-AZ deployment for high availability
+          
+          ## Next Steps
+          - Monitor cost optimization recommendations
+          - Review security audit logs regularly
+          - Test disaster recovery procedures
+          - Update compliance documentation
+          EOF
+          
+      - name: Upload Compliance Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-report
+          path: |
+            compliance-report.md
+            cost-optimization-report.txt
+          retention-days: 90

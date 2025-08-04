@@ -18,17 +18,12 @@ export function createMockFieldConfiguration(
 ): FieldConfiguration {
   const defaultConfig: FieldConfiguration = {
     id: 'test-field',
-    name: 'testField',
     type: 'text',
     label: 'Test Field',
     placeholder: 'Enter test value',
-    required: false,
     validation: {
       required: false,
     },
-    visible: true,
-    disabled: false,
-    order: 0,
   };
 
   return {
@@ -45,51 +40,34 @@ export function createMockFormConfiguration(
 ): FormConfiguration {
   const defaultConfig: FormConfiguration = {
     id: 'test-form',
-    title: 'Test Form',
+    name: 'Test Form',
     description: 'Test form description',
-    version: '1.0.0',
-    fields: [
-      createMockFieldConfiguration({
-        id: 'name',
-        name: 'name',
-        type: 'text',
-        label: 'Name',
-        required: true,
-        validation: {
-          required: true,
-          minLength: 1,
-        },
-      }),
-      createMockFieldConfiguration({
-        id: 'email',
-        name: 'email',
-        type: 'email',
-        label: 'Email',
-        required: true,
-        validation: {
-          required: true,
-        },
-      }),
-    ],
+    version: 1,
     sections: [
       {
         id: 'personal-info',
         title: 'Personal Information',
-        fields: ['name', 'email'],
-        visible: true,
-        order: 0,
+        fields: [
+          createMockFieldConfiguration({
+            id: 'name',
+            type: 'text',
+            label: 'Name',
+            validation: {
+              required: true,
+              minLength: 1,
+            },
+          }),
+          createMockFieldConfiguration({
+            id: 'email',
+            type: 'email',
+            label: 'Email',
+            validation: {
+              required: true,
+            },
+          }),
+        ],
       },
     ],
-    schema: 'auto',
-    submitAction: 'api',
-    apiEndpoint: '/api/forms/submit',
-    theme: 'default',
-    layout: 'vertical',
-    showProgress: false,
-    allowDraft: false,
-    redirectOnSuccess: '/success',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
   };
 
   return {

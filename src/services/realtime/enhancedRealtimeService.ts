@@ -389,7 +389,7 @@ export const realtimeService = new RealtimeService();
 
 // React hook for real-time subscriptions
 
-export function useRealtimeSubscription<T = any>(
+export function useRealtimeSubscription<T extends { [key: string]: any } = any>(
   channelName: string,
   options: SubscriptionOptions,
   callback: (payload: RealtimePostgresChangesPayload<T>) => void,
@@ -401,9 +401,10 @@ export function useRealtimeSubscription<T = any>(
   useEffect(() => {
     if (!channelName || !options.table) return;
 
-    const wrappedCallback = (payload: RealtimePostgresChangesPayload<T>) => {
+    const wrappedCallback = (payload: RealtimePostgresChangesPayload<any>) => {
       setIsConnected(true);
-      callback(payload);
+      // Type assertion to ensure compatibility while maintaining safety
+      callback(payload as RealtimePostgresChangesPayload<T>);
     };
 
     channelRef.current = realtimeService.subscribe(

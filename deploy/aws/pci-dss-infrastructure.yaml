@@ -1,0 +1,199 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'PCI DSS compliant infrastructure for GitHub Link-Up Buddy'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name for resource tagging
+  
+  DeploymentTimestamp:
+    Type: String
+    Default: '20250803'
+    Description: Timestamp suffix to avoid resource conflicts
+
+Resources:
+
+  # Dedicated VPC for payment processing (PCI DSS Requirement 1)
+  PaymentProcessingVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.1.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: github-link-buddy-payment-vpc
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: PCIScope
+          Value: InScope
+        - Key: DataClassification
+          Value: Sensitive
+
+  # Isolated subnets for cardholder data environment (PCI DSS Requirement 1.1)
+  CardholderDataSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref PaymentProcessingVPC
+      CidrBlock: 10.1.10.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: cardholder-data-subnet
+        - Key: PCIScope
+          Value: CDE
+
+  # Application tier security group (for reference)
+  ApplicationSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Application tier security group
+      VpcId: !Ref PaymentProcessingVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 10.1.0.0/16
+          Description: HTTP within VPC
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 10.1.0.0/16
+          Description: HTTPS within VPC
+      Tags:
+        - Key: PCIScope
+          Value: OutOfScope
+
+  # Security groups with restrictive rules (PCI DSS Requirement 1.2)
+  PaymentProcessingSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: PCI DSS compliant security group for payment processing
+      VpcId: !Ref PaymentProcessingVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref ApplicationSecurityGroup
+          Description: HTTPS from application tier
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS to payment processors only
+      Tags:
+        - Key: PCIScope
+          Value: InScope
+
+  # IAM Role for payment processing services (PCI DSS Requirement 7)
+  PaymentProcessingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'github-link-buddy-payment-processing-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+                - lambda.amazonaws.com
+                - ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: PaymentProcessingPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/github-link-buddy-payments-*'
+      Tags:
+        - Key: PCIScope
+          Value: InScope
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Dedicated KMS key for payment data (PCI DSS Requirement 3)
+  PaymentDataKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: PCI DSS compliant key for payment data encryption
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Payment Processing Service Access
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:role/github-link-buddy-payment-processing-role-${Environment}'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'kms:ViaService': !Sub 'dynamodb.${AWS::Region}.amazonaws.com'
+      EnableKeyRotation: true
+
+  PaymentDataKMSAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/github-link-buddy-payment-data
+      TargetKeyId: !Ref PaymentDataKMSKey
+
+  # Separate policy for KMS access to avoid circular dependency
+  PaymentProcessingKMSPolicy:
+    Type: AWS::IAM::Policy
+    DependsOn: [PaymentProcessingRole, PaymentDataKMSKey]
+    Properties:
+      PolicyName: PaymentProcessingKMSAccess
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: !GetAtt PaymentDataKMSKey.Arn
+      Roles:
+        - !Ref PaymentProcessingRole
+
+Outputs:
+  VPCId:
+    Description: VPC ID for PCI DSS
+    Value: !Ref PaymentProcessingVPC
+    Export:
+      Name: !Sub '${AWS::StackName}-PCI-VPC-ID'
+
+  CardholderSubnetId:
+    Description: Cardholder Data Environment Subnet ID
+    Value: !Ref CardholderDataSubnet
+    Export:
+      Name: !Sub '${AWS::StackName}-CDE-Subnet-ID'
+
+  PaymentDataKeyId:
+    Description: KMS Key ID for payment data encryption
+    Value: !Ref PaymentDataKMSKey
+    Export:
+      Name: !Sub '${AWS::StackName}-KMS-Key-ID'
+

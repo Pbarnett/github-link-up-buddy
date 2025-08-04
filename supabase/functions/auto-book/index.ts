@@ -10,6 +10,8 @@ import {
 } from '../lib/amadeus.ts';
 import { stripe } from '../lib/stripe.ts';   // Assuming stripe.ts exports the initialized SDK instance
 import { selectSeat } from '../lib/seatSelector.ts'; // Assuming seatSelector.ts exports selectSeat
+// Import emergency kill-switch
+import { canProceedWithAutoBooking, canProceedWithPayment, canProceedWithDuffel } from '../_shared/emergency-kill-switch.ts';
 
 // Define a type for the trip object for better type safety (optional but good practice)
 interface TripRequest {
@@ -91,6 +93,54 @@ Deno.serve(async (req: Request) => {
       });
     }
     console.log(`[AutoBook] Processing trip ID: ${trip.id}`);
+
+    // 0. Emergency Kill-Switch Check
+    console.log(`[AutoBook] Checking emergency kill-switch for trip ID: ${trip.id}`);
+    const killSwitchResult = await canProceedWithAutoBooking({
+      userId: trip.user_id,
+      feature: 'auto_booking',
+      environment: Deno.env.get('ENVIRONMENT') || 'development'
+    });
+
+    if (!killSwitchResult.canProceed) {
+      console.warn(`[AutoBook] Emergency kill-switch active for trip ID: ${trip.id}. Reason: ${killSwitchResult.reason}`);
+      
+      // Update booking attempt if we need to track this
+      try {
+        const { data: attemptData } = await supabaseClient
+          .from('booking_attempts')
+          .insert({
+            trip_request_id: trip.id,
+            status: 'blocked_by_kill_switch',
+            started_at: new Date().toISOString(),
+            ended_at: new Date().toISOString(),
+            error_message: killSwitchResult.reason
+          })
+          .select('id')
+          .single();
+        
+        console.log(`[AutoBook] Recorded kill-switch block with attempt ID: ${attemptData?.id}`);
+      } catch (attemptError) {
+        console.warn(`[AutoBook] Failed to record kill-switch attempt: ${attemptError}`);
+      }
+      
+      // Return the emergency response if available
+      if (killSwitchResult.emergencyResponse) {
+        return killSwitchResult.emergencyResponse;
+      }
+      
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'AUTO_BOOKING_DISABLED', 
+        message: 'Auto-booking is temporarily disabled',
+        reason: killSwitchResult.reason
+      }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '300' },
+      });
+    }
+    
+    console.log(`[AutoBook] Kill-switch check passed for trip ID: ${trip.id}`);
 
     // 1. Lock Acquisition
     console.log(`[AutoBook] Attempting to acquire lock for trip ID: ${trip.id}`);
@@ -482,6 +532,18 @@ Deno.serve(async (req: Request) => {
     // --- End Conditional Seat Selection ---
 
     // 3. Production-Ready Duffel Integration Following Saga Pattern
+    console.log(`[AutoBook] Checking Duffel integration kill-switch for trip ID: ${trip.id}`);
+    const duffelAllowed = await canProceedWithDuffel({
+      userId: trip.user_id,
+      feature: 'duffel_integration',
+      environment: Deno.env.get('ENVIRONMENT') || 'development'
+    });
+    
+    if (!duffelAllowed) {
+      console.warn(`[AutoBook] Duffel integration disabled by kill-switch for trip ID: ${trip.id}`);
+      throw new Error('Flight booking integration is temporarily disabled by emergency kill-switch');
+    }
+    
     console.log(`[AutoBook] Starting Duffel booking integration for trip ID: ${trip.id}`);
     
     // Check feature flag for Duffel live mode
@@ -588,6 +650,18 @@ Deno.serve(async (req: Request) => {
     }
 
     // 4. Stripe PaymentIntent Capture (updated numbering)
+    console.log(`[AutoBook] Checking payment processing kill-switch for trip ID: ${trip.id}`);
+    const paymentAllowed = await canProceedWithPayment({
+      userId: trip.user_id,
+      feature: 'payment_processing',
+      environment: Deno.env.get('ENVIRONMENT') || 'development'
+    });
+    
+    if (!paymentAllowed) {
+      console.warn(`[AutoBook] Payment processing disabled by kill-switch for trip ID: ${trip.id}`);
+      throw new Error('Payment processing is temporarily disabled by emergency kill-switch');
+    }
+    
     console.log(`[AutoBook] Initiating Stripe payment capture for trip ID: ${trip.id}. Flight Order ID: ${flightOrderIdForRollback}`);
     const paymentIntentId = trip.payment_intent_id;
     if (!paymentIntentId) {

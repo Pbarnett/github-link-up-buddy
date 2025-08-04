@@ -215,58 +215,17 @@ class ResponseTransformer {
 // RETRY MECHANISM
 // ============================================================================
 
+import { callWithRetry } from '../utils/call-with-retry';
+
 class RetryHandler {
   static async executeWithRetry<T>(
     operation: () => Promise<T>,
     config: ApiRequestConfig['retry']
   ): Promise<T> {
-    let lastError: Error;
-    let delay = config?.delay ?? 1000;
-
-    for (let attempt = 1; attempt <= (config?.attempts ?? 1); attempt++) {
-      try {
-        return await operation()();
-      } catch (error) {
-        lastError = error as Error;
-
-        // Don't retry on the last attempt
-        if (attempt === (config?.attempts ?? 1)) {
-          break;
-        }
-
-        // Check if error is retryable
-        if (error instanceof ApiClientError) {
-          if (
-            error.statusCode &&
-            !this.isRetryableStatusCode(error.statusCode, config)
-          ) {
-            break;
-          }
-        }
-
-        // Wait before retrying
-        await this.sleep(delay);
-
-        // Apply backoff
-        if (config?.backoff === 'exponential') {
-          delay *= 2;
-        }
-      }
-    }
-
-    throw lastError!;
-  }
-
-  private static isRetryableStatusCode(
-    statusCode: HttpStatusCode,
-    config: ApiRequestConfig['retry']
-  ): boolean {
-    const retryableCodes = [429, 500, 502, 503, 504]; // Default retryable codes
-    return retryableCodes.includes(statusCode);
-  }
-
-  private static sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return callWithRetry('api-client', operation, {
+      maxRetries: config?.attempts ?? 3,
+      baseDelay: config?.delay ?? 1000
+    });
   }
 }
 

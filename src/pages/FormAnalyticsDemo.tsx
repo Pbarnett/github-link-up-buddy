@@ -24,24 +24,21 @@ const sampleFormConfig = {
       fields: [
         {
           id: 'firstName',
-          type: 'text',
+          type: 'text' as const,
           label: 'First Name',
-          required: true,
-          validation: { minLength: 2 }
+          validation: { required: true, minLength: 2 }
         },
         {
           id: 'lastName', 
-          type: 'text',
+          type: 'text' as const,
           label: 'Last Name',
-          required: true,
-          validation: { minLength: 2 }
+          validation: { required: true, minLength: 2 }
         },
         {
           id: 'email',
-          type: 'email',
+          type: 'email' as const,
           label: 'Email Address',
-          required: true,
-          validation: { pattern: '^[^@]+@[^@]+\\.[^@]+$' }
+          validation: { required: true, pattern: '^[^@]+@[^@]+\\.[^@]+$' }
         }
       ]
     },
@@ -51,13 +48,13 @@ const sampleFormConfig = {
       fields: [
         {
           id: 'newsletter',
-          type: 'checkbox',
+          type: 'checkbox' as const,
           label: 'Subscribe to newsletter',
           defaultValue: false
         },
         {
           id: 'interests',
-          type: 'multi-select',
+          type: 'multi-select' as const,
           label: 'Areas of Interest',
           options: [
             { value: 'tech', label: 'Technology' },

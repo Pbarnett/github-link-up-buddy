@@ -8,6 +8,8 @@ import {
   metricsChannel 
 } from './diagnostics.js';
 import adminRouter from './api/admin.js';
+import awsEnhancedRouter from './api/aws-enhanced.js';
+import { secretsMonitor, connectionManager } from '../src/lib/aws-sdk-enhanced';
 
 const app = express();
 
@@ -39,16 +41,32 @@ app.use((req, res, next) => {
 // Admin routes
 app.use('/api/admin', adminRouter);
 
+// Enhanced AWS SDK routes
+app.use('/api/aws-enhanced', awsEnhancedRouter);
+
 // Health check endpoint with enhanced diagnostics
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
   const dnsStats = customDNSResolver.getStats();
+  const awsHealth = await secretsMonitor.getHealthStatus();
+  
   const healthData = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     pid: process.pid,
     uptime: process.uptime(),
     memory: process.memoryUsage(),
-    dns: dnsStats
+    dns: dnsStats,
+    aws: {
+      secrets: {
+        cacheSize: awsHealth.cache.size,
+        hitRate: awsHealth.cache.hitRate,
+        successRate: awsHealth.performance.successRate
+      },
+      connections: {
+        total: awsHealth.connections.total,
+        healthy: awsHealth.connections.healthy
+      }
+    }
   };
   
   // Publish health check metrics
@@ -172,6 +190,69 @@ app.get('/api/trip-offers', (req, res) => {
   });
 });
 
+// AWS Secrets Manager health endpoint
+app.get('/api/aws/secrets/health', async (req, res) => {
+  try {
+    const health = await secretsMonitor.getHealthStatus();
+    const report = await secretsMonitor.generateMonitoringReport();
+    
+    res.json({
+      status: 'ok',
+      health,
+      report,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// AWS Connection Manager status endpoint
+app.get('/api/aws/connections/status', async (req, res) => {
+  try {
+    const connectionHealth = connectionManager.getConnectionHealth();
+    const activeConnections = connectionManager.getActiveConnectionsCount();
+    
+    res.json({
+      status: 'ok',
+      connections: {
+        total: connectionHealth.size,
+        healthy: activeConnections,
+        details: Object.fromEntries(connectionHealth.entries())
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Force AWS connections rotation endpoint (admin only)
+app.post('/api/aws/connections/rotate', async (req, res) => {
+  try {
+    await connectionManager.forceRotation();
+    res.json({
+      status: 'ok',
+      message: 'Connection rotation completed',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Test endpoint to generate sample service dependency data
 app.get('/api/test-dependencies', async (req, res) => {
   const { recordOutboundRequest } = await import('./service-dependency-metrics.js');
@@ -217,6 +298,19 @@ app.get('/', (req, res) => {
       'GET /api/feature-flags/:flagName',
       'GET /api/trip-offers',
       'GET /api/test-dependencies',
+      // Enhanced AWS SDK endpoints
+      'GET /api/aws-enhanced/health',
+      'GET /api/aws-enhanced/status',
+      'GET /api/aws-enhanced/cache/stats',
+      'GET /api/aws-enhanced/connections',
+      'GET /api/aws-enhanced/metrics',
+      'GET /api/aws-enhanced/report',
+      'GET /api/aws-enhanced/test/connectivity',
+      // Admin-only enhanced AWS endpoints
+      'DELETE /api/aws-enhanced/cache/clear [Admin]',
+      'POST /api/aws-enhanced/cache/warmup [Admin]',
+      'POST /api/aws-enhanced/connections/rotate [Admin]',
+      'POST /api/aws-enhanced/test/secret-access [Admin]',
       // Admin endpoints
       'GET /api/admin/metrics',
       'GET /api/admin/health',

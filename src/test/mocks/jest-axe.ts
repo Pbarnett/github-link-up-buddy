@@ -1,4 +1,6 @@
 // Mock implementation of jest-axe for accessibility testing
+import { vi, expect } from 'vitest';
+
 export const axe = vi
   .fn()
   .mockImplementation(() => Promise.resolve({ violations: [] }));

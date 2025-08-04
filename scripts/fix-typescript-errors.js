@@ -19,7 +19,7 @@ const fs = require('fs');
 // Removed unused log function
   console.log(`[${timestamp}] ${(level || "INFO").toUpperCase()}: ${message}`);
 
-const PROJECT_ROOT = path.resolve(__'..');
+const PROJECT_ROOT = path.resolve(__dirname, '..');
 
 function runCommand(command, description) {
   console.log(`\n🔧 ${description}...`);

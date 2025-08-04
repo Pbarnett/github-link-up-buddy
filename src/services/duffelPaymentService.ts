@@ -417,10 +417,10 @@ export class DuffelPaymentService {
     if (provider === 'duffel') {
       const payment = await this.duffel.paymentIntents.get(paymentId);
       return {
-        status: payment.data.status,
+        status: payment.data.status || 'unknown',
         amount: payment.data.amount,
         currency: payment.data.currency,
-        metadata: payment.data.metadata,
+        metadata: (payment.data as any).metadata,
       };
     }
 

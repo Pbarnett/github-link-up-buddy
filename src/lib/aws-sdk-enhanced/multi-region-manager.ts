@@ -15,17 +15,16 @@ let EncryptCommand: any, DecryptCommand: any, DescribeKeyCommand: any;
 let HeadBucketCommand: any, DescribeTableCommand: any;
 
 if (!IS_MOCK_MODE) {
-  ({
-    KMSClient,
-    EncryptCommand,
-    DecryptCommand,
-    DescribeKeyCommand,
-  } = require('@aws-sdk/client-kms'));
-  ({ S3Client, HeadBucketCommand } = require('@aws-sdk/client-s3'));
-  ({
-    DynamoDBClient,
-    DescribeTableCommand,
-  } = require('@aws-sdk/client-dynamodb'));
+  // For server environments, we'll load these dynamically when needed
+  // Setting them to undefined for now to avoid require statements
+  KMSClient = undefined;
+  S3Client = undefined;
+  DynamoDBClient = undefined;
+  EncryptCommand = undefined;
+  DecryptCommand = undefined;
+  DescribeKeyCommand = undefined;
+  HeadBucketCommand = undefined;
+  DescribeTableCommand = undefined;
 } else {
   // Mock clients and commands for browser environments
   KMSClient = class MockKMSClient {};

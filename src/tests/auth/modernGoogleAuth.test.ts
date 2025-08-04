@@ -14,7 +14,13 @@ import {
   beforeAll,
 } from 'vitest';
 import { modernGoogleAuth } from '@/services/modernGoogleAuthService';
-import { setupAdvancedOAuthTesting } from '../utils/advancedOAuthMocks';
+import { 
+  setupAdvancedOAuthTesting,
+  PopupTestScenarios,
+  createPopupMocks,
+  createOneTapMocks,
+  EnhancedOAuthTestScenarios
+} from '../utils/advancedOAuthMocks';
 // Use vi.hoisted() for proper pre-import mocking
 const mockGoogleAccounts = vi.hoisted(() => ({
   id: {
@@ -390,32 +396,37 @@ describe('ModernGoogleAuthService', () => {
   });
 
   describe('popup authentication', () => {
-    // Note: Default /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open mock is set in global beforeEach
-    // Individual tests can override it as needed
+    // Mock window.open for popup authentication tests
+    let mockWindow: any;
+    
+    beforeEach(() => {
+      // Default mock window with successful popup
+      const mockPopup = {
+        close: vi.fn(),
+        closed: false,
+        focus: vi.fn(),
+        postMessage: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      };
+      
+      mockWindow = {
+        ...globalThis.window,
+        open: vi.fn().mockReturnValue(mockPopup),
+        google: { accounts: mockGoogleAccounts },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        postMessage: vi.fn(),
+        dispatchEvent: vi.fn().mockReturnValue(true),
+      };
+      
+      vi.stubGlobal('window', mockWindow);
+    });
 
     it('should detect popup blockers', async () => {
-      // Override the default mock for this test - /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open returns null
-      const mockOpen = vi.fn().mockReturnValue(null);
-
-      // Clear existing mock and create new one
-      function safeWindowOpen() {
-        return mockOpen;
-      }
-
-      vi.unstubAllGlobals();
-      vi.stubGlobal(
-        '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window',
-        {
-          ...globalThis./* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
-          google: { accounts: mockGoogleAccounts },
-          open: safeWindowOpen(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          postMessage: vi.fn(),
-          dispatchEvent: vi.fn().mockReturnValue(true),
-        }
-      );
-      vi.stubGlobal('google', { accounts: mockGoogleAccounts });
+      // Override window.open to return null (blocked)
+      mockWindow.open = vi.fn().mockReturnValue(null);
+      vi.stubGlobal('window', mockWindow);
 
       await modernGoogleAuth.initialize();
       const result = await modernGoogleAuth.signInWithPopup();
@@ -426,29 +437,19 @@ describe('ModernGoogleAuthService', () => {
       expect(mockGoogleAccounts.oauth2.initTokenClient).not.toHaveBeenCalled();
     }, 1000); // Short timeout since this should return immediately
 
-    it('should detect popup blockers when /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open returns a closed popup', async () => {
-      // Mock popup blocker scenario - /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.open returns a closed popup /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window
+    it('should detect popup blockers when window.open returns a closed popup', async () => {
+      // Mock popup blocker scenario - window.open returns a closed popup window
       const mockClosedPopup = {
         close: vi.fn(),
         closed: true, // Already closed (blocked)
+        focus: vi.fn(),
+        postMessage: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
       };
-      const mockOpen = vi.fn().mockReturnValue(mockClosedPopup);
-
-      // Clear existing mock and create new one
-      vi.unstubAllGlobals();
-      vi.stubGlobal(
-        '/* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window',
-        {
-          ...globalThis./* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window,
-          google: { accounts: mockGoogleAccounts },
-          open: mockOpen,
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          postMessage: vi.fn(),
-          dispatchEvent: vi.fn().mockReturnValue(true),
-        }
-      );
-      vi.stubGlobal('google', { accounts: mockGoogleAccounts });
+      
+      mockWindow.open = vi.fn().mockReturnValue(mockClosedPopup);
+      vi.stubGlobal('window', mockWindow);
 
       await modernGoogleAuth.initialize();
       const result = await modernGoogleAuth.signInWithPopup();

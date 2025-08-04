@@ -362,9 +362,8 @@ class AuthSecurityMonitor {
         this.logEvent({
           type: 'SUSPICIOUS_ACTIVITY',
           metadata: {
-            pattern: 'repeated_failures',
-            count: recentFailures.length,
             userAgent: navigator.userAgent,
+            errorMessage: `Repeated authentication failures detected: ${recentFailures.length} attempts`,
             browserInfo: this.getBrowserInfo(),
           },
           severity: 'HIGH',

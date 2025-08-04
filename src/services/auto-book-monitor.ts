@@ -5,17 +5,17 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import { UpstashRedis } from '@upstash/redis'
-import { Sentry } from '@sentry/node'
+import { Redis } from '@upstash/redis'
+import * as Sentry from '@sentry/node'
 import fetch from 'node-fetch';
 
 const supabase = createClient('https://your-supabase-url', 'public-anon-key')
-const redis = UpstashRedis.fromEnv();
+const redis = Redis.fromEnv();
 
 export async function autoBookMonitor() {
   try {
     // Acquire distributed lock
-    const lockAcquired = await redis.set('locks:auto_book_monitor', '1', 'NX', 'EX', 600);
+    const lockAcquired = await redis.set('locks:auto_book_monitor', '1', { nx: true, ex: 600 });
     if (!lockAcquired) {
       console.log('Another instance is running');
       return;
@@ -30,7 +30,7 @@ export async function autoBookMonitor() {
     if (error) throw error;
 
     for (const offer of pendingOffers) {
-      const offerLock = await redis.set(`lock:offer:${offer.id}`, '1', 'NX', 'EX', 600);
+      const offerLock = await redis.set(`lock:offer:${offer.id}`, '1', { nx: true, ex: 600 });
       if (!offerLock) continue;
 
       try {

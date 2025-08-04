@@ -24,6 +24,7 @@ import { capturePaymentIntent, refundPaymentIntent } from '../_shared/stripe.ts'
 import { recordAutoBookingSuccess, recordAutoBookingFailure, recordStripeCaptureSuccess, recordStripeCaptureFailure, autoBookingFailureTotal } from '../_shared/metrics.ts'
 import { alertBookingSuccess, alertBookingFailure, alertRefundCompleted } from '../_shared/notifications.ts'
 import { checkAutoBookingFlags } from '../_shared/launchdarkly-guard.ts'
+import { notifyBookingSuccess, notifyBookingFailure, notifyBookingWarning } from '../_shared/booking-alerts.ts'
 import { 
   createDuffelProductionClient,
   mapTripRequestToDuffelSearch,
@@ -222,6 +223,48 @@ Deno.serve(async (req: Request) => {
       expires: selectedOffer.expires_at
     });
 
+    // Step 6.1: Validate expires_at before booking (Gap #57)
+    if (selectedOffer.expires_at) {
+      const expiresAt = new Date(selectedOffer.expires_at);
+      const now = new Date();
+      
+      if (expiresAt <= now) {
+        logger.error('Selected offer expired before booking', {
+          operation: 'auto_book_expired_offer',
+          offerId: selectedOffer.id,
+          expiresAt: selectedOffer.expires_at,
+          currentTime: now.toISOString(),
+          tripRequestId
+        });
+        
+        throw new Error(`Selected offer ${selectedOffer.id} has expired at ${selectedOffer.expires_at}`);
+      }
+      
+      // Warn if offer expires soon (within 3 minutes for auto-booking)
+      const threeMinutesFromNow = new Date(now.getTime() + 3 * 60 * 1000);
+      if (expiresAt <= threeMinutesFromNow) {
+        const minutesUntilExpiry = Math.floor((expiresAt.getTime() - now.getTime()) / (60 * 1000));
+        logger.warn('Selected offer expires very soon', {
+          operation: 'auto_book_expiring_offer',
+          offerId: selectedOffer.id,
+          expiresAt: selectedOffer.expires_at,
+          minutesUntilExpiry,
+          tripRequestId
+        });
+        
+        if (minutesUntilExpiry < 1) {
+          throw new Error(`Selected offer ${selectedOffer.id} expires in less than 1 minute, too risky to proceed`);
+        }
+      }
+    } else {
+      // Log warning for offers without expiration time
+      logger.warn('Selected offer has no expiration time set', {
+        operation: 'auto_book_no_expiry',
+        offerId: selectedOffer.id,
+        tripRequestId
+      });
+    }
+
     // Step 7: Capture payment via Stripe with idempotency
     logger.info('Capturing payment via Stripe', {
       operation: 'auto_book_stripe_capture',
@@ -345,6 +388,21 @@ Deno.serve(async (req: Request) => {
           stripeChargeId,
           'failed'
         );
+        
+        // Send booking failure alert (Gap #31)
+        await notifyBookingFailure(
+          bookingAttempt.id,
+          tripRequest.user_id,
+          parseFloat(selectedOffer.total_amount),
+          selectedOffer.total_currency,
+          `Duffel booking failed and refund failed: ${refundError.message}`,
+          {
+            originalError: duffelError.message,
+            refundError: refundError.message,
+            stripeChargeId,
+            tripRequestId
+          }
+        );
       }
       
       // Mark attempt as failed
@@ -360,6 +418,22 @@ Deno.serve(async (req: Request) => {
         `Duffel order creation failed: ${duffelError.message}`,
         stripeChargeId,
         refundCompleted ? 'completed' : 'pending'
+      );
+      
+      // Send booking failure alert (Gap #31)
+      await notifyBookingFailure(
+        bookingAttempt.id,
+        tripRequest.user_id,
+        parseFloat(selectedOffer.total_amount),
+        selectedOffer.total_currency,
+        `Duffel order creation failed: ${duffelError.message}`,
+        {
+          duffelError: duffelError.message,
+          refundStatus: refundCompleted ? 'completed' : 'pending',
+          stripeChargeId,
+          tripRequestId,
+          offerId: selectedOffer.id
+        }
       );
 
       throw new Error(`Booking failed: ${duffelError.message}. Payment has been ${refundCompleted ? 'refunded' : 'queued for refund'}.`);
@@ -409,6 +483,20 @@ Deno.serve(async (req: Request) => {
 
     recordAutoBookingSuccess(tripRequest.user_id, selectedOffer.total_currency);
 
+    // Send booking success alert (Gap #31)
+    await notifyBookingSuccess(
+      completionResult.booking_id,
+      tripRequest.user_id,
+      parseFloat(selectedOffer.total_amount),
+      selectedOffer.total_currency,
+      {
+        duffelOrderId: duffelOrder.id,
+        bookingReference: duffelOrder.booking_reference,
+        tripRequestId,
+        offerId: selectedOffer.id
+      }
+    );
+
     return new Response(JSON.stringify({
       success: true,
       bookingId: completionResult.booking_id,
@@ -438,6 +526,22 @@ Deno.serve(async (req: Request) => {
     }
 
     recordAutoBookingFailure(tripRequest.user_id || 'unknown_user', error.message, selectedOffer.total_currency || 'USD');
+
+    // Send booking failure alert for general errors (Gap #31)
+    if (bookingAttempt && tripRequest) {
+      await notifyBookingFailure(
+        bookingAttempt.id,
+        tripRequest.user_id,
+        parseFloat(selectedOffer?.total_amount || 0),
+        selectedOffer?.total_currency || 'USD',
+        error.message,
+        {
+          tripRequestId,
+          errorType: 'general_booking_error',
+          phase: stripeChargeId ? 'post_payment' : 'pre_payment'
+        }
+      );
+    }
 
     return new Response(JSON.stringify({
       success: false,

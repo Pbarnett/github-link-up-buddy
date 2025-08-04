@@ -104,7 +104,7 @@ export class StripeSubscriptionService {
               params.collection_method || 'charge_automatically',
             metadata: buildPaymentMetadata({
               userId: params.customerId,
-              bookingType: 'subscription',
+              bookingType: 'premium',
               additionalData: params.metadata || {},
             }),
           },
@@ -236,7 +236,7 @@ export class StripeSubscriptionService {
             default_price_data: params.default_price_data,
             metadata: buildPaymentMetadata({
               userId: params.customerId,
-              bookingType: 'usage_based',
+              bookingType: 'business',
             }),
           },
         }

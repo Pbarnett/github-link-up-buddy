@@ -1,0 +1,337 @@
+groups:
+  - name: parker-flight-booking-alerts
+    rules:
+      # =================
+      # BOOKING FAILURES
+      # =================
+      
+      # Critical: High booking failure rate
+      - alert: BookingFailureRateHigh
+        expr: |
+          (
+            rate(parker_flight_booking_attempts_total{status="failed"}[5m]) / 
+            rate(parker_flight_booking_attempts_total[5m])
+          ) > 0.10
+        for: 3m
+        labels:
+          severity: critical
+          service: parker-flight
+          component: booking
+          alert_type: failure_rate
+        annotations:
+          summary: "Booking failure rate is critically high"
+          description: |
+            Booking failure rate is {{ $value | humanizePercentage }} over the last 5 minutes.
+            This exceeds the 10% threshold and indicates a critical booking system issue.
+            Immediate investigation required to prevent revenue impact.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/booking-failures.md"
+          dashboard_url: "https://grafana.parkerfly.io/d/booking-health/booking-system-health"
+
+      # Warning: Moderate booking failure rate
+      - alert: BookingFailureRateModerate
+        expr: |
+          (
+            rate(parker_flight_booking_attempts_total{status="failed"}[5m]) / 
+            rate(parker_flight_booking_attempts_total[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: parker-flight
+          component: booking
+          alert_type: failure_rate
+        annotations:
+          summary: "Booking failure rate is elevated"
+          description: |
+            Booking failure rate is {{ $value | humanizePercentage }} over the last 5 minutes.
+            This exceeds the 5% warning threshold. Monitor closely for potential issues.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/booking-failures.md"
+
+      # Critical: Auto-booking system failures
+      - alert: AutoBookingSystemDown
+        expr: |
+          absent(rate(parker_flight_auto_booking_executions_total[5m])) or
+          rate(parker_flight_auto_booking_executions_total{status="success"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: parker-flight
+          component: auto_booking
+          alert_type: system_down
+        annotations:
+          summary: "Auto-booking system has stopped functioning"
+          description: |
+            No successful auto-booking executions detected in the last 5 minutes.
+            The automatic booking system may be down or completely failing.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/auto-booking-down.md"
+
+      # Critical: Payment processing failures
+      - alert: PaymentProcessingFailureSpike
+        expr: |
+          (
+            rate(parker_flight_payment_attempts_total{status="failed"}[5m]) / 
+            rate(parker_flight_payment_attempts_total[5m])
+          ) > 0.15
+        for: 2m
+        labels:
+          severity: critical
+          service: parker-flight
+          component: payment
+          alert_type: payment_failure
+        annotations:
+          summary: "Payment processing failure rate is critically high"
+          description: |
+            Payment failure rate is {{ $value | humanizePercentage }}.
+            This may indicate issues with Stripe integration or payment processing.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/payment-failures.md"
+
+      # =================
+      # OFFER EXPIRATION
+      # =================
+
+      # Critical: High rate of expired offer booking attempts
+      - alert: ExpiredOfferBookingAttempts
+        expr: |
+          rate(parker_flight_booking_attempts_total{failure_reason="offer_expired"}[10m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          service: parker-flight
+          component: booking
+          alert_type: expired_offers
+        annotations:
+          summary: "High rate of booking attempts on expired offers"
+          description: |
+            {{ $value | humanize }} booking attempts per second are failing due to expired offers.
+            This may indicate timing issues in the offer monitoring system.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/expired-offers.md"
+
+      # =================
+      # SYSTEM CAPACITY
+      # =================
+
+      # Warning: High booking volume may impact system performance
+      - alert: BookingVolumeHigh
+        expr: |
+          rate(parker_flight_booking_attempts_total[5m]) > 10
+        for: 10m
+        labels:
+          severity: warning
+          service: parker-flight
+          component: booking
+          alert_type: high_volume
+        annotations:
+          summary: "Booking volume is unusually high"
+          description: |
+            Current booking rate is {{ $value | humanize }} attempts per second.
+            Monitor system resources and consider scaling if performance degrades.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/high-booking-volume.md"
+
+      # Critical: No bookings being processed (could indicate system outage)
+      - alert: NoBookingActivity
+        expr: |
+          absent(rate(parker_flight_booking_attempts_total[15m])) or
+          rate(parker_flight_booking_attempts_total[15m]) == 0
+        for: 5m
+        labels:
+          severity: critical
+          service: parker-flight
+          component: booking
+          alert_type: no_activity
+        annotations:
+          summary: "No booking activity detected"
+          description: |
+            No booking attempts have been recorded in the last 15 minutes.
+            This may indicate a system outage or complete service failure.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/no-booking-activity.md"
+
+      # =================
+      # EXTERNAL DEPENDENCIES
+      # =================
+
+      # Critical: Duffel API failures
+      - alert: DuffelAPIFailureRate
+        expr: |
+          (
+            rate(parker_flight_duffel_requests_total{status=~"5.."}[5m]) / 
+            rate(parker_flight_duffel_requests_total[5m])
+          ) > 0.20
+        for: 3m
+        labels:
+          severity: critical
+          service: parker-flight
+          component: duffel_api
+          alert_type: external_failure
+        annotations:
+          summary: "Duffel API failure rate is high"
+          description: |
+            Duffel API failure rate is {{ $value | humanizePercentage }}.
+            This will directly impact booking success rates.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/duffel-api-failures.md"
+
+      # Warning: Stripe webhook processing issues
+      - alert: StripeWebhookProcessingFailures
+        expr: |
+          rate(parker_flight_stripe_webhook_errors_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: parker-flight
+          component: stripe_webhook
+          alert_type: webhook_failure
+        annotations:
+          summary: "Stripe webhook processing failures detected"
+          description: |
+            Stripe webhook processing is failing at {{ $value | humanize }} errors per second.
+            This may impact payment confirmation and booking completion.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/stripe-webhook-failures.md"
+
+      # =================
+      # BOOKING FUNNEL HEALTH
+      # =================
+
+      # Warning: Low conversion rate from offers to bookings
+      - alert: BookingConversionRateLow
+        expr: |
+          (
+            rate(parker_flight_booking_attempts_total{status="success"}[1h]) / 
+            rate(parker_flight_offers_viewed_total[1h])
+          ) < 0.02
+        for: 15m
+        labels:
+          severity: warning
+          service: parker-flight
+          component: booking_funnel
+          alert_type: low_conversion
+        annotations:
+          summary: "Booking conversion rate is unusually low"
+          description: |
+            Only {{ $value | humanizePercentage }} of viewed offers result in successful bookings.
+            This may indicate pricing, UX, or system issues affecting user conversion.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/low-conversion-rate.md"
+
+      # =================
+      # BUSINESS IMPACT
+      # =================
+
+      # Critical: High-value booking failures
+      - alert: HighValueBookingFailures
+        expr: |
+          rate(parker_flight_booking_attempts_total{status="failed",booking_value="high"}[10m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: parker-flight
+          component: booking
+          alert_type: high_value_failure
+        annotations:
+          summary: "High-value bookings are failing"
+          description: |
+            {{ $value | humanize }} high-value bookings (>$1000) are failing per second.
+            This has significant revenue impact and requires immediate attention.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/high-value-failures.md"
+          escalation: "page_cto"
+
+      # =================
+      # LATENCY AND PERFORMANCE
+      # =================
+
+      # Warning: Booking process taking too long
+      - alert: BookingProcessLatencyHigh
+        expr: |
+          histogram_quantile(0.95, rate(parker_flight_booking_duration_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: parker-flight
+          component: booking
+          alert_type: high_latency
+        annotations:
+          summary: "Booking process latency is high"
+          description: |
+            P95 booking completion time is {{ $value }}s, exceeding 30s threshold.
+            Users may experience timeouts or abandon bookings.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/booking-latency.md"
+
+      # Critical: Booking process extremely slow
+      - alert: BookingProcessLatencyCritical
+        expr: |
+          histogram_quantile(0.95, rate(parker_flight_booking_duration_seconds_bucket[5m])) > 60
+        for: 2m
+        labels:
+          severity: critical
+          service: parker-flight
+          component: booking
+          alert_type: critical_latency
+        annotations:
+          summary: "Booking process latency is critically high"
+          description: |
+            P95 booking completion time is {{ $value }}s, exceeding 60s critical threshold.
+            This severely impacts user experience and likely causes booking abandonment.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/booking-latency.md"
+
+      # =================
+      # DATABASE AND INFRASTRUCTURE
+      # =================
+
+      # Critical: Database connection issues affecting bookings
+      - alert: BookingDatabaseConnectionFailures
+        expr: |
+          rate(parker_flight_db_connection_errors_total{component="booking"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: parker-flight
+          component: database
+          alert_type: connection_failure
+        annotations:
+          summary: "Database connection failures affecting booking system"
+          description: |
+            Booking system is experiencing {{ $value | humanize }} database connection errors per second.
+            This will cause booking failures and data consistency issues.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/database-connection-failures.md"
+
+      # Warning: Redis lock acquisition failures
+      - alert: RedisLockAcquisitionFailures
+        expr: |
+          rate(parker_flight_redis_lock_failures_total[5m]) > 0.5
+        for: 3m
+        labels:
+          severity: warning
+          service: parker-flight
+          component: redis
+          alert_type: lock_failure
+        annotations:
+          summary: "Redis lock acquisition failures detected"
+          description: |
+            {{ $value | humanize }} Redis lock acquisition failures per second.
+            This may cause duplicate booking processing or race conditions.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/redis-lock-failures.md"
+
+      # =================
+      # RECOVERY AND HEALTH
+      # =================
+
+      # Info: Booking system recovery detected
+      - alert: BookingSystemRecovery
+        expr: |
+          (
+            rate(parker_flight_booking_attempts_total{status="success"}[5m]) / 
+            rate(parker_flight_booking_attempts_total[5m])
+          ) > 0.90 and
+          (
+            rate(parker_flight_booking_attempts_total{status="success"}[5m] offset 10m) / 
+            rate(parker_flight_booking_attempts_total[5m] offset 10m)
+          ) < 0.50
+        for: 2m
+        labels:
+          severity: info
+          service: parker-flight
+          component: booking
+          alert_type: recovery
+        annotations:
+          summary: "Booking system has recovered from failures"
+          description: |
+            Booking success rate has improved to {{ $value | humanizePercentage }} after being below 50%.
+            System appears to have recovered from previous issues.
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/system-recovery.md"

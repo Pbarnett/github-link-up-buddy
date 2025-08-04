@@ -46,6 +46,12 @@ jobs:
         env:
           CI: true
 
+      - name: Run Mutation Testing
+        run: pnpm mutate:check
+        continue-on-error: false  # Fail build if mutation score < 70%
+        env:
+          CI: true
+
       - name: Upload Quality Report
         if: always()
         uses: actions/upload-artifact@v4

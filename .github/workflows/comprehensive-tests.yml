@@ -188,7 +188,73 @@ jobs:
             test-results/
           retention-days: 30
 
-  # Job 4: Performance Tests
+  # Job 4: Database Migration Deployment
+  deploy-migrations:
+    name: Deploy Database Migrations
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [unit-integration, security]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+          
+      - name: Link to Supabase project
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          
+      - name: Run database migrations
+        run: |
+          echo "🚀 Running database migrations..."
+          supabase db push --dry-run
+          supabase db push
+          echo "✅ Migrations deployed successfully"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          
+      - name: Verify migration status
+        run: |
+          echo "📋 Checking migration status..."
+          supabase migration list
+          echo "✅ Migration verification complete"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          
+      - name: Tag Sentry Release (Gap #43)
+        run: |
+          # Install Sentry CLI
+          curl -sL https://sentry.io/get-cli/ | bash
+          
+          # Create new release
+          VERSION="migration-$(date +%Y%m%d)-${GITHUB_SHA:0:7}"
+          sentry-cli releases new $VERSION
+          sentry-cli releases set-commits $VERSION --auto
+          sentry-cli releases finalize $VERSION
+          
+          # Deploy to production environment
+          sentry-cli releases deploys $VERSION new -e production
+          
+          echo "✅ Sentry release $VERSION tagged successfully"
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          
+      - name: Notify deployment status
+        run: |
+          echo "📊 Migration deployment summary:"
+          echo "- Project: ${{ secrets.SUPABASE_PROJECT_REF }}"
+          echo "- Commit: ${GITHUB_SHA:0:7}"
+          echo "- Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "- Status: Success ✅"
+
+  # Job 5: Performance Tests
   performance:
     name: Performance Tests
     runs-on: ubuntu-latest

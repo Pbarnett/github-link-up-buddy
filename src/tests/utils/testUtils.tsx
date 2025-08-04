@@ -1,5 +1,7 @@
 import * as React from 'react';
-import { ReactNode } from 'react';
+import { ReactNode, ReactElement } from 'react';
+import { render, RenderOptions } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
 import DOMPurify from 'dompurify';
 // ==============================================================================
@@ -57,7 +59,7 @@ export const createMockComponent = (
 // Create mock hook
 export const createMockHook = <T extends any>(name: string, returnValue: T) => {
   const mockHook = vi.fn(() => returnValue);
-  mockHook.mockName = `use${name}`;
+  (mockHook as any).mockName = `use${name}`;
   return mockHook;
 };
 

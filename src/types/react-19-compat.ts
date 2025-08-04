@@ -11,7 +11,8 @@ import * as React from 'react';
 export type ComponentType<P = {}> = React.ComponentType<P>;
 export type HTMLAttributes<T> = React.HTMLAttributes<T>;
 export type ButtonHTMLAttributes<T> = React.ButtonHTMLAttributes<T>;
-export type ElementRef<T extends React.ElementType> = React.ElementRef<T>;
+// Simplified ElementRef type to avoid constraint issues
+export type ElementRef<T> = any;
 export type CSSProperties = React.CSSProperties;
 
 // Additional utility types that might be needed

@@ -57,19 +57,24 @@ export function createMockSupabaseClient(
     }),
 
     // Auth mock
-    auth: {
+auth: {
       getUser: vi.fn().mockResolvedValue({
-        data: { user: { id: 'test-user', email: 'test@example.com' } },
+        data: { user: { id: 'mock-user-id', email: 'test@example.com' } },
         error: null,
       }),
       signUp: vi.fn().mockResolvedValue({
-        data: { user: { id: 'test-user' }, session: null },
+        data: { user: { id: 'mock-user-id' }, session: null },
         error: null,
       }),
       signInWithPassword: vi.fn().mockResolvedValue({
         data: {
-          user: { id: 'test-user' },
-          session: { access_token: 'test-token' },
+          user: { id: 'mock-user-id' },
+          session: { 
+            access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtb2NrLXVzZXItaWQiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJpYXQiOjE2MDk0NTkyMDAsImV4cCI6MTYwOTQ2MjgwMH0.mock-signature',
+            refresh_token: 'mock-refresh-token',
+            expires_in: 3600,
+            token_type: 'bearer'
+          }
         },
         error: null,
       }),
@@ -78,7 +83,12 @@ export function createMockSupabaseClient(
         data: { subscription: { unsubscribe: vi.fn() } },
       }),
       getSession: vi.fn().mockResolvedValue({
-        data: { session: { access_token: 'test-token' } },
+        data: { session: { 
+          access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtb2NrLXVzZXItaWQiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJpYXQiOjE2MDk0NTkyMDAsImV4cCI6MTYwOTQ2MjgwMH0.mock-signature',
+          refresh_token: 'mock-refresh-token',
+          expires_in: 3600,
+          token_type: 'bearer'
+        }},
         error: null,
       }),
     },

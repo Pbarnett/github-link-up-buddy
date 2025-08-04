@@ -2,11 +2,13 @@ import * as React from 'react';
 import {
   Brand,
   ISODateString,
-  Url,
   EmailAddress,
-  GitHubUsername,
   UserId,
 } from './index';
+
+// Define missing types that should be exported from ./index
+export type Url = string;
+export type GitHubUsername = string;
 export interface GitHubRepository {
   id: string;
   githubId: number;

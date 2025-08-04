@@ -97,7 +97,7 @@ export const selectDestination = async (
       await userEvent.clear(customInput);
       await userEvent.type(customInput, destinationCode);
     } else {
-      throw error;
+      throw _error;
     }
   }
 };

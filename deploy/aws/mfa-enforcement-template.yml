@@ -1,0 +1,457 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'MFA Enforcement Policy for AWS World-Class Standards Compliance'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues:
+      - development
+      - staging
+      - production
+    Description: Environment for the MFA enforcement policy
+  
+  OrganizationName:
+    Type: String
+    Default: github-link-buddy
+    Description: Organization name for resource naming
+  
+  EnableBreakGlassRole:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Create a break-glass role that bypasses MFA (emergency use only)
+
+Resources:
+  # Core MFA Enforcement Policy
+  MFAEnforcementPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${OrganizationName}-MFA-Enforcement-Policy-${Environment}'
+      Description: !Sub 'Enforces MFA for all IAM operations in ${Environment} environment'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          # Allow viewing account information without MFA
+          - Sid: AllowViewAccountInfo
+            Effect: Allow
+            Action:
+              - iam:GetAccountPasswordPolicy
+              - iam:GetAccountSummary
+              - iam:ListVirtualMFADevices
+              - iam:ListMFADevices
+              - iam:ListUsers
+              - iam:ListAccountAliases
+            Resource: "*"
+          
+          # Allow users to manage their own passwords and MFA devices
+          - Sid: AllowSelfMFAManagement
+            Effect: Allow
+            Action:
+              - iam:ChangePassword
+              - iam:GetUser
+              - iam:CreateVirtualMFADevice
+              - iam:DeleteVirtualMFADevice
+              - iam:EnableMFADevice
+              - iam:ResyncMFADevice
+              - iam:DeactivateMFADevice
+              - iam:ListMFADevices
+            Resource: "*"
+            Condition:
+              StringEquals:
+                "aws:userid": "${aws:userid}"
+          
+          # Allow STS operations for MFA
+          - Sid: AllowGetSessionToken
+            Effect: Allow
+            Action:
+              - sts:GetSessionToken
+            Resource: "*"
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: 'false'
+              NumericLessThan:
+                aws:MultiFactorAuthAge: '3600'
+          
+          # Deny all other actions unless MFA is present
+          - Sid: DenyAllExceptUnlessSignedInWithMFA
+            Effect: Deny
+            NotAction:
+              - iam:CreateVirtualMFADevice
+              - iam:EnableMFADevice
+              - iam:GetUser
+              - iam:ListMFADevices
+              - iam:ListVirtualMFADevices
+              - iam:ResyncMFADevice
+              - iam:ChangePassword
+              - iam:GetAccountPasswordPolicy
+              - iam:GetAccountSummary
+              - iam:ListAccountAliases
+              - iam:ListUsers
+              - sts:GetSessionToken
+            Resource: "*"
+            Condition:
+              BoolIfExists:
+                aws:MultiFactorAuthPresent: 'false'
+          
+          # Additional protection for sensitive actions even with MFA
+          - Sid: RequireRecentMFAForSensitiveActions
+            Effect: Deny
+            Action:
+              - iam:CreateRole
+              - iam:DeleteRole
+              - iam:AttachRolePolicy
+              - iam:DetachRolePolicy
+              - iam:CreateUser
+              - iam:DeleteUser
+              - iam:CreateAccessKey
+              - iam:DeleteAccessKey
+              - iam:CreatePolicy
+              - iam:DeletePolicy
+            Resource: "*"
+            Condition:
+              NumericGreaterThan:
+                aws:MultiFactorAuthAge: '900'  # 15 minutes
+
+  # MFA Enforcement Group
+  MFAEnforcedUsersGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub '${OrganizationName}-MFA-Enforced-Users-${Environment}'
+      ManagedPolicyArns:
+        - !Ref MFAEnforcementPolicy
+
+  # Break-glass role for emergency access (optional)
+  BreakGlassRole:
+    Type: AWS::IAM::Role
+    Condition: CreateBreakGlassRole
+    Properties:
+      RoleName: !Sub '${OrganizationName}-Emergency-BreakGlass-${Environment}'
+      Description: 'Emergency break-glass role that bypasses MFA - USE ONLY IN EMERGENCIES'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: sts:AssumeRole
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: 'true'
+              NumericLessThan:
+                aws:MultiFactorAuthAge: '300'  # 5 minutes
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:user/emergency-admin'
+            Action: sts:AssumeRole
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: 'true'
+              StringEquals:
+                aws:RequestedRegion: !Ref AWS::Region
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Organization
+          Value: !Ref OrganizationName
+        - Key: Purpose
+          Value: Emergency-Access
+        - Key: Warning
+          Value: USE-ONLY-IN-EMERGENCIES
+
+  # CloudWatch Log Group for MFA events
+  MFALogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/iam/mfa-events/${OrganizationName}/${Environment}'
+      RetentionInDays: 90
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Organization
+          Value: !Ref OrganizationName
+        - Key: Purpose
+          Value: MFA-Monitoring
+
+  # EventBridge Rule for MFA Events
+  MFAEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${OrganizationName}-MFA-Events-${Environment}'
+      Description: 'Captures MFA-related events for monitoring'
+      EventPattern:
+        source:
+          - aws.iam
+        detail-type:
+          - AWS Console Sign In via CloudTrail
+          - AWS API Call via CloudTrail
+        detail:
+          eventSource:
+            - iam.amazonaws.com
+          eventName:
+            - EnableMFADevice
+            - DeactivateMFADevice
+            - CreateVirtualMFADevice
+            - DeleteVirtualMFADevice
+            - ResyncMFADevice
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt MFALogGroup.Arn
+          Id: MFALogTarget
+
+  # SNS Topic for MFA Alerts
+  MFAAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${OrganizationName}-MFA-Alerts-${Environment}'
+      DisplayName: !Sub 'MFA Security Alerts - ${Environment}'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Organization
+          Value: !Ref OrganizationName
+        - Key: Purpose
+          Value: MFA-Alerts
+
+  # CloudWatch Alarm for Break-glass Role Usage
+  BreakGlassRoleUsageAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CreateBreakGlassRole
+    Properties:
+      AlarmName: !Sub '${OrganizationName}-BreakGlass-Role-Usage-${Environment}'
+      AlarmDescription: 'Alert when break-glass role is assumed'
+      MetricName: AssumeRoleCount
+      Namespace: AWS/IAM
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: RoleName
+          Value: !Ref BreakGlassRole
+      AlarmActions:
+        - !Ref MFAAlertTopic
+
+  # CloudWatch Alarm for MFA Device Changes
+  MFADeviceChangesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${OrganizationName}-MFA-Device-Changes-${Environment}'
+      AlarmDescription: 'Alert when MFA devices are modified'
+      MetricName: MFADeviceChanges
+      Namespace: !Sub '${OrganizationName}/Security'
+      Statistic: Sum
+      Period: 900  # 15 minutes
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref MFAAlertTopic
+
+  # Lambda function for MFA compliance checking
+  MFAComplianceChecker:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${OrganizationName}-MFA-Compliance-Checker-${Environment}'
+      Description: 'Checks MFA compliance for all IAM users'
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Timeout: 300
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          import logging
+          from typing import Dict, List, Any
+
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+          def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+              """
+              Check MFA compliance for all IAM users
+              """
+              iam = boto3.client('iam')
+              sns = boto3.client('sns')
+              
+              try:
+                  # Get all users
+                  users_response = iam.list_users()
+                  users = users_response['Users']
+                  
+                  non_compliant_users = []
+                  
+                  for user in users:
+                      username = user['UserName']
+                      
+                      # Skip service accounts and system users
+                      if username.startswith('service-') or username in ['emergency-admin']:
+                          continue
+                      
+                      # Check if user has MFA device
+                      mfa_devices = iam.list_mfa_devices(UserName=username)
+                      
+                      if not mfa_devices['MFADevices']:
+                          non_compliant_users.append({
+                              'username': username,
+                              'created_date': user['CreateDate'].isoformat(),
+                              'last_used': user.get('PasswordLastUsed', 'Never').isoformat() if user.get('PasswordLastUsed') else 'Never'
+                          })
+                  
+                  # Generate compliance report
+                  total_users = len([u for u in users if not u['UserName'].startswith('service-')])
+                  compliant_users = total_users - len(non_compliant_users)
+                  compliance_percentage = (compliant_users / total_users * 100) if total_users > 0 else 100
+                  
+                  report = {
+                      'timestamp': context.aws_request_id,
+                      'total_users': total_users,
+                      'compliant_users': compliant_users,
+                      'non_compliant_users': len(non_compliant_users),
+                      'compliance_percentage': round(compliance_percentage, 2),
+                      'non_compliant_details': non_compliant_users
+                  }
+                  
+                  logger.info(f"MFA Compliance Report: {json.dumps(report)}")
+                  
+                  # Send alert if compliance is below 100%
+                  if compliance_percentage < 100:
+                      topic_arn = os.environ.get('SNS_TOPIC_ARN')
+                      if topic_arn:
+                          sns.publish(
+                              TopicArn=topic_arn,
+                              Subject=f'🚨 MFA Compliance Alert - {compliance_percentage}% Compliant',
+                              Message=json.dumps(report, indent=2)
+                          )
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps(report)
+                  }
+                  
+              except Exception as e:
+                  logger.error(f"Error checking MFA compliance: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps({'error': str(e)})
+                  }
+      Role: !GetAtt MFAComplianceLambdaRole.Arn
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref MFAAlertTopic
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Organization
+          Value: !Ref OrganizationName
+        - Key: Purpose
+          Value: MFA-Compliance
+
+  # IAM Role for Lambda function
+  MFAComplianceLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${OrganizationName}-MFA-Compliance-Lambda-Role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: MFACompliancePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:ListUsers
+                  - iam:ListMFADevices
+                  - iam:GetUser
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref MFAAlertTopic
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+
+  # EventBridge Rule to run compliance check daily
+  MFAComplianceSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${OrganizationName}-MFA-Compliance-Schedule-${Environment}'
+      Description: 'Daily MFA compliance check'
+      ScheduleExpression: 'cron(0 9 * * ? *)'  # 9 AM UTC daily
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt MFAComplianceChecker.Arn
+          Id: MFAComplianceTarget
+
+  # Permission for EventBridge to invoke Lambda
+  MFAComplianceLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref MFAComplianceChecker
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt MFAComplianceSchedule.Arn
+
+Conditions:
+  CreateBreakGlassRole: !Equals [!Ref EnableBreakGlassRole, 'true']
+
+Outputs:
+  MFAEnforcementPolicyArn:
+    Description: ARN of the MFA enforcement policy
+    Value: !Ref MFAEnforcementPolicy
+    Export:
+      Name: !Sub '${AWS::StackName}-MFAEnforcementPolicyArn'
+
+  MFAEnforcedUsersGroupName:
+    Description: Name of the MFA enforced users group
+    Value: !Ref MFAEnforcedUsersGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-MFAEnforcedUsersGroupName'
+
+  BreakGlassRoleArn:
+    Condition: CreateBreakGlassRole
+    Description: ARN of the break-glass emergency role
+    Value: !GetAtt BreakGlassRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-BreakGlassRoleArn'
+
+  MFAAlertTopicArn:
+    Description: ARN of the MFA alerts SNS topic
+    Value: !Ref MFAAlertTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-MFAAlertTopicArn'
+
+  MFAComplianceCheckerArn:
+    Description: ARN of the MFA compliance checker Lambda function
+    Value: !GetAtt MFAComplianceChecker.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-MFAComplianceCheckerArn'
+
+  DeploymentInstructions:
+    Description: Instructions for deploying this template
+    Value: |
+      1. Deploy this CloudFormation template
+      2. Add IAM users to the MFAEnforcedUsersGroup
+      3. Configure SNS topic subscriptions for alerts
+      4. Test MFA enforcement with a test user
+      5. Monitor compliance via the daily Lambda function
+      6. Use break-glass role only in emergencies

@@ -5,11 +5,18 @@ import { Dot } from 'lucide-react';
 
 import { OTPInput, OTPInputContext } from 'input-otp';
 import { cn } from '@/lib/utils';
-interface InputOTPProps
-  extends React.ComponentPropsWithoutRef<typeof OTPInput> {
-  ref?: React.Ref<React.ElementRef<typeof OTPInput>>;
+interface InputOTPProps {
+  ref?: React.Ref<HTMLInputElement>;
   className?: string;
   containerClassName?: string;
+  maxLength: number;
+  value?: string;
+  onChange?: (newValue: string) => unknown;
+  textAlign?: 'center' | 'right' | 'left';
+  onComplete?: ((...args: any[]) => unknown);
+  pushPasswordManagerStrategy?: 'none' | 'increase-width';
+  pasteTransformer?: (pasted: string) => string;
+  children: React.ReactNode;
 }
 
 const InputOTP = ({

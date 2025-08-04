@@ -22,14 +22,54 @@
             <p>Great news! Your flight booking has been successfully confirmed.</p>
             
             <div class="highlight">
-                <h3>Flight Details:</h3>
-                <p><strong>Destination:</strong> {{destination}}</p>
-                <p><strong>Departure Date:</strong> {{departureDate}}</p>
-                <p><strong>Departure Time:</strong> {{departureTime}}</p>
-                <p><strong>Return Date:</strong> {{returnDate}}</p>
-                <p><strong>Flight Number:</strong> {{flightNumber}}</p>
-                <p><strong>Airline:</strong> {{airline}}</p>
-                <p><strong>Price:</strong> ${{price}}</p>
+                <h3>✈️ Your Itinerary</h3>
+                <div style="border-left: 4px solid #2563eb; padding-left: 15px; margin: 15px 0;">
+                    <h4>Outbound Flight</h4>
+                    <p><strong>Route:</strong> {{origin}} → {{destination}}</p>
+                    <p><strong>Departure:</strong> {{departureDate}} at {{departureTime}}</p>
+                    <p><strong>Flight:</strong> {{airline}} {{flightNumber}}</p>
+                    <p><strong>Booking Reference:</strong> {{bookingReference}}</p>
+                </div>
+                
+                <div style="border-left: 4px solid #16a34a; padding-left: 15px; margin: 15px 0;">
+                    <h4>Return Flight (if applicable)</h4>
+                    <p><strong>Route:</strong> {{destination}} → {{origin}}</p>
+                    <p><strong>Departure:</strong> {{returnDate}} at {{returnTime}}</p>
+                    <p><strong>Flight:</strong> {{returnAirline}} {{returnFlightNumber}}</p>
+                </div>
+                
+                <div style="background: #f8fafc; padding: 10px; border-radius: 5px; margin: 15px 0;">
+                    <h4>💰 Payment Summary</h4>
+                    <p><strong>Base Fare:</strong> ${{baseFare}}</p>
+                    <p><strong>Taxes & Fees:</strong> ${{taxesAndFees}}</p>
+                    <p><strong>Total Paid:</strong> <span style="font-size: 18px; font-weight: bold; color: #2563eb;">${{price}}</span></p>
+                </div>
+            </div>
+            
+            <div class="highlight">
+                <h3>👤 Traveler Information</h3>
+                <p><strong>Name:</strong> {{travelerName}}</p>
+                <p><strong>Email:</strong> {{travelerEmail}}</p>
+                <p><strong>Phone:</strong> {{travelerPhone}}</p>
+                <p><strong>Seat Preference:</strong> {{seatPreference}}</p>
+            </div>
+            
+            <div class="highlight">
+                <h3>📋 Important Information</h3>
+                <ul style="line-height: 1.8;">
+                    <li><strong>Check-in:</strong> Online check-in opens 24 hours before departure</li>
+                    <li><strong>Baggage:</strong> {{baggageInfo}}</li>
+                    <li><strong>Airport Arrival:</strong> Arrive 2 hours early for domestic, 3 hours for international</li>
+                    <li><strong>Changes:</strong> Contact us at least 24 hours before departure for changes</li>
+                </ul>
+            </div>
+            
+            <div class="highlight">
+                <h3>📞 Contact & Support</h3>
+                <p><strong>Customer Service:</strong> +1-800-FLY-HELP (359-4357)</p>
+                <p><strong>Email Support:</strong> support@parkerfly.com</p>
+                <p><strong>Emergency Travel Support:</strong> +1-800-EMERGENCY (24/7)</p>
+                <p><strong>Website:</strong> <a href="https://parkerfly.com/manage-booking?ref={{bookingReference}}">Manage Your Booking</a></p>
             </div>
             
             <p>We'll send you a reminder 24 hours before your departure.</p>

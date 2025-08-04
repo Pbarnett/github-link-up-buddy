@@ -70,6 +70,9 @@ export function DatabaseDashboard() {
       const interval = setInterval(refreshData, refreshInterval);
       return () => clearInterval(interval);
     }
+    
+    // Return empty cleanup function for the else case
+    return () => {};
   }, [refreshInterval, isAutoRefresh]);
 
   // Return statement ensures all code paths return a value

@@ -23,11 +23,18 @@ Object.defineProperty(
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
+  root: Element | null = null;
+  rootMargin: string = '0px';
+  thresholds: ReadonlyArray<number> = [];
+  
+  constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+    // Mock implementation
+  }
   observe() {}
   disconnect() {}
   unobserve() {}
-};
+  takeRecords(): IntersectionObserverEntry[] { return []; }
+} as any;
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
@@ -75,7 +82,7 @@ Object.defineProperty(Element.prototype, 'getBoundingClientRect', {
 });
 
 // Mock range APIs for text selection with complete Range interface
-const createMockRange = () => ({
+const createMockRange = (): Range => ({
   setStart: () => {},
   setEnd: () => {},
   setStartBefore: () => {},
@@ -85,7 +92,7 @@ const createMockRange = () => ({
   selectNode: () => {},
   selectNodeContents: () => {},
   collapse: () => {},
-  cloneRange: () => createMockRange(), // This was missing!
+  cloneRange: () => createMockRange(),
   cloneContents: () => document.createDocumentFragment(),
   deleteContents: () => {},
   extractContents: () => document.createDocumentFragment(),
@@ -94,6 +101,17 @@ const createMockRange = () => ({
   compareBoundaryPoints: () => 0,
   detach: () => {},
   toString: () => '',
+  // Add missing Range properties
+  comparePoint: () => 0,
+  createContextualFragment: () => document.createDocumentFragment(),
+  intersectsNode: () => false,
+  isPointInRange: () => false,
+  // Range constants with proper literal types
+  START_TO_START: 0 as const,
+  START_TO_END: 1 as const,
+  END_TO_END: 2 as const,
+  END_TO_START: 3 as const,
+  // Existing properties
   commonAncestorContainer: document.body,
   collapsed: true,
   startContainer: document.body,
@@ -109,9 +127,14 @@ const createMockRange = () => ({
     width: 0,
     x: 0,
     y: 0,
+    toJSON: () => ({}),
   }),
-  getClientRects: () => [],
-});
+  getClientRects: () => ({
+    length: 0,
+    item: () => null,
+    [Symbol.iterator]: function* () {},
+  }) as DOMRectList,
+} as Range);
 
 Object.defineProperty(document, 'createRange', {
   value: createMockRange,
@@ -122,7 +145,8 @@ Object.defineProperty(document, 'createRange', {
 if (!global.Range) {
   global.Range = function Range() {
     return createMockRange();
-  };
+  } as any;
+  global.Range.prototype = createMockRange();
 }
 
 // Mock /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ /* eslint-disable-next-line no-undef */ window.getSelection with complete Selection interface
@@ -142,6 +166,9 @@ const createMockSelection = () => ({
   setBaseAndExtent: () => {},
   setPosition: () => {},
   toString: () => '',
+  // Add missing Selection properties
+  direction: 'none' as 'forward' | 'backward' | 'none',
+  modify: () => {},
   rangeCount: 0,
   anchorNode: null,
   anchorOffset: 0,
@@ -169,7 +196,8 @@ Object.defineProperty(document, 'getSelection', {
 if (!global.Selection) {
   global.Selection = function Selection() {
     return createMockSelection();
-  };
+  } as any;
+  global.Selection.prototype = createMockSelection();
 }
 
 // Mock requestAnimationFrame and cancelAnimationFrame
@@ -195,7 +223,7 @@ if (!global.CSS) {
   global.CSS = {
     supports: () => false,
     escape: (str: string) => str,
-  };
+  } as any;
 }
 
 // Mock MutationObserver if not already available

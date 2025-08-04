@@ -1,6 +1,5 @@
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { FlightOfferV2DbRow } from '@/flightSearchV2/types';
-import { supabase } from '@/integrations/supabase/client';
 import {
   getFlightOffers,
   clearGetFlightOffersCache,
@@ -10,6 +9,34 @@ import {
 // Mock the invokeEdgeFn function
 vi.mock('@/lib/invokeEdgeFn', () => ({
   invokeEdgeFn: vi.fn(),
+}));
+
+// Mock the Supabase client module entirely
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    auth: {
+      getUser: vi.fn().mockResolvedValue({
+        data: { user: { id: 'mock-user-id', email: 'test@example.com' } },
+        error: null,
+      }),
+      getSession: vi.fn().mockResolvedValue({
+        data: { 
+          session: { 
+            access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtb2NrLXVzZXItaWQiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJpYXQiOjE2MDk0NTkyMDAsImV4cCI6MTYwOTQ2MjgwMH0.mock-signature',
+            refresh_token: 'mock-refresh-token',
+            expires_in: 3600,
+            token_type: 'bearer',
+            user: { id: 'mock-user-id' }
+          }
+        },
+        error: null,
+      }),
+    },
+    from: vi.fn(),
+    functions: {
+      invoke: vi.fn(),
+    },
+  },
 }));
 
 const mockTripRequestId = 'test-trip-id-123';
@@ -35,13 +62,8 @@ const mockDbRows: FlightOfferV2DbRow[] = [
 ];
 
 describe('getFlightOffers server action', () => {
-  // Use vi.mocked to get properly typed mock functions
-  const mockSupabaseClient = {
-    from: vi.fn(),
-    functions: {
-      invoke: vi.fn(),
-    },
-  } as any;
+  // Create a properly structured mock that matches the Supabase client interface
+  let mockSupabaseClient: any;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -50,9 +72,30 @@ describe('getFlightOffers server action', () => {
     // Reset all mocks to clear state from previous tests
     vi.clearAllMocks();
 
-    // Reset mock implementations - these are now guaranteed to have proper methods
-    mockSupabaseClient.from.mockClear?.();
-    mockSupabaseClient.functions.invoke.mockClear?.();
+    // Create fresh mock for each test
+    mockSupabaseClient = {
+      from: vi.fn(),
+      functions: {
+        invoke: vi.fn(),
+      },
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: 'mock-user-id', email: 'test@example.com' } },
+          error: null,
+        }),
+        getSession: vi.fn().mockResolvedValue({
+          data: { 
+            session: { 
+              access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtb2NrLXVzZXItaWQiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJpYXQiOjE2MDk0NTkyMDAsImV4cCI6MTYwOTQ2MjgwMH0.mock-signature',
+              refresh_token: 'mock-refresh-token',
+              expires_in: 3600,
+              token_type: 'bearer'
+            }
+          },
+          error: null,
+        }),
+      },
+    };
 
     // Set up default query chain behavior for round trip detection
     const mockTripRequestSelect = {
@@ -104,7 +147,7 @@ describe('getFlightOffers server action', () => {
       invokeEdgeFn: vi.fn(),
     };
 
-    const result = await getFlightOffers(mockTripRequestId, deps);
+    const result = await getFlightOffers(mockTripRequestId, undefined, deps);
 
     expect(mockSupabaseClient.from).toHaveBeenCalledWith('flight_offers_v2');
     expect(result).toEqual(mockDbRows);
@@ -160,7 +203,7 @@ describe('getFlightOffers server action', () => {
       invokeEdgeFn: vi.fn(),
     };
 
-    await expect(getFlightOffers(mockTripRequestId, deps)).rejects.toThrow(
+    await expect(getFlightOffers(mockTripRequestId, undefined, deps)).rejects.toThrow(
       `Failed to fetch flight offers from table: ${errorMessage}`
     );
     expect(mockSupabaseClient.from).toHaveBeenCalledWith('flight_offers_v2');
@@ -174,11 +217,11 @@ describe('getFlightOffers server action', () => {
     };
 
     // First call - should fetch from table
-    const result1 = await getFlightOffers(mockTripRequestId, deps);
+    const result1 = await getFlightOffers(mockTripRequestId, undefined, deps);
     expect(result1).toEqual(mockDbRows);
 
     // Second call - should use cache (same result)
-    const result2 = await getFlightOffers(mockTripRequestId, deps);
+    const result2 = await getFlightOffers(mockTripRequestId, undefined, deps);
     expect(result2).toEqual(mockDbRows);
     // Cache functionality working correctly
   });
@@ -192,7 +235,7 @@ describe('getFlightOffers server action', () => {
     };
 
     // First call
-    const result1 = await getFlightOffers(mockTripRequestId, deps);
+    const result1 = await getFlightOffers(mockTripRequestId, undefined, deps);
     expect(result1).toEqual(mockDbRows);
 
     // Advance time beyond cache duration
@@ -230,7 +273,7 @@ describe('getFlightOffers server action', () => {
     });
 
     // Second call - should fetch again from table
-    const result2 = await getFlightOffers(mockTripRequestId, deps);
+    const result2 = await getFlightOffers(mockTripRequestId, undefined, deps);
     expect(result2).toEqual([{ ...mockDbRows[0], id: 'offer-2' }]);
     // Cache expired, fetched fresh data from table
   });
@@ -250,12 +293,15 @@ describe('getFlightOffers server action', () => {
       // Call with refresh=true using options object and deps
       const refreshedResult = await getFlightOffers(
         { tripRequestId: mockTripRequestId, refresh: true },
+        undefined,
         deps
       );
 
       expect(mockInvokeEdgeFn).toHaveBeenCalledTimes(1);
       expect(mockInvokeEdgeFn).toHaveBeenCalledWith('flight-search-v2', {
         tripRequestId: mockTripRequestId,
+      }, {
+        signal: undefined,
       });
 
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('trip_requests');
@@ -277,6 +323,7 @@ describe('getFlightOffers server action', () => {
       await expect(
         getFlightOffers(
           { tripRequestId: mockTripRequestId, refresh: true },
+          undefined,
           deps
         )
       ).rejects.toThrow(
@@ -285,6 +332,8 @@ describe('getFlightOffers server action', () => {
       expect(mockInvokeEdgeFn).toHaveBeenCalledTimes(1);
       expect(mockInvokeEdgeFn).toHaveBeenCalledWith('flight-search-v2', {
         tripRequestId: mockTripRequestId,
+      }, {
+        signal: undefined,
       });
       expect(mockSupabaseClient.from).not.toHaveBeenCalled();
     });
@@ -301,12 +350,15 @@ describe('getFlightOffers server action', () => {
 
       const result = await getFlightOffers(
         { tripRequestId: mockTripRequestId, refresh: true },
+        undefined,
         deps
       );
 
       expect(mockInvokeEdgeFn).toHaveBeenCalledTimes(1);
       expect(mockInvokeEdgeFn).toHaveBeenCalledWith('flight-search-v2', {
         tripRequestId: mockTripRequestId,
+      }, {
+        signal: undefined,
       });
       expect(result).toEqual(mockDbRows);
     });
@@ -324,7 +376,7 @@ describe('getFlightOffers server action', () => {
     };
 
     // Fetch for first ID
-    const result1 = await getFlightOffers(mockTripRequestId, deps);
+    const result1 = await getFlightOffers(mockTripRequestId, undefined, deps);
     expect(result1).toEqual(mockDbRows);
 
     // Clear mocks and set up for second ID with conditional data based on trip_request_id
@@ -364,12 +416,12 @@ describe('getFlightOffers server action', () => {
     });
 
     // Fetch for second ID - this should call the database and get new data
-    const result2 = await getFlightOffers(mockTripRequestId2, deps);
+    const result2 = await getFlightOffers(mockTripRequestId2, undefined, deps);
     expect(result2).toEqual(mockDbRows2);
 
     // Call first ID again - since caching is disabled in test mode, this will re-fetch from DB
     // But our mock should now return the correct data based on the trip request ID
-    const result1Again = await getFlightOffers(mockTripRequestId, deps);
+    const result1Again = await getFlightOffers(mockTripRequestId, undefined, deps);
     expect(result1Again).toEqual(mockDbRows);
   });
 
@@ -380,7 +432,7 @@ describe('getFlightOffers server action', () => {
     };
 
     // First call - caches data
-    const result1 = await getFlightOffers(mockTripRequestId, deps);
+    const result1 = await getFlightOffers(mockTripRequestId, undefined, deps);
     expect(result1).toEqual(mockDbRows);
 
     // Clear the cache
@@ -416,7 +468,7 @@ describe('getFlightOffers server action', () => {
     });
 
     // Second call - should fetch again as cache is cleared
-    const result2 = await getFlightOffers(mockTripRequestId, deps);
+    const result2 = await getFlightOffers(mockTripRequestId, undefined, deps);
     expect(result2).toEqual([{ ...mockDbRows[0], id: 'offer-new' }]);
   });
 
@@ -474,7 +526,7 @@ describe('getFlightOffers server action', () => {
       invokeEdgeFn: vi.fn(),
     };
 
-    const result = await getFlightOffers(mockTripRequestId, deps);
+    const result = await getFlightOffers(mockTripRequestId, undefined, deps);
 
     // Should get transformed legacy data
     expect(result).toHaveLength(1);

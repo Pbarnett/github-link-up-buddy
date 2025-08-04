@@ -498,7 +498,8 @@ function createMigrationService(): AuthMigrationService {
 export const authMigrationService = createMigrationService();
 
 // Export types for external use
-export type { AuthProvider };
+// Export type is commented out to avoid conflicts
+// export type { AuthProvider };
 
 // Utility functions
 export const isMigrationEnabled = () => {

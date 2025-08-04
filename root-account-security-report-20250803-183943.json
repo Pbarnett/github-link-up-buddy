@@ -1,0 +1,49 @@
+{
+  "audit_date": "2025-08-03T23:39:44Z",
+  "audit_type": "root_account_security",
+  "account_id": "759262713606",
+  "checks": [
+    {
+      "check_name": "Account MFA Status",
+      "status": "PASS",
+      "details": "MFA is enabled for the account",
+      "recommendation": "",
+      "timestamp": "2025-08-03T23:39:46Z"
+    },
+    {
+      "check_name": "Root Access Key Check",
+      "status": "FAIL",
+      "details": "Found 1 access keys for current user",
+      "recommendation": "If this is root account, delete all access keys immediately",
+      "timestamp": "2025-08-03T23:39:47Z"
+    },
+    {
+      "check_name": "CloudTrail Monitoring",
+      "status": "FAIL",
+      "details": "No active CloudTrail found",
+      "recommendation": "Enable CloudTrail to monitor root account activity",
+      "timestamp": "2025-08-03T23:39:48Z"
+    },
+    {
+      "check_name": "Root Account Usage",
+      "status": "PASS",
+      "details": "No root account usage detected in last 30 days",
+      "recommendation": "",
+      "timestamp": "2025-08-03T23:39:50Z"
+    },
+    {
+      "check_name": "Password Policy",
+      "status": "PASS",
+      "details": "Strong password policy configured",
+      "recommendation": "",
+      "timestamp": "2025-08-03T23:39:51Z"
+    },
+    {
+      "check_name": "MFA Devices",
+      "status": "WARNING",
+      "details": "No virtual MFA devices found",
+      "recommendation": "Ensure root account has MFA device configured",
+      "timestamp": "2025-08-03T23:39:52Z"
+    }
+  ]
+}

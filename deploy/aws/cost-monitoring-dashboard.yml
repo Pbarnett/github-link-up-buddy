@@ -1,0 +1,571 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Comprehensive Cost Monitoring Dashboard with Budget Alerts and Anomaly Detection'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name for resource tagging
+    
+  AlertEmailAddress:
+    Type: String
+    Description: Email address for cost alerts and notifications
+    Default: admin@company.com
+    
+  MonthlyBudgetAmount:
+    Type: Number
+    Default: 500
+    Description: Monthly budget amount in USD
+    
+  Project:
+    Type: String
+    Default: github-link-buddy
+    Description: Project name for cost filtering
+    
+  EnableAnomalyDetection:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Enable Cost Anomaly Detection (only supported in certain regions)
+    
+  DeploymentTimestamp:
+    Type: String
+    Default: '20250803'
+    Description: Timestamp suffix to avoid resource conflicts
+
+Conditions:
+  CreateAnomalyDetector: !Equals [!Ref EnableAnomalyDetection, 'true']
+
+Resources:
+  # Cost Monitoring Dashboard
+  CostMonitoringDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub 'GitHubLinkBuddy-CostOptimization-${Environment}'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Billing", "EstimatedCharges", "Currency", "USD"],
+                  [".", ".", ".", ".", {"stat": "Maximum"}]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Monthly Estimated Charges",
+                "period": 86400,
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/EC2", "CPUUtilization", {"stat": "Average"}],
+                  ["AWS/RDS", "CPUUtilization", {"stat": "Average"}],
+                  ["AWS/DynamoDB", "ConsumedReadCapacityUnits", {"stat": "Sum"}]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Resource Utilization Overview",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["GitHubLinkBuddy/CostOptimization", "PotentialSavings", "Environment", "${Environment}"],
+                  [".", "ResourcesOptimized", ".", "."],
+                  [".", "UnusedResourcesFound", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Cost Optimization Metrics",
+                "period": 86400
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 6,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/EC2", "NetworkIn", {"stat": "Sum"}],
+                  [".", "NetworkOut", {"stat": "Sum"}],
+                  ["AWS/S3", "BucketSizeBytes", "BucketName", "${Project}-assets-${Environment}", "StorageType", "StandardStorage"]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Network and Storage Usage",
+                "period": 86400
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 6,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Duration", {"stat": "Average"}],
+                  [".", "Invocations", {"stat": "Sum"}],
+                  [".", "Errors", {"stat": "Sum"}]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Lambda Performance",
+                "period": 300
+              }
+            },
+            {
+              "type": "log",
+              "x": 0,
+              "y": 12,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "query": "SOURCE '/aws/lambda/github-link-buddy-cost-optimizer'\n| fields @timestamp, @message\n| filter @message like /COST_OPTIMIZATION/\n| sort @timestamp desc\n| limit 100",
+                "region": "${AWS::Region}",
+                "title": "Cost Optimization Activities",
+                "view": "table"
+              }
+            },
+            {
+              "type": "number",
+              "x": 0,
+              "y": 18,
+              "width": 6,
+              "height": 3,
+              "properties": {
+                "metrics": [
+                  ["AWS/Billing", "EstimatedCharges", "Currency", "USD", {"stat": "Maximum"}]
+                ],
+                "view": "singleValue",
+                "region": "us-east-1",
+                "title": "Current Month Charges",
+                "period": 86400
+              }
+            },
+            {
+              "type": "number",
+              "x": 6,
+              "y": 18,
+              "width": 6,
+              "height": 3,
+              "properties": {
+                "metrics": [
+                  ["GitHubLinkBuddy/CostOptimization", "PotentialSavings", "Environment", "${Environment}", {"stat": "Maximum"}]
+                ],
+                "view": "singleValue",
+                "region": "${AWS::Region}",
+                "title": "Potential Monthly Savings",
+                "period": 86400
+              }
+            },
+            {
+              "type": "number",
+              "x": 12,
+              "y": 18,
+              "width": 6,
+              "height": 3,
+              "properties": {
+                "metrics": [
+                  ["GitHubLinkBuddy/CostOptimization", "ResourcesOptimized", "Environment", "${Environment}", {"stat": "Sum"}]
+                ],
+                "view": "singleValue",
+                "region": "${AWS::Region}",
+                "title": "Resources Optimized",
+                "period": 86400
+              }
+            },
+            {
+              "type": "number",
+              "x": 18,
+              "y": 18,
+              "width": 6,
+              "height": 3,
+              "properties": {
+                "metrics": [
+                  ["AWS/EC2", "CPUUtilization", {"stat": "Average"}]
+                ],
+                "view": "singleValue",
+                "region": "${AWS::Region}",
+                "title": "Average CPU Utilization",
+                "period": 86400
+              }
+            }
+          ]
+        }
+
+  # SNS Topic for Cost Alerts
+  CostAlertSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${Project}-cost-alerts-${Environment}-${DeploymentTimestamp}'
+      DisplayName: !Sub 'GitHub Link-Buddy Cost Alerts ${Environment}'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref Project
+
+  # SNS Subscription for Email Alerts
+  CostAlertEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref CostAlertSNSTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmailAddress
+
+  # Budget with Multiple Alert Thresholds
+  GitHubLinkBuddyBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub '${Project}-monthly-budget-${Environment}-${DeploymentTimestamp}'
+        BudgetLimit:
+          Amount: !Ref MonthlyBudgetAmount
+          Unit: USD
+        TimeUnit: MONTHLY
+        BudgetType: COST
+        CostFilters:
+          TagKeyValue:
+            - !Sub 'Project$${Project}'
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 50
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmailAddress
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmailAddress
+            - SubscriptionType: SNS
+              Address: !Ref CostAlertSNSTopic
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmailAddress
+            - SubscriptionType: SNS
+              Address: !Ref CostAlertSNSTopic
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 120
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmailAddress
+
+  # Note: Cost Anomaly Detection removed due to regional availability issues
+  # Users can manually enable this via AWS Console if supported in their region
+
+  # CloudWatch Alarms for Cost Monitoring
+  HighCostAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Project}-high-cost-alarm-${Environment}'
+      AlarmDescription: 'Alert when estimated charges exceed threshold'
+      MetricName: EstimatedCharges
+      Namespace: AWS/Billing
+      Statistic: Maximum
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: !Ref MonthlyBudgetAmount
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: Currency
+          Value: USD
+      AlarmActions:
+        - !Ref CostAlertSNSTopic
+      OKActions:
+        - !Ref CostAlertSNSTopic
+      TreatMissingData: notBreaching
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref Project
+
+  # Lambda Function for Advanced Cost Analysis
+  CostAnalysisLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${Project}-cost-analysis-lambda-role-${Environment}-${DeploymentTimestamp}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CostAnalysisPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ce:GetCostAndUsage
+                  - ce:GetUsageReport
+                  - ce:GetReservationCoverage
+                  - ce:GetReservationPurchaseRecommendation
+                  - ce:GetReservationUtilization
+                  - ce:GetSavingsPlansUtilization
+                  - ce:ListCostCategoryDefinitions
+                  - cloudwatch:PutMetricData
+                  - sns:Publish
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+
+  CostAnalysisLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${Project}-cost-analysis-${Environment}-${DeploymentTimestamp}'
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Role: !GetAtt CostAnalysisLambdaRole.Arn
+      Timeout: 300
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref CostAlertSNSTopic
+          PROJECT_NAME: !Ref Project
+          ENVIRONMENT: !Ref Environment
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          from datetime import datetime, timedelta
+          from decimal import Decimal
+          
+          def lambda_handler(event, context):
+              ce_client = boto3.client('ce')
+              cloudwatch = boto3.client('cloudwatch')
+              sns = boto3.client('sns')
+              
+              project_name = os.environ['PROJECT_NAME']
+              environment = os.environ['ENVIRONMENT']
+              sns_topic_arn = os.environ['SNS_TOPIC_ARN']
+              
+              # Get cost data for the last 7 days
+              end_date = datetime.now().strftime('%Y-%m-%d')
+              start_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+              
+              try:
+                  # Get cost and usage data
+                  response = ce_client.get_cost_and_usage(
+                      TimePeriod={
+                          'Start': start_date,
+                          'End': end_date
+                      },
+                      Granularity='DAILY',
+                      Metrics=['BlendedCost'],
+                      GroupBy=[
+                          {
+                              'Type': 'DIMENSION',
+                              'Key': 'SERVICE'
+                          }
+                      ],
+                      Filter={
+                          'Tags': {
+                              'Key': 'Project',
+                              'Values': [project_name]
+                          }
+                      }
+                  )
+                  
+                  # Calculate metrics
+                  total_cost = Decimal('0')
+                  service_costs = {}
+                  
+                  for result in response['ResultsByTime']:
+                      for group in result['Groups']:
+                          service = group['Keys'][0]
+                          cost = Decimal(group['Metrics']['BlendedCost']['Amount'])
+                          total_cost += cost
+                          
+                          if service not in service_costs:
+                              service_costs[service] = Decimal('0')
+                          service_costs[service] += cost
+                  
+                  # Send metrics to CloudWatch
+                  cloudwatch.put_metric_data(
+                      Namespace=f'{project_name}/CostAnalysis',
+                      MetricData=[
+                          {
+                              'MetricName': 'WeeklyCost',
+                              'Value': float(total_cost),
+                              'Unit': 'None',
+                              'Dimensions': [
+                                  {
+                                      'Name': 'Environment',
+                                      'Value': environment
+                                  }
+                              ]
+                          }
+                      ]
+                  )
+                  
+                  # Find top cost drivers
+                  top_services = sorted(service_costs.items(), key=lambda x: x[1], reverse=True)[:5]
+                  
+                  # Check for cost spikes
+                  daily_costs = []
+                  for result in response['ResultsByTime']:
+                      daily_total = sum(Decimal(group['Metrics']['BlendedCost']['Amount']) 
+                                      for group in result['Groups'])
+                      daily_costs.append(daily_total)
+                  
+                  avg_daily_cost = sum(daily_costs) / len(daily_costs) if daily_costs else Decimal('0')
+                  latest_daily_cost = daily_costs[-1] if daily_costs else Decimal('0')
+                  
+                  # Alert on significant cost increase
+                  if latest_daily_cost > avg_daily_cost * Decimal('1.5'):
+                      alert_message = f"""
+                      🚨 Cost Spike Alert for {project_name} ({environment})
+                      
+                      Latest Daily Cost: ${latest_daily_cost:.2f}
+                      Average Daily Cost: ${avg_daily_cost:.2f}
+                      Increase: {((latest_daily_cost / avg_daily_cost - 1) * 100):.1f}%
+                      
+                      Top Cost Drivers:
+                      """
+                      
+                      for service, cost in top_services:
+                          alert_message += f"- {service}: ${cost:.2f}\n"
+                      
+                      sns.publish(
+                          TopicArn=sns_topic_arn,
+                          Subject=f'Cost Spike Alert - {project_name}',
+                          Message=alert_message
+                      )
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps({
+                          'total_weekly_cost': str(total_cost),
+                          'top_services': [(service, str(cost)) for service, cost in top_services],
+                          'average_daily_cost': str(avg_daily_cost),
+                          'latest_daily_cost': str(latest_daily_cost)
+                      })
+                  }
+                  
+              except Exception as e:
+                  print(f"Error in cost analysis: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps({'error': str(e)})
+                  }
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref Project
+
+  # EventBridge rule to trigger cost analysis daily
+  CostAnalysisScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${Project}-cost-analysis-schedule-${Environment}'
+      Description: 'Daily cost analysis trigger'
+      ScheduleExpression: 'cron(0 9 * * ? *)'  # Daily at 9 AM UTC
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt CostAnalysisLambda.Arn
+          Id: CostAnalysisTarget
+
+  # Permission for EventBridge to invoke Lambda
+  CostAnalysisLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CostAnalysisLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt CostAnalysisScheduleRule.Arn
+
+  # CloudWatch Log Group for Cost Analysis Lambda
+  CostAnalysisLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Project}-cost-analysis-${Environment}'
+      RetentionInDays: 30
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref Project
+
+Outputs:
+  DashboardURL:
+    Description: URL to the Cost Monitoring Dashboard
+    Value: !Sub 'https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=GitHubLinkBuddy-CostOptimization-${Environment}'
+    Export:
+      Name: !Sub '${AWS::StackName}-Dashboard-URL'
+
+  BudgetName:
+    Description: Name of the created budget
+    Value: !Sub '${Project}-monthly-budget-${Environment}'
+    Export:
+      Name: !Sub '${AWS::StackName}-Budget-Name'
+
+  CostAlertTopicArn:
+    Description: ARN of the SNS topic for cost alerts
+    Value: !Ref CostAlertSNSTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-Cost-Alert-Topic-ARN'
+
+  # AnomalyDetectorArn removed - feature not available in all regions
+
+  CostAnalysisLambdaArn:
+    Description: ARN of the cost analysis Lambda function
+    Value: !GetAtt CostAnalysisLambda.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-Cost-Analysis-Lambda-ARN'

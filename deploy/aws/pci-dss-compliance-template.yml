@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'PCI DSS Compliant Network Architecture for Flight Booking Platform'
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+    Description: Deployment environment
+
+Resources:
+  # VPC for PCI DSS compliance
+  PCICompliantVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Compliance
+          Value: PCI-DSS
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Cardholder Data Environment (CDE) Subnet
+  CDESubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref PCICompliantVPC
+      CidrBlock: 10.0.10.0/24
+      AvailabilityZone: us-east-1a
+      Tags:
+        - Key: DataClassification
+          Value: CardholderData
+        - Key: PCIScope
+          Value: InScope
+
+  # Security group for payment processing
+  PaymentProcessingSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: PCI DSS compliant security group for payment processing
+      VpcId: !Ref PCICompliantVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 10.0.0.0/16
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS to payment processors only
+
+Outputs:
+  VPCId:
+    Description: 'The VPC ID for PCI DSS compliant environment'
+    Value: !Ref PCICompliantVPC
+  SubnetId:
+    Description: 'The Subnet ID for CDE'
+    Value: !Ref CDESubnet
+  PaymentSecurityGroupId:
+    Description: 'The Security Group ID for payment processing'
+    Value: !Ref PaymentProcessingSecurityGroup
+

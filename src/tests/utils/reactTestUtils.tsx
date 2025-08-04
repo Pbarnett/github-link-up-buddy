@@ -2,7 +2,11 @@ type _Component<P = {}, S = {}> = React.Component<P, S>;
 
 import { vi } from 'vitest';
 import * as React from 'react';
-import { ReactNodeType } from 'react';
+import { ReactNode, ComponentType } from 'react';
+import { render, screen, RenderOptions } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { userEvent } from '@testing-library/user-event';
 import { createSupabaseStub } from './supabaseMocks';
 // Mock toast notifications
 export const mockToast = {
@@ -111,7 +115,7 @@ export async function submitForm(form: HTMLFormElement) {
     'button[type="submit"]'
   ) as HTMLButtonElement;
   if (submitButton) {
-    await user.click(submitButton);
+    await _user.click(submitButton);
   } else {
     // Fallback to programmatic submit
     form.submit();
@@ -125,8 +129,8 @@ export async function fillFormField(labelText: string | RegExp, value: string) {
   const _user = userEvent.setup();
 
   const field = screen.getByLabelText(labelText);
-  await user.clear(field);
-  await user.type(field, value);
+  await _user.clear(field);
+  await _user.type(field, value);
 }
 
 // Mock router utilities
@@ -244,7 +248,7 @@ export const ComponentHelpers = {
       const { userEvent } = await import('@testing-library/user-event');
       const _user = userEvent.setup();
       const tab = screen.getByRole('tab', { name: /trip history/i });
-      await user.click(tab);
+      await _user.click(tab);
     },
 
     async switchToCurrentRequests() {
@@ -253,7 +257,7 @@ export const ComponentHelpers = {
       const tab = screen.getByRole('tab', {
         name: /current booking requests/i,
       });
-      await user.click(tab);
+      await _user.click(tab);
     },
   },
 
@@ -277,9 +281,9 @@ export const ComponentHelpers = {
 
     async submitForm() {
       const _userEvent = await import('@testing-library/user-event');
-      const _user = userEvent.default.setup();
+      const _user = userEvent.setup();
       const submitButton = screen.getByRole('button', { name: /submit/i });
-      await user.click(submitButton);
+      await _user.click(submitButton);
     },
   },
 };

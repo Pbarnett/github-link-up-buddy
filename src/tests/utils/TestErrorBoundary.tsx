@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { ReactNode, ErrorInfo } from 'react';
-type _Component<P = {}, S = {}> = React.Component<P, S>;
+import { ReactNode, ErrorInfo, Component } from 'react';
 
 interface Props {
   children: ReactNode;

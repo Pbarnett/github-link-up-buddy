@@ -6,7 +6,7 @@ import * as React from 'react';
  * in various real-world scenarios following AWS SDK v3 best practices.
  */
 
-import { getSecretValue } from '../secrets-manager';
+import { secretsManager } from '../secrets-manager';
 /**
  * Example 1: Retrieve Stripe API Keys
  * Common pattern for payment processing applications
@@ -22,9 +22,8 @@ export async function getStripeKeys(
       prod: 'prod/payments/stripe-secret-key',
     };
 
-    const stripeSecretKey = await getSecretValue(
-      secretNames[environment],
-      process.env.AWS_REGION || 'us-west-2'
+    const stripeSecretKey = await secretsManager.getSecret(
+      secretNames[environment]
     );
 
     if (!stripeSecretKey) {
@@ -51,7 +50,7 @@ export async function getDatabaseCredentials(region: string = 'us-west-2') {
   try {
     // Retrieve database connection string or credentials
     const dbSecretId = 'prod/database/connection-string';
-    const connectionString = await getSecretValue(dbSecretId, region);
+    const connectionString = await secretsManager.getSecret(dbSecretId);
 
     if (!connectionString) {
       throw new Error('Database credentials not found');
@@ -88,7 +87,7 @@ export async function getOAuthCredentials(
       discord: 'prod/oauth/discord-client-secret',
     };
 
-    const clientSecret = await getSecretValue(secretIds[provider], region);
+    const clientSecret = await secretsManager.getSecret(secretIds[provider]);
 
     if (!clientSecret) {
       throw new Error(`OAuth secret not found for provider: ${provider}`);
@@ -144,7 +143,7 @@ class SecretCache {
     // Cache miss or expired - fetch from AWS
     try {
       console.log(`Fetching secret from AWS: ${secretId}`);
-      const value = await getSecretValue(secretId, region);
+      const value = await secretsManager.getSecret(secretId);
 
       if (value) {
         // Cache the result
@@ -193,7 +192,7 @@ export async function getSecretWithRegionalFallback(
     console.log(
       `Attempting to retrieve secret from primary region: ${primaryRegion}`
     );
-    const secret = await getSecretValue(secretId, primaryRegion);
+    const secret = await secretsManager.getSecret(secretId);
     if (secret) {
       return { secret, region: primaryRegion };
     }
@@ -205,7 +204,7 @@ export async function getSecretWithRegionalFallback(
   for (const region of fallbackRegions) {
     try {
       console.log(`Attempting fallback region: ${region}`);
-      const secret = await getSecretValue(secretId, region);
+      const secret = await secretsManager.getSecret(secretId);
       if (secret) {
         return { secret, region };
       }
@@ -229,7 +228,7 @@ export async function getBatchSecrets(
     const secretPromises = secrets.map(
       async ({ id, region = defaultRegion }) => {
         try {
-          const value = await getSecretValue(id, region);
+          const value = await secretsManager.getSecret(id);
           return { id, value, success: true, error: null };
         } catch (error) {
           return {
@@ -270,7 +269,7 @@ export async function loadApplicationConfig(environment: string = 'prod') {
     const configSecretId = `${environment}/app/config`;
     const region = process.env.AWS_REGION || 'us-west-2';
 
-    const configJson = await getSecretValue(configSecretId, region);
+    const configJson = await secretsManager.getSecret(configSecretId);
 
     if (!configJson) {
       throw new Error(
@@ -326,7 +325,7 @@ export async function getSecretWithRotationSupport(
 ) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const secret = await getSecretValue(secretId, region);
+      const secret = await secretsManager.getSecret(secretId);
 
       if (secret) {
         return secret;

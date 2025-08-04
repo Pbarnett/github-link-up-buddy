@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import { BusinessRulesProvider } from '@/hooks/useBusinessRules';
 interface TestWrapperProps {
   children: ReactNode;

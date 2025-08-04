@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import TripRequestForm from '@/components/trip/TripRequestForm';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -47,7 +49,7 @@ vi.mock('@/hooks/use-mobile', () => ({
 }));
 
 describe('TripRequestForm - Isolated Core Tests', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
 
     // Mock current user
@@ -56,8 +58,10 @@ describe('TripRequestForm - Isolated Core Tests', () => {
       userId: 'test-user-id',
     });
 
-    // Mock navigate
-    (useNavigate as Mock).mockReturnValue(vi.fn());
+    // Mock navigate - properly set up the mock
+    const mockNavigate = vi.fn();
+    const mockRouterDom = await import('react-router-dom');
+    vi.mocked(mockRouterDom.useNavigate).mockReturnValue(mockNavigate);
 
     // Mock usePaymentMethods and useTravelerInfoCheck
     (usePaymentMethods as Mock).mockReturnValue({

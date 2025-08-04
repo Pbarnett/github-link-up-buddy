@@ -281,7 +281,7 @@ export class StripeConnectService {
               : undefined,
             metadata: buildPaymentMetadata({
               userId: params.customer || 'marketplace',
-              bookingType: 'marketplace',
+              bookingType: 'business',
               additionalData: {
                 marketplace_payment: 'true',
                 destination_account: params.transfer_data?.destination || '',

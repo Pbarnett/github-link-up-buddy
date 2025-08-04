@@ -3,17 +3,17 @@ import * as React from 'react';
  * Common TypeScript event handler types for consistent typing across components
  */
 // Input element event handlers
-export type InputChangeHandler = (e: ChangeEvent<HTMLInputElement>) => void;
+export type InputChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => void;
 export type TextAreaChangeHandler = (
-  e: ChangeEvent<HTMLTextAreaElement>
+  e: React.ChangeEvent<HTMLTextAreaElement>
 ) => void;
-export type SelectChangeHandler = (e: ChangeEvent<HTMLSelectElement>) => void;
+export type SelectChangeHandler = (e: React.ChangeEvent<HTMLSelectElement>) => void;
 
 // Generic form event handlers
-export type FormSubmitHandler = (e: FormEvent) => void;
-export type ButtonClickHandler = (e: MouseEvent<HTMLButtonElement>) => void;
-export type DivClickHandler = (e: MouseEvent<HTMLDivElement>) => void;
-export type KeyPressHandler = (e: KeyboardEvent<HTMLElement>) => void;
+export type FormSubmitHandler = (e: React.FormEvent) => void;
+export type ButtonClickHandler = (e: React.MouseEvent<HTMLButtonElement>) => void;
+export type DivClickHandler = (e: React.MouseEvent<HTMLDivElement>) => void;
+export type KeyPressHandler = (e: React.KeyboardEvent<HTMLElement>) => void;
 
 // Value-based handlers (for custom components)
 export type ValueChangeHandler = (value: string) => void;

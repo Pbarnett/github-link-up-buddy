@@ -1,9 +1,13 @@
 import path from 'path'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current working directory.
+  const env = loadEnv(mode, process.cwd(), '')
+  
+  return {
   root: '.',
   publicDir: 'public',
   server: {
@@ -20,7 +24,11 @@ export default defineConfig({
   },
   define: {
     global: 'globalThis',
+    // Explicitly define Supabase environment variables
+    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(env.SUPABASE_URL || env.VITE_SUPABASE_URL),
+    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY),
   },
+  envPrefix: ['VITE_'],
   optimizeDeps: {
     exclude: [
       '@aws-sdk/credential-providers',
@@ -31,11 +39,18 @@ export default defineConfig({
       '@aws-sdk/client-sts',
       '@aws-sdk/client-cloudwatch'
     ],
+    include: [
+      '@aws-sdk/client-s3 > @smithy/fetch-http-handler',
+      '@aws-sdk/util-user-agent-browser'
+    ],
     force: true,
     esbuildOptions: {
       // Handle CommonJS modules properly
       format: 'esm',
-      target: 'es2022'
+      target: 'es2022',
+      define: {
+        global: 'globalThis'
+      }
     }
   },
   resolve: {
@@ -53,6 +68,11 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, './packages/shared'),
       // Fix for mnemonist CommonJS to ESM conversion issue
       'mnemonist/lru-cache': path.resolve(__dirname, './src/lib/mnemonist-lru-cache-wrapper.js'),
+      // Browser polyfills for Node.js modules
+      'stream': 'stream-browserify',
+      'util': 'util',
+      'buffer': 'buffer',
+      'process': 'process/browser',
     },
   },
   build: {
@@ -144,4 +164,5 @@ export default defineConfig({
       },
     },
   },
+  }
 })

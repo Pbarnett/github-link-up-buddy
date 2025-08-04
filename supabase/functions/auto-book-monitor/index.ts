@@ -20,6 +20,12 @@ import { acquireMonitorLock, acquireOfferLock, RedisLockManager } from '../lib/r
 import { createDuffelClient } from '../lib/duffel.ts'
 import { withSpan } from '../_shared/otel.ts'
 import { logger } from '../_shared/logger.ts'
+import { 
+  calculatePerformanceMetrics, 
+  logPerformanceMetrics, 
+  generatePerformanceRecommendations,
+  exportMetricsForDashboard 
+} from '../_shared/performance-monitor.ts'
 
 interface MonitorRequest {
   action?: 'monitor' | 'health-check'
@@ -160,7 +166,7 @@ Deno.serve(async (req: Request) => {
         })
       }
 
-      // Step 4: Process each pending request
+      // Step 4: Process pending requests in parallel for maximum performance
       const results = {
         processed: 0,
         skipped: 0,
@@ -168,61 +174,179 @@ Deno.serve(async (req: Request) => {
         bookings_triggered: 0
       }
 
-      for (const tripRequest of pendingRequests as PendingTripRequest[]) {
-        try {
-          console.log(`[AutoBookMonitor] Processing trip request: ${tripRequest.id}`)
-
-          // Auto-booking flags already checked at function entry (applies to all users)
-
-          // Acquire per-trip lock to prevent concurrent processing
-          const tripLockKey = `trip:${tripRequest.id}`
-          const tripLock = await acquireOfferLock(tripLockKey, 300)
-
-          if (!tripLock.acquired) {
-            console.log(`[AutoBookMonitor] Trip ${tripRequest.id} is already being processed`)
-            results.skipped++
-            continue
-          }
-
-          try {
-            // Process the trip request
-            const processResult = await processTripRequest(supabaseClient, tripRequest, dryRun)
+      console.log(`[AutoBookMonitor] Processing ${pendingRequests.length} requests in parallel`)
+      
+      // Process requests in parallel with controlled concurrency
+      const concurrency = Math.min(10, pendingRequests.length) // Max 10 concurrent
+      const batchSize = Math.ceil(pendingRequests.length / concurrency)
+      
+      const processingPromises = []
+      
+      for (let i = 0; i < pendingRequests.length; i += batchSize) {
+        const batch = pendingRequests.slice(i, i + batchSize)
+        
+        const batchPromise = Promise.allSettled(
+          batch.map(async (tripRequest: PendingTripRequest) => {
+            const startTime = Date.now()
             
-            if (processResult.booking_triggered) {
-              results.bookings_triggered++
-            }
-            
-            results.processed++
+            try {
+              console.log(`[AutoBookMonitor] Processing trip request: ${tripRequest.id}`)
 
-          } finally {
-            // Release trip lock
-            if (tripLock.lockId) {
-              await lockManager!.releaseLock(`locks:auto_book:${tripLockKey}`, tripLock.lockId)
+              // Acquire per-trip lock to prevent concurrent processing
+              const tripLockKey = `trip:${tripRequest.id}`
+              const tripLock = await acquireOfferLock(tripLockKey, 300)
+
+              if (!tripLock.acquired) {
+                console.log(`[AutoBookMonitor] Trip ${tripRequest.id} is already being processed`)
+                return { status: 'skipped', tripId: tripRequest.id }
+              }
+
+              try {
+                // Process the trip request
+                const processResult = await processTripRequest(supabaseClient, tripRequest, dryRun)
+                
+                const duration = Date.now() - startTime
+                console.log(`[AutoBookMonitor] Completed trip ${tripRequest.id} in ${duration}ms`)
+                
+                return { 
+                  status: 'processed', 
+                  tripId: tripRequest.id,
+                  booking_triggered: processResult.booking_triggered,
+                  duration_ms: duration
+                }
+
+              } finally {
+                // Release trip lock
+                if (tripLock.lockId) {
+                  await lockManager!.releaseLock(`locks:auto_book:${tripLockKey}`, tripLock.lockId)
+                }
+              }
+
+            } catch (error) {
+              const duration = Date.now() - startTime
+              console.error(`[AutoBookMonitor] Error processing trip ${tripRequest.id} after ${duration}ms:`, error)
+              
+              return { 
+                status: 'error', 
+                tripId: tripRequest.id, 
+                error: error instanceof Error ? error.message : 'Unknown error',
+                duration_ms: duration
+              }
+            }
+          })
+        )
+        
+        processingPromises.push(batchPromise)
+      }
+      
+      // Wait for all batches to complete
+      const batchResults = await Promise.allSettled(processingPromises)
+      
+      // Aggregate results from all batches
+      const processingStats = {
+        totalDuration: 0,
+        minDuration: Infinity,
+        maxDuration: 0,
+        successfulRequests: [] as string[],
+        failedRequests: [] as string[]
+      }
+      
+      for (const batchResult of batchResults) {
+        if (batchResult.status === 'fulfilled') {
+          for (const tripResult of batchResult.value) {
+            if (tripResult.status === 'fulfilled') {
+              const result = tripResult.value
+              
+              switch (result.status) {
+                case 'processed':
+                  results.processed++
+                  if (result.booking_triggered) {
+                    results.bookings_triggered++
+                  }
+                  processingStats.successfulRequests.push(result.tripId)
+                  if (result.duration_ms) {
+                    processingStats.totalDuration += result.duration_ms
+                    processingStats.minDuration = Math.min(processingStats.minDuration, result.duration_ms)
+                    processingStats.maxDuration = Math.max(processingStats.maxDuration, result.duration_ms)
+                  }
+                  break
+                case 'skipped':
+                  results.skipped++
+                  break
+                case 'error':
+                  results.errors++
+                  processingStats.failedRequests.push(result.tripId)
+                  break
+              }
+            } else {
+              results.errors++
             }
           }
-
-        } catch (error) {
-          console.error(`[AutoBookMonitor] Error processing trip ${tripRequest.id}:`, error)
+        } else {
+          console.error('[AutoBookMonitor] Batch processing failed:', batchResult.reason)
           results.errors++
-          
-          // Continue processing other requests even if one fails
-          continue
         }
       }
+      
+      // Calculate comprehensive performance metrics
+      const duration = Date.now() - startTime
+      
+      const performanceComparison = calculatePerformanceMetrics(
+        pendingRequests.length,                     // totalRequests
+        results.processed,                          // processed
+        results.skipped,                           // skipped
+        results.errors,                            // errors
+        results.bookings_triggered,                // bookingsTriggered
+        processingStats.totalDuration,             // totalDurationMs
+        processingStats.minDuration,               // minDurationMs
+        processingStats.maxDuration,               // maxDurationMs
+        concurrency,                               // concurrency
+        processingPromises.length                  // batches
+      )
+      
+      // Log detailed performance analysis
+      logPerformanceMetrics(performanceComparison)
+      
+      // Generate optimization recommendations
+      const recommendations = generatePerformanceRecommendations(performanceComparison)
+      if (recommendations.length > 0) {
+        logger.warn('Performance optimization recommendations', {
+          operation: 'auto_book_monitor_recommendations',
+          recommendations
+        })
+      }
+      
+      // Export metrics for dashboard monitoring
+      const dashboardMetrics = exportMetricsForDashboard(performanceComparison)
+      
+      console.log(`[AutoBookMonitor] Parallel processing completed:`, {
+        batches: processingPromises.length,
+        concurrency,
+        performance_gain_pct: performanceComparison.performanceGain,
+        throughput_per_second: performanceComparison.parallelProcessing.throughputPerSecond.toFixed(2),
+        ...results
+      })
 
-        const duration = Date.now() - startTime
+      // Set comprehensive span attributes for observability
+      span.attributes['monitor.duration_ms'] = duration;
+      span.attributes['monitor.processed'] = results.processed;
+      span.attributes['monitor.skipped'] = results.skipped;
+      span.attributes['monitor.errors'] = results.errors;
+      span.attributes['monitor.bookings_triggered'] = results.bookings_triggered;
+      span.attributes['monitor.performance_gain_pct'] = performanceComparison.performanceGain;
+      span.attributes['monitor.throughput_per_second'] = performanceComparison.parallelProcessing.throughputPerSecond;
+      span.attributes['monitor.concurrency'] = concurrency;
         
-        span.attributes['monitor.duration_ms'] = duration;
-        span.attributes['monitor.processed'] = results.processed;
-        span.attributes['monitor.skipped'] = results.skipped;
-        span.attributes['monitor.errors'] = results.errors;
-        span.attributes['monitor.bookings_triggered'] = results.bookings_triggered;
-        
-        logger.info('Auto-book monitor cycle completed', {
-          operation: 'auto_book_monitor_completed',
-          durationMs: duration,
-          ...results
-        });
+      logger.info('Auto-book monitor cycle completed', {
+        operation: 'auto_book_monitor_completed',
+        durationMs: duration,
+        performance: {
+          gain_percentage: performanceComparison.performanceGain,
+          throughput_per_second: performanceComparison.parallelProcessing.throughputPerSecond,
+          avg_request_duration_ms: performanceComparison.parallelProcessing.avgDurationMs
+        },
+        ...results
+      });
 
         return new Response(JSON.stringify({
           success: true,

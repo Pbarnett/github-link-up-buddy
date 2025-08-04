@@ -12,6 +12,11 @@ import { FlightOffer } from '@/services/flightSearchSecure';
 import { stripeServiceSecure } from '@/services/stripeServiceSecure';
 import SecureFlightSearch from '@/components/flights/SecureFlightSearch';
 import { useSecureOAuth } from '@/components/auth/SecureOAuthLogin';
+import BookingValidationService, {
+  ValidationResult,
+  formatValidationErrors,
+  canProceedWithBooking,
+} from '@/services/validation/bookingValidationService';
 // Booking flow steps
 type BookingStep =
   | 'search'
@@ -45,6 +50,8 @@ interface BookingState {
   paymentError: string | null;
   bookingReference: string | null;
   totalPrice: number;
+  validationResult: ValidationResult | null;
+  isValidating: boolean;
 }
 
 interface SecureFlightBookingProps {
@@ -70,6 +77,8 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
     paymentError: null,
     bookingReference: null,
     totalPrice: 0,
+    validationResult: null,
+    isValidating: false,
   });
 
   /**
@@ -132,74 +141,127 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
   );
 
   /**
-   * Validate passenger information
+   * Comprehensive pre-booking validation using ValidationService
+   */
+  const validateBooking = async (): Promise<ValidationResult> => {
+    if (!bookingState.selectedFlight || !user?.id) {
+      return {
+        isValid: false,
+        errors: [{
+          field: 'system',
+          message: 'Missing required booking information',
+          code: 'MISSING_DATA',
+        }],
+        warnings: [],
+      };
+    }
+
+    // Sanitize passenger data
+    const sanitizedPassengers = bookingState.passengers.map(passenger => 
+      BookingValidationService.sanitizeInput(passenger)
+    );
+
+    const bookingData = {
+      passengers: sanitizedPassengers,
+      contactEmail: BookingValidationService.sanitizeInput(bookingState.contactEmail),
+      contactPhone: BookingValidationService.sanitizeInput(bookingState.contactPhone),
+      selectedOfferId: bookingState.selectedFlight.id,
+      totalPrice: bookingState.totalPrice,
+      currency: bookingState.selectedFlight.price.currency,
+      userId: user.id,
+    };
+
+    try {
+      return await BookingValidationService.validatePreBooking(bookingData);
+    } catch (error) {
+      console.error('Booking validation failed:', error);
+      return {
+        isValid: false,
+        errors: [{
+          field: 'system',
+          message: 'Validation service temporarily unavailable',
+          code: 'VALIDATION_ERROR',
+        }],
+        warnings: [],
+      };
+    }
+  };
+
+  /**
+   * Legacy validation function (kept for compatibility)
    */
   const validatePassengers = (): string | null => {
-    for (let i = 0; i < bookingState.passengers.length; i++) {
-      const passenger = bookingState.passengers[i];
-
-      if (!passenger.firstName.trim()) {
-        return `First name is required for passenger ${i + 1}`;
+    // Use the validation result if available
+    if (bookingState.validationResult) {
+      if (!bookingState.validationResult.isValid) {
+        return formatValidationErrors(bookingState.validationResult.errors);
       }
-
-      if (!passenger.lastName.trim()) {
-        return `Last name is required for passenger ${i + 1}`;
+      
+      // Check for high-severity warnings
+      const highWarnings = bookingState.validationResult.warnings.filter(w => w.severity === 'high');
+      if (highWarnings.length > 0) {
+        return highWarnings.map(w => w.message).join('; ');
       }
-
-      if (!passenger.dateOfBirth) {
-        return `Date of birth is required for passenger ${i + 1}`;
-      }
-
-      // Validate age based on passenger type
-      const birthDate = new Date(passenger.dateOfBirth);
-      const today = new Date();
-      const age = Math.floor(
-        (today.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-      );
-
-      if (passenger.type === 'ADULT' && age < 12) {
-        return `Passenger ${i + 1} must be at least 12 years old for adult fare`;
-      }
-
-      if (passenger.type === 'CHILD' && (age < 2 || age >= 12)) {
-        return `Passenger ${i + 1} age must be between 2-11 years for child fare`;
-      }
-
-      if (passenger.type === 'INFANT' && age >= 2) {
-        return `Passenger ${i + 1} must be under 2 years old for infant fare`;
-      }
-    }
-
-    if (
-      !bookingState.contactEmail.trim() ||
-      !bookingState.contactEmail.includes('@')
-    ) {
-      return 'Valid contact email is required';
-    }
-
-    if (!bookingState.contactPhone.trim()) {
-      return 'Contact phone number is required';
     }
 
     return null;
   };
 
   /**
-   * Proceed to payment step
+   * Proceed to payment step with comprehensive validation
    */
-  const proceedToPayment = () => {
-    const validationError = validatePassengers();
-    if (validationError) {
-      setBookingState(prev => ({ ...prev, paymentError: validationError }));
-      onError?.(validationError);
-      return;
-    }
+  const proceedToPayment = async () => {
+    setBookingState(prev => ({ ...prev, isValidating: true, paymentError: null }));
 
-    setBookingState(prev => ({
-      ...prev,
-      step: 'payment',
-      paymentError: null,
-    }));
+    try {
+      // Run comprehensive pre-booking validation
+      const validationResult = await validateBooking();
+      
+      setBookingState(prev => ({ ...prev, validationResult, isValidating: false }));
+
+      // Check if we can proceed with booking
+      if (!canProceedWithBooking(validationResult)) {
+        const errorMessage = validationResult.isValid 
+          ? 'Please address the warnings before proceeding'
+          : formatValidationErrors(validationResult.errors);
+        
+        setBookingState(prev => ({ ...prev, paymentError: errorMessage }));
+        onError?.(errorMessage);
+        return;
+      }
+
+      // Show warnings to user if any
+      if (validationResult.warnings.length > 0) {
+        const warningMessage = validationResult.warnings
+          .map(w => `${w.severity.toUpperCase()}: ${w.message}`)
+          .join('\n');
+        
+        console.warn('Booking validation warnings:', warningMessage);
+        
+        // For medium/low warnings, we can proceed but inform the user
+        if (validationResult.warnings.some(w => w.severity === 'medium')) {
+          // You might want to show a confirmation dialog here
+          console.info('Proceeding with medium-severity warnings');
+        }
+      }
+
+      setBookingState(prev => ({
+        ...prev,
+        step: 'payment',
+        paymentError: null,
+      }));
+    } catch (error) {
+      console.error('Validation failed:', error);
+      const errorMessage = 'Unable to validate booking. Please try again.';
+      
+      setBookingState(prev => ({
+        ...prev,
+        isValidating: false,
+        paymentError: errorMessage,
+      }));
+      
+      onError?.(errorMessage);
+    }
   };
 
   /**
@@ -307,6 +369,8 @@ export const SecureFlightBooking: React.FC<SecureFlightBookingProps> = ({
       paymentError: null,
       bookingReference: null,
       totalPrice: 0,
+      validationResult: null,
+      isValidating: false,
     });
   };
 

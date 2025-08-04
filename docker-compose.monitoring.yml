@@ -24,15 +24,20 @@ services:
     image: grafana/grafana:latest
     container_name: parker-flight-grafana
     ports:
-      - "3001:3000"
+      - "3005:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_INSTALL_PLUGINS=novatec-sdg-panel
+      - GF_SERVER_ROOT_URL=http://localhost:3005
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SMTP_ENABLED=true
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./monitoring/grafana/config:/etc/grafana/config
     restart: unless-stopped
 
   alertmanager:

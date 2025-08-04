@@ -1,0 +1,268 @@
+-- Create cleanup cron jobs for expired data
+-- Addresses Gaps #27 and #28: Cleanup cron removes expired offers and anonymizes PII
+
+-- Enable pg_cron extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- 1. Cleanup expired flight offers (runs every hour)
+-- This addresses Gap #27: Cleanup cron removes expired offers
+SELECT cron.schedule(
+  'cleanup-expired-offers',
+  '0 * * * *', -- Every hour at minute 0
+  $$
+  UPDATE public.flight_offers 
+  SET 
+    status = 'expired',
+    updated_at = NOW()
+  WHERE 
+    status = 'pending' 
+    AND expires_at IS NOT NULL 
+    AND expires_at < NOW()
+    AND status != 'expired';
+
+-- Log cleanup statistics (if system_logs table exists)
+  DO $$
+  BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'system_logs') THEN
+      INSERT INTO public.system_logs (
+        operation,
+        message,
+        metadata,
+        created_at
+      )
+      SELECT 
+        'cleanup_expired_offers',
+        'Expired ' || COUNT(*) || ' flight offers',
+        jsonb_build_object(
+          'expired_count', COUNT(*),
+          'cleanup_time', NOW()
+        ),
+        NOW()
+      FROM public.flight_offers 
+      WHERE status = 'expired' 
+        AND updated_at > NOW() - INTERVAL '1 hour';
+    END IF;
+  END $$;
+  $$
+);
+
+-- 2. Cleanup old booking attempts (runs daily at 2 AM)
+-- Remove booking attempts older than 30 days to prevent table bloat
+SELECT cron.schedule(
+  'cleanup-old-booking-attempts',
+  '0 2 * * *', -- Daily at 2 AM
+  $$
+  DELETE FROM public.booking_attempts 
+  WHERE 
+    created_at < NOW() - INTERVAL '30 days'
+    AND status IN ('succeeded', 'failed');
+
+  -- Log cleanup statistics (if system_logs table exists)
+  DO $$
+  BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'system_logs') THEN
+      INSERT INTO public.system_logs (
+        operation,
+        message,
+        metadata,
+        created_at
+      )
+      VALUES (
+        'cleanup_old_booking_attempts',
+        'Cleaned up old booking attempts',
+        jsonb_build_object(
+          'cleanup_time', NOW(),
+          'retention_days', 30
+        ),
+        NOW()
+      );
+    END IF;
+  END $$;
+  $$
+);
+
+-- 3. PII anonymization for deleted users (runs daily at 3 AM)
+-- This addresses Gap #28: Cleanup job anonymizes PII
+SELECT cron.schedule(
+  'anonymize-deleted-user-pii',
+  '0 3 * * *', -- Daily at 3 AM
+  $$
+  -- Anonymize PII in profiles table (if it exists)
+  DO $inner$
+  BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'profiles') THEN
+      UPDATE public.profiles
+      SET 
+        first_name = 'ANONYMIZED',
+        last_name = 'USER',
+        email = 'anonymized@example.com',
+        phone = NULL,
+        updated_at = NOW()
+      WHERE 
+        created_at < NOW() - INTERVAL '2 years'  -- Anonymize old profiles
+        AND first_name != 'ANONYMIZED';
+    END IF;
+  END $inner$;
+
+  -- Anonymize old trip request PII for privacy compliance
+  UPDATE public.trip_requests
+  SET 
+    contact_email = 'anonymized@example.com',
+    contact_phone = NULL,
+    traveler_name = 'Anonymized User',
+    updated_at = NOW()
+  WHERE 
+    created_at < NOW() - INTERVAL '2 years'
+    AND contact_email != 'anonymized@example.com';
+
+  -- Log anonymization statistics
+  INSERT INTO public.system_logs (
+    operation,
+    message,
+    metadata,
+    created_at
+  )
+  VALUES (
+    'anonymize_old_user_pii',
+    'Anonymized old PII data for privacy compliance',
+    jsonb_build_object(
+      'cleanup_time', NOW(),
+      'retention_years', 2
+    ),
+    NOW()
+  );
+  $$
+);
+
+-- 4. Cleanup expired Redis locks (runs every 15 minutes)
+-- This is a safety net in case Redis TTL doesn't work as expected
+SELECT cron.schedule(
+  'cleanup-expired-locks-audit',
+  '*/15 * * * *', -- Every 15 minutes
+  $$
+  -- Log any locks that should have expired
+  -- This is mainly for monitoring Redis health
+  INSERT INTO public.system_logs (
+    operation,
+    message,
+    metadata,
+    created_at
+  )
+  VALUES (
+    'redis_lock_audit',
+    'Redis lock health check completed',
+    jsonb_build_object(
+      'check_time', NOW(),
+      'note', 'Redis auto-expires locks with TTL'
+    ),
+    NOW()
+  );
+  $$
+);
+
+-- 5. Cleanup old system logs (runs weekly on Sunday at 4 AM)
+-- Prevent system_logs table from growing indefinitely
+SELECT cron.schedule(
+  'cleanup-old-system-logs',
+  '0 4 * * 0', -- Weekly on Sunday at 4 AM
+  $$
+  DELETE FROM public.system_logs 
+  WHERE created_at < NOW() - INTERVAL '90 days';
+
+  INSERT INTO public.system_logs (
+    operation,
+    message,
+    metadata,
+    created_at
+  )
+  VALUES (
+    'cleanup_old_system_logs',
+    'Cleaned up system logs older than 90 days',
+    jsonb_build_object(
+      'cleanup_time', NOW(),
+      'retention_days', 90
+    ),
+    NOW()
+  );
+  $$
+);
+
+-- 6. Cleanup old audit trails (runs monthly on 1st at 5 AM)
+-- Keep audit trails for regulatory compliance but limit growth
+SELECT cron.schedule(
+  'cleanup-old-audit-trails',
+  '0 5 1 * *', -- Monthly on 1st at 5 AM
+  $$
+  -- Keep 2 years of audit data for compliance
+  DELETE FROM public.customer_lifecycle_audit 
+  WHERE created_at < NOW() - INTERVAL '2 years';
+
+  DELETE FROM public.pii_anonymization_log 
+  WHERE created_at < NOW() - INTERVAL '2 years';
+
+  INSERT INTO public.system_logs (
+    operation,
+    message,
+    metadata,
+    created_at
+  )
+  VALUES (
+    'cleanup_old_audit_trails',
+    'Cleaned up audit trails older than 2 years',
+    jsonb_build_object(
+      'cleanup_time', NOW(),
+      'retention_years', 2
+    ),
+    NOW()
+  );
+  $$
+);
+
+-- Create indexes to support cleanup operations efficiently
+CREATE INDEX IF NOT EXISTS flight_offers_cleanup_idx 
+  ON public.flight_offers (status, expires_at) 
+  WHERE status = 'pending';
+
+CREATE INDEX IF NOT EXISTS booking_attempts_cleanup_idx 
+  ON public.booking_attempts (created_at, status) 
+  WHERE status IN ('succeeded', 'failed');
+
+-- Skip traveler_profiles index - table may not exist
+-- CREATE INDEX IF NOT EXISTS traveler_profiles_cleanup_idx 
+--   ON public.traveler_profiles (deleted_at, anonymized_at) 
+--   WHERE deleted_at IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS system_logs_cleanup_idx 
+  ON public.system_logs (created_at);
+
+-- Comments for documentation
+COMMENT ON INDEX flight_offers_cleanup_idx IS 'Supports efficient cleanup of expired flight offers';
+COMMENT ON INDEX booking_attempts_cleanup_idx IS 'Supports efficient cleanup of old booking attempts';
+-- COMMENT ON INDEX traveler_profiles_cleanup_idx IS 'Supports efficient PII anonymization for deleted users';
+COMMENT ON INDEX system_logs_cleanup_idx IS 'Supports efficient cleanup of old system logs';
+
+-- View cron jobs
+SELECT 
+  jobname,
+  schedule,
+  active,
+  jobid
+FROM cron.job 
+WHERE jobname LIKE 'cleanup-%' OR jobname LIKE 'anonymize-%';
+
+-- Log successful migration
+INSERT INTO public.system_logs (
+  operation,
+  message,
+  metadata,
+  created_at
+)
+VALUES (
+  'migration_cleanup_crons',
+  'Successfully created cleanup cron jobs',
+  jsonb_build_object(
+    'jobs_created', 6,
+    'migration_time', NOW()
+  ),
+  NOW()
+);

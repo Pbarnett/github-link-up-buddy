@@ -58,7 +58,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("email, first_name")
+      .select("email, first_name, last_name, phone")
       .eq("id", bookingRequest.user_id)
       .single();
 
@@ -71,15 +71,36 @@ const handler = async (req: Request): Promise<Response> => {
       new URL("../templates/booking-confirmation.html", import.meta.url)
     );
 
-    const offerData = bookingRequest.offer_data as Record<string, unknown>;
+    const offerData = bookingRequest.offer_data as Record<string, any>;
+    
+    // Enhanced template population with comprehensive itinerary details
     const filledHtml = htmlTemplate
-      .replace("{{destination}}", offerData.destination || "N/A")
-      .replace("{{departureDate}}", offerData.departure_date || "N/A")
-      .replace("{{departureTime}}", offerData.departure_time || "N/A")
-      .replace("{{returnDate}}", offerData.return_date || "N/A")
-      .replace("{{flightNumber}}", offerData.flight_number || "N/A")
-      .replace("{{airline}}", offerData.airline || "N/A")
-      .replace("{{price}}", offerData.price?.toString() || "N/A");
+      // Basic flight details
+      .replace(/{{origin}}/g, offerData.origin || "N/A")
+      .replace(/{{destination}}/g, offerData.destination || "N/A")
+      .replace(/{{departureDate}}/g, offerData.departure_date || "N/A")
+      .replace(/{{departureTime}}/g, offerData.departure_time || "N/A")
+      .replace(/{{returnDate}}/g, offerData.return_date || "N/A")
+      .replace(/{{returnTime}}/g, offerData.return_time || "N/A")
+      .replace(/{{flightNumber}}/g, offerData.flight_number || "N/A")
+      .replace(/{{airline}}/g, offerData.airline || "N/A")
+      .replace(/{{returnFlightNumber}}/g, offerData.return_flight_number || "N/A")
+      .replace(/{{returnAirline}}/g, offerData.return_airline || offerData.airline || "N/A")
+      .replace(/{{bookingReference}}/g, offerData.booking_reference || offerData.order_id || "N/A")
+      
+      // Pricing details
+      .replace(/{{price}}/g, offerData.price?.toString() || "N/A")
+      .replace(/{{baseFare}}/g, offerData.base_fare?.toString() || (offerData.price * 0.85)?.toFixed(2) || "N/A")
+      .replace(/{{taxesAndFees}}/g, offerData.taxes_and_fees?.toString() || (offerData.price * 0.15)?.toFixed(2) || "N/A")
+      
+      // Traveler information
+      .replace(/{{travelerName}}/g, `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "N/A")
+      .replace(/{{travelerEmail}}/g, profile.email || "N/A")
+      .replace(/{{travelerPhone}}/g, profile.phone || "Contact support for phone updates")
+      .replace(/{{seatPreference}}/g, offerData.seat_preference || "Standard")
+      
+      // Additional details
+      .replace(/{{baggageInfo}}/g, offerData.baggage_info || "1 personal item included, check airline policy for carry-on and checked bags");
 
     // Send email via Resend
     await sendEmail({

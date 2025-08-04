@@ -4,14 +4,31 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 // Environment variable utility function for proper type handling
 const getEnvVar = (key: string) => {
+  let value: string | undefined;
+  
   if (typeof process !== 'undefined' && process.env) {
-    // Node.js environment
-    return process.env[key];
+    // Node.js environment - check both prefixed and non-prefixed
+    value = process.env[key] || process.env[`VITE_${key}`];
   } else if (typeof import.meta !== 'undefined' && import.meta.env) {
-    // Vite/React environment
-    return import.meta.env[`VITE_${key}`];
+    // Vite/React environment - check both prefixed and non-prefixed
+    value = import.meta.env[`VITE_${key}`] || import.meta.env[key];
   }
-  return undefined;
+  
+  // Debug logging
+  console.log(`🔧 Environment variable lookup for ${key}:`, {
+    processEnv: typeof process !== 'undefined' ? {
+      direct: process.env?.[key],
+      prefixed: process.env?.[`VITE_${key}`]
+    } : 'not available',
+    importMeta: typeof import.meta !== 'undefined' ? {
+      prefixed: import.meta.env?.[`VITE_${key}`],
+      direct: import.meta.env?.[key],
+      allViteVars: Object.keys(import.meta.env || {}).filter(k => k.includes('SUPABASE'))
+    } : 'not available',
+    finalValue: value ? `${value.substring(0, 20)}...` : 'undefined'
+  });
+  
+  return value;
 };
 
 // Get environment variables with proper fallbacks
@@ -24,7 +41,7 @@ console.log('🔍 Supabase client initialization:', {
   hasKey: !!SUPABASE_ANON_KEY,
   url: SUPABASE_URL ? `${SUPABASE_URL.substring(0, 20)}...` : 'missing',
   fullURL: SUPABASE_URL, // Show full URL for debugging
-  env: import.meta.env.MODE,
+  env: import.meta.env?.MODE || 'unknown',
 });
 
 // Create the Supabase client with proper error handling for testing

@@ -214,6 +214,100 @@ serve(async (req) => {
       console.log(`🔍 Filtered to ${filteredOffers.length} offers under $${maxPrice}`)
     }
 
+    // Step 4.1: Multi-criteria ranking and scoring (Gap #3)
+    console.log('🔍 Applying multi-criteria ranking...')
+    
+    const rankedOffers = filteredOffers.map(offer => {
+      let score = 0
+      const criteria = {
+        price: 0,
+        duration: 0,
+        stops: 0,
+        airline: 0
+      }
+      
+      // Price score (40% weight) - lower price = higher score
+      const price = parseFloat(offer.total_amount)
+      const maxOfferPrice = Math.max(...filteredOffers.map(o => parseFloat(o.total_amount)))
+      const minOfferPrice = Math.min(...filteredOffers.map(o => parseFloat(o.total_amount)))
+      if (maxOfferPrice > minOfferPrice) {
+        criteria.price = ((maxOfferPrice - price) / (maxOfferPrice - minOfferPrice)) * 40
+      }
+      
+      // Duration score (30% weight) - shorter duration = higher score
+      const totalDuration = offer.slices?.reduce((total, slice) => {
+        // Parse ISO 8601 duration (PT2H30M -> 150 minutes)
+        const duration = slice.duration || 'PT0M'
+        const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/)
+        const hours = parseInt(match?.[1] || '0')
+        const minutes = parseInt(match?.[2] || '0')
+        return total + (hours * 60) + minutes
+      }, 0) || 0
+      
+      const maxDuration = Math.max(...filteredOffers.map(o => {
+        return o.slices?.reduce((total, slice) => {
+          const duration = slice.duration || 'PT0M'
+          const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?/)
+          const hours = parseInt(match?.[1] || '0')
+          const minutes = parseInt(match?.[2] || '0')
+          return total + (hours * 60) + minutes
+        }, 0) || 0
+      }))
+      
+      if (maxDuration > 0) {
+        criteria.duration = Math.max(0, (1 - (totalDuration / maxDuration)) * 30)
+      }
+      
+      // Stops score (20% weight) - fewer stops = higher score
+      const totalStops = offer.slices?.reduce((total, slice) => {
+        return total + ((slice.segments?.length || 1) - 1)
+      }, 0) || 0
+      
+      if (totalStops === 0) {
+        criteria.stops = 20 // Direct flights get full points
+      } else if (totalStops === 1) {
+        criteria.stops = 15 // One stop gets most points
+      } else if (totalStops === 2) {
+        criteria.stops = 10 // Two stops get some points
+      } else {
+        criteria.stops = 0 // More than 2 stops get no points
+      }
+      
+      // Airline preference score (10% weight) - major carriers preferred
+      const preferredAirlines = ['AA', 'UA', 'DL', 'BA', 'LH', 'AF', 'KL']
+      const airlineCode = offer.slices?.[0]?.segments?.[0]?.marketing_carrier?.iata_code
+      if (airlineCode && preferredAirlines.includes(airlineCode)) {
+        criteria.airline = 10
+      } else {
+        criteria.airline = 5 // Non-preferred airlines get half points
+      }
+      
+      score = criteria.price + criteria.duration + criteria.stops + criteria.airline
+      
+      return {
+        ...offer,
+        ranking_score: score,
+        ranking_criteria: criteria,
+        total_duration_minutes: totalDuration,
+        total_stops: totalStops,
+        main_airline: airlineCode
+      }
+    })
+    
+    // Sort by ranking score (highest first)
+    rankedOffers.sort((a, b) => b.ranking_score - a.ranking_score)
+    
+    console.log(`🔍 Top 3 ranked offers:`, rankedOffers.slice(0, 3).map(offer => ({
+      price: offer.total_amount,
+      score: offer.ranking_score.toFixed(1),
+      duration: offer.total_duration_minutes + 'min',
+      stops: offer.total_stops,
+      airline: offer.main_airline
+    })))
+    
+    // Use ranked offers for further processing
+    filteredOffers = rankedOffers
+
     // Advanced filtering if enabled by feature flag
     if (advancedFiltering.value) {
       console.log('🔍 Applying advanced filtering...')

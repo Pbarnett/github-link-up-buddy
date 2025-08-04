@@ -826,7 +826,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
       error: null,
     });
 
-    const _user = userEvent.setup();
+    const user = userEvent.setup();
     const { wrapper } = renderWithProviders(<TripRequestForm />);
     render(<TripRequestForm />, { wrapper });
 
@@ -945,7 +945,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
       }
     });
 
-    const _user = userEvent.setup();
+    const user = userEvent.setup();
     const { wrapper } = renderWithProviders(<TripRequestForm />);
     render(<TripRequestForm />, { wrapper });
 

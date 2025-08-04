@@ -6,13 +6,15 @@ import * as React from 'react';
 
 import type {
   ApiResponse,
-  HttpMethod,
-  ApiEndpoint,
   ISODateString,
   AsyncState,
   Result,
   ValidationError,
 } from './index';
+
+// Define missing types that should be exported from ./index
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export type ApiEndpoint = string;
 
 // ============================================================================
 // API REQUEST/RESPONSE PATTERNS

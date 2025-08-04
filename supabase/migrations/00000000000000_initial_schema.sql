@@ -1,3 +1,15 @@
+-- Create system_logs table to log system operations and cleanup activities
+CREATE TABLE IF NOT EXISTS public.system_logs (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    operation text NOT NULL,
+    message text NOT NULL,
+    metadata jsonb,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Index for efficient querying by creation timestamp
+CREATE INDEX IF NOT EXISTS system_logs_created_at_idx ON public.system_logs (created_at);
+
 
 
 SET statement_timeout = 0;

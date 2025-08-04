@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Comprehensive CloudTrail and Monitoring Setup for GitHub Link-Up Buddy'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name for resource tagging
+  
+  AlertEmail:
+    Type: String
+    Description: Email address for CloudTrail alerts
+    AllowedPattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    ConstraintDescription: Must be a valid email address
+  
+  DeploymentTimestamp:
+    Type: String
+    Default: '20250803'
+    Description: Timestamp suffix to avoid resource conflicts
+  
+Resources:
+  # CloudTrail
+  GitHubLinkBuddyCloudTrail:
+    Type: AWS::CloudTrail::Trail
+    DependsOn: CloudTrailBucketPolicy
+    Properties:
+      TrailName: !Sub 'github-link-buddy-cloudtrail-${Environment}-${DeploymentTimestamp}'
+      S3BucketName: !Ref CloudTrailBucket
+      S3KeyPrefix: 'cloudtrail-logs/'
+      IncludeGlobalServiceEvents: true
+      IsMultiRegionTrail: true
+      IsLogging: true
+      EnableLogFileValidation: true
+      EventSelectors:
+        - ReadWriteType: All
+          IncludeManagementEvents: true
+      InsightSelectors:
+        - InsightType: ApiCallRateInsight
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  CloudTrailBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'github-buddy-ct-${AWS::AccountId}-${Environment}-${DeploymentTimestamp}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref GitHubLinkBuddyKMSKey
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: CloudTrailLogRetention
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+              - TransitionInDays: 90
+                StorageClass: GLACIER
+              - TransitionInDays: 365
+                StorageClass: DEEP_ARCHIVE
+
+  # KMS Key for encryption
+  GitHubLinkBuddyKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: KMS Key for GitHub Link-Buddy CloudTrail encryption
+      KeyPolicy:
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow CloudTrail to encrypt/decrypt logs
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action:
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  GitHubLinkBuddyKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/github-link-buddy-cloudtrail-${Environment}-${DeploymentTimestamp}'
+      TargetKeyId: !Ref GitHubLinkBuddyKMSKey
+
+  # S3 Bucket Policy for CloudTrail
+  CloudTrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref CloudTrailBucket
+      PolicyDocument:
+        Statement:
+          - Sid: AWSCloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !GetAtt CloudTrailBucket.Arn
+          - Sid: AWSCloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub '${CloudTrailBucket.Arn}/cloudtrail-logs/*'
+            Condition:
+              StringEquals:
+                's3:x-amz-acl': bucket-owner-full-control
+
+  # SNS Topic for Alerts
+  CloudTrailAlertSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub 'github-link-buddy-cloudtrail-alerts-${Environment}-${DeploymentTimestamp}'
+      DisplayName: !Sub 'GitHub Link-Buddy CloudTrail Alerts ${Environment}'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  CloudTrailBucketName:
+    Description: CloudTrail S3 bucket name
+    Value: !Ref CloudTrailBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudTrail-Bucket-Name'
+
+  CloudTrailSNSTopicArn:
+    Description: SNS Topic ARN for CloudTrail alerts
+    Value: !Ref CloudTrailAlertSNSTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-SNS-CloudTrail-Alerts-Arn'
+
+  CloudTrailName:
+    Description: Name of CloudTrail
+    Value: !Sub 'github-link-buddy-cloudtrail-${Environment}'
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudTrail-Name'
