@@ -1,0 +1,48 @@
+# Simplified Dockerfile for AWS SDK Enhanced Demo
+FROM node:20-alpine
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
+# Install system dependencies
+RUN apk add --no-cache aws-cli curl dumb-init
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json pnpm-lock.yaml* ./
+
+# Install dependencies
+RUN npm install -g pnpm && \
+    pnpm install --prod --frozen-lockfile && \
+    pnpm store prune && \
+    npm cache clean --force
+
+# Copy essential files
+COPY scripts/docker-deploy.cjs scripts/docker-deploy.cjs
+COPY config/ config/
+COPY deployment/ deployment/
+
+# Create logs directory and set permissions
+RUN mkdir -p /app/logs && \
+    chown -R nodejs:nodejs /app && \
+    chmod +x /app/scripts/*.cjs
+
+# Switch to non-root user
+USER nodejs
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Environment variables
+ENV NODE_ENV=production \
+    AWS_SDK_LOAD_CONFIG=1 \
+    PORT=3000
+
+# Start command
+CMD ["dumb-init", "--", "node", "-e", "console.log('AWS SDK Enhanced Container Started'); setInterval(() => console.log('Health check at', new Date()), 30000);"]

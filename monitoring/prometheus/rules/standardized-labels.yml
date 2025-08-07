@@ -1,0 +1,25 @@
+groups:
+  - name: cross-environment-alerts
+    rules:
+      - alert: ParkerFlightCrossEnvironmentErrorRateDeviation
+        expr: |
+          (
+            sum(rate(parker_flight_requests_total{status=~"5..", environment="production"}[5m])) / 
+            sum(rate(parker_flight_requests_total{environment="production"}[5m]))
+          ) > 
+          (
+            sum(rate(parker_flight_requests_total{status=~"5..", environment="staging"}[5m])) / 
+            sum(rate(parker_flight_requests_total{environment="staging"}[5m]))
+          ) * 2
+        for: 5m
+        labels:
+          severity: warning
+          service: parker-flight
+          type: cross-environment
+          team: sre
+          alerttype: deviation
+        annotations:
+          summary: "Production error rate significantly higher than staging"
+          description: "Production environment error rate is more than 2x staging error rate, indicating potential production-specific issues."
+          runbook_url: "https://github.com/parkerbarnett/github-link-up-buddy/docs/runbooks/cross-env-deviation.md"
+          dashboard_url: "http://localhost:3001/d/parker-flight-env-comparison"

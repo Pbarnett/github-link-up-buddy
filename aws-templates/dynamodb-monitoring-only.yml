@@ -1,0 +1,261 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DynamoDB monitoring infrastructure for existing table'
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: github-link-buddy
+    Description: Application name for consistent resource naming
+  
+  Environment:
+    Type: String
+    AllowedValues: [development, staging, production]
+    Default: production
+    Description: Environment name
+
+  ExistingTableName:
+    Type: String
+    Default: github-link-buddy-links-production
+    Description: Name of the existing DynamoDB table to monitor
+
+  # Monitoring Parameters
+  EnableDetailedMonitoring:
+    Type: String
+    AllowedValues: [true, false]
+    Default: true
+    Description: Enable detailed CloudWatch monitoring
+
+  NotificationEmail:
+    Type: String
+    Default: parker@example.com
+    Description: Email for DynamoDB alerts and notifications
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, 'production']
+  EnableMonitoring: !Equals [!Ref EnableDetailedMonitoring, 'true']
+
+Resources:
+  # SNS Topic for DynamoDB Alerts
+  DynamoDBAlertsTopic:
+    Type: AWS::SNS::Topic
+    Condition: EnableMonitoring
+    Properties:
+      TopicName: !Sub '${ApplicationName}-dynamodb-alerts-${Environment}'
+      DisplayName: 'DynamoDB Performance and Cost Alerts'
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref NotificationEmail
+
+  # CloudWatch Alarms for Monitoring
+  HighReadCapacityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: EnableMonitoring
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-high-read-capacity-${Environment}'
+      AlarmDescription: 'High read capacity utilization detected'
+      MetricName: ConsumedReadCapacityUnits
+      Namespace: AWS/DynamoDB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 1000
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TableName
+          Value: !Ref ExistingTableName
+      AlarmActions:
+        - !Ref DynamoDBAlertsTopic
+      TreatMissingData: notBreaching
+
+  HighWriteCapacityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: EnableMonitoring
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-high-write-capacity-${Environment}'
+      AlarmDescription: 'High write capacity utilization detected'
+      MetricName: ConsumedWriteCapacityUnits
+      Namespace: AWS/DynamoDB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 500
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TableName
+          Value: !Ref ExistingTableName
+      AlarmActions:
+        - !Ref DynamoDBAlertsTopic
+      TreatMissingData: notBreaching
+
+  ThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: EnableMonitoring
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-throttle-detected-${Environment}'
+      AlarmDescription: 'DynamoDB throttling detected - consider capacity adjustment'
+      MetricName: ThrottledRequests
+      Namespace: AWS/DynamoDB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TableName
+          Value: !Ref ExistingTableName
+      AlarmActions:
+        - !Ref DynamoDBAlertsTopic
+      TreatMissingData: notBreaching
+
+  # CloudWatch Dashboard for DynamoDB Monitoring
+  DynamoDBDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Condition: EnableMonitoring
+    Properties:
+      DashboardName: !Sub '${ApplicationName}-dynamodb-performance-${Environment}'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "${ExistingTableName}"],
+                  [".", "ConsumedWriteCapacityUnits", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Consumed Capacity Units",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", "${ExistingTableName}", "Operation", "GetItem"],
+                  [".", ".", ".", ".", ".", "PutItem"],
+                  [".", ".", ".", ".", ".", "UpdateItem"],
+                  [".", ".", ".", ".", ".", "DeleteItem"]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Request Latency",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/DynamoDB", "ThrottledRequests", "TableName", "${ExistingTableName}"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Throttled Requests",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "${ExistingTableName}", "GlobalSecondaryIndexName", "UserIndex"],
+                  [".", "ConsumedWriteCapacityUnits", ".", ".", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "GSI Consumed Capacity Units",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 12,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/DynamoDB", "ItemCount", "TableName", "${ExistingTableName}"],
+                  [".", "TableSizeBytes", ".", "."]
+                ],
+                "period": 86400,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Table Size Metrics",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            }
+          ]
+        }
+
+Outputs:
+  ExistingTableName:
+    Description: 'Name of the existing DynamoDB table being monitored'
+    Value: !Ref ExistingTableName
+
+  DashboardURL:
+    Condition: EnableMonitoring
+    Description: 'URL to the CloudWatch Dashboard'
+    Value: !Sub 'https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${DynamoDBDashboard}'
+
+  SNSTopicArn:
+    Condition: EnableMonitoring
+    Description: 'ARN of the SNS topic for alerts'
+    Value: !Ref DynamoDBAlertsTopic
+
+  MonitoringSetup:
+    Description: 'Monitoring setup status'
+    Value: !Sub |
+      ✅ CloudWatch Dashboard: ${DynamoDBDashboard}
+      ✅ High read capacity alarm: ${HighReadCapacityAlarm} 
+      ✅ High write capacity alarm: ${HighWriteCapacityAlarm}
+      ✅ Throttling alarm: ${ThrottleAlarm}
+      ✅ SNS notifications: ${DynamoDBAlertsTopic}
+      
+      Next steps:
+      1. Check your email and confirm SNS subscription
+      2. Access dashboard via URL in outputs
+      3. Run weekly analysis: ./scripts/monitor-dynamodb-usage.sh
+      4. After 2-4 weeks, run: node scripts/dynamodb-cost-calculator.js

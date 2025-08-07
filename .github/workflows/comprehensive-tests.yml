@@ -1,0 +1,369 @@
+name: Comprehensive Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run nightly comprehensive tests
+    - cron: '0 2 * * *'
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '10.11.0'
+
+jobs:
+  # Job 1: Unit and Integration Tests
+  unit-integration:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+        
+      - name: Run type checking
+        run: pnpm tsc --noEmit
+        
+      - name: Run unit tests
+        run: pnpm test --coverage
+        
+      - name: Run integration tests
+        run: |
+          pnpm test:integration:external
+          node test-env-validation.js --local
+          node test-kms-integration.js
+          node validate-profile-architecture.js
+        env:
+          NODE_ENV: test
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          LAUNCHDARKLY_SDK_KEY: ${{ secrets.LAUNCHDARKLY_SDK_KEY }}
+          
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+
+  # Job 2: Security Tests
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Run security audit
+        run: node scripts/security/security-audit.js
+        continue-on-error: true
+        
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: tests/security/reports/
+          retention-days: 30
+
+  # Job 3: E2E Tests
+  e2e:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+        
+      - name: Build application
+        run: pnpm build
+        
+      - name: Start application
+        run: |
+          pnpm preview &
+          sleep 10
+        env:
+          PORT: 8080
+          
+      - name: Run E2E tests
+        run: npx playwright test
+        env:
+          E2E_BASE_URL: http://localhost:8080
+          
+      - name: Upload E2E artifacts
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-report
+          path: |
+            tests/e2e/reports/
+            test-results/
+          retention-days: 30
+
+  # Job 4: Performance Tests
+  performance:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Build application
+        run: pnpm build
+        
+      - name: Start application
+        run: |
+          pnpm preview &
+          sleep 10
+        env:
+          PORT: 8080
+          
+      - name: Run Lighthouse CI
+        run: npx lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+          
+      - name: Run k6 performance tests
+        run: k6 run tests/performance/flight-search-load.js
+        env:
+          BASE_URL: http://localhost:8080
+          
+      - name: Upload performance reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report
+          path: tests/performance/
+          retention-days: 30
+
+  # Job 5: Visual Regression Tests
+  visual:
+    name: Visual Regression Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+        
+      - name: Build application
+        run: pnpm build
+        
+      - name: Start application
+        run: |
+          pnpm preview &
+          sleep 10
+        env:
+          PORT: 8080
+          
+      - name: Run visual regression tests
+        run: npx playwright test tests/e2e/visual/
+        env:
+          E2E_BASE_URL: http://localhost:8080
+          
+      - name: Upload visual test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: visual-regression-report
+          path: |
+            tests/e2e/visual/
+            test-results/
+          retention-days: 30
+
+  # Job 6: Master Test Runner (Comprehensive)
+  comprehensive:
+    name: Comprehensive Test Suite
+    runs-on: ubuntu-latest
+    needs: [unit-integration, security, e2e, performance, visual]
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[comprehensive]')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+        
+      - name: Build application
+        run: pnpm build
+        
+      - name: Start application
+        run: |
+          pnpm preview &
+          sleep 10
+        env:
+          PORT: 8080
+          
+      - name: Run comprehensive test suite
+        run: node scripts/run-all-tests.cjs --sequential
+        env:
+          TEST_ENV: ci
+          E2E_BASE_URL: http://localhost:8080
+          
+      - name: Generate final report
+        run: node scripts/run-all-tests.cjs --report-only
+        
+      - name: Upload comprehensive report
+        uses: actions/upload-artifact@v4
+        with:
+          name: comprehensive-test-report
+          path: tests/reports/
+          retention-days: 90
+          
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'tests/reports/latest-summary.json';
+            
+            if (fs.existsSync(path)) {
+              const summary = JSON.parse(fs.readFileSync(path, 'utf8'));
+              const body = `## 🧪 Comprehensive Test Results
+              
+              | Metric | Value |
+              |--------|-------|
+              | Total Suites | ${summary.total} |
+              | Passed | ${summary.passed} ✅ |
+              | Failed | ${summary.failed} ❌ |
+              | Warnings | ${summary.warnings} ⚠️ |
+              | Skipped | ${summary.skipped} ⏭️ |
+              | Duration | ${Math.round(summary.duration / 1000)}s |
+              | Environment | ${summary.environment} |
+              
+              ${summary.failed > 0 ? '❌ Some tests failed. Please check the detailed reports.' : '✅ All tests passed!'}
+              `;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
+
+  # Job 7: Notification
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [unit-integration, security, e2e, performance, visual]
+    if: always() && (github.ref == 'refs/heads/main' || github.event_name == 'schedule')
+    
+    steps:
+      - name: Notify Slack
+        if: env.SLACK_WEBHOOK_URL
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#dev-alerts'
+          text: |
+            Test Suite Results for ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            
+            Unit/Integration: ${{ needs.unit-integration.result }}
+            Security: ${{ needs.security.result }}
+            E2E: ${{ needs.e2e.result }}
+            Performance: ${{ needs.performance.result }}
+            Visual: ${{ needs.visual.result }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

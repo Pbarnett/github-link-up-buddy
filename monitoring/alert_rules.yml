@@ -1,0 +1,101 @@
+groups:
+- name: parker_flight_alerts
+  rules:
+  # High CPU usage alert
+  - alert: HighCPUUsage
+    expr: (rate(container_cpu_usage_seconds_total{name="parker-flight"}[5m]) * 100) > 80
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage on Parker Flight container"
+      description: "Parker Flight container CPU usage is above 80% for more than 2 minutes"
+
+  # High memory usage alert  
+  - alert: HighMemoryUsage
+    expr: (container_memory_usage_bytes{name="parker-flight"} / container_spec_memory_limit_bytes{name="parker-flight"}) * 100 > 85
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High memory usage on Parker Flight container"
+      description: "Parker Flight container memory usage is above 85% for more than 5 minutes"
+
+  # Container down alert
+  - alert: ContainerDown
+    expr: up{job="parker-flight"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Parker Flight container is down"
+      description: "Parker Flight container has been down for more than 1 minute"
+
+  # High error rate alert
+  - alert: HighErrorRate
+    expr: rate(nginx_http_requests_total{status=~"5.."}[5m]) > 0.1
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High error rate on Parker Flight"
+      description: "Error rate is above 10% for more than 2 minutes"
+
+  # Disk space alert
+  - alert: LowDiskSpace
+    expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Low disk space"
+      description: "Disk space is below 10% for more than 5 minutes"
+
+  # Database connection issues
+  - alert: DatabaseConnectionIssue
+    expr: pg_stat_database_numbackends{datname="postgres"} > 80
+    for: 3m
+    labels:
+      severity: warning
+      service: database
+    annotations:
+      summary: "High database connection count"
+      description: "Database has {{ $value }} active connections"
+
+  # KMS operation failures
+  - alert: KMSOperationFailure
+    expr: increase(aws_kms_errors_total[5m]) > 5
+    for: 2m
+    labels:
+      severity: critical
+      service: kms
+    annotations:
+      summary: "KMS operation failures detected"
+      description: "{{ $value }} KMS operation failures in the last 5 minutes"
+
+  # Edge function performance issues
+  - alert: EdgeFunctionTimeout
+    expr: |
+      sum(rate(aws_lambda_duration_sum{function_name=~"parker-flight-.*"}[5m])) /
+      sum(rate(aws_lambda_duration_count{function_name=~"parker-flight-.*"}[5m])) > 10000
+    for: 3m
+    labels:
+      severity: warning
+      service: edge-functions
+    annotations:
+      summary: "Edge function timeout issues"
+      description: "Average execution time is {{ $value }}ms for Edge Functions"
+
+  # High response time alert
+  - alert: HighResponseTime
+    expr: |
+      histogram_quantile(0.95, 
+        sum(rate(http_request_duration_seconds_bucket{job="parker-flight"}[5m])) by (le)
+      ) > 2
+    for: 5m
+    labels:
+      severity: warning
+      service: parker-flight
+    annotations:
+      summary: "High response time detected"
+      description: "95th percentile response time is {{ $value }}s"

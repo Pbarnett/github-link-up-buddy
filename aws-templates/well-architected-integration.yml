@@ -1,0 +1,811 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS Well-Architected Tool integration with automated workload reviews, recommendations tracking, and JIRA integration'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name for resource naming
+  
+  ApplicationName:
+    Type: String
+    Default: github-link-buddy
+    Description: Application name
+
+  NotificationEmail:
+    Type: String
+    Description: Email address for Well-Architected notifications
+    AllowedPattern: '^[^\s@]+@[^\s@]+\.[^\s@]+$'
+
+  JiraIntegrationEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Enable JIRA integration for tracking recommendations
+
+  JiraBaseUrl:
+    Type: String
+    Default: ''
+    Description: JIRA base URL (optional)
+
+  JiraProjectKey:
+    Type: String
+    Default: ''
+    Description: JIRA project key for tracking issues (optional)
+
+  ReviewSchedule:
+    Type: String
+    Default: 'rate(30 days)'
+    Description: Schedule for automated Well-Architected reviews
+
+  KMSKeyId:
+    Type: String
+    Description: KMS Key ID for encryption
+
+Conditions:
+  JiraEnabled: !Equals [!Ref JiraIntegrationEnabled, 'true']
+  IsProduction: !Equals [!Ref Environment, 'production']
+
+Resources:
+  # DynamoDB Table for Workload Reviews
+  WorkloadReviewsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ApplicationName}-workload-reviews-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: WorkloadId
+          AttributeType: S
+        - AttributeName: ReviewDate
+          AttributeType: S
+        - AttributeName: Status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: WorkloadId
+          KeyType: HASH
+        - AttributeName: ReviewDate
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: Status
+              KeyType: HASH
+            - AttributeName: ReviewDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref KMSKeyId
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Purpose
+          Value: WellArchitectedReviews
+
+  # DynamoDB Table for Recommendations
+  RecommendationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ApplicationName}-wa-recommendations-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: RecommendationId
+          AttributeType: S
+        - AttributeName: WorkloadId
+          AttributeType: S
+        - AttributeName: Priority
+          AttributeType: S
+        - AttributeName: Status
+          AttributeType: S
+        - AttributeName: CreatedDate
+          AttributeType: S
+      KeySchema:
+        - AttributeName: RecommendationId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: WorkloadIndex
+          KeySchema:
+            - AttributeName: WorkloadId
+              KeyType: HASH
+            - AttributeName: CreatedDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: PriorityIndex
+          KeySchema:
+            - AttributeName: Priority
+              KeyType: HASH
+            - AttributeName: CreatedDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: Status
+              KeyType: HASH
+            - AttributeName: CreatedDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref KMSKeyId
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Purpose
+          Value: WellArchitectedRecommendations
+
+  # DynamoDB Table for Reports
+  WellArchitectedReportsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ApplicationName}-wa-reports-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: ReportId
+          AttributeType: S
+        - AttributeName: WorkloadId
+          AttributeType: S
+        - AttributeName: GeneratedDate
+          AttributeType: S
+        - AttributeName: ReportType
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ReportId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: WorkloadReportsIndex
+          KeySchema:
+            - AttributeName: WorkloadId
+              KeyType: HASH
+            - AttributeName: GeneratedDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ReportTypeIndex
+          KeySchema:
+            - AttributeName: ReportType
+              KeyType: HASH
+            - AttributeName: GeneratedDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref KMSKeyId
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Purpose
+          Value: WellArchitectedReports
+
+  # S3 Bucket for Well-Architected Reports
+  WellArchitectedReportsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ApplicationName}-wa-reports-${AWS::AccountId}-${Environment}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref KMSKeyId
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ReportsRetention
+            Status: Enabled
+            ExpirationInDays: 2555  # 7 years
+            Transitions:
+              - TransitionInDays: 90
+                StorageClass: STANDARD_IA
+              - TransitionInDays: 365
+                StorageClass: GLACIER
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Purpose
+          Value: WellArchitectedReports
+
+  # IAM Role for Well-Architected Lambda Functions
+  WellArchitectedLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ApplicationName}-wa-lambda-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+      Policies:
+        - PolicyName: WellArchitectedPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - wellarchitected:*
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt WorkloadReviewsTable.Arn
+                  - !GetAtt RecommendationsTable.Arn
+                  - !GetAtt WellArchitectedReportsTable.Arn
+                  - !Sub '${WorkloadReviewsTable.Arn}/index/*'
+                  - !Sub '${RecommendationsTable.Arn}/index/*'
+                  - !Sub '${WellArchitectedReportsTable.Arn}/index/*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub '${WellArchitectedReportsBucket}/*'
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !GetAtt WellArchitectedReportsBucket.Arn
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref WellArchitectedNotificationTopic
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !If 
+                  - JiraEnabled
+                  - !Ref JiraCredentialsSecret
+                  - !Ref AWS::NoValue
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                Resource: 
+                  - !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KMSKeyId}'
+
+  # Lambda Layer for Well-Architected Common Libraries
+  WellArchitectedLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub '${ApplicationName}-wa-layer-${Environment}'
+      Description: 'Common libraries for Well-Architected functions'
+      Content:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          from datetime import datetime, timedelta
+          from typing import Dict, List, Optional
+          import uuid
+          
+          class WellArchitectedHelper:
+              def __init__(self):
+                  self.wa_client = boto3.client('wellarchitected')
+                  self.dynamodb = boto3.resource('dynamodb')
+                  self.s3 = boto3.client('s3')
+                  
+              def get_workloads(self) -> List[Dict]:
+                  """Get all workloads"""
+                  workloads = []
+                  paginator = self.wa_client.get_paginator('list_workloads')
+                  
+                  for page in paginator.paginate():
+                      workloads.extend(page['WorkloadSummaries'])
+                      
+                  return workloads
+                  
+              def create_milestone(self, workload_id: str, milestone_name: str) -> str:
+                  """Create a milestone for a workload"""
+                  response = self.wa_client.create_milestone(
+                      WorkloadId=workload_id,
+                      MilestoneName=milestone_name
+                  )
+                  return response['MilestoneNumber']
+                  
+              def get_lens_review(self, workload_id: str, lens_alias: str = 'wellarchitected') -> Dict:
+                  """Get lens review for a workload"""
+                  response = self.wa_client.get_lens_review(
+                      WorkloadId=workload_id,
+                      LensAlias=lens_alias
+                  )
+                  return response['LensReview']
+                  
+              def get_improvement_plan(self, workload_id: str, lens_alias: str = 'wellarchitected') -> List[Dict]:
+                  """Get improvement plan for a workload"""
+                  improvements = []
+                  paginator = self.wa_client.get_paginator('list_lens_review_improvements')
+                  
+                  for page in paginator.paginate(
+                      WorkloadId=workload_id,
+                      LensAlias=lens_alias
+                  ):
+                      improvements.extend(page['ImprovementSummaries'])
+                      
+                  return improvements
+      CompatibleRuntimes:
+        - python3.9
+        - python3.8
+
+  # Lambda Function for Automated Review
+  WellArchitectedReviewFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ApplicationName}-wa-review-${Environment}'
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Role: !GetAtt WellArchitectedLambdaRole.Arn
+      Timeout: 900
+      MemorySize: 512
+      Layers:
+        - !Ref WellArchitectedLayer
+      Environment:
+        Variables:
+          WORKLOAD_REVIEWS_TABLE: !Ref WorkloadReviewsTable
+          RECOMMENDATIONS_TABLE: !Ref RecommendationsTable
+          REPORTS_TABLE: !Ref WellArchitectedReportsTable
+          REPORTS_BUCKET: !Ref WellArchitectedReportsBucket
+          NOTIFICATION_TOPIC: !Ref WellArchitectedNotificationTopic
+          ENVIRONMENT: !Ref Environment
+          APPLICATION_NAME: !Ref ApplicationName
+      TracingConfig:
+        Mode: Active
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          from datetime import datetime
+          import uuid
+          from decimal import Decimal
+          
+          def lambda_handler(event, context):
+              wa_client = boto3.client('wellarchitected')
+              dynamodb = boto3.resource('dynamodb')
+              sns = boto3.client('sns')
+              
+              workload_reviews_table = dynamodb.Table(os.environ['WORKLOAD_REVIEWS_TABLE'])
+              recommendations_table = dynamodb.Table(os.environ['RECOMMENDATIONS_TABLE'])
+              
+              try:
+                  # Get all workloads
+                  workloads = []
+                  paginator = wa_client.get_paginator('list_workloads')
+                  
+                  for page in paginator.paginate():
+                      workloads.extend(page['WorkloadSummaries'])
+                  
+                  results = []
+                  
+                  for workload in workloads:
+                      workload_id = workload['WorkloadId']
+                      workload_name = workload['WorkloadName']
+                      
+                      print(f"Reviewing workload: {workload_name} ({workload_id})")
+                      
+                      # Create milestone
+                      milestone_name = f"Automated Review {datetime.now().strftime('%Y-%m-%d')}"
+                      try:
+                          milestone_response = wa_client.create_milestone(
+                              WorkloadId=workload_id,
+                              MilestoneName=milestone_name
+                          )
+                          milestone_number = milestone_response['MilestoneNumber']
+                      except Exception as e:
+                          print(f"Error creating milestone: {str(e)}")
+                          milestone_number = None
+                      
+                      # Get lens review
+                      lens_review = wa_client.get_lens_review(
+                          WorkloadId=workload_id,
+                          LensAlias='wellarchitected'
+                      )
+                      
+                      # Get improvement plan
+                      improvements = []
+                      improvement_paginator = wa_client.get_paginator('list_lens_review_improvements')
+                      
+                      for page in improvement_paginator.paginate(
+                          WorkloadId=workload_id,
+                          LensAlias='wellarchitected'
+                      ):
+                          improvements.extend(page['ImprovementSummaries'])
+                      
+                      # Calculate risk counts
+                      risk_counts = lens_review['LensReview']['RiskCounts']
+                      
+                      # Store review in DynamoDB
+                      review_item = {
+                          'WorkloadId': workload_id,
+                          'ReviewDate': datetime.now().isoformat(),
+                          'WorkloadName': workload_name,
+                          'Status': 'COMPLETED',
+                          'MilestoneNumber': milestone_number,
+                          'RiskCounts': {k: Decimal(str(v)) for k, v in risk_counts.items()},
+                          'ImprovementCount': len(improvements),
+                          'LensAlias': 'wellarchitected',
+                          'ReviewType': 'AUTOMATED',
+                          'TTL': int((datetime.now().timestamp() + (90 * 24 * 60 * 60)))  # 90 days
+                      }
+                      
+                      workload_reviews_table.put_item(Item=review_item)
+                      
+                      # Store recommendations
+                      for improvement in improvements:
+                          recommendation_item = {
+                              'RecommendationId': str(uuid.uuid4()),
+                              'WorkloadId': workload_id,
+                              'WorkloadName': workload_name,
+                              'PillarId': improvement['PillarId'],
+                              'QuestionId': improvement['QuestionId'],
+                              'ImprovementPlanUrl': improvement.get('ImprovementPlanUrl', ''),
+                              'Priority': improvement.get('Risk', 'MEDIUM'),
+                              'Status': 'OPEN',
+                              'CreatedDate': datetime.now().isoformat(),
+                              'Title': improvement.get('QuestionTitle', ''),
+                              'Description': improvement.get('ImprovementPlanUrl', ''),
+                              'TTL': int((datetime.now().timestamp() + (365 * 24 * 60 * 60)))  # 1 year
+                          }
+                          
+                          recommendations_table.put_item(Item=recommendation_item)
+                      
+                      results.append({
+                          'WorkloadId': workload_id,
+                          'WorkloadName': workload_name,
+                          'MilestoneNumber': milestone_number,
+                          'ImprovementCount': len(improvements),
+                          'RiskCounts': risk_counts
+                      })
+                  
+                  # Send notification
+                  notification_message = {
+                      'message': f'Well-Architected review completed for {len(workloads)} workloads',
+                      'workloads_reviewed': len(workloads),
+                      'total_improvements': sum(r['ImprovementCount'] for r in results),
+                      'results': results
+                  }
+                  
+                  sns.publish(
+                      TopicArn=os.environ['NOTIFICATION_TOPIC'],
+                      Subject=f'Well-Architected Review Completed - {os.environ["APPLICATION_NAME"]}',
+                      Message=json.dumps(notification_message, indent=2)
+                  )
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps({
+                          'message': 'Review completed successfully',
+                          'workloads_reviewed': len(workloads),
+                          'results': results
+                      })
+                  }
+                  
+              except Exception as e:
+                  print(f"Error during review: {str(e)}")
+                  
+                  # Send error notification
+                  sns.publish(
+                      TopicArn=os.environ['NOTIFICATION_TOPIC'],
+                      Subject=f'Well-Architected Review Failed - {os.environ["APPLICATION_NAME"]}',
+                      Message=f'Error during automated review: {str(e)}'
+                  )
+                  
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps({
+                          'error': str(e),
+                          'message': 'Review failed'
+                      })
+                  }
+
+  # Lambda Function for JIRA Integration (if enabled)
+  JiraIntegrationFunction:
+    Type: AWS::Lambda::Function
+    Condition: JiraEnabled
+    Properties:
+      FunctionName: !Sub '${ApplicationName}-wa-jira-integration-${Environment}'
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Role: !GetAtt WellArchitectedLambdaRole.Arn
+      Timeout: 300
+      MemorySize: 256
+      Environment:
+        Variables:
+          JIRA_SECRET_ARN: !Ref JiraCredentialsSecret
+          JIRA_BASE_URL: !Ref JiraBaseUrl
+          JIRA_PROJECT_KEY: !Ref JiraProjectKey
+          RECOMMENDATIONS_TABLE: !Ref RecommendationsTable
+      TracingConfig:
+        Mode: Active
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          import requests
+          from base64 import b64encode
+          
+          def lambda_handler(event, context):
+              if not os.environ.get('JIRA_BASE_URL') or not os.environ.get('JIRA_PROJECT_KEY'):
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps({'message': 'JIRA integration not configured'})
+                  }
+              
+              secrets_client = boto3.client('secretsmanager')
+              dynamodb = boto3.resource('dynamodb')
+              
+              try:
+                  # Get JIRA credentials
+                  secret_response = secrets_client.get_secret_value(
+                      SecretId=os.environ['JIRA_SECRET_ARN']
+                  )
+                  jira_creds = json.loads(secret_response['SecretString'])
+                  
+                  # Setup JIRA API headers
+                  auth_string = f"{jira_creds['username']}:{jira_creds['api_token']}"
+                  auth_bytes = auth_string.encode('ascii')
+                  auth_b64 = b64encode(auth_bytes).decode('ascii')
+                  
+                  headers = {
+                      'Authorization': f'Basic {auth_b64}',
+                      'Content-Type': 'application/json'
+                  }
+                  
+                  # Process DynamoDB stream records (if triggered by stream)
+                  if 'Records' in event:
+                      for record in event['Records']:
+                          if record['eventName'] == 'INSERT':
+                              recommendation = record['dynamodb']['NewImage']
+                              
+                              # Create JIRA issue
+                              issue_data = {
+                                  'fields': {
+                                      'project': {'key': os.environ['JIRA_PROJECT_KEY']},
+                                      'summary': f"WA Recommendation: {recommendation['Title']['S']}",
+                                      'description': recommendation.get('Description', {}).get('S', ''),
+                                      'issuetype': {'name': 'Task'},
+                                      'priority': {'name': get_jira_priority(recommendation['Priority']['S'])},
+                                      'labels': [
+                                          'well-architected',
+                                          f"workload-{recommendation['WorkloadId']['S']}",
+                                          f"pillar-{recommendation['PillarId']['S']}"
+                                      ]
+                                  }
+                              }
+                              
+                              response = requests.post(
+                                  f"{os.environ['JIRA_BASE_URL']}/rest/api/3/issue",
+                                  headers=headers,
+                                  json=issue_data
+                              )
+                              
+                              if response.status_code == 201:
+                                  jira_issue = response.json()
+                                  
+                                  # Update DynamoDB with JIRA issue key
+                                  table = dynamodb.Table(os.environ['RECOMMENDATIONS_TABLE'])
+                                  table.update_item(
+                                      Key={'RecommendationId': recommendation['RecommendationId']['S']},
+                                      UpdateExpression='SET JiraIssueKey = :key, JiraIssueUrl = :url',
+                                      ExpressionAttributeValues={
+                                          ':key': jira_issue['key'],
+                                          ':url': f"{os.environ['JIRA_BASE_URL']}/browse/{jira_issue['key']}"
+                                      }
+                                  )
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps({'message': 'JIRA integration completed successfully'})
+                  }
+                  
+              except Exception as e:
+                  print(f"Error in JIRA integration: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps({'error': str(e)})
+                  }
+          
+          def get_jira_priority(wa_priority):
+              priority_map = {
+                  'HIGH': 'High',
+                  'MEDIUM': 'Medium',
+                  'LOW': 'Low'
+              }
+              return priority_map.get(wa_priority, 'Medium')
+
+  # Secrets Manager Secret for JIRA Credentials (if enabled)
+  JiraCredentialsSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: JiraEnabled
+    Properties:
+      Name: !Sub '${ApplicationName}-jira-credentials-${Environment}'
+      Description: 'JIRA API credentials for Well-Architected integration'
+      SecretString: !Sub |
+        {
+          "username": "your_jira_email@example.com",
+          "api_token": "your_jira_api_token",
+          "base_url": "${JiraBaseUrl}",
+          "project_key": "${JiraProjectKey}"
+        }
+      KmsKeyId: !Ref KMSKeyId
+
+  # EventBridge Rule for Scheduled Reviews
+  WellArchitectedReviewSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${ApplicationName}-wa-review-schedule-${Environment}'
+      Description: 'Schedule for automated Well-Architected reviews'
+      ScheduleExpression: !Ref ReviewSchedule
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt WellArchitectedReviewFunction.Arn
+          Id: 'WellArchitectedReviewTarget'
+
+  # Permission for EventBridge to invoke Lambda
+  WellArchitectedReviewInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref WellArchitectedReviewFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt WellArchitectedReviewSchedule.Arn
+
+  # DynamoDB Stream Event Source Mapping for JIRA Integration
+  JiraIntegrationEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Condition: JiraEnabled
+    Properties:
+      EventSourceArn: !GetAtt RecommendationsTable.StreamArn
+      FunctionName: !Ref JiraIntegrationFunction
+      StartingPosition: LATEST
+      BatchSize: 10
+      MaximumBatchingWindowInSeconds: 5
+
+  # SNS Topic for Well-Architected Notifications
+  WellArchitectedNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ApplicationName}-wa-notifications-${Environment}'
+      KmsMasterKeyId: !Ref KMSKeyId
+
+  WellArchitectedNotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref WellArchitectedNotificationTopic
+      Endpoint: !Ref NotificationEmail
+
+  # CloudWatch Dashboard for Well-Architected Metrics
+  WellArchitectedDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ApplicationName}-well-architected-${Environment}'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Duration", "FunctionName", "${WellArchitectedReviewFunction}" ],
+                  [ ".", "Errors", ".", "." ],
+                  [ ".", "Invocations", ".", "." ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Well-Architected Review Function Metrics",
+                "period": 300
+              }
+            },
+            {
+              "type": "log",
+              "x": 0,
+              "y": 6,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "query": "SOURCE '/aws/lambda/${WellArchitectedReviewFunction}'\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 20",
+                "region": "${AWS::Region}",
+                "title": "Recent Errors",
+                "view": "table"
+              }
+            }
+          ]
+        }
+
+  # CloudWatch Alarms
+  WellArchitectedReviewErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-wa-review-errors-${Environment}'
+      AlarmDescription: 'Well-Architected review function errors'
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref WellArchitectedReviewFunction
+      AlarmActions:
+        - !Ref WellArchitectedNotificationTopic
+
+Outputs:
+  WorkloadReviewsTableName:
+    Description: 'Name of the workload reviews DynamoDB table'
+    Value: !Ref WorkloadReviewsTable
+    Export:
+      Name: !Sub '${ApplicationName}-workload-reviews-table-${Environment}'
+
+  RecommendationsTableName:
+    Description: 'Name of the recommendations DynamoDB table'
+    Value: !Ref RecommendationsTable
+    Export:
+      Name: !Sub '${ApplicationName}-recommendations-table-${Environment}'
+
+  WellArchitectedReportsBucketName:
+    Description: 'Name of the Well-Architected reports S3 bucket'
+    Value: !Ref WellArchitectedReportsBucket
+    Export:
+      Name: !Sub '${ApplicationName}-wa-reports-bucket-${Environment}'
+
+  WellArchitectedReviewFunctionArn:
+    Description: 'ARN of the Well-Architected review function'
+    Value: !GetAtt WellArchitectedReviewFunction.Arn
+    Export:
+      Name: !Sub '${ApplicationName}-wa-review-function-${Environment}'
+
+  WellArchitectedNotificationTopicArn:
+    Description: 'ARN of the Well-Architected notification topic'
+    Value: !Ref WellArchitectedNotificationTopic
+    Export:
+      Name: !Sub '${ApplicationName}-wa-notification-topic-${Environment}'
+
+  JiraCredentialsSecretArn:
+    Condition: JiraEnabled
+    Description: 'ARN of the JIRA credentials secret'
+    Value: !Ref JiraCredentialsSecret
+    Export:
+      Name: !Sub '${ApplicationName}-jira-secret-${Environment}'

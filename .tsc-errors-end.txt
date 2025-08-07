@@ -1,0 +1,50 @@
+src/types/react-compat.ts(19,40): error TS2694: Namespace '"react"' has no exported member 'ElementType'.
+src/types/react-compat.ts(19,61): error TS2694: Namespace '"react"' has no exported member 'ElementRef'.
+src/types/react-compat.ts(20,44): error TS2694: Namespace '"react"' has no exported member 'ElementType'.
+src/types/react-compat.ts(20,65): error TS2694: Namespace '"react"' has no exported member 'ComponentProps'.
+src/types/react-compat.ts(21,54): error TS2694: Namespace '"react"' has no exported member 'ElementType'.
+src/types/react-compat.ts(21,75): error TS2694: Namespace '"react"' has no exported member 'ComponentPropsWithoutRef'.
+src/types/react-compat.ts(24,39): error TS2694: Namespace '"react"' has no exported member 'HTMLAttributes'.
+src/types/react-compat.ts(25,45): error TS2694: Namespace '"react"' has no exported member 'ButtonHTMLAttributes'.
+src/types/react-compat.ts(26,44): error TS2694: Namespace '"react"' has no exported member 'InputHTMLAttributes'.
+src/types/react-compat.ts(30,45): error TS2694: Namespace '"react"' has no exported member 'MouseEvent'.
+src/types/react-compat.ts(31,48): error TS2694: Namespace '"react"' has no exported member 'KeyboardEvent'.
+src/types/react-compat.ts(33,45): error TS2694: Namespace '"react"' has no exported member 'FocusEvent'.
+src/types/react-compat.ts(36,35): error TS2694: Namespace '"react"' has no exported member 'CSSProperties'.
+src/types/react-compat.ts(39,28): error TS2694: Namespace '"react"' has no exported member 'Ref'.
+src/types/react-compat.ts(40,34): error TS2694: Namespace '"react"' has no exported member 'RefObject'.
+src/types/react-compat.ts(41,41): error TS2694: Namespace '"react"' has no exported member 'MutableRefObject'.
+src/types/react-compat.ts(45,3): error TS2339: Property 'forwardRef' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(46,3): error TS2339: Property 'memo' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(47,3): error TS2339: Property 'createContext' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(48,3): error TS2339: Property 'createElement' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(49,3): error TS2339: Property 'Fragment' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(53,3): error TS2339: Property 'useId' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(58,3): error TS2339: Property 'useDeferredValue' does not exist on type 'typeof import("react")'.
+src/types/react-compat.ts(65,46): error TS2339: Property 'value' does not exist on type 'EventTarget & T'.
+src/types/react-compat.ts(76,16): error TS2339: Property 'isValidElement' does not exist on type 'typeof import("react")'.
+src/types/react-helpers.ts(5,3): error TS2305: Module '"react"' has no exported member 'MouseEvent'.
+src/types/react-helpers.ts(6,3): error TS2305: Module '"react"' has no exported member 'KeyboardEvent'.
+src/types/react-helpers.ts(7,3): error TS2305: Module '"react"' has no exported member 'FocusEvent'.
+src/types/react-helpers.ts(9,3): error TS2305: Module '"react"' has no exported member 'ElementType'.
+src/types/react-helpers.ts(10,3): error TS2305: Module '"react"' has no exported member 'CSSProperties'.
+src/types/react-helpers.ts(13,3): error TS2305: Module '"react"' has no exported member 'HTMLAttributes'.
+src/types/react-helpers.ts(14,3): error TS2305: Module '"react"' has no exported member 'ButtonHTMLAttributes'.
+src/types/react-helpers.ts(15,3): error TS2305: Module '"react"' has no exported member 'InputHTMLAttributes'.
+src/types/react-helpers.ts(16,3): error TS2305: Module '"react"' has no exported member 'ComponentProps'.
+src/types/user.types.ts(7,3): error TS2305: Module '"./index"' has no exported member 'Brand'.
+src/types/user.types.ts(8,3): error TS2305: Module '"./index"' has no exported member 'UserId'.
+src/types/user.types.ts(9,3): error TS2305: Module '"./index"' has no exported member 'EmailAddress'.
+src/types/user.types.ts(10,3): error TS2305: Module '"./index"' has no exported member 'ISODateString'.
+src/types/user.types.ts(11,3): error TS2305: Module '"./index"' has no exported member 'DeepReadonly'.
+src/types/user.types.ts(12,3): error TS2305: Module '"./index"' has no exported member 'Optional'.
+src/types/user.types.ts(13,3): error TS2305: Module '"./index"' has no exported member 'Result'.
+src/utils/type-guards.ts(7,3): error TS2305: Module '"../types"' has no exported member 'Brand'.
+src/utils/type-guards.ts(8,3): error TS2305: Module '"../types"' has no exported member 'UserId'.
+src/utils/type-guards.ts(9,3): error TS2305: Module '"../types"' has no exported member 'EmailAddress'.
+src/utils/type-guards.ts(10,3): error TS2305: Module '"../types"' has no exported member 'ISODateString'.
+src/utils/type-guards.ts(11,3): error TS2305: Module '"../types"' has no exported member 'Result'.
+src/utils/type-guards.ts(12,3): error TS2724: '"../types"' has no exported member named 'ValidationResult'. Did you mean 'ValidationRule'?
+src/utils/type-guards.ts(13,3): error TS2305: Module '"../types"' has no exported member 'ValidationError'.
+src/utils/type-guards.ts(14,3): error TS2305: Module '"../types"' has no exported member 'ApiResponse'.
+src/utils/type-guards.ts(15,3): error TS2305: Module '"../types"' has no exported member 'AsyncState'.

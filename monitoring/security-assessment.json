@@ -1,0 +1,69 @@
+{
+  "generated_at": "2025-07-23T03:07:14.011Z",
+  "assessment": {
+    "authentication": {
+      "status": "configured",
+      "methods": [
+        "local",
+        "api-key"
+      ],
+      "recommendations": [
+        "Implement OAuth/SAML for single sign-on",
+        "Enable multi-factor authentication",
+        "Set up session timeout policies"
+      ]
+    },
+    "authorization": {
+      "status": "basic",
+      "rbac_enabled": true,
+      "folder_permissions": true,
+      "recommendations": [
+        "Implement fine-grained RBAC",
+        "Regular access reviews",
+        "Principle of least privilege"
+      ]
+    },
+    "network_security": {
+      "status": "development",
+      "tls_enabled": false,
+      "firewall_configured": false,
+      "recommendations": [
+        "Enable TLS/SSL for all communications",
+        "Configure network firewalls",
+        "Implement VPN for remote access",
+        "Use service mesh for inter-service communication"
+      ]
+    },
+    "data_protection": {
+      "status": "basic",
+      "encryption_at_rest": false,
+      "backup_encryption": false,
+      "recommendations": [
+        "Implement encryption at rest",
+        "Encrypt backup files",
+        "Use secure key management",
+        "Regular security audits"
+      ]
+    },
+    "monitoring": {
+      "status": "configured",
+      "audit_logging": true,
+      "security_alerts": true,
+      "recommendations": [
+        "Ship logs to SIEM system",
+        "Set up security dashboards",
+        "Regular penetration testing",
+        "Compliance monitoring"
+      ]
+    }
+  },
+  "security_score": 65,
+  "next_steps": [
+    "Implement TLS/SSL certificates",
+    "Set up OAuth/SAML authentication",
+    "Configure network security groups",
+    "Enable encryption at rest",
+    "Implement centralized logging",
+    "Regular security assessments"
+  ]
+}

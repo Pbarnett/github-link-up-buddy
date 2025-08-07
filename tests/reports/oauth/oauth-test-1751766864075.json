@@ -1,0 +1,129 @@
+{
+  "timestamp": "2025-07-06T01:54:23.776Z",
+  "version": "2.0.0-optimized",
+  "environment": "development",
+  "performance": {
+    "totalDuration": 299.2818500000001,
+    "testDurations": {
+      "Environment Variables": 205.72593000000006,
+      "Google OAuth Config": 233.93134599999996,
+      "Supabase Connection": 0.48634900000001835,
+      "OAuth URL Generation": 1.2100439999999253,
+      "Current Session": 0.34958800000003976,
+      "Dev Server": 43.713209000000006,
+      "Config Files": 0.909881999999925
+    },
+    "cacheHits": 0,
+    "parallelExecutions": 1
+  },
+  "passed": 15,
+  "failed": 0,
+  "warnings": 1,
+  "tests": [
+    {
+      "name": "VITE_SUPABASE_URL",
+      "passed": true,
+      "message": "Environment variable set",
+      "fix": null,
+      "timestamp": 1751766863793
+    },
+    {
+      "name": "VITE_SUPABASE_ANON_KEY",
+      "passed": true,
+      "message": "Environment variable set",
+      "fix": null,
+      "timestamp": 1751766863793
+    },
+    {
+      "name": "GOOGLE_CLIENT_ID",
+      "passed": true,
+      "message": "Environment variable set",
+      "fix": null,
+      "timestamp": 1751766863793
+    },
+    {
+      "name": "GOOGLE_CLIENT_SECRET",
+      "passed": true,
+      "message": "Environment variable set",
+      "fix": null,
+      "timestamp": 1751766863793
+    },
+    {
+      "name": "Google OAuth Enabled",
+      "passed": true,
+      "message": "Google OAuth is enabled in Supabase",
+      "fix": null,
+      "timestamp": 1751766864027
+    },
+    {
+      "name": "Email Auth",
+      "passed": true,
+      "message": "Email auth enabled",
+      "fix": null,
+      "timestamp": 1751766864027
+    },
+    {
+      "name": "Signup Enabled",
+      "passed": true,
+      "message": "User signup enabled",
+      "fix": null,
+      "timestamp": 1751766864027
+    },
+    {
+      "name": "Supabase Connection",
+      "passed": true,
+      "message": "Successfully connected to Supabase",
+      "fix": null,
+      "timestamp": 1751766864028
+    },
+    {
+      "name": "OAuth URL Generation",
+      "passed": true,
+      "message": "OAuth URL generated successfully",
+      "fix": null,
+      "timestamp": 1751766864029
+    },
+    {
+      "name": "OAuth URL Host",
+      "passed": true,
+      "message": "OAuth URL uses local Supabase instance",
+      "fix": null,
+      "timestamp": 1751766864029
+    },
+    {
+      "name": "OAuth URL Parameters",
+      "passed": true,
+      "message": "Required parameters present",
+      "fix": null,
+      "timestamp": 1751766864030
+    },
+    {
+      "name": "Current Session",
+      "passed": true,
+      "message": "No active session (expected for testing)",
+      "fix": null,
+      "timestamp": 1751766864030
+    },
+    {
+      "name": "Dev Server",
+      "passed": true,
+      "message": "Development server is running",
+      "fix": null,
+      "timestamp": 1751766864074
+    },
+    {
+      "name": "Supabase Config",
+      "passed": true,
+      "message": "Google OAuth configured in supabase/config.toml",
+      "fix": null,
+      "timestamp": 1751766864075
+    },
+    {
+      "name": "Google Credentials",
+      "passed": true,
+      "message": "Google credentials present in config",
+      "fix": null,
+      "timestamp": 1751766864075
+    }
+  ]
+}

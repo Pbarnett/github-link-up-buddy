@@ -1,0 +1,3 @@
+supabase/functions/migrate-legacy-data/index.ts
+supabase/functions/stripe-webhook-wallet/index.ts
+supabase/functions/set-default-payment-method/index.ts

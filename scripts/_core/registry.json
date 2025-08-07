@@ -1,0 +1,1437 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-08-06T22:36:01.337Z",
+  "description": "World-class script registry for automated execution",
+  "scripts": {
+    "build/build.sh": {
+      "name": "build",
+      "category": "build",
+      "description": "Auto-registered build script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/build/build.sh",
+      "registeredAt": "2025-08-06T22:36:01.257Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/api-coordinated-rollout.sh": {
+      "name": "api-coordinated-rollout",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/api-coordinated-rollout.sh",
+      "registeredAt": "2025-08-06T22:36:01.259Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/api-setup-rollout.sh": {
+      "name": "api-setup-rollout",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/api-setup-rollout.sh",
+      "registeredAt": "2025-08-06T22:36:01.261Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/auto-setup-production.sh": {
+      "name": "auto-setup-production",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/auto-setup-production.sh",
+      "registeredAt": "2025-08-06T22:36:01.262Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/complete-deployment.sh": {
+      "name": "complete-deployment",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/complete-deployment.sh",
+      "registeredAt": "2025-08-06T22:36:01.263Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/complete-duffel-deployment.sh": {
+      "name": "complete-duffel-deployment",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/complete-duffel-deployment.sh",
+      "registeredAt": "2025-08-06T22:36:01.263Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/coordinated-feature-rollout.sh": {
+      "name": "coordinated-feature-rollout",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/coordinated-feature-rollout.sh",
+      "registeredAt": "2025-08-06T22:36:01.264Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy-duffel-complete.sh": {
+      "name": "deploy-duffel-complete",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-duffel-complete.sh",
+      "registeredAt": "2025-08-06T22:36:01.264Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy-duffel-functions.sh": {
+      "name": "deploy-duffel-functions",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-duffel-functions.sh",
+      "registeredAt": "2025-08-06T22:36:01.265Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy-duffel-production.sh": {
+      "name": "deploy-duffel-production",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-duffel-production.sh",
+      "registeredAt": "2025-08-06T22:36:01.265Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy-function.sh": {
+      "name": "deploy-function",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-function.sh",
+      "registeredAt": "2025-08-06T22:36:01.266Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy-optimized-infrastructure.sh": {
+      "name": "deploy-optimized-infrastructure",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-optimized-infrastructure.sh",
+      "registeredAt": "2025-08-06T22:36:01.266Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy-payment-system.sh": {
+      "name": "deploy-payment-system",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-payment-system.sh",
+      "registeredAt": "2025-08-06T22:36:01.267Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy-phase2.js": {
+      "name": "deploy-phase2",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-phase2.js",
+      "registeredAt": "2025-08-06T22:36:01.268Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy-production.js": {
+      "name": "deploy-production",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-production.js",
+      "registeredAt": "2025-08-06T22:36:01.268Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy-production.sh": {
+      "name": "deploy-production",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-production.sh",
+      "registeredAt": "2025-08-06T22:36:01.269Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy-to-production.sh": {
+      "name": "deploy-to-production",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-to-production.sh",
+      "registeredAt": "2025-08-06T22:36:01.269Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy-zero-downtime.sh": {
+      "name": "deploy-zero-downtime",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-zero-downtime.sh",
+      "registeredAt": "2025-08-06T22:36:01.270Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy.config.js": {
+      "name": "deploy.config",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy.config.js",
+      "registeredAt": "2025-08-06T22:36:01.270Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/deploy.sh": {
+      "name": "deploy",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy.sh",
+      "registeredAt": "2025-08-06T22:36:01.271Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/gradual-rollout-simple.sh": {
+      "name": "gradual-rollout-simple",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/gradual-rollout-simple.sh",
+      "registeredAt": "2025-08-06T22:36:01.271Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/gradual-rollout.sh": {
+      "name": "gradual-rollout",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/gradual-rollout.sh",
+      "registeredAt": "2025-08-06T22:36:01.272Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/orchestrate-rollout.ts": {
+      "name": "orchestrate-rollout",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/orchestrate-rollout.ts",
+      "registeredAt": "2025-08-06T22:36:01.272Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/production-dashboard.sh": {
+      "name": "production-dashboard",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/production-dashboard.sh",
+      "registeredAt": "2025-08-06T22:36:01.273Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/production-env-setup.ts": {
+      "name": "production-env-setup",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/production-env-setup.ts",
+      "registeredAt": "2025-08-06T22:36:01.274Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/production-health-check.ts": {
+      "name": "production-health-check",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/production-health-check.ts",
+      "registeredAt": "2025-08-06T22:36:01.274Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/rollback-production.js": {
+      "name": "rollback-production",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/rollback-production.js",
+      "registeredAt": "2025-08-06T22:36:01.275Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/run-rollout.sh": {
+      "name": "run-rollout",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/run-rollout.sh",
+      "registeredAt": "2025-08-06T22:36:01.275Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/setup-branch-protection.js": {
+      "name": "setup-branch-protection",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/setup-branch-protection.js",
+      "registeredAt": "2025-08-06T22:36:01.276Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/setup-production-complete.sh": {
+      "name": "setup-production-complete",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/setup-production-complete.sh",
+      "registeredAt": "2025-08-06T22:36:01.277Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/setup-rollout-database.sh": {
+      "name": "setup-rollout-database",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/setup-rollout-database.sh",
+      "registeredAt": "2025-08-06T22:36:01.277Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/test-deployment-ready.sh": {
+      "name": "test-deployment-ready",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/test-deployment-ready.sh",
+      "registeredAt": "2025-08-06T22:36:01.277Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/test-pipeline-production.js": {
+      "name": "test-pipeline-production",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/test-pipeline-production.js",
+      "registeredAt": "2025-08-06T22:36:01.278Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/test-production-readiness.ts": {
+      "name": "test-production-readiness",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/test-production-readiness.ts",
+      "registeredAt": "2025-08-06T22:36:01.278Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/test-rollout-dev.sh": {
+      "name": "test-rollout-dev",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/test-rollout-dev.sh",
+      "registeredAt": "2025-08-06T22:36:01.279Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/update-docker-deployment.sh": {
+      "name": "update-docker-deployment",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/update-docker-deployment.sh",
+      "registeredAt": "2025-08-06T22:36:01.279Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/validate-coordinated-rollout.sh": {
+      "name": "validate-coordinated-rollout",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/validate-coordinated-rollout.sh",
+      "registeredAt": "2025-08-06T22:36:01.280Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/validate-deployment.ts": {
+      "name": "validate-deployment",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/validate-deployment.ts",
+      "registeredAt": "2025-08-06T22:36:01.280Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/validate-production-ready.sh": {
+      "name": "validate-production-ready",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/validate-production-ready.sh",
+      "registeredAt": "2025-08-06T22:36:01.281Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/verify-production-deployment.sh": {
+      "name": "verify-production-deployment",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/verify-production-deployment.sh",
+      "registeredAt": "2025-08-06T22:36:01.281Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "deployment/wallet-ui-rollout.sh": {
+      "name": "wallet-ui-rollout",
+      "category": "deployment",
+      "description": "Auto-registered deployment script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/wallet-ui-rollout.sh",
+      "registeredAt": "2025-08-06T22:36:01.282Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/advanced-test-runner.js": {
+      "name": "advanced-test-runner",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/advanced-test-runner.js",
+      "registeredAt": "2025-08-06T22:36:01.283Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/cleanup-legacy.sh": {
+      "name": "cleanup-legacy",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/cleanup-legacy.sh",
+      "registeredAt": "2025-08-06T22:36:01.283Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/create-test-env.js": {
+      "name": "create-test-env",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/create-test-env.js",
+      "registeredAt": "2025-08-06T22:36:01.284Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/debug-test.js": {
+      "name": "debug-test",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/debug-test.js",
+      "registeredAt": "2025-08-06T22:36:01.284Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/load-test.js": {
+      "name": "load-test",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/load-test.js",
+      "registeredAt": "2025-08-06T22:36:01.285Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/log-ai-activity.ts": {
+      "name": "log-ai-activity",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/log-ai-activity.ts",
+      "registeredAt": "2025-08-06T22:36:01.285Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/run-oauth-tests-with-mock.sh": {
+      "name": "run-oauth-tests-with-mock",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/run-oauth-tests-with-mock.sh",
+      "registeredAt": "2025-08-06T22:36:01.286Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/security-performance-validation.sh": {
+      "name": "security-performance-validation",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/security-performance-validation.sh",
+      "registeredAt": "2025-08-06T22:36:01.286Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/setup-integration-tests.js": {
+      "name": "setup-integration-tests",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/setup-integration-tests.js",
+      "registeredAt": "2025-08-06T22:36:01.287Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/smoke-test.ts": {
+      "name": "smoke-test",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/smoke-test.ts",
+      "registeredAt": "2025-08-06T22:36:01.287Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-alert-rules.js": {
+      "name": "test-alert-rules",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-alert-rules.js",
+      "registeredAt": "2025-08-06T22:36:01.288Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-amadeus-api.js": {
+      "name": "test-amadeus-api",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-amadeus-api.js",
+      "registeredAt": "2025-08-06T22:36:01.288Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-ci.sh": {
+      "name": "test-ci",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-ci.sh",
+      "registeredAt": "2025-08-06T22:36:01.289Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-components.sh": {
+      "name": "test-components",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-components.sh",
+      "registeredAt": "2025-08-06T22:36:01.289Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-docker-setup.sh": {
+      "name": "test-docker-setup",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-docker-setup.sh",
+      "registeredAt": "2025-08-06T22:36:01.290Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-email-tracking-detailed.ts": {
+      "name": "test-email-tracking-detailed",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-email-tracking-detailed.ts",
+      "registeredAt": "2025-08-06T22:36:01.290Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-email-tracking.ts": {
+      "name": "test-email-tracking",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-email-tracking.ts",
+      "registeredAt": "2025-08-06T22:36:01.290Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-friend-greetings.ts": {
+      "name": "test-friend-greetings",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-friend-greetings.ts",
+      "registeredAt": "2025-08-06T22:36:01.291Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-launchdarkly-connectivity.ts": {
+      "name": "test-launchdarkly-connectivity",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-launchdarkly-connectivity.ts",
+      "registeredAt": "2025-08-06T22:36:01.291Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-launchdarkly-contexts.ts": {
+      "name": "test-launchdarkly-contexts",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-launchdarkly-contexts.ts",
+      "registeredAt": "2025-08-06T22:36:01.292Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-launchdarkly-server-integration.ts": {
+      "name": "test-launchdarkly-server-integration",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-launchdarkly-server-integration.ts",
+      "registeredAt": "2025-08-06T22:36:01.292Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-local-function.sh": {
+      "name": "test-local-function",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-local-function.sh",
+      "registeredAt": "2025-08-06T22:36:01.293Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-migration.sh": {
+      "name": "test-migration",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-migration.sh",
+      "registeredAt": "2025-08-06T22:36:01.293Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-personalization-events.sh": {
+      "name": "test-personalization-events",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-personalization-events.sh",
+      "registeredAt": "2025-08-06T22:36:01.294Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-profile-completeness.sh": {
+      "name": "test-profile-completeness",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-profile-completeness.sh",
+      "registeredAt": "2025-08-06T22:36:01.295Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-staging-function.sh": {
+      "name": "test-staging-function",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-staging-function.sh",
+      "registeredAt": "2025-08-06T22:36:01.295Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-summary.js": {
+      "name": "test-summary",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-summary.js",
+      "registeredAt": "2025-08-06T22:36:01.296Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-twilio-sms.ts": {
+      "name": "test-twilio-sms",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-twilio-sms.ts",
+      "registeredAt": "2025-08-06T22:36:01.296Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "testing/test-wallet-integration.js": {
+      "name": "test-wallet-integration",
+      "category": "testing",
+      "description": "Auto-registered testing script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-wallet-integration.js",
+      "registeredAt": "2025-08-06T22:36:01.297Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "database/migrate-duffel-rules.sh": {
+      "name": "migrate-duffel-rules",
+      "category": "database",
+      "description": "Auto-registered database script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/database/migrate-duffel-rules.sh",
+      "registeredAt": "2025-08-06T22:36:01.297Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "database/migrate-to-modern-oauth.sh": {
+      "name": "migrate-to-modern-oauth",
+      "category": "database",
+      "description": "Auto-registered database script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/database/migrate-to-modern-oauth.sh",
+      "registeredAt": "2025-08-06T22:36:01.298Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/backup-dashboards.sh": {
+      "name": "backup-dashboards",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/backup-dashboards.sh",
+      "registeredAt": "2025-08-06T22:36:01.299Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/create-business-dashboards.js": {
+      "name": "create-business-dashboards",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/create-business-dashboards.js",
+      "registeredAt": "2025-08-06T22:36:01.299Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/dashboard-best-practices.js": {
+      "name": "dashboard-best-practices",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/dashboard-best-practices.js",
+      "registeredAt": "2025-08-06T22:36:01.299Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/health-check.sh": {
+      "name": "health-check",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/health-check.sh",
+      "registeredAt": "2025-08-06T22:36:01.300Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/health-monitor.sh": {
+      "name": "health-monitor",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/health-monitor.sh",
+      "registeredAt": "2025-08-06T22:36:01.300Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/manage-dashboards.js": {
+      "name": "manage-dashboards",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/manage-dashboards.js",
+      "registeredAt": "2025-08-06T22:36:01.301Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/monitor-app.sh": {
+      "name": "monitor-app",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/monitor-app.sh",
+      "registeredAt": "2025-08-06T22:36:01.301Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/monitor-ping.ts": {
+      "name": "monitor-ping",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/monitor-ping.ts",
+      "registeredAt": "2025-08-06T22:36:01.302Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/monitoring-dashboard.sh": {
+      "name": "monitoring-dashboard",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/monitoring-dashboard.sh",
+      "registeredAt": "2025-08-06T22:36:01.302Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/monitoring-status.sh": {
+      "name": "monitoring-status",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/monitoring-status.sh",
+      "registeredAt": "2025-08-06T22:36:01.303Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/optimize-monitoring-setup.js": {
+      "name": "optimize-monitoring-setup",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/optimize-monitoring-setup.js",
+      "registeredAt": "2025-08-06T22:36:01.303Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/performance-monitor.sh": {
+      "name": "performance-monitor",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/performance-monitor.sh",
+      "registeredAt": "2025-08-06T22:36:01.304Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/setup-monitoring.js": {
+      "name": "setup-monitoring",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/setup-monitoring.js",
+      "registeredAt": "2025-08-06T22:36:01.304Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/setup-monitoring.ts": {
+      "name": "setup-monitoring",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/setup-monitoring.ts",
+      "registeredAt": "2025-08-06T22:36:01.305Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/start-monitoring.sh": {
+      "name": "start-monitoring",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/start-monitoring.sh",
+      "registeredAt": "2025-08-06T22:36:01.305Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "monitoring/stop-monitoring.sh": {
+      "name": "stop-monitoring",
+      "category": "monitoring",
+      "description": "Auto-registered monitoring script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/stop-monitoring.sh",
+      "registeredAt": "2025-08-06T22:36:01.306Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "security/credential-manager.ts": {
+      "name": "credential-manager",
+      "category": "security",
+      "description": "Auto-registered security script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/credential-manager.ts",
+      "registeredAt": "2025-08-06T22:36:01.307Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "security/manage-secrets.sh": {
+      "name": "manage-secrets",
+      "category": "security",
+      "description": "Auto-registered security script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/manage-secrets.sh",
+      "registeredAt": "2025-08-06T22:36:01.307Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "security/security-audit.ts": {
+      "name": "security-audit",
+      "category": "security",
+      "description": "Auto-registered security script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/security-audit.ts",
+      "registeredAt": "2025-08-06T22:36:01.308Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "security/setup-credentials-pro.sh": {
+      "name": "setup-credentials-pro",
+      "category": "security",
+      "description": "Auto-registered security script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/setup-credentials-pro.sh",
+      "registeredAt": "2025-08-06T22:36:01.308Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "security/setup-credentials.sh": {
+      "name": "setup-credentials",
+      "category": "security",
+      "description": "Auto-registered security script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/setup-credentials.sh",
+      "registeredAt": "2025-08-06T22:36:01.309Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "security/setup-security.js": {
+      "name": "setup-security",
+      "category": "security",
+      "description": "Auto-registered security script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/setup-security.js",
+      "registeredAt": "2025-08-06T22:36:01.309Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "security/dist/access-key-rotation-manager.js": {
+      "name": "access-key-rotation-manager",
+      "category": "security",
+      "description": "Auto-registered security script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/dist/access-key-rotation-manager.js",
+      "registeredAt": "2025-08-06T22:36:01.310Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "security/dist/iam-policy-auditor.js": {
+      "name": "iam-policy-auditor",
+      "category": "security",
+      "description": "Auto-registered security script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/dist/iam-policy-auditor.js",
+      "registeredAt": "2025-08-06T22:36:01.311Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "maintenance/backup-staging.sh": {
+      "name": "backup-staging",
+      "category": "maintenance",
+      "description": "Auto-registered maintenance script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/maintenance/backup-staging.sh",
+      "registeredAt": "2025-08-06T22:36:01.311Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "maintenance/optimize-data-retention.js": {
+      "name": "optimize-data-retention",
+      "category": "maintenance",
+      "description": "Auto-registered maintenance script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/maintenance/optimize-data-retention.js",
+      "registeredAt": "2025-08-06T22:36:01.312Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/advanced-optimization.js": {
+      "name": "advanced-optimization",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/advanced-optimization.js",
+      "registeredAt": "2025-08-06T22:36:01.313Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/ai-code-analysis.js": {
+      "name": "ai-code-analysis",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/ai-code-analysis.js",
+      "registeredAt": "2025-08-06T22:36:01.313Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/ai-code-review.js": {
+      "name": "ai-code-review",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/ai-code-review.js",
+      "registeredAt": "2025-08-06T22:36:01.314Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/complete-kms-integration.sh": {
+      "name": "complete-kms-integration",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/complete-kms-integration.sh",
+      "registeredAt": "2025-08-06T22:36:01.314Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/create-launchdarkly-flags-interactive.sh": {
+      "name": "create-launchdarkly-flags-interactive",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/create-launchdarkly-flags-interactive.sh",
+      "registeredAt": "2025-08-06T22:36:01.315Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/create-type-declarations.js": {
+      "name": "create-type-declarations",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/create-type-declarations.js",
+      "registeredAt": "2025-08-06T22:36:01.315Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/enable-personalization-greeting.ts": {
+      "name": "enable-personalization-greeting",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/enable-personalization-greeting.ts",
+      "registeredAt": "2025-08-06T22:36:01.316Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/enforce-organization.js": {
+      "name": "enforce-organization",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/enforce-organization.js",
+      "registeredAt": "2025-08-06T22:36:01.316Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/final-validation.js": {
+      "name": "final-validation",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/final-validation.js",
+      "registeredAt": "2025-08-06T22:36:01.317Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-all-react-imports.mjs": {
+      "name": "fix-all-react-imports",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-all-react-imports.mjs",
+      "registeredAt": "2025-08-06T22:36:01.317Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-common-issues.mjs": {
+      "name": "fix-common-issues",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-common-issues.mjs",
+      "registeredAt": "2025-08-06T22:36:01.318Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-component-issues.mjs": {
+      "name": "fix-component-issues",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-component-issues.mjs",
+      "registeredAt": "2025-08-06T22:36:01.318Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-duplicate-imports.js": {
+      "name": "fix-duplicate-imports",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-duplicate-imports.js",
+      "registeredAt": "2025-08-06T22:36:01.319Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-import-empty-lines.js": {
+      "name": "fix-import-empty-lines",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-import-empty-lines.js",
+      "registeredAt": "2025-08-06T22:36:01.320Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-import-order.js": {
+      "name": "fix-import-order",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-import-order.js",
+      "registeredAt": "2025-08-06T22:36:01.320Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-react-19-compatibility.mjs": {
+      "name": "fix-react-19-compatibility",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-react-19-compatibility.mjs",
+      "registeredAt": "2025-08-06T22:36:01.321Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-react-19-imports.js": {
+      "name": "fix-react-19-imports",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-react-19-imports.js",
+      "registeredAt": "2025-08-06T22:36:01.321Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-react-hooks-imports.js": {
+      "name": "fix-react-hooks-imports",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-react-hooks-imports.js",
+      "registeredAt": "2025-08-06T22:36:01.322Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-react-imports.js": {
+      "name": "fix-react-imports",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-react-imports.js",
+      "registeredAt": "2025-08-06T22:36:01.322Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-remaining-imports.sh": {
+      "name": "fix-remaining-imports",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-remaining-imports.sh",
+      "registeredAt": "2025-08-06T22:36:01.323Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-select-casting.mjs": {
+      "name": "fix-select-casting",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-select-casting.mjs",
+      "registeredAt": "2025-08-06T22:36:01.323Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-typescript-errors.js": {
+      "name": "fix-typescript-errors",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-typescript-errors.js",
+      "registeredAt": "2025-08-06T22:36:01.324Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-typescript-issues.mjs": {
+      "name": "fix-typescript-issues",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-typescript-issues.mjs",
+      "registeredAt": "2025-08-06T22:36:01.324Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix-unused-variables.js": {
+      "name": "fix-unused-variables",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-unused-variables.js",
+      "registeredAt": "2025-08-06T22:36:01.325Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/fix_remaining_ts.sh": {
+      "name": "fix_remaining_ts",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix_remaining_ts.sh",
+      "registeredAt": "2025-08-06T22:36:01.326Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/get-token.sh": {
+      "name": "get-token",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/get-token.sh",
+      "registeredAt": "2025-08-06T22:36:01.326Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/git-branch-safe.sh": {
+      "name": "git-branch-safe",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/git-branch-safe.sh",
+      "registeredAt": "2025-08-06T22:36:01.327Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/go-live-validation.js": {
+      "name": "go-live-validation",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/go-live-validation.js",
+      "registeredAt": "2025-08-06T22:36:01.327Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/load-env.ts": {
+      "name": "load-env",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/load-env.ts",
+      "registeredAt": "2025-08-06T22:36:01.328Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/manage-encryption.ts": {
+      "name": "manage-encryption",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/manage-encryption.ts",
+      "registeredAt": "2025-08-06T22:36:01.328Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/quality-gates.js": {
+      "name": "quality-gates",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/quality-gates.js",
+      "registeredAt": "2025-08-06T22:36:01.329Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/quick-validate.js": {
+      "name": "quick-validate",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/quick-validate.js",
+      "registeredAt": "2025-08-06T22:36:01.329Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/resend-domain-setup.ts": {
+      "name": "resend-domain-setup",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/resend-domain-setup.ts",
+      "registeredAt": "2025-08-06T22:36:01.330Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/setup-feature-flags.ts": {
+      "name": "setup-feature-flags",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/setup-feature-flags.ts",
+      "registeredAt": "2025-08-06T22:36:01.330Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/setup-google-oauth-client.sh": {
+      "name": "setup-google-oauth-client",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/setup-google-oauth-client.sh",
+      "registeredAt": "2025-08-06T22:36:01.331Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/setup-launchdarkly-flags.sh": {
+      "name": "setup-launchdarkly-flags",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/setup-launchdarkly-flags.sh",
+      "registeredAt": "2025-08-06T22:36:01.331Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/setup-multi-environment.js": {
+      "name": "setup-multi-environment",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/setup-multi-environment.js",
+      "registeredAt": "2025-08-06T22:36:01.332Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/setup-upstash-redis.sh": {
+      "name": "setup-upstash-redis",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/setup-upstash-redis.sh",
+      "registeredAt": "2025-08-06T22:36:01.332Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/start-functions-with-env.sh": {
+      "name": "start-functions-with-env",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/start-functions-with-env.sh",
+      "registeredAt": "2025-08-06T22:36:01.333Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/validate-duffel-compliance.ts": {
+      "name": "validate-duffel-compliance",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/validate-duffel-compliance.ts",
+      "registeredAt": "2025-08-06T22:36:01.334Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/validate-environment.ts": {
+      "name": "validate-environment",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/validate-environment.ts",
+      "registeredAt": "2025-08-06T22:36:01.335Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/verify-launchdarkly-api.ts": {
+      "name": "verify-launchdarkly-api",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/verify-launchdarkly-api.ts",
+      "registeredAt": "2025-08-06T22:36:01.335Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/verify-launchdarkly-integration.js": {
+      "name": "verify-launchdarkly-integration",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/verify-launchdarkly-integration.js",
+      "registeredAt": "2025-08-06T22:36:01.336Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/verify-launchdarkly.ts": {
+      "name": "verify-launchdarkly",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/verify-launchdarkly.ts",
+      "registeredAt": "2025-08-06T22:36:01.336Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    },
+    "development/verify-oauth-session.ts": {
+      "name": "verify-oauth-session",
+      "category": "development",
+      "description": "Auto-registered development script",
+      "autoRegistered": true,
+      "path": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/verify-oauth-session.ts",
+      "registeredAt": "2025-08-06T22:36:01.337Z",
+      "lastExecuted": null,
+      "executionCount": 0
+    }
+  }
+}

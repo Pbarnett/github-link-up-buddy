@@ -1,0 +1,44 @@
+
+import React from 'react';
+import {  } from 'import PoolHeader from ./PoolHeader';
+import PoolHeader from './PoolHeader';
+
+type ReactNode = React.ReactNode;
+type FC<T = {}> = React.FC<T>;
+
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+
+interface PoolSectionProps {
+  name: string;
+  count: number;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}
+
+const PoolSection: FC<PoolSectionProps> = ({
+  name,
+  count,
+  defaultOpen = false,
+  children,
+}) => {
+  return (
+    <Collapsible defaultOpen={defaultOpen} className="w-full">
+      <CollapsibleTrigger className="w-full p-4 hover:bg-gray-50 rounded-lg">
+        <PoolHeader name={name} count={count} />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-4 mt-4">
+        {count === 0 ? (
+          <div className="text-center text-gray-500 py-8">
+            No options in this category.
+          </div>
+        ) : (
+          children
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+export default PoolSection;

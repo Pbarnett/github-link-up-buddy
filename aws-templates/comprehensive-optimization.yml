@@ -1,0 +1,548 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'GitHub Link Buddy - Comprehensive AWS Optimization with Enterprise Patterns'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name for resource naming
+  
+  ApplicationName:
+    Type: String
+    Default: github-link-buddy
+    Description: Application name for consistent resource naming
+  
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID for resource deployment
+  
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Private subnet IDs for secure resource placement
+  
+  PublicSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Public subnet IDs for ALB deployment
+  
+  CertificateArn:
+    Type: String
+    Description: SSL certificate ARN for HTTPS termination
+  
+  DomainName:
+    Type: String
+    Description: Primary domain name for the application
+  
+  SecondaryRegion:
+    Type: String
+    Default: us-west-2
+    Description: Secondary region for disaster recovery
+  
+  RPOTargetHours:
+    Type: Number
+    Default: 1
+    Description: Recovery Point Objective in hours
+  
+  RTOTargetMinutes:
+    Type: Number
+    Default: 15
+    Description: Recovery Time Objective in minutes
+  
+  NotificationEmail:
+    Type: String
+    Description: Email for notifications and alerts
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, 'production']
+
+Resources:
+  # Multi-region KMS Key for encryption
+  PrimaryKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: 'Primary encryption key for GitHub Link Buddy'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow AWS Services
+            Effect: Allow
+            Principal:
+              Service:
+                - s3.amazonaws.com
+                - dynamodb.amazonaws.com
+                - lambda.amazonaws.com
+                - backup.amazonaws.com
+                - secretsmanager.amazonaws.com
+                - xray.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+              - kms:CreateGrant
+            Resource: '*'
+      EnableKeyRotation: true
+      MultiRegion: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  PrimaryKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ApplicationName}-primary-${Environment}'
+      TargetKeyId: !Ref PrimaryKMSKey
+
+  # DynamoDB Global Table for multi-region replication
+  LinksTable:
+    Type: AWS::DynamoDB::GlobalTable
+    Properties:
+      TableName: !Sub '${ApplicationName}-links-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      Replicas:
+        - Region: us-east-1
+          PointInTimeRecoverySpecification:
+            PointInTimeRecoveryEnabled: true
+          TableClass: STANDARD
+          Tags:
+            - Key: Environment
+              Value: !Ref Environment
+            - Key: Application
+              Value: !Ref ApplicationName
+            - Key: BackupEnabled
+              Value: 'true'
+        - Region: !Ref SecondaryRegion
+          PointInTimeRecoverySpecification:
+            PointInTimeRecoveryEnabled: true
+          TableClass: STANDARD
+          Tags:
+            - Key: Environment
+              Value: !Ref Environment
+            - Key: Application
+              Value: !Ref ApplicationName
+            - Key: BackupEnabled
+              Value: 'true'
+
+  # S3 Bucket with Intelligent Tiering and Cross-Region Replication
+  PrimaryS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ApplicationName}-primary-${AWS::AccountId}-${Environment}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref PrimaryKMSKey
+            BucketKeyEnabled: true
+      IntelligentTieringConfigurations:
+        - Id: EntireBucketIntelligentTiering
+          Status: Enabled
+          Tierings:
+            - AccessTier: ARCHIVE_ACCESS
+              Days: 90
+            - AccessTier: DEEP_ARCHIVE_ACCESS
+              Days: 180
+      VersioningConfiguration:
+        Status: Enabled
+      # ReplicationConfiguration - will be added post-deployment
+      LifecycleConfiguration:
+        Rules:
+          - Id: OptimizeStorage
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+              - TransitionInDays: 90
+                StorageClass: GLACIER
+              - TransitionInDays: 365
+                StorageClass: DEEP_ARCHIVE
+            NoncurrentVersionTransitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+              - TransitionInDays: 90
+                StorageClass: GLACIER
+            NoncurrentVersionExpirationInDays: 730
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # IAM Role for S3 Cross-Region Replication
+  S3ReplicationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ApplicationName}-s3-replication-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3ReplicationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObjectVersionForReplication
+                  - s3:GetObjectVersionAcl
+                  - s3:GetObjectVersionTagging
+                Resource: !Sub 'arn:aws:s3:::${PrimaryS3Bucket}/*'
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Sub 'arn:aws:s3:::${PrimaryS3Bucket}'
+              - Effect: Allow
+                Action:
+                  - s3:ReplicateObject
+                  - s3:ReplicateDelete
+                  - s3:ReplicateTags
+                Resource: !Sub 'arn:aws:s3:::${ApplicationName}-secondary-${AWS::AccountId}-${Environment}/*'
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                Resource: 
+                  - !GetAtt PrimaryKMSKey.Arn
+                  - !Sub 'arn:aws:kms:${SecondaryRegion}:${AWS::AccountId}:key/*'
+
+  # AWS Backup Vault with cross-region replication
+  PrimaryBackupVault:
+    Type: AWS::Backup::BackupVault
+    Properties:
+      BackupVaultName: !Sub '${ApplicationName}-primary-vault-${Environment}'
+      EncryptionKeyArn: !GetAtt PrimaryKMSKey.Arn
+      Notifications:
+        BackupVaultEvents:
+          - BACKUP_JOB_STARTED
+          - BACKUP_JOB_COMPLETED
+          - BACKUP_JOB_FAILED
+          - RESTORE_JOB_STARTED
+          - RESTORE_JOB_COMPLETED
+          - RESTORE_JOB_FAILED
+        SNSTopicArn: !Ref BackupNotificationTopic
+
+  # AWS Backup Plan
+  ComprehensiveBackupPlan:
+    Type: AWS::Backup::BackupPlan
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Sub '${ApplicationName}-comprehensive-backup-${Environment}'
+        BackupPlanRule:
+          - RuleName: DailyBackupsWithCrossRegionCopy
+            TargetBackupVault: !Ref PrimaryBackupVault
+            ScheduleExpression: 'cron(0 2 * * ? *)'
+            StartWindowMinutes: 60
+            CompletionWindowMinutes: 120
+            Lifecycle:
+              DeleteAfterDays: 120
+              MoveToColdStorageAfterDays: 30
+            RecoveryPointTags:
+              Environment: !Ref Environment
+              Application: !Ref ApplicationName
+            CopyActions:
+              - DestinationBackupVaultArn: !Sub 'arn:aws:backup:${SecondaryRegion}:${AWS::AccountId}:backup-vault:${ApplicationName}-secondary-vault-${Environment}'
+                Lifecycle:
+                  DeleteAfterDays: 120
+                  MoveToColdStorageAfterDays: 30
+          - RuleName: HourlyBackupsForRPO
+            TargetBackupVault: !Ref PrimaryBackupVault
+            ScheduleExpression: 'cron(0 * * * ? *)'
+            StartWindowMinutes: 60
+            CompletionWindowMinutes: 120
+            Lifecycle:
+              DeleteAfterDays: 7
+            RecoveryPointTags:
+              Environment: !Ref Environment
+              Application: !Ref ApplicationName
+              BackupType: 'hourly-rpo'
+
+  # Backup Selection for DynamoDB
+  DynamoDBBackupSelection:
+    Type: AWS::Backup::BackupSelection
+    Properties:
+      BackupPlanId: !Ref ComprehensiveBackupPlan
+      BackupSelection:
+        SelectionName: !Sub '${ApplicationName}-dynamodb-selection-${Environment}'
+        IamRoleArn: !GetAtt BackupServiceRole.Arn
+        Resources:
+          - !GetAtt LinksTable.Arn
+        Conditions:
+          StringEquals:
+            - ConditionKey: 'aws:ResourceTag/BackupEnabled'
+              ConditionValue: 'true'
+
+  # IAM Role for AWS Backup Service
+  BackupServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ApplicationName}-backup-service-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: backup.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
+        - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
+
+  # SNS Topic for Backup Notifications
+  BackupNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ApplicationName}-backup-notifications-${Environment}'
+      KmsMasterKeyId: !Ref PrimaryKMSKey
+
+  BackupNotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref BackupNotificationTopic
+      Endpoint: !Ref NotificationEmail
+
+  # X-Ray Sampling Rules for distributed tracing
+  CriticalEndpointsSamplingRule:
+    Type: AWS::XRay::SamplingRule
+    Properties:
+      SamplingRule:
+        RuleName: !Sub 'critical-${Environment}'
+        Priority: 1000
+        FixedRate: 1.0
+        ReservoirSize: 10
+        ServiceName: !Sub '${ApplicationName}-api-${Environment}'
+        ServiceType: 'AWS::Lambda::Function'
+        Host: '*'
+        HTTPMethod: '*'
+        URLPath: '/api/v1/links*'
+        Version: 1
+        ResourceARN: '*'
+        Attributes: {}
+
+  ErrorSamplingRule:
+    Type: AWS::XRay::SamplingRule
+    Properties:
+      SamplingRule:
+        RuleName: !Sub 'errors-${Environment}'
+        Priority: 2000
+        FixedRate: 1.0
+        ReservoirSize: 5
+        ServiceName: '*'
+        ServiceType: '*'
+        Host: '*'
+        HTTPMethod: '*'
+        URLPath: '*'
+        Version: 1
+        ResourceARN: '*'
+        Attributes:
+          error: 'true'
+
+  # CloudWatch Dashboard for comprehensive monitoring
+  ComprehensiveMonitoringDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ApplicationName}-monitoring-${Environment}'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "${LinksTable}", { "stat": "Sum" } ],
+                  [ ".", "ConsumedWriteCapacityUnits", ".", ".", { "stat": "Sum" } ],
+                  [ ".", "ThrottledRequests", ".", ".", { "stat": "Sum" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "DynamoDB Performance",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/S3", "BucketSizeBytes", "BucketName", "${PrimaryS3Bucket}", "StorageType", "StandardStorage" ],
+                  [ ".", "NumberOfObjects", ".", ".", ".", "AllStorageTypes" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "S3 Storage Metrics",
+                "period": 86400
+              }
+            }
+          ]
+        }
+
+  # CloudWatch Alarms for critical metrics
+  DynamoDBThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-dynamodb-throttle-${Environment}'
+      AlarmDescription: 'DynamoDB throttling detected'
+      MetricName: ThrottledRequests
+      Namespace: AWS/DynamoDB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TableName
+          Value: !Ref LinksTable
+      AlarmActions:
+        - !Ref AlertNotificationTopic
+
+  # SNS Topic for Alerts
+  AlertNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ApplicationName}-alerts-${Environment}'
+      KmsMasterKeyId: !Ref PrimaryKMSKey
+
+  AlertNotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref AlertNotificationTopic
+      Endpoint: !Ref NotificationEmail
+
+  # AWS Secrets Manager for secure credential management
+  DatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${ApplicationName}/database/${Environment}'
+      Description: 'Database credentials for GitHub Link Buddy'
+      GenerateSecretString:
+        SecretStringTemplate: !Sub |
+          {
+            "username": "${ApplicationName}_user",
+            "engine": "postgres",
+            "host": "localhost",
+            "port": 5432,
+            "dbname": "${ApplicationName}_${Environment}"
+          }
+        GenerateStringKey: 'password'
+        PasswordLength: 32
+        ExcludeCharacters: '"@/\'
+        RequireEachIncludedType: true
+      KmsKeyId: !Ref PrimaryKMSKey
+      ReplicaRegions:
+        - Region: !Ref SecondaryRegion
+          KmsKeyId: !Sub 'arn:aws:kms:${SecondaryRegion}:${AWS::AccountId}:alias/${ApplicationName}-primary-${Environment}'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  APIKeysSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${ApplicationName}/api-keys/${Environment}'
+      Description: 'External API keys and tokens'
+      SecretString: !Sub |
+        {
+          "github_token": "ghp_placeholder_token_${Environment}",
+          "jwt_secret": "jwt_secret_placeholder_${Environment}",
+          "oauth_client_id": "oauth_client_id_placeholder",
+          "oauth_client_secret": "oauth_client_secret_placeholder",
+          "supabase_url": "https://your-project.supabase.co",
+          "supabase_anon_key": "your_supabase_anon_key"
+        }
+      KmsKeyId: !Ref PrimaryKMSKey
+      ReplicaRegions:
+        - Region: !Ref SecondaryRegion
+          KmsKeyId: !Sub 'arn:aws:kms:${SecondaryRegion}:${AWS::AccountId}:alias/${ApplicationName}-primary-${Environment}'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # Route 53 Health Check and associated alarm removed due to domain configuration requirements
+  # Can be added post-deployment once domain is properly configured
+
+Outputs:
+  DynamoDBTableName:
+    Description: 'DynamoDB table name for the application'
+    Value: !Ref LinksTable
+    Export:
+      Name: !Sub '${ApplicationName}-dynamodb-table-${Environment}'
+
+  S3BucketName:
+    Description: 'S3 bucket name for file storage'
+    Value: !Ref PrimaryS3Bucket
+    Export:
+      Name: !Sub '${ApplicationName}-s3-bucket-${Environment}'
+
+  KMSKeyId:
+    Description: 'KMS Key ID for encryption'
+    Value: !Ref PrimaryKMSKey
+    Export:
+      Name: !Sub '${ApplicationName}-kms-key-${Environment}'
+
+  BackupVaultName:
+    Description: 'AWS Backup vault name'
+    Value: !Ref PrimaryBackupVault
+    Export:
+      Name: !Sub '${ApplicationName}-backup-vault-${Environment}'
+
+  DatabaseSecretArn:
+    Description: 'ARN of the database credentials secret'
+    Value: !Ref DatabaseSecret
+    Export:
+      Name: !Sub '${ApplicationName}-database-secret-${Environment}'
+
+  APIKeysSecretArn:
+    Description: 'ARN of the API keys secret'
+    Value: !Ref APIKeysSecret
+    Export:
+      Name: !Sub '${ApplicationName}-api-keys-secret-${Environment}'

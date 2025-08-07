@@ -1,0 +1,1 @@
+security/manage-secrets.sh

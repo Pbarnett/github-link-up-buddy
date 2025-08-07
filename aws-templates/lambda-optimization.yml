@@ -1,0 +1,661 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'GitHub Link Buddy - Optimized Lambda Functions with Advanced Monitoring and Cost Controls'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name for resource naming
+  
+  ApplicationName:
+    Type: String
+    Default: github-link-buddy
+    Description: Application name for consistent resource naming
+  
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID for Lambda deployment
+  
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Private subnet IDs for Lambda functions
+  
+  KMSKeyId:
+    Type: String
+    Description: KMS Key ID for encryption (from comprehensive-optimization stack)
+  
+  DatabaseSecretArn:
+    Type: String
+    Description: ARN of database credentials secret
+  
+  APIKeysSecretArn:
+    Type: String
+    Description: ARN of API keys secret
+  
+  DynamoDBTableName:
+    Type: String
+    Description: DynamoDB table name for the application
+  
+  S3BucketName:
+    Type: String
+    Description: S3 bucket name for file storage
+  
+  NotificationEmail:
+    Type: String
+    Description: Email for cost and performance alerts
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, 'production']
+
+Resources:
+  # Security Group for Lambda Functions
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${ApplicationName}-lambda-sg-${Environment}'
+      GroupDescription: 'Security group for Lambda functions'
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: 'HTTPS outbound for AWS APIs'
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 10.0.0.0/8
+          Description: 'PostgreSQL database access'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # IAM Role for Lambda Functions with comprehensive permissions
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ApplicationName}-lambda-execution-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+      Policies:
+        - PolicyName: ComprehensiveLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # DynamoDB permissions
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: 
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDBTableName}'
+                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDBTableName}/*'
+              
+              # S3 permissions
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub 'arn:aws:s3:::${S3BucketName}/*'
+              
+              # Secrets Manager permissions
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:DescribeSecret
+                Resource:
+                  - !Ref DatabaseSecretArn
+                  - !Ref APIKeysSecretArn
+              
+              # KMS permissions
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                Resource: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KMSKeyId}'
+              
+              # CloudWatch permissions for custom metrics
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    'cloudwatch:namespace': !Sub '${ApplicationName}/Lambda'
+              
+              # SNS permissions for notifications
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref CostOptimizationTopic
+
+  # API Handler Lambda Function with Cost Optimization
+  APIHandlerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ApplicationName}-api-handler-${Environment}'
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 30
+      MemorySize: !If [IsProduction, 1024, 512]
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds: !Ref PrivateSubnetIds
+      TracingConfig:
+        Mode: Active
+      Environment:
+        Variables:
+          NODE_ENV: !Ref Environment
+          DYNAMODB_TABLE: !Ref DynamoDBTableName
+          S3_BUCKET: !Ref S3BucketName
+          DATABASE_SECRET_ARN: !Ref DatabaseSecretArn
+          API_KEYS_SECRET_ARN: !Ref APIKeysSecretArn
+          KMS_KEY_ID: !Ref KMSKeyId
+          _X_AMZN_TRACE_ID: !Ref 'AWS::NoValue'
+      Code:
+        ZipFile: |
+          // Simplified Lambda function for production deployment
+          exports.handler = async (event, context) => {
+            try {
+              console.log('Event:', JSON.stringify(event, null, 2));
+              console.log('Context:', JSON.stringify(context, null, 2));
+              console.log('Environment Variables:');
+              console.log('- NODE_ENV:', process.env.NODE_ENV);
+              console.log('- DYNAMODB_TABLE:', process.env.DYNAMODB_TABLE);
+              console.log('- S3_BUCKET:', process.env.S3_BUCKET);
+              
+              const path = event.path || '/';
+              const httpMethod = event.httpMethod || 'GET';
+              
+              console.log(`Processing request: ${httpMethod} ${path}`);
+              
+              // Handle different routes
+              if (path === '/health' || path.endsWith('/health')) {
+                return {
+                  statusCode: 200,
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                  },
+                  body: JSON.stringify({
+                    status: 'healthy',
+                    timestamp: new Date().toISOString(),
+                    service: 'github-link-buddy-api',
+                    environment: process.env.NODE_ENV,
+                    functionName: context.functionName,
+                    version: context.functionVersion
+                  })
+                };
+              }
+              
+              if (path.includes('/api/links')) {
+                if (httpMethod === 'GET') {
+                  return {
+                    statusCode: 200,
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Access-Control-Allow-Origin': '*'
+                    },
+                    body: JSON.stringify({
+                      message: 'API Handler is working',
+                      links: [],
+                      count: 0,
+                      note: 'DynamoDB integration will be added in next deployment phase'
+                    })
+                  };
+                } else if (httpMethod === 'POST') {
+                  return {
+                    statusCode: 201,
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Access-Control-Allow-Origin': '*'
+                    },
+                    body: JSON.stringify({
+                      message: 'Link creation endpoint ready',
+                      note: 'DynamoDB integration will be added in next deployment phase'
+                    })
+                  };
+                }
+              }
+              
+              // Default response for unhandled routes
+              return {
+                statusCode: 404,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Access-Control-Allow-Origin': '*'
+                },
+                body: JSON.stringify({
+                  error: 'Not Found',
+                  path: path,
+                  method: httpMethod
+                })
+              };
+              
+            } catch (error) {
+              console.error('Error:', error);
+              
+              return {
+                statusCode: 500,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Access-Control-Allow-Origin': '*'
+                },
+                body: JSON.stringify({
+                  error: 'Internal Server Error',
+                  requestId: context.awsRequestId,
+                  message: error.message
+                })
+              };
+            }
+          };
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: CostOptimized
+          Value: 'true'
+
+  # Lambda Function for Cost Optimization Monitoring
+  CostOptimizationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ApplicationName}-cost-optimizer-${Environment}'
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Role: !GetAtt CostOptimizationRole.Arn
+      Timeout: 300
+      MemorySize: 512
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+          APPLICATION_NAME: !Ref ApplicationName
+          SNS_TOPIC_ARN: !Ref CostOptimizationTopic
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          import os
+          from datetime import datetime, timedelta
+          
+          def lambda_handler(event, context):
+              """Monitor and optimize Lambda function costs"""
+              
+              cloudwatch = boto3.client('cloudwatch')
+              lambda_client = boto3.client('lambda')
+              sns = boto3.client('sns')
+              
+              try:
+                  # Get cost and performance metrics
+                  recommendations = []
+                  
+                  # Check memory utilization
+                  memory_recommendations = check_memory_utilization(cloudwatch, lambda_client)
+                  recommendations.extend(memory_recommendations)
+                  
+                  # Check provisioned concurrency usage
+                  concurrency_recommendations = check_concurrency_usage(lambda_client)
+                  recommendations.extend(concurrency_recommendations)
+                  
+                  # Check execution duration patterns
+                  duration_recommendations = check_duration_patterns(cloudwatch)
+                  recommendations.extend(duration_recommendations)
+                  
+                  if recommendations:
+                      # Send recommendations
+                      message = {
+                          'timestamp': datetime.utcnow().isoformat(),
+                          'environment': os.environ['ENVIRONMENT'],
+                          'recommendations': recommendations
+                      }
+                      
+                      sns.publish(
+                          TopicArn=os.environ['SNS_TOPIC_ARN'],
+                          Subject=f"Cost Optimization Recommendations - {os.environ['APPLICATION_NAME']}",
+                          Message=json.dumps(message, indent=2)
+                      )
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps({
+                          'message': f'Cost optimization check completed. Found {len(recommendations)} recommendations.',
+                          'recommendations': recommendations
+                      })
+                  }
+                  
+              except Exception as e:
+                  print(f"Error in cost optimization: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps({'error': str(e)})
+                  }
+          
+          def check_memory_utilization(cloudwatch, lambda_client):
+              """Check if Lambda functions are over or under-provisioned for memory"""
+              recommendations = []
+              
+              try:
+                  # Get functions with our application prefix
+                  functions = lambda_client.list_functions()['Functions']
+                  app_functions = [f for f in functions if os.environ['APPLICATION_NAME'] in f['FunctionName']]
+                  
+                  for function in app_functions:
+                      function_name = function['FunctionName']
+                      current_memory = function['MemorySize']
+                      
+                      # Get memory utilization metrics (this would typically come from CloudWatch Insights)
+                      # For demonstration, we'll use duration as a proxy
+                      end_time = datetime.utcnow()
+                      start_time = end_time - timedelta(days=7)
+                      
+                      response = cloudwatch.get_metric_statistics(
+                          Namespace='AWS/Lambda',
+                          MetricName='Duration',
+                          Dimensions=[{'Name': 'FunctionName', 'Value': function_name}],
+                          StartTime=start_time,
+                          EndTime=end_time,
+                          Period=3600,
+                          Statistics=['Average', 'Maximum']
+                      )
+                      
+                      if response['Datapoints']:
+                          avg_duration = sum(d['Average'] for d in response['Datapoints']) / len(response['Datapoints'])
+                          max_duration = max(d['Maximum'] for d in response['Datapoints'])
+                          
+                          # Simple heuristic for memory optimization
+                          if avg_duration < 1000 and current_memory > 512:  # Fast execution, potentially over-provisioned
+                              recommendations.append({
+                                  'type': 'memory_reduction',
+                                  'function': function_name,
+                                  'current_memory': current_memory,
+                                  'recommended_memory': max(128, current_memory // 2),
+                                  'reason': f'Low average duration ({avg_duration:.0f}ms) suggests over-provisioning',
+                                  'potential_savings': f'{((current_memory - max(128, current_memory // 2)) / current_memory) * 100:.1f}%'
+                              })
+                          elif max_duration > 25000 and current_memory < 1024:  # Slow execution, potentially under-provisioned
+                              recommendations.append({
+                                  'type': 'memory_increase',
+                                  'function': function_name,
+                                  'current_memory': current_memory,
+                                  'recommended_memory': min(3008, current_memory * 2),
+                                  'reason': f'High maximum duration ({max_duration:.0f}ms) suggests under-provisioning',
+                                  'benefit': 'Faster execution may reduce overall cost despite higher memory allocation'
+                              })
+              
+              except Exception as e:
+                  print(f"Error checking memory utilization: {str(e)}")
+              
+              return recommendations
+          
+          def check_concurrency_usage(lambda_client):
+              """Check provisioned concurrency usage"""
+              recommendations = []
+              
+              try:
+                  functions = lambda_client.list_functions()['Functions']
+                  app_functions = [f for f in functions if os.environ['APPLICATION_NAME'] in f['FunctionName']]
+                  
+                  for function in app_functions:
+                      function_name = function['FunctionName']
+                      
+                      try:
+                          # Check if provisioned concurrency is configured
+                          response = lambda_client.list_provisioned_concurrency_configs(FunctionName=function_name)
+                          
+                          if response['ProvisionedConcurrencyConfigs']:
+                              for config in response['ProvisionedConcurrencyConfigs']:
+                                  provisioned = config['AllocatedConcurrencyExecutions']
+                                  available = config['AvailableProvisionedConcurrencyExecutions']
+                                  
+                                  utilization = ((provisioned - available) / provisioned) * 100 if provisioned > 0 else 0
+                                  
+                                  if utilization < 20:  # Low utilization
+                                      recommendations.append({
+                                          'type': 'reduce_provisioned_concurrency',
+                                          'function': function_name,
+                                          'current_provisioned': provisioned,
+                                          'utilization': f'{utilization:.1f}%',
+                                          'recommendation': 'Consider reducing provisioned concurrency or removing if not needed',
+                                          'potential_savings': 'Significant - provisioned concurrency has hourly charges'
+                                      })
+                      except lambda_client.exceptions.ResourceNotFoundException:
+                          # No provisioned concurrency configured
+                          pass
+                      except Exception as e:
+                          print(f"Error checking concurrency for {function_name}: {str(e)}")
+              
+              except Exception as e:
+                  print(f"Error checking concurrency usage: {str(e)}")
+              
+              return recommendations
+          
+          def check_duration_patterns(cloudwatch):
+              """Check for duration patterns that might indicate optimization opportunities"""
+              recommendations = []
+              
+              try:
+                  # This would typically involve more sophisticated analysis
+                  # For demonstration, we'll check for consistently high durations
+                  
+                  end_time = datetime.utcnow()
+                  start_time = end_time - timedelta(days=7)
+                  
+                  # Get all Lambda functions for this application
+                  functions_to_check = [f"{os.environ['APPLICATION_NAME']}-api-handler-{os.environ['ENVIRONMENT']}"]
+                  
+                  for function_name in functions_to_check:
+                      response = cloudwatch.get_metric_statistics(
+                          Namespace='AWS/Lambda',
+                          MetricName='Duration',
+                          Dimensions=[{'Name': 'FunctionName', 'Value': function_name}],
+                          StartTime=start_time,
+                          EndTime=end_time,
+                          Period=3600,
+                          Statistics=['Average', 'Maximum', 'Minimum']
+                      )
+                      
+                      if response['Datapoints'] and len(response['Datapoints']) > 10:
+                          datapoints = response['Datapoints']
+                          avg_duration = sum(d['Average'] for d in datapoints) / len(datapoints)
+                          max_duration = max(d['Maximum'] for d in datapoints)
+                          min_duration = min(d['Minimum'] for d in datapoints)
+                          
+                          # Check for high variance (indicates cold starts or inefficient code)
+                          variance_ratio = (max_duration - min_duration) / avg_duration if avg_duration > 0 else 0
+                          
+                          if variance_ratio > 2:  # High variance
+                              recommendations.append({
+                                  'type': 'cold_start_optimization',
+                                  'function': function_name,
+                                  'average_duration': f'{avg_duration:.0f}ms',
+                                  'variance_ratio': f'{variance_ratio:.1f}',
+                                  'recommendations': [
+                                      'Consider provisioned concurrency for consistent performance',
+                                      'Optimize initialization code',
+                                      'Use connection pooling for database connections'
+                                  ]
+                              })
+              
+              except Exception as e:
+                  print(f"Error checking duration patterns: {str(e)}")
+              
+              return recommendations
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # IAM Role for Cost Optimization Lambda
+  CostOptimizationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ApplicationName}-cost-optimization-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CostOptimizationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:ListFunctions
+                  - lambda:GetFunction
+                  - lambda:GetFunctionConfiguration
+                  - lambda:ListProvisionedConcurrencyConfigs
+                  - lambda:GetProvisionedConcurrencyConfig
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:GetMetricData
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref CostOptimizationTopic
+              # KMS permissions for SNS encryption
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                Resource: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KMSKeyId}'
+
+  # SNS Topic for Cost Optimization Notifications
+  CostOptimizationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ApplicationName}-cost-optimization-${Environment}'
+      KmsMasterKeyId: !Ref KMSKeyId
+
+  CostOptimizationSubscription:
+    Type: AWS::SNS::Subscription
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Protocol: email
+      TopicArn: !Ref CostOptimizationTopic
+      Endpoint: !Ref NotificationEmail
+
+  # EventBridge Rule for Cost Optimization Schedule
+  CostOptimizationSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${ApplicationName}-cost-optimization-schedule-${Environment}'
+      Description: 'Weekly cost optimization analysis'
+      ScheduleExpression: 'rate(7 days)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt CostOptimizationFunction.Arn
+          Id: CostOptimizationTarget
+
+  # Permission for EventBridge to invoke Lambda
+  CostOptimizationSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CostOptimizationFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt CostOptimizationSchedule.Arn
+
+  # CloudWatch Alarms for Lambda Cost Control
+  HighInvocationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-high-invocations-${Environment}'
+      AlarmDescription: 'High Lambda invocation count detected'
+      MetricName: Invocations
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: !If [IsProduction, 10000, 1000]
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref APIHandlerFunction
+      AlarmActions:
+        - !Ref CostOptimizationTopic
+
+  HighDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-high-duration-${Environment}'
+      AlarmDescription: 'High Lambda duration detected'
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Average
+      Period: 900
+      EvaluationPeriods: 2
+      Threshold: 15000
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref APIHandlerFunction
+      AlarmActions:
+        - !Ref CostOptimizationTopic
+
+  # CloudWatch Log Groups with retention
+  APIHandlerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${APIHandlerFunction}'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  CostOptimizationLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${CostOptimizationFunction}'
+      RetentionInDays: 14
+
+Outputs:
+  APIHandlerFunctionArn:
+    Description: 'ARN of the API handler Lambda function'
+    Value: !GetAtt APIHandlerFunction.Arn
+    Export:
+      Name: !Sub '${ApplicationName}-api-handler-arn-${Environment}'
+
+  APIHandlerFunctionName:
+    Description: 'Name of the API handler Lambda function'
+    Value: !Ref APIHandlerFunction
+    Export:
+      Name: !Sub '${ApplicationName}-api-handler-name-${Environment}'
+
+  CostOptimizationFunctionArn:
+    Description: 'ARN of the cost optimization Lambda function'
+    Value: !GetAtt CostOptimizationFunction.Arn
+    Export:
+      Name: !Sub '${ApplicationName}-cost-optimizer-arn-${Environment}'
+
+  LambdaSecurityGroupId:
+    Description: 'Security Group ID for Lambda functions'
+    Value: !Ref LambdaSecurityGroup
+    Export:
+      Name: !Sub '${ApplicationName}-lambda-sg-${Environment}'

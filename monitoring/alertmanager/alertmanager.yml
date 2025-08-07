@@ -1,0 +1,33 @@
+global:
+  smtp_smarthost: '${SMTP_HOST}:${SMTP_PORT}'
+  smtp_from: '${SMTP_FROM}'
+  smtp_auth_username: '${SMTP_USERNAME}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_auth_identity: '${SMTP_USERNAME}'
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname']
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 1h
+  receiver: 'parker-flight-default'
+
+receivers:
+  - name: 'parker-flight-default'
+    email_configs:
+      - to: '${ALERT_EMAIL_TO}'
+        from: '${SMTP_FROM}'
+        html: |
+          <h3>Parker Flight Alert</h3>
+          <p><strong>Alert:</strong> {{ range .Alerts }}{{ .Labels.alertname }}{{ end }}</p>
+          <p><strong>Status:</strong> {{ .Status }}</p>
+          
+          {{ range .Alerts }}
+          <p><strong>Instance:</strong> {{ .Labels.instance }}</p>
+          <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+          <p><strong>Summary:</strong> {{ .Annotations.summary }}</p>
+          {{ end }}
+    webhook_configs:
+      - url: 'http://host.docker.internal:3002/webhook/alerts'
+        send_resolved: true

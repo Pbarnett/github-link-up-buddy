@@ -1,0 +1,374 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'KMS Key with Automatic Rotation and Alias Management for GitHub Link Buddy'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name
+  
+  ApplicationName:
+    Type: String
+    Default: github-link-buddy
+    Description: Application name for resource naming
+  
+  RotationPeriodInDays:
+    Type: Number
+    Default: 365
+    MinValue: 90
+    MaxValue: 2560
+    Description: Number of days between key rotations (90-2560 days)
+  
+  NotificationEmail:
+    Type: String
+    Default: ""
+    Description: Email for rotation notifications (optional)
+
+Conditions:
+  HasNotificationEmail: !Not [!Equals [!Ref NotificationEmail, ""]]
+
+Resources:
+  # KMS Key with automatic rotation
+  EncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub "${ApplicationName} encryption key with automatic rotation"
+      EnableKeyRotation: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      Origin: AWS_KMS
+      MultiRegion: false
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-encryption-key-${Environment}"
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Purpose
+          Value: "Data encryption with automatic rotation"
+
+  # KMS Key Alias
+  EncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${ApplicationName}-encryption-key-${Environment}"
+      TargetKeyId: !Ref EncryptionKey
+
+  # IAM Role for application services
+  ApplicationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ApplicationName}-application-role-${Environment}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+                - lambda.amazonaws.com
+                - ecs-tasks.amazonaws.com
+                - ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: KMSAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:Encrypt
+                  - kms:Decrypt
+                  - kms:ReEncrypt*
+                  - kms:GenerateDataKey*
+                  - kms:GenerateDataKeyWithoutPlaintext
+                  - kms:DescribeKey
+                  - kms:CreateGrant
+                  - kms:ListGrants
+                  - kms:RevokeGrant
+                Resource: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*'
+        - PolicyName: CloudWatchMetrics
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-application-role"
+        - Key: Environment
+          Value: !Ref Environment
+
+  # IAM Role for KMS rotation handler
+  RotationHandlerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ApplicationName}-kms-rotation-handler-${Environment}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: KMSRotationHandling
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:DescribeKey
+                  - kms:ListAliases
+                  - kms:UpdateAlias
+                Resource: 
+                  - !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*'
+                  - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/${ApplicationName}-encryption-key-${Environment}"
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-rotation-handler-role"
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Lambda function for handling key rotation events
+  RotationHandlerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ApplicationName}-kms-rotation-handler-${Environment}"
+      Description: Handles KMS key rotation events and alias updates
+      Runtime: nodejs18.x
+      Handler: index.lambdaHandler
+      Role: !GetAtt RotationHandlerRole.Arn
+      Timeout: 300
+      MemorySize: 256
+      Environment:
+        Variables:
+          KMS_KEY_ALIAS: !Sub "alias/${ApplicationName}-encryption-key-${Environment}"
+          NODE_ENV: !Ref Environment
+          NOTIFICATION_TOPIC: !If [HasNotificationEmail, !Ref NotificationTopic, ""]
+      Code:
+        ZipFile: |
+          const { KMSClient, UpdateAliasCommand, DescribeKeyCommand, ListAliasesCommand } = require('@aws-sdk/client-kms');
+          const { CloudWatchClient, PutMetricDataCommand } = require('@aws-sdk/client-cloudwatch');
+          const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
+
+          exports.lambdaHandler = async (event) => {
+            const kms = new KMSClient();
+            const cloudwatch = new CloudWatchClient();
+            const sns = new SNSClient();
+            
+            const keyAlias = process.env.KMS_KEY_ALIAS;
+            const notificationTopic = process.env.NOTIFICATION_TOPIC;
+
+            console.log('Processing KMS rotation event:', JSON.stringify(event, null, 2));
+
+            try {
+              if (event.source === 'aws.kms' && event['detail-type'] === 'KMS Key Rotation') {
+                const { keyId, eventName, rotationStatus } = event.detail;
+                
+                if (eventName === 'KeyRotation' && rotationStatus === 'Enabled') {
+                  // Verify the key is active
+                  const keyInfo = await kms.send(new DescribeKeyCommand({ KeyId: keyId }));
+                  
+                  if (keyInfo.KeyMetadata.KeyState === 'Enabled') {
+                    // Update the alias
+                    await kms.send(new UpdateAliasCommand({
+                      AliasName: keyAlias,
+                      TargetKeyId: keyId
+                    }));
+                    
+                    console.log(`Successfully updated alias ${keyAlias} to rotated key ${keyId}`);
+                    
+                    // Record success metric
+                    await cloudwatch.send(new PutMetricDataCommand({
+                      Namespace: 'GitHubLinkBuddy/KMS',
+                      MetricData: [{
+                        MetricName: 'KeyRotation.Success',
+                        Value: 1,
+                        Unit: 'Count',
+                        Dimensions: [
+                          { Name: 'Environment', Value: process.env.NODE_ENV },
+                          { Name: 'KeyAlias', Value: keyAlias }
+                        ]
+                      }]
+                    }));
+
+                    // Send notification if configured
+                    if (notificationTopic) {
+                      await sns.send(new PublishCommand({
+                        TopicArn: notificationTopic,
+                        Subject: 'KMS Key Rotation Completed Successfully',
+                        Message: `KMS key rotation completed successfully for ${keyAlias}. New key ID: ${keyId}`
+                      }));
+                    }
+                  }
+                }
+              }
+              
+              return { statusCode: 200, body: 'Success' };
+            } catch (error) {
+              console.error('Error processing rotation:', error);
+              
+              // Record error metric
+              await cloudwatch.send(new PutMetricDataCommand({
+                Namespace: 'GitHubLinkBuddy/KMS',
+                MetricData: [{
+                  MetricName: 'KeyRotation.Error',
+                  Value: 1,
+                  Unit: 'Count',
+                  Dimensions: [
+                    { Name: 'Environment', Value: process.env.NODE_ENV },
+                    { Name: 'Error', Value: error.message }
+                  ]
+                }]
+              }));
+
+              // Send error notification if configured
+              if (notificationTopic) {
+                await sns.send(new PublishCommand({
+                  TopicArn: notificationTopic,
+                  Subject: 'KMS Key Rotation Failed',
+                  Message: `KMS key rotation failed: ${error.message}`
+                }));
+              }
+              
+              throw error;
+            }
+          };
+      Tags:
+        - Key: Name
+          Value: !Sub "${ApplicationName}-rotation-handler"
+        - Key: Environment
+          Value: !Ref Environment
+
+  # EventBridge rule for KMS rotation events
+  RotationEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${ApplicationName}-kms-rotation-events-${Environment}"
+      Description: Trigger Lambda on KMS key rotation events
+      EventPattern:
+        source: ["aws.kms"]
+        detail-type: ["KMS Key Rotation"]
+        detail:
+          keyId: [!Ref EncryptionKey]
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt RotationHandlerFunction.Arn
+          Id: "RotationHandlerTarget"
+
+  # Lambda permission for EventBridge
+  RotationEventRulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt RotationHandlerFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt RotationEventRule.Arn
+
+  # SNS Topic for notifications (optional)
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Condition: HasNotificationEmail
+    Properties:
+      TopicName: !Sub "${ApplicationName}-kms-rotation-notifications-${Environment}"
+      DisplayName: "KMS Key Rotation Notifications"
+      Subscription:
+        - Endpoint: !Ref NotificationEmail
+          Protocol: email
+
+  # CloudWatch Alarms for monitoring
+  KeyRotationFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ApplicationName}-kms-rotation-failure-${Environment}"
+      AlarmDescription: "KMS key rotation failed"
+      MetricName: KeyRotation.Error
+      Namespace: GitHubLinkBuddy/KMS
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      AlarmActions:
+        - !If [HasNotificationEmail, !Ref NotificationTopic, !Ref "AWS::NoValue"]
+      TreatMissingData: notBreaching
+
+  EncryptionOperationErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ApplicationName}-kms-encryption-errors-${Environment}"
+      AlarmDescription: "High number of KMS encryption errors"
+      MetricName: KMS.Encrypt.Error
+      Namespace: GitHubLinkBuddy/Application
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+        - Name: Service
+          Value: KMS
+      AlarmActions:
+        - !If [HasNotificationEmail, !Ref NotificationTopic, !Ref "AWS::NoValue"]
+      TreatMissingData: notBreaching
+
+Outputs:
+  EncryptionKeyId:
+    Description: KMS Key ID
+    Value: !Ref EncryptionKey
+    Export:
+      Name: !Sub "${ApplicationName}-encryption-key-id-${Environment}"
+  
+  EncryptionKeyArn:
+    Description: KMS Key ARN
+    Value: !GetAtt EncryptionKey.Arn
+    Export:
+      Name: !Sub "${ApplicationName}-encryption-key-arn-${Environment}"
+  
+  EncryptionKeyAlias:
+    Description: KMS Key Alias (use this in your application)
+    Value: !Ref EncryptionKeyAlias
+    Export:
+      Name: !Sub "${ApplicationName}-encryption-key-alias-${Environment}"
+  
+  ApplicationRoleArn:
+    Description: IAM Role ARN for application services
+    Value: !GetAtt ApplicationRole.Arn
+    Export:
+      Name: !Sub "${ApplicationName}-application-role-arn-${Environment}"
+  
+  RotationHandlerFunctionArn:
+    Description: KMS Rotation Handler Lambda Function ARN
+    Value: !GetAtt RotationHandlerFunction.Arn
+    Export:
+      Name: !Sub "${ApplicationName}-rotation-handler-arn-${Environment}"

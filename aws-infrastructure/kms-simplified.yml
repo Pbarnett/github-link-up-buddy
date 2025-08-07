@@ -1,0 +1,196 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Simplified KMS Keys setup for Parker Flight payment processing'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: 'production'
+    AllowedValues: ['development', 'staging', 'production']
+    Description: 'Environment for the deployment'
+  
+  ApplicationName:
+    Type: String
+    Default: 'parker-flight'
+    Description: 'Application name for resource naming'
+
+Resources:
+  # KMS Keys (Three-key approach as recommended by AWS AI bot)
+  
+  GeneralKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub '${ApplicationName} general data encryption key for ${Environment}'
+      KeyUsage: ENCRYPT_DECRYPT
+      KeySpec: SYMMETRIC_DEFAULT
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Development Access
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:user/parker-flight-admin'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-general-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: DataType
+          Value: 'general'
+
+  PIIKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub '${ApplicationName} PII data encryption key for ${Environment}'
+      KeyUsage: ENCRYPT_DECRYPT
+      KeySpec: SYMMETRIC_DEFAULT
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Development Access
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:user/parker-flight-admin'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-pii-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: DataType
+          Value: 'pii'
+
+  PaymentKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub '${ApplicationName} payment data encryption key for ${Environment}'
+      KeyUsage: ENCRYPT_DECRYPT
+      KeySpec: SYMMETRIC_DEFAULT
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Development Access
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:user/parker-flight-admin'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-payment-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: DataType
+          Value: 'payment'
+
+  # KMS Key Aliases
+  GeneralKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ApplicationName}-general-${Environment}'
+      TargetKeyId: !Ref GeneralKey
+
+  PIIKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ApplicationName}-pii-${Environment}'
+      TargetKeyId: !Ref PIIKey
+
+  PaymentKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ApplicationName}-payment-${Environment}'
+      TargetKeyId: !Ref PaymentKey
+
+  # CloudWatch Log Group for KMS operations monitoring
+  KMSLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ApplicationName}-kms-${Environment}'
+      RetentionInDays: 30
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-kms-logs-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  GeneralKeyId:
+    Description: 'General data encryption key ID'
+    Value: !Ref GeneralKey
+    Export:
+      Name: !Sub '${AWS::StackName}-GeneralKeyId'
+
+  PIIKeyId:
+    Description: 'PII data encryption key ID'
+    Value: !Ref PIIKey
+    Export:
+      Name: !Sub '${AWS::StackName}-PIIKeyId'
+
+  PaymentKeyId:
+    Description: 'Payment data encryption key ID'
+    Value: !Ref PaymentKey
+    Export:
+      Name: !Sub '${AWS::StackName}-PaymentKeyId'
+
+  GeneralKeyAlias:
+    Description: 'General data encryption key alias'
+    Value: !Sub 'alias/${ApplicationName}-general-${Environment}'
+
+  PIIKeyAlias:
+    Description: 'PII data encryption key alias'
+    Value: !Sub 'alias/${ApplicationName}-pii-${Environment}'
+
+  PaymentKeyAlias:
+    Description: 'Payment data encryption key alias'
+    Value: !Sub 'alias/${ApplicationName}-payment-${Environment}'
+
+  AccountId:
+    Description: 'AWS Account ID'
+    Value: !Ref 'AWS::AccountId'
+
+  Region:
+    Description: 'AWS Region'
+    Value: !Ref 'AWS::Region'
+
+  EstimatedMonthlyCost:
+    Description: 'Estimated monthly cost for KMS operations (100-1000 payments/month)'
+    Value: 'Approximately $3.06/month (3 keys @ $1 each + API calls ~$0.06)'

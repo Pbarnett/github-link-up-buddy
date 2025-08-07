@@ -1,0 +1,330 @@
+{
+  "timestamp": "2025-07-24T15:28:22.085Z",
+  "summary": {
+    "filesAnalyzed": 50,
+    "totalIssues": 24,
+    "criticalIssues": 0,
+    "highIssues": 0,
+    "mediumIssues": 16,
+    "lowIssues": 8
+  },
+  "categories": {
+    "performance": 3,
+    "security": 0,
+    "maintainability": 13,
+    "typescript": 8
+  },
+  "issues": [
+    {
+      "file": "src/App.tsx",
+      "type": "performance",
+      "severity": "medium",
+      "message": "Empty dependency array in useEffect may cause memory leaks",
+      "suggestion": "Consider using useMemo or useCallback for optimization",
+      "matches": 1
+    },
+    {
+      "file": "src/App.tsx",
+      "type": "react_typescript",
+      "severity": "low",
+      "message": "useEffect with dependencies - verify exhaustive deps",
+      "suggestion": "Ensure all dependencies are included or use ESLint rule",
+      "matches": 1
+    },
+    {
+      "file": "src/types/react.d.ts",
+      "type": "react_typescript",
+      "severity": "low",
+      "message": "React.FC is discouraged in modern React",
+      "suggestion": "Use function declarations with typed props",
+      "matches": 1
+    },
+    {
+      "file": "src/types/ambient.ts",
+      "type": "react_typescript",
+      "severity": "low",
+      "message": "React.FC is discouraged in modern React",
+      "suggestion": "Use function declarations with typed props",
+      "matches": 1
+    },
+    {
+      "file": "src/types/react-19-compat.ts",
+      "type": "react_typescript",
+      "severity": "low",
+      "message": "React.FC is discouraged in modern React",
+      "suggestion": "Use function declarations with typed props",
+      "matches": 1
+    },
+    {
+      "file": "src/contexts/PersonalizationContext.tsx",
+      "type": "react_typescript",
+      "severity": "low",
+      "message": "React.FC is discouraged in modern React",
+      "suggestion": "Use function declarations with typed props",
+      "matches": 1
+    },
+    {
+      "file": "src/contexts/PersonalizationContext.tsx",
+      "type": "react_typescript",
+      "severity": "low",
+      "message": "useEffect with dependencies - verify exhaustive deps",
+      "suggestion": "Ensure all dependencies are included or use ESLint rule",
+      "matches": 1
+    },
+    {
+      "file": "src/contexts/WalletContext.tsx",
+      "type": "performance",
+      "severity": "medium",
+      "message": "Empty dependency array in useEffect may cause memory leaks",
+      "suggestion": "Consider using useMemo or useCallback for optimization",
+      "matches": 2
+    },
+    {
+      "file": "src/contexts/WalletContext.tsx",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "Function is too long (>1000 characters)",
+      "suggestion": "Break down into smaller, focused functions",
+      "matches": 1
+    },
+    {
+      "file": "src/contexts/WalletContext.tsx",
+      "type": "react_typescript",
+      "severity": "low",
+      "message": "useEffect with dependencies - verify exhaustive deps",
+      "suggestion": "Ensure all dependencies are included or use ESLint rule",
+      "matches": 1
+    },
+    {
+      "file": "src/context/PersonalizationContext.tsx",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "Function is too long (>1000 characters)",
+      "suggestion": "Break down into smaller, focused functions",
+      "matches": 1
+    },
+    {
+      "file": "src/context/WalletProvider.tsx",
+      "type": "react_typescript",
+      "severity": "low",
+      "message": "React.FC is discouraged in modern React",
+      "suggestion": "Use function declarations with typed props",
+      "matches": 1
+    },
+    {
+      "file": "src/providers/LaunchDarklyProvider.tsx",
+      "type": "performance",
+      "severity": "medium",
+      "message": "Empty dependency array in useEffect may cause memory leaks",
+      "suggestion": "Consider using useMemo or useCallback for optimization",
+      "matches": 1
+    },
+    {
+      "file": "src/tests/__mocks__/supabaseClient.ts",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "Function is too long (>1000 characters)",
+      "suggestion": "Break down into smaller, focused functions",
+      "matches": 1
+    },
+    {
+      "file": "src/tests/__mocks__/supabase.ts",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "Function is too long (>1000 characters)",
+      "suggestion": "Break down into smaller, focused functions",
+      "matches": 1
+    },
+    {
+      "file": "src/App.tsx",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "High cyclomatic complexity (11)",
+      "suggestion": "Refactor to reduce complexity and improve testability"
+    },
+    {
+      "file": "src/types/wallet.ts",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "High cyclomatic complexity (19)",
+      "suggestion": "Refactor to reduce complexity and improve testability"
+    },
+    {
+      "file": "src/types/stripe.ts",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "High cyclomatic complexity (45)",
+      "suggestion": "Refactor to reduce complexity and improve testability"
+    },
+    {
+      "file": "src/types/api.types.ts",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "High cyclomatic complexity (32)",
+      "suggestion": "Refactor to reduce complexity and improve testability"
+    },
+    {
+      "file": "src/types/personalization.ts",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "High cyclomatic complexity (12)",
+      "suggestion": "Refactor to reduce complexity and improve testability"
+    },
+    {
+      "file": "src/App.tsx",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "Duplicate code block detected (2 instances)",
+      "suggestion": "Extract into a reusable function or component"
+    },
+    {
+      "file": "src/types/stripe.ts",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "Duplicate code block detected (2 instances)",
+      "suggestion": "Extract into a reusable function or component"
+    },
+    {
+      "file": "src/types/supabase-json-schemas.ts",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "Duplicate code block detected (2 instances)",
+      "suggestion": "Extract into a reusable function or component"
+    },
+    {
+      "file": "src/types/database.ts",
+      "type": "maintainability",
+      "severity": "medium",
+      "message": "Duplicate code block detected (2 instances)",
+      "suggestion": "Extract into a reusable function or component"
+    }
+  ],
+  "refactoringSuggestions": [
+    {
+      "file": "src/App.tsx",
+      "rule": "Add semicolons",
+      "matches": 165,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/App.tsx",
+      "rule": "Remove console.log",
+      "matches": 1,
+      "safe": true,
+      "autoFixable": false
+    },
+    {
+      "file": "src/main.tsx",
+      "rule": "Add semicolons",
+      "matches": 29,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/main.tsx",
+      "rule": "Remove console.log",
+      "matches": 7,
+      "safe": true,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/wallet.ts",
+      "rule": "Add semicolons",
+      "matches": 32,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/postgrest.ts",
+      "rule": "Add semicolons",
+      "matches": 22,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/react-compat.ts",
+      "rule": "Add semicolons",
+      "matches": 67,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/stripe.ts",
+      "rule": "Add semicolons",
+      "matches": 25,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/event-handlers.ts",
+      "rule": "Add semicolons",
+      "matches": 10,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/api.types.ts",
+      "rule": "Add semicolons",
+      "matches": 147,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/react-helpers.ts",
+      "rule": "Add semicolons",
+      "matches": 25,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/personalization.ts",
+      "rule": "Add semicolons",
+      "matches": 14,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/supabase-json-schemas.ts",
+      "rule": "Add semicolons",
+      "matches": 212,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/flight.types.ts",
+      "rule": "Add semicolons",
+      "matches": 6,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/form.ts",
+      "rule": "Add semicolons",
+      "matches": 181,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/campaign.ts",
+      "rule": "Add semicolons",
+      "matches": 8,
+      "safe": false,
+      "autoFixable": false
+    },
+    {
+      "file": "src/types/dynamic-forms.ts",
+      "rule": "Add semicolons",
+      "matches": 73,
+      "safe": false,
+      "autoFixable": false
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "low",
+      "action": "Setup automated code quality gates in CI/CD",
+      "impact": "Prevent quality regression"
+    }
+  ]
+}

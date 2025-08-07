@@ -1,0 +1,93 @@
+# Multi-stage Dockerfile for Enhanced AWS SDK Integration Backend
+# Optimized for production deployment with security best practices
+
+# Stage 1: Build stage
+FROM node:20-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++
+
+# Copy package files
+COPY package*.json ./
+COPY pnpm-lock.yaml* ./
+
+# Install dependencies using pnpm for better performance
+RUN npm install -g pnpm && \
+    pnpm install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Build TypeScript and prepare for production
+RUN npm run build:backend 2>/dev/null || echo "Build step skipped - no build script found"
+
+# Stage 2: Production stage
+FROM node:20-alpine AS production
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Set working directory
+WORKDIR /app
+
+# Install production dependencies and AWS CLI
+RUN apk add --no-cache \
+    aws-cli \
+    curl \
+    dumb-init \
+    && npm install -g pnpm
+
+# Copy package files and install production dependencies only
+COPY package*.json ./
+COPY pnpm-lock.yaml* ./
+RUN pnpm install --prod --frozen-lockfile && \
+    pnpm store prune && \
+    npm cache clean --force
+
+# Copy essential application files from builder
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nodejs:nodejs /app/scripts/docker-deploy.cjs ./scripts/docker-deploy.cjs
+COPY --from=builder --chown=nodejs:nodejs /app/config ./config
+COPY --from=builder --chown=nodejs:nodejs /app/deployment ./deployment
+
+# Set ownership and permissions
+RUN chown -R nodejs:nodejs /app && \
+    chmod +x /app/scripts/*.cjs 2>/dev/null || echo "No executable scripts found"
+
+# Create logs directory
+RUN mkdir -p /app/logs && chown nodejs:nodejs /app/logs
+
+# Switch to non-root user
+USER nodejs
+
+# Expose port (configurable via environment)
+EXPOSE ${PORT:-3000}
+
+# Health check - simple curl to port
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
+
+# Set environment variables
+ENV NODE_ENV=production \
+    AWS_SDK_LOAD_CONFIG=1 \
+    AWS_SDK_LOG_LEVEL=warn \
+    AWS_SDK_ENABLE_METRICS=true \
+    AWS_SDK_ENABLE_TRACING=true
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Default command - run the docker deployment script
+CMD ["node", "scripts/docker-deploy.cjs", "start"]
+
+# Labels for metadata
+LABEL maintainer="Parker Flight Team" \
+      version="1.0.0" \
+      description="Enhanced AWS SDK Integration for KMS operations" \
+      org.opencontainers.image.source="https://github.com/parker-flight/enhanced-aws-sdk" \
+      service.type="backend" \
+      service.component="aws-sdk-enhanced"

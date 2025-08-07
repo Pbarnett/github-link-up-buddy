@@ -1,0 +1,271 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Parker Flight - Performance Optimization Dashboard",
+    "tags": ["performance", "optimization", "database", "kms"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Database Query Performance",
+        "type": "stat",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "rate(flight_search_db_queries_total[5m])",
+            "legendFormat": "Queries/sec",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 10 },
+                { "color": "red", "value": 50 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Cache Hit Ratio",
+        "type": "gauge",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "flight_search_cache_hit_ratio",
+            "legendFormat": "Cache Hit %",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                { "color": "red", "value": 0 },
+                { "color": "yellow", "value": 20 },
+                { "color": "green", "value": 40 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Response Time Distribution",
+        "type": "histogram",
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(flight_search_response_time_bucket[5m]))",
+            "legendFormat": "95th percentile",
+            "refId": "C"
+          },
+          {
+            "expr": "histogram_quantile(0.75, rate(flight_search_response_time_bucket[5m]))",
+            "legendFormat": "75th percentile",
+            "refId": "D"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(flight_search_response_time_bucket[5m]))",
+            "legendFormat": "Median",
+            "refId": "E"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "KMS Connection Pool Efficiency",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+        "targets": [
+          {
+            "expr": "rate(kms_client_reuse_total[5m])",
+            "legendFormat": "Connection Reuse/sec",
+            "refId": "F"
+          },
+          {
+            "expr": "rate(kms_new_connection_total[5m])",
+            "legendFormat": "New Connections/sec",
+            "refId": "G"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Batch Operation Metrics",
+        "type": "table",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+        "targets": [
+          {
+            "expr": "batch_operation_efficiency_ratio",
+            "legendFormat": "{{operation_type}}",
+            "refId": "H"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {},
+              "indexByName": {},
+              "renameByName": {
+                "operation_type": "Operation",
+                "Value": "Efficiency %"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Error Rate Monitoring",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 8, "x": 0, "y": 24 },
+        "targets": [
+          {
+            "expr": "rate(flight_search_errors_total[5m]) / rate(flight_search_requests_total[5m]) * 100",
+            "legendFormat": "Error Rate %",
+            "refId": "I"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 5 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Database Connection Pool",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 8, "x": 8, "y": 24 },
+        "targets": [
+          {
+            "expr": "database_active_connections",
+            "legendFormat": "Active Connections",
+            "refId": "J"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Memory Usage",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 8, "x": 16, "y": 24 },
+        "targets": [
+          {
+            "expr": "cache_memory_usage_bytes",
+            "legendFormat": "Cache Memory MB",
+            "refId": "K"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s",
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "iconColor": "green",
+          "tags": ["deployment", "optimization"]
+        }
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "environment",
+          "type": "query",
+          "query": "label_values(environment)",
+          "options": [
+            { "text": "production", "value": "production" },
+            { "text": "staging", "value": "staging" },
+            { "text": "development", "value": "development" }
+          ]
+        }
+      ]
+    }
+  },
+  "alerts": [
+    {
+      "name": "High Database Query Rate",
+      "condition": "flight_search_db_queries_per_second > 50",
+      "frequency": "1m",
+      "severity": "warning",
+      "message": "Database query rate is above normal threshold. Check for N+1 query problems or inefficient batch operations."
+    },
+    {
+      "name": "Low Cache Hit Ratio",
+      "condition": "flight_search_cache_hit_ratio < 0.3",
+      "frequency": "5m",
+      "severity": "warning",
+      "message": "Cache hit ratio is below 30%. Check cache TTL settings and invalidation logic."
+    },
+    {
+      "name": "High Response Time",
+      "condition": "flight_search_response_time_p95 > 500",
+      "frequency": "2m",
+      "severity": "critical",
+      "message": "95th percentile response time exceeds 500ms. Performance optimization may have regressed."
+    },
+    {
+      "name": "High Error Rate",
+      "condition": "flight_search_error_rate > 0.05",
+      "frequency": "1m",
+      "severity": "critical",
+      "message": "Error rate exceeds 5%. Check logs for optimization-related issues."
+    },
+    {
+      "name": "KMS Connection Pool Inefficiency",
+      "condition": "kms_connection_reuse_ratio < 0.6",
+      "frequency": "5m",
+      "severity": "warning",
+      "message": "KMS connection reuse ratio below 60%. Connection pooling may not be working effectively."
+    },
+    {
+      "name": "Memory Leak Detection",
+      "condition": "increase(cache_memory_usage_bytes[30m]) > 100000000",
+      "frequency": "30m",
+      "severity": "warning",
+      "message": "Cache memory usage increased by >100MB in 30 minutes. Check for memory leaks in optimization code."
+    }
+  ],
+  "description": "Dashboard for monitoring Parker Flight performance optimizations including KMS connection pooling, database query optimization, and cache effectiveness.",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "hideControls": false,
+  "links": [
+    {
+      "title": "Performance Optimization Documentation",
+      "url": "https://github.com/your-repo/docs/performance-optimizations",
+      "targetBlank": true
+    }
+  ],
+  "schemaVersion": 30,
+  "style": "dark",
+  "version": 1
+}

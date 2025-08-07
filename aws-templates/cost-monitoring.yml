@@ -1,0 +1,537 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Enterprise Cost Monitoring and Financial Governance - Budgets, Alerts, and Optimization'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Deployment environment
+  
+  AlertEmail:
+    Type: String
+    Description: Email address for cost alerts
+    AllowedPattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+  
+  OrganizationName:
+    Type: String
+    Default: Parker-Flight
+    Description: Organization name for resource naming
+  
+  MonthlyBudgetLimit:
+    Type: Number
+    Default: 500
+    MinValue: 1
+    MaxValue: 10000
+    Description: Monthly budget limit in USD
+  
+  CostAnomalyThreshold:
+    Type: Number
+    Default: 100
+    MinValue: 10
+    MaxValue: 1000
+    Description: Dollar threshold for cost anomaly detection
+  
+  EnableDetailedMonitoring:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Enable detailed cost monitoring and optimization recommendations
+  
+  DeploymentTimestamp:
+    Type: String
+    Default: ''
+    Description: Timestamp suffix for unique resource naming
+
+Conditions:
+  IsProductionEnvironment: !Equals [!Ref Environment, 'production']
+  EnableDetailedReports: !Equals [!Ref EnableDetailedMonitoring, 'true']
+  HasTimestamp: !Not [!Equals [!Ref DeploymentTimestamp, '']]
+
+Resources:
+  # SNS Topic for Cost Alerts
+  CostAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub 
+        - '${OrganizationName}-Cost-Alerts-${Environment}${Suffix}'
+        - Suffix: !If [HasTimestamp, !Sub '-${DeploymentTimestamp}', '']
+      DisplayName: 'AWS Cost Monitoring Alerts'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: Cost-Monitoring
+
+  CostAlertsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref CostAlertsTopic
+      Endpoint: !Ref AlertEmail
+
+  # Main Budget with Multiple Alert Thresholds
+  MainBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub '${OrganizationName}-Monthly-Budget-${Environment}'
+        BudgetLimit:
+          Amount: !Ref MonthlyBudgetLimit
+          Unit: USD
+        TimeUnit: MONTHLY
+        BudgetType: COST
+        CostFilters:
+          TagKeyValue:
+            - !Sub 'Environment$${Environment}'
+        CalculatedSpend:
+          ActualSpend:
+            Amount: 0
+            Unit: USD
+        # PlannedBudgetLimits removed due to CloudFormation limitations
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 50
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+            - SubscriptionType: SNS
+              Address: !Ref CostAlertsTopic
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+            - SubscriptionType: SNS
+              Address: !Ref CostAlertsTopic
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+            - SubscriptionType: SNS
+              Address: !Ref CostAlertsTopic
+
+  # Service-specific Budgets
+  EC2Budget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub '${OrganizationName}-EC2-Budget-${Environment}'
+        BudgetLimit:
+          Amount: 
+            !If
+              - IsProductionEnvironment
+              - 120  # 40% of 300 (if budget is 300)
+              - 90   # 30% of 300 (if budget is 300)
+          Unit: USD
+        TimeUnit: MONTHLY
+        BudgetType: COST
+        CostFilters:
+          Service:
+            - Amazon Elastic Compute Cloud - Compute
+          TagKeyValue:
+            - !Sub 'Environment$${Environment}'
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+
+  RDSBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub '${OrganizationName}-RDS-Budget-${Environment}'
+        BudgetLimit:
+          Amount: 75  # 25% of 300
+          Unit: USD
+        TimeUnit: MONTHLY
+        BudgetType: COST
+        CostFilters:
+          Service:
+            - Amazon Relational Database Service
+          TagKeyValue:
+            - !Sub 'Environment$${Environment}'
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 90
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+
+  LambdaBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub '${OrganizationName}-Lambda-Budget-${Environment}'
+        BudgetLimit:
+          Amount: 45  # 15% of 300
+          Unit: USD
+        TimeUnit: MONTHLY
+        BudgetType: COST
+        CostFilters:
+          Service:
+            - AWS Lambda
+          TagKeyValue:
+            - !Sub 'Environment$${Environment}'
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 75
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+
+  # CloudWatch Dashboard for Cost Monitoring
+  CostMonitoringDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${OrganizationName}-Cost-Monitoring-${Environment}'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Billing", "EstimatedCharges", "Currency", "USD" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Estimated Monthly Charges",
+                "period": 86400,
+                "stat": "Maximum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Billing", "EstimatedCharges", "Currency", "USD", "ServiceName", "AmazonEC2" ],
+                  [ "...", "AWSLambda" ],
+                  [ "...", "AmazonRDS" ],
+                  [ "...", "AmazonS3" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Service-wise Cost Breakdown",
+                "period": 86400,
+                "stat": "Maximum"
+              }
+            },
+            {
+              "type": "text",
+              "x": 0,
+              "y": 6,
+              "width": 24,
+              "height": 2,
+              "properties": {
+                "markdown": "# Cost Optimization Recommendations\n\n- **Right-size EC2 instances** based on utilization metrics\n- **Use Reserved Instances** for predictable workloads\n- **Implement auto-scaling** to optimize resource usage\n- **Enable S3 Intelligent Tiering** for automatic storage optimization\n- **Review and terminate unused resources** regularly"
+              }
+            }
+          ]
+        }
+
+  # CloudWatch Log Group for Cost Monitoring
+  CostMonitoringLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/cost-monitoring/${OrganizationName}-${Environment}'
+      RetentionInDays: 90
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: Cost-Monitoring
+
+  # Lambda Role for Cost Optimization
+  CostOptimizationLambdaRole:
+    Type: AWS::IAM::Role
+    Condition: EnableDetailedReports
+    Properties:
+      RoleName: !Sub 
+        - '${OrganizationName}-CostOptimization-Role-${Environment}${Suffix}'
+        - Suffix: !If [HasTimestamp, !Sub '-${DeploymentTimestamp}', '']
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CostOptimizationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ce:GetUsageAndCosts
+                  - ce:GetDimensionValues
+                  - ce:GetReservationCoverage
+                  - ce:GetReservationPurchaseRecommendation
+                  - ce:GetReservationUtilization
+                  - ce:GetCostAndUsage
+                  - ce:GetRightsizingRecommendation
+                  - ec2:DescribeInstances
+                  - ec2:DescribeReservedInstances
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:ListMetrics
+                  - sns:Publish
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+  # Lambda Function for Cost Optimization Reports
+  CostOptimizationFunction:
+    Type: AWS::Lambda::Function
+    Condition: EnableDetailedReports
+    Properties:
+      FunctionName: !Sub 
+        - '${OrganizationName}-cost-optimization-${Environment}${Suffix}'
+        - Suffix: !If [HasTimestamp, !Sub '-${DeploymentTimestamp}', '']
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Role: !GetAtt CostOptimizationLambdaRole.Arn
+      Timeout: 300
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref CostAlertsTopic
+          ENVIRONMENT: !Ref Environment
+          BUDGET_LIMIT: !Ref MonthlyBudgetLimit
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          from datetime import datetime, timedelta
+          
+          def lambda_handler(event, context):
+              ce = boto3.client('ce')
+              sns = boto3.client('sns')
+              
+              # Get cost and usage data for the last 30 days
+              end_date = datetime.now().strftime('%Y-%m-%d')
+              start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+              
+              try:
+                  # Get cost by service
+                  response = ce.get_cost_and_usage(
+                      TimePeriod={
+                          'Start': start_date,
+                          'End': end_date
+                      },
+                      Granularity='MONTHLY',
+                      Metrics=['BlendedCost'],
+                      GroupBy=[
+                          {
+                              'Type': 'DIMENSION',
+                              'Key': 'SERVICE'
+                          }
+                      ]
+                  )
+                  
+                  # Generate cost optimization recommendations
+                  recommendations = []
+                  total_cost = 0
+                  
+                  for result in response['ResultsByTime']:
+                      for group in result['Groups']:
+                          service = group['Keys'][0]
+                          cost = float(group['Metrics']['BlendedCost']['Amount'])
+                          total_cost += cost
+                          
+                          if cost > 50:  # Services costing more than $50
+                              recommendations.append(f"Review {service}: ${cost:.2f}")
+                  
+                  # Get rightsizing recommendations
+                  try:
+                      rightsizing = ce.get_rightsizing_recommendation(
+                          Service='AmazonEC2'
+                      )
+                      
+                      if rightsizing['RightsizingRecommendations']:
+                          recommendations.append(f"Found {len(rightsizing['RightsizingRecommendations'])} EC2 rightsizing opportunities")
+                  except Exception as e:
+                      print(f"Could not get rightsizing recommendations: {e}")
+                  
+                  # Create report
+                  report = {
+                      'timestamp': datetime.now().isoformat(),
+                      'environment': os.environ['ENVIRONMENT'],
+                      'total_monthly_cost': round(total_cost, 2),
+                      'budget_limit': float(os.environ['BUDGET_LIMIT']),
+                      'budget_utilization': round((total_cost / float(os.environ['BUDGET_LIMIT'])) * 100, 1),
+                      'recommendations': recommendations[:10]  # Top 10 recommendations
+                  }
+                  
+                  # Send notification if over 80% of budget
+                  if report['budget_utilization'] > 80:
+                      message = f"""
+                      🚨 COST ALERT - {os.environ['ENVIRONMENT'].upper()}
+                      
+                      Current Monthly Cost: ${report['total_monthly_cost']}
+                      Budget Limit: ${report['budget_limit']}
+                      Budget Utilization: {report['budget_utilization']}%
+                      
+                      Top Recommendations:
+                      {chr(10).join(['• ' + rec for rec in report['recommendations'][:5]])}
+                      """
+                      
+                      sns.publish(
+                          TopicArn=os.environ['SNS_TOPIC_ARN'],
+                          Message=message,
+                          Subject=f'Cost Alert - {os.environ["ENVIRONMENT"]} Environment'
+                      )
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps(report)
+                  }
+                  
+              except Exception as e:
+                  print(f"Error generating cost report: {e}")
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps({'error': str(e)})
+                  }
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: Cost-Optimization
+
+  # EventBridge Rule for Weekly Cost Reports
+  WeeklyCostReportRule:
+    Type: AWS::Events::Rule
+    Condition: EnableDetailedReports
+    Properties:
+      Name: !Sub '${OrganizationName}-weekly-cost-report-${Environment}'
+      Description: 'Trigger weekly cost optimization reports'
+      ScheduleExpression: 'cron(0 9 ? * MON *)'  # Every Monday at 9 AM UTC
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt CostOptimizationFunction.Arn
+          Id: CostOptimizationTarget
+
+  # Permission for EventBridge to invoke Lambda
+  CostOptimizationLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Condition: EnableDetailedReports
+    Properties:
+      FunctionName: !Ref CostOptimizationFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt WeeklyCostReportRule.Arn
+
+  # CloudWatch Alarm for High Daily Spend
+  DailySpendAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${OrganizationName}-Daily-Spend-Alarm-${Environment}'
+      AlarmDescription: 'Alarm when daily spend exceeds threshold'
+      MetricName: EstimatedCharges
+      Namespace: AWS/Billing
+      Statistic: Maximum
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: 12  # ~4% of 300 per day
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: Currency
+          Value: USD
+      AlarmActions:
+        - !Ref CostAlertsTopic
+      TreatMissingData: notBreaching
+
+  # Cost Anomaly Detection - Removed due to regional availability limitations
+  # AWS Cost Anomaly Detection can be manually enabled in AWS Console
+
+  # Savings Plans Utilization Budget
+  SavingsPlansUtilizationBudget:
+    Type: AWS::Budgets::Budget
+    Condition: IsProductionEnvironment
+    Properties:
+      Budget:
+        BudgetName: !Sub '${OrganizationName}-SavingsPlans-Utilization-${Environment}'
+        BudgetLimit:
+          Amount: 95
+          Unit: PERCENT
+        TimeUnit: MONTHLY
+        BudgetType: SAVINGS_PLANS_UTILIZATION
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: LESS_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+
+Outputs:
+  CostAlertsTopic:
+    Description: 'SNS Topic for cost alerts'
+    Value: !Ref CostAlertsTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-Cost-Alerts-Topic'
+
+  CostMonitoringDashboard:
+    Description: 'CloudWatch Dashboard for cost monitoring'
+    Value: !Sub 'https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${OrganizationName}-Cost-Monitoring-${Environment}'
+    Export:
+      Name: !Sub '${AWS::StackName}-Cost-Dashboard-URL'
+
+  MainBudgetName:
+    Description: 'Name of the main budget'
+    Value: !Sub '${OrganizationName}-Monthly-Budget-${Environment}'
+    Export:
+      Name: !Sub '${AWS::StackName}-Main-Budget-Name'
+
+  CostOptimizationFunction:
+    Condition: EnableDetailedReports
+    Description: 'ARN of the cost optimization Lambda function'
+    Value: !GetAtt CostOptimizationFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-Cost-Optimization-Function'
+
+  # CostAnomalyDetector output removed - manual setup required

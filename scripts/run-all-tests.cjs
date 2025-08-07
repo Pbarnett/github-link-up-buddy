@@ -1,0 +1,1 @@
+testing/run-all-tests.cjs

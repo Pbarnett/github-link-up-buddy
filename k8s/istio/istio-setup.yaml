@@ -1,0 +1,120 @@
+---
+# Enable Istio sidecar injection for namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: parker-flight
+  labels:
+    istio-injection: enabled
+---
+# Parker Flight Deployment with Istio
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: parker-flight
+  namespace: parker-flight
+  labels:
+    app: parker-flight
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: parker-flight
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: parker-flight
+        version: v1
+    spec:
+      containers:
+      - name: parker-flight
+        image: parker-flight:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: PORT
+          value: "80"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
+---
+# Service for Parker Flight
+apiVersion: v1
+kind: Service
+metadata:
+  name: parker-flight-service
+  namespace: parker-flight
+  labels:
+    app: parker-flight
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    name: http
+  selector:
+    app: parker-flight
+---
+# Istio Gateway for external traffic
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: parker-flight-gateway
+  namespace: parker-flight
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+# Virtual Service for routing
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: parker-flight
+  namespace: parker-flight
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - parker-flight-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: parker-flight-service
+        port:
+          number: 80
+---
+# Destination Rule for load balancing
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: parker-flight
+  namespace: parker-flight
+spec:
+  host: parker-flight-service
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN
+  subsets:
+  - name: v1
+    labels:
+      version: v1

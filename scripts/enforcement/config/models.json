@@ -1,0 +1,72 @@
+{
+  "models": {
+    "gpt-4.1-mini": {
+      "name": "gpt-4.1-mini-2025-04-14",
+      "input_cost": 0.40,
+      "output_cost": 1.60,
+      "cached_input_cost": 0.10,
+      "context_window": 128000,
+      "use_cases": ["code_review", "bug_detection", "general_analysis"]
+    },
+    "gpt-4.1-nano": {
+      "name": "gpt-4.1-nano-2025-04-14", 
+      "input_cost": 0.10,
+      "output_cost": 0.40,
+      "cached_input_cost": 0.025,
+      "context_window": 128000,
+      "use_cases": ["documentation", "simple_tasks"]
+    },
+    "o4-mini": {
+      "name": "o4-mini-2025-04-16",
+      "input_cost": 1.10,
+      "output_cost": 4.40,
+      "cached_input_cost": 0.275,
+      "flex_input_cost": 0.55,
+      "flex_output_cost": 2.20,
+      "context_window": 200000,
+      "use_cases": ["test_generation", "security_analysis", "complex_reasoning"]
+    },
+    "o3-pro": {
+      "name": "o3-pro-2025-06-10",
+      "input_cost": 20.00,
+      "output_cost": 80.00,
+      "context_window": 200000,
+      "use_cases": ["critical_security", "complex_architecture_review"]
+    }
+  },
+  "routing": {
+    "code_review": {
+      "primary": "gpt-4.1-mini",
+      "escalation_threshold": 0.7,
+      "escalation_model": "o4-mini",
+      "fallback": "pattern_based"
+    },
+    "test_generation": {
+      "primary": "o4-mini",
+      "use_flex": true,
+      "fallback": "gpt-4.1-mini"
+    },
+    "documentation": {
+      "primary": "gpt-4.1-nano",
+      "fallback": "template_based"
+    },
+    "security_analysis": {
+      "primary": "o4-mini",
+      "escalation_threshold": 0.8,
+      "escalation_model": "o3-pro",
+      "triggers": ["auth", "crypto", "data_handling", "api_endpoints"]
+    },
+    "bug_detection": {
+      "primary": "gpt-4.1-mini",
+      "escalation_threshold": 0.7,
+      "escalation_model": "o4-mini"
+    }
+  },
+  "cost_controls": {
+    "daily_budget": 5.00,
+    "monthly_budget": 30.00,
+    "enable_caching": true,
+    "enable_flex_processing": true,
+    "graceful_degradation": true
+  }
+}

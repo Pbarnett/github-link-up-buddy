@@ -1,0 +1,819 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ElastiCache Redis and DynamoDB DAX caching infrastructure with read-through and write-behind patterns'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name for resource naming
+  
+  ApplicationName:
+    Type: String
+    Default: github-link-buddy
+    Description: Application name
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID for cache deployment
+
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Private subnet IDs for cache deployment
+
+  RedisNodeType:
+    Type: String
+    Default: cache.t3.micro
+    AllowedValues:
+      - cache.t3.micro
+      - cache.t3.small
+      - cache.t3.medium
+      - cache.r6g.large
+      - cache.r6g.xlarge
+      - cache.r6g.2xlarge
+    Description: ElastiCache Redis node type
+
+  DAXNodeType:
+    Type: String
+    Default: dax.t3.small
+    AllowedValues:
+      - dax.t2.small
+      - dax.t2.medium
+      - dax.t3.small
+      - dax.t3.medium
+      - dax.r4.large
+      - dax.r4.xlarge
+    Description: DynamoDB DAX node type
+
+  RedisClusterSize:
+    Type: Number
+    Default: 2
+    MinValue: 1
+    MaxValue: 6
+    Description: Number of Redis cache nodes
+
+  DAXClusterSize:
+    Type: Number
+    Default: 3
+    MinValue: 1
+    MaxValue: 10
+    Description: Number of DAX nodes
+
+  EnableRedisClusterMode:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Enable Redis cluster mode for horizontal scaling
+
+  EnableBackupRetention:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Enable automatic backup retention
+
+  BackupRetentionDays:
+    Type: Number
+    Default: 7
+    MinValue: 1
+    MaxValue: 35
+    Description: Number of days to retain automatic backups
+
+  NotificationEmail:
+    Type: String
+    Description: Email address for cache notifications
+    AllowedPattern: '^[^\s@]+@[^\s@]+\.[^\s@]+$'
+
+  KMSKeyId:
+    Type: String
+    Description: KMS Key ID for encryption
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, 'production']
+  ClusterModeEnabled: !Equals [!Ref EnableRedisClusterMode, 'true']
+  BackupEnabled: !Equals [!Ref EnableBackupRetention, 'true']
+  NonClusterModeEnabled: !Equals [!Ref EnableRedisClusterMode, 'false']
+
+Resources:
+  # Security Groups
+  RedisSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${ApplicationName}-redis-sg-${Environment}'
+      GroupDescription: 'Security group for ElastiCache Redis cluster'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !Ref ApplicationSecurityGroup
+          Description: 'Redis access from application'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-redis-sg-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  DAXSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${ApplicationName}-dax-sg-${Environment}'
+      GroupDescription: 'Security group for DynamoDB DAX cluster'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8111
+          ToPort: 8111
+          SourceSecurityGroupId: !Ref ApplicationSecurityGroup
+          Description: 'DAX access from application'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-dax-sg-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  ApplicationSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${ApplicationName}-app-cache-sg-${Environment}'
+      GroupDescription: 'Security group for applications accessing cache'
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-app-cache-sg-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # ElastiCache Subnet Group
+  RedisSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: 'Subnet group for ElastiCache Redis'
+      SubnetIds: !Ref PrivateSubnetIds
+      CacheSubnetGroupName: !Sub '${ApplicationName}-redis-subnet-group-${Environment}'
+
+  # ElastiCache Parameter Group
+  RedisParameterGroup:
+    Type: AWS::ElastiCache::ParameterGroup
+    Properties:
+      CacheParameterGroupFamily: redis7.x
+      Description: 'Parameter group for Redis with optimized settings'
+      ParameterGroupName: !Sub '${ApplicationName}-redis-params-${Environment}'
+      Properties:
+        maxmemory-policy: allkeys-lru
+        timeout: 300
+        tcp-keepalive: 300
+        save: '900 1 300 10 60 10000'
+        stop-writes-on-bgsave-error: 'no'
+
+  # ElastiCache Redis Cluster (Non-Cluster Mode)
+  RedisReplicationGroup:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Condition: NonClusterModeEnabled
+    Properties:
+      ReplicationGroupId: !Sub '${ApplicationName}-redis-${Environment}'
+      Description: 'Redis cluster for caching'
+      CacheNodeType: !Ref RedisNodeType
+      Engine: redis
+      EngineVersion: '7.0'
+      NumCacheClusters: !Ref RedisClusterSize
+      CacheParameterGroupName: !Ref RedisParameterGroup
+      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      SecurityGroupIds:
+        - !Ref RedisSecurityGroup
+      AtRestEncryptionEnabled: true
+      TransitEncryptionEnabled: true
+      KmsKeyId: !Ref KMSKeyId
+      AutomaticFailoverEnabled: !If [IsProduction, true, false]
+      MultiAZEnabled: !If [IsProduction, true, false]
+      SnapshotRetentionLimit: !If [BackupEnabled, !Ref BackupRetentionDays, 0]
+      SnapshotWindow: '03:00-04:00'
+      PreferredMaintenanceWindow: 'sun:04:00-sun:05:00'
+      NotificationTopicArn: !Ref CacheNotificationTopic
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Purpose
+          Value: 'Primary cache for application data'
+
+  # ElastiCache Redis Cluster (Cluster Mode Enabled)
+  RedisClusterModeReplicationGroup:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Condition: ClusterModeEnabled
+    Properties:
+      ReplicationGroupId: !Sub '${ApplicationName}-redis-cluster-${Environment}'
+      Description: 'Redis cluster with cluster mode enabled'
+      CacheNodeType: !Ref RedisNodeType
+      Engine: redis
+      EngineVersion: '7.0'
+      CacheParameterGroupName: !Ref RedisParameterGroup
+      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      SecurityGroupIds:
+        - !Ref RedisSecurityGroup
+      AtRestEncryptionEnabled: true
+      TransitEncryptionEnabled: true
+      KmsKeyId: !Ref KMSKeyId
+      NumNodeGroups: 2
+      ReplicasPerNodeGroup: 1
+      AutomaticFailoverEnabled: true
+      MultiAZEnabled: true
+      SnapshotRetentionLimit: !If [BackupEnabled, !Ref BackupRetentionDays, 0]
+      SnapshotWindow: '03:00-04:00'
+      PreferredMaintenanceWindow: 'sun:04:00-sun:05:00'
+      NotificationTopicArn: !Ref CacheNotificationTopic
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Purpose
+          Value: 'Distributed cache for application data'
+
+  # DynamoDB Tables for DAX Integration
+  UserSessionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ApplicationName}-user-sessions-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: sessionId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: expiresAt
+          AttributeType: N
+      KeySchema:
+        - AttributeName: sessionId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserIdIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: expiresAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref KMSKeyId
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Purpose
+          Value: UserSessions
+
+  CacheableDataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ApplicationName}-cacheable-data-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: dataKey
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+        - AttributeName: lastAccessed
+          AttributeType: N
+      KeySchema:
+        - AttributeName: dataKey
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: CategoryIndex
+          KeySchema:
+            - AttributeName: category
+              KeyType: HASH
+            - AttributeName: lastAccessed
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        KMSMasterKeyId: !Ref KMSKeyId
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Purpose
+          Value: CacheableData
+
+  # DAX Subnet Group
+  DAXSubnetGroup:
+    Type: AWS::DAX::SubnetGroup
+    Properties:
+      SubnetGroupName: !Sub '${ApplicationName}-dax-subnet-group-${Environment}'
+      Description: 'Subnet group for DAX cluster'
+      SubnetIds: !Ref PrivateSubnetIds
+
+  # DAX Parameter Group
+  DAXParameterGroup:
+    Type: AWS::DAX::ParameterGroup
+    Properties:
+      ParameterGroupName: !Sub '${ApplicationName}-dax-params-${Environment}'
+      Description: 'Parameter group for DAX with optimized settings'
+      ParameterNameValues:
+        'query-ttl-millis': '300000'  # 5 minutes
+        'record-ttl-millis': '300000'  # 5 minutes
+
+  # IAM Service Role for DAX
+  DAXServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ApplicationName}-dax-service-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: dax.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonDaxServiceRolePolicy
+
+  # DAX Cluster
+  DAXCluster:
+    Type: AWS::DAX::Cluster
+    Properties:
+      ClusterName: !Sub '${ApplicationName}-dax-${Environment}'
+      Description: 'DynamoDB Accelerator cluster'
+      IAMRoleArn: !GetAtt DAXServiceRole.Arn
+      NodeType: !Ref DAXNodeType
+      ReplicationFactor: !Ref DAXClusterSize
+      SecurityGroupIds:
+        - !Ref DAXSecurityGroup
+      SubnetGroupName: !Ref DAXSubnetGroup
+      ParameterGroupName: !Ref DAXParameterGroup
+      SSESpecification:
+        SSEEnabled: true
+      NotificationTopicArn: !Ref CacheNotificationTopic
+      PreferredMaintenanceWindow: 'sun:04:00-sun:05:00'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Purpose
+          Value: 'DynamoDB acceleration'
+
+  # Lambda Function for Cache Management
+  CacheManagementFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ApplicationName}-cache-management-${Environment}'
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Role: !GetAtt CacheManagementRole.Arn
+      Timeout: 300
+      MemorySize: 512
+      Environment:
+        Variables:
+          REDIS_ENDPOINT: !If 
+            - ClusterModeEnabled
+            - !GetAtt RedisClusterModeReplicationGroup.ConfigurationEndPoint.Address
+            - !GetAtt RedisReplicationGroup.PrimaryEndPoint.Address
+          DAX_ENDPOINT: !GetAtt DAXCluster.ClusterDiscoveryEndpoint
+          USER_SESSIONS_TABLE: !Ref UserSessionsTable
+          CACHEABLE_DATA_TABLE: !Ref CacheableDataTable
+          ENVIRONMENT: !Ref Environment
+      TracingConfig:
+        Mode: Active
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import redis
+          import os
+          from datetime import datetime, timedelta
+          import logging
+
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+          def lambda_handler(event, context):
+              try:
+                  action = event.get('action', 'health_check')
+                  
+                  if action == 'health_check':
+                      return perform_health_check()
+                  elif action == 'clear_cache':
+                      return clear_cache_data(event.get('pattern', '*'))
+                  elif action == 'cache_stats':
+                      return get_cache_statistics()
+                  elif action == 'optimize_cache':
+                      return optimize_cache_performance()
+                  else:
+                      return {
+                          'statusCode': 400,
+                          'body': json.dumps({'error': 'Unknown action'})
+                      }
+                      
+              except Exception as e:
+                  logger.error(f"Error in cache management: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps({'error': str(e)})
+                  }
+
+          def perform_health_check():
+              results = {}
+              
+              # Check Redis connectivity
+              try:
+                  redis_client = redis.Redis(
+                      host=os.environ['REDIS_ENDPOINT'],
+                      port=6379,
+                      decode_responses=True,
+                      ssl=True
+                  )
+                  redis_client.ping()
+                  results['redis'] = {'status': 'healthy', 'response_time_ms': 'N/A'}
+              except Exception as e:
+                  results['redis'] = {'status': 'unhealthy', 'error': str(e)}
+              
+              # Check DAX connectivity
+              try:
+                  import boto3
+                  dax_client = boto3.client('dynamodb', endpoint_url=f"https://{os.environ['DAX_ENDPOINT']}:8111")
+                  # Simple operation to test connectivity
+                  dax_client.describe_table(TableName=os.environ['USER_SESSIONS_TABLE'])
+                  results['dax'] = {'status': 'healthy'}
+              except Exception as e:
+                  results['dax'] = {'status': 'unhealthy', 'error': str(e)}
+              
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps({
+                      'message': 'Health check completed',
+                      'results': results,
+                      'timestamp': datetime.now().isoformat()
+                  })
+              }
+
+          def clear_cache_data(pattern):
+              try:
+                  redis_client = redis.Redis(
+                      host=os.environ['REDIS_ENDPOINT'],
+                      port=6379,
+                      decode_responses=True,
+                      ssl=True
+                  )
+                  
+                  keys = redis_client.keys(pattern)
+                  if keys:
+                      deleted_count = redis_client.delete(*keys)
+                  else:
+                      deleted_count = 0
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps({
+                          'message': f'Cleared {deleted_count} cache entries',
+                          'pattern': pattern
+                      })
+                  }
+              except Exception as e:
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps({'error': str(e)})
+                  }
+
+          def get_cache_statistics():
+              stats = {}
+              
+              try:
+                  redis_client = redis.Redis(
+                      host=os.environ['REDIS_ENDPOINT'],
+                      port=6379,
+                      decode_responses=True,
+                      ssl=True
+                  )
+                  
+                  redis_info = redis_client.info()
+                  stats['redis'] = {
+                      'connected_clients': redis_info.get('connected_clients'),
+                      'used_memory': redis_info.get('used_memory_human'),
+                      'keyspace_hits': redis_info.get('keyspace_hits'),
+                      'keyspace_misses': redis_info.get('keyspace_misses'),
+                      'evicted_keys': redis_info.get('evicted_keys')
+                  }
+                  
+                  if stats['redis']['keyspace_hits'] and stats['redis']['keyspace_misses']:
+                      total_requests = stats['redis']['keyspace_hits'] + stats['redis']['keyspace_misses']
+                      hit_rate = (stats['redis']['keyspace_hits'] / total_requests) * 100
+                      stats['redis']['hit_rate_percentage'] = round(hit_rate, 2)
+                  
+              except Exception as e:
+                  stats['redis'] = {'error': str(e)}
+              
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps({
+                      'message': 'Cache statistics retrieved',
+                      'statistics': stats,
+                      'timestamp': datetime.now().isoformat()
+                  })
+              }
+
+          def optimize_cache_performance():
+              optimizations = []
+              
+              try:
+                  redis_client = redis.Redis(
+                      host=os.environ['REDIS_ENDPOINT'],
+                      port=6379,
+                      decode_responses=True,
+                      ssl=True
+                  )
+                  
+                  # Get memory usage info
+                  info = redis_client.info()
+                  used_memory = info.get('used_memory', 0)
+                  max_memory = info.get('maxmemory', 0)
+                  
+                  if max_memory > 0:
+                      memory_usage_percent = (used_memory / max_memory) * 100
+                      
+                      if memory_usage_percent > 80:
+                          # Clean up expired keys
+                          redis_client.execute_command('MEMORY', 'PURGE')
+                          optimizations.append('Purged expired keys due to high memory usage')
+                  
+                  # Get keys with no expiration set and set default TTL
+                  sample_keys = redis_client.randomkey()
+                  if sample_keys:
+                      ttl = redis_client.ttl(sample_keys)
+                      if ttl == -1:  # No expiration set
+                          redis_client.expire(sample_keys, 3600)  # Set 1 hour TTL
+                          optimizations.append('Set TTL for keys without expiration')
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps({
+                          'message': 'Cache optimization completed',
+                          'optimizations_performed': optimizations,
+                          'memory_usage_percent': memory_usage_percent if 'memory_usage_percent' in locals() else 'N/A'
+                      })
+                  }
+                  
+              except Exception as e:
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps({'error': str(e)})
+                  }
+
+  # IAM Role for Cache Management Lambda
+  CacheManagementRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ApplicationName}-cache-mgmt-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+      Policies:
+        - PolicyName: CacheManagementPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - elasticache:DescribeCacheClusters
+                  - elasticache:DescribeReplicationGroups
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - dax:DescribeClusters
+                  - dynamodb:DescribeTable
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt UserSessionsTable.Arn
+                  - !GetAtt CacheableDataTable.Arn
+                  - !Sub '${UserSessionsTable.Arn}/index/*'
+                  - !Sub '${CacheableDataTable.Arn}/index/*'
+
+  # EventBridge Rule for Cache Optimization
+  CacheOptimizationSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${ApplicationName}-cache-optimization-${Environment}'
+      Description: 'Schedule for cache optimization tasks'
+      ScheduleExpression: 'rate(6 hours)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt CacheManagementFunction.Arn
+          Id: 'CacheOptimizationTarget'
+          Input: '{"action": "optimize_cache"}'
+
+  # Permission for EventBridge to invoke Lambda
+  CacheOptimizationInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CacheManagementFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt CacheOptimizationSchedule.Arn
+
+  # SNS Topic for Cache Notifications
+  CacheNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ApplicationName}-cache-notifications-${Environment}'
+      KmsMasterKeyId: !Ref KMSKeyId
+
+  CacheNotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref CacheNotificationTopic
+      Endpoint: !Ref NotificationEmail
+
+  # CloudWatch Dashboard for Cache Monitoring
+  CacheDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ApplicationName}-cache-monitoring-${Environment}'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/ElastiCache", "CacheMisses", "CacheClusterId", "${!If [ClusterModeEnabled, RedisClusterModeReplicationGroup, RedisReplicationGroup]}" ],
+                  [ ".", "CacheHits", ".", "." ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Redis Cache Hit/Miss Ratio",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/DAX", "ItemRequestCount", "ClusterName", "${DAXCluster}" ],
+                  [ ".", "ErrorRequestCount", ".", "." ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "DAX Request Metrics",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/ElastiCache", "DatabaseMemoryUsagePercentage", "CacheClusterId", "${!If [ClusterModeEnabled, RedisClusterModeReplicationGroup, RedisReplicationGroup]}" ],
+                  [ "AWS/DAX", "CPUUtilization", "ClusterName", "${DAXCluster}" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Resource Utilization",
+                "period": 300
+              }
+            }
+          ]
+        }
+
+  # CloudWatch Alarms
+  RedisHighMemoryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-redis-high-memory-${Environment}'
+      AlarmDescription: 'Redis memory usage is high'
+      MetricName: DatabaseMemoryUsagePercentage
+      Namespace: AWS/ElastiCache
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: CacheClusterId
+          Value: !If 
+            - ClusterModeEnabled
+            - !Ref RedisClusterModeReplicationGroup
+            - !Ref RedisReplicationGroup
+      AlarmActions:
+        - !Ref CacheNotificationTopic
+
+  DAXHighErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-dax-high-errors-${Environment}'
+      AlarmDescription: 'DAX error rate is high'
+      MetricName: ErrorRequestCount
+      Namespace: AWS/DAX
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref DAXCluster
+      AlarmActions:
+        - !Ref CacheNotificationTopic
+
+Outputs:
+  RedisEndpoint:
+    Description: 'Redis cluster endpoint'
+    Value: !If 
+      - ClusterModeEnabled
+      - !GetAtt RedisClusterModeReplicationGroup.ConfigurationEndPoint.Address
+      - !GetAtt RedisReplicationGroup.PrimaryEndPoint.Address
+    Export:
+      Name: !Sub '${ApplicationName}-redis-endpoint-${Environment}'
+
+  RedisPort:
+    Description: 'Redis cluster port'
+    Value: !If 
+      - ClusterModeEnabled
+      - !GetAtt RedisClusterModeReplicationGroup.ConfigurationEndPoint.Port
+      - !GetAtt RedisReplicationGroup.PrimaryEndPoint.Port
+    Export:
+      Name: !Sub '${ApplicationName}-redis-port-${Environment}'
+
+  DAXClusterEndpoint:
+    Description: 'DAX cluster endpoint'
+    Value: !GetAtt DAXCluster.ClusterDiscoveryEndpoint
+    Export:
+      Name: !Sub '${ApplicationName}-dax-endpoint-${Environment}'
+
+  DAXClusterPort:
+    Description: 'DAX cluster port'
+    Value: !GetAtt DAXCluster.Port
+    Export:
+      Name: !Sub '${ApplicationName}-dax-port-${Environment}'
+
+  UserSessionsTableName:
+    Description: 'Name of the user sessions DynamoDB table'
+    Value: !Ref UserSessionsTable
+    Export:
+      Name: !Sub '${ApplicationName}-user-sessions-table-${Environment}'
+
+  CacheableDataTableName:
+    Description: 'Name of the cacheable data DynamoDB table'
+    Value: !Ref CacheableDataTable
+    Export:
+      Name: !Sub '${ApplicationName}-cacheable-data-table-${Environment}'
+
+  ApplicationSecurityGroupId:
+    Description: 'Security group ID for applications accessing cache'
+    Value: !Ref ApplicationSecurityGroup
+    Export:
+      Name: !Sub '${ApplicationName}-app-cache-sg-${Environment}'
+
+  CacheManagementFunctionArn:
+    Description: 'ARN of the cache management function'
+    Value: !GetAtt CacheManagementFunction.Arn
+    Export:
+      Name: !Sub '${ApplicationName}-cache-mgmt-function-${Environment}'

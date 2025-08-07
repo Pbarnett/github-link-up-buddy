@@ -1,0 +1,199 @@
+/**
+ * Enhanced Radix UI Component Mocks - Fixed Version
+ * 
+ * Comprehensive mocks for Radix UI components used in the Trip Request Form.
+ * These mocks provide test-friendly versions that maintain the same API surface
+ * while being easily testable and providing proper accessibility attributes.
+ * 
+ * Fixed issues:
+ * - Nested button elements
+ * - Invalid DOM props
+ * - Proper asChild handling
+ */
+
+import React from 'react';
+
+// Helper to filter out non-DOM props
+const filterDOMProps = (props: Record<string, any>) => {
+  const { 
+    asChild, 
+    showOutsideDays, 
+    classNames, 
+    initialFocus, 
+    sideOffset,
+    ...domProps 
+  } = props;
+  return domProps;
+};
+
+// Mock Radix UI Popover components
+export const mockPopoverComponents = {
+  Popover: ({ children, open, onOpenChange, ...props }: any) => {
+    return (
+      <div 
+        data-testid="popover" 
+        data-state={open ? 'open' : 'closed'}
+        {...filterDOMProps(props)}
+      >
+        {React.Children.map(children, child => 
+          React.isValidElement(child) 
+            ? React.cloneElement(child, { open, onOpenChange })
+            : child
+        )}
+      </div>
+    );
+  },
+
+  PopoverTrigger: ({ children, asChild, onClick, ...props }: any) => {
+    if (asChild && React.isValidElement(children)) {
+      return React.cloneElement(children, {
+        'data-testid': 'popover-trigger',
+        onClick: (e: Event) => {
+          onClick?.(e);
+          children.props.onClick?.(e);
+        },
+      });
+    }
+
+    return (
+      <div 
+        data-testid="popover-trigger" 
+        onClick={onClick}
+        {...filterDOMProps(props)}
+      >
+        {children}
+      </div>
+    );
+  },
+
+  PopoverContent: ({ children, side, align, ...props }: any) => (
+    <div 
+      data-testid="popover-content"
+      data-side={side}
+      data-align={align}
+      role="dialog"
+      {...filterDOMProps(props)}
+    >
+      {children}
+    </div>
+  ),
+
+  PopoverArrow: (props: any) => (
+    <div data-testid="popover-arrow" {...filterDOMProps(props)} />
+  ),
+
+  PopoverClose: ({ children, asChild, onClick, ...props }: any) => {
+    if (asChild && React.isValidElement(children)) {
+      return React.cloneElement(children, {
+        'data-testid': 'popover-close',
+        onClick,
+      });
+    }
+
+    return (
+      <button 
+        data-testid="popover-close" 
+        onClick={onClick}
+        {...filterDOMProps(props)}
+      >
+        {children}
+      </button>
+    );
+  },
+};
+
+// Mock Radix UI Switch components
+export const mockSwitchComponents = {
+  Switch: ({ 
+    checked, 
+    onCheckedChange, 
+    disabled, 
+    name, 
+    value,
+    ...props 
+  }: any) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      onCheckedChange?.(e.target.checked);
+    };
+    
+    return (
+      <button
+        role="switch"
+        aria-checked={checked}
+        data-testid="switch"
+        data-state={checked ? 'checked' : 'unchecked'}
+        disabled={disabled}
+        onClick={() => !disabled && onCheckedChange?.(!checked)}
+        {...filterDOMProps(props)}
+      >
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={handleChange}
+          name={name}
+          value={value}
+          style={{ display: 'none' }}
+        />
+        <span data-testid="switch-thumb" />
+      </button>
+    );
+  },
+
+  SwitchThumb: (props: any) => (
+    <span data-testid="switch-thumb" {...filterDOMProps(props)} />
+  ),
+};
+
+// Mock Radix UI Select components
+export const mockSelectComponents = {
+  Select: ({ 
+    children, 
+    value, 
+    onValueChange, 
+    open, 
+    onOpenChange,
+    disabled,
+    name,
+    ...props 
+  }: any) => {
+    const [isOpen, setIsOpen] = React.useState(open || false);
+    
+    React.useEffect(() => {
+      setIsOpen(open || false);
+    }, [open]);
+
+    const handleOpenChange = (newOpen: boolean) => {
+      setIsOpen(newOpen);
+      onOpenChange?.(newOpen);
+    };
+
+    return (
+      <div 
+        data-testid="select"
+        data-state={isOpen ? 'open' : 'closed'}
+        {...filterDOMProps(props)}
+      >
+        {React.Children.map(children, child =>
+          React.isValidElement(child)
+            ? React.cloneElement(child, {
+                value,
+                onValueChange,
+                open: isOpen,
+                onOpenChange: handleOpenChange,
+                disabled,
+                name,
+              })
+            : child
+        )}
+      </div>
+    );
+  },
+
+  SelectTrigger: ({ 
+    children, 
+    onClick, 
+    open, 
+    onOpenChange, 
+    disabled,
+    ...props 
+  }: any) => {

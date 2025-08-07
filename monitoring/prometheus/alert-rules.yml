@@ -1,0 +1,268 @@
+groups:
+  - name: parker_flight_slo_alerts
+    rules:
+      # Critical: SLO breach alerts
+      - alert: ParkerFlightHighErrorRate
+        expr: |
+          (
+            rate(parker_flight_http_requests_total{status_code!~"2.."}[5m]) /
+            rate(parker_flight_http_requests_total[5m])
+          ) > 0.02
+        for: 2m
+        labels:
+          severity: critical
+          team: platform-engineering
+          slo_type: availability
+        annotations:
+          summary: "Parker Flight error rate too high"
+          description: "Error rate is {{ $value | humanizePercentage }} for the last 5 minutes, exceeding SLO target of 2%"
+          runbook_url: "https://runbooks.parkerfly.com/high-error-rate"
+          dashboard_url: "http://localhost:3001/d/parker_flight_overview"
+
+      - alert: ParkerFlightHighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            rate(parker_flight_http_request_duration_seconds_bucket[5m])
+          ) > 0.2
+        for: 5m
+        labels:
+          severity: critical
+          team: platform-engineering
+          slo_type: latency
+        annotations:
+          summary: "Parker Flight P95 latency too high"
+          description: "P95 latency is {{ $value }}s for the last 5 minutes, exceeding SLO target of 200ms"
+          runbook_url: "https://runbooks.parkerfly.com/high-latency"
+          dashboard_url: "http://localhost:3001/d/parker_flight_slos"
+
+      - alert: ParkerFlightServiceDown
+        expr: parker_flight_uptime_status{service="api"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          team: platform-engineering
+          slo_type: availability
+        annotations:
+          summary: "Parker Flight API is down"
+          description: "The Parker Flight API service is not responding to health checks"
+          runbook_url: "https://runbooks.parkerfly.com/service-down"
+          dashboard_url: "http://localhost:3001/d/parker_flight_overview"
+
+  - name: parker_flight_business_alerts
+    rules:
+      # Warning: Business metric degradation
+      - alert: ParkerFlightLowUserRegistrations
+        expr: |
+          rate(parker_flight_user_registrations_total{status="success"}[10m]) * 60 < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          team: product
+          metric_type: business
+        annotations:
+          summary: "Parker Flight user registrations are low"
+          description: "User registrations are at {{ $value }} per minute, below expected threshold"
+          dashboard_url: "http://localhost:3001/d/parker_flight_overview"
+
+      - alert: ParkerFlightPaymentFailures
+        expr: |
+          (
+            rate(parker_flight_wallet_transactions_total{status="failure"}[5m]) /
+            rate(parker_flight_wallet_transactions_total[5m])
+          ) > 0.05
+        for: 3m
+        labels:
+          severity: warning
+          team: product
+          metric_type: business
+        annotations:
+          summary: "Parker Flight payment failure rate is high"
+          description: "Payment failure rate is {{ $value | humanizePercentage }} for the last 5 minutes"
+          dashboard_url: "http://localhost:3001/d/parker_flight_overview"
+
+  - name: parker_flight_feature_flag_alerts
+    rules:
+      # Warning: Feature flag issues
+      - alert: ParkerFlightLaunchDarklyErrors
+        expr: |
+          rate(parker_flight_feature_flag_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          team: platform-engineering
+          service: launchdarkly
+        annotations:
+          summary: "Parker Flight LaunchDarkly errors detected"
+          description: "LaunchDarkly errors are occurring at {{ $value }} per second"
+          runbook_url: "https://runbooks.parkerfly.com/launchdarkly-errors"
+          dashboard_url: "http://localhost:3001/d/parker_flight_overview"
+
+      - alert: ParkerFlightCircuitBreakerOpen
+        expr: parker_flight_circuit_breaker_state > 0
+        for: 1m
+        labels:
+          severity: warning
+          team: platform-engineering
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "Parker Flight circuit breaker open for {{ $labels.service }}"
+          description: "Circuit breaker is open for {{ $labels.service }}, requests may be failing"
+          runbook_url: "https://runbooks.parkerfly.com/circuit-breaker"
+
+  - name: parker_flight_infrastructure_alerts
+    rules:
+      # Warning: Infrastructure issues
+      - alert: ParkerFlightHighMemoryUsage
+        expr: |
+          (
+            parker_flight_nodejs_process_resident_memory_bytes /
+            parker_flight_nodejs_process_heap_size_limit_bytes
+          ) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          team: platform-engineering
+          metric_type: infrastructure
+        annotations:
+          summary: "Parker Flight high memory usage"
+          description: "Memory usage is {{ $value | humanizePercentage }} of heap limit"
+          runbook_url: "https://runbooks.parkerfly.com/high-memory"
+
+      - alert: ParkerFlightHighCPU
+        expr: rate(parker_flight_nodejs_process_cpu_user_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          team: platform-engineering
+          metric_type: infrastructure
+        annotations:
+          summary: "Parker Flight high CPU usage"
+          description: "CPU usage is {{ $value | humanizePercentage }}"
+          runbook_url: "https://runbooks.parkerfly.com/high-cpu"
+
+  - name: parker_flight_error_budget_alerts
+    rules:
+      # Critical: Error budget burn rate
+      - alert: ParkerFlightErrorBudgetBurnRateCritical
+        expr: parker_flight_error_budget_remaining < 10
+        for: 1m
+        labels:
+          severity: critical
+          team: platform-engineering
+          slo_type: "{{ $labels.slo_type }}"
+        annotations:
+          summary: "Parker Flight error budget critically low"
+          description: "Error budget for {{ $labels.slo_type }} SLO is {{ $value }}% remaining"
+          runbook_url: "https://runbooks.parkerfly.com/error-budget-critical"
+          dashboard_url: "http://localhost:3001/d/parker_flight_slos"
+
+      - alert: ParkerFlightErrorBudgetBurnRateWarning
+        expr: parker_flight_error_budget_remaining < 25
+        for: 5m
+        labels:
+          severity: warning
+          team: platform-engineering
+          slo_type: "{{ $labels.slo_type }}"
+        annotations:
+          summary: "Parker Flight error budget low"
+          description: "Error budget for {{ $labels.slo_type }} SLO is {{ $value }}% remaining"
+          dashboard_url: "http://localhost:3001/d/parker_flight_slos"
+
+groups:
+  - name: parker-flight-high-form-error
+    rules:
+      - alert: HighFormErrorRate
+        expr: |
+          (
+            sum(rate(form_validation_errors_total{app="parker-flight-api"}[5m])) /
+            sum(rate(form_submissions_total{app="parker-flight-api"}[5m]))
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: parker-flight-api
+          alert_type: form_error
+        annotations:
+          summary: "High form error rate detected"
+          description: "Form error rate is {{ $value }}% over the last 5 minutes, which exceeds the 5% threshold"
+          runbook_url: "https://github.com/parker-flight/runbooks/form-troubleshooting.md"
+
+  - name: parker-flight-search-success-drop
+    rules:
+      - alert: SearchSuccessRateDrop
+        expr: |
+          (
+            sum(rate(search_success_total{app="parker-flight-api"}[5m])) /
+            sum(rate(search_attempts_total{app="parker-flight-api"}[5m]))
+          ) * 100 < 90
+        for: 2m
+        labels:
+          severity: critical
+          service: parker-flight-api
+          alert_type: search_failure
+        annotations:
+          summary: "Search success rate dropped below 90%"
+          description: "Search success rate is {{ $value }}% over the last 5 minutes, which is below the 90% threshold"
+          runbook_url: "https://github.com/parker-flight/runbooks/search-troubleshooting.md"
+
+  - name: parker-flight-config-drift
+    rules:
+      - alert: ConfigDriftDetected
+        expr: config_version_mismatch{app="parker-flight-api"} == 1
+        for: 1m
+        labels:
+          severity: warning
+          service: parker-flight-api
+          alert_type: config_drift
+        annotations:
+          summary: "Configuration drift detected"
+          description: "Deployed config version does not match latest config version for environment {{ $labels.environment }}"
+          runbook_url: "https://github.com/parker-flight/runbooks/config-management.md"
+
+  - name: parker-flight-feature-flag-rollback
+    rules:
+      - alert: FeatureFlagRollback
+        expr: feature_flag_rollback_triggered{app="parker-flight-api"} == 1
+        for: 0m
+        labels:
+          severity: info
+          service: parker-flight-api
+          alert_type: feature_flag
+        annotations:
+          summary: "Feature flag rollback triggered"
+          description: "Feature flag {{ $labels.flag }} has been rolled back in environment {{ $labels.environment }}"
+          runbook_url: "https://github.com/parker-flight/runbooks/feature-flag-management.md"
+
+  - name: parker-flight-business-rules-health
+    rules:
+      - alert: BusinessRulesConfigFailure
+        expr: |
+          sum by (environment) (
+            rate(business_rules_config_requests_total{app="parker-flight-api",status="error"}[5m])
+          ) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          service: parker-flight-api
+          alert_type: config_failure
+        annotations:
+          summary: "Business rules config requests failing"
+          description: "Business rules config requests are failing at {{ $value }} requests/sec in {{ $labels.environment }}"
+          runbook_url: "https://github.com/parker-flight/runbooks/config-management.md"
+
+  - name: parker-flight-aws-operations
+    rules:
+      - alert: HighAWSOperationErrors
+        expr: |
+          sum by (operation) (
+            rate(aws_operations_total{app="parker-flight-api",status="error"}[5m])
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: parker-flight-api
+          alert_type: aws_error
+        annotations:
+          summary: "High AWS operation error rate"
+          description: "AWS {{ $labels.operation }} operations are failing at {{ $value }} operations/sec"
+          runbook_url: "https://github.com/parker-flight/runbooks/aws-troubleshooting.md"

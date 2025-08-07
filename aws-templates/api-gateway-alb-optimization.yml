@@ -1,0 +1,899 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'GitHub Link Buddy - Optimized API Gateway and ALB with Zero-Downtime Deployments'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name for resource naming
+  
+  ApplicationName:
+    Type: String
+    Default: github-link-buddy
+    Description: Application name for consistent resource naming
+  
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID for resource deployment
+  
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Private subnet IDs for target instances
+  
+  PublicSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Public subnet IDs for ALB deployment (minimum 2 for multi-AZ)
+  
+  CertificateArn:
+    Type: String
+    Description: SSL certificate ARN for HTTPS termination
+  
+  DomainName:
+    Type: String
+    Description: Primary domain name for the application
+  
+  APIHandlerFunctionArn:
+    Type: String
+    Description: ARN of the API handler Lambda function
+  
+  KMSKeyId:
+    Type: String
+    Description: KMS Key ID for encryption
+  
+  NotificationEmail:
+    Type: String
+    Description: Email for alerts and notifications
+  
+  HealthCheckPath:
+    Type: String
+    Default: '/health'
+    Description: Health check endpoint path
+  
+  DeregistrationDelayTimeoutSeconds:
+    Type: Number
+    Default: 300
+    MinValue: 0
+    MaxValue: 3600
+    Description: Connection draining timeout in seconds
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, 'production']
+
+Resources:
+  # API Gateway with advanced configuration
+  RestAPI:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub '${ApplicationName}-api-${Environment}'
+      Description: 'GitHub Link Buddy REST API with optimization features'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      BinaryMediaTypes:
+        - 'application/octet-stream'
+        - 'image/*'
+      MinimumCompressionSize: 1024
+      ApiKeySourceType: HEADER
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # API Gateway Stage with advanced settings
+  APIStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref RestAPI
+      DeploymentId: !Ref APIDeployment
+      StageName: !Ref Environment
+      Description: !Sub 'API stage for ${Environment} environment'
+      CacheClusterEnabled: !If [IsProduction, true, false]
+      CacheClusterSize: !If [IsProduction, '0.5', !Ref 'AWS::NoValue']
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          DataTraceEnabled: !If [IsProduction, false, true]
+          MetricsEnabled: true
+          CachingEnabled: !If [IsProduction, true, false]
+          CacheTtlInSeconds: !If [IsProduction, 300, !Ref 'AWS::NoValue']
+          CacheKeyParameters: []
+          ThrottlingBurstLimit: !If [IsProduction, 2000, 500]
+          ThrottlingRateLimit: !If [IsProduction, 1000, 250]
+      AccessLogSetting:
+        DestinationArn: !GetAtt APIGatewayLogGroup.Arn
+        Format: >
+          $context.requestId $context.status $context.error.message 
+          $context.error.messageString $context.requestTime $context.responseTime 
+          $context.responseLength $context.identity.sourceIp $context.identity.userAgent
+      TracingEnabled: true
+      Variables:
+        environment: !Ref Environment
+        version: '1.0'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # CloudWatch Log Group for API Gateway
+  APIGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${ApplicationName}-${Environment}'
+      RetentionInDays: !If [IsProduction, 30, 7]
+      KmsKeyId: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KMSKeyId}'
+
+  # API Gateway Resources and Methods
+  LinksResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestAPI
+      ParentId: !GetAtt RestAPI.RootResourceId
+      PathPart: 'links'
+
+  LinksGETMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref LinksResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.querystring.userId: false
+        method.request.header.User-Agent: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${APIHandlerFunctionArn}/invocations'
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+        RequestTemplates:
+          application/json: |
+            {
+              "httpMethod": "$context.httpMethod",
+              "path": "$context.path",
+              "queryStringParameters": {
+                #foreach($param in $input.params().querystring.keySet())
+                "$param": "$util.escapeJavaScript($input.params().querystring.get($param))"
+                #if($foreach.hasNext),#end
+                #end
+              },
+              "headers": {
+                #foreach($header in $input.params().header.keySet())
+                "$header": "$util.escapeJavaScript($input.params().header.get($header))"
+                #if($foreach.hasNext),#end
+                #end
+              },
+              "requestContext": {
+                "requestId": "$context.requestId",
+                "stage": "$context.stage",
+                "identity": {
+                  "sourceIp": "$context.identity.sourceIp",
+                  "userAgent": "$context.identity.userAgent"
+                }
+              }
+            }
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+        - StatusCode: 400
+        - StatusCode: 500
+
+  LinksPOSTMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref LinksResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      RequestValidatorId: !Ref RequestValidator
+      RequestModels:
+        application/json: !Ref CreateLinkModel
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${APIHandlerFunctionArn}/invocations'
+      MethodResponses:
+        - StatusCode: 201
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+        - StatusCode: 400
+        - StatusCode: 500
+
+  LinksOPTIONSMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref LinksResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+
+  # Flight search resource
+  FlightSearchResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestAPI
+      ParentId: !GetAtt RestAPI.RootResourceId
+      PathPart: 'flight-search'
+
+  FlightSearchPOSTMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref FlightSearchResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${APIHandlerFunctionArn}/invocations'
+      MethodResponses:
+        - StatusCode: 200
+        - StatusCode: 400
+        - StatusCode: 500
+
+  FlightSearchOPTIONSMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref FlightSearchResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+
+  # Flight booking resource
+  FlightBookingResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestAPI
+      ParentId: !GetAtt RestAPI.RootResourceId
+      PathPart: 'flight-booking'
+
+  FlightBookingPOSTMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref FlightBookingResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${APIHandlerFunctionArn}/invocations'
+      MethodResponses:
+        - StatusCode: 200
+        - StatusCode: 400
+        - StatusCode: 500
+
+  FlightBookingOPTIONSMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref FlightBookingResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+
+  # Health check resource
+  HealthResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestAPI
+      ParentId: !GetAtt RestAPI.RootResourceId
+      PathPart: 'health'
+
+  HealthGETMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref HealthResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${APIHandlerFunctionArn}/invocations'
+      MethodResponses:
+        - StatusCode: 200
+
+  # Request Validator
+  RequestValidator:
+    Type: AWS::ApiGateway::RequestValidator
+    Properties:
+      RestApiId: !Ref RestAPI
+      Name: 'request-validator'
+      ValidateRequestBody: true
+      ValidateRequestParameters: true
+
+  # Request Model for validation
+  CreateLinkModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      RestApiId: !Ref RestAPI
+      ContentType: 'application/json'
+      Name: 'CreateLinkModel'
+      Schema:
+        $schema: 'http://json-schema.org/draft-04/schema#'
+        title: 'Create Link Request'
+        type: object
+        properties:
+          url:
+            type: string
+            format: uri
+            maxLength: 2000
+          title:
+            type: string
+            maxLength: 200
+          userId:
+            type: string
+            maxLength: 100
+        required:
+          - url
+        additionalProperties: false
+
+  # API Deployment
+  APIDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - LinksGETMethod
+      - LinksPOSTMethod
+      - LinksOPTIONSMethod
+      - FlightSearchPOSTMethod
+      - FlightSearchOPTIONSMethod
+      - FlightBookingPOSTMethod
+      - FlightBookingOPTIONSMethod
+      - HealthGETMethod
+    Properties:
+      RestApiId: !Ref RestAPI
+      Description: !Sub 'Deployment for ${Environment} environment'
+
+  # Lambda Permission for API Gateway
+  LambdaAPIGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref APIHandlerFunctionArn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub '${RestAPI}/*/*'
+
+  # Usage Plan for API throttling and quotas
+  APIUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      UsagePlanName: !Sub '${ApplicationName}-usage-plan-${Environment}'
+      Description: 'Usage plan with throttling and quotas'
+      ApiStages:
+        - ApiId: !Ref RestAPI
+          Stage: !Ref APIStage
+      Throttle:
+        BurstLimit: !If [IsProduction, 2000, 500]
+        RateLimit: !If [IsProduction, 1000, 250]
+      Quota:
+        Limit: !If [IsProduction, 100000, 10000]
+        Period: DAY
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # Security Group for Application Load Balancer
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${ApplicationName}-alb-sg-${Environment}'
+      GroupDescription: 'Security group for Application Load Balancer'
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: 'HTTP access from internet'
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: 'HTTPS access from internet'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # Security Group for Target Instances
+  TargetSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${ApplicationName}-target-sg-${Environment}'
+      GroupDescription: 'Security group for ALB target instances'
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # Security Group Rules (separate to avoid circular dependency)
+  ALBEgressRule1:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8080
+      ToPort: 8080
+      DestinationSecurityGroupId: !Ref TargetSecurityGroup
+      Description: 'HTTP to application targets'
+
+  ALBEgressRule2:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8443
+      ToPort: 8443
+      DestinationSecurityGroupId: !Ref TargetSecurityGroup
+      Description: 'HTTPS to application targets'
+
+  TargetIngressRule1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref TargetSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8080
+      ToPort: 8080
+      SourceSecurityGroupId: !Ref ALBSecurityGroup
+      Description: 'HTTP from ALB'
+
+  TargetIngressRule2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref TargetSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8443
+      ToPort: 8443
+      SourceSecurityGroupId: !Ref ALBSecurityGroup
+      Description: 'HTTPS from ALB'
+
+  # S3 Bucket for ALB Access Logs
+  ALBAccessLogsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ApplicationName}-alb-logs-${AWS::AccountId}-${Environment}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KMSKeyId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ALBLogsLifecycle
+            Status: Enabled
+            ExpirationInDays: 90
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+              - TransitionInDays: 60
+                StorageClass: GLACIER
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # Application Load Balancer
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${ApplicationName}-alb-${Environment}'
+      Type: application
+      Scheme: internet-facing
+      IpAddressType: ipv4
+      Subnets: !Ref PublicSubnetIds
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '60'
+        - Key: routing.http2.enabled
+          Value: 'true'
+        - Key: access_logs.s3.enabled
+          Value: 'true'
+        - Key: access_logs.s3.bucket
+          Value: !Ref ALBAccessLogsBucket
+        - Key: access_logs.s3.prefix
+          Value: !Sub '${ApplicationName}-alb-${Environment}'
+        - Key: deletion_protection.enabled
+          Value: !If [IsProduction, 'true', 'false']
+        - Key: load_balancing.cross_zone.enabled
+          Value: 'true'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # Blue Target Group (Current Production)
+  BlueTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${ApplicationName}-blue-tg-${Environment}'
+      Port: 8080
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: instance
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPath: !Ref HealthCheckPath
+      HealthCheckPort: traffic-port
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200,201,202'
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: !Ref DeregistrationDelayTimeoutSeconds
+        - Key: slow_start.duration_seconds
+          Value: '30'
+        - Key: load_balancing.algorithm.type
+          Value: round_robin
+        - Key: stickiness.enabled
+          Value: 'false'
+        - Key: target_group_health.dns_failover.minimum_healthy_targets.count
+          Value: '1'
+        - Key: target_group_health.unhealthy_state_routing.minimum_healthy_targets.count
+          Value: '1'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: DeploymentColor
+          Value: blue
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # Green Target Group (New Deployment)
+  GreenTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${ApplicationName}-green-tg-${Environment}'
+      Port: 8080
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: instance
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPath: !Ref HealthCheckPath
+      HealthCheckPort: traffic-port
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200,201,202'
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: !Ref DeregistrationDelayTimeoutSeconds
+        - Key: slow_start.duration_seconds
+          Value: '30'
+        - Key: load_balancing.algorithm.type
+          Value: round_robin
+        - Key: stickiness.enabled
+          Value: 'false'
+        - Key: target_group_health.dns_failover.minimum_healthy_targets.count
+          Value: '1'
+        - Key: target_group_health.unhealthy_state_routing.minimum_healthy_targets.count
+          Value: '1'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: DeploymentColor
+          Value: green
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # HTTPS Listener (Primary)
+  HTTPSListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-TLS-1-2-2017-01
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref BlueTargetGroup
+
+  # HTTP Listener (Redirect to HTTPS)
+  HTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: '443'
+            StatusCode: HTTP_301
+
+  # Listener Rule for Blue-Green Deployment Testing
+  TestListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HTTPSListener
+      Priority: 100
+      Conditions:
+        - Field: host-header
+          Values:
+            - !Sub 'test-${DomainName}'
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref GreenTargetGroup
+
+  # Weighted Target Groups for Canary Deployments
+  WeightedTargetGroupsRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HTTPSListener
+      Priority: 200
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - '/api/*'
+      Actions:
+        - Type: forward
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref BlueTargetGroup
+                Weight: 90  # 90% traffic to blue
+              - TargetGroupArn: !Ref GreenTargetGroup
+                Weight: 10  # 10% traffic to green for canary testing
+
+  # CloudWatch Dashboard for API and ALB Monitoring
+  APIALBDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ApplicationName}-api-alb-${Environment}'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/ApiGateway", "Count", "ApiName", "${RestAPI}", { "stat": "Sum" } ],
+                  [ ".", "Latency", ".", ".", { "stat": "Average" } ],
+                  [ ".", "4XXError", ".", ".", { "stat": "Sum" } ],
+                  [ ".", "5XXError", ".", ".", { "stat": "Sum" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "API Gateway Metrics",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/ApplicationELB", "RequestCount", "LoadBalancer", "${ApplicationLoadBalancer}", { "stat": "Sum" } ],
+                  [ ".", "TargetResponseTime", ".", ".", { "stat": "Average" } ],
+                  [ ".", "HTTPCode_ELB_4XX_Count", ".", ".", { "stat": "Sum" } ],
+                  [ ".", "HTTPCode_ELB_5XX_Count", ".", ".", { "stat": "Sum" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Application Load Balancer Metrics",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", "${BlueTargetGroup}", { "label": "Blue Healthy Targets" } ],
+                  [ ".", "UnHealthyHostCount", ".", ".", { "label": "Blue Unhealthy Targets" } ],
+                  [ ".", "HealthyHostCount", ".", "${GreenTargetGroup}", { "label": "Green Healthy Targets" } ],
+                  [ ".", "UnHealthyHostCount", ".", ".", { "label": "Green Unhealthy Targets" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Target Group Health",
+                "period": 300
+              }
+            }
+          ]
+        }
+
+  # CloudWatch Alarms
+  APIGateway4XXAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-api-4xx-errors-${Environment}'
+      AlarmDescription: 'High 4XX error rate in API Gateway'
+      MetricName: 4XXError
+      Namespace: AWS/ApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref RestAPI
+      AlarmActions:
+        - !Ref AlertNotificationTopic
+
+  APIGateway5XXAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-api-5xx-errors-${Environment}'
+      AlarmDescription: 'High 5XX error rate in API Gateway'
+      MetricName: 5XXError
+      Namespace: AWS/ApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref RestAPI
+      AlarmActions:
+        - !Ref AlertNotificationTopic
+
+  ALBResponseTimeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-alb-response-time-${Environment}'
+      AlarmDescription: 'High response time in ALB'
+      MetricName: TargetResponseTime
+      Namespace: AWS/ApplicationELB
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 2
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+      AlarmActions:
+        - !Ref AlertNotificationTopic
+
+  # SNS Topic for Alerts
+  AlertNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ApplicationName}-api-alb-alerts-${Environment}'
+      KmsMasterKeyId: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KMSKeyId}'
+
+  AlertNotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref AlertNotificationTopic
+      Endpoint: !Ref NotificationEmail
+
+Outputs:
+  RestAPIId:
+    Description: 'REST API ID'
+    Value: !Ref RestAPI
+    Export:
+      Name: !Sub '${ApplicationName}-rest-api-id-${Environment}'
+
+  APIGatewayURL:
+    Description: 'API Gateway URL'
+    Value: !Sub 'https://${RestAPI}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'
+    Export:
+      Name: !Sub '${ApplicationName}-api-gateway-url-${Environment}'
+
+  ApplicationLoadBalancerArn:
+    Description: 'Application Load Balancer ARN'
+    Value: !Ref ApplicationLoadBalancer
+    Export:
+      Name: !Sub '${ApplicationName}-alb-arn-${Environment}'
+
+  ApplicationLoadBalancerDNS:
+    Description: 'Application Load Balancer DNS Name'
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Export:
+      Name: !Sub '${ApplicationName}-alb-dns-${Environment}'
+
+  BlueTargetGroupArn:
+    Description: 'Blue Target Group ARN'
+    Value: !Ref BlueTargetGroup
+    Export:
+      Name: !Sub '${ApplicationName}-blue-tg-arn-${Environment}'
+
+  GreenTargetGroupArn:
+    Description: 'Green Target Group ARN'
+    Value: !Ref GreenTargetGroup
+    Export:
+      Name: !Sub '${ApplicationName}-green-tg-arn-${Environment}'
+
+  ALBAccessLogsBucket:
+    Description: 'ALB Access Logs S3 Bucket'
+    Value: !Ref ALBAccessLogsBucket
+    Export:
+      Name: !Sub '${ApplicationName}-alb-logs-bucket-${Environment}'

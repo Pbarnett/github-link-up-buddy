@@ -1,0 +1,396 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'GitHub Link Buddy - Flight Booking API Gateway'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name for resource naming
+  
+  ApplicationName:
+    Type: String
+    Default: github-link-buddy
+    Description: Application name for consistent resource naming
+  
+  APIHandlerFunctionArn:
+    Type: String
+    Description: ARN of the API handler Lambda function
+  
+  KMSKeyId:
+    Type: String
+    Description: KMS Key ID for encryption
+  
+  NotificationEmail:
+    Type: String
+    Description: Email for alerts and notifications
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, 'production']
+
+Resources:
+  # API Gateway with advanced configuration
+  RestAPI:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub '${ApplicationName}-api-${Environment}'
+      Description: 'GitHub Link Buddy Flight Booking REST API'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      BinaryMediaTypes:
+        - 'application/octet-stream'
+        - 'image/*'
+      MinimumCompressionSize: 1024
+      ApiKeySourceType: HEADER
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # API Gateway Stage with advanced settings
+  APIStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref RestAPI
+      DeploymentId: !Ref APIDeployment
+      StageName: !Ref Environment
+      Description: !Sub 'API stage for ${Environment} environment'
+      CacheClusterEnabled: !If [IsProduction, true, false]
+      CacheClusterSize: !If [IsProduction, '0.5', !Ref 'AWS::NoValue']
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          # LoggingLevel requires CloudWatch Logs role in API Gateway account settings
+          # LoggingLevel: INFO
+          # DataTraceEnabled: !If [IsProduction, false, true]
+          MetricsEnabled: true
+          CachingEnabled: !If [IsProduction, true, false]
+          CacheTtlInSeconds: !If [IsProduction, 300, !Ref 'AWS::NoValue']
+          ThrottlingBurstLimit: !If [IsProduction, 2000, 500]
+          ThrottlingRateLimit: !If [IsProduction, 1000, 250]
+      # AccessLogSetting requires CloudWatch Logs role to be set in API Gateway account settings
+      # To enable this, run: aws apigateway put-account --cloudwatch-role-arn <role-arn>
+      # AccessLogSetting:
+      #   DestinationArn: !GetAtt APIGatewayLogGroup.Arn
+      #   Format: >
+      #     $context.requestId $context.status $context.error.message 
+      #     $context.error.messageString $context.requestTime $context.responseTime 
+      #     $context.responseLength $context.identity.sourceIp $context.identity.userAgent
+      TracingEnabled: true
+      Variables:
+        environment: !Ref Environment
+        version: '1.0'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # CloudWatch Log Group for API Gateway
+  APIGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${ApplicationName}-${Environment}'
+      RetentionInDays: !If [IsProduction, 30, 7]
+      KmsKeyId: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KMSKeyId}'
+
+  # Flight search resource
+  FlightSearchResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestAPI
+      ParentId: !GetAtt RestAPI.RootResourceId
+      PathPart: 'flight-search'
+
+  FlightSearchPOSTMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref FlightSearchResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${APIHandlerFunctionArn}/invocations'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+        - StatusCode: 400
+        - StatusCode: 500
+
+  FlightSearchOPTIONSMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref FlightSearchResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+
+  # Flight booking resource
+  FlightBookingResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestAPI
+      ParentId: !GetAtt RestAPI.RootResourceId
+      PathPart: 'flight-booking'
+
+  FlightBookingPOSTMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref FlightBookingResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${APIHandlerFunctionArn}/invocations'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+        - StatusCode: 400
+        - StatusCode: 500
+
+  FlightBookingOPTIONSMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref FlightBookingResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+
+  # Health check resource
+  HealthResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestAPI
+      ParentId: !GetAtt RestAPI.RootResourceId
+      PathPart: 'health'
+
+  HealthGETMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref HealthResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${APIHandlerFunctionArn}/invocations'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+
+  # Trip requests resource (for creating flight search requests)
+  TripRequestsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestAPI
+      ParentId: !GetAtt RestAPI.RootResourceId
+      PathPart: 'trip-requests'
+
+  TripRequestsPOSTMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref TripRequestsResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${APIHandlerFunctionArn}/invocations'
+      MethodResponses:
+        - StatusCode: 201
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+        - StatusCode: 400
+        - StatusCode: 500
+
+  TripRequestsOPTIONSMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestAPI
+      ResourceId: !Ref TripRequestsResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+
+  # API Deployment
+  APIDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - FlightSearchPOSTMethod
+      - FlightSearchOPTIONSMethod
+      - FlightBookingPOSTMethod
+      - FlightBookingOPTIONSMethod
+      - TripRequestsPOSTMethod
+      - TripRequestsOPTIONSMethod
+      - HealthGETMethod
+    Properties:
+      RestApiId: !Ref RestAPI
+      Description: !Sub 'Deployment for ${Environment} environment'
+
+  # Lambda Permission for API Gateway
+  LambdaAPIGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref APIHandlerFunctionArn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestAPI}/*/*'
+
+  # Usage Plan for API throttling and quotas
+  APIUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      UsagePlanName: !Sub '${ApplicationName}-usage-plan-${Environment}'
+      Description: 'Usage plan with throttling and quotas'
+      ApiStages:
+        - ApiId: !Ref RestAPI
+          Stage: !Ref APIStage
+      Throttle:
+        BurstLimit: !If [IsProduction, 2000, 500]
+        RateLimit: !If [IsProduction, 1000, 250]
+      Quota:
+        Limit: !If [IsProduction, 100000, 10000]
+        Period: DAY
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # CloudWatch Alarms
+  APIGateway4XXAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-api-4xx-errors-${Environment}'
+      AlarmDescription: 'High 4XX error rate in API Gateway'
+      MetricName: 4XXError
+      Namespace: AWS/ApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref RestAPI
+      AlarmActions:
+        - !Ref AlertNotificationTopic
+
+  APIGateway5XXAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-api-5xx-errors-${Environment}'
+      AlarmDescription: 'High 5XX error rate in API Gateway'
+      MetricName: 5XXError
+      Namespace: AWS/ApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref RestAPI
+      AlarmActions:
+        - !Ref AlertNotificationTopic
+
+  # SNS Topic for Alerts
+  AlertNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ApplicationName}-api-alerts-${Environment}'
+      KmsMasterKeyId: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KMSKeyId}'
+
+  AlertNotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref AlertNotificationTopic
+      Endpoint: !Ref NotificationEmail
+
+Outputs:
+  RestAPIId:
+    Description: 'REST API ID'
+    Value: !Ref RestAPI
+    Export:
+      Name: !Sub '${ApplicationName}-rest-api-id-${Environment}'
+
+  APIGatewayURL:
+    Description: 'API Gateway URL for Flight Booking Application'
+    Value: !Sub 'https://${RestAPI}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'
+    Export:
+      Name: !Sub '${ApplicationName}-api-gateway-url-${Environment}'
+
+  FlightSearchEndpoint:
+    Description: 'Flight Search API Endpoint'
+    Value: !Sub 'https://${RestAPI}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/flight-search'
+
+  FlightBookingEndpoint:
+    Description: 'Flight Booking API Endpoint' 
+    Value: !Sub 'https://${RestAPI}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/flight-booking'
+
+  TripRequestsEndpoint:
+    Description: 'Trip Requests API Endpoint'
+    Value: !Sub 'https://${RestAPI}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/trip-requests'
+
+  HealthCheckEndpoint:
+    Description: 'Health Check Endpoint'
+    Value: !Sub 'https://${RestAPI}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/health'

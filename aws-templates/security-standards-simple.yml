@@ -1,0 +1,265 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Core AWS Security Standards - MFA Enforcement and CloudTrail'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Deployment environment
+  
+  AlertEmail:
+    Type: String
+    Description: Email address for security alerts
+    AllowedPattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+  
+  OrganizationName:
+    Type: String
+    Default: Parker-Flight
+    Description: Organization name for resource naming
+
+Resources:
+  # CloudTrail S3 Bucket
+  CloudTrailBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${OrganizationName}-cloudtrail-${Environment}-${AWS::AccountId}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: CloudTrail-Logs
+
+  # CloudTrail S3 Bucket Policy
+  CloudTrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref CloudTrailBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AWSCloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !GetAtt CloudTrailBucket.Arn
+          - Sid: AWSCloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub '${CloudTrailBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                's3:x-amz-acl': bucket-owner-full-control
+
+  # CloudWatch Log Group for CloudTrail
+  CloudTrailLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/cloudtrail/${OrganizationName}-${Environment}'
+      RetentionInDays: 90
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: CloudTrail-Logs
+
+  # CloudTrail Log Group Role
+  CloudTrailLogRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${OrganizationName}-CloudTrailLogRole-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CloudTrailLogPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:PutLogEvents
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                Resource: !GetAtt CloudTrailLogGroup.Arn
+
+  # Main CloudTrail
+  SecurityCloudTrail:
+    Type: AWS::CloudTrail::Trail
+    DependsOn: CloudTrailBucketPolicy
+    Properties:
+      TrailName: !Sub '${OrganizationName}-security-trail'
+      S3BucketName: !Ref CloudTrailBucket
+      S3KeyPrefix: 'cloudtrail-logs'
+      IncludeGlobalServiceEvents: true
+      IsMultiRegionTrail: true
+      EnableLogFileValidation: true
+      CloudWatchLogsLogGroupArn: !GetAtt CloudTrailLogGroup.Arn
+      CloudWatchLogsRoleArn: !GetAtt CloudTrailLogRole.Arn
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Compliance
+          Value: SOX-GDPR-HIPAA
+
+  # MFA Enforcement Policy
+  MFAEnforcementPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${OrganizationName}-MFA-Enforcement-${Environment}'
+      Description: 'Enforce MFA for all IAM actions except MFA management'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowViewAccountInfo
+            Effect: Allow
+            Action:
+              - iam:GetAccountPasswordPolicy
+              - iam:GetAccountSummary
+              - iam:ListVirtualMFADevices
+            Resource: '*'
+          - Sid: AllowUsersToManageTheirOwnMFA
+            Effect: Allow
+            Action:
+              - iam:ChangePassword
+              - iam:CreateVirtualMFADevice
+              - iam:DeleteVirtualMFADevice
+              - iam:ListMFADevices
+              - iam:EnableMFADevice
+              - iam:ResyncMFADevice
+              - iam:GetUser
+            Resource: '*'
+          - Sid: DenyAllExceptUnlessSignedInWithMFA
+            Effect: Deny
+            NotAction:
+              - iam:CreateVirtualMFADevice
+              - iam:EnableMFADevice
+              - iam:GetUser
+              - iam:ListMFADevices
+              - iam:ListVirtualMFADevices
+              - iam:ResyncMFADevice
+              - sts:GetSessionToken
+              - iam:ChangePassword
+            Resource: '*'
+            Condition:
+              BoolIfExists:
+                'aws:MultiFactorAuthPresent': 'false'
+
+  # MFA Enforced Users Group
+  MFAEnforcedGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub '${OrganizationName}-MFA-Required-Users-${Environment}'
+      ManagedPolicyArns:
+        - !Ref MFAEnforcementPolicy
+
+  # SNS Topic for Security Alerts
+  SecurityAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${OrganizationName}-Security-Alerts-${Environment}'
+      DisplayName: 'Security Alerts'
+
+  SecurityAlertsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref SecurityAlertsTopic
+      Endpoint: !Ref AlertEmail
+
+  # CloudWatch Metric Filter for Root Usage
+  RootUsageMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CloudTrailLogGroup
+      FilterPattern: '{ $.userIdentity.type = "Root" && $.userIdentity.invokedBy NOT EXISTS && $.eventType != "AwsServiceEvent" }'
+      MetricTransformations:
+        - MetricNamespace: SecurityMetrics
+          MetricName: RootAccountUsage
+          MetricValue: '1'
+
+  # CloudWatch Alarm for Root Usage
+  RootUsageAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${OrganizationName}-Root-Account-Usage-${Environment}'
+      AlarmDescription: 'Alarm when root account is used'
+      MetricName: RootAccountUsage
+      Namespace: SecurityMetrics
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SecurityAlertsTopic
+      TreatMissingData: notBreaching
+
+  # Console Sign-in Failures
+  ConsoleSigninFailureMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CloudTrailLogGroup
+      FilterPattern: '{ ($.eventName = ConsoleLogin) && ($.errorMessage EXISTS) }'
+      MetricTransformations:
+        - MetricNamespace: SecurityMetrics
+          MetricName: ConsoleSigninFailureCount
+          MetricValue: '1'
+
+  ConsoleSigninFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${OrganizationName}-Console-Signin-Failures-${Environment}'
+      AlarmDescription: 'Alarm when there are console sign-in failures'
+      MetricName: ConsoleSigninFailureCount
+      Namespace: SecurityMetrics
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SecurityAlertsTopic
+
+Outputs:
+  CloudTrailArn:
+    Description: 'ARN of the CloudTrail'
+    Value: !GetAtt SecurityCloudTrail.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudTrail-Arn'
+
+  CloudTrailBucket:
+    Description: 'S3 Bucket for CloudTrail logs'
+    Value: !Ref CloudTrailBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudTrail-Bucket'
+
+  SecurityAlertsTopic:
+    Description: 'SNS Topic for security alerts'
+    Value: !Ref SecurityAlertsTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-Security-Alerts-Topic'
+
+  MFAEnforcementPolicy:
+    Description: 'ARN of MFA Enforcement Policy'
+    Value: !Ref MFAEnforcementPolicy
+    Export:
+      Name: !Sub '${AWS::StackName}-MFA-Policy-Arn'

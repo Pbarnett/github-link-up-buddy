@@ -1,0 +1,763 @@
+
+
+import React from 'react';
+import {  } from '@/components/ui/button';
+
+type _Component<P = {}, S = {}> = React.Component<P, S>;
+
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+
+// import { createDuffelBooking, checkBookingStatus } from "@/services/api/duffelBookingApi";
+
+const TripConfirm = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [offer, setOffer] = useState<OfferProps | null>(null);
+  const [hasError, setHasError] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [bookingStatus, setBookingStatus] = useState<string | null>(null);
+  const [showTravelerForm, setShowTravelerForm] = useState(true);
+  const [travelerData, setTravelerData] = useState<TravelerData | null>(null);
+  const [bookingRequestId, setBookingRequestId] = useState<string | null>(null);
+  const [isSavingTravelerData, setIsSavingTravelerData] = useState(false);
+  const [isCheckingOffer, setIsCheckingOffer] = useState(false);
+  const [autoBookEnabled, setAutoBookEnabled] = useState<boolean | null>(null);
+  const [isLoadingAutoBookStatus, setIsLoadingAutoBookStatus] = useState(true);
+  const { userId, loading: userLoading } = useCurrentUser();
+  const searchParams = new URLSearchParams(location.search);
+  const sessionId = searchParams.get('session_id');
+
+  const checkOfferForExternalBooking = async (offerId: string) => {
+    setIsCheckingOffer(true);
+    try {
+      const { data: offerData, error } = await supabase
+        .from('flight_offers')
+        .select('booking_url, airline')
+        .eq('id', offerId)
+        .single();
+
+      if (error) {
+        console.error('[TripConfirm] Error fetching offer details:', error);
+        return false;
+      }
+
+      if (offerData?.booking_url) {
+        console.log(
+          '[TripConfirm] Offer has external booking URL, redirecting...'
+        );
+        toast({
+          title: 'Redirecting to ' + offerData.airline,
+          description:
+            'This flight should be booked directly with the airline.',
+          duration: 3000,
+        });
+
+        setTimeout(() => {
+          window.open(offerData.booking_url, '_blank');
+          navigate('/trip/offers');
+        }, 1000);
+
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error('[TripConfirm] Exception checking offer:', err);
+      return false;
+    } finally {
+      setIsCheckingOffer(false);
+    }
+  };
+
+  useEffect(() => {
+    console.log(
+      '[TripConfirm] Component mounted with location:',
+      location.search
+    );
+
+    try {
+      if (sessionId) {
+        console.log(
+          '[TripConfirm] Returning from Stripe checkout with sessionId:',
+          sessionId
+        );
+        setBookingStatus('Processing payment...');
+        setShowTravelerForm(false);
+
+        const processCompletedBooking = async () => {
+          try {
+            console.log(
+              '[TripConfirm] Invoking process-booking for sessionId:',
+              sessionId
+            );
+            const { data, error } = await supabase.functions.invoke(
+              'process-booking',
+              {
+                body: { sessionId },
+              }
+            );
+
+            if (error) {
+              console.error('[TripConfirm] Error processing booking:', error);
+              setError(`Booking processing failed: ${error.message}`);
+              setBookingStatus('❌ Booking failed');
+            } else {
+              console.log('[TripConfirm] Process-booking response:', data);
+            }
+          } catch (err: unknown) {
+            console.error('[TripConfirm] Exception processing booking:', err);
+            const errorMessage =
+              err instanceof Error ? err.message : 'Unknown error';
+            setError(`Booking processing error: ${errorMessage}`);
+            setBookingStatus('❌ Booking failed');
+          }
+        };
+
+        processCompletedBooking();
+        return;
+      }
+
+      const searchParams = new URLSearchParams(location.search);
+
+      if (!searchParams.has('id')) {
+        console.error('[TripConfirm] Missing flight ID in URL params');
+        setHasError(true);
+        toast({
+          title: 'Error',
+          description:
+            'Missing flight information. Please select a flight first.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const parsedOffer: OfferProps = {
+        id: searchParams.get('id') || '',
+        airline: searchParams.get('airline') || '',
+        flight_number: searchParams.get('flight_number') || '',
+        price: parseFloat(searchParams.get('price') || '0'),
+        departure_date: searchParams.get('departure_date') || '',
+        departure_time: searchParams.get('departure_time') || '',
+        return_date: searchParams.get('return_date') || '',
+        return_time: searchParams.get('return_time') || '',
+        duration: searchParams.get('duration') || '',
+      };
+
+      console.log('[TripConfirm] Parsed offer:', parsedOffer);
+
+      if (!parsedOffer.id || !parsedOffer.airline || !parsedOffer.price) {
+        throw new Error('Incomplete flight information');
+      }
+
+      const initializeOfferAndAutoBookStatus = async () => {
+        setIsLoadingAutoBookStatus(true);
+        const shouldRedirect = await checkOfferForExternalBooking(
+          parsedOffer.id
+        );
+        if (shouldRedirect) {
+          setIsLoadingAutoBookStatus(false);
+          return;
+        }
+
+        setOffer(parsedOffer);
+
+        try {
+          const { data: offerData, error: offerDetailsError } = await supabase
+            .from('flight_offers')
+            .select('trip_request_id')
+            .eq('id', parsedOffer.id)
+            .single();
+
+          if (offerDetailsError || !offerData?.trip_request_id) {
+            console.error(
+              'Error fetching trip_request_id for offer:',
+              offerDetailsError?.message
+            );
+            setAutoBookEnabled(false);
+            setIsLoadingAutoBookStatus(false);
+            return;
+          }
+
+          const { data: tripRequestData, error: tripRequestError } =
+            await supabase
+              .from('trip_requests')
+              .select('auto_book_enabled')
+              .eq('id', offerData.trip_request_id)
+              .single();
+
+          if (tripRequestError) {
+            console.error(
+              'Error fetching auto_book_enabled status:',
+              tripRequestError.message
+            );
+            setAutoBookEnabled(false);
+          } else {
+            setAutoBookEnabled(tripRequestData?.auto_book_enabled ?? false);
+          }
+        } catch (err) {
+          console.error('Exception fetching auto_book_status:', err);
+          setAutoBookEnabled(false);
+        } finally {
+          setIsLoadingAutoBookStatus(false);
+        }
+      };
+
+      initializeOfferAndAutoBookStatus();
+    } catch (error: unknown) {
+      console.error('[TripConfirm] Error parsing offer details:', error);
+      setHasError(true);
+      toast({
+        title: 'Error',
+        description:
+          'Invalid flight information. Please select a flight again.',
+        variant: 'destructive',
+      });
+    }
+  }, [location.search, sessionId, navigate, checkOfferForExternalBooking]);
+
+  const updateBookingStatusMessage = (status: string) => {
+    console.log(
+      '[TripConfirm] Updating booking status message for status:',
+      status
+    );
+
+    switch (status) {
+      case 'pending_payment':
+        setBookingStatus('Waiting for payment confirmation...');
+        break;
+      case 'pending_booking':
+        setBookingStatus('Payment received! Booking your flight...');
+        break;
+      case 'processing':
+        setBookingStatus('Finalizing your booking...');
+        break;
+      case 'done':
+        setBookingStatus('✅ Your flight is booked!');
+        toast({
+          title: 'Booking Confirmed!',
+          description:
+            'Your flight has been successfully booked. Redirecting to dashboard...',
+        });
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 3000);
+        break;
+      case 'failed':
+        setBookingStatus('❌ Booking failed');
+        setError('There was a problem with your booking. Please try again.');
+        break;
+      default:
+        setBookingStatus(`Status: ${status}`);
+    }
+  };
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    console.log(
+      '[TripConfirm] Setting up realtime subscription for sessionId:',
+      sessionId
+    );
+
+    const fetchBookingRequest = async () => {
+      try {
+        console.log(
+          '[TripConfirm] Fetching booking request status for sessionId:',
+          sessionId
+        );
+        // TODO: Implement proper booking status check
+        // const { data, error } = await checkBookingStatus(bookingRequestId);
+        // For now, skip the status check
+        console.log('[TripConfirm] Booking status check not implemented yet');
+      } catch (err: unknown) {
+        console.error('[TripConfirm] Exception fetching booking request:', err);
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : 'Could not retrieve your booking status at this time.';
+        toast({
+          title: 'Error Fetching Booking Details',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        setError('Could not retrieve booking status.');
+      }
+    };
+
+    fetchBookingRequest();
+
+    // TODO: Implement proper realtime subscription for booking status updates
+    // const channel = supabase
+    //   .channel(`checkout:${sessionId}`)
+    //   .on(
+    //     'postgres_changes',
+    //     {
+    //       event: 'UPDATE',
+    //       schema: 'public',
+    //       table: 'booking_requests',
+    //       filter: `checkout_session_id=eq.${sessionId}`,
+    //     },
+    //     (payload: any) => {
+    //       console.log("[TripConfirm] Received booking status update:", payload);
+    //       updateBookingStatusMessage(payload.new.status);
+    //     }
+    //   )
+    //   .subscribe();
+
+    // For now, just poll for status updates
+    const pollInterval = setInterval(() => {
+      console.log('[TripConfirm] Polling for booking status updates...');
+      // TODO: Implement status polling
+    }, 5000);
+
+    return () => {
+      console.log('[TripConfirm] Cleaning up polling interval');
+      clearInterval(pollInterval);
+    };
+  }, [sessionId, updateBookingStatusMessage]);
+
+  const handleCancel = () => {
+    navigate('/trip/offers');
+  };
+
+  const handleTravelerDataSubmit = async (data: TravelerData) => {
+    if (!offer || !userId) {
+      console.error(
+        '[TripConfirm] Missing offer or userId for traveler data submit'
+      );
+      toast({
+        title: 'Error',
+        description: 'Missing required information to save traveler data.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    console.log('[TripConfirm] Saving traveler data:', data);
+    setIsSavingTravelerData(true);
+    setError(null);
+
+    try {
+      // For now, we'll create a simple booking request in the database
+      // TODO: Integrate with actual Duffel booking API
+      const bookingRequestData: TablesInsert<'booking_requests'> = {
+        offer_data: toJsonSafe(offer),
+        offer_id: offer.id,
+        traveler_data: toJsonSafe(data),
+        status: 'new',
+        user_id: userId,
+      };
+
+      const { data: bookingRequest, error: bookingError } = await supabase
+        .from('booking_requests')
+        .insert([bookingRequestData])
+        .select()
+        .single();
+
+      if (bookingError) {
+        console.error(
+          '[TripConfirm] Error creating booking request:',
+          bookingError
+        );
+        throw bookingError;
+      }
+
+      console.log('[TripConfirm] Created booking request:', bookingRequest);
+      setBookingRequestId(bookingRequest.id);
+      setTravelerData(data);
+      setShowTravelerForm(false);
+
+      toast({
+        title: 'Traveler Information Saved',
+        description: 'You can now proceed to payment.',
+      });
+    } catch (err: unknown) {
+      console.error('[TripConfirm] Exception saving traveler data:', err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Failed to save traveler information';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description:
+          errorMessage ||
+          'Failed to save traveler information. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingTravelerData(false);
+    }
+  };
+
+  const onConfirm = async () => {
+    if (!offer || !offer.id) {
+      console.error('[TripConfirm] Missing offer for confirmation');
+      toast({
+        title: 'Error',
+        description: 'Invalid flight information. Cannot complete booking.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!userId) {
+      console.error('[TripConfirm] User not authenticated');
+      toast({
+        title: 'Authentication Error',
+        description: 'You must be logged in to book a flight.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!bookingRequestId) {
+      console.error('[TripConfirm] Missing booking request ID');
+      toast({
+        title: 'Error',
+        description: 'Please complete traveler information first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    console.log(
+      '[TripConfirm] Starting payment confirmation for booking request:',
+      bookingRequestId
+    );
+    setIsConfirming(true);
+    setError(null);
+
+    try {
+      console.log('[TripConfirm] Invoking create-booking-request with:', {
+        userId,
+        offerId: offer.id,
+        bookingRequestId,
+      });
+
+      const res = await supabase.functions.invoke('create-booking-request', {
+        body: { userId, offerId: offer.id, bookingRequestId },
+      });
+
+      console.log('[TripConfirm] Create-booking-request response:', res);
+
+      if (res.error) {
+        console.error('[TripConfirm] Edge function error:', res.error);
+        throw new Error(
+          res.error.message || 'Failed to create booking request'
+        );
+      }
+
+      if (!res.data || !res.data.url) {
+        console.error('[TripConfirm] No checkout URL received:', res.data);
+        throw new Error('No checkout URL received from server');
+      }
+
+      console.log(
+        '[TripConfirm] Redirecting to Stripe checkout:',
+        res.data.url
+      );
+      window.location.href = res.data.url;
+    } catch (err: unknown) {
+      console.error('[TripConfirm] Exception during confirmation:', err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'There was a problem setting up the booking';
+      setError(errorMessage);
+      toast({
+        title: 'Booking Failed',
+        description:
+          errorMessage ||
+          'There was a problem setting up your booking. Please try again.',
+        variant: 'destructive',
+      });
+      setIsConfirming(false);
+    }
+  };
+
+  // Show booking status if we're returning from checkout
+  if (sessionId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
+        <Card className="w-full max-w-3xl">
+          <CardHeader>
+            <CardTitle className="text-2xl">Booking Status</CardTitle>
+            <CardDescription>
+              Your flight booking is being processed
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex flex-col items-center justify-center p-6">
+              {error ? (
+                <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md flex items-start">
+                  <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+                  <p>{error}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                  <p className="text-lg font-medium text-gray-700">
+                    {bookingStatus}
+                  </p>
+                </>
+              )}
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-md">
+              <p className="text-sm text-gray-500">
+                Please don't close this page while we're processing your
+                booking. You'll be redirected to your dashboard when the booking
+                is complete.
+              </p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            {error && (
+              <Button
+                onClick={() => navigate('/trip/offers')}
+                variant="outline"
+              >
+                <X className="mr-2 h-4 w-4" /> Return to Flight Offers
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
+        <Card className="w-full max-w-3xl">
+          <CardHeader>
+            <CardTitle className="text-2xl">Error</CardTitle>
+            <CardDescription>
+              There was a problem with your selected flight
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>
+              Unable to retrieve flight details. Please go back and select a
+              flight again.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleCancel} variant="outline">
+              <X className="mr-2 h-4 w-4" /> Return to Offers
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  if (userLoading || !offer || isCheckingOffer || isLoadingAutoBookStatus) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+        <div className="animate-pulse flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <p className="text-gray-500">
+            {isCheckingOffer
+              ? 'Checking booking options...'
+              : isLoadingAutoBookStatus
+                ? 'Loading booking settings...'
+                : 'Loading flight details...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (autoBookEnabled === true) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-3xl mx-auto my-8 p-6 bg-blue-50 border border-blue-200 rounded-lg text-center shadow">
+          <CardHeader>
+            <CardTitle className="text-blue-700 text-2xl">
+              Auto-Booking Enabled
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-lg font-medium text-blue-700 mb-2">
+              Auto‐booking is enabled and in progress for this trip.
+            </p>
+            <p className="text-sm text-blue-600">
+              You will be notified once the booking is confirmed or if any
+              issues arise. You can view the status on your dashboard.
+            </p>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <Button onClick={() => navigate('/dashboard')} variant="outline">
+              Go to Dashboard
+            </Button>
+          </CardFooter>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
+      <div className="w-full max-w-3xl space-y-6">
+        {/* Flight Details Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Confirm Your Flight</CardTitle>
+            <CardDescription>
+              Please review your selected flight details
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {error && (
+              <div className="p-4 border border-red-200 bg-red-50 text-red-700 rounded-md flex items-start">
+                <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+                <p>{error}</p>
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <h3 className="text-xl font-semibold">{offer.airline}</h3>
+                <Badge variant="outline" className="ml-2">
+                  {offer.flight_number}
+                </Badge>
+              </div>
+              <p className="text-2xl font-bold">${offer.price}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-b py-4">
+              <div className="space-y-3">
+                <h4 className="font-medium">Departure</h4>
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>
+                    {new Date(offer.departure_date).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>{offer.departure_time}</span>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <h4 className="font-medium">Return</h4>
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>
+                    {new Date(offer.return_date).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                  <span>{offer.return_time}</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <PlaneTakeoff className="h-4 w-4 mr-2 text-gray-500" />
+              <span className="text-sm text-gray-500">
+                Flight duration: {offer.duration}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {showTravelerForm && (
+          <TravelerDataForm
+            onSubmit={handleTravelerDataSubmit}
+            isLoading={isSavingTravelerData}
+            useKMS={true}
+          />
+        )}
+
+        {!showTravelerForm && travelerData && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Passenger Information
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTravelerForm(true)}
+                  disabled={isConfirming}
+                >
+                  Edit
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Name:</span>{' '}
+                  {travelerData.fullName}
+                </div>
+                <div>
+                  <span className="font-medium">Date of Birth:</span>{' '}
+                  {new Date(travelerData.dateOfBirth).toLocaleDateString()}
+                </div>
+                <div>
+                  <span className="font-medium">Gender:</span>{' '}
+                  {travelerData.gender}
+                </div>
+                <div>
+                  <span className="font-medium">Document:</span>{' '}
+                  {travelerData.passportNumber}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="bg-gray-50 p-4 rounded-md mb-4">
+              <p className="text-sm text-gray-500">
+                By confirming this booking, you agree to the terms and
+                conditions of the airline. This booking is non-refundable after
+                24 hours.
+              </p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button
+              onClick={handleCancel}
+              variant="outline"
+              disabled={isConfirming || isSavingTravelerData}
+            >
+              <X className="mr-2 h-4 w-4" /> Cancel
+            </Button>
+            <Button
+              onClick={onConfirm}
+              disabled={
+                isConfirming ||
+                showTravelerForm ||
+                !!error ||
+                isSavingTravelerData
+              }
+            >
+              {isConfirming ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing…
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" /> Pay & Book
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default TripConfirm;

@@ -1,0 +1,76 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.env.backup
+
+# Environment files with secrets - NEVER commit these!
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+
+# Professional Security System
+.security/
+.security/vault/
+.security/audit/
+.security/config/
+security-report.json
+security-audit-*.json
+
+# Supabase secrets
+.env.supabase
+supabase/.env
+start-functions-with-env.sh
+
+# Test artifacts
+tests/reports/
+tests/screenshots/
+tests/videos/
+test-results/
+playwright-report/
+blob-report/
+coverage/
+
+# Build artifacts
+.vercel
+.netlify
+build/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# AI/LLM generated files (optional)
+*.ai-generated
+.ai-context/
+
+# Scripts with secrets
+scripts/**/*.secret.*
+scripts/**/*-with-secrets.*
+.env*

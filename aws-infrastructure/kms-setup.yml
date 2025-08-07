@@ -1,0 +1,290 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'KMS Keys and IAM setup for Parker Flight payment processing'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: 'production'
+    AllowedValues: ['development', 'staging', 'production']
+    Description: 'Environment for the deployment'
+  
+  ApplicationName:
+    Type: String
+    Default: 'parker-flight'
+    Description: 'Application name for resource naming'
+
+Resources:
+  # KMS Keys (Three-key approach as recommended by AWS AI bot)
+  
+  GeneralKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub '${ApplicationName} general data encryption key for ${Environment}'
+      KeyUsage: ENCRYPT_DECRYPT
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyRotationStatus: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Development Access
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:user/parker-flight-admin'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-general-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: DataType
+          Value: 'general'
+
+  PIIKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub '${ApplicationName} PII data encryption key for ${Environment}'
+      KeyUsage: ENCRYPT_DECRYPT
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyRotationStatus: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Supabase Edge Functions
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt SupabaseKMSRole.Arn
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-pii-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: DataType
+          Value: 'pii'
+
+  PaymentKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub '${ApplicationName} payment data encryption key for ${Environment}'
+      KeyUsage: ENCRYPT_DECRYPT
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyRotationStatus: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Supabase Edge Functions
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt SupabaseKMSRole.Arn
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-payment-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: DataType
+          Value: 'payment'
+
+  # KMS Key Aliases
+  GeneralKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ApplicationName}-general-${Environment}'
+      TargetKeyId: !Ref GeneralKey
+
+  PIIKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ApplicationName}-pii-${Environment}'
+      TargetKeyId: !Ref PIIKey
+
+  PaymentKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ApplicationName}-payment-${Environment}'
+      TargetKeyId: !Ref PaymentKey
+
+  # IAM Role for Supabase Edge Functions
+  SupabaseKMSRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ApplicationName}-supabase-kms-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              # Replace with your actual Supabase account ID or external service
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Sub '${ApplicationName}-${Environment}-external-id'
+      ManagedPolicyArns:
+        - !Ref SupabaseKMSPolicy
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-supabase-kms-role-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+
+  # IAM Policy for KMS Operations
+  SupabaseKMSPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${ApplicationName}-supabase-kms-policy-${Environment}'
+      Description: 'Policy for Supabase Edge Functions to access KMS keys'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowKMSOperations
+            Effect: Allow
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource:
+              - !GetAtt GeneralKey.Arn
+              - !GetAtt PIIKey.Arn
+              - !GetAtt PaymentKey.Arn
+          - Sid: AllowSecretsManagerAccess
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+            Resource:
+              - !Sub 'arn:aws:secretsmanager:*:${AWS::AccountId}:secret:supabase/payment-config-*'
+              - !Sub 'arn:aws:secretsmanager:*:${AWS::AccountId}:secret:supabase/kms-config-*'
+              - !Sub 'arn:aws:secretsmanager:*:${AWS::AccountId}:secret:supabase/stripe-secrets-*'
+
+  # Secrets for credential management (as recommended by AWS AI bot)
+  PaymentConfigSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: 'supabase/payment-config'
+      Description: 'Payment configuration for Supabase Edge Functions'
+      SecretString: !Sub |
+        {
+          "stripe_webhook_secret": "whsec_your_webhook_secret_here",
+          "stripe_publishable_key": "pk_test_your_publishable_key_here",
+          "payment_processor": "stripe"
+        }
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-payment-config-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+
+  KMSConfigSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: 'supabase/kms-config'
+      Description: 'KMS configuration for Supabase Edge Functions'
+      SecretString: !Sub |
+        {
+          "kms_general_key_id": "${GeneralKey}",
+          "kms_pii_key_id": "${PIIKey}",
+          "kms_payment_key_id": "${PaymentKey}",
+          "primary_region": "${AWS::Region}",
+          "fallback_regions": ["us-west-2", "eu-west-1"]
+        }
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-kms-config-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+
+  # CloudWatch Log Group for KMS operations monitoring
+  KMSLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ApplicationName}-kms-${Environment}'
+      RetentionInDays: 30
+      Tags:
+        - Key: Name
+          Value: !Sub '${ApplicationName}-kms-logs-${Environment}'
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  GeneralKeyId:
+    Description: 'General data encryption key ID'
+    Value: !Ref GeneralKey
+    Export:
+      Name: !Sub '${AWS::StackName}-GeneralKeyId'
+
+  PIIKeyId:
+    Description: 'PII data encryption key ID'
+    Value: !Ref PIIKey
+    Export:
+      Name: !Sub '${AWS::StackName}-PIIKeyId'
+
+  PaymentKeyId:
+    Description: 'Payment data encryption key ID'
+    Value: !Ref PaymentKey
+    Export:
+      Name: !Sub '${AWS::StackName}-PaymentKeyId'
+
+  GeneralKeyAlias:
+    Description: 'General data encryption key alias'
+    Value: !Ref GeneralKeyAlias
+    Value: !Sub 'alias/${ApplicationName}-general-${Environment}'
+
+  PIIKeyAlias:
+    Description: 'PII data encryption key alias'
+    Value: !Sub 'alias/${ApplicationName}-pii-${Environment}'
+
+  PaymentKeyAlias:
+    Description: 'Payment data encryption key alias'
+    Value: !Sub 'alias/${ApplicationName}-payment-${Environment}'
+
+  SupabaseRoleArn:
+    Description: 'ARN of the IAM role for Supabase Edge Functions'
+    Value: !GetAtt SupabaseKMSRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-SupabaseRoleArn'
+
+  ExternalId:
+    Description: 'External ID for role assumption'
+    Value: !Sub '${ApplicationName}-${Environment}-external-id'
+
+  EstimatedMonthlyCost:
+    Description: 'Estimated monthly cost for KMS operations (100-1000 payments/month)'
+    Value: 'Approximately $3.06/month (3 keys @ $1 each + API calls ~$0.06)'

@@ -1,0 +1,38 @@
+[
+    {
+        "ParameterKey": "Environment",
+        "ParameterValue": "production"
+    },
+    {
+        "ParameterKey": "ApplicationName",
+        "ParameterValue": "github-link-buddy"
+    },
+    {
+        "ParameterKey": "VpcId",
+        "ParameterValue": "vpc-01a6733c619f3d271"
+    },
+    {
+        "ParameterKey": "PrivateSubnetIds",
+        "ParameterValue": "subnet-077fcd2f422f9262a,subnet-0c711e7cc7fdc7893,subnet-0d95d74671754dce3,subnet-085e680e3eabf2a71,subnet-0c223b6971c42755e,subnet-0878d1a5852871fcd"
+    },
+    {
+        "ParameterKey": "PublicSubnetIds",
+        "ParameterValue": "subnet-077fcd2f422f9262a,subnet-0c711e7cc7fdc7893,subnet-0d95d74671754dce3,subnet-085e680e3eabf2a71,subnet-0c223b6971c42755e,subnet-0878d1a5852871fcd"
+    },
+    {
+        "ParameterKey": "CertificateArn",
+        "ParameterValue": "arn:aws:acm:us-east-1:123456789012:certificate/placeholder"
+    },
+    {
+        "ParameterKey": "DomainName",
+        "ParameterValue": "github-link-buddy.com"
+    },
+    {
+        "ParameterKey": "SecondaryRegion",
+        "ParameterValue": "us-west-2"
+    },
+    {
+        "ParameterKey": "NotificationEmail",
+        "ParameterValue": "parker@example.com"
+    }
+]

@@ -1,0 +1,70 @@
+config:
+  target: 'http://localhost:8080'
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 20
+      name: "Sustained load"
+    - duration: 60
+      arrivalRate: 50
+      name: "Peak load"
+  processor: "./artillery-processor.js"
+  variables:
+    api_base: "https://bbonngdyfyfjqfhvoljl.supabase.co/functions/v1"
+  environments:
+    staging:
+      target: 'https://staging.parkerfly.com'
+    production:
+      target: 'https://parkerfly.com'
+      phases:
+        - duration: 60
+          arrivalRate: 2
+          name: "Production safe test"
+
+scenarios:
+  - name: "User Journey Flow"
+    weight: 60
+    flow:
+      - get:
+          url: "/"
+          capture:
+            - json: "$.csrf_token"
+              as: "csrf_token"
+      - think: 2
+      - get:
+          url: "/trip-request"
+      - think: 5
+      - post:
+          url: "{{ api_base }}/flight-search-v2"
+          headers:
+            Content-Type: "application/json"
+            Authorization: "Bearer {{ $processEnvironment.VITE_SUPABASE_ANON_KEY }}"
+          json:
+            origin: "{{ $randomString(3) }}{{ $randomString(1) }}"
+            destination: "{{ $randomString(3) }}{{ $randomString(1) }}"
+            departureDate: "2025-02-15"
+            passengers: "{{ $randomInt(1, 4) }}"
+            tripType: "round-trip"
+      - think: 3
+
+  - name: "Static Asset Load"
+    weight: 20
+    flow:
+      - get:
+          url: "/"
+      - get:
+          url: "/assets/index.css"
+      - get:
+          url: "/assets/index.js"
+
+  - name: "API Health Check"
+    weight: 20
+    flow:
+      - get:
+          url: "/health"
+      - get:
+          url: "{{ api_base }}/health"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.VITE_SUPABASE_ANON_KEY }}"

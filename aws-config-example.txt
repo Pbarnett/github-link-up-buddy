@@ -1,0 +1,25 @@
+# ~/.aws/config
+[profile supabase-dev]
+region = us-east-1
+output = json
+
+[profile supabase-staging]
+region = us-east-1
+output = json
+
+[profile supabase-prod]
+region = us-east-1
+output = json
+
+# ~/.aws/credentials
+[supabase-dev]
+aws_access_key_id = YOUR_DEV_ACCESS_KEY
+aws_secret_access_key = YOUR_DEV_SECRET_KEY
+
+[supabase-staging]
+aws_access_key_id = YOUR_STAGING_ACCESS_KEY
+aws_secret_access_key = YOUR_STAGING_SECRET_KEY
+
+[supabase-prod]
+aws_access_key_id = YOUR_PROD_ACCESS_KEY
+aws_secret_access_key = YOUR_PROD_SECRET_KEY

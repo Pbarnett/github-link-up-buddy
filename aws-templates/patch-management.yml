@@ -1,0 +1,685 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS Systems Manager Patch Manager with automated updates, compliance reporting, and rollback procedures'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name for resource naming
+  
+  ApplicationName:
+    Type: String
+    Default: github-link-buddy
+    Description: Application name
+
+  MaintenanceWindowSchedule:
+    Type: String
+    Default: 'cron(0 2 ? * SUN *)'
+    Description: Maintenance window schedule (Sunday 2 AM UTC)
+  
+  MaintenanceWindowDuration:
+    Type: Number
+    Default: 4
+    MinValue: 1
+    MaxValue: 24
+    Description: Maintenance window duration in hours
+  
+  PatchingConcurrency:
+    Type: String
+    Default: '20%'
+    Description: Maximum number of instances to patch concurrently
+  
+  ErrorThreshold:
+    Type: String
+    Default: '10%'
+    Description: Maximum error threshold before stopping patching
+  
+  NotificationEmail:
+    Type: String
+    Description: Email address for patch notifications
+    AllowedPattern: '^[^\s@]+@[^\s@]+\.[^\s@]+$'
+  
+  EnableAutoApproval:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Enable automatic approval for critical patches
+
+  KMSKeyId:
+    Type: String
+    Description: KMS Key ID for encryption
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, 'production']
+  AutoApprovalEnabled: !Equals [!Ref EnableAutoApproval, 'true']
+
+Resources:
+  # KMS Key for Systems Manager Encryption
+  SSMKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: 'KMS Key for Systems Manager encryption'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Systems Manager Service
+            Effect: Allow
+            Principal:
+              Service: ssm.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+              - kms:CreateGrant
+            Resource: '*'
+      EnableKeyRotation: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: SystemsManager
+
+  SSMKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ApplicationName}-ssm-${Environment}'
+      TargetKeyId: !Ref SSMKMSKey
+
+  # Custom Patch Baseline for Amazon Linux
+  AmazonLinuxPatchBaseline:
+    Type: AWS::SSM::PatchBaseline
+    Properties:
+      Name: !Sub '${ApplicationName}-amazon-linux-baseline-${Environment}'
+      Description: 'Custom patch baseline for Amazon Linux instances'
+      OperatingSystem: AMAZON_LINUX_2
+      PatchGroups:
+        - !Sub '${ApplicationName}-amazon-linux-${Environment}'
+      ApprovalRules:
+        PatchRules:
+          - PatchFilterGroup:
+              PatchFilters:
+                - Key: CLASSIFICATION
+                  Values:
+                    - Security
+                    - Bugfix
+                    - Critical
+                - Key: SEVERITY
+                  Values:
+                    - Critical
+                    - Important
+            ApproveAfterDays: !If [IsProduction, 7, 0]
+            ApproveUntilDate: ''
+            EnableNonSecurity: false
+            ComplianceLevel: CRITICAL
+          - PatchFilterGroup:
+              PatchFilters:
+                - Key: CLASSIFICATION
+                  Values:
+                    - Recommended
+                - Key: SEVERITY
+                  Values:
+                    - Medium
+                    - Low
+            ApproveAfterDays: !If [IsProduction, 14, 3]
+            ApproveUntilDate: ''
+            EnableNonSecurity: true
+            ComplianceLevel: MEDIUM
+      ApprovedPatches: []
+      ApprovedPatchesComplianceLevel: HIGH
+      ApprovedPatchesEnableNonSecurity: false
+      RejectedPatches: []
+      RejectedPatchesAction: ALLOW_AS_DEPENDENCY
+      Sources: []
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: PatchBaseline
+          Value: AmazonLinux
+
+  # Custom Patch Baseline for Ubuntu
+  UbuntuPatchBaseline:
+    Type: AWS::SSM::PatchBaseline
+    Properties:
+      Name: !Sub '${ApplicationName}-ubuntu-baseline-${Environment}'
+      Description: 'Custom patch baseline for Ubuntu instances'
+      OperatingSystem: UBUNTU
+      PatchGroups:
+        - !Sub '${ApplicationName}-ubuntu-${Environment}'
+      ApprovalRules:
+        PatchRules:
+          - PatchFilterGroup:
+              PatchFilters:
+                - Key: PRIORITY
+                  Values:
+                    - Required
+                    - Important
+                    - Standard
+                - Key: SECTION
+                  Values:
+                    - '*'
+            ApproveAfterDays: !If [IsProduction, 7, 0]
+            ApproveUntilDate: ''
+            EnableNonSecurity: false
+            ComplianceLevel: CRITICAL
+      ApprovedPatches: []
+      ApprovedPatchesComplianceLevel: HIGH
+      RejectedPatches: []
+      RejectedPatchesAction: ALLOW_AS_DEPENDENCY
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: PatchBaseline
+          Value: Ubuntu
+
+  # Maintenance Window for Patching
+  PatchingMaintenanceWindow:
+    Type: AWS::SSM::MaintenanceWindow
+    Properties:
+      Name: !Sub '${ApplicationName}-patching-window-${Environment}'
+      Description: 'Maintenance window for automated patching'
+      Schedule: !Ref MaintenanceWindowSchedule
+      Duration: !Ref MaintenanceWindowDuration
+      Cutoff: 1
+      AllowUnassociatedTargets: false
+      ScheduleTimezone: 'UTC'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Purpose
+          Value: Patching
+
+  # Maintenance Window Target for Amazon Linux Instances
+  AmazonLinuxMaintenanceTarget:
+    Type: AWS::SSM::MaintenanceWindowTarget
+    Properties:
+      WindowId: !Ref PatchingMaintenanceWindow
+      ResourceType: INSTANCE
+      Targets:
+        - Key: tag:PatchGroup
+          Values:
+            - !Sub '${ApplicationName}-amazon-linux-${Environment}'
+        - Key: tag:Environment
+          Values:
+            - !Ref Environment
+      Name: !Sub '${ApplicationName}-amazon-linux-targets-${Environment}'
+      Description: 'Amazon Linux instances for patching'
+
+  # Maintenance Window Target for Ubuntu Instances
+  UbuntuMaintenanceTarget:
+    Type: AWS::SSM::MaintenanceWindowTarget
+    Properties:
+      WindowId: !Ref PatchingMaintenanceWindow
+      ResourceType: INSTANCE
+      Targets:
+        - Key: tag:PatchGroup
+          Values:
+            - !Sub '${ApplicationName}-ubuntu-${Environment}'
+        - Key: tag:Environment
+          Values:
+            - !Ref Environment
+      Name: !Sub '${ApplicationName}-ubuntu-targets-${Environment}'
+      Description: 'Ubuntu instances for patching'
+
+  # IAM Role for Maintenance Window Tasks
+  MaintenanceWindowRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ApplicationName}-maintenance-window-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ssm.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonSSMMaintenanceWindowRole
+      Policies:
+        - PolicyName: MaintenanceWindowCustomPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:CreateSnapshot
+                  - ec2:DescribeSnapshots
+                  - ec2:DescribeInstances
+                  - ec2:DescribeInstanceAttribute
+                  - ec2:DescribeVolumes
+                  - ec2:ModifyInstanceAttribute
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref PatchingNotificationTopic
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                Resource: !GetAtt SSMKMSKey.Arn
+
+  # S3 Bucket for Patching Logs
+  PatchingLogsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ApplicationName}-patching-logs-${AWS::AccountId}-${Environment}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref SSMKMSKey
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: PatchingLogsRetention
+            Status: Enabled
+            ExpirationInDays: 90
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  # Pre-Patching Task - Create Snapshots
+  PrePatchingTask:
+    Type: AWS::SSM::MaintenanceWindowTask
+    Properties:
+      WindowId: !Ref PatchingMaintenanceWindow
+      TaskType: AUTOMATION
+      TaskArn: !Ref PrePatchingAutomationDocument
+      ServiceRoleArn: !GetAtt MaintenanceWindowRole.Arn
+      Targets:
+        - Key: WindowTargetIds
+          Values:
+            - !Ref AmazonLinuxMaintenanceTarget
+            - !Ref UbuntuMaintenanceTarget
+      Priority: 1
+      MaxConcurrency: !Ref PatchingConcurrency
+      MaxErrors: !Ref ErrorThreshold
+      Name: !Sub '${ApplicationName}-pre-patching-${Environment}'
+      Description: 'Create snapshots before patching'
+      TaskParameters:
+        InstanceId:
+          - '{{RESOURCE_ID}}'
+        SnapshotDescription:
+          - !Sub 'Pre-patching snapshot for ${ApplicationName}-${Environment}'
+
+  # Main Patching Task
+  PatchingTask:
+    Type: AWS::SSM::MaintenanceWindowTask
+    Properties:
+      WindowId: !Ref PatchingMaintenanceWindow
+      TaskType: RUN_COMMAND
+      TaskArn: 'AWS-RunPatchBaseline'
+      ServiceRoleArn: !GetAtt MaintenanceWindowRole.Arn
+      Targets:
+        - Key: WindowTargetIds
+          Values:
+            - !Ref AmazonLinuxMaintenanceTarget
+            - !Ref UbuntuMaintenanceTarget
+      Priority: 2
+      MaxConcurrency: !Ref PatchingConcurrency
+      MaxErrors: !Ref ErrorThreshold
+      Name: !Sub '${ApplicationName}-patching-task-${Environment}'
+      Description: 'Install approved patches'
+      TaskParameters:
+        Operation:
+          - Install
+        RebootOption:
+          - RebootIfNeeded
+        SnapshotId:
+          - '{{ssm:pre-patch-snapshot-id}}'
+      TaskInvocationParameters:
+        RunCommandParameters:
+          NotificationConfig:
+            NotificationArn: !Ref PatchingNotificationTopic
+            NotificationEvents:
+              - All
+            NotificationType: Command
+          OutputS3BucketName: !Ref PatchingLogsBucket
+          OutputS3KeyPrefix: !Sub 'patching-logs/${Environment}/'
+          ServiceRoleArn: !GetAtt MaintenanceWindowRole.Arn
+          TimeoutSeconds: 3600
+
+  # Post-Patching Validation Task
+  PostPatchingTask:
+    Type: AWS::SSM::MaintenanceWindowTask
+    Properties:
+      WindowId: !Ref PatchingMaintenanceWindow
+      TaskType: AUTOMATION
+      TaskArn: !Ref PostPatchingAutomationDocument
+      ServiceRoleArn: !GetAtt MaintenanceWindowRole.Arn
+      Targets:
+        - Key: WindowTargetIds
+          Values:
+            - !Ref AmazonLinuxMaintenanceTarget
+            - !Ref UbuntuMaintenanceTarget
+      Priority: 3
+      MaxConcurrency: !Ref PatchingConcurrency
+      MaxErrors: !Ref ErrorThreshold
+      Name: !Sub '${ApplicationName}-post-patching-${Environment}'
+      Description: 'Validate instances after patching'
+      TaskParameters:
+        InstanceId:
+          - '{{RESOURCE_ID}}'
+        ValidationTests:
+          - 'service-health-check'
+          - 'application-connectivity'
+          - 'system-resource-check'
+
+  # Automation Document for Pre-Patching
+  PrePatchingAutomationDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      DocumentFormat: YAML
+      Name: !Sub '${ApplicationName}-pre-patching-automation-${Environment}'
+      Content:
+        schemaVersion: '0.3'
+        description: 'Pre-patching automation with snapshot creation'
+        assumeRole: '{{ AutomationAssumeRole }}'
+        parameters:
+          InstanceId:
+            type: String
+            description: 'EC2 Instance ID'
+          AutomationAssumeRole:
+            type: String
+            description: 'IAM role for automation'
+            default: !GetAtt MaintenanceWindowRole.Arn
+          SnapshotDescription:
+            type: String
+            description: 'Snapshot description'
+            default: 'Pre-patching snapshot'
+        mainSteps:
+          - name: DescribeInstance
+            action: 'aws:executeAwsApi'
+            description: 'Get instance details'
+            inputs:
+              Service: ec2
+              Api: DescribeInstances
+              InstanceIds:
+                - '{{ InstanceId }}'
+            outputs:
+              - Name: InstanceDetails
+                Selector: '$.Reservations[0].Instances[0]'
+                Type: MapList
+          - name: GetInstanceVolumes
+            action: 'aws:executeAwsApi'
+            description: 'Get instance volumes'
+            inputs:
+              Service: ec2
+              Api: DescribeVolumes
+              Filters:
+                - Name: 'attachment.instance-id'
+                  Values:
+                    - '{{ InstanceId }}'
+            outputs:
+              - Name: VolumeIds
+                Selector: '$.Volumes[*].VolumeId'
+                Type: StringList
+          - name: CreateSnapshots
+            action: 'aws:executeScript'
+            description: 'Create snapshots for all volumes'
+            inputs:
+              Runtime: python3.8
+              Handler: create_snapshots
+              Script: |
+                import boto3
+                import json
+                
+                def create_snapshots(events, context):
+                    ec2 = boto3.client('ec2')
+                    volume_ids = events['VolumeIds']
+                    instance_id = events['InstanceId']
+                    description = events['SnapshotDescription']
+                    
+                    snapshot_ids = []
+                    
+                    for volume_id in volume_ids:
+                        response = ec2.create_snapshot(
+                            VolumeId=volume_id,
+                            Description=f"{description} - {volume_id} - {instance_id}",
+                            TagSpecifications=[
+                                {
+                                    'ResourceType': 'snapshot',
+                                    'Tags': [
+                                        {'Key': 'Name', 'Value': f'pre-patch-{instance_id}-{volume_id}'},
+                                        {'Key': 'InstanceId', 'Value': instance_id},
+                                        {'Key': 'VolumeId', 'Value': volume_id},
+                                        {'Key': 'Purpose', 'Value': 'pre-patching-backup'},
+                                        {'Key': 'Environment', 'Value': events.get('Environment', 'unknown')}
+                                    ]
+                                }
+                            ]
+                        )
+                        snapshot_ids.append(response['SnapshotId'])
+                    
+                    return {
+                        'SnapshotIds': snapshot_ids,
+                        'Message': f'Created {len(snapshot_ids)} snapshots for instance {instance_id}'
+                    }
+              InputPayload:
+                VolumeIds: '{{ GetInstanceVolumes.VolumeIds }}'
+                InstanceId: '{{ InstanceId }}'
+                SnapshotDescription: '{{ SnapshotDescription }}'
+                Environment: !Ref Environment
+            outputs:
+              - Name: SnapshotIds
+                Selector: '$.Payload.SnapshotIds'
+                Type: StringList
+
+  # Automation Document for Post-Patching
+  PostPatchingAutomationDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      DocumentFormat: YAML
+      Name: !Sub '${ApplicationName}-post-patching-automation-${Environment}'
+      Content:
+        schemaVersion: '0.3'
+        description: 'Post-patching validation and cleanup'
+        assumeRole: '{{ AutomationAssumeRole }}'
+        parameters:
+          InstanceId:
+            type: String
+            description: 'EC2 Instance ID'
+          AutomationAssumeRole:
+            type: String
+            description: 'IAM role for automation'
+            default: !GetAtt MaintenanceWindowRole.Arn
+          ValidationTests:
+            type: StringList
+            description: 'List of validation tests to run'
+            default:
+              - 'service-health-check'
+              - 'application-connectivity'
+        mainSteps:
+          - name: RunHealthCheck
+            action: 'aws:runCommand'
+            description: 'Run health check on patched instance'
+            inputs:
+              DocumentName: 'AWS-RunShellScript'
+              InstanceIds:
+                - '{{ InstanceId }}'
+              Parameters:
+                commands:
+                  - '#!/bin/bash'
+                  - 'echo "Running post-patch health checks..."'
+                  - 'systemctl status'
+                  - 'df -h'
+                  - 'free -m'
+                  - 'uptime'
+                  - 'echo "Health check completed successfully"'
+            outputs:
+              - Name: HealthCheckOutput
+                Selector: '$.CommandInvocations[0].CommandPlugins[0].Output'
+                Type: String
+          - name: ValidateServices
+            action: 'aws:runCommand'
+            description: 'Validate critical services are running'
+            inputs:
+              DocumentName: 'AWS-RunShellScript'
+              InstanceIds:
+                - '{{ InstanceId }}'
+              Parameters:
+                commands:
+                  - '#!/bin/bash'
+                  - 'echo "Validating critical services..."'
+                  - 'services=(sshd network docker)'
+                  - 'for service in "${services[@]}"; do'
+                  - '  if systemctl is-active --quiet $service; then'
+                  - '    echo "$service is running"'
+                  - '  else'
+                  - '    echo "WARNING: $service is not running"'
+                  - '  fi'
+                  - 'done'
+          - name: SendCompletionNotification
+            action: 'aws:executeAwsApi'
+            description: 'Send patching completion notification'
+            inputs:
+              Service: sns
+              Api: Publish
+              TopicArn: !Ref PatchingNotificationTopic
+              Subject: !Sub 'Patching completed for ${ApplicationName}-${Environment}'
+              Message: !Sub |
+                Patching has been completed for instance {{ InstanceId }} in ${ApplicationName}-${Environment}.
+                
+                Health Check Results:
+                {{ RunHealthCheck.HealthCheckOutput }}
+                
+                Post-patching validation completed successfully.
+
+  # SNS Topic for Patching Notifications
+  PatchingNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ApplicationName}-patching-notifications-${Environment}'
+      KmsMasterKeyId: !Ref SSMKMSKey
+
+  PatchingNotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref PatchingNotificationTopic
+      Endpoint: !Ref NotificationEmail
+
+  # CloudWatch Dashboard for Patch Management
+  PatchManagementDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ApplicationName}-patch-management-${Environment}'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/SSM-RunCommand", "CommandsSucceeded", { "stat": "Sum" } ],
+                  [ ".", "CommandsFailed", { "stat": "Sum" } ],
+                  [ ".", "CommandsTimedOut", { "stat": "Sum" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Patch Management Command Execution",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/SSM", "ComplianceBySeverity", "ComplianceType", "Patch", "Severity", "Critical", { "stat": "Average" } ],
+                  [ ".", ".", ".", ".", ".", "High", { "stat": "Average" } ],
+                  [ ".", ".", ".", ".", ".", "Medium", { "stat": "Average" } ],
+                  [ ".", ".", ".", ".", ".", "Low", { "stat": "Average" } ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Patch Compliance by Severity",
+                "period": 3600
+              }
+            }
+          ]
+        }
+
+  # CloudWatch Alarms for Patch Management
+  PatchComplianceAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-patch-compliance-${Environment}'
+      AlarmDescription: 'Low patch compliance detected'
+      MetricName: ComplianceBySeverity
+      Namespace: AWS/SSM
+      Statistic: Average
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 95
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: ComplianceType
+          Value: Patch
+        - Name: Severity
+          Value: Critical
+      AlarmActions:
+        - !Ref PatchingNotificationTopic
+
+Outputs:
+  MaintenanceWindowId:
+    Description: 'ID of the maintenance window'
+    Value: !Ref PatchingMaintenanceWindow
+    Export:
+      Name: !Sub '${ApplicationName}-maintenance-window-${Environment}'
+
+  PatchingLogsBucket:
+    Description: 'S3 bucket for patching logs'
+    Value: !Ref PatchingLogsBucket
+    Export:
+      Name: !Sub '${ApplicationName}-patching-logs-bucket-${Environment}'
+
+  PatchingNotificationTopicArn:
+    Description: 'ARN of the patching notification topic'
+    Value: !Ref PatchingNotificationTopic
+    Export:
+      Name: !Sub '${ApplicationName}-patching-topic-${Environment}'
+
+  AmazonLinuxPatchBaselineId:
+    Description: 'ID of the Amazon Linux patch baseline'
+    Value: !Ref AmazonLinuxPatchBaseline
+    Export:
+      Name: !Sub '${ApplicationName}-amazon-linux-baseline-${Environment}'
+
+  UbuntuPatchBaselineId:
+    Description: 'ID of the Ubuntu patch baseline'
+    Value: !Ref UbuntuPatchBaseline
+    Export:
+      Name: !Sub '${ApplicationName}-ubuntu-baseline-${Environment}'

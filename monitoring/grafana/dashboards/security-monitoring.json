@@ -1,0 +1,85 @@
+{
+  "id": null,
+  "title": "Parker Flight - Security Monitoring",
+  "tags": [
+    "parker-flight",
+    "security",
+    "audit"
+  ],
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Login Attempts",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "increase(grafana_login_attempts_total[1h])",
+          "legendFormat": "Login Attempts (1h)"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "title": "Failed Authentication",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "increase(grafana_login_attempts_total{result=\"failed\"}[1h])",
+          "legendFormat": "Failed Logins (1h)"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      }
+    },
+    {
+      "id": 3,
+      "title": "API Key Usage",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(grafana_api_key_requests_total[5m])",
+          "legendFormat": "API Key Requests/sec"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      }
+    },
+    {
+      "id": 4,
+      "title": "Dashboard Changes",
+      "type": "logs",
+      "targets": [
+        {
+          "expr": "increase(grafana_dashboard_save_total[1h])",
+          "legendFormat": "Dashboard Saves (1h)"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      }
+    }
+  ],
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "refresh": "30s"
+}

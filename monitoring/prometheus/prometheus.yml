@@ -1,0 +1,49 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  # Storage optimizations
+  external_labels:
+    environment: "production"
+    service: "parker-flight"
+
+rule_files:
+  - "rules/*.yml"
+
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Parker Flight API metrics
+  - job_name: 'parker-flight-api'
+    static_configs:
+      - targets: ['host.docker.internal:5001']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+    scrape_timeout: 5s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+
+  # Parker Flight application health (Supabase Edge Function)
+  - job_name: 'parker-flight-health'
+    static_configs:
+      - targets: ['host.docker.internal:54321']
+    metrics_path: '/functions/v1/health'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    params:
+      format: ['prometheus']
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+
+# Storage Optimization Notes:
+# - Default retention: 30d (can be overridden with --storage.tsdb.retention.time)
+# - Max storage size: 10GB (can be set with --storage.tsdb.retention.size)
+# - Enable WAL compression with --storage.tsdb.wal-compression

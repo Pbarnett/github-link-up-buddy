@@ -1,0 +1,152 @@
+import express from 'express';
+import { register } from './metrics.js';
+
+const app = express();
+
+// Middleware
+app.use(express.json());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Metrics endpoint for Prometheus
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  } catch (error) {
+    res.status(500).end(error);
+  }
+});
+
+// Business rules config endpoint
+app.get('/api/business-rules/config', (req, res) => {
+  res.json({
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    businessRules: {
+      maxPassengers: 9,
+      minAdvanceBooking: 24, // hours
+      maxAdvanceBooking: 365, // days
+      allowedCabinClasses: ['economy', 'premium_economy', 'business', 'first'],
+      refundableTicketsOnly: false,
+      minimumLayoverTime: 60 // minutes
+    },
+    features: {
+      autoBookingEnabled: true,
+      paymentProcessingEnabled: true,
+      notificationsEnabled: true
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Feature flags endpoint
+app.get('/api/feature-flags/:flagName', (req, res) => {
+  const { flagName } = req.params;
+  const userId = req.headers['x-user-id'] as string;
+  
+  // Mock feature flag logic
+  const featureFlags: Record<string, { enabled: boolean; rolloutPercentage: number }> = {
+    'ENABLE_CONFIG_DRIVEN_FORMS': { enabled: true, rolloutPercentage: 100 },
+    'WALLET_UI': { enabled: true, rolloutPercentage: 5 },
+    'ENHANCED_SEARCH': { enabled: false, rolloutPercentage: 0 },
+    'AUTO_BOOKING': { enabled: true, rolloutPercentage: 50 }
+  };
+  
+  const flag = featureFlags[flagName];
+  
+  if (!flag) {
+    return res.status(404).json({ error: 'Feature flag not found' });
+  }
+  
+  // Simple hash-based user rollout simulation
+  let userInRollout = false;
+  if (userId && flag.rolloutPercentage > 0) {
+    const hash = userId.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    userInRollout = Math.abs(hash) % 100 < flag.rolloutPercentage;
+  }
+  
+  res.json({
+    flagName,
+    enabled: flag.enabled && (flag.rolloutPercentage === 100 || userInRollout),
+    rolloutPercentage: flag.rolloutPercentage,
+    userInRollout,
+    userId: userId || null,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Trip offers endpoint (for additional testing)
+app.get('/api/trip-offers', (req, res) => {
+  res.json({
+    offers: [],
+    total: 0,
+    message: 'Mock endpoint - connect to Duffel API for real data',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test endpoint to generate sample service dependency data
+app.get('/api/test-dependencies', async (req, res) => {
+  const { recordOutboundRequest } = await import('./service-dependency-metrics.js');
+  
+  try {
+    // Simulate some outbound requests for testing
+    const testRequests = [
+      { url: 'https://supabase.co/api/v1/users', method: 'GET', status: 200, duration: 120 },
+      { url: 'https://api.stripe.com/v1/customers', method: 'POST', status: 201, duration: 250 },
+      { url: 'https://app.launchdarkly.com/api/v1/flags', method: 'GET', status: 200, duration: 80 },
+      { url: 'https://api.duffel.com/air/offers', method: 'POST', status: 200, duration: 1500 },
+      { url: 'https://api.resend.com/emails', method: 'POST', status: 200, duration: 300 },
+      // Add some failures
+      { url: 'https://api.stripe.com/v1/charges', method: 'POST', status: 429, duration: 100 },
+      { url: 'https://supabase.co/api/v1/profiles', method: 'GET', status: 500, duration: 5000 },
+    ];
+    
+    testRequests.forEach(req => {
+      recordOutboundRequest(req.url, req.method, req.status, req.duration);
+    });
+    
+    res.json({
+      message: 'Test service dependency data generated',
+      requests_generated: testRequests.length,
+      check_metrics: '/metrics',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate test data', details: error.message });
+  }
+});
+
+// Default route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Parker Flight API Server', 
+    version: '1.0.0',
+    endpoints: [
+      'GET /health',
+      'GET /metrics', 
+      'GET /api/business-rules/config',
+      'GET /api/feature-flags/:flagName',
+      'GET /api/trip-offers',
+      'GET /api/test-dependencies'
+    ]
+  });
+});
+
+export function startServer(port: number) {
+  const server = app.listen(port, '127.0.0.1', () => {
+    console.log(`Server running on 127.0.0.1:${port}`);
+  });
+  
+  return server;
+}
+
+export default app;

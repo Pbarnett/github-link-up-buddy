@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  parker-flight:
+    container_name: parker-flight-staging
+    ports:
+      - "8080:80"  # Staging port mapping
+    environment:
+      - NODE_ENV=staging
+      - PORT=80
+    labels:
+      - "com.docker.compose.service=parker-flight-staging"
+      - "environment=staging"
+      - "version=1.5.0"

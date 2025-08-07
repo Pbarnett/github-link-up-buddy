@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Library Browser Tests - ECMA-404 Compliance</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .test-pass {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .test-fail {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .test-info {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+            color: #0c5460;
+        }
+        .summary {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .run-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .run-button:hover {
+            background: #218838;
+        }
+        .clear-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .clear-button:hover {
+            background: #5a6268;
+        }
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧪 JSON Library Browser Tests</h1>
+        <p>ECMA-404 JSON Data Interchange Standard Compliance Testing</p>
+        <p><strong>JavaScript Version:</strong> ES2025 | <strong>Test Framework:</strong> Native Browser APIs</p>
+    </div>
+
+    <div class="test-section">
+        <h2>🎮 Test Controls</h2>
+        <button class="run-button" onclick="runAllTests()">🚀 Run All Tests</button>
+        <button class="run-button" onclick="runBasicTests()">📝 Basic JSON Tests</button>
+        <button class="run-button" onclick="runComplexTests()">🔬 Complex Tests</button>
+        <button class="run-button" onclick="runPerformanceTests()">⚡ Performance Tests</button>
+        <button class="run-button" onclick="runEcma404Tests()">📋 ECMA-404 Compliance</button>
+        <button class="clear-button" onclick="clearResults()">🧹 Clear Results</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Test Progress</h2>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+        </div>
+        <div id="progressText">Ready to run tests...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>📈 Performance Metrics</h2>
+        <div class="performance-metrics">
+            <div class="metric-card">
+                <h4>Parse Speed</h4>
+                <div id="parseSpeed">-- ops/ms</div>
+            </div>
+            <div class="metric-card">
+                <h4>Stringify Speed</h4>
+                <div id="stringifySpeed">-- ops/ms</div>
+            </div>
+            <div class="metric-card">
+                <h4>Memory Usage</h4>
+                <div id="memoryUsage">-- KB</div>
+            </div>
+            <div class="metric-card">
+                <h4>Compliance Score</h4>
+                <div id="complianceScore">--%</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <script>
+        // Enhanced JSON Test Library Implementation
+        class JSONTestRunner {
+            constructor() {
+                this.results = [];
+                this.totalTests = 0;
+                this.passedTests = 0;
+                this.failedTests = 0;
+                this.skippedTests = 0;
+                this.startTime = 0;
+                this.endTime = 0;
+                this.testCategories = new Map();
+                this.benchmarkResults = [];
+                this.memoryBaseline = this.getMemoryUsage();
+            }
+
+            // Memory monitoring utilities
+            getMemoryUsage() {
+                if (performance.memory) {
+                    return {
+                        used: performance.memory.usedJSHeapSize,
+                        total: performance.memory.totalJSHeapSize,
+                        limit: performance.memory.jsHeapSizeLimit
+                    };
+                }
+                return null;
+            }
+
+            formatBytes(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            log(message, type = 'info', details = null) {
+                const result = { message, type, details, timestamp: new Date() };
+                this.results.push(result);
+                this.displayResult(result);
+            }
+
+            displayResult(result) {
+                const resultsDiv = document.getElementById('testResults');
+                const div = document.createElement('div');
+                div.className = `test-result test-${result.type}`;
+                
+                let content = `<strong>${result.message}</strong>`;
+                if (result.details) {
+                    content += `<pre>${JSON.stringify(result.details, null, 2)}</pre>`;
+                }
+                div.innerHTML = content;
+                resultsDiv.appendChild(div);
+                resultsDiv.scrollTop = resultsDiv.scrollHeight;
+            }
+
+            updateProgress() {
+                const progress = (this.passedTests + this.failedTests) / this.totalTests * 100;
+                document.getElementById('progressBar').style.width = `${progress}%`;
+                document.getElementById('progressText').textContent = 
+                    `Progress: ${this.passedTests + this.failedTests}/${this.totalTests} tests completed`;
+            }
+
+            assert(condition, testName, expectedValue = null, actualValue = null) {
+                this.totalTests++;
+                if (condition) {
+                    this.passedTests++;
+                    this.log(`✅ ${testName}`, 'pass');
+                } else {
+                    this.failedTests++;
+                    const details = expectedValue !== null ? 
+                        { expected: expectedValue, actual: actualValue } : null;
+                    this.log(`❌ ${testName}`, 'fail', details);
+                }
+                this.updateProgress();
+            }
+
+            assertEquals(actual, expected, testName) {
+                const condition = JSON.stringify(actual) === JSON.stringify(expected);
+                this.assert(condition, testName, expected, actual);
+            }
+
+            assertThrows(fn, testName) {
+                try {
+                    fn();
+                    this.assert(false, `${testName} (should throw)`, 'Exception', 'No exception');
+                } catch (e) {
+                    this.assert(true, `${testName} (correctly throws)`, 'Exception', e.name);
+                }
+            }
+
+            // Basic JSON Tests
+            runBasicTests() {
+                this.log('🔍 Running Basic JSON Tests...', 'info');
+
+                // Test 1: Parse simple objects
+                try {
+                    const obj = JSON.parse('{"name": "test", "value": 42}');
+                    this.assertEquals(obj.name, 'test', 'Parse simple object - name property');
+                    this.assertEquals(obj.value, 42, 'Parse simple object - value property');
+                } catch (e) {
+                    this.log(`❌ Parse simple object failed: ${e.message}`, 'fail');
+                }
+
+                // Test 2: Parse arrays
+                try {
+                    const arr = JSON.parse('[1, 2, 3, "hello", true, null]');
+                    this.assertEquals(arr.length, 6, 'Parse array - length');
+                    this.assertEquals(arr[3], 'hello', 'Parse array - string element');
+                    this.assertEquals(arr[4], true, 'Parse array - boolean element');
+                    this.assertEquals(arr[5], null, 'Parse array - null element');
+                } catch (e) {
+                    this.log(`❌ Parse array failed: ${e.message}`, 'fail');
+                }
+
+                // Test 3: Stringify objects
+                try {
+                    const obj = { name: 'test', value: 42, active: true };
+                    const json = JSON.stringify(obj);
+                    this.assert(json.includes('"name":"test"'), 'Stringify object - contains name');
+                    this.assert(json.includes('"value":42'), 'Stringify object - contains value');
+                } catch (e) {
+                    this.log(`❌ Stringify object failed: ${e.message}`, 'fail');
+                }
+
+                // Test 4: Round-trip consistency
+                try {
+                    const original = { a: 1, b: [2, 3, { c: 4 }], d: null };
+                    const roundTrip = JSON.parse(JSON.stringify(original));
+                    this.assertEquals(roundTrip, original, 'Round-trip consistency');
+                } catch (e) {
+                    this.log(`❌ Round-trip test failed: ${e.message}`, 'fail');
+                }
+
+                // Test 5: Error handling
+                this.assertThrows(() => JSON.parse('{invalid json}'), 'Invalid JSON throws error');
+                this.assertThrows(() => JSON.parse('{"unclosed": "string}'), 'Unclosed string throws error');
+            }
+
+            // Complex JSON Tests
+            runComplexTests() {
+                this.log('🔬 Running Complex JSON Tests...', 'info');
+
+                // Test nested objects
+                try {
+                    const complex = {
+                        user: {
+                            name: 'John Doe',
+                            preferences: {
+                                theme: 'dark',
+                                notifications: {
+                                    email: true,
+                                    push: false
+                                }
+                            }
+                        },
+                        data: [1, 2, { nested: [3, 4, 5] }]
+                    };
+                    const json = JSON.stringify(complex);
+                    const parsed = JSON.parse(json);
+                    this.assertEquals(parsed.user.name, 'John Doe', 'Complex nested parsing - user name');
+                    this.assertEquals(parsed.user.preferences.notifications.email, true, 'Deep nested boolean');
+                    this.assertEquals(parsed.data[2].nested[1], 4, 'Nested array element');
+                } catch (e) {
+                    this.log(`❌ Complex nested test failed: ${e.message}`, 'fail');
+                }
+
+                // Test special characters and Unicode
+                try {
+                    const specialChars = {
+                        quotes: 'He said "Hello"',
+                        backslashes: 'Path\\to\\file',
+                        unicode: 'Café ñoño 🚀',
+                        tabs: 'Line1\tLine2',
+                        newlines: 'Line1\nLine2'
+                    };
+                    const json = JSON.stringify(specialChars);
+                    const parsed = JSON.parse(json);
+                    this.assertEquals(parsed.quotes, 'He said "Hello"', 'Quotes handling');
+                    this.assertEquals(parsed.unicode, 'Café ñoño 🚀', 'Unicode handling');
+                    this.assertEquals(parsed.newlines, 'Line1\nLine2', 'Newlines handling');
+                } catch (e) {
+                    this.log(`❌ Special characters test failed: ${e.message}`, 'fail');
+                }
+
+                // Test large numbers and precision
+                try {
+                    const numbers = {
+                        integer: 9007199254740991, // Number.MAX_SAFE_INTEGER
+                        float: 3.141592653589793,
+                        scientific: 1.23e-10,
+                        negative: -42.5
+                    };
+                    const json = JSON.stringify(numbers);
+                    const parsed = JSON.parse(json);
+                    this.assertEquals(parsed.integer, 9007199254740991, 'Large integer precision');
+                    this.assert(Math.abs(parsed.float - 3.141592653589793) < 1e-15, 'Float precision');
+                    this.assertEquals(parsed.scientific, 1.23e-10, 'Scientific notation');
+                } catch (e) {
+                    this.log(`❌ Number precision test failed: ${e.message}`, 'fail');
+                }
+
+                // Test replacer and reviver functions
+                try {
+                    const obj = { a: 1, b: 'secret', c: 3 };
+                    const json = JSON.stringify(obj, (key, value) => {
+                        return key === 'b' ? undefined : value;
+                    });
+                    const parsed = JSON.parse(json);
+                    this.assert(!('b' in parsed), 'Replacer function filtering');
+                    this.assertEquals(parsed.a, 1, 'Replacer preserves other properties');
+
+                    const jsonWithReviver = '{"date": "2023-01-01T00:00:00.000Z"}';
+                    const parsedWithReviver = JSON.parse(jsonWithReviver, (key, value) => {
+                        return key === 'date' ? new Date(value) : value;
+                    });
+                    this.assert(parsedWithReviver.date instanceof Date, 'Reviver function transformation');
+                } catch (e) {
+                    this.log(`❌ Replacer/Reviver test failed: ${e.message}`, 'fail');
+                }
+            }
+
+            // Performance Tests
+            runPerformanceTests() {
+                this.log('⚡ Running Performance Tests...', 'info');
+
+                const testData = {
+                    users: Array.from({ length: 1000 }, (_, i) => ({
+                        id: i,
+                        name: `User ${i}`,
+                        email: `user${i}@example.com`,
+                        active: Math.random() > 0.5,
+                        created: new Date().toISOString()
+                    }))
+                };
+
+                // Parse performance
+                const parseStartTime = performance.now();
+                const jsonString = JSON.stringify(testData);
+                for (let i = 0; i < 100; i++) {
+                    JSON.parse(jsonString);
+                }
+                const parseEndTime = performance.now();
+                const parseSpeed = Math.round(100 / (parseEndTime - parseStartTime));
+                document.getElementById('parseSpeed').textContent = `${parseSpeed} ops/ms`;
+
+                // Stringify performance
+                const stringifyStartTime = performance.now();
+                for (let i = 0; i < 100; i++) {
+                    JSON.stringify(testData);
+                }
+                const stringifyEndTime = performance.now();
+                const stringifySpeed = Math.round(100 / (stringifyEndTime - stringifyStartTime));
+                document.getElementById('stringifySpeed').textContent = `${stringifySpeed} ops/ms`;
+
+                // Memory usage estimation
+                const memoryUsage = Math.round(jsonString.length / 1024);
+                document.getElementById('memoryUsage').textContent = `${memoryUsage} KB`;
+
+                this.log(`✅ Performance test completed - Parse: ${parseSpeed} ops/ms, Stringify: ${stringifySpeed} ops/ms`, 'pass');
+            }
+
+            // ECMA-404 Compliance Tests
+            runEcma404Tests() {
+                this.log('📋 Running ECMA-404 Compliance Tests...', 'info');
+
+                // Test JSON grammar compliance
+                const validJsonSamples = [
+                    'null',
+                    'true',
+                    'false',
+                    '42',
+                    '-42',
+                    '3.14',
+                    '1.23e-4',
+                    '"string"',
+                    '[]',
+                    '{}',
+                    '[1,2,3]',
+                    '{"key":"value"}',
+                    '{"a":1,"b":[2,3],"c":{"d":4}}'
+                ];
+
+                let complianceScore = 0;
+                validJsonSamples.forEach((sample, index) => {
+                    try {
+                        const parsed = JSON.parse(sample);
+                        const stringified = JSON.stringify(parsed);
+                        this.log(`✅ ECMA-404 Valid Sample ${index + 1}: ${sample}`, 'pass');
+                        complianceScore++;
+                    } catch (e) {
+                        this.log(`❌ ECMA-404 Valid Sample ${index + 1} failed: ${sample}`, 'fail');
+                    }
+                });
+
+                // Test invalid JSON samples
+                const invalidJsonSamples = [
+                    '{key:"value"}', // unquoted key
+                    "{'key':'value'}", // single quotes
+                    '{,}', // leading comma
+                    '{key:}', // missing value
+                    'undefined',
+                    '{key: undefined}',
+                    '{trailing,comma,}',
+                    '\t\r\n' // only whitespace
+                ];
+
+                invalidJsonSamples.forEach((sample, index) => {
+                    this.assertThrows(() => JSON.parse(sample), `Invalid JSON Sample ${index + 1}: ${sample}`);
+                });
+
+                // Test JSON text sequences
+                try {
+                    const sequence = '[1,2,3]\n{"key":"value"}\nnull';
+                    const parts = sequence.split('\n');
+                    parts.forEach((part, index) => {
+                        const parsed = JSON.parse(part);
+                        this.log(`✅ JSON Text Sequence Part ${index + 1}`, 'pass');
+                        complianceScore++;
+                    });
+                } catch (e) {
+                    this.log(`❌ JSON Text Sequence test failed: ${e.message}`, 'fail');
+                }
+
+                const finalScore = Math.round((complianceScore / (validJsonSamples.length + 3)) * 100);
+                document.getElementById('complianceScore').textContent = `${finalScore}%`;
+                
+                this.log(`📊 ECMA-404 Compliance Score: ${finalScore}%`, 
+                         finalScore >= 90 ? 'pass' : finalScore >= 70 ? 'info' : 'fail');
+            }
+
+            // Run all tests
+            runAllTests() {
+                this.clearResults();
+                this.startTime = performance.now();
+                
+                this.runBasicTests();
+                this.runComplexTests();
+                this.runPerformanceTests();
+                this.runEcma404Tests();
+                
+                this.endTime = performance.now();
+                const duration = Math.round(this.endTime - this.startTime);
+                
+                this.log(`🏁 All tests completed in ${duration}ms`, 'info');
+                this.log(`📊 Summary: ${this.passedTests} passed, ${this.failedTests} failed`, 
+                         this.failedTests === 0 ? 'pass' : 'fail');
+            }
+
+            clearResults() {
+                this.results = [];
+                this.totalTests = 0;
+                this.passedTests = 0;
+                this.failedTests = 0;
+                document.getElementById('testResults').innerHTML = '';
+                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('progressText').textContent = 'Ready to run tests...';
+                
+                // Reset metrics
+                document.getElementById('parseSpeed').textContent = '-- ops/ms';
+                document.getElementById('stringifySpeed').textContent = '-- ops/ms';
+                document.getElementById('memoryUsage').textContent = '-- KB';
+                document.getElementById('complianceScore').textContent = '--%';
+            }
+        }
+
+        // Global test runner instance
+        const testRunner = new JSONTestRunner();
+
+        // Button handlers
+        function runAllTests() {
+            testRunner.runAllTests();
+        }
+
+        function runBasicTests() {
+            testRunner.clearResults();
+            testRunner.runBasicTests();
+        }
+
+        function runComplexTests() {
+            testRunner.clearResults();
+            testRunner.runComplexTests();
+        }
+
+        function runPerformanceTests() {
+            testRunner.clearResults();
+            testRunner.runPerformanceTests();
+        }
+
+        function runEcma404Tests() {
+            testRunner.clearResults();
+            testRunner.runEcma404Tests();
+        }
+
+        function clearResults() {
+            testRunner.clearResults();
+        }
+
+        // Auto-run basic tests on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                testRunner.log('🎯 JSON Test Environment Ready!', 'info');
+                testRunner.log('💡 Click "Run All Tests" to start comprehensive testing', 'info');
+                testRunner.log(`🌐 Browser: ${navigator.userAgent}`, 'info');
+                testRunner.log(`📅 Timestamp: ${new Date().toISOString()}`, 'info');
+            }, 500);
+        });
+    </script>
+</body>
+</html>

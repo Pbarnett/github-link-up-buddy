@@ -1,0 +1,48 @@
+apiVersion: 1
+
+disable_users: false
+
+editors_can_admin: true
+
+orgs:
+  - name: Parker Flight Engineering
+    admin: true
+    users:
+      - name: Alice
+        role: Editor
+        email: alice@example.com
+      - name: Bob
+        role: Viewer
+        email: bob@example.com
+
+users:
+  - name: Admin
+    email: admin@example.com
+    isGrafanaAdmin: true
+    password: changeme
+
+teams:
+  - name: DevOps
+    email: devops@example.com
+    orgId: 1
+    members:
+      - email: alice@example.com
+  - name: Developers
+    email: dev@example.com
+    orgId: 1
+    members:
+      - email: bob@example.com
+
+templates:
+  - name: Parker Flight Template
+    folder: ""
+    dashboards:
+      - folder: "General"
+        title: "Parker Flight Overview"
+  - name: Parker Flight SLO Template
+    folder: "Monitoring"
+    dashboards:
+      - folder: "SLOs"
+        title: "SLO Dashboard"
+        file: parker-flight-slo-dashboard.json
+

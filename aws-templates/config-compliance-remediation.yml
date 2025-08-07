@@ -1,0 +1,656 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Advanced AWS Config Rules with Automated Remediation for Compliance Monitoring'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name for resource naming
+  
+  ApplicationName:
+    Type: String
+    Default: github-link-buddy
+    Description: Application name for consistent resource naming
+  
+  AutoRemediationEnabled:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Enable automatic remediation for non-compliant resources
+  
+  NotificationEmail:
+    Type: String
+    Description: Email for compliance notifications
+    AllowedPattern: '^[^\s@]+@[^\s@]+\.[^\s@]+$'
+  
+  KMSKeyId:
+    Type: String
+    Description: KMS Key ID for encryption
+
+Conditions:
+  AutoRemediationOn: !Equals [!Ref AutoRemediationEnabled, 'true']
+  IsProduction: !Equals [!Ref Environment, 'production']
+
+Resources:
+  # AWS Config Configuration Recorder
+  ConfigurationRecorder:
+    Type: AWS::Config::ConfigurationRecorder
+    Properties:
+      Name: !Sub '${ApplicationName}-config-recorder-${Environment}'
+      RoleARN: !GetAtt ConfigRole.Arn
+      RecordingGroup:
+        AllSupported: true
+        IncludeGlobalResourceTypes: true
+        ResourceTypes: []
+
+  # AWS Config Delivery Channel
+  DeliveryChannel:
+    Type: AWS::Config::DeliveryChannel
+    Properties:
+      Name: !Sub '${ApplicationName}-delivery-channel-${Environment}'
+      S3BucketName: !Ref ConfigBucket
+      S3KeyPrefix: !Sub 'config-history/${Environment}/'
+      ConfigSnapshotDeliveryProperties:
+        DeliveryFrequency: TwentyFour_Hours
+
+  # S3 Bucket for Config
+  ConfigBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ApplicationName}-config-${AWS::AccountId}-${Environment}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KMSKeyId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ConfigDataRetention
+            Status: Enabled
+            ExpirationInDays: 2555  # 7 years
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+              - TransitionInDays: 90
+                StorageClass: GLACIER
+
+  # IAM Role for AWS Config
+  ConfigRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ApplicationName}-config-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: config.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/ConfigRole
+      Policies:
+        - PolicyName: ConfigBucketAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetBucketAcl
+                  - s3:ListBucket
+                Resource: !Sub 'arn:aws:s3:::${ConfigBucket}'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub 'arn:aws:s3:::${ConfigBucket}/*'
+
+  # Config Rules for Security Compliance
+
+  # 1. S3 Bucket Public Access Prohibited
+  S3BucketPublicAccessProhibitedRule:
+    Type: AWS::Config::ConfigRule
+    DependsOn: ConfigurationRecorder
+    Properties:
+      ConfigRuleName: !Sub 's3-bucket-public-access-prohibited-${Environment}'
+      Description: 'Checks if S3 buckets are publicly accessible'
+      Source:
+        Owner: AWS
+        SourceIdentifier: S3_BUCKET_PUBLIC_ACCESS_PROHIBITED
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::S3::Bucket
+
+  # Remediation for S3 Public Access
+  S3PublicAccessRemediation:
+    Type: AWS::Config::RemediationConfiguration
+    Condition: AutoRemediationOn
+    Properties:
+      ConfigRuleName: !Ref S3BucketPublicAccessProhibitedRule
+      TargetType: SSM_DOCUMENT
+      TargetId: !Ref S3PublicAccessRemediationDocument
+      TargetVersion: '1'
+      Parameters:
+        BucketName:
+          ResourceValue:
+            Value: RESOURCE_ID
+        AutomationAssumeRole:
+          StaticValue:
+            Values:
+              - !GetAtt RemediationRole.Arn
+      Automatic: true
+      MaximumAutomaticAttempts: 3
+
+  # SSM Document for S3 Public Access Remediation
+  S3PublicAccessRemediationDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      DocumentFormat: YAML
+      Name: !Sub '${ApplicationName}-s3-public-access-remediation-${Environment}'
+      Content:
+        schemaVersion: '0.3'
+        description: 'Remediate S3 bucket public access'
+        assumeRole: '{{ AutomationAssumeRole }}'
+        parameters:
+          BucketName:
+            type: String
+            description: 'S3 bucket name'
+          AutomationAssumeRole:
+            type: String
+            description: 'IAM role for automation'
+        mainSteps:
+          - name: BlockPublicAccess
+            action: 'aws:executeAwsApi'
+            description: 'Block public access to S3 bucket'
+            inputs:
+              Service: s3
+              Api: PutPublicAccessBlock
+              Bucket: '{{ BucketName }}'
+              PublicAccessBlockConfiguration:
+                BlockPublicAcls: true
+                IgnorePublicAcls: true
+                BlockPublicPolicy: true
+                RestrictPublicBuckets: true
+          - name: NotifyCompliance
+            action: 'aws:executeAwsApi'
+            description: 'Send notification about remediation'
+            inputs:
+              Service: sns
+              Api: Publish
+              TopicArn: !Ref ComplianceNotificationTopic
+              Message: !Sub 'S3 bucket {{ BucketName }} public access has been blocked in ${Environment} environment'
+
+  # 2. EBS Volume Encryption Rule
+  EBSEncryptionRule:
+    Type: AWS::Config::ConfigRule
+    DependsOn: ConfigurationRecorder
+    Properties:
+      ConfigRuleName: !Sub 'ebs-encrypted-volumes-${Environment}'
+      Description: 'Checks if EBS volumes are encrypted'
+      Source:
+        Owner: AWS
+        SourceIdentifier: ENCRYPTED_VOLUMES
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::EC2::Volume
+
+  # Remediation for Unencrypted EBS Volumes
+  EBSEncryptionRemediation:
+    Type: AWS::Config::RemediationConfiguration
+    Condition: AutoRemediationOn
+    Properties:
+      ConfigRuleName: !Ref EBSEncryptionRule
+      TargetType: SSM_DOCUMENT
+      TargetId: !Ref EBSEncryptionRemediationDocument
+      TargetVersion: '1'
+      Parameters:
+        VolumeId:
+          ResourceValue:
+            Value: RESOURCE_ID
+        AutomationAssumeRole:
+          StaticValue:
+            Values:
+              - !GetAtt RemediationRole.Arn
+      Automatic: true
+      MaximumAutomaticAttempts: 3
+
+  # SSM Document for EBS Encryption Remediation
+  EBSEncryptionRemediationDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      DocumentFormat: YAML
+      Name: !Sub '${ApplicationName}-ebs-encryption-remediation-${Environment}'
+      Content:
+        schemaVersion: '0.3'
+        description: 'Create encrypted snapshot and replace unencrypted EBS volume'
+        assumeRole: '{{ AutomationAssumeRole }}'
+        parameters:
+          VolumeId:
+            type: String
+            description: 'EBS volume ID'
+          AutomationAssumeRole:
+            type: String
+            description: 'IAM role for automation'
+        mainSteps:
+          - name: CreateSnapshot
+            action: 'aws:executeAwsApi'
+            description: 'Create snapshot of unencrypted volume'
+            inputs:
+              Service: ec2
+              Api: CreateSnapshot
+              VolumeId: '{{ VolumeId }}'
+              Description: 'Snapshot for encryption remediation'
+            outputs:
+              - Name: SnapshotId
+                Selector: '$.SnapshotId'
+                Type: String
+          - name: WaitForSnapshot
+            action: 'aws:waitForAwsResourceProperty'
+            description: 'Wait for snapshot completion'
+            inputs:
+              Service: ec2
+              Api: DescribeSnapshots
+              SnapshotIds:
+                - '{{ CreateSnapshot.SnapshotId }}'
+              PropertySelector: '$.Snapshots[0].State'
+              DesiredValues:
+                - completed
+          - name: CreateEncryptedSnapshot
+            action: 'aws:executeAwsApi'
+            description: 'Create encrypted copy of snapshot'
+            inputs:
+              Service: ec2
+              Api: CopySnapshot
+              SourceSnapshotId: '{{ CreateSnapshot.SnapshotId }}'
+              SourceRegion: !Ref 'AWS::Region'
+              Description: 'Encrypted snapshot for remediation'
+              Encrypted: true
+              KmsKeyId: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KMSKeyId}'
+            outputs:
+              - Name: EncryptedSnapshotId
+                Selector: '$.SnapshotId'
+                Type: String
+          - name: TagVolume
+            action: 'aws:executeAwsApi'
+            description: 'Tag original volume for tracking'
+            inputs:
+              Service: ec2
+              Api: CreateTags
+              Resources:
+                - '{{ VolumeId }}'
+              Tags:
+                - Key: 'ComplianceRemediation'
+                  Value: 'EncryptionRequired'
+                - Key: 'EncryptedSnapshotId'
+                  Value: '{{ CreateEncryptedSnapshot.EncryptedSnapshotId }}'
+
+  # 3. Security Group SSH Access Rule
+  SecurityGroupSSHRule:
+    Type: AWS::Config::ConfigRule
+    DependsOn: ConfigurationRecorder
+    Properties:
+      ConfigRuleName: !Sub 'security-group-ssh-restricted-${Environment}'
+      Description: 'Checks if security groups allow unrestricted SSH access'
+      Source:
+        Owner: AWS
+        SourceIdentifier: INCOMING_SSH_DISABLED
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::EC2::SecurityGroup
+
+  # Remediation for Security Group SSH Access
+  SecurityGroupSSHRemediation:
+    Type: AWS::Config::RemediationConfiguration
+    Condition: AutoRemediationOn
+    Properties:
+      ConfigRuleName: !Ref SecurityGroupSSHRule
+      TargetType: SSM_DOCUMENT
+      TargetId: !Ref SecurityGroupSSHRemediationDocument
+      TargetVersion: '1'
+      Parameters:
+        SecurityGroupId:
+          ResourceValue:
+            Value: RESOURCE_ID
+        AutomationAssumeRole:
+          StaticValue:
+            Values:
+              - !GetAtt RemediationRole.Arn
+      Automatic: true
+      MaximumAutomaticAttempts: 3
+
+  # SSM Document for Security Group SSH Remediation
+  SecurityGroupSSHRemediationDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      DocumentFormat: YAML
+      Name: !Sub '${ApplicationName}-sg-ssh-remediation-${Environment}'
+      Content:
+        schemaVersion: '0.3'
+        description: 'Remove unrestricted SSH access from security group'
+        assumeRole: '{{ AutomationAssumeRole }}'
+        parameters:
+          SecurityGroupId:
+            type: String
+            description: 'Security Group ID'
+          AutomationAssumeRole:
+            type: String
+            description: 'IAM role for automation'
+        mainSteps:
+          - name: RevokeSSHAccess
+            action: 'aws:executeAwsApi'
+            description: 'Revoke unrestricted SSH access'
+            inputs:
+              Service: ec2
+              Api: RevokeSecurityGroupIngress
+              GroupId: '{{ SecurityGroupId }}'
+              IpPermissions:
+                - IpProtocol: tcp
+                  FromPort: 22
+                  ToPort: 22
+                  IpRanges:
+                    - CidrIp: '0.0.0.0/0'
+                      Description: 'Removed by compliance remediation'
+          - name: AddRestrictedSSHAccess
+            action: 'aws:executeAwsApi'
+            description: 'Add restricted SSH access from corporate network'
+            inputs:
+              Service: ec2
+              Api: AuthorizeSecurityGroupIngress
+              GroupId: '{{ SecurityGroupId }}'
+              IpPermissions:
+                - IpProtocol: tcp
+                  FromPort: 22
+                  ToPort: 22
+                  IpRanges:
+                    - CidrIp: '10.0.0.0/8'
+                      Description: 'Corporate network SSH access'
+
+  # 4. IAM Policy Drift Detection Rule
+  IAMPolicyDriftRule:
+    Type: AWS::Config::ConfigRule
+    DependsOn: ConfigurationRecorder
+    Properties:
+      ConfigRuleName: !Sub 'iam-policy-no-statements-with-admin-access-${Environment}'
+      Description: 'Checks if IAM policies grant admin access'
+      Source:
+        Owner: AWS
+        SourceIdentifier: IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::IAM::Policy
+
+  # Custom Config Rule for Advanced IAM Policy Drift
+  CustomIAMPolicyDriftRule:
+    Type: AWS::Config::ConfigRule
+    DependsOn: ConfigurationRecorder
+    Properties:
+      ConfigRuleName: !Sub 'custom-iam-policy-drift-${Environment}'
+      Description: 'Custom rule for detecting IAM policy drift from baseline'
+      Source:
+        Owner: AWS_CONFIG_RULE
+        SourceIdentifier: !GetAtt IAMPolicyDriftFunction.Arn
+        SourceDetails:
+          - EventSource: aws.config
+            MessageType: ConfigurationItemChangeNotification
+          - EventSource: aws.config
+            MessageType: OversizedConfigurationItemChangeNotification
+      InputParameters: !Sub |
+        {
+          "baselinePolicyArns": [
+            "arn:aws:iam::${AWS::AccountId}:policy/${ApplicationName}-baseline-policy"
+          ],
+          "allowedActions": [
+            "s3:GetObject",
+            "s3:PutObject",
+            "dynamodb:GetItem",
+            "dynamodb:PutItem",
+            "dynamodb:UpdateItem",
+            "dynamodb:Query"
+          ]
+        }
+
+  # Lambda Function for IAM Policy Drift Detection
+  IAMPolicyDriftFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ApplicationName}-iam-policy-drift-${Environment}'
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Role: !GetAtt ConfigRuleLambdaRole.Arn
+      Timeout: 300
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          import logging
+          from datetime import datetime
+
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+          def lambda_handler(event, context):
+              """Custom Config rule for IAM policy drift detection"""
+              
+              config_client = boto3.client('config')
+              iam_client = boto3.client('iam')
+              
+              try:
+                  configuration_item = event.get('configurationItem', {})
+                  rule_parameters = json.loads(event.get('ruleParameters', '{}'))
+                  
+                  if configuration_item.get('resourceType') != 'AWS::IAM::Policy':
+                      return {'compliance': 'NOT_APPLICABLE'}
+                  
+                  policy_arn = configuration_item.get('resourceId')
+                  baseline_policy_arns = rule_parameters.get('baselinePolicyArns', [])
+                  allowed_actions = rule_parameters.get('allowedActions', [])
+                  
+                  # Check if policy has drifted from baseline
+                  compliance_result = check_policy_drift(
+                      iam_client, policy_arn, baseline_policy_arns, allowed_actions
+                  )
+                  
+                  # Send evaluation result back to Config
+                  evaluation = {
+                      'ComplianceResourceType': configuration_item.get('resourceType'),
+                      'ComplianceResourceId': configuration_item.get('resourceId'),
+                      'ComplianceType': compliance_result['compliance'],
+                      'Annotation': compliance_result['annotation'],
+                      'OrderingTimestamp': datetime.utcnow().isoformat()
+                  }
+                  
+                  config_client.put_evaluations(
+                      Evaluations=[evaluation],
+                      ResultToken=event.get('resultToken')
+                  )
+                  
+                  return evaluation
+                  
+              except Exception as e:
+                  logger.error(f"Error in IAM policy drift check: {str(e)}")
+                  return {'compliance': 'NON_COMPLIANT', 'annotation': f'Error: {str(e)}'}
+          
+          def check_policy_drift(iam_client, policy_arn, baseline_arns, allowed_actions):
+              """Check if IAM policy has drifted from baseline"""
+              
+              try:
+                  # Get policy document
+                  policy_response = iam_client.get_policy(PolicyArn=policy_arn)
+                  version_response = iam_client.get_policy_version(
+                      PolicyArn=policy_arn,
+                      VersionId=policy_response['Policy']['DefaultVersionId']
+                  )
+                  
+                  policy_document = version_response['PolicyVersion']['Document']
+                  
+                  # Check for overly permissive statements
+                  for statement in policy_document.get('Statement', []):
+                      if isinstance(statement.get('Action'), str):
+                          actions = [statement['Action']]
+                      else:
+                          actions = statement.get('Action', [])
+                      
+                      # Check for wildcard permissions
+                      if '*' in actions or any('*' in action for action in actions):
+                          if statement.get('Effect') == 'Allow':
+                              return {
+                                  'compliance': 'NON_COMPLIANT',
+                                  'annotation': 'Policy contains wildcard permissions'
+                              }
+                      
+                      # Check for disallowed actions
+                      disallowed_actions = [
+                          action for action in actions 
+                          if action not in allowed_actions and not action.startswith('iam:')
+                      ]
+                      
+                      if disallowed_actions:
+                          return {
+                              'compliance': 'NON_COMPLIANT',
+                              'annotation': f'Policy contains disallowed actions: {", ".join(disallowed_actions)}'
+                          }
+                  
+                  return {
+                      'compliance': 'COMPLIANT',
+                      'annotation': 'Policy complies with baseline requirements'
+                  }
+                  
+              except Exception as e:
+                  return {
+                      'compliance': 'NON_COMPLIANT',
+                      'annotation': f'Error evaluating policy: {str(e)}'
+                  }
+
+  # IAM Role for Config Rule Lambda
+  ConfigRuleLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ApplicationName}-config-rule-lambda-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSConfigRole
+      Policies:
+        - PolicyName: ConfigRuleLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - config:PutEvaluations
+                  - iam:GetPolicy
+                  - iam:GetPolicyVersion
+                  - iam:ListPolicies
+                Resource: '*'
+
+  # IAM Role for Remediation Actions
+  RemediationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ApplicationName}-remediation-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ssm.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonSSMAutomationRole
+      Policies:
+        - PolicyName: RemediationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutPublicAccessBlock
+                  - s3:GetPublicAccessBlock
+                  - ec2:CreateSnapshot
+                  - ec2:DescribeSnapshots
+                  - ec2:CopySnapshot
+                  - ec2:CreateTags
+                  - ec2:RevokeSecurityGroupIngress
+                  - ec2:AuthorizeSecurityGroupIngress
+                  - sns:Publish
+                Resource: '*'
+
+  # SNS Topic for Compliance Notifications
+  ComplianceNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ApplicationName}-compliance-notifications-${Environment}'
+      KmsMasterKeyId: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${KMSKeyId}'
+
+  ComplianceNotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref ComplianceNotificationTopic
+      Endpoint: !Ref NotificationEmail
+
+  # CloudWatch Dashboard for Compliance Monitoring
+  ComplianceDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ApplicationName}-compliance-${Environment}'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Config", "ComplianceByConfigRule", "ConfigRuleName", "${S3BucketPublicAccessProhibitedRule}", "ComplianceType", "COMPLIANT" ],
+                  [ ".", ".", ".", ".", ".", "NON_COMPLIANT" ],
+                  [ ".", ".", ".", "${EBSEncryptionRule}", ".", "COMPLIANT" ],
+                  [ ".", ".", ".", ".", ".", "NON_COMPLIANT" ],
+                  [ ".", ".", ".", "${SecurityGroupSSHRule}", ".", "COMPLIANT" ],
+                  [ ".", ".", ".", ".", ".", "NON_COMPLIANT" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Compliance Status by Config Rule",
+                "period": 3600
+              }
+            }
+          ]
+        }
+
+Outputs:
+  ConfigBucketName:
+    Description: 'S3 bucket name for Config'
+    Value: !Ref ConfigBucket
+    Export:
+      Name: !Sub '${ApplicationName}-config-bucket-${Environment}'
+
+  ComplianceNotificationTopicArn:
+    Description: 'ARN of the compliance notification topic'
+    Value: !Ref ComplianceNotificationTopic
+    Export:
+      Name: !Sub '${ApplicationName}-compliance-topic-${Environment}'
+
+  ConfigRoleArn:
+    Description: 'ARN of the Config service role'
+    Value: !GetAtt ConfigRole.Arn
+    Export:
+      Name: !Sub '${ApplicationName}-config-role-${Environment}'

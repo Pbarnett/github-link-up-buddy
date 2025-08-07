@@ -1,0 +1,1112 @@
+{
+  "timestamp": "2025-08-06T22:35:59.980Z",
+  "totalScripts": 135,
+  "successful": 135,
+  "failed": 0,
+  "categoryBreakdown": {
+    "development": 47,
+    "security": 5,
+    "deployment": 36,
+    "monitoring": 16,
+    "maintenance": 2,
+    "build": 1,
+    "testing": 26,
+    "database": 2
+  },
+  "results": [
+    {
+      "script": "advanced-optimization.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/advanced-optimization.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/advanced-optimization.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "analyze-audit-results.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/analyze-audit-results.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/analyze-audit-results.cjs",
+      "category": "security",
+      "status": "success"
+    },
+    {
+      "script": "api-coordinated-rollout.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/api-coordinated-rollout.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/api-coordinated-rollout.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "api-setup-rollout.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/api-setup-rollout.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/api-setup-rollout.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "apply-remote-migration.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/apply-remote-migration.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/apply-remote-migration.cjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "audit-business-rules.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/audit-business-rules.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/audit-business-rules.cjs",
+      "category": "security",
+      "status": "success"
+    },
+    {
+      "script": "auto-setup-production.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/auto-setup-production.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/auto-setup-production.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "backup-dashboards.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/backup-dashboards.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/backup-dashboards.sh",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "backup-staging.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/backup-staging.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/maintenance/backup-staging.sh",
+      "category": "maintenance",
+      "status": "success"
+    },
+    {
+      "script": "build.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/build.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/build/build.sh",
+      "category": "build",
+      "status": "success"
+    },
+    {
+      "script": "cleanup-legacy.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/cleanup-legacy.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/cleanup-legacy.sh",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "complete-deployment.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/complete-deployment.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/complete-deployment.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "complete-kms-integration.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/complete-kms-integration.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/complete-kms-integration.sh",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "coordinated-feature-rollout.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/coordinated-feature-rollout.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/coordinated-feature-rollout.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "create-business-dashboards.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/create-business-dashboards.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/create-business-dashboards.js",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "create-launchdarkly-flags-interactive.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/create-launchdarkly-flags-interactive.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/create-launchdarkly-flags-interactive.sh",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "create-test-env.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/create-test-env.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/create-test-env.js",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "create-type-declarations.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/create-type-declarations.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/create-type-declarations.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "dashboard-best-practices.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/dashboard-best-practices.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/dashboard-best-practices.js",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "demo-enhanced-aws-sdk.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/demo-enhanced-aws-sdk.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/demo-enhanced-aws-sdk.cjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "deploy-duffel-functions.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/deploy-duffel-functions.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-duffel-functions.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "deploy-duffel-production.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/deploy-duffel-production.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-duffel-production.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "deploy-enhanced-aws-sdk.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/deploy-enhanced-aws-sdk.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-enhanced-aws-sdk.cjs",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "deploy-function.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/deploy-function.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-function.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "deploy-optimized-infrastructure.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/deploy-optimized-infrastructure.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-optimized-infrastructure.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "deploy-payment-system.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/deploy-payment-system.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-payment-system.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "deploy-phase2.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/deploy-phase2.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-phase2.js",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "deploy-production.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/deploy-production.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-production.js",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "deploy-production.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/deploy-production.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-production.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "deploy-to-production.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/deploy-to-production.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-to-production.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "deploy-zero-downtime.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/deploy-zero-downtime.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy-zero-downtime.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "deploy.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/deploy.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/deploy.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "docker-deploy.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/docker-deploy.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/docker-deploy.cjs",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "enable-personalization-greeting.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/enable-personalization-greeting.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/enable-personalization-greeting.ts",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "final-validation.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/final-validation.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/final-validation.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-all-react-imports.mjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-all-react-imports.mjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-all-react-imports.mjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-common-issues.mjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-common-issues.mjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-common-issues.mjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-common-patterns.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-common-patterns.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-common-patterns.cjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-component-issues.mjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-component-issues.mjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-component-issues.mjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-duplicate-imports.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-duplicate-imports.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-duplicate-imports.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-import-empty-lines.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-import-empty-lines.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-import-empty-lines.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-import-order.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-import-order.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-import-order.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-react-19-compatibility.mjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-react-19-compatibility.mjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-react-19-compatibility.mjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-react-19-imports.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-react-19-imports.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-react-19-imports.cjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-react-19-imports.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-react-19-imports.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-react-19-imports.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-react-hooks-imports.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-react-hooks-imports.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-react-hooks-imports.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-react-imports.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-react-imports.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-react-imports.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-react-types.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-react-types.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-react-types.cjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-remaining-imports.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-remaining-imports.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-remaining-imports.sh",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-select-casting.mjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-select-casting.mjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-select-casting.mjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-typescript-errors.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-typescript-errors.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-typescript-errors.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-typescript-issues.mjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-typescript-issues.mjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-typescript-issues.mjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix-unused-variables.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix-unused-variables.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix-unused-variables.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "fix_remaining_ts.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/fix_remaining_ts.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/fix_remaining_ts.sh",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "get-token.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/get-token.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/get-token.sh",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "go-live-validation.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/go-live-validation.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/go-live-validation.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "gradual-rollout-simple.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/gradual-rollout-simple.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/gradual-rollout-simple.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "gradual-rollout.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/gradual-rollout.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/gradual-rollout.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "health-check.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/health-check.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/health-check.sh",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "health-monitor.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/health-monitor.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/health-monitor.sh",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "lint-fixer.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/lint-fixer.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/lint-fixer.cjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "load-env.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/load-env.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/load-env.ts",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "load-test.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/load-test.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/load-test.js",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "log-ai-activity.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/log-ai-activity.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/log-ai-activity.ts",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "manage-dashboards.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/manage-dashboards.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/manage-dashboards.js",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "manage-encryption.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/manage-encryption.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/manage-encryption.ts",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "manage-secrets.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/manage-secrets.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/manage-secrets.sh",
+      "category": "security",
+      "status": "success"
+    },
+    {
+      "script": "migrate-duffel-rules.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/migrate-duffel-rules.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/database/migrate-duffel-rules.sh",
+      "category": "database",
+      "status": "success"
+    },
+    {
+      "script": "migrate-to-modern-oauth.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/migrate-to-modern-oauth.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/database/migrate-to-modern-oauth.sh",
+      "category": "database",
+      "status": "success"
+    },
+    {
+      "script": "monitor-app.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitor-app.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/monitor-app.sh",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "monitor-ping.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitor-ping.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/monitor-ping.ts",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "monitoring-status.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring-status.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/monitoring-status.sh",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "optimize-data-retention.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/optimize-data-retention.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/maintenance/optimize-data-retention.js",
+      "category": "maintenance",
+      "status": "success"
+    },
+    {
+      "script": "optimize-monitoring-setup.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/optimize-monitoring-setup.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/optimize-monitoring-setup.js",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "orchestrate-rollout.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/orchestrate-rollout.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/orchestrate-rollout.ts",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "performance-monitor.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/performance-monitor.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/performance-monitor.sh",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "production-dashboard.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/production-dashboard.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/production-dashboard.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "production-env-setup.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/production-env-setup.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/production-env-setup.ts",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "production-health-check.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/production-health-check.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/production-health-check.ts",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "quick-validate.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/quick-validate.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/quick-validate.cjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "quick-validate.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/quick-validate.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/quick-validate.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "resend-domain-setup.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/resend-domain-setup.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/resend-domain-setup.ts",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "rollback-production.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/rollback-production.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/rollback-production.js",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "run-all-tests.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/run-all-tests.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/run-all-tests.cjs",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "run-oauth-tests-with-mock.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/run-oauth-tests-with-mock.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/run-oauth-tests-with-mock.sh",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "run-rollout.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/run-rollout.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/run-rollout.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "security-performance-validation.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/security-performance-validation.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/security-performance-validation.sh",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "setup-credentials.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-credentials.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/setup-credentials.sh",
+      "category": "security",
+      "status": "success"
+    },
+    {
+      "script": "setup-feature-flags.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-feature-flags.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/setup-feature-flags.ts",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "setup-google-oauth-client.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-google-oauth-client.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/setup-google-oauth-client.sh",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "setup-integration-tests.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-integration-tests.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/setup-integration-tests.js",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "setup-launchdarkly-flags.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-launchdarkly-flags.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/setup-launchdarkly-flags.sh",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "setup-monitoring.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-monitoring.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/setup-monitoring.cjs",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "setup-monitoring.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-monitoring.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/setup-monitoring.js",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "setup-monitoring.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-monitoring.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/setup-monitoring.ts",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "setup-multi-environment.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-multi-environment.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/setup-multi-environment.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "setup-production-complete.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-production-complete.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/setup-production-complete.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "setup-rollout-database.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-rollout-database.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/setup-rollout-database.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "setup-security.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-security.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/security/setup-security.js",
+      "category": "security",
+      "status": "success"
+    },
+    {
+      "script": "setup-upstash-redis.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/setup-upstash-redis.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/setup-upstash-redis.sh",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "smoke-test.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/smoke-test.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/smoke-test.ts",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "start-monitoring.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/start-monitoring.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/start-monitoring.sh",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "stop-monitoring.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/stop-monitoring.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/monitoring/stop-monitoring.sh",
+      "category": "monitoring",
+      "status": "success"
+    },
+    {
+      "script": "test-alert-rules.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-alert-rules.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-alert-rules.js",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-ci.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-ci.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-ci.sh",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-components.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-components.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-components.sh",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-deployment-ready.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-deployment-ready.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/test-deployment-ready.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "test-docker-setup.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-docker-setup.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-docker-setup.sh",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-email-tracking-detailed.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-email-tracking-detailed.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-email-tracking-detailed.ts",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-email-tracking.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-email-tracking.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-email-tracking.ts",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-friend-greetings.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-friend-greetings.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-friend-greetings.ts",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-launchdarkly-connectivity.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-launchdarkly-connectivity.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-launchdarkly-connectivity.ts",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-launchdarkly-contexts.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-launchdarkly-contexts.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-launchdarkly-contexts.ts",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-launchdarkly-server-integration.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-launchdarkly-server-integration.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-launchdarkly-server-integration.ts",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-local-function.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-local-function.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-local-function.sh",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-migration.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-migration.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-migration.sh",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-personalization-events.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-personalization-events.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-personalization-events.sh",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-pipeline-production.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-pipeline-production.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/test-pipeline-production.js",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "test-production-readiness.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-production-readiness.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/test-production-readiness.ts",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "test-profile-completeness.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-profile-completeness.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-profile-completeness.sh",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-rollout-dev.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-rollout-dev.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/test-rollout-dev.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "test-staging-function.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-staging-function.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-staging-function.sh",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-summary.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-summary.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-summary.js",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "test-twilio-sms.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/test-twilio-sms.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/testing/test-twilio-sms.ts",
+      "category": "testing",
+      "status": "success"
+    },
+    {
+      "script": "validate-coordinated-rollout.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/validate-coordinated-rollout.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/validate-coordinated-rollout.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "validate-deployment.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/validate-deployment.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/validate-deployment.ts",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "validate-duffel-compliance.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/validate-duffel-compliance.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/validate-duffel-compliance.ts",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "validate-environment.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/validate-environment.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/validate-environment.ts",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "validate-production-ready.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/validate-production-ready.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/validate-production-ready.sh",
+      "category": "deployment",
+      "status": "success"
+    },
+    {
+      "script": "verify-launchdarkly-api.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/verify-launchdarkly-api.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/verify-launchdarkly-api.ts",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "verify-launchdarkly-integration.cjs",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/verify-launchdarkly-integration.cjs",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/verify-launchdarkly-integration.cjs",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "verify-launchdarkly-integration.js",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/verify-launchdarkly-integration.js",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/verify-launchdarkly-integration.js",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "verify-launchdarkly.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/verify-launchdarkly.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/verify-launchdarkly.ts",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "verify-oauth-session.ts",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/verify-oauth-session.ts",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/development/verify-oauth-session.ts",
+      "category": "development",
+      "status": "success"
+    },
+    {
+      "script": "wallet-ui-rollout.sh",
+      "from": "/Users/parkerbarnett/github-link-up-buddy/scripts/wallet-ui-rollout.sh",
+      "to": "/Users/parkerbarnett/github-link-up-buddy/scripts/deployment/wallet-ui-rollout.sh",
+      "category": "deployment",
+      "status": "success"
+    }
+  ],
+  "migrationLog": [
+    "[2025-08-06T22:35:59.696Z] [INFO] Script Migrator initialized",
+    "[2025-08-06T22:35:59.706Z] [INFO] Analyzing current script organization...",
+    "[2025-08-06T22:35:59.773Z] [INFO] Created migration plan for 135 scripts",
+    "[2025-08-06T22:35:59.773Z] [INFO] Starting non-destructive migration...",
+    "[2025-08-06T22:35:59.773Z] [INFO] Created category directory: development",
+    "[2025-08-06T22:35:59.774Z] [INFO] Created category directory: security",
+    "[2025-08-06T22:35:59.774Z] [INFO] Created category directory: deployment",
+    "[2025-08-06T22:35:59.774Z] [INFO] Created category directory: monitoring",
+    "[2025-08-06T22:35:59.774Z] [INFO] Created category directory: maintenance",
+    "[2025-08-06T22:35:59.775Z] [INFO] Created category directory: build",
+    "[2025-08-06T22:35:59.775Z] [INFO] Created category directory: testing",
+    "[2025-08-06T22:35:59.775Z] [INFO] Created category directory: database",
+    "[2025-08-06T22:35:59.777Z] [INFO] Migrated: advanced-optimization.js → development/advanced-optimization.js",
+    "[2025-08-06T22:35:59.778Z] [INFO] Migrated: analyze-audit-results.cjs → security/analyze-audit-results.cjs",
+    "[2025-08-06T22:35:59.779Z] [INFO] Migrated: api-coordinated-rollout.sh → deployment/api-coordinated-rollout.sh",
+    "[2025-08-06T22:35:59.780Z] [INFO] Migrated: api-setup-rollout.sh → deployment/api-setup-rollout.sh",
+    "[2025-08-06T22:35:59.781Z] [INFO] Migrated: apply-remote-migration.cjs → development/apply-remote-migration.cjs",
+    "[2025-08-06T22:35:59.781Z] [INFO] Migrated: audit-business-rules.cjs → security/audit-business-rules.cjs",
+    "[2025-08-06T22:35:59.782Z] [INFO] Migrated: auto-setup-production.sh → deployment/auto-setup-production.sh",
+    "[2025-08-06T22:35:59.783Z] [INFO] Migrated: backup-dashboards.sh → monitoring/backup-dashboards.sh",
+    "[2025-08-06T22:35:59.784Z] [INFO] Migrated: backup-staging.sh → maintenance/backup-staging.sh",
+    "[2025-08-06T22:35:59.785Z] [INFO] Migrated: build.sh → build/build.sh",
+    "[2025-08-06T22:35:59.786Z] [INFO] Migrated: cleanup-legacy.sh → testing/cleanup-legacy.sh",
+    "[2025-08-06T22:35:59.787Z] [INFO] Migrated: complete-deployment.sh → deployment/complete-deployment.sh",
+    "[2025-08-06T22:35:59.788Z] [INFO] Migrated: complete-kms-integration.sh → development/complete-kms-integration.sh",
+    "[2025-08-06T22:35:59.789Z] [INFO] Migrated: coordinated-feature-rollout.sh → deployment/coordinated-feature-rollout.sh",
+    "[2025-08-06T22:35:59.791Z] [INFO] Migrated: create-business-dashboards.js → monitoring/create-business-dashboards.js",
+    "[2025-08-06T22:35:59.792Z] [INFO] Migrated: create-launchdarkly-flags-interactive.sh → development/create-launchdarkly-flags-interactive.sh",
+    "[2025-08-06T22:35:59.794Z] [INFO] Migrated: create-test-env.js → testing/create-test-env.js",
+    "[2025-08-06T22:35:59.795Z] [INFO] Migrated: create-type-declarations.js → development/create-type-declarations.js",
+    "[2025-08-06T22:35:59.796Z] [INFO] Migrated: dashboard-best-practices.js → monitoring/dashboard-best-practices.js",
+    "[2025-08-06T22:35:59.798Z] [INFO] Migrated: demo-enhanced-aws-sdk.cjs → development/demo-enhanced-aws-sdk.cjs",
+    "[2025-08-06T22:35:59.800Z] [INFO] Migrated: deploy-duffel-functions.sh → deployment/deploy-duffel-functions.sh",
+    "[2025-08-06T22:35:59.801Z] [INFO] Migrated: deploy-duffel-production.sh → deployment/deploy-duffel-production.sh",
+    "[2025-08-06T22:35:59.803Z] [INFO] Migrated: deploy-enhanced-aws-sdk.cjs → deployment/deploy-enhanced-aws-sdk.cjs",
+    "[2025-08-06T22:35:59.805Z] [INFO] Migrated: deploy-function.sh → deployment/deploy-function.sh",
+    "[2025-08-06T22:35:59.806Z] [INFO] Migrated: deploy-optimized-infrastructure.sh → deployment/deploy-optimized-infrastructure.sh",
+    "[2025-08-06T22:35:59.809Z] [INFO] Migrated: deploy-payment-system.sh → deployment/deploy-payment-system.sh",
+    "[2025-08-06T22:35:59.815Z] [INFO] Migrated: deploy-phase2.js → deployment/deploy-phase2.js",
+    "[2025-08-06T22:35:59.818Z] [INFO] Migrated: deploy-production.js → deployment/deploy-production.js",
+    "[2025-08-06T22:35:59.822Z] [INFO] Migrated: deploy-production.sh → deployment/deploy-production.sh",
+    "[2025-08-06T22:35:59.823Z] [INFO] Migrated: deploy-to-production.sh → deployment/deploy-to-production.sh",
+    "[2025-08-06T22:35:59.825Z] [INFO] Migrated: deploy-zero-downtime.sh → deployment/deploy-zero-downtime.sh",
+    "[2025-08-06T22:35:59.827Z] [INFO] Migrated: deploy.sh → deployment/deploy.sh",
+    "[2025-08-06T22:35:59.829Z] [INFO] Migrated: docker-deploy.cjs → deployment/docker-deploy.cjs",
+    "[2025-08-06T22:35:59.831Z] [INFO] Migrated: enable-personalization-greeting.ts → development/enable-personalization-greeting.ts",
+    "[2025-08-06T22:35:59.833Z] [INFO] Migrated: final-validation.js → development/final-validation.js",
+    "[2025-08-06T22:35:59.836Z] [INFO] Migrated: fix-all-react-imports.mjs → development/fix-all-react-imports.mjs",
+    "[2025-08-06T22:35:59.839Z] [INFO] Migrated: fix-common-issues.mjs → development/fix-common-issues.mjs",
+    "[2025-08-06T22:35:59.852Z] [INFO] Migrated: fix-common-patterns.cjs → development/fix-common-patterns.cjs",
+    "[2025-08-06T22:35:59.860Z] [INFO] Migrated: fix-component-issues.mjs → development/fix-component-issues.mjs",
+    "[2025-08-06T22:35:59.862Z] [INFO] Migrated: fix-duplicate-imports.js → development/fix-duplicate-imports.js",
+    "[2025-08-06T22:35:59.863Z] [INFO] Migrated: fix-import-empty-lines.js → development/fix-import-empty-lines.js",
+    "[2025-08-06T22:35:59.864Z] [INFO] Migrated: fix-import-order.js → development/fix-import-order.js",
+    "[2025-08-06T22:35:59.866Z] [INFO] Migrated: fix-react-19-compatibility.mjs → development/fix-react-19-compatibility.mjs",
+    "[2025-08-06T22:35:59.867Z] [INFO] Migrated: fix-react-19-imports.cjs → development/fix-react-19-imports.cjs",
+    "[2025-08-06T22:35:59.868Z] [INFO] Migrated: fix-react-19-imports.js → development/fix-react-19-imports.js",
+    "[2025-08-06T22:35:59.870Z] [INFO] Migrated: fix-react-hooks-imports.js → development/fix-react-hooks-imports.js",
+    "[2025-08-06T22:35:59.871Z] [INFO] Migrated: fix-react-imports.js → development/fix-react-imports.js",
+    "[2025-08-06T22:35:59.872Z] [INFO] Migrated: fix-react-types.cjs → development/fix-react-types.cjs",
+    "[2025-08-06T22:35:59.873Z] [INFO] Migrated: fix-remaining-imports.sh → development/fix-remaining-imports.sh",
+    "[2025-08-06T22:35:59.874Z] [INFO] Migrated: fix-select-casting.mjs → development/fix-select-casting.mjs",
+    "[2025-08-06T22:35:59.875Z] [INFO] Migrated: fix-typescript-errors.js → development/fix-typescript-errors.js",
+    "[2025-08-06T22:35:59.876Z] [INFO] Migrated: fix-typescript-issues.mjs → development/fix-typescript-issues.mjs",
+    "[2025-08-06T22:35:59.878Z] [INFO] Migrated: fix-unused-variables.js → development/fix-unused-variables.js",
+    "[2025-08-06T22:35:59.879Z] [INFO] Migrated: fix_remaining_ts.sh → development/fix_remaining_ts.sh",
+    "[2025-08-06T22:35:59.880Z] [INFO] Migrated: get-token.sh → development/get-token.sh",
+    "[2025-08-06T22:35:59.881Z] [INFO] Migrated: go-live-validation.js → development/go-live-validation.js",
+    "[2025-08-06T22:35:59.883Z] [INFO] Migrated: gradual-rollout-simple.sh → deployment/gradual-rollout-simple.sh",
+    "[2025-08-06T22:35:59.884Z] [INFO] Migrated: gradual-rollout.sh → deployment/gradual-rollout.sh",
+    "[2025-08-06T22:35:59.885Z] [INFO] Migrated: health-check.sh → monitoring/health-check.sh",
+    "[2025-08-06T22:35:59.886Z] [INFO] Migrated: health-monitor.sh → monitoring/health-monitor.sh",
+    "[2025-08-06T22:35:59.887Z] [INFO] Migrated: lint-fixer.cjs → development/lint-fixer.cjs",
+    "[2025-08-06T22:35:59.889Z] [INFO] Migrated: load-env.ts → development/load-env.ts",
+    "[2025-08-06T22:35:59.890Z] [INFO] Migrated: load-test.js → testing/load-test.js",
+    "[2025-08-06T22:35:59.891Z] [INFO] Migrated: log-ai-activity.ts → testing/log-ai-activity.ts",
+    "[2025-08-06T22:35:59.892Z] [INFO] Migrated: manage-dashboards.js → monitoring/manage-dashboards.js",
+    "[2025-08-06T22:35:59.893Z] [INFO] Migrated: manage-encryption.ts → development/manage-encryption.ts",
+    "[2025-08-06T22:35:59.894Z] [INFO] Migrated: manage-secrets.sh → security/manage-secrets.sh",
+    "[2025-08-06T22:35:59.895Z] [INFO] Migrated: migrate-duffel-rules.sh → database/migrate-duffel-rules.sh",
+    "[2025-08-06T22:35:59.897Z] [INFO] Migrated: migrate-to-modern-oauth.sh → database/migrate-to-modern-oauth.sh",
+    "[2025-08-06T22:35:59.898Z] [INFO] Migrated: monitor-app.sh → monitoring/monitor-app.sh",
+    "[2025-08-06T22:35:59.899Z] [INFO] Migrated: monitor-ping.ts → monitoring/monitor-ping.ts",
+    "[2025-08-06T22:35:59.900Z] [INFO] Migrated: monitoring-status.sh → monitoring/monitoring-status.sh",
+    "[2025-08-06T22:35:59.901Z] [INFO] Migrated: optimize-data-retention.js → maintenance/optimize-data-retention.js",
+    "[2025-08-06T22:35:59.902Z] [INFO] Migrated: optimize-monitoring-setup.js → monitoring/optimize-monitoring-setup.js",
+    "[2025-08-06T22:35:59.903Z] [INFO] Migrated: orchestrate-rollout.ts → deployment/orchestrate-rollout.ts",
+    "[2025-08-06T22:35:59.904Z] [INFO] Migrated: performance-monitor.sh → monitoring/performance-monitor.sh",
+    "[2025-08-06T22:35:59.906Z] [INFO] Migrated: production-dashboard.sh → deployment/production-dashboard.sh",
+    "[2025-08-06T22:35:59.907Z] [INFO] Migrated: production-env-setup.ts → deployment/production-env-setup.ts",
+    "[2025-08-06T22:35:59.909Z] [INFO] Migrated: production-health-check.ts → deployment/production-health-check.ts",
+    "[2025-08-06T22:35:59.910Z] [INFO] Migrated: quick-validate.cjs → development/quick-validate.cjs",
+    "[2025-08-06T22:35:59.910Z] [INFO] Migrated: quick-validate.js → development/quick-validate.js",
+    "[2025-08-06T22:35:59.912Z] [INFO] Migrated: resend-domain-setup.ts → development/resend-domain-setup.ts",
+    "[2025-08-06T22:35:59.913Z] [INFO] Migrated: rollback-production.js → deployment/rollback-production.js",
+    "[2025-08-06T22:35:59.914Z] [INFO] Migrated: run-all-tests.cjs → testing/run-all-tests.cjs",
+    "[2025-08-06T22:35:59.916Z] [INFO] Migrated: run-oauth-tests-with-mock.sh → testing/run-oauth-tests-with-mock.sh",
+    "[2025-08-06T22:35:59.917Z] [INFO] Migrated: run-rollout.sh → deployment/run-rollout.sh",
+    "[2025-08-06T22:35:59.918Z] [INFO] Migrated: security-performance-validation.sh → testing/security-performance-validation.sh",
+    "[2025-08-06T22:35:59.920Z] [INFO] Migrated: setup-credentials.sh → security/setup-credentials.sh",
+    "[2025-08-06T22:35:59.921Z] [INFO] Migrated: setup-feature-flags.ts → development/setup-feature-flags.ts",
+    "[2025-08-06T22:35:59.923Z] [INFO] Migrated: setup-google-oauth-client.sh → development/setup-google-oauth-client.sh",
+    "[2025-08-06T22:35:59.924Z] [INFO] Migrated: setup-integration-tests.js → testing/setup-integration-tests.js",
+    "[2025-08-06T22:35:59.925Z] [INFO] Migrated: setup-launchdarkly-flags.sh → development/setup-launchdarkly-flags.sh",
+    "[2025-08-06T22:35:59.927Z] [INFO] Migrated: setup-monitoring.cjs → monitoring/setup-monitoring.cjs",
+    "[2025-08-06T22:35:59.928Z] [INFO] Migrated: setup-monitoring.js → monitoring/setup-monitoring.js",
+    "[2025-08-06T22:35:59.929Z] [INFO] Migrated: setup-monitoring.ts → monitoring/setup-monitoring.ts",
+    "[2025-08-06T22:35:59.931Z] [INFO] Migrated: setup-multi-environment.js → development/setup-multi-environment.js",
+    "[2025-08-06T22:35:59.932Z] [INFO] Migrated: setup-production-complete.sh → deployment/setup-production-complete.sh",
+    "[2025-08-06T22:35:59.934Z] [INFO] Migrated: setup-rollout-database.sh → deployment/setup-rollout-database.sh",
+    "[2025-08-06T22:35:59.935Z] [INFO] Migrated: setup-security.js → security/setup-security.js",
+    "[2025-08-06T22:35:59.936Z] [INFO] Migrated: setup-upstash-redis.sh → development/setup-upstash-redis.sh",
+    "[2025-08-06T22:35:59.937Z] [INFO] Migrated: smoke-test.ts → testing/smoke-test.ts",
+    "[2025-08-06T22:35:59.938Z] [INFO] Migrated: start-monitoring.sh → monitoring/start-monitoring.sh",
+    "[2025-08-06T22:35:59.940Z] [INFO] Migrated: stop-monitoring.sh → monitoring/stop-monitoring.sh",
+    "[2025-08-06T22:35:59.941Z] [INFO] Migrated: test-alert-rules.js → testing/test-alert-rules.js",
+    "[2025-08-06T22:35:59.942Z] [INFO] Migrated: test-ci.sh → testing/test-ci.sh",
+    "[2025-08-06T22:35:59.943Z] [INFO] Migrated: test-components.sh → testing/test-components.sh",
+    "[2025-08-06T22:35:59.944Z] [INFO] Migrated: test-deployment-ready.sh → deployment/test-deployment-ready.sh",
+    "[2025-08-06T22:35:59.946Z] [INFO] Migrated: test-docker-setup.sh → testing/test-docker-setup.sh",
+    "[2025-08-06T22:35:59.947Z] [INFO] Migrated: test-email-tracking-detailed.ts → testing/test-email-tracking-detailed.ts",
+    "[2025-08-06T22:35:59.948Z] [INFO] Migrated: test-email-tracking.ts → testing/test-email-tracking.ts",
+    "[2025-08-06T22:35:59.949Z] [INFO] Migrated: test-friend-greetings.ts → testing/test-friend-greetings.ts",
+    "[2025-08-06T22:35:59.951Z] [INFO] Migrated: test-launchdarkly-connectivity.ts → testing/test-launchdarkly-connectivity.ts",
+    "[2025-08-06T22:35:59.952Z] [INFO] Migrated: test-launchdarkly-contexts.ts → testing/test-launchdarkly-contexts.ts",
+    "[2025-08-06T22:35:59.953Z] [INFO] Migrated: test-launchdarkly-server-integration.ts → testing/test-launchdarkly-server-integration.ts",
+    "[2025-08-06T22:35:59.954Z] [INFO] Migrated: test-local-function.sh → testing/test-local-function.sh",
+    "[2025-08-06T22:35:59.955Z] [INFO] Migrated: test-migration.sh → testing/test-migration.sh",
+    "[2025-08-06T22:35:59.956Z] [INFO] Migrated: test-personalization-events.sh → testing/test-personalization-events.sh",
+    "[2025-08-06T22:35:59.958Z] [INFO] Migrated: test-pipeline-production.js → deployment/test-pipeline-production.js",
+    "[2025-08-06T22:35:59.960Z] [INFO] Migrated: test-production-readiness.ts → deployment/test-production-readiness.ts",
+    "[2025-08-06T22:35:59.961Z] [INFO] Migrated: test-profile-completeness.sh → testing/test-profile-completeness.sh",
+    "[2025-08-06T22:35:59.962Z] [INFO] Migrated: test-rollout-dev.sh → deployment/test-rollout-dev.sh",
+    "[2025-08-06T22:35:59.963Z] [INFO] Migrated: test-staging-function.sh → testing/test-staging-function.sh",
+    "[2025-08-06T22:35:59.965Z] [INFO] Migrated: test-summary.js → testing/test-summary.js",
+    "[2025-08-06T22:35:59.966Z] [INFO] Migrated: test-twilio-sms.ts → testing/test-twilio-sms.ts",
+    "[2025-08-06T22:35:59.968Z] [INFO] Migrated: validate-coordinated-rollout.sh → deployment/validate-coordinated-rollout.sh",
+    "[2025-08-06T22:35:59.969Z] [INFO] Migrated: validate-deployment.ts → deployment/validate-deployment.ts",
+    "[2025-08-06T22:35:59.970Z] [INFO] Migrated: validate-duffel-compliance.ts → development/validate-duffel-compliance.ts",
+    "[2025-08-06T22:35:59.971Z] [INFO] Migrated: validate-environment.ts → development/validate-environment.ts",
+    "[2025-08-06T22:35:59.973Z] [INFO] Migrated: validate-production-ready.sh → deployment/validate-production-ready.sh",
+    "[2025-08-06T22:35:59.974Z] [INFO] Migrated: verify-launchdarkly-api.ts → development/verify-launchdarkly-api.ts",
+    "[2025-08-06T22:35:59.975Z] [INFO] Migrated: verify-launchdarkly-integration.cjs → development/verify-launchdarkly-integration.cjs",
+    "[2025-08-06T22:35:59.976Z] [INFO] Migrated: verify-launchdarkly-integration.js → development/verify-launchdarkly-integration.js",
+    "[2025-08-06T22:35:59.978Z] [INFO] Migrated: verify-launchdarkly.ts → development/verify-launchdarkly.ts",
+    "[2025-08-06T22:35:59.979Z] [INFO] Migrated: verify-oauth-session.ts → development/verify-oauth-session.ts",
+    "[2025-08-06T22:35:59.980Z] [INFO] Migrated: wallet-ui-rollout.sh → deployment/wallet-ui-rollout.sh"
+  ]
+}

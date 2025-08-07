@@ -1,0 +1,503 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DynamoDB optimization template with monitoring and flexible billing modes'
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: github-link-buddy
+    Description: Application name for consistent resource naming
+  
+  Environment:
+    Type: String
+    AllowedValues: [development, staging, production]
+    Description: Environment name
+
+  # DynamoDB Capacity Mode Parameters
+  BillingMode:
+    Type: String
+    AllowedValues: [PAY_PER_REQUEST, PROVISIONED]
+    Default: PAY_PER_REQUEST
+    Description: DynamoDB billing mode - switch to PROVISIONED after analyzing traffic patterns
+
+  # Provisioned Capacity Parameters (used only when BillingMode is PROVISIONED)
+  BaseReadCapacity:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    MaxValue: 1000
+    Description: Base read capacity units (only used in PROVISIONED mode)
+
+  BaseWriteCapacity:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    MaxValue: 1000
+    Description: Base write capacity units (only used in PROVISIONED mode)
+
+  MaxReadCapacity:
+    Type: Number
+    Default: 100
+    MinValue: 1
+    MaxValue: 10000
+    Description: Maximum read capacity for auto-scaling
+
+  MaxWriteCapacity:
+    Type: Number
+    Default: 100
+    MinValue: 1
+    MaxValue: 10000
+    Description: Maximum write capacity for auto-scaling
+
+  # GSI Capacity Parameters
+  GSIBaseReadCapacity:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    MaxValue: 1000
+    Description: GSI base read capacity units (only used in PROVISIONED mode)
+
+  GSIBaseWriteCapacity:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    MaxValue: 1000
+    Description: GSI base write capacity units (only used in PROVISIONED mode)
+
+  # Monitoring Parameters
+  EnableDetailedMonitoring:
+    Type: String
+    AllowedValues: [true, false]
+    Default: true
+    Description: Enable detailed CloudWatch monitoring
+
+  NotificationEmail:
+    Type: String
+    Description: Email for DynamoDB alerts and notifications
+
+  SecondaryRegion:
+    Type: String
+    Default: us-west-2
+    Description: Secondary region for Global Table
+
+Conditions:
+  IsProvisioned: !Equals [!Ref BillingMode, 'PROVISIONED']
+  IsProduction: !Equals [!Ref Environment, 'production']
+  EnableMonitoring: !Equals [!Ref EnableDetailedMonitoring, 'true']
+
+Resources:
+  # SNS Topic for DynamoDB Alerts
+  DynamoDBAlertsTopic:
+    Type: AWS::SNS::Topic
+    Condition: EnableMonitoring
+    Properties:
+      TopicName: !Sub '${ApplicationName}-dynamodb-alerts-${Environment}'
+      DisplayName: 'DynamoDB Performance and Cost Alerts'
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref NotificationEmail
+
+  # DynamoDB Global Table - Enhanced with conditional billing mode
+  LinksTable:
+    Type: AWS::DynamoDB::GlobalTable
+    Properties:
+      TableName: !Sub '${ApplicationName}-links-${Environment}'
+      BillingMode: !Ref BillingMode
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          # Conditional provisioned throughput for GSI
+          ProvisionedThroughput: !If
+            - IsProvisioned
+            - ReadCapacityUnits: !Ref GSIBaseReadCapacity
+              WriteCapacityUnits: !Ref GSIBaseWriteCapacity
+            - !Ref AWS::NoValue
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      Replicas:
+        - Region: !Ref AWS::Region
+          PointInTimeRecoverySpecification:
+            PointInTimeRecoveryEnabled: true
+          TableClass: STANDARD
+          # Conditional provisioned throughput for main table
+          ProvisionedThroughputSettings: !If
+            - IsProvisioned
+            - ReadCapacityUnits: !Ref BaseReadCapacity
+              WriteCapacityUnits: !Ref BaseWriteCapacity
+            - !Ref AWS::NoValue
+          GlobalSecondaryIndexes:
+            - IndexName: UserIndex
+              ProvisionedThroughputSettings: !If
+                - IsProvisioned
+                - ReadCapacityUnits: !Ref GSIBaseReadCapacity
+                  WriteCapacityUnits: !Ref GSIBaseWriteCapacity
+                - !Ref AWS::NoValue
+          Tags:
+            - Key: Environment
+              Value: !Ref Environment
+            - Key: Application
+              Value: !Ref ApplicationName
+            - Key: BillingMode
+              Value: !Ref BillingMode
+            - Key: CostOptimization
+              Value: 'MonitorForOptimization'
+        - Region: !Ref SecondaryRegion
+          PointInTimeRecoverySpecification:
+            PointInTimeRecoveryEnabled: true
+          TableClass: STANDARD
+          ProvisionedThroughputSettings: !If
+            - IsProvisioned
+            - ReadCapacityUnits: !Ref BaseReadCapacity
+              WriteCapacityUnits: !Ref BaseWriteCapacity
+            - !Ref AWS::NoValue
+          GlobalSecondaryIndexes:
+            - IndexName: UserIndex
+              ProvisionedThroughputSettings: !If
+                - IsProvisioned
+                - ReadCapacityUnits: !Ref GSIBaseReadCapacity
+                  WriteCapacityUnits: !Ref GSIBaseWriteCapacity
+                - !Ref AWS::NoValue
+          Tags:
+            - Key: Environment
+              Value: !Ref Environment
+            - Key: Application
+              Value: !Ref ApplicationName
+            - Key: BillingMode
+              Value: !Ref BillingMode
+
+  # IAM Role for DynamoDB Auto-Scaling (only created if Provisioned mode)
+  DynamoDBAutoScalingRole:
+    Type: AWS::IAM::Role
+    Condition: IsProvisioned
+    Properties:
+      RoleName: !Sub '${ApplicationName}-dynamodb-autoscaling-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: application-autoscaling.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/DynamoDBAutoscaleRole
+
+  # Auto-Scaling Targets for Provisioned Mode
+  ReadCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsProvisioned
+    Properties:
+      MaxCapacity: !Ref MaxReadCapacity
+      MinCapacity: !Ref BaseReadCapacity
+      ResourceId: !Sub 'table/${LinksTable}'
+      RoleARN: !GetAtt DynamoDBAutoScalingRole.Arn
+      ScalableDimension: dynamodb:table:ReadCapacityUnits
+      ServiceNamespace: dynamodb
+
+  WriteCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsProvisioned
+    Properties:
+      MaxCapacity: !Ref MaxWriteCapacity
+      MinCapacity: !Ref BaseWriteCapacity
+      ResourceId: !Sub 'table/${LinksTable}'
+      RoleARN: !GetAtt DynamoDBAutoScalingRole.Arn
+      ScalableDimension: dynamodb:table:WriteCapacityUnits
+      ServiceNamespace: dynamodb
+
+  # Auto-Scaling Policies
+  ReadCapacityScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsProvisioned
+    Properties:
+      PolicyName: !Sub '${ApplicationName}-read-scaling-policy-${Environment}'
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ReadCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70.0
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBReadCapacityUtilization
+
+  WriteCapacityScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsProvisioned
+    Properties:
+      PolicyName: !Sub '${ApplicationName}-write-scaling-policy-${Environment}'
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref WriteCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70.0
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBWriteCapacityUtilization
+
+  # GSI Auto-Scaling Targets
+  GSIReadCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsProvisioned
+    Properties:
+      MaxCapacity: !Ref MaxReadCapacity
+      MinCapacity: !Ref GSIBaseReadCapacity
+      ResourceId: !Sub 'table/${LinksTable}/index/UserIndex'
+      RoleARN: !GetAtt DynamoDBAutoScalingRole.Arn
+      ScalableDimension: dynamodb:index:ReadCapacityUnits
+      ServiceNamespace: dynamodb
+
+  GSIWriteCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsProvisioned
+    Properties:
+      MaxCapacity: !Ref MaxWriteCapacity
+      MinCapacity: !Ref GSIBaseWriteCapacity
+      ResourceId: !Sub 'table/${LinksTable}/index/UserIndex'
+      RoleARN: !GetAtt DynamoDBAutoScalingRole.Arn
+      ScalableDimension: dynamodb:index:WriteCapacityUnits
+      ServiceNamespace: dynamodb
+
+  # GSI Auto-Scaling Policies
+  GSIReadCapacityScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsProvisioned
+    Properties:
+      PolicyName: !Sub '${ApplicationName}-gsi-read-scaling-policy-${Environment}'
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref GSIReadCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70.0
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBReadCapacityUtilization
+
+  GSIWriteCapacityScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsProvisioned
+    Properties:
+      PolicyName: !Sub '${ApplicationName}-gsi-write-scaling-policy-${Environment}'
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref GSIWriteCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70.0
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBWriteCapacityUtilization
+
+  # CloudWatch Alarms for Monitoring
+  HighReadCapacityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: EnableMonitoring
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-high-read-capacity-${Environment}'
+      AlarmDescription: 'High read capacity utilization detected'
+      MetricName: ConsumedReadCapacityUnits
+      Namespace: AWS/DynamoDB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: !If [IsProvisioned, !Ref BaseReadCapacity, 1000]
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TableName
+          Value: !Ref LinksTable
+      AlarmActions:
+        - !Ref DynamoDBAlertsTopic
+      TreatMissingData: notBreaching
+
+  HighWriteCapacityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: EnableMonitoring
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-high-write-capacity-${Environment}'
+      AlarmDescription: 'High write capacity utilization detected'
+      MetricName: ConsumedWriteCapacityUnits
+      Namespace: AWS/DynamoDB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: !If [IsProvisioned, !Ref BaseWriteCapacity, 500]
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TableName
+          Value: !Ref LinksTable
+      AlarmActions:
+        - !Ref DynamoDBAlertsTopic
+      TreatMissingData: notBreaching
+
+  ThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: EnableMonitoring
+    Properties:
+      AlarmName: !Sub '${ApplicationName}-throttle-detected-${Environment}'
+      AlarmDescription: 'DynamoDB throttling detected - consider capacity adjustment'
+      MetricName: ThrottledRequests
+      Namespace: AWS/DynamoDB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TableName
+          Value: !Ref LinksTable
+      AlarmActions:
+        - !Ref DynamoDBAlertsTopic
+      TreatMissingData: notBreaching
+
+  # Cost monitoring note: Enable Cost Anomaly Detection manually in AWS Cost Explorer
+  # if you want additional cost monitoring beyond CloudWatch alarms
+
+  # CloudWatch Dashboard for DynamoDB Monitoring
+  DynamoDBDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Condition: EnableMonitoring
+    Properties:
+      DashboardName: !Sub '${ApplicationName}-dynamodb-performance-${Environment}'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "${LinksTable}"],
+                  [".", "ConsumedWriteCapacityUnits", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Consumed Capacity Units",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/DynamoDB", "SuccessfulRequestLatency", "TableName", "${LinksTable}", "Operation", "GetItem"],
+                  [".", ".", ".", ".", ".", "PutItem"],
+                  [".", ".", ".", ".", ".", "UpdateItem"],
+                  [".", ".", ".", ".", ".", "DeleteItem"]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Request Latency",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/DynamoDB", "ThrottledRequests", "TableName", "${LinksTable}"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Throttled Requests",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "${LinksTable}", "GlobalSecondaryIndexName", "UserIndex"],
+                  [".", "ConsumedWriteCapacityUnits", ".", ".", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "GSI Consumed Capacity Units",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            }
+          ]
+        }
+
+Outputs:
+  TableName:
+    Description: 'Name of the DynamoDB table'
+    Value: !Ref LinksTable
+    Export:
+      Name: !Sub '${ApplicationName}-table-name-${Environment}'
+
+  TableArn:
+    Description: 'ARN of the DynamoDB table'
+    Value: !GetAtt LinksTable.Arn
+    Export:
+      Name: !Sub '${ApplicationName}-table-arn-${Environment}'
+
+  StreamArn:
+    Description: 'ARN of the DynamoDB stream'
+    Value: !GetAtt LinksTable.StreamArn
+    Export:
+      Name: !Sub '${ApplicationName}-stream-arn-${Environment}'
+
+  BillingMode:
+    Description: 'Current billing mode of the table'
+    Value: !Ref BillingMode
+
+  DashboardURL:
+    Condition: EnableMonitoring
+    Description: 'URL to the CloudWatch Dashboard'
+    Value: !Sub 'https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${DynamoDBDashboard}'
+
+  CostOptimizationRecommendation:
+    Description: 'Next steps for cost optimization'
+    Value: !Sub |
+      1. Monitor the CloudWatch Dashboard for 2-4 weeks
+      2. Analyze traffic patterns and utilization
+      3. If utilization is consistent (>60%) and predictable, consider switching to PROVISIONED mode
+      4. Use the cost analysis in aws-templates/dynamodb-optimization-analysis.md
+      5. Update the BillingMode parameter and redeploy when ready
