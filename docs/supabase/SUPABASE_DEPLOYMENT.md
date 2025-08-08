@@ -1,0 +1,1750 @@
+# Supabase Deployment Documentation
+
+This document contains comprehensive information about deploying Supabase applications to production.
+
+## Overview
+Documentation for deploying Supabase applications with best practices for production environments.
+
+## Environments
+
+### Managing Environments
+
+### Environment Configuration
+
+### Environment Variables
+
+## Database Migrations
+
+### Migration Best Practices
+
+### Running Migrations in Production
+
+### Rollback Strategies
+
+### Schema Management
+
+## Branching
+
+### Database Branching
+
+### Preview Branches
+
+### Development Workflows
+
+## CI/CD
+
+### Automated Testing
+
+### Test Suites
+
+### Integration Testing
+
+### Deployment Pipelines
+
+### Generate Types from Your Database
+
+### Type Safety in Production
+
+## Production Readiness
+
+### Shared Responsibility Model
+
+### Maturity Model
+
+### Production Checklist
+
+### Performance Optimization
+
+### Security Hardening
+
+### Monitoring Setup
+
+## Terraform
+
+### Terraform Provider
+
+### Terraform Tutorial
+
+### Terraform Reference
+
+### Infrastructure as Code
+
+## Backup and Recovery
+
+### Back Up Your Database
+
+### Point-in-Time Recovery
+
+### Disaster Recovery Planning
+
+### Data Retention Policies
+
+---
+
+*Add Supabase Deployment documentation content here*
+Deployment
+
+Deploying your app makes it live and accessible to users. Usually, you will deploy an app to at least two environments: a production environment for users and (one or multiple) staging or preview environments for developers.
+Supabase provides several options for environment management and deployment.
+Environment management#
+You can maintain separate development, staging, and production environments for Supabase:
+Development: Develop with a local Supabase stack using the Supabase CLI.
+Staging: Use branching to create staging or preview environments. You can use persistent branches for a long-lived staging setup, or ephemeral branches for short-lived previews (which are often tied to a pull request).
+Production: If you have branching enabled, you can use the Supabase GitHub integration to automatically push your migration files when you merge a pull request. Alternatively, you can set up your own continuous deployment pipeline using the Supabase CLI.
+Self-hosting
+See the self-hosting guides for instructions on hosting your own Supabase stack.
+Deployment#
+You can automate deployments using:
+The Supabase GitHub integration (with branching enabled)
+The Supabase CLI in your own continuous deployment pipeline
+The Supabase Terraform provider
+Edit this page on GitHub
+Is this helpful?
+No
+Yes
+On this page
+Environment managementDeployment
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+Managing Environments
+Manage multiple environments using Database Migrations and GitHub Actions.
+
+This guide shows you how to set up your local Supabase development environment that integrates with GitHub Actions to automatically test and release schema changes to staging and production Supabase projects.
+
+Set up a local environment#
+The first step is to set up your local repository with the Supabase CLI:
+supabase init
+You should see a new supabase directory. Then you need to link your local repository with your Supabase project:
+supabase login
+supabase link --project-ref $PROJECT_ID
+You can get your $PROJECT_ID from your project's dashboard URL:
+https://supabase.com/dashboard/project/<project-id>
+If you're using an existing Supabase project, you might have made schema changes through the Dashboard.
+Run the following command to pull these changes before making local schema changes from the CLI:
+supabase db pull
+This command creates a new migration in supabase/migrations/<timestamp>_remote_schema.sql which reflects the schema changes you have made previously.
+Now commit your local changes to Git and run the local development setup:
+git add .
+git commit -m "init supabase"
+supabase start
+You are now ready to develop schema changes locally and create your first migration.
+Create a new migration#
+There are two ways to make schema changes:
+Manual migration: Write DDL statements manually into a migration file
+Auto schema diff: Make changes through Studio UI and auto generate a schema diff
+Manual migration#
+Create a new migration script by running:
+supabase migration new new_employee
+You should see a new file created: supabase/migrations/<timestamp>_new_employee.sql. You can then write SQL statements in this script using a text editor:
+create table public.employees (
+ id integer primary key generated always as identity,
+ name text
+);
+Apply the new migration to your local database:
+supabase db reset
+This command recreates your local database from scratch and applies all migration scripts under supabase/migrations directory. Now your local database is up to date.
+The new migration command also supports stdin as input. This allows you to pipe in an existing script from another file or stdout:
+supabase migration new new_employee < create_employees_table.sql
+Auto schema diff#
+Unlike manual migrations, auto schema diff creates a new migration script from changes already applied to your local database.
+Create an employees table under the public schema using Studio UI, accessible at localhost:54323 by default.
+Next, generate a schema diff by running the following command:
+supabase db diff -f new_employee
+You should see that a new file supabase/migrations/<timestamp>_new_employee.sql is created. Open the file and verify that the generated DDL statements are the same as below.
+-- This script was generated by the Schema Diff utility in pgAdmin 4
+-- For the circular dependencies, the order in which Schema Diff writes the objects is not very sophisticated
+-- and may require manual changes to the script to ensure changes are applied in the correct order.
+-- Please report an issue for any failure with the reproduction steps.
+CREATE TABLE IF NOT EXISTS public.employees
+(
+   id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
+   name text COLLATE pg_catalog."default",
+   CONSTRAINT employees_pkey PRIMARY KEY (id)
+)
+TABLESPACE pg_default;
+ALTER TABLE IF EXISTS public.employees
+   OWNER to postgres;
+GRANT ALL ON TABLE public.employees TO anon;
+GRANT ALL ON TABLE public.employees TO authenticated;
+GRANT ALL ON TABLE public.employees TO postgres;
+GRANT ALL ON TABLE public.employees TO service_role;
+You may notice that the auto-generated migration script is more verbose than the manually written one.
+This is because the default schema diff tool does not account for default privileges added by the initial schema.
+Commit the new migration script to git and you are ready to deploy.
+Alternatively, you may pass in the --use-migra experimental flag to generate a more concise migration using migra.
+Without the -f file flag, the output is written to stdout by default.
+supabase db diff --use-migra
+Deploy a migration#
+In a production environment, we recommend using a CI/CD pipeline to deploy new migrations with GitHub Actions rather than deploying from your local machine.
+
+This example uses two Supabase projects, one for production and one for staging.
+Prepare your environments by:
+Creating separate Supabase projects for staging and production
+Pushing your git repository to GitHub and enabling GitHub Actions
+You need a new project for staging. A project which has already been modified to reflect the production project's schema can't be used because the CLI would reapply these changes.
+Configure GitHub Actions#
+The Supabase CLI requires a few environment variables to run in non-interactive mode.
+SUPABASE_ACCESS_TOKEN is your personal access token
+SUPABASE_DB_PASSWORD is your project specific database password
+SUPABASE_PROJECT_ID is your project specific reference string
+We recommend adding these as encrypted secrets to your GitHub Actions runners.
+Create the following files inside the .github/workflows directory:
+ci.yaml
+staging.yaml
+production.yaml
+name: CI
+on:
+ pull_request:
+ workflow_dispatch:
+jobs:
+ test:
+   runs-on: ubuntu-latest
+   steps:
+     - uses: actions/checkout@v4
+     - uses: supabase/setup-cli@v1
+       with:
+         version: latest
+     - name: Start Supabase local development setup
+       run: supabase db start
+     - name: Verify generated types are checked in
+       run: |
+         supabase gen types typescript --local > types.gen.ts
+         if ! git diff --ignore-space-at-eol --exit-code --quiet types.gen.ts; then
+           echo "Detected uncommitted changes after build. See status below:"
+           git diff
+           exit 1
+         fi
+The full example code is available in the demo repository.
+Commit these files to git and push to your main branch on GitHub. Update these environment variables to match your Supabase projects:
+SUPABASE_ACCESS_TOKEN
+PRODUCTION_PROJECT_ID
+PRODUCTION_DB_PASSWORD
+STAGING_PROJECT_ID
+STAGING_DB_PASSWORD
+When configured correctly, your repository will have CI and Release workflows that trigger on new commits pushed to main and develop branches.
+
+Open a PR with new migration#
+Follow the migration steps to create a supabase/migrations/<timestamp>_new_employee.sql file.
+Checkout a new branch feat/employee from develop , commit the migration file, and push to GitHub.
+git checkout -b feat/employee
+git add supabase/migrations/<timestamp>_new_employee.sql
+git commit -m "Add employee table"
+git push --set-upstream origin feat/employee
+Open a PR from feat/employee to the develop branch to see that the CI workflow has been triggered.
+Once the test error is resolved, merge this PR and watch the deployment in action.
+Release to production#
+After verifying your staging project has successfully migrated, create another PR from develop to main and merge it to deploy the migration to the production project.
+The release job applies all new migration scripts merged in supabase/migrations directory to a linked Supabase project. You can control which project the job links to via PROJECT_ID environment variable.
+Troubleshooting#
+Sync production project to staging#
+When setting up a new staging project, you might need to sync the initial schema with migrations previously applied to the production project.
+One way is to leverage the Release workflow:
+Create a new branch develop and choose main as the branch source
+Push the develop branch to GitHub
+The GitHub Actions runner will deploy your existing migrations to the staging project.
+Alternatively, you can also apply migrations through your local CLI to a linked remote database.
+supabase db push
+Once pushed, check that the migration version is up to date for both local and remote databases.
+supabase migration list
+Permission denied on db pull#
+If you have been using Supabase hosted projects for a long time, you might encounter the following permission error when executing db pull.
+Error: Error running pg_dump on remote database: pg_dump: error: query failed: ERROR:  permission denied for table _type
+pg_dump: error: query was: LOCK TABLE "graphql"."_type" IN ACCESS SHARE MODE
+To resolve this error, you need to grant postgres role permissions to graphql schema. You can do that by running the following query from Supabase dashboard's SQL Editor.
+grant all on all tables in schema graphql to postgres, anon, authenticated, service_role;
+grant all on all functions in schema graphql to postgres, anon, authenticated, service_role;
+grant all on all sequences in schema graphql to postgres, anon, authenticated, service_role;
+Permission denied on db push#
+If you created a table through Supabase dashboard, and your new migration script contains ALTER TABLE statements, you might run into permission error when applying them on staging or production databases.
+ERROR: must be owner of table employees (SQLSTATE 42501); while executing migration <timestamp>
+This is because tables created through Supabase dashboard are owned by supabase_admin role while the migration scripts executed through CLI are under postgres role.
+One way to solve this is to reassign the owner of those tables to postgres role. For example, if your table is named users in the public schema, you can run the following command to reassign owner.
+ALTER TABLE users OWNER TO postgres;
+Apart from tables, you also need to reassign owner of other entities using their respective commands, including types, functions, and schemas.
+Rebasing new migrations#
+Sometimes your teammate may merge a new migration file to git main branch, and now you need to rebase your local schema changes on top.
+We can handle this scenario gracefully by renaming your old migration file with a new timestamp.
+git pull
+supabase migration new dev_A
+# Assume the new file is: supabase/migrations/<t+2>_dev_A.sql
+mv <time>_dev_A.sql <t+2>_dev_A.sql
+supabase db reset
+In case reset fails, you can manually resolve conflicts by editing <t+2>_dev_A.sql file.
+Once validated locally, commit your changes to Git and push to GitHub.
+Edit this page on GitHub
+Watch video guide
+
+Is this helpful?
+No
+Yes
+On this page
+Set up a local environmentCreate a new migrationManual migrationAuto schema diffDeploy a migrationConfigure GitHub ActionsOpen a PR with new migrationRelease to productionTroubleshootingSync production project to stagingPermission denied on db pullPermission denied on db pushRebasing new migrations
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+Database Migrations
+How to manage schema migrations for your Supabase project.
+
+Database migrations are SQL statements that create, update, or delete your existing database schemas. They are a common way of tracking changes to your database over time.
+Schema migrations#
+For this guide, we'll create a table called employees and see how we can make changes to it.
+You will need to install the Supabase CLI and start the local development stack.
+1
+Create your first migration file
+To get started, generate a new migration to store the SQL needed to create our employees table.
+Terminal
+supabase migration new create_employees_table
+2
+Add the SQL to your migration file
+This creates a new migration file in supabase/migrations directory.
+To that file, add the SQL to create this employees table.
+supabase/migrations/<timestamp>_create_employees_table.sql
+create table if not exists employees (
+ id bigint primary key generated always as identity,
+ name text not null,
+ email text,
+ created_at timestamptz default now()
+);
+3
+Apply your first migration
+Run this migration to create the employees table.
+Now you can visit your new employees table in the local Dashboard.
+Terminal
+supabase migration up
+4
+Modify your employees table
+Next, modify your employees table by adding a column for department.
+Terminal
+supabase migration new add_department_column
+5
+Add a new column to your table
+To that new migration file, add the SQL to create a new department column.
+supabase/migrations/<timestamp>_add_department_column.sql
+alter table if exists public.employees
+add department text default 'Hooli';
+6
+Apply your second migration
+Run this migration to update your existing employees table.
+Terminal
+supabase migration up
+Finally, you should see the department column added to your employees table in the local Dashboard.
+View the complete code for this example on GitHub.
+Seeding data#
+Now that you are managing your database with migrations scripts, it would be great have some seed data to use every time you reset the database.
+1
+Populate your table
+Create a seed script in supabase/seed.sql.
+To that file, add the SQL to insert data into your employees table.
+supabase/seed.sql
+insert into public.employees
+ (name)
+values
+ ('Erlich Bachman'),
+ ('Richard Hendricks'),
+ ('Monica Hall');
+2
+Reset your database
+Reset your database to reapply migrations and populate with seed data.
+Terminal
+supabase db reset
+You should now see the employees table, along with your seed data in the Dashboard! All of your database changes are captured in code, and you can reset to a known state at any time, complete with seed data.
+Diffing changes#
+This workflow is great if you know SQL and are comfortable creating tables and columns. If not, you can still use the Dashboard to create tables and columns, and then use the CLI to diff your changes and create migrations.
+1
+Create your table from the Dashboard
+Create a new table called cities, with columns id, name and population.
+Then generate a schema diff.
+Terminal
+supabase db diff -f create_cities_table
+2
+Add schema diff as a migration
+A new migration file is created for you.
+Alternately, you can copy the table definitions directly from the Table Editor.
+supabase/migrations/<timestamp>_create_cities_table.sql
+create table "public"."cities" (
+ "id" bigint primary key generated always as identity,
+ "name" text,
+ "population" bigint
+);
+3
+Test your migration
+Test your new migration file by resetting your local database.
+Terminal
+supabase db reset
+The last step is deploying these changes to a live Supabase project.
+Deploy your project#
+You've been developing your project locally, making changes to your tables via migrations. It's time to deploy your project to the Supabase Platform and start scaling up to millions of users!
+Head over to Supabase and create a new project to deploy to.
+1
+Log in to the Supabase CLI
+Login to the Supabase CLI using an auto-generated Personal Access Token.
+Terminal
+supabase login
+2
+Link your project
+Link to your remote project by selecting from the on-screen prompt.
+Terminal
+supabase link
+3
+Deploy database migrations
+Push your migrations to the remote database.
+Terminal
+supabase db push
+4
+Deploy database seed data (optional)
+Push your migrations and seed the remote database.
+Terminal
+supabase db push --include-seed
+Visiting your live project on Supabase, you'll see a new employees table, complete with the department column you added in the second migration above.
+Edit this page on GitHub
+Watch video guide
+
+Is this helpful?
+No
+Yes
+On this page
+Schema migrationsSeeding dataDiffing changesDeploy your project
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+Branching
+Use Supabase Branches to test and preview changes
+
+Use branching to safely experiment with changes to your Supabase project.
+Supabase branches work like Git branches. They let you create and test changes like new configurations, database schemas, or features in a separate, temporary instance without affecting your production setup.
+When you're ready to ship your changes, merge your branch to update your production instance with the new changes.
+If you understand Git, you already understand Supabase Branching.
+How branching works#
+Separate Environments: Each branch is a separate environment with its own Supabase instance and API credentials.
+Git Integration: Branching works with Git, currently supporting GitHub repositories.
+Preview Branches: You can create multiple Preview Branches for testing.
+Migrations and Seeding: Branches run migrations from your repository and can seed data using a seed.sql file.
+Prerequisites#
+Supabase Project: You need an existing Supabase project.
+GitHub Repository: Your project must be connected to a GitHub repository containing your Supabase directory.
+You can run multiple Preview Branches for every Supabase project. Branches contain all the Supabase features with their own API credentials.
+Preview Environments auto-pause after 5 minutes of inactivity. Upon receiving a new request to your database or REST API, the paused branch will automatically resume to serve the request. The implications of this architecture means
+pg_cron jobs will not execute in an auto-paused database.
+Larger variance in request latency due to database cold starts.
+If you need higher performance guarantees on your Preview Environment, you can switch individual branches to persistent so they are not auto-paused.
+
+Each Branch is a separate environment.
+Branching workflow#
+Preview Branch instances contain no data by default. You must include a seed file to seed your preview instance with sample data when the Preview Branch is created. Future versions of Branching may allow for automated data seeding and cloning after we are confident that we can provide safe data masking.
+Git providers#
+To manage code changes, your Supabase project must be connected to a Git repository. At this stage, we only support GitHub. If you are interested in other Git providers, join the discussion for GitLab, Bitbucket, and non-Git based Branching.
+Branching with GitHub#
+Supabase Branching uses the Supabase GitHub integration to read files from your GitHub repository. With this integration, Supabase watches all commits, branches, and pull requests of your GitHub repository.
+You can create a corresponding Preview Branch for any Git branch in your repository. Each time a new Preview Branch is created and configured based on the config.toml configuration on this branch, the migrations from the corresponding Git branch are run on the Preview Branch.
+The Preview Branch is also seeded with sample data based on ./supabase/seed.sql by default, if that file exists.
+Supabase Branching follows the Trunk Based Development workflow, with one main Production branch and multiple development branches:
+
+Each GitHub branch can have its own Supabase preview branch.
+When you merge your Git branch into the production branch, all new migrations will be applied to your Production environment. If you have declared Storage buckets or Edge Functions in config.toml, they will also be deployed automatically. All other configurations, including API, Auth, and seed files, will be ignored by default.
+Data changes are not merged into production.
+Preparing your Git repository#
+You can use the Supabase CLI to manage changes inside a local ./supabase directory:
+Existing project
+New Project
+1
+Initialize Supabase locally
+If you don't have a ./supabase directory, you can create one:
+supabase init
+2
+Pull your database migration
+Pull your database changes using supabase db pull. To get your database connection string, go to your project dashboard, click Connect and look for the Session pooler connection string.
+supabase db pull --db-url <db_connection_string>
+# Your Database connection string will look like this:
+# postgres://postgres.xxxx:password@xxxx.pooler.supabase.com:6543/postgres
+If you're in an IPv6 environment or have the IPv4 Add-On, you can use the direct connection string instead of Supavisor in Session mode.
+3
+Commit the `supabase` directory to Git
+Commit the supabase directory to Git, and push your changes to your remote repository.
+git add supabase
+git commit -m "Initial migration"
+git push
+Enable Supabase branching#
+Once your repository is correctly prepared, you can enable branching from the Supabase dashboard.
+Prepare your GitHub repository before enabling Branching
+If your repository doesn't have all the migration files, your production branch could run an incomplete set of migrations. Make sure your GitHub repository is prepared.
+1
+Inside your Supabase project, click `Enable branching`
+
+2
+Install the GitHub integration
+When clicking Enable branching you will see the following dialog:
+
+If you don't have the GitHub integration installed, click Add new project connection. The integration is required to run migration files and the optional database seed file.
+You're taken to the GitHub integration page. Click Install.
+
+Follow the instructions to link your Supabase project to its GitHub repository.
+
+Return to your project and re-click Enable branching.
+3
+You should now see a popover with the GitHub Connection details shown
+Type in the branch you want to use for production. The name of the branch will be validated to make sure it exists in your GitHub repository.
+Your production branch can't be changed while branching is enabled.
+To change your production branch, you need to disable branching and re-enable it with a different branch.
+
+4
+Click `I understand, enable branching`. Branching is now enabled for your project.
+Open a pull request#
+When you open a pull request on GitHub, the Supabase integration automatically checks for a matching preview branch. If one doesn't exist, it gets created.
+A comment is added to your PR with the deployment status of your preview branch. Statuses are shown separately for Database, Services, and APIs.
+
+Supabase GitHub integration will comment on your PR with the status of your Preview Branch, including whether migrations have successfully run.
+Every time a new commit is pushed that changes the migration files in ./supabase/migrations, the new migrations are run against the preview branch. You can check the status of these runs in the comment's Tasks table.
+Preventing migration failures#
+We highly recommend turning on a 'required check' for the Supabase integration. You can do this from your GitHub repository settings. This prevents PRs from being merged when migration checks fail, and stops invalid migrations from being merged into your production branch.
+
+Check the "Require status checks to pass before merging" option.
+Manually create a preview branch#
+Preview branches are automatically created for each pull request, but you can also manually create one.
+1
+Create a new Git branch in your GitHub repository
+You need at least one other branch aside from your Supabase production branch.
+You can use the GitHub dashboard or command line to create a new branch. In this example, the new branch is called feat/add-members.
+2
+Navigate to the Branches page in your Supabase dashboard.
+In the Supabase dashboard, look for the branch dropdown on the right-hand side of the top bar. It should be set to your production branch by default. Open the dropdown and click Manage branches.
+
+3
+Create a Supabase preview branch
+Click Create preview branch.
+
+Type in the branch name you want to add. Click Create branch to confirm.
+Only branches from the repository can be used to create a Preview Branch
+Git branches from external contributors currently can't support a Preview Branch
+
+The Git integration watches for changes in the supabase directory. This includes:
+All SQL migration files, under the subdirectory migrations
+An optional seed.sql file, used to seed preview instances with sample data
+You can create new migrations either locally or remotely. Local development is recommended.
+Local Development
+Remote Development
+The Supabase CLI provides two options: manual migrations and generated migrations using Supabase's local studio and the supabase db-diff command. Let's use the latter and push the change to our Preview Branch:
+1
+Make schema changes locally
+Start Supabase locally:
+supabase start
+Then proceed to localhost:54323 to access your local Supabase dashboard.
+You can make changes in either the Table Editor or the SQL Editor.
+2
+Generate a migration file
+Once you are finished making database changes, run supabase db diff to create a new migration file. For example:
+supabase db diff -f "add_employees_table"
+This will create a SQL file called ./supabase/migrations/[timestamp]add_employees_table.sql. This file will reflect the changes that you made in your local dashboard.
+If you want to continue making changes, you can manually edit this migration file, then use the db reset command to pick up your edits:
+supabase db reset
+This will reset the database and run all the migrations again. The local dashboard at localhost:54323 will reflect the new changes you made.
+3
+Commit your changes and push.
+Commit and push your migration file to your remote GitHub repository. For example:
+git add supabase/migrations
+git commit -m "Add employees table"
+git push --set-upstream origin new-employee
+The Supabase integration detects the new migration and runs it on the remote Preview Branch. It can take up to 10 minutes for migrations to be applied. If you have a PR for your branch, errors are reflected in the GitHub check run status and in a PR comment.
+If you need to reset your database to a clean state (that is, discard any changes that aren't reflected in the migration files), run supabase db reset locally. Then, delete the preview branch and recreate it by closing, and reopening your pull request.
+Disable branching#
+You can disable branching at any time. Navigate to the Branches page, which can be found via the Branches dropdown menu on the top navigation, then click "Manage Branches" in the menu. Click the 'Disable branching' button at the top of the Overview section.
+Persistent branches#
+Persistent branches are the type of branches that will remain active even after the underlying PR is closed. Any PR based on a persistent branch will also have a corresponding preview branch created automatically.
+You can change any branch to be persistent on the Branches page by clicking the triple dots icon next to the branch you want to modify, and selecting "Switch to persistent".
+All persistent branches can be toggled back to be an ephemeral branch in the exact same way.
+Migration and seeding behavior#
+Migrations are run in sequential order. Each migration builds upon the previous one.
+The preview branch has a record of which migrations have been applied, and only applies new migrations for each commit. This can create an issue when rolling back migrations.
+Using ORM or custom seed scripts#
+If you want to use your own ORM for managing migrations and seed scripts, you will need to run them in GitHub Actions after the preview branch is ready. The branch credentials can be fetched using the following example GHA workflow.
+on:
+ pull_request:
+   types:
+     - opened
+     - reopened
+     - synchronize
+   branches:
+     - main
+   paths:
+     - 'supabase/**'
+jobs:
+ wait:
+   runs-on: ubuntu-latest
+   outputs:
+     status: ${{ steps.check.outputs.conclusion }}
+   steps:
+     - uses: fountainhead/action-wait-for-check@v1.2.0
+       id: check
+       with:
+         checkName: Supabase Preview
+         ref: ${{ github.event.pull_request.head.sha }}
+         token: ${{ secrets.GITHUB_TOKEN }}
+ migrate:
+   needs:
+     - wait
+   if: ${{ needs.wait.outputs.status == 'success' }}
+   runs-on: ubuntu-latest
+   steps:
+     - uses: supabase/setup-cli@v1
+       with:
+         version: latest
+     - run: supabase --experimental branches get "$GITHUB_HEAD_REF" -o env >> $GITHUB_ENV
+     - name: Custom ORM migration
+       run: psql "$POSTGRES_URL_NON_POOLING" -c 'select 1'
+Branch configuration with remotes#
+When Branching is enabled, your config.toml settings automatically sync to all ephemeral branches through a one-to-one mapping between your Git and Supabase branches.
+Basic configuration#
+To update configuration for a Supabase branch, modify config.toml and push to git. The Supabase integration will detect the changes and apply them to the corresponding branch.
+Remote-specific configuration#
+For persistent branches that need specific settings, you can use the [remotes] block in your config.toml. Each remote configuration must reference an existing project ID.
+Here's an example of configuring a separate seed script for a staging environment:
+[remotes.staging]
+project_id = "your-project-ref"
+[remotes.staging.db.seed]
+sql_paths = ["./seeds/staging.sql"]
+Since the project_id field must reference an existing branch, you need to create the persistent branch before adding its configuration. Use the CLI to create a persistent branch first:
+supabase --experimental branches create --persistent
+# Do you want to create a branch named develop? [Y/n]
+Configuration merging#
+When merging a PR into a persistent branch, the Supabase integration:
+Checks for configuration changes
+Logs the changes
+Applies them to the target remote
+If no remote is declared or the project ID is incorrect, the configuration step is skipped.
+Available configuration options#
+All standard configuration options are available in the [remotes] block. This includes:
+Database settings
+API configurations
+Authentication settings
+Edge Functions configuration
+And more
+You can use this to maintain different configurations for different environments while keeping them all in version control.
+Managing secrets for branches#
+For sensitive configuration like SMTP credentials or API keys, you can use the Supabase CLI to manage secrets for your branches. This is especially useful for custom SMTP setup or other services that require secure credentials.
+To set secrets for a persistent branch:
+# Set secrets from a .env file
+supabase secrets set --env-file ./supabase/.env
+# Or set individual secrets
+supabase secrets set SMTP_HOST=smtp.example.com
+supabase secrets set SMTP_USER=your-username
+supabase secrets set SMTP_PASSWORD=your-password
+These secrets will be available to your branch's services and can be used in your configuration. For example, in your config.toml:
+[auth.smtp]
+host = "env(SMTP_HOST)"
+user = "env(SMTP_USER)"
+password = "env(SMTP_PASSWORD)"
+Secrets are branch-specific
+Secrets set for one branch are not automatically available in other branches. You'll need to set
+them separately for each branch that needs them.
+Using dotenvx for git-based workflow#
+For managing environment variables across different branches, you can use dotenvx to securely manage your configurations. This approach is particularly useful for teams working with Git branches and preview deployments.
+Environment file structure
+Following the conventions used in the example repository, environments are configured using dotenv files in the supabase directory:
+File
+Environment
+.gitignore it?
+Encrypted
+.env.keys
+All
+Yes
+No
+.env.local
+Local
+Yes
+No
+.env.production
+Production
+No
+Yes
+.env.preview
+Branches
+No
+Yes
+.env
+Any
+Maybe
+Yes
+
+Setting up encrypted secrets
+Generate key pair and encrypt your secrets:
+npx @dotenvx/dotenvx set SUPABASE_AUTH_EXTERNAL_GITHUB_SECRET "<your-secret>" -f supabase/.env.preview
+This creates a new encryption key in supabase/.env.preview and a new decryption key in supabase/.env.keys.
+Update project secrets:
+npx supabase secrets set --env-file supabase/.env.keys
+Choose your configuration approach in config.toml:
+Option A: Use encrypted values directly:
+[auth.external.github]
+enabled = true
+secret = "encrypted:<encrypted-value>"
+Option B: Use environment variables:
+[auth.external.github]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GITHUB_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GITHUB_SECRET)"
+Secret fields
+The encrypted: syntax only works for designated "secret" fields in the configuration (like
+secret in auth providers). Using encrypted values in other fields will not be automatically
+decrypted and may cause issues. For non-secret fields, use environment variables with the env()
+syntax instead.
+Using with preview branches
+When you commit your .env.preview file with encrypted values, the branching executor will automatically retrieve and use these values when deploying your branch. This allows you to maintain different configurations for different branches while keeping sensitive information secure.
+Rolling back migrations#
+You might want to roll back changes you've made in an earlier migration change. For example, you may have pushed a migration file containing schema changes you no longer want.
+To fix this, push the latest changes, then delete the preview branch in Supabase and reopen it.
+The new preview branch is reseeded from the ./supabase/seed.sql file by default. Any additional data changes made on the old preview branch are lost. This is equivalent to running supabase db reset locally. All migrations are rerun in sequential order.
+Seeding behavior#
+Your Preview Branches are seeded with sample data using the same as local seeding behavior.
+The database is only seeded once, when the preview branch is created. To rerun seeding, delete the preview branch and recreate it by closing, and reopening your pull request.
+Branching and hosting providers#
+Branching works with hosting providers that support preview deployments.
+With the Supabase branching integration, you can sync the Git branch used by the hosting provider with the corresponding Supabase preview branch. This means that the preview deployment built by your hosting provider is matched to the correct database schema, edge functions, and other Supabase configurations.
+Vercel#
+Install the Vercel integration:
+From the Vercel marketplace or
+By clicking the blue Deploy button in a Supabase example app's README file
+Vercel GitHub integration also required.
+For branching to work with Vercel, you also need the Vercel GitHub integration.
+And make sure you have connected your Supabase project to your Vercel project.
+Supabase automatically updates your Vercel project with the correct environment variables for the corresponding preview branches. The synchronization happens at the time of Pull Request being opened, not at the time of branch creation.
+As branching integration is tied to the Preview Deployments feature in Vercel, there are possible race conditions between Supabase setting correct variables, and Vercel running a deployment process. Because of that, Supabase is always automatically re-deploying the most recent deployment of the given pull request.
+Other Git providers#
+There are multiple alternative Git providers under consideration. If you're interested in branching for GitLab, Bitbucket, or some other provider, join the GitHub discussion.
+Alternatives to branching#
+Under the hood, you can see Supabase branching as a way to programmatically "duplicate" your Supabase project via git flow. This allows spawning a new configured (via config.toml) and seeded instance of the database and the adjacent Supabase services (buckets, edge functions, etc.).
+A new project is deployed on behalf of the user on the Supabase side as the new "branch" if it doesn't already exist. This includes the database, storage, edge-function, and all Supabase-related services.
+The branch is cloned and the new project is configured based on the config.toml committed into this project branch.
+Migrations are applied and seeding scripts are run (the first time) for this branch.
+You can make a similar setup with a distinct project for each environment. Or just have two environments, the localhost and the production one.
+Pricing#
+Branching is available on the Pro Plan and above. The price is:
+Each Preview branch costs $0.01344 per hour
+Each Preview branch is billed until it is removed
+Troubleshooting#
+Rolling back migrations#
+You might want to roll back changes you've made in an earlier migration change. For example, you may have pushed a migration file containing schema changes you no longer want.
+To fix this, push the latest changes, then delete the preview branch in Supabase and reopen it.
+The new preview branch is reseeded from the ./supabase/seed.sql file by default. Any additional data changes made on the old preview branch are lost. This is equivalent to running supabase db reset locally. All migrations are rerun in sequential order.
+Deployment failures#
+A deployment might fail for various reasons, including invalid SQL statements and schema conflicts in migrations, errors within the config.toml config, or something else.
+To check the error message, see the Supabase workflow run for your branch under the View logs section.
+Network restrictions#
+If you enable network restrictions on your project, the branching cluster will be blocked from connecting to your project by default. This often results in database connection failures when migrating your production project after merging a development branch.
+The workaround is to explicitly allow the IPv6 CIDR range of the branching cluster in your project's database settings page: 2600:1f18:2b7d:f600::/56
+
+Schema drift between preview branches#
+If multiple preview branches exist, each preview branch might contain different schema changes. This is similar to Git branches, where each branch might contain different code changes.
+When a preview branch is merged into the production branch, it creates a schema drift between the production branch and the preview branches that haven't been merged yet.
+These conflicts can be resolved in the same way as normal Git Conflicts: merge or rebase from the production Git branch to the preview Git branch. Since migrations are applied sequentially, ensure that migration files are timestamped correctly after the rebase. Changes that build on top of earlier changes should always have later timestamps.
+Changing production branch#
+It's not possible to change the Git branch used as the Production branch for Supabase Branching. The only way to change it is to disable and re-enable branching. See Disable Branching.
+Feedback#
+Supabase branching is a new and exciting part of the Supabase development ecosystem. Feedback is welcome.
+You can join the conversation over in GitHub discussions.
+Edit this page on GitHub
+Is this helpful?
+No
+Yes
+On this page
+How branching worksPrerequisitesBranching workflowGit providersBranching with GitHubPreparing your Git repositoryEnable Supabase branchingOpen a pull requestPreventing migration failuresManually create a preview branchDisable branchingPersistent branchesMigration and seeding behaviorUsing ORM or custom seed scriptsBranch configuration with remotesBasic configurationRemote-specific configurationConfiguration mergingAvailable configuration optionsManaging secrets for branchesRolling back migrationsSeeding behaviorBranching and hosting providersVercelOther Git providersAlternatives to branchingPricingTroubleshootingRolling back migrationsDeployment failuresNetwork restrictionsSchema drift between preview branchesChanging production branchFeedback
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+Terraform Provider
+
+The Supabase Provider allows Terraform to manage resources hosted on Supabase platform.
+You may use this provider to version control your project settings or setup CI/CD pipelines for automatically provisioning projects and branches.
+CI/CD example
+Step-by-step tutorials
+Contributing guide
+Using the provider#
+This simple example imports an existing Supabase project and synchronises its API settings.
+terraform {
+ required_providers {
+   supabase = {
+     source  = "supabase/supabase"
+     version = "~> 1.0"
+   }
+ }
+}
+provider "supabase" {
+ access_token = file("${path.module}/access-token")
+}
+# Define a linked project variable as user input
+variable "linked_project" {
+ type = string
+}
+# Import the linked project resource
+import {
+ to = supabase_project.production
+ id = var.linked_project
+}
+resource "supabase_project" "production" {
+ organization_id   = "nknnyrtlhxudbsbuazsu"
+ name              = "tf-project"
+ database_password = "tf-example"
+ region            = "ap-southeast-1"
+ lifecycle {
+   ignore_changes = [database_password]
+ }
+}
+# Configure api settings for the linked project
+resource "supabase_settings" "production" {
+ project_ref = var.linked_project
+ api = jsonencode({
+   db_schema            = "public,storage,graphql_public"
+   db_extra_search_path = "public,extensions"
+   max_rows             = 1000
+ })
+}
+Edit this page on GitHub
+Is this helpful?
+No
+Yes
+On this page
+Using the provider
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+Using the Supabase Terraform Provider
+
+Setting up a TF module#
+Create a Personal Access Token from Supabase Dashboard.
+Save your access token locally to access-token file or a secure credentials store.
+Create module/provider.tf with the following contents:
+terraform {
+ required_providers {
+   supabase = {
+     source  = "supabase/supabase"
+     version = "~> 1.0"
+   }
+ }
+}
+provider "supabase" {
+ access_token = file("${path.cwd}/access-token")
+}
+Run the command terraform -chdir=module apply which should succeed in finding the provider.
+Creating a project#
+Supabase projects are represented as a TF resource called supabase_project.
+Create a module/resource.tf file with the following contents.
+# Create a project resource
+resource "supabase_project" "production" {
+ organization_id   = "<your-org-id>"
+ name              = "tf-example"
+ database_password = "<your-password>"
+ region            = "ap-southeast-1"
+ lifecycle {
+   ignore_changes = [database_password]
+ }
+}
+Remember to substitue placeholder values with your own. For sensitive fields like password, you may consider retrieving it from a secure credentials store.
+Next, run terraform -chdir=module apply and confirm creating the new project resource.
+Importing a project#
+If you have an existing project hosted on Supabase, you may import it into your local terraform state for tracking and management.
+Edit module/resource.tf with the following changes.
+# Define a linked project variable as user input
+variable "linked_project" {
+ type = string
+}
+import {
+ to = supabase_project.production
+ id = var.linked_project
+}
+# Create a project resource
+resource "supabase_project" "production" {
+ organization_id   = "<your-org-id>"
+ name              = "tf-example"
+ database_password = "<your-password>"
+ region            = "ap-southeast-1"
+ lifecycle {
+   ignore_changes = [database_password]
+ }
+}
+Run terraform -chdir=module apply and you will be prompted to enter the reference ID of an existing Supabase project. If your local TF state is empty, your project will be imported from remote rather than recreated.
+Alternatively, you may use the terraform import ... command without editing the resource file.
+Configuring a project#
+Keeping your project settings in-sync is easy with the supabase_settings resource.
+Create module/settings.tf with the following contents.
+# Configure api settings for the linked project
+resource "supabase_settings" "production" {
+ project_ref = var.linked_project
+ api = jsonencode({
+   db_schema            = "public,storage,graphql_public"
+   db_extra_search_path = "public,extensions"
+   max_rows             = 1000
+ })
+}
+Project settings don't exist on their own. They are created and destroyed together with their corresponding project resource referenced by the project_ref field. This means there is no difference between creating and updating supabase_settings resource while deletion is always a no-op.
+You may declare any subset of fields to be managed by your TF module. The Supabase provider always performs a partial update when you run terraform -chdir=module apply. The underlying API call is also idempotent so it's safe to apply again if the local state is lost.
+To see the full list of settings available, try importing the supabase_settings resource instead.
+Configuring branches#
+One of the most powerful features of TF is the ability to fan out configs to multiple resources. You can easily mirror the configurations of your production project to your branch databases using the for_each meta-argument.
+Create a module/branches.tf file.
+# Fetch all branches of a linked project
+data "supabase_branch" "all" {
+ parent_project_ref = var.linked_project
+}
+# Override settings for each preview branch
+resource "supabase_settings" "branch" {
+ for_each = { for b in data.supabase_branch.all.branches : b.project_ref => b }
+ project_ref = each.key
+ api = supabase_settings.production.api
+ auth = jsonencode({
+   site_url = "http://localhost:3001"
+ })
+}
+When you run terraform -chdir=module apply, the provider will configure all branches associated with your linked_project to mirror the api settings of your production project.
+In addition, the auth.site_url settings of your branches will be customised to a localhost URL for all branches. This allows your users to login via a separate domain for testing.
+Committing your changes#
+Finally, you may commit the entire module directory to git for version control. This allows your CI runner to run terraform apply automatically on new config changes. Any command line variables can be passed to CI via TF_VAR_* environment variables instead.
+Resolving config drift#
+Tracking your configs in TF module does not mean that you lose the ability to change configs through the dashboard. However, doing so could introduce config drift that you need to resolve manually by adding them to your *.tf files.
+Edit this page on GitHub
+Is this helpful?
+No
+Yes
+On this page
+Setting up a TF moduleCreating a projectImporting a projectConfiguring a projectConfiguring branchesCommitting your changesResolving config drift
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+Terraform Provider reference
+Resources and data sources available through the Terraform Provider
+The Terraform Provider provices access to resources and data sources. Resources are infrastructure objects, such as a Supabase project, that you can declaratively configure. Data sources are sources of information about your Supabase instances.
+Provider settings#
+Use these settings to configure your Supabase provider and authenticate to your Supabase project.
+Example usage#
+1provider "supabase" {
+2    access_token = ""
+3    endpoint = ""
+4}
+Details#
+Attribute
+Description
+Type
+Optional
+Sensitive
+access_token
+Supabase access token
+string
+true
+true
+endpoint
+Supabase API endpoint
+string
+true
+
+
+
+Resources#
+You can configure these resources using the Supabase Terraform provider:
+supabase_branch
+supabase_project
+supabase_settings
+Example usage#
+1resource "supabase_branch" "<label>" {
+2    git_branch = ""
+3    parent_project_ref = ""
+4    region = ""
+5}
+Details#
+Attribute
+Description
+Type
+Required
+Optional
+Read-only
+database
+Database connection details
+Nested type
+
+
+
+
+true
+git_branch
+Git branch
+string
+true
+
+
+
+
+id
+Branch identifier
+string
+
+
+
+
+true
+parent_project_ref
+Parent project ref
+string
+true
+
+
+
+
+region
+Database region
+string
+
+
+true
+
+
+
+Data sources#
+You can read these resources using the Supabase Terraform provider:
+supabase_branch
+Example usage#
+1resource "supabase_branch" "all" {
+2    parent_project_ref = ""
+3}
+Details#
+Attribute
+Description
+Type
+Required
+Optional
+Read-only
+branches
+Branch databases
+Nested type
+
+
+
+
+true
+parent_project_ref
+Parent project ref
+string
+true
+
+
+
+
+
+Edit this page on GitHub
+Is this helpful?
+No
+Yes
+On this page
+Provider settingsExample usageDetailsResourcesData sources
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+Shared Responsibility Model
+
+Running databases is a shared responsibility between you and Supabase. There are some things that we can take care of for you, and some things that you are responsible for. This is by design: we want to give you the freedom to use your database however you want. While we could put many more restrictions in place to ensure that you can’t do anything wrong, you will eventually find those restrictions prohibitive.
+
+To summarize, you are always responsible for:
+Your Supabase account
+Access management (Supabase account, database, tables, etc)
+Data
+Applying security controls
+Generally, we aim to reduce your burden of managing infrastructure and knowing about Postgres internals, minimizing configuration as much as we can. Here are a few things that you should know:
+You share the security responsibility#
+We give you full access to the database. If you share that access with other people (either people on your team, or the public in general) then it is your responsibility to ensure that the access levels you provide are correctly managed.
+If you have an inexperienced member on your team, then you probably shouldn’t give them access to Production. You should set internal workflows around what they should and should not be able to do, with restricted access to avoid anything that might be deemed dangerous.
+You are also responsible for ensuring that tables with sensitive data have the right level of access. You are also responsible for managing your database secrets and API keys, storing them safely in an encrypted store.
+Supabase provides controls for securing your data, and it is recommended that you always apply Row Level Security (RLS).
+We will also provide you with security alerts through Security Advisor and applying the recommendations are your responsibility.
+You decide your own workflow#
+There are many ways to work with Supabase.
+You can use our Dashboard, our client libraries, external tools like Prisma and Drizzle, or migration tools like our CLI, Flyway, Sqitch, and anything else that is Postgres-compatible. You can develop directly on your database while you're getting started, run migrations from local to production, or you can use multiple environments.
+None of these are right or wrong. It depends on the stage of your project. You definitely shouldn’t be developing on your database directly when you’re in production - but that’s absolutely fine when you’re prototyping and don’t have users.
+You are responsible for your application architecture#
+Supabase isn't a silver-bullet for bad architectural decisions. A poorly designed database will run poorly, no matter where it’s hosted.
+You can get away with a poorly-designed database for a while by adding compute. After a while, things will start to break. The database schema is the area you want to spend the most time thinking about. That’s the benefit of Supabase - you can spend more time designing a scalable database system and less time thinking about the mundane tasks like implementing CRUD APIs.
+If you don’t want to implement logic inside your database, that is 100% fine. You can use any tools which work with Postgres.
+You are responsible for third-party services#
+Supabase offers a lot of opportunities for flexibly integrating with third-party services, such as:
+OAuth and SAML login providers
+SMTP and SMS sending APIs
+Calls to external APIs within Postgres functions or triggers
+Calls to external APIs within Edge Functions
+You are free to use and integrate with any service, but you're also responsible for ensuring that the performance, availability, and security of the services you use match up with your application's requirements. We do not monitor for outages or performance issues within integrations with third-party services. Depending on the implementation, an issue with such an integration could also result in performance degradation or an outage for your Supabase project.
+If your application architecture relies on such integrations, you should monitor the relevant logs and metrics to ensure optimal performance.
+You choose your level of comfort with Postgres#
+Our goal at Supabase is to make all of Postgres easy to use. That doesn’t mean you have to use all of it. If you’re a Postgres veteran, you’ll probably love the tools that we offer. If you’ve never used Postgres before, then start smaller and grow into it. If you just want to treat Postgres like a simple table-store, that’s perfectly fine.
+You are in control of your database#
+Supabase places very few guard-rails around your database. That gives you a lot of control, but it also means you can break things. ”Break” is used liberally here. It refers to any situation that affects your application because of the way you're using the database.
+You are responsible for using best-practices to optimize and manage your database: adding indexes, adding filters on large queries, using caching strategies, optimizing your database queries, and managing connections to the database.
+You are responsible of provisioning enough compute to run the workload that your application requires. The Supabase Dashboard provides observability tooling to help with this.
+Before going to production#
+We recommend reviewing and applying the recommendations offered in our Production Checklist. This checklist covers the responsibilities discussed here and a few additional general production readiness best practices.
+SOC 2 and compliance#
+Supabase provides a SOC 2 compliant environment for hosting and managing sensitive data. We recommend reviewing the SOC 2 compliance responsibilities document alongside the aforementioned production checklist.
+Managing healthcare data#
+You can use Supabase to store and process Protected Health Information (PHI). You are responsible for the following
+Signing a Business Associate Agreement (BAA) with Supabase. Submit a HIPAA add-on request to get started. You will need to be at least on the Team Plan to sign a BAA with us.
+Marking specific projects as HIPAA projects and addressing security issues raised by the advisor.
+Ensuring MFA is enabled on all Supabase accounts.
+Enforce MFA as a requirement to access the organization
+Enabling Point in Time Recovery which requires at least a small compute add-on.
+Turning on SSL Enforcement.
+Enabling Network Restrictions.
+Disabling data sharing for Supabase AI editor in our dashboard.
+Specifically, "Opt-in to sending anonymous data to OpenAI" should be disabled (Opt-out).
+Complying with encryption requirements in the HIPAA Security Rule. Data is encrypted at rest and in transit by Supabase. You can consider encrypting the data at your application layer.
+Not using Edge functions to process PHI.
+Not storing PHI in public Storage buckets.
+Not transferring projects to a non-HIPAA organization.
+For more information on the shared responsibilities and rules under HIPAA, review the HIPAA compliance responsibilities document.
+Edit this page on GitHub
+Is this helpful?
+No
+Yes
+On this page
+You share the security responsibilityYou decide your own workflowYou are responsible for your application architectureYou are responsible for third-party servicesYou choose your level of comfort with PostgresYou are in control of your databaseBefore going to productionSOC 2 and complianceManaging healthcare data
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+Maturity Model
+
+Supabase is great for building something very fast and for scaling up. However, it's important to note that as your application matures and your team expands, the practices you use for managing an application in production should not be the same as the practices you used for prototyping.
+Prototyping#
+The Dashboard is a quick and easy tool for building applications while you are prototyping. That said, we strongly recommend using Migrations to manage your database changes. You can use our CLI to capture any changes you have made on the Dashboard so that you can commit them a version control system, like git.
+Collaborating#
+As soon as you start collaborating with team members, all project changes should be in version control. At this point we strongly recommend moving away from using the Dashboard for schema changes. Use migrations to manage your database, and check them into your version control system to track every change.
+Resources:
+Database migrations
+Managing access on the Dashboard
+PGAudit for Postgres
+In production#
+Once your application is live, you should never change your database using the Dashboard - everything should be done with Migrations. Some other important things to consider at this point include:
+The Dashboard has various access levels that can prevent changes being made via the UI.
+Design a safe workflow for managing your database. We strongly recommend running multiple environments as part of your development workflow (local -> staging -> prod).
+Do not share any production passwords with your team, especially your postgres password. All changes should be made via version-controlled migrations which run via a bastion host or a CI platform (like GitHub Actions. If you use GitHub Actions, use approval workflows to prevent any migrations being run accidentally.
+Restrict production access to your database using Network Restrictions.
+As your database to grows, we strongly recommend moving to Point-in-Time Recovery. This is safer and has less impact on your database performance during maintenance windows.
+Read the Production Checklist and familiarize your team with the Shared Responsibilities between your organization and Supabase.
+Resources:
+Database migrations
+Managing access on the Dashboard
+PGAudit for Postgres
+Managing environments
+Enterprise#
+For a more secure setup, consider running your workload across several organizations. It's a common pattern to have a Production organization which is restricted to only those team members who are qualified to have direct access to production databases.
+Reach out to growth if you need help designing a secure development workflow for your organization.
+Edit this page on GitHub
+Is this helpful?
+No
+Yes
+On this page
+PrototypingCollaboratingIn productionEnterprise
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+Production Checklist
+
+After developing your project and deciding it's Production Ready, you should run through this checklist to ensure that your project:
+is secure
+won't falter under the expected load
+remains available whilst in production
+Security#
+Ensure RLS is enabled
+Tables that do not have RLS enabled with reasonable policies allow any client to access and modify their data. This is unlikely to be what you want in the majority of cases.
+Learn more about RLS.
+Enable replication on tables containing sensitive data by enabling Row Level Security (RLS) and setting row security policies:
+Go to the Authentication > Policies page in the Supabase Dashboard to enable RLS and create security policies.
+Go to the Database > Publications page in the Supabase Dashboard to manage replication tables.
+Turn on SSL Enforcement
+Enable Network Restrictions for your database.
+Ensure that your Supabase Account is protected with multi-factor authentication (MFA).
+If using a GitHub signin, enable 2FA on GitHub. Since your GitHub account gives you administrative rights to your Supabase org, you should protect it with a strong password and 2FA using a U2F key or a TOTP app.
+If using email+password signin, set up MFA for your Supabase account.
+Enable MFA enforcement on your organization. This ensures all users must have a valid MFA backed session to interact with organization and project resources.
+Consider adding multiple owners on your Supabase org. This ensures that if one of the owners is unreachable or loses access to their account, you still have Owner access to your org.
+Ensure email confirmations are enabled in the Settings > Auth page.
+Ensure that you've set the expiry for one-time passwords (OTPs) to a reasonable value that you are comfortable with. We recommend setting this to 3600 seconds (1 hour) or lower.
+Increase the length of the OTP if you need a higher level of entropy.
+If your application requires a higher level of security, consider setting up multi-factor authentication (MFA) for your users.
+Use a custom SMTP server for auth emails so that your users can see that the mails are coming from a trusted domain (preferably the same domain that your app is hosted on). Grab SMTP credentials from any major email provider such as SendGrid, AWS SES, etc.
+Think hard about how you would abuse your service as an attacker, and mitigate.
+Review these common cybersecurity threats.
+Check and review issues in your database using Security Advisor.
+Performance#
+Ensure that you have suitable indices to cater to your common query patterns
+Learn more about indexes in Postgres.
+pg_stat_statements can help you identify hot or slow queries.
+Perform load testing (preferably on a staging env)
+Tools like k6 can simulate traffic from many different users.
+Upgrade your database if you require more resources. If you need anything beyond what is listed, contact enterprise@supabase.io.
+If you are expecting a surge in traffic (for a big launch) and are on a Team or Enterprise Plan, contact support with more details about your launch and we'll help keep an eye on your project.
+If you expect your database size to be > 4 GB, enable the Point in Time Recovery (PITR) add-on. Daily backups can take up resources from your database when the backup is in progress. PITR is more resource efficient, since only the changes to the database are backed up.
+Check and review issues in your database using Performance Advisor.
+Availability#
+Use your own SMTP credentials so that you have full control over the deliverability of your transactional auth emails (see Settings > Auth)
+you can grab SMTP credentials from any major email provider such as SendGrid, AWS SES, etc. You can refer to our SMTP guide for more details.
+The default rate limit for auth emails when using a custom SMTP provider is 30 new users per hour, if doing a major public announcement you will likely require more than this.
+Applications on the Free Plan that exhibit extremely low activity in a 7 day period may be paused by Supabase to save on server resources.
+You can restore paused projects from the Supabase dashboard.
+Upgrade to Pro to guarantee that your project will not be paused for inactivity.
+Database backups are not available for download on the Free Plan.
+You can set up your own backup systems using tools like pg_dump or wal-g.
+Nightly backups for Pro Plan projects are available on the Supabase dashboard for up to 7 days.
+Point in Time Recovery (PITR) allows a project to be backed up at much shorter intervals. This provides users an option to restore to any chosen point of up to seconds in granularity. In terms of Recovery Point Objective (RPO), Daily Backups would be suitable for projects willing to lose up to 24 hours worth of data. If a lower RPO is required, enable PITR.
+Supabase Projects use disks that offer 99.8-99.9% durability by default.
+Use Read Replicas if you require availability resilience to a disk failure event
+Use PITR if you require durability resilience to a disk failure event
+Upgrading to the Supabase Pro Plan will give you access to our support team.
+Rate limiting, resource allocation, & abuse prevention#
+Supabase employs a number of safeguards against bursts of incoming traffic to prevent abuse and help maximize stability across the platform
+If you're on a Team or Enterprise Plan and expect high load events, such as production launches, heavy load testing, or prolonged high resource usage, open a ticket via the support form for help. Provide at least 2 weeks notice.
+Auth rate limits#
+The table below shows the rate limit quotas on the following authentication endpoints. You can configure the auth rate limits for your project here.
+Endpoint
+Path
+Limited By
+Rate Limit
+All endpoints that send emails
+/auth/v1/signup /auth/v1/recover /auth/v1/user[^1]
+Sum of combined requests
+As of 3 Sep 2024, this has been updated to 2 emails per hour. You can only change this with your own custom SMTP setup.
+All endpoints that send One-Time-Passwords (OTP)
+/auth/v1/otp
+Sum of combined requests
+Defaults to 360 OTPs per hour. Is customizable.
+Send OTPs or magic links
+/auth/v1/otp
+Last request
+Defaults to 60 seconds window before a new request is allowed. Is customizable.
+Signup confirmation request
+/auth/v1/signup
+Last request
+Defaults to 60 seconds window before a new request is allowed. Is customizable.
+Password Reset Request
+/auth/v1/recover
+Last request
+Defaults to 60 seconds window before a new request is allowed. Is customizable.
+Verification requests
+/auth/v1/verify
+IP Address
+360 requests per hour (with bursts up to 30 requests)
+Token refresh requests
+/auth/v1/token
+IP Address
+1800 requests per hour (with bursts up to 30 requests)
+Create or Verify an MFA challenge
+/auth/v1/factors/:id/challenge /auth/v1/factors/:id/verify
+IP Address
+15 requests per minute (with bursts up to 30 requests)
+Anonymous sign-ins
+/auth/v1/signup[^2]
+IP Address
+30 requests per hour (with bursts up to 30 requests)
+
+Realtime quotas#
+Review the Realtime quotas.
+If you need quotas increased you can always contact support.
+Abuse prevention#
+Supabase provides CAPTCHA protection on the signup, sign-in and password reset endpoints. Refer to our guide on how to protect against abuse using this method.
+Email link validity#
+When working with enterprise systems, email scanners may scan and make a GET request to the reset password link or sign up link in your email. Since links in Supabase Auth are single use, a user who opens an email post-scan to click on a link will receive an error. To get around this problem,
+consider altering the email template to replace the original magic link with a link to a domain you control. The domain can present the user with a "Sign-in" button which redirect the user to the original magic link URL when clicked.
+When using a custom SMTP service, some services might have link tracking enabled which may overwrite or disform the email confirmation links sent by Supabase Auth. To prevent this from happening, we recommend that you disable link tracking when using a custom SMTP service.
+Subscribe to Supabase status page#
+Stay informed about Supabase service status by subscribing to the Status Page. We recommend setting up Slack notifications through an RSS feed to ensure your team receives timely updates about service status changes.
+Setting up Slack notifications#
+Install the RSS app in Slack:
+Visit the RSS app page in the Slack marketplace
+Click Add to Slack if not already installed
+Otherwise you will get straight to next step, no need to reinstall the app
+Configure the Supabase status feed:
+Create a channel (e.g., #supabase-status-alerts) for status updates
+On the RSS app page go to Add a Feed section and set Feed URL to https://status.supabase.com/history.rss
+Select your designated channel and click "Subscribe to this feed"
+Once configured, your team will receive automatic notifications in Slack whenever the Supabase Status Page is updated.
+For detailed setup instructions, see the Add RSS feeds to Slack.
+Next steps#
+This checklist is always growing so be sure to check back frequently, and also feel free to suggest additions and amendments by making a PR on GitHub.
+Edit this page on GitHub
+Is this helpful?
+No
+Yes
+On this page
+SecurityPerformanceAvailabilityRate limiting, resource allocation, & abuse preventionAuth rate limitsRealtime quotasAbuse preventionEmail link validitySubscribe to Supabase status pageSetting up Slack notificationsNext steps
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+SOC 2 Compliance and Supabase
+
+Supabase is Systems and Organization Controls 2 (SOC 2) Type 2 compliant and is assessed annually to ensure continued adherence to the SOC 2 security framework. SOC 2 assesses Supabase’s adherence to, and implementation of, controls governing the security, availability, processing integrity, confidentiality, and privacy on the Supabase platform. These controls define requirements for the management and storage of customer data on the platform. These controls applied to Supabase, as a service provider, serve two customer data environments.
+The first environment is the customer relationship with Supabase, this refers to the data Supabase has on a customer of the platform. All billing, contact, usage and contract information is managed and stored according to SOC 2 requirements.
+The second environment is the backend as a service (the product) that Supabase provides to customers. Supabase implements the controls from the SOC 2 framework to ensure the security of the platform, which hosts the backend as a service (the product), including the Postgres Database, Storage, Authentication, Realtime, Edge Functions and Data API features. Supabase can assert that the environment hosting customer data, stored within the product, adheres to SOC 2 requirements. And the management and storage of data within this environment (the product) is strictly controlled and kept secure.
+Supabase’s SOC 2 compliance does not transfer to environments outside of the Supabase product or Supabase’s control. This is known as the security or compliance boundary and forms part of the Shared Responsibility Model that Supabase and their customers enter into.
+SOC 2 does not cover, nor is it a substitute for, compliance with the Health Insurance Portability and Accountability Act (HIPAA).
+Organizations must have a signed Business Associate Agreement (BAA) with Supabase and have the HIPAA add-on enabled when dealing with Protected Health Information (PHI).
+Our HIPAA documentation provides more information about the responsibilities and requirements for HIPAA on Supabase.
+Meeting compliance requirements
+SOC 2 compliance is a critical aspect of data security for Supabase and our customers. Being fully SOC 2 compliant is a shared responsibility and here’s a breakdown of the responsibilities for both parties:
+Supabase responsibilities#
+Security Measures: Supabase implements robust security controls to protect customer data. These includes measures to prevent data breaches and ensure the confidentiality and integrity of the information managed and stored by the platform. Supabase is obliged to be vigilant about security risks and must demonstrate that our security measures meet industry standards through regular audits.
+Compliance Audits: Supabase undergoes SOC 2 audits yearly to verify that our data management practices comply with the Trust Services Criteria (TSC), which include security, availability, processing integrity, confidentiality, and privacy. These audits are conducted by an independent third party.
+Incident Response: Supabase has an incident response plan in place to handle data breaches efficiently. This plan outlines how the organization detects issues, responds to incidents, and manages system vulnerabilities.
+Reporting: Upon a successful audit, Supabase receive a SOC 2 report that details our compliance status. This report is available to customers as a SOC 2 Type 2 report, and allows customers and stakeholders to assure that Supabase has implemented adequate and the requisite safeguards to protect sensitive information.
+Customer responsibilities#
+Compliance Requirements: Understand your own compliance requirements. While SOC 2 compliance is not a legal requirement, many enterprise customers require their providers to have a SOC 2 report. This is because it provides assurance that the provider has implemented robust controls to protect customer data.
+Due Diligence: Customers must perform due diligence when selecting Supabase as a provider. This includes reviewing the SOC 2 Type 2 report to ensure that Supabase meets the expected security standards. Customers should also understand the division of responsibilities between themselves and Supabase to avoid duplication of effort.
+Monitoring and Review: Customers should regularly monitor and review Supabase’s compliance status.
+Control Compliance: If a customer needs to be SOC 2 compliant, they should themselves implement the requisite controls and undergo a SOC 2 audit.
+Shared responsibilities#
+Data Security: Both customers and Supabase share the responsibility of ensuring data security. While the Supabase, as the provider, implements the security controls, the customer must ensure that their use of the Supabase platform does not compromise these controls.
+Control Compliance: Supabase asserts through our SOC 2 that all requisite security controls are met. Customers wishing to also be SOC 2 compliant need to go through their own SOC 2 audit, verifying that security controls are met on the customer's side.
+In summary, SOC 2 compliance involves a shared responsibility between Supabase and our customers to ensure the security and integrity of data. Supabase, as a provider, must implement and maintain robust security measures, customers must perform due diligence and monitor Supabase's compliance status, while also implement their own compliance controls to protect their sensitive information.
+Frequently asked questions#
+How often is Supabase SOC 2 audited?
+Supabase has obtained SOC 2 Type 2 certification, which means Supabase's controls are fully audited annually. The auditor's reports on these examinations are issued as soon as they are ready after the audit. Supabase makes the SOC 2 Type 2 report available to Enterprise and Team Plan customers. The audit report covers a rolling 12-month window, known as the audit period, and runs from 1 March to 28 February of the next calendar year.
+How to obtain Supabase's SOC 2 Type 2 report?
+To access the SOC 2 Type 2 report, you must be a Enterprise or Team Plan Supabase customer. The report is downloadable from the Legal Documents section in the organization dashboard.
+Why does it matter that Supabase is SOC 2 Compliant?
+SOC 2 is used to assert that controls are in place to ensure the proper management and storage of data. SOC 2 provides a framework for measuring how secure a service provider is and re-evaluates the provider on an annual basis. This provides the confidence and assurance that data stored within the Supabase platform is correctly secured and managed.
+If Supabase’s SOC 2 does not transfer to the customer, why does it matter that Supabase has SOC 2?
+Even though Supabase’s SOC 2 compliance does not transfer outside of the product, it does provide the assurance that all data within the product is correctly managed and stored. Supabase can assert that only authorized persons have access to the data, and security controls are in place to prevent, detect and respond to data intrusions. This forms part of a customer’s own adherence to the SOC 2 framework and relieves part of the burden of data management and storage on the customer. In many organizations' security and risk departments require all vendors or sub-processors to be SOC 2 compliant.
+What is the security or compliance boundary?
+This defines the boundary or border between Supabase and customer responsibility for data security within the Shared Responsibility Model. Customer data stored within the Supabase product, on the Supabase side of the security boundary, is managed and secured by Supabase. Supabase ensures the safe handling and storage of data within this environment. This includes controls for preventing unauthorized access, monitoring data access, alerting, data backups and redundancy. Data on the customer side of the boundary, the data that enters and leaves the Supabase product, is the responsibility of the customer. Management and possible storage of such data outside of Supabase should be performed by the customer, and any security and compliance controls are the responsibility of the customer.
+We have strong data residency requirements. Does Supabase SOC 2 cover data residency?
+While SOC 2 itself does not mandate specific data residency requirements, organizations may still need to comply with other regulatory frameworks, such as GDPR, that do have such requirements. Ensuring projects are deployed in the correct region is a customer responsibility as each Supabase project is deployed into the region the customer specifies at creation time. All data will remain within the chosen region.
+Read replicas can be created for multi-region availability, it remains the customer's responsibility to ensure regions chosen for read replicas are within the geographic area required by any additional regulatory frameworks.
+Does SOC 2 cover health related data (HIPAA)?
+SOC 2 is non-industry specific and provides a framework for the security and privacy of data. This is however not sufficient in most cases when dealing with Protected Healthcare Information (PHI), which requires additional privacy and legal controls.
+When dealing with PHI in the United States or for United States customers, HIPAA is mandatory.
+Resources#
+System and Organization Controls: SOC Suite of Services
+Shared Responsibility Model
+Edit this page on GitHub
+Is this helpful?
+No
+Yes
+On this page
+Supabase responsibilitiesCustomer responsibilitiesShared responsibilitiesFrequently asked questionsResources
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+Production Checklist
+
+After developing your project and deciding it's Production Ready, you should run through this checklist to ensure that your project:
+is secure
+won't falter under the expected load
+remains available whilst in production
+Security#
+Ensure RLS is enabled
+Tables that do not have RLS enabled with reasonable policies allow any client to access and modify their data. This is unlikely to be what you want in the majority of cases.
+Learn more about RLS.
+Enable replication on tables containing sensitive data by enabling Row Level Security (RLS) and setting row security policies:
+Go to the Authentication > Policies page in the Supabase Dashboard to enable RLS and create security policies.
+Go to the Database > Publications page in the Supabase Dashboard to manage replication tables.
+Turn on SSL Enforcement
+Enable Network Restrictions for your database.
+Ensure that your Supabase Account is protected with multi-factor authentication (MFA).
+If using a GitHub signin, enable 2FA on GitHub. Since your GitHub account gives you administrative rights to your Supabase org, you should protect it with a strong password and 2FA using a U2F key or a TOTP app.
+If using email+password signin, set up MFA for your Supabase account.
+Enable MFA enforcement on your organization. This ensures all users must have a valid MFA backed session to interact with organization and project resources.
+Consider adding multiple owners on your Supabase org. This ensures that if one of the owners is unreachable or loses access to their account, you still have Owner access to your org.
+Ensure email confirmations are enabled in the Settings > Auth page.
+Ensure that you've set the expiry for one-time passwords (OTPs) to a reasonable value that you are comfortable with. We recommend setting this to 3600 seconds (1 hour) or lower.
+Increase the length of the OTP if you need a higher level of entropy.
+If your application requires a higher level of security, consider setting up multi-factor authentication (MFA) for your users.
+Use a custom SMTP server for auth emails so that your users can see that the mails are coming from a trusted domain (preferably the same domain that your app is hosted on). Grab SMTP credentials from any major email provider such as SendGrid, AWS SES, etc.
+Think hard about how you would abuse your service as an attacker, and mitigate.
+Review these common cybersecurity threats.
+Check and review issues in your database using Security Advisor.
+Performance#
+Ensure that you have suitable indices to cater to your common query patterns
+Learn more about indexes in Postgres.
+pg_stat_statements can help you identify hot or slow queries.
+Perform load testing (preferably on a staging env)
+Tools like k6 can simulate traffic from many different users.
+Upgrade your database if you require more resources. If you need anything beyond what is listed, contact enterprise@supabase.io.
+If you are expecting a surge in traffic (for a big launch) and are on a Team or Enterprise Plan, contact support with more details about your launch and we'll help keep an eye on your project.
+If you expect your database size to be > 4 GB, enable the Point in Time Recovery (PITR) add-on. Daily backups can take up resources from your database when the backup is in progress. PITR is more resource efficient, since only the changes to the database are backed up.
+Check and review issues in your database using Performance Advisor.
+Availability#
+Use your own SMTP credentials so that you have full control over the deliverability of your transactional auth emails (see Settings > Auth)
+you can grab SMTP credentials from any major email provider such as SendGrid, AWS SES, etc. You can refer to our SMTP guide for more details.
+The default rate limit for auth emails when using a custom SMTP provider is 30 new users per hour, if doing a major public announcement you will likely require more than this.
+Applications on the Free Plan that exhibit extremely low activity in a 7 day period may be paused by Supabase to save on server resources.
+You can restore paused projects from the Supabase dashboard.
+Upgrade to Pro to guarantee that your project will not be paused for inactivity.
+Database backups are not available for download on the Free Plan.
+You can set up your own backup systems using tools like pg_dump or wal-g.
+Nightly backups for Pro Plan projects are available on the Supabase dashboard for up to 7 days.
+Point in Time Recovery (PITR) allows a project to be backed up at much shorter intervals. This provides users an option to restore to any chosen point of up to seconds in granularity. In terms of Recovery Point Objective (RPO), Daily Backups would be suitable for projects willing to lose up to 24 hours worth of data. If a lower RPO is required, enable PITR.
+Supabase Projects use disks that offer 99.8-99.9% durability by default.
+Use Read Replicas if you require availability resilience to a disk failure event
+Use PITR if you require durability resilience to a disk failure event
+Upgrading to the Supabase Pro Plan will give you access to our support team.
+Rate limiting, resource allocation, & abuse prevention#
+Supabase employs a number of safeguards against bursts of incoming traffic to prevent abuse and help maximize stability across the platform
+If you're on a Team or Enterprise Plan and expect high load events, such as production launches, heavy load testing, or prolonged high resource usage, open a ticket via the support form for help. Provide at least 2 weeks notice.
+Auth rate limits#
+The table below shows the rate limit quotas on the following authentication endpoints. You can configure the auth rate limits for your project here.
+Endpoint
+Path
+Limited By
+Rate Limit
+All endpoints that send emails
+/auth/v1/signup /auth/v1/recover /auth/v1/user[^1]
+Sum of combined requests
+As of 3 Sep 2024, this has been updated to 2 emails per hour. You can only change this with your own custom SMTP setup.
+All endpoints that send One-Time-Passwords (OTP)
+/auth/v1/otp
+Sum of combined requests
+Defaults to 360 OTPs per hour. Is customizable.
+Send OTPs or magic links
+/auth/v1/otp
+Last request
+Defaults to 60 seconds window before a new request is allowed. Is customizable.
+Signup confirmation request
+/auth/v1/signup
+Last request
+Defaults to 60 seconds window before a new request is allowed. Is customizable.
+Password Reset Request
+/auth/v1/recover
+Last request
+Defaults to 60 seconds window before a new request is allowed. Is customizable.
+Verification requests
+/auth/v1/verify
+IP Address
+360 requests per hour (with bursts up to 30 requests)
+Token refresh requests
+/auth/v1/token
+IP Address
+1800 requests per hour (with bursts up to 30 requests)
+Create or Verify an MFA challenge
+/auth/v1/factors/:id/challenge /auth/v1/factors/:id/verify
+IP Address
+15 requests per minute (with bursts up to 30 requests)
+Anonymous sign-ins
+/auth/v1/signup[^2]
+IP Address
+30 requests per hour (with bursts up to 30 requests)
+
+Realtime quotas#
+Review the Realtime quotas.
+If you need quotas increased you can always contact support.
+Abuse prevention#
+Supabase provides CAPTCHA protection on the signup, sign-in and password reset endpoints. Refer to our guide on how to protect against abuse using this method.
+Email link validity#
+When working with enterprise systems, email scanners may scan and make a GET request to the reset password link or sign up link in your email. Since links in Supabase Auth are single use, a user who opens an email post-scan to click on a link will receive an error. To get around this problem,
+consider altering the email template to replace the original magic link with a link to a domain you control. The domain can present the user with a "Sign-in" button which redirect the user to the original magic link URL when clicked.
+When using a custom SMTP service, some services might have link tracking enabled which may overwrite or disform the email confirmation links sent by Supabase Auth. To prevent this from happening, we recommend that you disable link tracking when using a custom SMTP service.
+Subscribe to Supabase status page#
+Stay informed about Supabase service status by subscribing to the Status Page. We recommend setting up Slack notifications through an RSS feed to ensure your team receives timely updates about service status changes.
+Setting up Slack notifications#
+Install the RSS app in Slack:
+Visit the RSS app page in the Slack marketplace
+Click Add to Slack if not already installed
+Otherwise you will get straight to next step, no need to reinstall the app
+Configure the Supabase status feed:
+Create a channel (e.g., #supabase-status-alerts) for status updates
+On the RSS app page go to Add a Feed section and set Feed URL to https://status.supabase.com/history.rss
+Select your designated channel and click "Subscribe to this feed"
+Once configured, your team will receive automatic notifications in Slack whenever the Supabase Status Page is updated.
+For detailed setup instructions, see the Add RSS feeds to Slack.
+Next steps#
+This checklist is always growing so be sure to check back frequently, and also feel free to suggest additions and amendments by making a PR on GitHub.
+Edit this page on GitHub
+Is this helpful?
+No
+Yes
+On this page
+SecurityPerformanceAvailabilityRate limiting, resource allocation, & abuse preventionAuth rate limitsRealtime quotasAbuse preventionEmail link validitySubscribe to Supabase status pageSetting up Slack notificationsNext steps
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+SOC 2 Compliance and Supabase
+
+Supabase is Systems and Organization Controls 2 (SOC 2) Type 2 compliant and is assessed annually to ensure continued adherence to the SOC 2 security framework. SOC 2 assesses Supabase’s adherence to, and implementation of, controls governing the security, availability, processing integrity, confidentiality, and privacy on the Supabase platform. These controls define requirements for the management and storage of customer data on the platform. These controls applied to Supabase, as a service provider, serve two customer data environments.
+The first environment is the customer relationship with Supabase, this refers to the data Supabase has on a customer of the platform. All billing, contact, usage and contract information is managed and stored according to SOC 2 requirements.
+The second environment is the backend as a service (the product) that Supabase provides to customers. Supabase implements the controls from the SOC 2 framework to ensure the security of the platform, which hosts the backend as a service (the product), including the Postgres Database, Storage, Authentication, Realtime, Edge Functions and Data API features. Supabase can assert that the environment hosting customer data, stored within the product, adheres to SOC 2 requirements. And the management and storage of data within this environment (the product) is strictly controlled and kept secure.
+Supabase’s SOC 2 compliance does not transfer to environments outside of the Supabase product or Supabase’s control. This is known as the security or compliance boundary and forms part of the Shared Responsibility Model that Supabase and their customers enter into.
+SOC 2 does not cover, nor is it a substitute for, compliance with the Health Insurance Portability and Accountability Act (HIPAA).
+Organizations must have a signed Business Associate Agreement (BAA) with Supabase and have the HIPAA add-on enabled when dealing with Protected Health Information (PHI).
+Our HIPAA documentation provides more information about the responsibilities and requirements for HIPAA on Supabase.
+Meeting compliance requirements
+SOC 2 compliance is a critical aspect of data security for Supabase and our customers. Being fully SOC 2 compliant is a shared responsibility and here’s a breakdown of the responsibilities for both parties:
+Supabase responsibilities#
+Security Measures: Supabase implements robust security controls to protect customer data. These includes measures to prevent data breaches and ensure the confidentiality and integrity of the information managed and stored by the platform. Supabase is obliged to be vigilant about security risks and must demonstrate that our security measures meet industry standards through regular audits.
+Compliance Audits: Supabase undergoes SOC 2 audits yearly to verify that our data management practices comply with the Trust Services Criteria (TSC), which include security, availability, processing integrity, confidentiality, and privacy. These audits are conducted by an independent third party.
+Incident Response: Supabase has an incident response plan in place to handle data breaches efficiently. This plan outlines how the organization detects issues, responds to incidents, and manages system vulnerabilities.
+Reporting: Upon a successful audit, Supabase receive a SOC 2 report that details our compliance status. This report is available to customers as a SOC 2 Type 2 report, and allows customers and stakeholders to assure that Supabase has implemented adequate and the requisite safeguards to protect sensitive information.
+Customer responsibilities#
+Compliance Requirements: Understand your own compliance requirements. While SOC 2 compliance is not a legal requirement, many enterprise customers require their providers to have a SOC 2 report. This is because it provides assurance that the provider has implemented robust controls to protect customer data.
+Due Diligence: Customers must perform due diligence when selecting Supabase as a provider. This includes reviewing the SOC 2 Type 2 report to ensure that Supabase meets the expected security standards. Customers should also understand the division of responsibilities between themselves and Supabase to avoid duplication of effort.
+Monitoring and Review: Customers should regularly monitor and review Supabase’s compliance status.
+Control Compliance: If a customer needs to be SOC 2 compliant, they should themselves implement the requisite controls and undergo a SOC 2 audit.
+Shared responsibilities#
+Data Security: Both customers and Supabase share the responsibility of ensuring data security. While the Supabase, as the provider, implements the security controls, the customer must ensure that their use of the Supabase platform does not compromise these controls.
+Control Compliance: Supabase asserts through our SOC 2 that all requisite security controls are met. Customers wishing to also be SOC 2 compliant need to go through their own SOC 2 audit, verifying that security controls are met on the customer's side.
+In summary, SOC 2 compliance involves a shared responsibility between Supabase and our customers to ensure the security and integrity of data. Supabase, as a provider, must implement and maintain robust security measures, customers must perform due diligence and monitor Supabase's compliance status, while also implement their own compliance controls to protect their sensitive information.
+Frequently asked questions#
+How often is Supabase SOC 2 audited?
+Supabase has obtained SOC 2 Type 2 certification, which means Supabase's controls are fully audited annually. The auditor's reports on these examinations are issued as soon as they are ready after the audit. Supabase makes the SOC 2 Type 2 report available to Enterprise and Team Plan customers. The audit report covers a rolling 12-month window, known as the audit period, and runs from 1 March to 28 February of the next calendar year.
+How to obtain Supabase's SOC 2 Type 2 report?
+To access the SOC 2 Type 2 report, you must be a Enterprise or Team Plan Supabase customer. The report is downloadable from the Legal Documents section in the organization dashboard.
+Why does it matter that Supabase is SOC 2 Compliant?
+SOC 2 is used to assert that controls are in place to ensure the proper management and storage of data. SOC 2 provides a framework for measuring how secure a service provider is and re-evaluates the provider on an annual basis. This provides the confidence and assurance that data stored within the Supabase platform is correctly secured and managed.
+If Supabase’s SOC 2 does not transfer to the customer, why does it matter that Supabase has SOC 2?
+Even though Supabase’s SOC 2 compliance does not transfer outside of the product, it does provide the assurance that all data within the product is correctly managed and stored. Supabase can assert that only authorized persons have access to the data, and security controls are in place to prevent, detect and respond to data intrusions. This forms part of a customer’s own adherence to the SOC 2 framework and relieves part of the burden of data management and storage on the customer. In many organizations' security and risk departments require all vendors or sub-processors to be SOC 2 compliant.
+What is the security or compliance boundary?
+This defines the boundary or border between Supabase and customer responsibility for data security within the Shared Responsibility Model. Customer data stored within the Supabase product, on the Supabase side of the security boundary, is managed and secured by Supabase. Supabase ensures the safe handling and storage of data within this environment. This includes controls for preventing unauthorized access, monitoring data access, alerting, data backups and redundancy. Data on the customer side of the boundary, the data that enters and leaves the Supabase product, is the responsibility of the customer. Management and possible storage of such data outside of Supabase should be performed by the customer, and any security and compliance controls are the responsibility of the customer.
+We have strong data residency requirements. Does Supabase SOC 2 cover data residency?
+While SOC 2 itself does not mandate specific data residency requirements, organizations may still need to comply with other regulatory frameworks, such as GDPR, that do have such requirements. Ensuring projects are deployed in the correct region is a customer responsibility as each Supabase project is deployed into the region the customer specifies at creation time. All data will remain within the chosen region.
+Read replicas can be created for multi-region availability, it remains the customer's responsibility to ensure regions chosen for read replicas are within the geographic area required by any additional regulatory frameworks.
+Does SOC 2 cover health related data (HIPAA)?
+SOC 2 is non-industry specific and provides a framework for the security and privacy of data. This is however not sufficient in most cases when dealing with Protected Healthcare Information (PHI), which requires additional privacy and legal controls.
+When dealing with PHI in the United States or for United States customers, HIPAA is mandatory.
+Resources#
+System and Organization Controls: SOC Suite of Services
+Shared Responsibility Model
+Edit this page on GitHub
+Is this helpful?
+No
+Yes
+On this page
+Supabase responsibilitiesCustomer responsibilitiesShared responsibilitiesFrequently asked questionsResources
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+Automated testing using GitHub Actions
+Run your tests when you or your team make changes.
+
+You can use the Supabase CLI to run automated tests.
+Testing your database#
+After you have created unit tests for your database, you can use the GitHub Action to run the tests.
+Inside your repository, create a new file inside the .github/workflows folder called database-tests.yml. Copy this snippet inside the file, and the action will run whenever a new PR is created:
+name: 'database-tests'
+on:
+ pull_request:
+jobs:
+ build:
+   runs-on: ubuntu-latest
+   steps:
+     - uses: actions/checkout@v3
+     - uses: supabase/setup-cli@v1
+       with:
+         version: latest
+     - run: supabase db start
+     - run: supabase test db
+Testing your Edge Functions#
+After you have created unit tests for your Edge Functions, you can use the GitHub Action to run the tests.
+Inside your repository, create a new file inside the .github/workflows folder called functions-tests.yml. Copy this snippet inside the file, and the action will run whenever a new PR is created:
+name: 'functions-tests'
+on:
+ pull_request:
+jobs:
+ build:
+   runs-on: ubuntu-latest
+   steps:
+     - uses: actions/checkout@v3
+     - uses: supabase/setup-cli@v1
+       with:
+         version: latest
+     - uses: denoland/setup-deno@v2
+       with:
+         deno-version: latest
+     - run: supabase start
+     - run: deno test --allow-all deno-test.ts --env-file .env.local
+More resources#
+Learn more about the pgTAP extension for database testing.
+Official pgTAP Documentation: pgtap.org
+Edit this page on GitHub
+Is this helpful?
+No
+Yes
+On this page
+Testing your databaseTesting your Edge FunctionsMore resources
+Need some help?
+Contact support
+Latest product updates?
+See Changelog
+Something's not right?
+Check system status
+
+© Supabase Inc—ContributingAuthor StyleguideOpen SourceSupaSquadPrivacy Settings
+GitHub
+Twitter
+Discord
+
+Automated backups using GitHub Actions
+Backup your database on a regular basis.
+
+You can use the Supabase CLI to backup your Postgres database. The steps involve running a series of commands to dump roles, schema, and data separately.
+Inside your repository, create a new file inside the .github/workflows folder called backup.yml. Copy the following snippet inside the file, and the action will run whenever a new PR is created.
+Never backup your data to a public repository.
+Backup action#
+name: 'backup-database'
+on:
+ pull_request:
+jobs:
+ build:
+   runs-on: ubuntu-latest
+   env:
+     supabase_db_url: ${{ secrets.SUPABASE_DB_URL }}   # For example: postgresql://postgres:[YOUR-PASSWORD]@db.<ref>.supabase.co:5432/postgres
+   steps:
+     - uses: actions/checkout@v2
+     - uses: supabase/setup-cli@v1
+       with:
+         version: latest
+     - name: Backup roles
+       run: supabase db dump --db-url "$supabase_db_url" -f roles.sql --role-only
+     - name: Backup schema
+       run: supabase db dump --db-url "$supabase_db_url" -f schema.sql
+     - name: Backup data
+       run: supabase db dump --db-url "$supabase_db_url" -f data.sql --data-only --use-copy
+Periodic Backups Workflow#
+You can use the GitHub Action to run periodic backups of your database. In this example, the Action workflow is triggered by push and pull_request events on the main branch, manually via workflow_dispatch, and automatically at midnight every day due to the schedule event with a cron expression.
+The workflow runs on the latest Ubuntu runner and requires write permissions to the repository's contents. It uses the Supabase CLI to dump the roles, schema, and data from your Supabase database, utilizing the SUPABASE_DB_URL environment variable that is securely stored in the GitHub secrets.
+After the backup is complete, it auto-commits the changes to the repository using the git-auto-commit-action. This ensures that the latest backup is always available in your repository. The commit message for these automated commits is "Supabase backup".
+This workflow provides an automated solution for maintaining regular backups of your Supabase database. It helps keep your data safe and enables easy restoration in case of any accidental data loss or corruption.
+Never backup your data to a public repository.
+name: Supa-backup
+on:
+ push:
+   branches: [ main ]
+ pull_request:
+   branches: [ main ]
+ workflow_dispatch:
+ schedule:
+   - cron: '0 0 * * *' # Runs every day at midnight
+jobs:  
+ run_db_backup:
+   runs-on: ubuntu-latest
+   permissions:
+     contents: write
+   env:
+     supabase_db_url: ${{ secrets.SUPABASE_DB_URL }}   # For example: postgresql://postgres:[YOUR-PASSWORD]@db.<ref>.supabase.co:5432/postgres
+   steps:
+     - uses: actions/checkout@v3
+       with:
+         ref: ${{ github.head_ref }}
+     - uses: supabase/setup-cli@v1
+       with:
+         version: latest
+     - name: Backup roles
+       run: supabase db dump --db-url "$supabase_db_url" -f roles.sql --role-only
+     - name: Backup schema
+       run: supabase db dump --db-url "$supabase_db_url" -f schema.sql
+     - name: Backup data
+       run: supabase db dump --db-url "$supabase_db_url" -f data.sql --data-only --use-copy
+     - uses: stefanzweifel/git-auto-commit-action@v4
+       with:
+         commit_message: Supabase backup
+

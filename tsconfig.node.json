@@ -1,11 +1,61 @@
 {
   "compilerOptions": {
+    /* Node.js Environment */
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    
+    /* Project Configuration */
     "composite": true,
-    "skipLibCheck": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "incremental": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist/node",
+    "rootDir": ".",
+    
+    /* Type Checking */
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "useUnknownInCatchVariables": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    
+    /* Module System */
     "allowSyntheticDefaultImports": true,
-    "strict": true
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": false,
+    
+    /* Performance */
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": false,
+    
+    /* Node.js specific */
+    "types": ["node", "vite/client", "vitest"]
   },
-  "include": ["vite.config.ts", "vitest.config.ts", "vitest.edge-functions.config.ts"]
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "vitest.edge-functions.config.ts",
+    "vitest.setup.ts",
+    "playwright.config.ts",
+    "tailwind.config.ts",
+    "eslint.config.js",
+    "postcss.config.js",
+    "scripts/**/*",
+    "server/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage"
+  ]
 }

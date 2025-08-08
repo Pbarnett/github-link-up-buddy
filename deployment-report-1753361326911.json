@@ -1,0 +1,29 @@
+{
+  "timestamp": "2025-07-24T12:48:46.910Z",
+  "duration": "31.36s",
+  "environment": "production",
+  "version": "1.0.0",
+  "commit": "unknown",
+  "checks": {
+    "environment": true,
+    "aws": true,
+    "kms": true,
+    "supabase": true,
+    "edgeFunctions": true,
+    "monitoring": true,
+    "healthCheck": true
+  },
+  "configuration": {
+    "aws_region": "us-east-1",
+    "supabase_project": "bbonngdyfyfjqfhvoljl",
+    "kms_keys": [
+      "alias/parker-flight-general-production",
+      "alias/parker-flight-pii-production",
+      "alias/parker-flight-payment-production"
+    ],
+    "edge_functions": [
+      "encrypt-data",
+      "create-payment-method"
+    ]
+  }
+}
