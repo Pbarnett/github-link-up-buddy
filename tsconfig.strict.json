@@ -1,0 +1,78 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Maximum Type Safety - Enterprise Level
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitAny": true,
+    "useUnknownInCatchVariables": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    
+    // Advanced Type Checking
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    
+    // Enhanced Error Reporting
+    "noErrorTruncation": true,
+    "preserveWatchOutput": true,
+    "pretty": true,
+    
+    // Advanced Module Resolution
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "allowArbitraryExtensions": true,
+    "noResolve": false,
+    
+    // Performance Optimizations
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "assumeChangesOnlyAffectDirectDependencies": true,
+    
+    // Additional Checks
+    "noImplicitUseStrict": false,
+    "suppressExcessPropertyErrors": false,
+    "suppressImplicitAnyIndexErrors": false,
+    "keyofStringsOnly": false,
+    
+    // Plugin Support
+    "plugins": [
+      {
+        "name": "typescript-strict-plugin",
+        "onlyRunOnTypeScript": true
+      }
+    ]
+  },
+  "compileOnSave": false,
+  "include": [
+    "src/**/*",
+    "src/types/**/*",
+    "app/**/*",
+    "scripts/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build", 
+    "coverage",
+    "**/*.min.js",
+    "**/*.bundle.js",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts", 
+    "**/*.spec.tsx",
+    "playwright.config.ts",
+    "vitest.config.ts"
+  ]
+}

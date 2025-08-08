@@ -1,0 +1,154 @@
+# OpenTelemetry Collector Configuration
+# Production-ready configuration with resource optimization and security best practices
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: ${OTEL_RECEIVER_ENDPOINT:-0.0.0.0:4317}
+        auth:
+          authenticator: bearertokenauth
+        tls:
+          cert_file: ${OTEL_TLS_CERT_FILE}
+          key_file: ${OTEL_TLS_KEY_FILE}
+          ca_file: ${OTEL_TLS_CA_FILE}
+      http:
+        endpoint: ${OTEL_HTTP_ENDPOINT:-0.0.0.0:4318}
+        auth:
+          authenticator: bearertokenauth
+        tls:
+          cert_file: ${OTEL_TLS_CERT_FILE}
+          key_file: ${OTEL_TLS_KEY_FILE}
+          ca_file: ${OTEL_TLS_CA_FILE}
+
+processors:
+  # Batch processor with optimized settings
+  batch:
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+    timeout: 5s
+    
+  # Memory limiter to prevent OOM
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: ${OTEL_MEMORY_LIMIT_MIB:-512}
+    spike_limit_mib: ${OTEL_MEMORY_SPIKE_LIMIT_MIB:-128}
+    
+  # Resource processor for service identification
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: ${DEPLOYMENT_ENVIRONMENT}
+        action: upsert
+      - key: service.version
+        value: ${SERVICE_VERSION}
+        action: upsert
+      - key: k8s.cluster.name
+        value: ${K8S_CLUSTER_NAME}
+        action: upsert
+        
+  # Sampling processor for production load management
+  probabilistic_sampler:
+    hash_seed: 22
+    sampling_percentage: ${OTEL_SAMPLING_PERCENTAGE:-100}
+
+exporters:
+  # OTLP exporter with optimized queue configuration
+  otlp:
+    endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+    headers:
+      api-key: ${OTEL_EXPORTER_API_KEY}
+    tls:
+      insecure: false
+      cert_file: ${OTEL_EXPORTER_CERT_FILE}
+      key_file: ${OTEL_EXPORTER_KEY_FILE}
+      ca_file: ${OTEL_EXPORTER_CA_FILE}
+    sending_queue:
+      enabled: true
+      num_consumers: 4
+      queue_size: ${OTEL_QUEUE_SIZE:-800}
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    timeout: 30s
+    
+  # Jaeger exporter (optional)
+  jaeger:
+    endpoint: ${JAEGER_ENDPOINT}
+    tls:
+      insecure: false
+    sending_queue:
+      enabled: true
+      num_consumers: 2
+      queue_size: ${JAEGER_QUEUE_SIZE:-400}
+      
+  # Prometheus metrics exporter
+  prometheus:
+    endpoint: ${PROMETHEUS_ENDPOINT:-0.0.0.0:8889}
+    namespace: otelcol
+    const_labels:
+      environment: ${DEPLOYMENT_ENVIRONMENT}
+      
+  # Logging exporter for debugging (disable in production)
+  logging:
+    loglevel: ${OTEL_LOG_LEVEL:-info}
+
+extensions:
+  # Health check extension
+  health_check:
+    endpoint: ${OTEL_HEALTH_CHECK_ENDPOINT:-0.0.0.0:13133}
+    
+  # Bearer token authenticator
+  bearertokenauth:
+    token: ${OTEL_AUTH_TOKEN}
+    
+  # Performance profiler (development only)
+  pprof:
+    endpoint: ${OTEL_PPROF_ENDPOINT:-localhost:1777}
+    
+  # zPages for debugging
+  zpages:
+    endpoint: ${OTEL_ZPAGES_ENDPOINT:-localhost:55679}
+
+service:
+  extensions: [health_check, bearertokenauth, pprof, zpages]
+  
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch, probabilistic_sampler]
+      exporters: [otlp, jaeger]
+      
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp, prometheus]
+      
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp]
+
+  # Telemetry configuration for collector metrics
+  telemetry:
+    logs:
+      level: ${OTEL_COLLECTOR_LOG_LEVEL:-info}
+      development: false
+      sampling:
+        enabled: true
+        tick: 10s
+        initial: 5
+        thereafter: 200
+    metrics:
+      level: detailed
+      address: ${OTEL_INTERNAL_METRICS_ADDRESS:-0.0.0.0:8888}
+      
+# Resource usage monitoring
+# Monitor these metrics to tune performance:
+# - otelcol_exporter_queue_size
+# - otelcol_exporter_queue_capacity  
+# - otelcol_processor_batch_batch_send_size
+# - otelcol_receiver_accepted_spans
+# - otelcol_receiver_refused_spans

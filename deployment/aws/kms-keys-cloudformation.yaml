@@ -1,0 +1,237 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Parker Flight KMS Keys for Enhanced AWS SDK Integration'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues:
+      - development
+      - staging
+      - production
+    Description: Environment for the KMS keys
+  
+  ApplicationName:
+    Type: String
+    Default: parker-flight
+    Description: Application name for resource naming
+  
+  KeyRotationEnabled:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable automatic key rotation
+
+Resources:
+  # General Data Encryption Key
+  GeneralDataKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub '${ApplicationName} General Data Encryption Key - ${Environment}'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Parker Flight Application Access
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:role/parker-flight-${Environment}-role'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'kms:EncryptionContext:purpose': 'general-data'
+                'kms:EncryptionContext:application': !Ref ApplicationName
+      EnableKeyRotation: !Ref KeyRotationEnabled
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: DataType
+          Value: General
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  GeneralDataKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ApplicationName}-general-${Environment}'
+      TargetKeyId: !Ref GeneralDataKey
+
+  # PII Data Encryption Key
+  PIIDataKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub '${ApplicationName} PII Data Encryption Key - ${Environment}'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Parker Flight Application Access
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:role/parker-flight-${Environment}-role'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'kms:EncryptionContext:purpose': 'user-profile-data'
+                'kms:EncryptionContext:application': !Ref ApplicationName
+      EnableKeyRotation: !Ref KeyRotationEnabled
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: DataType
+          Value: PII
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  PIIDataKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ApplicationName}-pii-${Environment}'
+      TargetKeyId: !Ref PIIDataKey
+
+  # Payment Data Encryption Key
+  PaymentDataKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub '${ApplicationName} Payment Data Encryption Key - ${Environment}'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow Parker Flight Application Access
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:role/parker-flight-${Environment}-role'
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'kms:EncryptionContext:purpose': 'payment-method-data'
+                'kms:EncryptionContext:application': !Ref ApplicationName
+      EnableKeyRotation: !Ref KeyRotationEnabled
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: DataType
+          Value: Payment
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  PaymentDataKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ApplicationName}-payment-${Environment}'
+      TargetKeyId: !Ref PaymentDataKey
+
+  # CloudWatch Log Group for KMS Operations
+  KMSLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/parker-flight/${Environment}/kms-operations'
+      RetentionInDays: 30
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+Outputs:
+  GeneralKeyId:
+    Description: ID of the General Data KMS Key
+    Value: !Ref GeneralDataKey
+    Export:
+      Name: !Sub '${AWS::StackName}-GeneralKeyId'
+
+  GeneralKeyArn:
+    Description: ARN of the General Data KMS Key
+    Value: !GetAtt GeneralDataKey.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-GeneralKeyArn'
+
+  PIIKeyId:
+    Description: ID of the PII Data KMS Key
+    Value: !Ref PIIDataKey
+    Export:
+      Name: !Sub '${AWS::StackName}-PIIKeyId'
+
+  PIIKeyArn:
+    Description: ARN of the PII Data KMS Key
+    Value: !GetAtt PIIDataKey.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-PIIKeyArn'
+
+  PaymentKeyId:
+    Description: ID of the Payment Data KMS Key
+    Value: !Ref PaymentDataKey
+    Export:
+      Name: !Sub '${AWS::StackName}-PaymentKeyId'
+
+  PaymentKeyArn:
+    Description: ARN of the Payment Data KMS Key
+    Value: !GetAtt PaymentDataKey.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-PaymentKeyArn'
+
+  GeneralKeyAlias:
+    Description: Alias of the General Data KMS Key
+    Value: !Ref GeneralDataKeyAlias
+    Export:
+      Name: !Sub '${AWS::StackName}-GeneralKeyAlias'
+
+  PIIKeyAlias:
+    Description: Alias of the PII Data KMS Key
+    Value: !Ref PIIDataKeyAlias
+    Export:
+      Name: !Sub '${AWS::StackName}-PIIKeyAlias'
+
+  PaymentKeyAlias:
+    Description: Alias of the Payment Data KMS Key
+    Value: !Ref PaymentDataKeyAlias
+    Export:
+      Name: !Sub '${AWS::StackName}-PaymentKeyAlias'
+
+  LogGroupName:
+    Description: CloudWatch Log Group for KMS operations
+    Value: !Ref KMSLogGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-LogGroupName'

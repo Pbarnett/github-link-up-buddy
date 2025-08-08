@@ -1,0 +1,49 @@
+{
+  "timestamp": "2025-07-27T04:15:41.611Z",
+  "environment": "development",
+  "baseUrl": "http://localhost:3000",
+  "summary": {
+    "passed": 1,
+    "failed": 1,
+    "warnings": 14,
+    "overall": "FAIL"
+  },
+  "details": {
+    "passed": [
+      "Build artifacts present"
+    ],
+    "failed": [
+      "No critical paths are accessible"
+    ],
+    "warnings": [
+      "Large build size: 10MB",
+      "Health endpoint /api/health not reachable",
+      "Health endpoint /health not reachable",
+      "Health endpoint / not reachable",
+      "Path / returned 0",
+      "Path /login returned 0",
+      "Path /dashboard returned 0",
+      "Path /api returned 0",
+      "No database configuration found",
+      "No feature flag configuration found",
+      "Bundle sizes exceed recommended limits (JS: 1646KB, CSS: 792KB)",
+      "Could not measure response time",
+      "Could not fetch security headers",
+      "Missing environment variables: NODE_ENV, PORT"
+    ],
+    "metrics": {
+      "buildSizeKB": 10374,
+      "accessiblePaths": 0,
+      "bundleSizeJs": 1646,
+      "bundleSizeCss": 792,
+      "environmentVariables": 0
+    }
+  },
+  "metrics": {
+    "buildSizeKB": 10374,
+    "accessiblePaths": 0,
+    "bundleSizeJs": 1646,
+    "bundleSizeCss": 792,
+    "environmentVariables": 0
+  }
+}
