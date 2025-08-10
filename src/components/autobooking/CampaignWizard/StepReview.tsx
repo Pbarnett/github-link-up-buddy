@@ -62,12 +62,12 @@ function StepReview({
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2">
           <CheckCircle className="h-5 w-5" />
-          Review & Confirm Campaign
+          Review & Confirm Rule
         </CardTitle>
         <CardDescription>
-          Please review all details before creating your auto-booking campaign.
+          Please review all details before creating your auto‑booking rule.
         </CardDescription>
       </CardHeader>
       
@@ -76,12 +76,12 @@ function StepReview({
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Plane className="h-5 w-5" />
-            <h3 className="text-lg font-semibold">Campaign Details</h3>
+            <h3 className="text-lg font-semibold">Rule Details</h3>
           </div>
           
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-500">Campaign Name</p>
+              <p className="text-sm font-medium text-gray-500">Rule Name</p>
               <p className="font-medium">{criteriaData.campaignName}</p>
             </div>
             
@@ -266,11 +266,11 @@ function StepReview({
         <div className="bg-blue-50 p-4 rounded-lg">
           <h4 className="font-medium mb-2">What happens next?</h4>
           <ul className="text-sm text-gray-600 space-y-1">
-            <li>• Your campaign will be activated immediately</li>
+            <li>• Your rule will be activated immediately</li>
             <li>• We'll monitor flights matching your criteria 24/7</li>
             <li>• When we find a deal within your budget, we'll automatically book it</li>
             <li>• You'll receive instant notifications about bookings and status updates</li>
-            <li>• You can pause or modify your campaign anytime from the dashboard</li>
+            <li>• You can pause or modify your rule anytime from the dashboard</li>
           </ul>
         </div>
 
@@ -290,7 +290,7 @@ function StepReview({
             disabled={isLoading}
             className="bg-green-600 hover:bg-green-700"
           >
-            {isLoading ? 'Creating Campaign...' : 'Create Campaign'}
+            {isLoading ? 'Creating Rule...' : 'Create Rule'}
           </Button>
         </div>
       </CardContent>

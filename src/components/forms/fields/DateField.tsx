@@ -23,6 +23,8 @@ interface DateFieldProps {
   disabled?: boolean;
   error?: string;
   className?: string;
+  minDate?: number;
+  maxDate?: number;
 }
 
 export const DateField: React.FC<DateFieldProps> = ({

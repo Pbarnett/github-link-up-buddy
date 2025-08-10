@@ -36,8 +36,9 @@ class StepFunctionsService {
   private apiEndpoint: string;
 
   constructor() {
-    // AWS API Gateway endpoint for Step Functions
-    this.apiEndpoint = process.env.VITE_AWS_STEP_FUNCTIONS_API || '';
+    // AWS API Gateway endpoint for Step Functions (browser-safe)
+    const env = (typeof import.meta !== 'undefined' ? (import.meta as any).env : {}) || {};
+    this.apiEndpoint = env.VITE_AWS_STEP_FUNCTIONS_API || '';
     
     if (!this.apiEndpoint && featureFlags.useAwsStepFunctions()) {
       console.warn('AWS Step Functions API endpoint not configured');
@@ -62,17 +63,20 @@ class StepFunctionsService {
         criteria: {
           destination: formData.destination,
           departureAirports: formData.departureAirports || [],
-          departureDates: {
-            start: formData.departureDates.start.toISOString(),
-            end: formData.departureDates.end.toISOString()
-          },
+          // normalize dates safely (accept both string and Date)
+          departureDates: (() => {
+            const dd: any = (formData as any).departureDates;
+            const start = typeof dd?.start === 'string' ? dd.start : (dd?.start instanceof Date ? dd.start.toISOString() : '');
+            const end = typeof dd?.end === 'string' ? dd.end : (dd?.end instanceof Date ? dd.end.toISOString() : '');
+            return { start, end };
+          })(),
           maxPrice: formData.maxPrice,
           minDuration: formData.minDuration || 3,
           maxDuration: formData.maxDuration || 14,
           directFlightsOnly: formData.directFlightsOnly || false,
           cabinClass: formData.cabinClass || 'economy',
           travelerProfileId: formData.travelerProfileId,
-          paymentMethodId: formData.paymentMethodId
+          paymentMethodId: String(formData.paymentMethodId || '')
         }
       };
 
@@ -195,7 +199,8 @@ class StepFunctionsService {
 
     const response = await fetch(`${this.apiEndpoint}/campaigns?userId=${userId}`, {
       headers: {
-        'Authorization': `Bearer ${await this.getAuthToken()}`
+        'Authorization': `Bearer ${await this.getAuthToken()}`,
+        'Content-Type': 'application/json'
       }
     });
 
@@ -210,10 +215,17 @@ class StepFunctionsService {
    * Get authentication token for Step Functions API
    */
   private async getAuthToken(): Promise<string> {
-    // For now, we'll use a simple token - in production, this should integrate
-    // with your existing auth system (Supabase JWT)
-    const token = localStorage.getItem('supabase.auth.token');
-    return token || 'development-token';
+    // Use Supabase session token for authorization
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase.auth.getSession();
+      const accessToken: string | undefined = data?.session?.access_token;
+      if (!accessToken) throw new Error('No Supabase session');
+      return accessToken;
+    } catch (err) {
+      console.warn('Falling back: no Supabase session token available for Step Functions API', err);
+      return 'development-token';
+    }
   }
 
   /**

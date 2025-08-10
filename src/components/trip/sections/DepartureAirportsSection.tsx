@@ -29,31 +29,43 @@ const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) =>
               Select NYC area airports you can depart from.
             </FormDescription>
             <div className="flex flex-wrap gap-3 mt-3">
-              {NYC_AIRPORTS.map((airport) => (
-                <FormItem key={airport.id} className="flex items-center">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value?.includes(airport.id)}
-                      onCheckedChange={(checked) => {
-                        const updatedValue = checked
-                          ? [...(field.value || []), airport.id]
-                          : (field.value || []).filter((value: string) => value !== airport.id);
+              {NYC_AIRPORTS.map((airport) => {
+                const isSelected = !!field.value?.includes(airport.id);
+                return (
+                  <FormItem key={airport.id} className="flex items-center">
+                    <FormControl>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) => {
+                          const updatedValue = checked
+                            ? [...(field.value || []), airport.id]
+                            : (field.value || []).filter((value: string) => value !== airport.id);
+                          field.onChange(updatedValue);
+                        }}
+                        className="sr-only"
+                      />
+                    </FormControl>
+                    <button
+                      type="button"
+                      role="button"
+                      aria-pressed={isSelected}
+                      onClick={() => {
+                        const updatedValue = isSelected
+                          ? (field.value || []).filter((value: string) => value !== airport.id)
+                          : [...(field.value || []), airport.id];
                         field.onChange(updatedValue);
                       }}
-                      className="sr-only"
-                    />
-                  </FormControl>
-                  <FormLabel 
-                    className={`px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-all duration-200 border-2 ${
-                      field.value?.includes(airport.id) 
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm' 
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300 hover:bg-blue-50'
-                    }`}
-                  >
-                    {airport.label}
-                  </FormLabel>
-                </FormItem>
-              ))}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border-2 focus:outline-none focus:ring-2 focus:ring-blue-300 ${
+                        isSelected
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300 hover:bg-blue-50'
+                      }`}
+                    >
+                      {airport.label}
+                    </button>
+                  </FormItem>
+                );
+              })}
             </div>
             <FormMessage />
           </FormItem>
@@ -74,6 +86,10 @@ const DepartureAirportsSection = ({ control }: DepartureAirportsSectionProps) =>
               <Input 
                 placeholder="e.g., BOS" 
                 className="h-11 border-gray-300"
+                autoComplete="off"
+                inputMode="text"
+                pattern="[A-Za-z]{3}"
+                title="Enter a three-letter IATA airport code (e.g., BOS)"
                 {...field} 
               />
             </FormControl>

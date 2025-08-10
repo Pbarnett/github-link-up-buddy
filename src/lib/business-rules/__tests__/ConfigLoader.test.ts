@@ -32,10 +32,11 @@ describe('ConfigLoader', () => {
       emergencyMessage: undefined
     };
 
-    mockFetch.mockResolvedValueOnce({
+mockFetch.mockResolvedValueOnce({
       ok: true,
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: vi.fn().mockResolvedValue(mockConfig)
-    });
+    } as any);
 
     const config = await configLoader.loadConfig('test');
     expect(config).toEqual(mockConfig);
@@ -43,7 +44,15 @@ describe('ConfigLoader', () => {
   });
 
   it('should return fallback config on fetch failure', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('Network error'));
+mockFetch.mockRejectedValueOnce(new Error('Network error'));
+    // Static fallback attempt should also fail its fetch, triggering final fallback
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      statusText: 'Not Found',
+      headers: new Headers({ 'Content-Type': 'text/plain' }),
+      text: vi.fn().mockResolvedValue('not found')
+    } as any);
     
     const config = await configLoader.loadConfig('test');
     expect(config.updatedBy).toBe('system@fallback.com');
@@ -65,10 +74,11 @@ describe('ConfigLoader', () => {
       emergencyMessage: undefined
     };
     
-    mockFetch.mockResolvedValueOnce({
+mockFetch.mockResolvedValueOnce({
       ok: true,
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: vi.fn().mockResolvedValue(mockConfig)
-    });
+    } as any);
 
     const config1 = await configLoader.loadConfig('test');
     const config2 = await configLoader.loadConfig('test');

@@ -20,7 +20,8 @@ interface WalletContextType {
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-export const WalletProvider: React.FC = ({ children }) => {
+type WalletProviderProps = { children: React.ReactNode };
+export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
   const fetchPaymentMethods = useCallback(async () => {

@@ -34,7 +34,9 @@ export const useFormState = (
       setFormState(prevState => ({
         ...prevState,
         values: values || {},
-        errors: form.formState.errors || {},
+        errors: Object.fromEntries(
+          Object.entries(form.formState.errors || {}).map(([k, v]: any) => [k, v?.message ?? ''])
+        ),
         isSubmitting: form.formState.isSubmitting,
         isValid: form.formState.isValid
       }));

@@ -31,8 +31,8 @@ const createTrip = async (
     budget: formData.budget,
     // Include new fields if provided
     departure_airports: formData.departure_airports || [],
-    destination_airport: formData.destination_airport || null,
-    destination_location_code: formData.destination_airport || null,
+    destination_airport: formData.destination_airport || '',
+    destination_location_code: formData.destination_airport || '',
     min_duration: formData.min_duration || 3,
     max_duration: formData.max_duration || 6,
     // Filter preferences

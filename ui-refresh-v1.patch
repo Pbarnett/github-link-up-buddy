@@ -1,0 +1,628 @@
+From ef120a9f93c68b5e162e1301a329224782c5273a Mon Sep 17 00:00:00 2001
+From: Parker Barnett <parker.s.barnett@gmail.com>
+Date: Sun, 10 Aug 2025 13:29:26 -0500
+Subject: [PATCH] UI refresh (flagged): add tokens +
+ Field/MoneyInput/MonthPreset/SummaryBar; wire TripRequestForm with
+ ui_refresh_v1; Wallet zero-state reassurance; no logic/schema changes
+
+---
+ src/components/layout/SummaryBar.tsx          |  48 ++++++++
+ src/components/trip/TripRequestForm.tsx       |  87 +++++++++++++-
+ .../trip/sections/EnhancedBudgetSection.tsx   |  36 ++++--
+ src/components/ui/Field.tsx                   |  32 ++++++
+ src/components/ui/MoneyInput.tsx              |  45 ++++++++
+ src/components/ui/MonthPreset.tsx             |  33 ++++++
+ src/main.tsx                                  | 106 ++++++++++++++----
+ src/pages/Wallet.tsx                          |   7 +-
+ src/styles/tokens.css                         |  32 ++++++
+ 9 files changed, 389 insertions(+), 37 deletions(-)
+ create mode 100644 src/components/layout/SummaryBar.tsx
+ create mode 100644 src/components/ui/Field.tsx
+ create mode 100644 src/components/ui/MoneyInput.tsx
+ create mode 100644 src/components/ui/MonthPreset.tsx
+ create mode 100644 src/styles/tokens.css
+
+diff --git a/src/components/layout/SummaryBar.tsx b/src/components/layout/SummaryBar.tsx
+new file mode 100644
+index 00000000..d9de4bf6
+--- /dev/null
++++ b/src/components/layout/SummaryBar.tsx
+@@ -0,0 +1,48 @@
++import React from 'react';
++
++export type SummaryValue = {
++  from?: string[];
++  to?: string[];
++  nights?: [number?, number?];
++  depart?: [Date?, Date?];
++  price?: number?;
++  cabin?: string?;
++  nonstop?: boolean?;
++};
++
++function summarize(v: SummaryValue) {
++  const parts: string[] = [];
++  if (v.from?.length) parts.push(`From ${v.from.join(', ')}`);
++  if (v.to?.length) parts.push(`to ${v.to.join(', ')}`);
++  if (v.nights && (v.nights[0] || v.nights[1])) {
++    const [min, max] = v.nights;
++    const range = [min, max].filter((x) => x !== undefined).join('–');
++    if (range) parts.push(`${range} nights`);
++  }
++  if (v.depart && (v.depart[0] || v.depart[1])) {
++    const [a, b] = v.depart;
++    const fmt = (d?: Date) => (d ? d.toLocaleDateString() : '');
++    parts.push(`depart ${fmt(a)} to ${fmt(b)}`.trim());
++  }
++  if (typeof v.price === 'number') parts.push(`up to $${v.price.toLocaleString()}`);
++  if (v.cabin) parts.push(v.cabin);
++  if (v.nonstop) parts.push('non-stop only');
++  return parts.join(', ');
++}
++
++export function SummaryBar({ value, cta, onSubmit }: { value: SummaryValue; cta: string; onSubmit: () => void; }) {
++  const text = React.useMemo(() => summarize(value), [value]);
++  return (
++    <div className="fixed bottom-0 left-0 right-0 bg-background border-t sticky-footer-shadow safe-area-bottom">
++      <div className="mx-auto max-w-6xl flex items-center justify-between gap-4 p-4">
++        <p aria-live="polite" role="status" className="truncate text-sm">
++          {text}
++        </p>
++        <button type="button" onClick={onSubmit} className="btn-primary-new px-4 py-2 rounded-md">
++          {cta}
++        </button>
++      </div>
++    </div>
++  );
++}
++
+diff --git a/src/components/trip/TripRequestForm.tsx b/src/components/trip/TripRequestForm.tsx
+index cd18980e..0b1a1b67 100644
+--- a/src/components/trip/TripRequestForm.tsx
++++ b/src/components/trip/TripRequestForm.tsx
+@@ -21,6 +21,7 @@ import { retryHttpRequest, RetryDecorators } from "@/lib/resilience/retry";
+ import { useIsMobile } from "@/hooks/use-mobile";
+ import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
+ import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
++import { MonthPreset } from "@/components/ui/MonthPreset";
+ import DepartureAirportsSection from "./sections/DepartureAirportsSection";
+ import ImprovedDatePickerSection from "./sections/ImprovedDatePickerSection";
+ import TravelersAndCabinSection from "./sections/TravelersAndCabinSection";
+@@ -31,6 +32,7 @@ import LiveBookingSummary from "./LiveBookingSummary";
+ import TripSummaryChips from "./sections/TripSummaryChips";
+ import AutoBookingSection from "./sections/AutoBookingSection";
+ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
++import { FormErrorSummary } from "@/components/forms/FormErrorSummary";
+ 
+ interface TripRequestFormProps {
+   tripRequestId?: string;
+@@ -60,7 +62,10 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
+   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+   const isMobile = useIsMobile();
+   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
++  const [showErrorSummary, setShowErrorSummary] = useState(false);
+   
++  const uiRefresh = (useFeatureFlag && typeof useFeatureFlag === 'function') ? (useFeatureFlag('ui_refresh_v1') ?? false) : false;
++
+   const form = useForm<FormValues>({
+     resolver: zodResolver(tripFormSchema),
+     defaultValues: {
+@@ -261,7 +266,9 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
+     const isStep1Valid = await form.trigger(step1Fields as any);
+     
+     if (!isStep1Valid) {
+-      // Validation failed - errors will be displayed automatically
++      // Show error summary and focus first invalid field
++      setShowErrorSummary(true);
++      focusFirstInvalid(step1Fields);
+       return;
+     }
+     
+@@ -301,6 +308,9 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
+       }
+       if (!validateFormData(data)) {
+         setIsSubmitting(false);
++        setShowErrorSummary(true);
++        // Attempt to focus the first invalid field based on current errors
++        focusFirstInvalid(Object.keys(form.formState.errors));
+         return;
+       }
+ 
+@@ -439,6 +449,13 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
+   ) : (
+     <div className="min-h-screen bg-gray-50 p-4">
+       <div className="container mx-auto py-8 space-y-6">
++        {/* Form-level status and error summary (screen reader friendly) */}
++        {showErrorSummary && Object.keys(form.formState.errors).length > 0 && (
++          <FormErrorSummary
++            errors={form.formState.errors as any}
++            onFocusField={(name) => focusFieldByName(name)}
++          />
++        )}
+         {/* Page Header */}
+         <div className="mb-8">
+           <div className="text-center max-w-2xl mx-auto">
+@@ -510,7 +527,26 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
+ 
+                   {/* Dates & Trip Length */}
+                   <div className="space-y-6 mb-8">
+-                    <ImprovedDatePickerSection control={form.control} />
++                  <ImprovedDatePickerSection control={form.control} />
++
++                  {uiRefresh && (
++                    <div className="mt-2">
++                      <p className="text-sm text-gray-600 mb-2">Or pick a month:</p>
++                      {/* Month preset chips simply write into existing earliest/latest date fields */}
++                      {/* eslint-disable-next-line react/jsx-no-undef */}
++                      <MonthPreset onSelect={(start, end) => {
++                        try {
++                          if (start && end) {
++                            form.setValue('earliestDeparture' as any, start as any, { shouldValidate: true });
++                            form.setValue('latestDeparture' as any, end as any, { shouldValidate: true });
++                          } else {
++                            form.setValue('earliestDeparture' as any, undefined as any, { shouldValidate: true });
++                            form.setValue('latestDeparture' as any, undefined as any, { shouldValidate: true });
++                          }
++                        } catch {}
++                      }} />
++                    </div>
++                  )}
+                   </div>
+                 </>
+               )}
+@@ -573,6 +609,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
+                             type="button" 
+                             variant="outline" 
+                             onClick={() => {
++                              setShowErrorSummary(false);
+                               if (mode === 'auto' && currentStep === 2) {
+                                 setCurrentStep(1);
+                               } else {
+@@ -605,6 +642,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
+                 </FormProvider>
+ 
+                 {/* Sticky Actions for Desktop */}
++                {!uiRefresh && (
+                 <StickyFormActions
+                   isSubmitting={isSubmitting}
+                   isFormValid={isFormValid}
+@@ -612,6 +650,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
+                   onSubmit={form.handleSubmit(handleStepSubmit)}
+                   control={form.control}
+                 />
++                )}
+               </div>
+             </div>
+           </div>
+@@ -628,7 +667,51 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
+         </div>
+       </div>
+     </div>
++
+   );
++  // Helpers for error summary and focusing fields
++  function focusFieldByName(name: string) {
++    const el = document.querySelector(
++      `input[name="${name}"] , select[name="${name}"] , textarea[name="${name}"]`
++    ) as HTMLElement | null;
++    if (el) {
++      el.focus();
++      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
++    }
++  }
++
++  function focusFirstInvalid(candidateNames?: string[]) {
++    const names = candidateNames && candidateNames.length > 0
++      ? candidateNames
++      : Object.keys(form.formState.errors);
++    for (const n of names) {
++      const el = document.querySelector(
++        `input[name="${n}"] , select[name="${n}"] , textarea[name="${n}"]`
++      ) as HTMLElement | null;
++      if (el) {
++        el.focus();
++        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
++        break;
++      }
++    }
++  }
++
++  function friendlyLabel(name: string) {
++    switch (name) {
++      case 'destination_airport': return 'Destination airport';
++      case 'destination_other': return 'Destination';
++      case 'nyc_airports': return 'Departure airports (NYC)';
++      case 'other_departure_airport': return 'Other departure airport';
++      case 'earliestDeparture': return 'Earliest departure date';
++      case 'latestDeparture': return 'Latest departure date';
++      case 'min_duration': return 'Minimum trip length (days)';
++      case 'max_duration': return 'Maximum trip length (days)';
++      case 'max_price': return 'Maximum price';
++      case 'preferred_payment_method_id': return 'Payment method';
++      case 'auto_book_consent': return 'Auto-booking authorization';
++      default: return name.replaceAll('_',' ');
++    }
++  }
+ };
+ 
+ // Progressive migration wrapper component
+diff --git a/src/components/trip/sections/EnhancedBudgetSection.tsx b/src/components/trip/sections/EnhancedBudgetSection.tsx
+index 0c6642a1..43589b29 100644
+--- a/src/components/trip/sections/EnhancedBudgetSection.tsx
++++ b/src/components/trip/sections/EnhancedBudgetSection.tsx
+@@ -8,6 +8,8 @@ import {
+   FormMessage 
+ } from "@/components/ui/form";
+ import { Input } from "@/components/ui/input";
++import { MoneyInput } from "@/components/ui/MoneyInput";
++import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+ import { HelpCircle } from "lucide-react";
+ 
+@@ -16,6 +18,7 @@ interface EnhancedBudgetSectionProps {
+ }
+ 
+ const EnhancedBudgetSection = ({ control }: EnhancedBudgetSectionProps) => {
++  const uiRefresh = (useFeatureFlag && typeof useFeatureFlag === 'function') ? (useFeatureFlag('ui_refresh_v1') ?? false) : false;
+   return (
+     <FormField
+       control={control}
+@@ -43,16 +46,29 @@ const EnhancedBudgetSection = ({ control }: EnhancedBudgetSectionProps) => {
+           <FormControl>
+             <div className="relative">
+               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">$</span>
+-              <Input
+-                id="max_price_input"
+-                type="number"
+-                min="100"
+-                max="10000"
+-                step="1"
+-                placeholder="1000"
+-                className="h-11 pl-6 pr-3 border-gray-300"
+-                {...field}
+-              />
++              {uiRefresh ? (
++                <MoneyInput
++                  id="max_price_input"
++                  value={typeof field.value === 'number' ? field.value : undefined}
++                  onChange={(v) => field.onChange(v)}
++                  placeholder="1000"
++                  className="h-11 pl-6 pr-3 border-gray-300"
++                />
++              ) : (
++                <Input
++                  id="max_price_input"
++                  type="number"
++                  min="100"
++                  max="10000"
++                  step="1"
++                  placeholder="1000"
++                  className="h-11 pl-6 pr-3 border-gray-300"
++                  inputMode="numeric"
++                  pattern="[0-9]*"
++                  autoComplete="off"
++                  {...field}
++                />
++              )}
+             </div>
+           </FormControl>
+           <FormMessage />
+diff --git a/src/components/ui/Field.tsx b/src/components/ui/Field.tsx
+new file mode 100644
+index 00000000..133a4391
+--- /dev/null
++++ b/src/components/ui/Field.tsx
+@@ -0,0 +1,32 @@
++import React from 'react';
++
++export type FieldProps = {
++  id: string;
++  label: string;
++  children: React.ReactElement;
++  help?: string;
++  error?: string;
++  required?: boolean;
++  className?: string;
++};
++
++export function Field({ id, label, children, help, error, required, className }: FieldProps) {
++  const helpId = help ? `${id}-help` : undefined;
++  const errorId = error ? `${id}-error` : undefined;
++  return (
++    <div className={className ?? 'mb-4'}>
++      <label htmlFor={id} className="block mb-1 text-sm font-medium">
++        {label}{required ? ' *' : ''}
++      </label>
++      {React.cloneElement(children, {
++        id,
++        'aria-describedby': [helpId, errorId].filter(Boolean).join(' ') || undefined,
++        'aria-invalid': !!error || undefined,
++        className: (children.props.className ?? '') + ' focus-visible-ring'
++      })}
++      {help && <p id={helpId} className="text-xs opacity-75 mt-1">{help}</p>}
++      {error && <p id={errorId} className="text-xs text-red-600 mt-1">{error}</p>}
++    </div>
++  );
++}
++
+diff --git a/src/components/ui/MoneyInput.tsx b/src/components/ui/MoneyInput.tsx
+new file mode 100644
+index 00000000..a777b1b6
+--- /dev/null
++++ b/src/components/ui/MoneyInput.tsx
+@@ -0,0 +1,45 @@
++import React from 'react';
++
++function formatNumber(n: number | undefined, locale = undefined as Intl.LocalesArgument) {
++  if (n === undefined) return '';
++  return new Intl.NumberFormat(locale).format(n);
++}
++
++function parseDigits(value: string): number | undefined {
++  const digits = value.replace(/[^0-9]/g, '');
++  if (!digits) return undefined;
++  const n = Number(digits);
++  return Number.isNaN(n) ? undefined : n;
++}
++
++export type MoneyInputProps = {
++  id?: string;
++  value?: number;
++  onChange: (v: number | undefined) => void;
++  placeholder?: string;
++  className?: string;
++};
++
++export function MoneyInput({ id, value, onChange, placeholder = 'e.g., 1000', className }: MoneyInputProps) {
++  const [text, setText] = React.useState<string>(formatNumber(value));
++  React.useEffect(() => setText(formatNumber(value)), [value]);
++
++  return (
++    <input
++      id={id}
++      inputMode="numeric"
++      className={(className ?? '') + ' w-full'}
++      value={text}
++      placeholder={placeholder}
++      onChange={(e) => {
++        const raw = e.target.value;
++        const n = parseDigits(raw);
++        const formatted = formatNumber(parseDigits(raw));
++        setText(formatted || raw.replace(/[^0-9]/g, ''));
++        onChange(n);
++      }}
++      onBlur={() => setText(formatNumber(parseDigits(text)))}
++    />
++  );
++}
++
+diff --git a/src/components/ui/MonthPreset.tsx b/src/components/ui/MonthPreset.tsx
+new file mode 100644
+index 00000000..7c020bdd
+--- /dev/null
++++ b/src/components/ui/MonthPreset.tsx
+@@ -0,0 +1,33 @@
++import React from 'react';
++
++function monthRange(year: number, monthIndex0: number) {
++  const start = new Date(year, monthIndex0, 1);
++  const end = new Date(year, monthIndex0 + 1, 0);
++  return { start, end };
++}
++
++export function MonthPreset({ onSelect, monthsAhead = 6 }: { onSelect: (start: Date, end: Date) => void; monthsAhead?: number; }) {
++  const today = new Date();
++  const months = Array.from({ length: monthsAhead }, (_, i) => new Date(today.getFullYear(), today.getMonth() + i, 1));
++  return (
++    <div className="flex gap-2 flex-wrap">
++      {months.map((m) => (
++        <button
++          key={`${m.getFullYear()}-${m.getMonth()}`}
++          type="button"
++          onClick={() => {
++            const { start, end } = monthRange(m.getFullYear(), m.getMonth());
++            onSelect(start, end);
++          }}
++          className="px-2 py-1 border rounded text-sm"
++        >
++          {m.toLocaleString(undefined, { month: 'long', year: 'numeric' })}
++        </button>
++      ))}
++      <button type="button" onClick={() => onSelect(undefined as any, undefined as any)} className="px-2 py-1 border rounded text-sm opacity-75">
++        Clear dates
++      </button>
++    </div>
++  );
++}
++
+diff --git a/src/main.tsx b/src/main.tsx
+index 751bf7b6..a10456c4 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -3,20 +3,25 @@ import * as Sentry from '@sentry/react'
+ import { asyncWithLDProvider } from 'launchdarkly-react-client-sdk'
+ import App from './App.tsx'
+ import './index.css'
++import './styles/tokens.css'
++import { ThemeProvider } from './components/theme-provider'
+ 
+-// Initialize Sentry
+-Sentry.init({
+-  dsn: import.meta.env.VITE_SENTRY_DSN,
+-  environment: import.meta.env.VITE_ENVIRONMENT || 'development',
+-  tracesSampleRate: 1.0,
+-  debug: import.meta.env.DEV,
+-  integrations: [
+-    Sentry.browserTracingIntegration(),
+-    Sentry.replayIntegration(),
+-  ],
+-  replaysSessionSampleRate: 0.1,
+-  replaysOnErrorSampleRate: 1.0,
+-});
++// Initialize Sentry only if DSN provided
++const sentryDsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
++if (sentryDsn) {
++  Sentry.init({
++    dsn: sentryDsn,
++    environment: import.meta.env.VITE_ENVIRONMENT || 'development',
++    tracesSampleRate: 1.0,
++    debug: import.meta.env.DEV,
++    integrations: [
++      Sentry.browserTracingIntegration(),
++      Sentry.replayIntegration(),
++    ],
++    replaysSessionSampleRate: 0.1,
++    replaysOnErrorSampleRate: 1.0,
++  });
++}
+ 
+ // Temporary debug logging
+ console.log('🔍 Environment Variables at App Startup:');
+@@ -32,16 +37,71 @@ if (import.meta.env.VITE_SUPABASE_URL?.includes('127.0.0.1')) {
+   console.log('⚠️ Unknown Supabase configuration');
+ }
+ 
+-// Initialize LaunchDarkly and render app
++// Enforce single dev origin to prevent auth flakiness
++if (import.meta.env.VITE_DISABLE_BASE_ENFORCE !== 'true') {
++  (function enforceBaseOrigin() {
++    const base = (import.meta.env.VITE_PUBLIC_BASE_URL as string) || window.location.origin;
++    const normalizedBase = base.replace(/\/$/, '');
++    // If the URL contains an auth code but we are not on /auth/callback, normalize path to the callback first
++    const params = new URLSearchParams(window.location.search);
++    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
++    const hasCode = params.has('code') || hash.has('code');
++    if (hasCode && window.location.pathname !== '/auth/callback') {
++      const dst = normalizedBase + '/auth/callback' + window.location.search + window.location.hash;
++      console.warn('[Boot] Detected auth code on non-callback path. Redirecting to:', dst);
++      window.location.replace(dst);
++      return;
++    }
++    // Otherwise, ensure we’re on the configured base origin
++    if (window.location.origin !== normalizedBase) {
++      const dst = normalizedBase + window.location.pathname + window.location.search + window.location.hash;
++      console.warn('[Boot] Redirecting to base origin for consistency:', dst);
++      window.location.replace(dst);
++    }
++  })();
++}
++
++// Initialize LaunchDarkly (optional) and render app
+ (async () => {
+-  const LDProvider = await asyncWithLDProvider({
+-    clientSideID: import.meta.env.VITE_LD_CLIENT_ID!,
+-    user: {
+-      key: 'anonymous',
+-      anonymous: true,
+-    },
+-  });
++  const clientId = import.meta.env.VITE_LD_CLIENT_ID as string | undefined;
++
++  // In development, optionally disable LD entirely if it causes issues
++  const disableLd = import.meta.env.VITE_DISABLE_LD === 'true';
++
++  // If no LD client ID or disabled, render app without LD
++  if (!clientId || disableLd) {
++    if (disableLd) console.warn('[LD] Disabled via VITE_DISABLE_LD');
++    createRoot(document.getElementById('root')!).render(
++      <ThemeProvider defaultTheme="system" storageKey="app-theme">
++        <App />
++      </ThemeProvider>
++    );
++    return;
++  }
++
++  try {
++    // Initialize LD Provider correctly and render
++    const LDProvider = await asyncWithLDProvider({
++      clientSideID: clientId,
++      user: { key: 'anonymous', anonymous: true },
++      options: {
++        // Quieter and more robust defaults for local dev
++        streaming: import.meta.env.PROD,            // use streaming in prod; polling in dev
++        sendEvents: true,                            // keep events enabled
++        diagnosticOptOut: import.meta.env.DEV,       // opt-out of diagnostics in dev
++      },
++    });
+ 
+-  const WrappedApp = LDProvider(App);
+-  createRoot(document.getElementById("root")!).render(<WrappedApp />);
++    createRoot(document.getElementById('root')!).render(
++      <LDProvider>
++        <ThemeProvider defaultTheme="system" storageKey="app-theme">
++          <App />
++        </ThemeProvider>
++      </LDProvider>
++    );
++  } catch (err) {
++    // Fallback: render app without LD if provider initialization fails (e.g., invalid hook call)
++    console.error('[LD] Failed to initialize provider, rendering without LD:', err);
++    createRoot(document.getElementById('root')!).render(<App />);
++  }
+ })();
+diff --git a/src/pages/Wallet.tsx b/src/pages/Wallet.tsx
+index 1f47376e..0980ec12 100644
+--- a/src/pages/Wallet.tsx
++++ b/src/pages/Wallet.tsx
+@@ -204,7 +204,10 @@ function WalletPage() {
+                 ))}
+               </ul>
+             ) : !isLoading && (
+-              <p className="text-gray-600 py-4">No payment methods saved yet.</p>
++              <div className="text-gray-700 py-4 space-y-2">
++                <p>No payment methods saved yet.</p>
++                <p className="text-sm text-gray-500">Add a card. It’s only charged when a booking is made.</p>
++              </div>
+             )}
+ 
+             {/* Add Payment Method Section */}
+@@ -244,7 +247,7 @@ function WalletPage() {
+               )}
+             </div>
+ 
+-            {!stripeKey && (
++            {import.meta.env.DEV && !stripeKey && (
+               <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4">
+                 <p className="text-yellow-700">
+                   Stripe isn't configured. Please set <code>VITE_STRIPE_PUBLIC_KEY</code> in your
+diff --git a/src/styles/tokens.css b/src/styles/tokens.css
+new file mode 100644
+index 00000000..0b76ac77
+--- /dev/null
++++ b/src/styles/tokens.css
+@@ -0,0 +1,32 @@
++:root {
++  /* Spacing scale */
++  --space-1: 4px;
++  --space-2: 8px;
++  --space-3: 12px;
++  --space-4: 16px;
++  --space-5: 24px;
++  --space-6: 32px;
++
++  /* Font sizes */
++  --fs-1: 14px;
++  --fs-2: 16px;
++  --fs-3: 18px;
++  --fs-4: 22px;
++  --fs-5: 28px;
++
++  /* Focus ring */
++  --focus-ring: 2px solid rgba(99, 102, 241, .9);
++
++  --radius-lg: 10px;
++}
++
++/* Utilities */
++.focus-visible-ring:focus-visible {
++  outline: none;
++  box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 0 4px rgba(99,102,241,0.9);
++}
++
++.sticky-footer-shadow {
++  box-shadow: 0 -6px 24px rgba(0,0,0,0.06);
++}
++
+-- 
+2.49.0
+

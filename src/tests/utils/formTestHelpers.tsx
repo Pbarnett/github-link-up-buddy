@@ -312,16 +312,18 @@ export const setDatesRobust = async () => {
     ].filter(Boolean);
     
     if (earliestInputs.length > 0 && latestInputs.length > 0) {
-      fireEvent.change(earliestInputs[0], { 
+      const e0 = earliestInputs[0] as Element;
+      const l0 = latestInputs[0] as Element;
+      fireEvent.change(e0, { 
         target: { value: tomorrow.toISOString().split('T')[0] } 
       });
-      fireEvent.change(latestInputs[0], { 
+      fireEvent.change(l0, { 
         target: { value: nextWeek.toISOString().split('T')[0] } 
       });
       
       // Trigger form validation
-      fireEvent.blur(earliestInputs[0]);
-      fireEvent.blur(latestInputs[0]);
+      fireEvent.blur(e0);
+      fireEvent.blur(l0);
       return;
     }
   } catch (error) {

@@ -56,7 +56,7 @@ vi.mock('@/hooks/useAnalytics', () => ({
 
 // Mock TripHistory component
 vi.mock('@/components/dashboard/TripHistory', () => ({
-  default: vi.fn(() => <div data-testid="trip-history-mock">Trip History Mock Content</div>),
+  default: vi.fn((props: any) => <div data-testid="trip-history-mock" data-userid={props.userId}>Trip History Mock Content</div>),
 }));
 
 // Mock useToast
@@ -195,8 +195,10 @@ describe('Dashboard Page', () => {
     await user.click(tripHistoryTabTrigger);
 
     await waitFor(() => expect(screen.getByTestId('trip-history-mock')).toBeInTheDocument());
-    const { default: TripHistoryMock } = await import('@/components/dashboard/TripHistory');
-    expect(TripHistoryMock).toHaveBeenCalledWith(expect.objectContaining({ userId: mockUser.id }), expect.anything());
+// Verify the mocked TripHistory rendered with the correct userId via data attributes
+    const tripHistoryElement = screen.getByTestId('trip-history-mock');
+    expect(tripHistoryElement).toBeInTheDocument();
+    expect(tripHistoryElement).toHaveAttribute('data-userid', mockUser.id);
     expect(screen.queryByText(/TestAir TA101/i)).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /My Trips/i, selected: true })).toBeInTheDocument();
   });

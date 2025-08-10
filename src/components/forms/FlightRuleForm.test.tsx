@@ -79,6 +79,14 @@ describe('FlightRuleForm', () => {
 
     render(<FlightRuleForm onSubmit={mockOnSubmit} defaultValues={defaultValues} />);
 
+// Ensure dates are set in the future relative to now before submitting
+    const futureOutbound = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const futureReturn = new Date(Date.now() + 37 * 24 * 60 * 60 * 1000);
+    const outboundInput = screen.getByLabelText(/earliest outbound/i);
+    const returnInput = screen.getByLabelText(/latest return/i);
+    fireEvent.change(outboundInput, { target: { value: futureOutbound.toISOString().substring(0,10) } });
+    fireEvent.change(returnInput, { target: { value: futureReturn.toISOString().substring(0,10) } });
+
     // submit using fireEvent.submit directly on the form
     const form = screen.getByRole('form');
     fireEvent.submit(form);

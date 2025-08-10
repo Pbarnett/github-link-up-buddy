@@ -26,7 +26,7 @@ const TripSummaryChips = ({ control, onClearField }: TripSummaryChipsProps) => {
   }
 
   // Origin chip
-  const origins = [];
+  const origins: string[] = [];
   if (watchedFields.nyc_airports?.length > 0) {
     origins.push(...watchedFields.nyc_airports);
   }

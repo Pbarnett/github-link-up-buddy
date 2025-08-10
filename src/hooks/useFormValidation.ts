@@ -10,9 +10,9 @@ import { z } from 'zod';
 import type { 
   DynamicFormConfig,
   FieldConfiguration,
-  ValidationRule 
+  ValidationRules 
 } from '@/types/dynamic-forms';
-import { generateValidationSchema, validateFormData } from '@/lib/form-validation';
+import { generateZodSchema, validateFormValues } from '@/lib/form-validation';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -24,7 +24,7 @@ export interface UseFormValidationReturn {
   /** Validate a single field */
   validateField: (fieldId: string, value: any) => Promise<ValidationResult>;
   /** Validate the entire form */
-  validateForm: (formData: Record<string, any>) => Promise<ValidationResult>;
+  validateForm: (formData?: Record<string, any>) => Promise<ValidationResult>;
   /** Current validation errors */
   validationErrors: Record<string, string>;
   /** Current validation warnings */
@@ -55,7 +55,7 @@ export const useFormValidation = (
   // Generate validation schema from config
   const validationSchema = useMemo(() => {
     if (!config) return z.object({});
-    return generateValidationSchema(config);
+    return generateZodSchema(config);
   }, [config]);
 
   // Check if form is valid (no errors)
@@ -134,7 +134,7 @@ export const useFormValidation = (
 
   // Validate entire form
   const validateForm = useCallback(async (
-    formData: Record<string, any>
+    formData?: Record<string, any>
   ): Promise<ValidationResult> => {
     if (!config) {
       return { isValid: true, errors: {}, warnings: {} };
@@ -144,15 +144,16 @@ export const useFormValidation = (
     const warnings: Record<string, string> = {};
 
     try {
+      const valuesToValidate = formData ?? {};
       // Use the comprehensive validation from form-validation lib
-      const validationResult = await validateFormData(config, formData);
+      const validationResult = await validateFormValues(config, valuesToValidate);
       
       if (!validationResult.isValid) {
         Object.assign(errors, validationResult.errors);
       }
 
       // Also run Zod schema validation
-      validationSchema.parse(formData);
+      validationSchema.parse(valuesToValidate);
 
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -166,7 +167,7 @@ export const useFormValidation = (
     }
 
     // Run cross-field validations
-    const crossFieldErrors = await validateCrossFieldRules(config, formData);
+    const crossFieldErrors = await validateCrossFieldRules(config, formData ?? {});
     Object.assign(errors, crossFieldErrors);
 
     // Update state
@@ -223,36 +224,42 @@ export const useFormValidation = (
 };
 
 // Helper function to generate validation schema for a single field
-const generateFieldValidationSchema = (field: FieldConfiguration): z.ZodSchema<any> => {
-  let schema: z.ZodSchema<any>;
+const generateFieldValidationSchema = (field: FieldConfiguration): z.ZodTypeAny => {
+  let schema: z.ZodTypeAny;
 
   switch (field.type) {
     case 'text':
     case 'email':
     case 'password':
     case 'textarea':
-      schema = z.string();
-      if (field.validation?.email) {
-        schema = schema.email('Invalid email address');
-      }
-      if (field.validation?.minLength) {
-        schema = schema.min(field.validation.minLength, `Minimum ${field.validation.minLength} characters`);
-      }
-      if (field.validation?.maxLength) {
-        schema = schema.max(field.validation.maxLength, `Maximum ${field.validation.maxLength} characters`);
-      }
-      if (field.validation?.pattern) {
-        schema = schema.regex(new RegExp(field.validation.pattern), 'Invalid format');
+      {
+        let s: z.ZodString = z.string();
+        if (field.validation?.email) {
+          s = s.email('Invalid email address');
+        }
+        if (field.validation?.minLength) {
+          s = s.min(field.validation.minLength, `Minimum ${field.validation.minLength} characters`);
+        }
+        if (field.validation?.maxLength) {
+          s = s.max(field.validation.maxLength, `Maximum ${field.validation.maxLength} characters`);
+        }
+        if (field.validation?.pattern) {
+          s = s.regex(new RegExp(field.validation.pattern), 'Invalid format');
+        }
+        schema = s;
       }
       break;
 
     case 'number':
-      schema = z.number();
-      if (field.validation?.min !== undefined) {
-        schema = schema.min(field.validation.min, `Minimum value is ${field.validation.min}`);
-      }
-      if (field.validation?.max !== undefined) {
-        schema = schema.max(field.validation.max, `Maximum value is ${field.validation.max}`);
+      {
+        let n: z.ZodNumber = z.number();
+        if (field.validation?.min !== undefined) {
+          n = n.min(field.validation.min, `Minimum value is ${field.validation.min}`);
+        }
+        if (field.validation?.max !== undefined) {
+          n = n.max(field.validation.max, `Maximum value is ${field.validation.max}`);
+        }
+        schema = n;
       }
       break;
 

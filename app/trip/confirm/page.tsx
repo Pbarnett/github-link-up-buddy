@@ -197,7 +197,7 @@ const TripConfirm = () => {
               <h4 className="font-medium">Departure</h4>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{new Date(offer.departure_date).toLocaleDateString()}</span>
+<span>{new Date(offer.departure_date || new Date().toISOString()).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-gray-500" />
@@ -210,7 +210,7 @@ const TripConfirm = () => {
               <h4 className="font-medium">Return</h4>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span>{new Date(offer.return_date).toLocaleDateString()}</span>
+<span>{new Date(offer.return_date || new Date().toISOString()).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-gray-500" />
@@ -228,7 +228,7 @@ const TripConfirm = () => {
             <div className="flex items-center">
               <Calendar className="h-4 w-4 mr-2 text-blue-500" />
               <span className="inline-block bg-blue-50 text-blue-700 text-sm font-semibold rounded-full px-2 py-1">
-                {Math.ceil((new Date(offer.return_date).getTime() - new Date(offer.departure_date).getTime()) / (1000 * 60 * 60 * 24))} Days Trip
+{Math.ceil((new Date(offer.return_date || new Date().toISOString()).getTime() - new Date(offer.departure_date || new Date().toISOString()).getTime()) / (1000 * 60 * 60 * 24))} Days Trip
               </span>
             </div>
           </div>

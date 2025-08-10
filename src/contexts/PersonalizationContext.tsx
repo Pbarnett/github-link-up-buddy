@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { PersonalizationData, PersonalizationError } from '@/types/personalization';
 import { supabase } from '@/integrations/supabase/client';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
@@ -41,14 +41,16 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
   const experimentConfig = userId ? getExperimentConfig(userId, 'personalizedGreetings') : null;
   
   // Feature flag check for controlled rollout (Alpha/Beta phases)
-  // Now enhanced with A/B testing
+  // Test override acts as a master switch: if it returns false, personalization is OFF regardless of other flags
   const featureFlagEnabled = useFeatureFlag('personalizedGreetings') ?? false;
-  const temporaryFlagEnabled = enablePersonalizationForTesting();
+  const testingOverride = enablePersonalizationForTesting();
   const abTestPersonalizationEnabled = experimentConfig?.enablePersonalization ?? false;
-  const isPersonalizationEnabled = featureFlagEnabled || temporaryFlagEnabled || abTestPersonalizationEnabled;
+  const isPersonalizationEnabled = (testingOverride === false)
+    ? false
+    : Boolean((testingOverride === true) || featureFlagEnabled || abTestPersonalizationEnabled);
 
-  // A/B testing event tracking function
-  const trackPersonalizationEvent = async (
+  // A/B testing event tracking function (stabilized)
+  const trackPersonalizationEvent = useCallback(async (
     eventType: 'exposure' | 'conversion' | 'engagement',
     eventName: string,
     metadata?: Record<string, any>
@@ -66,7 +68,7 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
     };
 
     await trackABTestEvent(event);
-  };
+  }, [userId, abTestVariant]);
 
   // Memoized value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
@@ -78,9 +80,16 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
     abTestVariant,
     experimentConfig,
     trackPersonalizationEvent,
-  }), [personalizationData, loading, error, isPersonalizationEnabled, abTestVariant, experimentConfig]);
+  }), [personalizationData, loading, error, isPersonalizationEnabled, abTestVariant, experimentConfig, trackPersonalizationEvent]);
 
   async function fetchPersonalizationData(): Promise<void> {
+    // Double-guard: bail out entirely in test mode if personalization is disabled
+    if (typeof window !== 'undefined' && (window as any).DISABLE_PERSONALIZATION_FOR_TESTS) {
+      setLoading(false);
+      setPersonalizationData(null);
+      return;
+    }
+
     if (!userId || !isPersonalizationEnabled) {
       setPersonalizationData(null);
       return;
@@ -90,12 +99,19 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
     setError(null);
 
     try {
-      // Use the deployed edge function for personalization data
+      // Ensure we send the user's JWT so the Edge Function can authenticate
+      const { data: sessionData } = await supabase.auth.getSession();
+      const jwt = sessionData?.session?.access_token;
+      if (!jwt) {
+        throw new Error('No active session token available for personalization request');
+      }
+
+      // Call the deployed edge function for personalization data
       const { data: personalizationResult, error: functionError } = await supabase.functions.invoke(
         'get-personalization-data',
         {
           headers: {
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${jwt}`,
           },
         }
       );
@@ -109,18 +125,22 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
       }
 
       // Edge function returns: { firstName, nextTripCity, personalizationEnabled }
-      const personalizationData: PersonalizationData = {
+      const nextData: PersonalizationData = {
         firstName: personalizationResult.firstName || undefined,
         nextTripCity: personalizationResult.nextTripCity || undefined,
         // loyaltyTier: undefined, // Can be added later
       };
 
-      setPersonalizationData(personalizationData);
+      // Avoid unnecessary state updates if data hasn't changed
+      const sameAsCurrent = personalizationData?.firstName === nextData.firstName && personalizationData?.nextTripCity === nextData.nextTripCity;
+      if (!sameAsCurrent) {
+        setPersonalizationData(nextData);
+      }
       
       // Log analytics event (without exposing personal data)
       console.log('🎯 Personalization data loaded from edge function:', {
-        hasFirstName: !!personalizationData.firstName,
-        hasNextTrip: !!personalizationData.nextTripCity,
+        hasFirstName: !!nextData.firstName,
+        hasNextTrip: !!nextData.nextTripCity,
         userId: userId.slice(0, 8), // Log only partial ID for debugging
         functionResponse: {
           personalizationEnabled: personalizationResult.personalizationEnabled,
@@ -129,8 +149,8 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
 
       // Track successful data fetch
       await trackPersonalizationEvent('exposure', 'data_fetched', {
-        hasFirstName: !!personalizationData.firstName,
-        hasNextTrip: !!personalizationData.nextTripCity,
+        hasFirstName: !!nextData.firstName,
+        hasNextTrip: !!nextData.nextTripCity,
         source: 'edge_function',
       });
 

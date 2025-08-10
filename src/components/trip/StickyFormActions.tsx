@@ -46,7 +46,7 @@ const StickyFormActions = ({
   }, [isMobile]);
 
   const renderSummaryChips = () => {
-    const chips = [];
+    const chips: React.ReactNode[] = [];
     
     // Origin → Destination chip
     const origin = watchedFields?.nyc_airports?.length > 0 

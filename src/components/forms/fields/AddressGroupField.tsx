@@ -25,6 +25,7 @@ interface AddressGroupFieldProps {
   disabled?: boolean;
   error?: string;
   className?: string;
+  config?: any;
 }
 
 export const AddressGroupField: React.FC<AddressGroupFieldProps> = ({
@@ -66,6 +67,7 @@ export const AddressGroupField: React.FC<AddressGroupFieldProps> = ({
           onChange={(e) => handleFieldChange('street', e.target.value)}
           placeholder="Enter street address"
           disabled={disabled}
+          autoComplete="address-line1"
           className={cn(error && "border-destructive")}
         />
       </div>
@@ -82,6 +84,7 @@ export const AddressGroupField: React.FC<AddressGroupFieldProps> = ({
             onChange={(e) => handleFieldChange('city', e.target.value)}
             placeholder="Enter city"
             disabled={disabled}
+            autoComplete="address-level2"
             className={cn(error && "border-destructive")}
           />
         </div>
@@ -96,6 +99,7 @@ export const AddressGroupField: React.FC<AddressGroupFieldProps> = ({
             onChange={(e) => handleFieldChange('state', e.target.value)}
             placeholder="Enter state or province"
             disabled={disabled}
+            autoComplete="address-level1"
             className={cn(error && "border-destructive")}
           />
         </div>
@@ -113,6 +117,8 @@ export const AddressGroupField: React.FC<AddressGroupFieldProps> = ({
             onChange={(e) => handleFieldChange('zipCode', e.target.value)}
             placeholder="Enter ZIP or postal code"
             disabled={disabled}
+            inputMode="numeric"
+            autoComplete="postal-code"
             className={cn(error && "border-destructive")}
           />
         </div>

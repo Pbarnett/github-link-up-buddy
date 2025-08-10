@@ -19,9 +19,9 @@ export const useBehavioralTriggers = () => {
     userEngaged: false,
   });
 
-  const startTime = useRef(Date.now());
+  const startTime = useRef<number>(Date.now());
   const hoverStartTime = useRef<number | null>(null);
-  const scrollTimer = useRef<number>();
+  const scrollTimer = useRef<number | null>(null);
 
   useEffect(() => {
     // Track time on page
@@ -47,7 +47,9 @@ export const useBehavioralTriggers = () => {
       }));
 
       // Debounce scroll events
-      clearTimeout(scrollTimer.current);
+      if (scrollTimer.current !== null) {
+        clearTimeout(scrollTimer.current);
+      }
       scrollTimer.current = window.setTimeout(() => {
         // User stopped scrolling, check if they need help
         if (scrollDepth < 50 && Date.now() - startTime.current > 8000) {
@@ -84,7 +86,9 @@ export const useBehavioralTriggers = () => {
 
     return () => {
       clearInterval(timeInterval);
-      clearTimeout(scrollTimer.current);
+      if (scrollTimer.current !== null) {
+        clearTimeout(scrollTimer.current);
+      }
       window.removeEventListener('scroll', handleScroll);
       cards.forEach(card => {
         card.removeEventListener('mouseenter', handleMouseEnter);

@@ -47,7 +47,7 @@ const LiveBookingSummary = ({ control, isVisible }: LiveBookingSummaryProps) => 
 
   const summaryText = useMemo(() => {
     // Build departure airports string
-    const departureAirports = [];
+    const departureAirports: string[] = [];
     if (nycAirports && nycAirports.length > 0) {
       if (nycAirports.length === 3) {
         departureAirports.push('NYC (JFK/LGA/EWR)');

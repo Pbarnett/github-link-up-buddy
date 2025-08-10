@@ -23,18 +23,17 @@ class FeatureFlagService {
 
   // Environment-based overrides
   constructor() {
-    // Allow environment variables to override defaults
-    this.flags.USE_AWS_STEP_FUNCTIONS = 
-      process.env.VITE_USE_AWS_STEP_FUNCTIONS === 'true';
-    
-    this.flags.USE_LEGACY_AUTO_BOOKING = 
-      process.env.VITE_USE_LEGACY_AUTO_BOOKING !== 'false';
-    
-    this.flags.ENABLE_AUTO_BOOKING_DEBUG = 
-      process.env.VITE_ENABLE_AUTO_BOOKING_DEBUG === 'true';
+    // Read from browser-safe Vite env; fall back to defaults when absent
+    const env = (typeof import.meta !== 'undefined' ? (import.meta as any).env : {}) || {};
 
-    this.flags.MIGRATION_ROLLBACK_MODE = 
-      process.env.VITE_MIGRATION_ROLLBACK_MODE === 'true';
+    this.flags.USE_AWS_STEP_FUNCTIONS = String(env.VITE_USE_AWS_STEP_FUNCTIONS).toLowerCase() === 'true';
+
+    // default true unless explicitly set to 'false'
+    this.flags.USE_LEGACY_AUTO_BOOKING = String(env.VITE_USE_LEGACY_AUTO_BOOKING).toLowerCase() !== 'false';
+
+    this.flags.ENABLE_AUTO_BOOKING_DEBUG = String(env.VITE_ENABLE_AUTO_BOOKING_DEBUG).toLowerCase() === 'true';
+
+    this.flags.MIGRATION_ROLLBACK_MODE = String(env.VITE_MIGRATION_ROLLBACK_MODE).toLowerCase() === 'true';
   }
 
   isEnabled(flag: keyof FeatureFlags): boolean {

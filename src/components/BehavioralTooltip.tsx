@@ -12,13 +12,17 @@ export const BehavioralTooltip = ({ show, onDismiss, variant = 'hesitation' }: B
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    let cleanup: (() => void) | undefined;
     if (show) {
       // Slight delay for natural feel
       const timer = setTimeout(() => setIsVisible(true), 500);
-      return () => clearTimeout(timer);
+      cleanup = () => clearTimeout(timer);
     } else {
       setIsVisible(false);
     }
+    return () => {
+      cleanup?.();
+    };
   }, [show]);
 
   if (!isVisible) return null;

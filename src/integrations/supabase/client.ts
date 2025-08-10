@@ -6,14 +6,15 @@ import type { Database } from '../../types/database';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Log for debugging
-console.log('🔍 Supabase client initialization:', {
-  hasURL: !!SUPABASE_URL,
-  hasKey: !!SUPABASE_ANON_KEY,
-  url: SUPABASE_URL ? `${SUPABASE_URL.substring(0, 20)}...` : 'missing',
-  fullURL: SUPABASE_URL, // Show full URL for debugging
-  env: import.meta.env.MODE
-});
+// Log for debugging (development only)
+if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
+  console.log('🔍 Supabase client initialization:', {
+    hasURL: !!SUPABASE_URL,
+    hasKey: !!SUPABASE_ANON_KEY,
+    url: SUPABASE_URL ? `${SUPABASE_URL.substring(0, 20)}...` : 'missing',
+    env: import.meta.env.MODE
+  });
+}
 
 // Create the Supabase client with proper error handling for testing
 let supabaseClient: any;
@@ -56,6 +57,7 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
         storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+        storageKey: import.meta.env.PROD ? 'sb-pf' : 'sb-pf-dev',
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true,

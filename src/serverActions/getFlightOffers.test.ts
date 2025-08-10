@@ -48,7 +48,12 @@ describe('getFlightOffers server action', () => {
 
     // Reset mock implementations - these are now guaranteed to have proper methods
     mockSupabaseClient.from.mockClear();
-    mockSupabaseClient.functions.invoke.mockClear();
+    // Ensure functions.invoke exists for edge function calls in tests
+    if (!(mockSupabaseClient as any).functions) {
+      (mockSupabaseClient as any).functions = { invoke: vi.fn() };
+    } else {
+      mockSupabaseClient.functions.invoke = vi.fn();
+    }
 
     // Set up default query chain behavior for round trip detection
     const mockTripRequestSelect = {

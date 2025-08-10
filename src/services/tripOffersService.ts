@@ -202,7 +202,7 @@ export async function fetchTripOffers(
         const carryOnFee = parseFloat(v2Offer.price_carry_on || '0');
         
         // For round-trip offers, create 2 itineraries; for one-way, create 1
-        const itineraries = [];
+        const itineraries: any[] = [];
         
         // Always add outbound itinerary
         itineraries.push({

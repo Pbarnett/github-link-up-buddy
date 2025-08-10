@@ -73,6 +73,9 @@ export function ProfileForm() {
                 value={formData.first_name}
                 onChange={(e) => handleChange("first_name", e.target.value)}
                 placeholder="Enter your first name"
+                autoComplete="given-name"
+                inputMode="text"
+                name="first_name"
               />
             </div>
             <div className="space-y-2">
@@ -83,6 +86,9 @@ export function ProfileForm() {
                 value={formData.last_name}
                 onChange={(e) => handleChange("last_name", e.target.value)}
                 placeholder="Enter your last name"
+                autoComplete="family-name"
+                inputMode="text"
+                name="last_name"
               />
             </div>
           </div>
@@ -95,6 +101,9 @@ export function ProfileForm() {
               value={formData.phone}
               onChange={(e) => handleChange("phone", e.target.value)}
               placeholder="Enter your phone number (e.g., +1234567890)"
+              autoComplete="tel"
+              inputMode="tel"
+              name="phone"
             />
             <p className="text-sm text-muted-foreground">
               Include country code (e.g., +1 for US). Required for SMS flight reminders.

@@ -157,6 +157,12 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessi
     setLoading(true);
     
     try {
+      // Preserve returnTo param if present
+      const currentParams = new URLSearchParams(window.location.search);
+      const returnToParam = currentParams.get('returnTo');
+      const publicBase = (import.meta.env.VITE_PUBLIC_BASE_URL as string) || window.location.origin;
+      const callbackBase = `${publicBase.replace(/\/$/, '')}/auth/callback`;
+      const redirectTo = returnToParam ? `${callbackBase}?returnTo=${encodeURIComponent(returnToParam)}` : callbackBase;
       // Log debugging information
       // console.log("Initiating Google login from:", window.location.origin); // Removed
       // console.log("Redirect URL:", window.location.origin + '/dashboard'); // Removed
@@ -194,7 +200,7 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessi
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/login',
+          redirectTo,
           skipBrowserRedirect: false
         }
       });
@@ -262,21 +268,23 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessi
             {loading ? 'Signing in...' : 'Sign in with Google'}
           </Button>
           
-          <div className="pt-6 border-t border-gray-200">
-            <Button 
-              type="button" 
-              variant="destructive" 
-              size="sm"
-              className="w-full text-xs"
-              onClick={() => {
-                cleanupAuthState();
-                toast({ title: "Auth Reset", description: "Authentication data cleared. Page will reload." });
-                setTimeout(() => window.location.reload(), 1000);
-              }}
-            >
-              🔧 Emergency Reset (Clear Auth Data)
-            </Button>
-          </div>
+          {!import.meta.env.PROD && (
+            <div className="pt-6 border-t border-gray-200">
+              <Button 
+                type="button" 
+                variant="destructive" 
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => {
+                  cleanupAuthState();
+                  toast({ title: "Auth Reset", description: "Authentication data cleared. Page will reload." });
+                  setTimeout(() => window.location.reload(), 1000);
+                }}
+              >
+                🔧 Emergency Reset (Clear Auth Data)
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -23,6 +23,7 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
 // Validation schema for payment step
 const paymentSchema = z.object({
   saveCard: z.boolean().default(true),
+  requireFirstApproval: z.boolean().default(true),
   agreeToPaymentTerms: z.boolean().refine(val => val === true, {
     message: 'You must agree to the payment terms',
   }),
@@ -41,6 +42,7 @@ function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       saveCard: true,
+      requireFirstApproval: true,
       agreeToPaymentTerms: false,
     },
   });
@@ -82,6 +84,7 @@ function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
   };
 
   const watchSaveCard = watch('saveCard');
+  const watchRequireApproval = watch('requireFirstApproval');
 
   return (
     <Card className="w-full max-w-3xl mx-auto">
@@ -123,6 +126,27 @@ function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
             />
             <Label htmlFor="saveCard" className="text-sm">
               Save this card for future payments
+            </Label>
+          </div>
+
+          {/* First-time approval safeguard */}
+          <div className="flex items-start space-x-2">
+            <Controller
+              name="requireFirstApproval"
+              control={control}
+              render={({ field }) => (
+                <Checkbox
+                  id="requireFirstApproval"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              )}
+            />
+            <Label htmlFor="requireFirstApproval" className="text-sm">
+              Ask me to approve the first booking
+              <span className="block text-xs text-muted-foreground">
+                Helps new users build trust. You can turn this off later.
+              </span>
             </Label>
           </div>
 

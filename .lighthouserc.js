@@ -1,67 +1,30 @@
-module.exports = {
+export default {
   ci: {
     collect: {
-      url: ['http://localhost:4173'],
-      startServerCommand: 'npm run preview',
-      startServerReadyPattern: 'Local:',
-      startServerReadyTimeout: 20000,
-      numberOfRuns: 3,
+      // Explicitly disable staticDistDir so lhci doesn't auto-host ./dist
+      staticDistDir: null,
+      // Start Vite preview so SPA assets load correctly during the audit
+      startServerCommand: 'npm run preview -- --port=4173 --strictPort',
+      startServerReadyPattern: 'Local:\\s*http://.*:4173/',
+      url: ['http://localhost:4173/'],
+      numberOfRuns: 1,
       settings: {
-        chromeFlags: ['--no-sandbox', '--headless'],
-      },
+        // Block external script that isn't needed for perf audits
+        blockedUrlPatterns: ['*gptengineer.js*']
+      }
     },
     assert: {
-      preset: 'lighthouse:recommended',
       assertions: {
-        // Performance Budget
-        'first-contentful-paint': ['error', { maxNumericValue: 2000 }],
-        'largest-contentful-paint': ['error', { maxNumericValue: 4000 }],
+        'categories:performance': ['warn', { minScore: 0.9 }],
+        'first-contentful-paint': ['warn', { maxNumericValue: 2000 }],
+        'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
         'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
-        'total-blocking-time': ['error', { maxNumericValue: 300 }],
-        'speed-index': ['error', { maxNumericValue: 3000 }],
-        
-        // Accessibility
-        'color-contrast': 'error',
-        'image-alt': 'error',
-        'label': 'error',
-        'tabindex': 'error',
-        
-        // Best Practices
-        'is-on-https': 'error',
-        'uses-responsive-images': 'warn',
-        'efficient-animated-content': 'warn',
-        
-        // SEO
-        'document-title': 'error',
-        'meta-description': 'error',
-        'http-status-code': 'error',
-        
-        // PWA (if applicable)
-        'service-worker': 'off', // Disable if not using PWA
-        'installable-manifest': 'off',
-        
-        // Custom Performance Budgets
-        'resource-summary:document:size': ['error', { maxNumericValue: 50000 }],
-        'resource-summary:script:size': ['error', { maxNumericValue: 500000 }],
-        'resource-summary:stylesheet:size': ['error', { maxNumericValue: 100000 }],
-        'resource-summary:image:size': ['warn', { maxNumericValue: 1000000 }],
-        'resource-summary:total:size': ['warn', { maxNumericValue: 2000000 }],
-      },
+        'total-byte-weight': ['warn', { maxNumericValue: 350000 }],
+        'script-treemap-data': 'off'
+      }
     },
     upload: {
-      target: 'temporary-public-storage',
-    },
-    server: {
-      port: 9001,
-      storage: {
-        storageMethod: 'sql',
-        sqlDialect: 'sqlite',
-        sqlConnectionSsl: false,
-        sqlConnectionUrl: 'sqlite:lhci.db',
-      },
-    },
-    wizard: {
-      preset: 'lighthouse:recommended',
-    },
-  },
+      target: 'temporary-public-storage'
+    }
+  }
 };

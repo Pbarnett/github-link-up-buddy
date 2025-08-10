@@ -93,18 +93,18 @@ function StepCriteria({ initialData, onNext, onBack, isLoading = false }: StepCr
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Plane className="h-5 w-5" />
-          Campaign Criteria
+          Rule Criteria
         </CardTitle>
         <CardDescription>
-          Define your travel preferences and search criteria for automated booking
+          Define your travel preferences and search criteria for your auto‑booking rule
         </CardDescription>
       </CardHeader>
       
       <CardContent>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-          {/* Campaign Name */}
+          {/* Rule Name */}
           <div className="space-y-2">
-            <Label htmlFor="campaignName">Campaign Name</Label>
+            <Label htmlFor="campaignName">Rule Name</Label>
             <Controller
               name="campaignName"
               control={control}

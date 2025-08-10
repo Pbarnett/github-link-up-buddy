@@ -121,7 +121,7 @@ const AutoBookingSection = ({ control, mode }: AutoBookingSectionProps) => {
                     disabled={isLoadingPaymentMethods}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger aria-required={isAutoMode || undefined}>
                         <SelectValue placeholder={
                           isLoadingPaymentMethods 
                             ? "Loading payment methods..." 
