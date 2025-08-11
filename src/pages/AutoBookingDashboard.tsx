@@ -158,10 +158,10 @@ function AutoBookingDashboard() {
                 </div>
                 <h2 className="text-2xl font-semibold">Book For Me</h2>
                 <p className="text-muted-foreground hidden md:block">
-                  Set your price. Parker Flight books your flight when a fare matches. Today, tomorrow, next month, whenever.
+                  Set your price. I’ll book when a fare matches. Today, tomorrow, or next month. I keep watch.
                 </p>
                 <p className="text-muted-foreground md:hidden">
-                  Set your price. Parker Flight books your flight when a fare matches. Today, tomorrow, next month, whenever.
+                  Set your price. I’ll book when a fare matches.
                 </p>
                 <div className="grid sm:grid-cols-2 gap-4 text-left max-w-3xl mx-auto">
                   <div className="flex items-start gap-3">
