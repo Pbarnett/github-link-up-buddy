@@ -52,6 +52,9 @@ Staging validation playbook
 2) Disable fee (APPLY_SAVINGS_FEE=false). Repeat; fee should be 0 and total should equal actual.
 
 Observability recommendations
+- SQL view: public.fee_metrics_daily (created via migration supabase/migrations/20250811214000_create_fee_metrics_view.sql)
+  - Columns: day, fee_cents_sum, avg_savings, with_fee_count, total_count, fee_application_rate
+  - Example: select * from public.fee_metrics_daily order by day desc limit 14;
 - Create a dashboard panel summing fee_amount_cents across booking_requests.offer_data.fee_breakdown.
 - Emit additional logs if needed during computation.
 
