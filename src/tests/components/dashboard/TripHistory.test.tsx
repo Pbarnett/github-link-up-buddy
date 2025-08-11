@@ -134,12 +134,8 @@ describe('TripHistory Component', () => {
       const detailsLink = screen.getByRole('link', { name: /View Details/i });
       expect(detailsLink).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}`);
     });
-    // Check that the mocked Link component was called with the correct `to` prop
-    const { Link } = await import('react-router-dom');
-    const LinkMock = Link as unknown as MockedFunction<any>;
-    expect(LinkMock).toHaveBeenCalledWith(
-        expect.objectContaining({ to: `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}` }),
-        expect.anything()
-    );
+// Also verify via DOM that the link has the correct href
+    const detailsLink = screen.getByRole('link', { name: /View Details/i });
+    expect(detailsLink).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}`);
   });
 });

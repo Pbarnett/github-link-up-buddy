@@ -22,7 +22,7 @@ import { useFormConfiguration } from './useFormConfiguration';
 import { useFormState } from './useFormState';
 import { useConditionalLogic } from './useConditionalLogic';
 import { useFormValidation } from './useFormValidation';
-import { generateValidationSchema } from '@/lib/form-validation';
+import { generateZodSchema } from '@/lib/form-validation';
 import { formConfigService } from '@/services/form-config.service';
 
 export interface UseDynamicFormOptions {
@@ -114,8 +114,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
   const {
     configuration: loadedConfiguration,
     loading: configLoading,
-    error: configError,
-    reloadConfiguration
+    error: configError
   } = useFormConfiguration({
     configId,
     configName,
@@ -128,7 +127,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
   // Generate validation schema
   const validationSchema = useMemo(() => {
     if (!formConfig) return undefined;
-    return generateValidationSchema(formConfig);
+    return generateZodSchema(formConfig as any);
   }, [formConfig]);
 
   // Initialize React Hook Form
@@ -138,7 +137,7 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
     mode: realTimeValidation ? 'onChange' : 'onSubmit'
   });
 
-  const { watch, setValue, getValue, formState, reset, handleSubmit } = form;
+  const { watch, setValue, getValues, formState, reset, handleSubmit } = form;
 
   // Watch all form values for conditional logic
   const formData = watch();
@@ -207,14 +206,14 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
       // Create submission object
       const submission: FormSubmission = {
         formId: formConfig.id,
-        formVersion: formConfig.version,
+        formName: (formConfig as any).name || '',
         data: formData,
         metadata: {
           submittedAt: new Date().toISOString(),
           userAgent: navigator.userAgent,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          formTitle: formConfig.title,
-          submissionId: crypto.randomUUID()
+          formVersion: formConfig.version,
+          instanceId: crypto.randomUUID()
         }
       };
 
@@ -264,10 +263,9 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
 
   // Reload configuration
   const reloadConfig = useCallback(async () => {
-    if (reloadConfiguration) {
-      await reloadConfiguration();
-    }
-  }, [reloadConfiguration]);
+    // No-op reload for now; configuration hook manages its own loading
+    return;
+  }, []);
 
   // Analytics tracking functions
   const trackFieldInteraction = useCallback((fieldId: string, interactionType: string) => {
@@ -331,6 +329,10 @@ export const useDynamicForm = (options: UseDynamicFormOptions): UseDynamicFormRe
   const watchField = useCallback((fieldId: string) => {
     return watch(fieldId);
   }, [watch]);
+
+  const getValue = useCallback((fieldId: string) => {
+    return getValues(fieldId as any);
+  }, [getValues]);
 
   return {
     // Form management

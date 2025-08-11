@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "environment": "development",
+  "lastUpdated": "2025-08-09T00:00:00.000Z",
+  "updatedBy": "dev@local",
+  "context": "flight-search",
+  "ui": {
+    "destination": true,
+    "departure": true,
+    "dates": true,
+    "budget": true,
+    "advancedFilters": true,
+    "paymentMethod": true,
+    "travelerInfo": true
+  },
+  "flightSearch": {
+    "forceRoundTrip": false,
+    "defaultNonstopRequired": false,
+    "maxAdvanceBookingDays": 30,
+    "minAdvanceBookingDays": 1,
+    "allowedCabinClasses": ["economy", "business"],
+    "maxPriceUSD": 5000,
+    "minPriceUSD": 50
+  },
+  "autoBooking": {
+    "enabled": true,
+    "maxConcurrentCampaigns": 3,
+    "cooldownPeriodHours": 24,
+    "requiresPaymentMethodVerification": false,
+    "maxMonthlySpend": 2000
+  },
+  "filters": [],
+  "emergencyDisable": false
+}
+

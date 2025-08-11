@@ -140,7 +140,7 @@ export function parseDuffelError(error: any): {
   // Handle Duffel API error response format
   if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {
     originalError = error.errors[0];
-    errorType = originalError.type || originalError.code || 'unknown_error';
+    errorType = originalError?.type || originalError?.code || 'unknown_error';
   }
   // Handle HTTP response errors
   else if (error?.status) {

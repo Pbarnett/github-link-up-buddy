@@ -26,7 +26,8 @@ const DuffelTest: React.FC = () => {
   // Test state
   const [tripRequestId, setTripRequestId] = useState('');
   const [testTraveler] = useState<DuffelTraveler>({
-    title: 'Mr',
+    type: 'adult',
+    title: 'mr',
     given_name: 'Test',
     family_name: 'User',
     born_on: '1990-01-01',

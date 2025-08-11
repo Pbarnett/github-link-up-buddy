@@ -55,6 +55,11 @@ export class UserInitializationService {
 
       if (checkError && checkError.code !== 'PGRST116') {
         // PGRST116 is "not found" which is expected if preferences don't exist
+        // 42P01 = undefined_table (table does not exist) — treat as non-fatal in dev environments
+        if ((checkError as any).code === '42P01') {
+          console.warn('user_preferences table is missing; skipping ensure step.');
+          return false;
+        }
         throw checkError;
       }
 

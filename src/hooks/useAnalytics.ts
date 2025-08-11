@@ -96,7 +96,7 @@ const analyticsTracker = new AnalyticsTracker();
 
 // React hook for analytics
 export const useAnalytics = () => {
-  const cardViewRef = useRef<(element: HTMLElement, cardType: 'auto' | 'manual') => void>();
+  const cardViewRef = useRef<((element: HTMLElement, cardType: 'auto' | 'manual') => void) | null>(null);
 
   useEffect(() => {
     cardViewRef.current = analyticsTracker.trackCardView.bind(analyticsTracker);

@@ -259,9 +259,13 @@ export function initializeConsentService(): void {
   }
 
   // Set up consent listener
-  window.addEventListener('consentUpdated', (event: CustomEvent) => {
-    console.log('🔒 Consent updated:', event.detail);
-  });
+  window.addEventListener(
+    'consentUpdated' as any,
+    ((evt: Event) => {
+      const event = evt as CustomEvent;
+      console.log('🔒 Consent updated:', event.detail);
+    }) as EventListener
+  );
 }
 
 // Default export

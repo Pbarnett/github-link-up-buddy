@@ -1,0 +1,82 @@
+{
+  "timestamp": "2025-07-29T04:43:55.698Z",
+  "summary": {
+    "passed": 18,
+    "failed": 4,
+    "warnings": 5,
+    "overall": "FAIL"
+  },
+  "details": {
+    "passed": [
+      "Code formatting (auto-fixed)",
+      "Test files present (1524 files)",
+      "Performance monitoring configured",
+      "Package name defined",
+      "Version defined",
+      "Scripts defined",
+      "Dependencies listed",
+      "Documentation: README.md",
+      "Documentation: REPOSITORY_ORGANIZATION_GUIDELINES.md",
+      "Documentation: OPERATIONS_RUNBOOK.md",
+      "Code documentation (90% of sampled files)",
+      "TypeScript configuration",
+      "ESLint configuration",
+      "Vite configuration",
+      "Vitest configuration",
+      "Playwright configuration",
+      "Environment template provided",
+      "Accessibility testing configured"
+    ],
+    "failed": [
+      "TypeScript compilation errors found",
+      "ESLint check failed",
+      "Potential hardcoded secrets found",
+      "Bundle size exceeds budget (JS: 1642KB, CSS: 792KB)"
+    ],
+    "warnings": [
+      "Console statements found in source code",
+      "Security audit could not be completed",
+      "Test coverage analysis failed",
+      "50 dependencies are outdated",
+      "Missing description in package.json"
+    ],
+    "metrics": {
+      "bundleSize": {
+        "js": 1681380,
+        "css": 810626,
+        "html": 2066,
+        "assets": 8069489
+      },
+      "outdatedDependencies": 50
+    }
+  },
+  "metrics": {
+    "bundleSize": {
+      "js": 1681380,
+      "css": 810626,
+      "html": 2066,
+      "assets": 8069489
+    },
+    "outdatedDependencies": 50
+  },
+  "thresholds": {
+    "TEST_COVERAGE": 80,
+    "TYPE_COVERAGE": 85,
+    "PERFORMANCE_BUDGET": {
+      "FIRST_CONTENTFUL_PAINT": 2000,
+      "LARGEST_CONTENTFUL_PAINT": 4000,
+      "CUMULATIVE_LAYOUT_SHIFT": 0.1,
+      "TOTAL_BLOCKING_TIME": 300
+    },
+    "BUNDLE_SIZE": {
+      "MAX_JS_SIZE_KB": 500,
+      "MAX_CSS_SIZE_KB": 100,
+      "MAX_INITIAL_CHUNK_KB": 200
+    },
+    "SECURITY": {
+      "MAX_HIGH_VULNERABILITIES": 0,
+      "MAX_MEDIUM_VULNERABILITIES": 5,
+      "MAX_OUTDATED_DEPENDENCIES": 10
+    }
+  }
+}

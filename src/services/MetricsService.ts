@@ -8,7 +8,8 @@
 import { 
   CloudWatchClient, 
   PutMetricDataCommand, 
-  MetricDatum 
+  MetricDatum,
+  StandardUnit
 } from '@aws-sdk/client-cloudwatch';
 import { getCloudWatchClient } from '../lib/aws-config';
 
@@ -56,7 +57,7 @@ export class MetricsService {
     const metric: MetricDatum = {
       MetricName: metricName,
       Value: value,
-      Unit: unit,
+      Unit: unit as any,
       Dimensions: [
         ...dimensions,
         {
@@ -118,7 +119,7 @@ export class MetricsService {
     const timestamp = new Date();
     const baseDimensions = [{ Name: 'Service', Value: 'S3' }];
 
-    const metricsToAdd = [
+    const metricsToAdd: Array<{ metricName: string; value: number; dimensions?: Array<{ Name: string; Value: string }>; timestamp: Date; unit?: string }> = [
       {
         metricName: `S3.${operation}.Duration`,
         value: duration,

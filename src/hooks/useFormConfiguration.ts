@@ -149,6 +149,6 @@ export const useFormConfiguration = (
     error,
     updateConfiguration,
     deployConfiguration,
-    validateConfiguration
+    validateConfiguration,
   };
 };

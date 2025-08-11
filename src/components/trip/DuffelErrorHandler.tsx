@@ -94,7 +94,7 @@ export const DuffelErrorHandler: React.FC<DuffelErrorHandlerProps> = ({
   };
 
   const getRecoveryActions = () => {
-    const actions = [];
+    const actions: React.ReactNode[] = [];
     
     if (error.retryable !== false && onRetry) {
       actions.push(

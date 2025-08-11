@@ -16,6 +16,7 @@ interface PhoneInputFieldProps {
   disabled?: boolean;
   error?: string;
   className?: string;
+  defaultCountry?: string;
 }
 
 export const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
@@ -46,10 +47,13 @@ export const PhoneInputField: React.FC<PhoneInputFieldProps> = ({
     <div className="relative">
       <Input
         type="tel"
+        inputMode="tel"
+        autoComplete="tel"
         value={value}
         onChange={handleChange}
         placeholder={placeholder}
         disabled={disabled}
+        aria-invalid={!!error}
         className={cn(
           "pl-8",
           error && "border-destructive",

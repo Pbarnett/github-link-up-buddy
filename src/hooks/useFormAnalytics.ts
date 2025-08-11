@@ -182,7 +182,7 @@ export const generateSessionId = (): string => {
  * Hook to generate and maintain session ID
  */
 export const useSessionId = (): string => {
-  const sessionId = useRef<string>();
+  const sessionId = useRef<string | null>(null);
   
   if (!sessionId.current) {
     sessionId.current = generateSessionId();

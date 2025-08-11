@@ -87,40 +87,42 @@ export const FormAnalyticsDashboard: React.FC = () => {
       if (analyticsError) throw analyticsError;
 
       // Aggregate data by form
-      const formAnalytics = (analyticsData || []).reduce((acc: Record<string, FormAnalytics>, curr) => {
-        const key = curr.form_name;
-        if (!acc[key]) {
-          acc[key] = {
-            form_name: curr.form_name,
-            total_views: 0,
-            total_submissions: 0,
-            completion_rate: 0,
-            abandonment_rate: 0,
-            avg_completion_time_ms: 0,
-            date: curr.date
-          };
-        }
-        
-        acc[key].total_views += curr.total_views || 0;
-        acc[key].total_submissions += curr.total_submissions || 0;
-        
-        return acc;
-      }, {});
+      const formAnalytics: Record<string, FormAnalytics> = (analyticsData as any[] | null || []).reduce(
+        (acc: Record<string, FormAnalytics>, curr: any) => {
+          const key = String(curr.form_name);
+          if (!acc[key]) {
+            acc[key] = {
+              form_name: String(curr.form_name),
+              total_views: Number(curr.total_views) || 0,
+              total_submissions: Number(curr.total_submissions) || 0,
+              completion_rate: 0,
+              abandonment_rate: 0,
+              avg_completion_time_ms: Number(curr.avg_completion_time_ms) || 0,
+              date: String(curr.date)
+            };
+          } else {
+            acc[key].total_views += Number(curr.total_views) || 0;
+            acc[key].total_submissions += Number(curr.total_submissions) || 0;
+          }
+          return acc;
+        },
+        {} as Record<string, FormAnalytics>
+      );
 
       // Calculate completion rates
-      Object.values(formAnalytics).forEach(form => {
+      Object.values(formAnalytics as Record<string, FormAnalytics>).forEach((form) => {
         if (form.total_views > 0) {
           form.completion_rate = (form.total_submissions / form.total_views) * 100;
         }
       });
 
-      const analyticsArray = Object.values(formAnalytics);
+      const analyticsArray: FormAnalytics[] = Object.values(formAnalytics);
       setAnalytics(analyticsArray);
 
       // Calculate overview metrics
-      const totalViews = analyticsArray.reduce((sum, form) => sum + form.total_views, 0);
-      const totalSubmissions = analyticsArray.reduce((sum, form) => sum + form.total_submissions, 0);
-      const avgCompletionRate = totalViews > 0 ? (totalSubmissions / totalViews) * 100 : 0;
+      const totalViews: number = analyticsArray.reduce((sum: number, form: FormAnalytics) => sum + form.total_views, 0);
+      const totalSubmissions: number = analyticsArray.reduce((sum: number, form: FormAnalytics) => sum + form.total_submissions, 0);
+      const avgCompletionRate: number = totalViews > 0 ? (totalSubmissions / totalViews) * 100 : 0;
 
       setOverview({
         totalForms: analyticsArray.length,

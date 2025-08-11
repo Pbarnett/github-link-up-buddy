@@ -180,13 +180,15 @@ const applyValidationRules = (
   // String validations
   if (schema instanceof z.ZodString) {
     if (rules.minLength !== undefined) {
-      updatedSchema = updatedSchema.min(rules.minLength, 
+      updatedSchema = (updatedSchema as z.ZodString).min(
+        rules.minLength,
         rules.message || `Must be at least ${rules.minLength} characters`
       );
     }
 
     if (rules.maxLength !== undefined) {
-      updatedSchema = updatedSchema.max(rules.maxLength,
+      updatedSchema = (updatedSchema as z.ZodString).max(
+        rules.maxLength,
         rules.message || `Must be no more than ${rules.maxLength} characters`
       );
     }
@@ -194,7 +196,8 @@ const applyValidationRules = (
     if (rules.pattern) {
       try {
         const regex = new RegExp(rules.pattern);
-        updatedSchema = updatedSchema.regex(regex, 
+        updatedSchema = (updatedSchema as z.ZodString).regex(
+          regex,
           rules.message || 'Invalid format'
         );
       } catch (error) {
@@ -203,13 +206,13 @@ const applyValidationRules = (
     }
 
     if (rules.email) {
-      updatedSchema = updatedSchema.email(
+      updatedSchema = (updatedSchema as z.ZodString).email(
         rules.message || 'Please enter a valid email address'
       );
     }
 
     if (rules.url) {
-      updatedSchema = updatedSchema.url(
+      updatedSchema = (updatedSchema as z.ZodString).url(
         rules.message || 'Please enter a valid URL'
       );
     }
@@ -218,13 +221,15 @@ const applyValidationRules = (
   // Number validations
   if (schema instanceof z.ZodNumber) {
     if (rules.min !== undefined) {
-      updatedSchema = updatedSchema.min(rules.min,
+      updatedSchema = (updatedSchema as z.ZodNumber).min(
+        rules.min,
         rules.message || `Must be at least ${rules.min}`
       );
     }
 
     if (rules.max !== undefined) {
-      updatedSchema = updatedSchema.max(rules.max,
+      updatedSchema = (updatedSchema as z.ZodNumber).max(
+        rules.max,
         rules.message || `Must be no more than ${rules.max}`
       );
     }

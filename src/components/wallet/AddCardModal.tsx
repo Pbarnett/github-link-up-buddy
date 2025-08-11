@@ -16,8 +16,9 @@ import { AddCardModalProps } from '@/types/wallet';
 import { useWallet } from '@/contexts/WalletContext';
 import { useToast } from '@/hooks/use-toast';
 
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!);
+// Initialize Stripe safely in browser env
+const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
 
 const cardElementOptions = {
   style: {
@@ -191,9 +192,18 @@ export function AddCardModal({ isOpen, onClose, onSuccess }: AddCardModalProps) 
         
         <Card>
           <CardContent className="pt-6">
-            <Elements stripe={stripePromise}>
-              <AddCardForm onSuccess={handleSuccess} onClose={onClose} />
-            </Elements>
+            {stripePromise ? (
+              <Elements stripe={stripePromise}>
+                <AddCardForm onSuccess={handleSuccess} onClose={onClose} />
+              </Elements>
+            ) : (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Stripe is not configured. Please set VITE_STRIPE_PUBLISHABLE_KEY in your environment.
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
       </DialogContent>

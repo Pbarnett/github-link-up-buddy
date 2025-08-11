@@ -31,6 +31,7 @@ import LiveBookingSummary from "./LiveBookingSummary";
 import TripSummaryChips from "./sections/TripSummaryChips";
 import AutoBookingSection from "./sections/AutoBookingSection";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { retryPromise } from "@/lib/resilience/retryPromise";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -64,6 +65,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
   const form = useForm<FormValues>({
     resolver: zodResolver(tripFormSchema),
     defaultValues: {
+      form_mode: mode,
       min_duration: 3,
       max_duration: 7,
       max_price: 1000, // Consolidated from budget
@@ -89,6 +91,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
           if (tripData) {
             const { nycAirports, otherAirport } = categorizeAirports(tripData.departure_airports);
             form.reset({
+              form_mode: mode,
               earliestDeparture: tripData.earliest_departure ? parseISO(tripData.earliest_departure) : undefined,
               latestDeparture: tripData.latest_departure ? parseISO(tripData.latest_departure) : undefined,
               min_duration: tripData.min_duration,
@@ -96,8 +99,8 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
               max_price: tripData.max_price || tripData.budget || 1000, // Use max_price, fallback to budget for backward compatibility
               nyc_airports: nycAirports,
               other_departure_airport: otherAirport,
-              destination_airport: tripData.destination_airport?.length === 3 && tripData.destination_airport === tripData.destination_airport?.toUpperCase() ? tripData.destination_airport : "",
-              destination_other: tripData.destination_airport?.length !== 3 || tripData.destination_airport !== tripData.destination_airport?.toUpperCase() ? tripData.destination_airport : "",
+              destination_airport: tripData.destination_airport?.length === 3 && tripData.destination_airport === tripData.destination_airport?.toUpperCase() ? (tripData.destination_airport ?? "") : "",
+              destination_other: (tripData.destination_airport?.length !== 3 || tripData.destination_airport !== tripData.destination_airport?.toUpperCase()) ? (tripData.destination_airport ?? "") : "",
               nonstop_required: tripData.nonstop_required ?? true,
               baggage_included_required: tripData.baggage_included_required ?? false,
               auto_book_enabled: tripData.auto_book_enabled ?? false, // Use nullish coalescing
@@ -135,25 +138,32 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
   };
 
   const transformFormData = (data: FormValues): ExtendedTripFormValues => {
-    const departureAirports: string[] = [];
-    if (data.nyc_airports && data.nyc_airports.length > 0) {
-      departureAirports.push(...data.nyc_airports);
-    }
-    if (data.other_departure_airport) {
-      departureAirports.push(data.other_departure_airport);
-    }
-    const destinationAirport = data.destination_airport || data.destination_other || "";
+    // Normalize and deduplicate airports
+    const departureAirportsSet = new Set<string>();
+    const pushAirport = (ap?: string | null) => {
+      if (!ap) return;
+      const norm = ap.trim().toUpperCase();
+      if (norm) departureAirportsSet.add(norm);
+    };
+    (data.nyc_airports || []).forEach(pushAirport);
+    pushAirport(data.other_departure_airport || undefined);
+
+    const destinationAirport = (data.destination_airport || data.destination_other || "").trim().toUpperCase();
+
+    // Clamp durations defensively
+    const minDur = Math.max(1, Math.min(30, data.min_duration));
+    const maxDur = Math.max(minDur, Math.min(30, data.max_duration));
     
     // Clean up auto-booking fields when auto-booking is disabled
-    const isAutoBookingEnabled = data.auto_book_enabled;
+    const isAutoBookingEnabled = !!data.auto_book_enabled;
     
     return {
       earliestDeparture: data.earliestDeparture,
       latestDeparture: data.latestDeparture,
-      min_duration: data.min_duration,
-      max_duration: data.max_duration,
+      min_duration: minDur,
+      max_duration: maxDur,
       budget: data.max_price, // Map max_price to budget field for backend compatibility
-      departure_airports: departureAirports,
+      departure_airports: Array.from(departureAirportsSet),
       destination_airport: destinationAirport,
       destination_location_code: destinationAirport, // Same as destination_airport for now
       nonstop_required: data.nonstop_required,
@@ -161,7 +171,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       auto_book_enabled: isAutoBookingEnabled,
       // Only include auto-booking fields when auto-booking is enabled
       max_price: isAutoBookingEnabled ? data.max_price : null,
-      preferred_payment_method_id: isAutoBookingEnabled ? data.preferred_payment_method_id : null,
+      preferred_payment_method_id: isAutoBookingEnabled ? data.preferred_payment_method_id || null : null,
     };
   };
 
@@ -173,7 +183,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
     const tripRequestData: TripRequestInsert = {
       user_id: userId,
       destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport,
+      destination_location_code: formData.destination_airport || '',
       departure_airports: formData.departure_airports || [],
       earliest_departure: formData.earliestDeparture.toISOString(),
       latest_departure: formData.latestDeparture.toISOString(),
@@ -317,9 +327,9 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       let resultingTripRequest: TripRequestFromDB;
 
       if (tripRequestId) {
-        resultingTripRequest = await updateTripRequest(transformedData);
+        resultingTripRequest = await retryPromise(() => updateTripRequest(transformedData), { retries: 2, delayMs: 300, jitter: true });
       } else {
-        resultingTripRequest = await createTripRequest(transformedData);
+        resultingTripRequest = await retryPromise(() => createTripRequest(transformedData), { retries: 2, delayMs: 300, jitter: true });
         
         // 🎯 INTELLIGENT FLIGHT SEARCH TRIGGER for new trips
         try {

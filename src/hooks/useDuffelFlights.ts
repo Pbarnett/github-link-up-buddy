@@ -98,7 +98,7 @@ export const useDuffelFlights = (
     });
 
     try {
-      const response = await fetchDuffelFlights(tripRequestId, searchOptions);
+      const response = await fetchDuffelFlights(tripRequestId, searchOptions as any);
       
       setSearchResponse(response);
       setLastSearchTime(new Date());

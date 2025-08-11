@@ -39,10 +39,22 @@ export interface FieldConfiguration {
   className?: string;
   defaultValue?: any;
   options?: FieldOption[]; // For select, radio, checkbox fields
+  // Optional UI/behavioral flags used by renderers
+  required?: boolean;
+  disabled?: boolean;
+  rows?: number;
+  defaultCountry?: string;
+  addressConfig?: any;
+  accept?: string;
+  multiple?: boolean;
+  maxSize?: number;
+  allowHalf?: boolean;
+  tooltip?: string;
+  autoComplete?: string;
 }
 
 export type FieldType = 
-  | 'text' | 'email' | 'phone' | 'number' | 'password' | 'textarea'
+  | 'text' | 'email' | 'phone' | 'number' | 'password' | 'textarea' | 'url'
   | 'select' | 'multi-select' | 'radio' | 'checkbox' | 'switch'
   | 'date' | 'datetime' | 'date-range' | 'date-range-flexible'
   | 'airport-autocomplete' | 'country-select' | 'currency-select'
@@ -89,6 +101,7 @@ export interface ValidationRules {
   required?: boolean;
   min?: number;
   max?: number;
+  step?: number;
   minLength?: number;
   maxLength?: number;
   pattern?: string;
@@ -317,6 +330,27 @@ export interface FormSubmissionData {
     instanceId: string;
     [key: string]: any;
   };
+}
+
+// Back-compatibility aliases for legacy imports in code
+export type DynamicFormConfig = FormConfiguration;
+export type FormSubmission = FormSubmissionData;
+export type ABTestResults = ABTestResult[];
+
+// A/B testing configuration shape used by ABTestingManager
+export interface ABTestConfiguration {
+  id?: string;
+  name: string;
+  description?: string;
+  trafficSplit: number; // percentage for primary variant
+  duration: number; // days
+  variants: Array<{
+    id: string;
+    name: string;
+    formConfigId: string;
+    trafficPercentage: number;
+  }>;
+  deploymentStrategy?: DeploymentStrategy;
 }
 
 

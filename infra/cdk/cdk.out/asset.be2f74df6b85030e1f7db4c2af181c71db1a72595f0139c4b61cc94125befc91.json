@@ -1,0 +1,175 @@
+{
+  "Comment": "Auto-booking workflow (v0) with correlationId propagation",
+  "StartAt": "ValidateInput",
+  "States": {
+    "ValidateInput": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "validate-booking-input",
+        "Payload": {
+          "correlationId.$": "$$.Execution.Name",
+          "input.$": "$"
+        }
+      },
+      "ResultPath": "$.validation",
+      "Catch": [
+        { "ErrorEquals": ["ValidationError"], "Next": "ValidationFailed", "ResultPath": "$.error" }
+      ],
+      "Next": "WaitForProvider"
+    },
+    "WaitForProvider": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Parameters": {
+        "FunctionName": "provider-callback-initiate",
+        "Payload": {
+          "correlationId.$": "$$.Execution.Name",
+          "TaskToken.$": "$$.Task.Token",
+          "payload.$": "$"
+        }
+      },
+      "TimeoutSeconds": 86400,
+      "HeartbeatSeconds": 3600,
+      "ResultPath": "$.provider",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.Timeout"],
+          "ResultPath": "$.error",
+          "Next": "ProcessingFailed"
+        }
+      ],
+      "Next": "ChargePayment"
+    },
+    "ChargePayment": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "payment-stub",
+        "Payload": {
+          "correlationId.$": "$$.Execution.Name",
+          "idempotencyKey.$": "States.Format('{}-charge', $$.Execution.Name)",
+          "amount.$": "$.searchParams.maxPrice"
+        }
+      },
+      "ResultPath": "$.payment",
+      "Retry": [
+        {
+          "ErrorEquals": ["TransientProviderError", "States.TaskFailed", "States.Timeout"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["ValidationError"],
+          "ResultPath": "$.error",
+          "Next": "ValidationFailed"
+        },
+        {
+          "ErrorEquals": ["FatalProviderError"],
+          "ResultPath": "$.error",
+          "Next": "ProcessingFailed"
+        },
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "ProcessingFailed"
+        }
+      ],
+      "Next": "ProcessBooking"
+    },
+    "ProcessBooking": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "process-auto-booking",
+        "Payload": {
+          "correlationId.$": "$$.Execution.Name",
+          "bookingData.$": "$"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed", "States.Timeout", "TransientProviderError"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["ValidationError"],
+          "ResultPath": "$.error",
+          "Next": "ValidationFailed"
+        },
+        {
+          "ErrorEquals": ["FatalProviderError", "States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "RefundPayment"
+        }
+      ],
+      "ResultPath": "$.booking",
+      "Next": "Success"
+    },
+    "RefundPayment": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "refund-payment-stub",
+        "Payload": {
+          "correlationId.$": "$$.Execution.Name",
+          "idempotencyKey.$": "States.Format('{}-refund', $$.Execution.Name)",
+          "amount.$": "$.payment.Payload.amount"
+        }
+      },
+      "ResultPath": "$.refund",
+      "Retry": [
+        {
+          "ErrorEquals": ["TransientProviderError", "States.TaskFailed", "States.Timeout"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Catch": [
+        { "ErrorEquals": ["ValidationError"], "ResultPath": "$.error", "Next": "ProcessingFailed" },
+        { "ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "ProcessingFailed" }
+      ],
+      "Next": "CancelBooking"
+    },
+    "CancelBooking": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "cancel-booking-stub",
+        "Payload": {
+          "correlationId.$": "$$.Execution.Name"
+        }
+      },
+      "ResultPath": "$.cancel",
+      "Retry": [
+        {
+          "ErrorEquals": ["TransientProviderError", "States.TaskFailed", "States.Timeout"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Catch": [
+        { "ErrorEquals": ["ValidationError"], "ResultPath": "$.error", "Next": "ProcessingFailed" },
+        { "ErrorEquals": ["States.ALL"], "ResultPath": "$.error", "Next": "ProcessingFailed" }
+      ],
+      "Next": "ProcessingFailed"
+    },
+    "ProcessingFailed": { "Type": "Fail", "Cause": "Booking processing failed" },
+    "Success": { "Type": "Succeed" },
+    "ValidationFailed": { "Type": "Fail", "Cause": "Input validation failed" }
+  }
+}
+

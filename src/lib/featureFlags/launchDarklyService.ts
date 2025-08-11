@@ -1,5 +1,13 @@
 import { initialize, LDClient, LDContext } from 'launchdarkly-js-client-sdk';
 
+export function trackPersonalizationSeen(enabled: boolean): void {
+  // No-op tracker for build-time environments; replace with real analytics if needed
+  // This ensures imports can be resolved during production builds
+  if (typeof window !== 'undefined') {
+    try { console.debug('[LD] personalization_greeting seen:', enabled); } catch {}
+  }
+}
+
 class LaunchDarklyService {
   private client: LDClient | null = null;
   private isInitialized = false;

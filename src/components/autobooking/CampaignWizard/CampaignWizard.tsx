@@ -12,6 +12,7 @@ import { campaignService } from '@/services/campaignService';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { CriteriaFormData } from './StepCriteria';
 import { TravelerFormData } from './StepTraveler';
+import { AutoBookingFAQDialog } from '@/components/autobooking/AutoBookingFAQDialog';
 
 // Lazy load step components
 const StepCriteria = lazy(() => import('./StepCriteria'));
@@ -120,8 +121,8 @@ function CampaignWizard() {
       });
 
       toast({
-        title: 'Campaign Created! 🎉',
-        description: 'Your auto-booking campaign is now active and monitoring flights.',
+        title: 'Rule Created! 🎉',
+        description: 'Your auto‑booking rule is now active and monitoring flights.',
       });
 
       // Navigate to dashboard
@@ -151,10 +152,17 @@ function CampaignWizard() {
         <CardContent className="pt-6">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold">Create Auto-Booking Campaign</h2>
-              <Badge variant="secondary">
-                Step {currentStep + 1} of {STEPS.length}
-              </Badge>
+              <h2 className="text-lg font-semibold">Create Auto-Booking Rule</h2>
+              <div className="flex items-center gap-3">
+                <AutoBookingFAQDialog
+                  trigger={
+                    <button className="text-xs text-muted-foreground hover:underline">How it works</button>
+                  }
+                />
+                <Badge variant="secondary">
+                  Step {currentStep + 1} of {STEPS.length}
+                </Badge>
+              </div>
             </div>
             
             <Progress value={progressPercentage} className="h-2" />

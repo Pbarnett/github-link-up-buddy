@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn().mockImplementation((table) => {
-      const chainMock = {
+      const chainMock: any = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
@@ -40,6 +40,9 @@ vi.mock('@/integrations/supabase/client', () => ({
         },
         error: null
       })
+    },
+auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'test-token' } }, error: null })
     }
   },
 }));

@@ -36,13 +36,11 @@ export const GreetingBanner: React.FC<GreetingBannerComponentProps> = ({
       const event: PersonalizationEvent = {
         type: 'greeting_shown',
         context,
-        data: {
-          variant,
-          hasPersonalData: !!(personalizationData?.firstName || personalizationData?.nextTripCity),
-          interactionType: onClick ? 'clickable' : 'static',
-          abTestVariant,
-          isPersonalized: isPersonalizationEnabled,
-        },
+          data: {
+            variant,
+            hasPersonalData: !!(personalizationData?.firstName || personalizationData?.nextTripCity),
+            interactionType: onClick ? 'clickable' : 'static',
+          },
         timestamp: new Date(),
         userId,
       };
@@ -81,7 +79,6 @@ export const GreetingBanner: React.FC<GreetingBannerComponentProps> = ({
           data: {
             variant,
             hasPersonalData: !!(personalizationData?.firstName || personalizationData?.nextTripCity),
-            abTestVariant,
           },
           timestamp: new Date(),
           userId,

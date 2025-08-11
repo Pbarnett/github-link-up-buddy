@@ -22,13 +22,17 @@ interface EnhancedDestinationSectionProps {
 const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSectionProps) => {
   const selectedDestination = watch("destination_airport");
   
+  const destOtherDescId = "destination_other-help";
+  const destOtherErrorId = "destination_other-error";
+  const destAirportErrorId = "destination_airport-error";
+
   return (
     <div className="bg-blue-50/30 rounded-lg p-4 border border-blue-100">
       <div className="space-y-4">
         <FormField
           control={control}
           name="destination_airport"
-          render={({ field }) => (
+          render={({ field, fieldState }) => (
             <FormItem>
               <div className="flex items-center gap-2">
                 <FormLabel className="text-base lg:text-lg font-bold text-gray-900">
@@ -50,7 +54,11 @@ const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSecti
                 value={field.value || ""}
               >
                 <FormControl>
-                  <SelectTrigger className="h-12 bg-white border-gray-300 text-base font-medium hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                  <SelectTrigger
+                    className="h-12 bg-white border-gray-300 text-base font-medium hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                    aria-invalid={fieldState.invalid || undefined}
+                    aria-describedby={fieldState.invalid ? destAirportErrorId : undefined}
+                  >
                     <SelectValue placeholder="Where are you going?" />
                   </SelectTrigger>
                 </FormControl>
@@ -62,7 +70,7 @@ const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSecti
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
+              <FormMessage id={destAirportErrorId} />
             </FormItem>
           )}
         />
@@ -70,21 +78,27 @@ const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSecti
         <FormField
           control={control}
           name="destination_other"
-          render={({ field }) => (
+          render={({ field, fieldState }) => (
             <FormItem>
               <FormLabel className="text-sm font-medium text-gray-700">Custom Destination</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="Enter airport code (e.g., LAX)" 
                   className="h-11 bg-white border-gray-300"
+                  autoComplete="off"
+                  inputMode="text"
+                  pattern="[A-Za-z]{3}"
+                  title="Enter a three-letter IATA airport code (e.g., LAX)"
+                  aria-invalid={fieldState.invalid || undefined}
+                  aria-describedby={fieldState.invalid ? `${destOtherDescId} ${destOtherErrorId}` : destOtherDescId}
                   {...field} 
                   disabled={!!selectedDestination}
                 />
               </FormControl>
-              <FormDescription className="text-xs text-gray-500">
+              <FormDescription id={destOtherDescId} className="text-xs text-gray-500">
                 Use this if your destination isn't listed above
               </FormDescription>
-              <FormMessage />
+              <FormMessage id={destOtherErrorId} />
             </FormItem>
           )}
         />

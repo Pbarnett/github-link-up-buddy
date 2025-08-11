@@ -5,7 +5,6 @@ import {
   SetupIntentResponse, 
   PaymentMethodsResponse, 
   WalletContextType,
-  PaymentMethodError
 } from '@/types/wallet';
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);

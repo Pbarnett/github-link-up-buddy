@@ -1,5 +1,7 @@
 import express from 'express';
 import { register } from './metrics';
+import fs from 'fs';
+import path from 'path';
 
 const app = express();
 
@@ -18,6 +20,23 @@ app.get('/metrics', async (req, res) => {
     res.end(await register.metrics());
   } catch (error) {
     res.status(500).end(error);
+  }
+});
+
+// Business rules config endpoint (serves static public config in dev)
+app.get('/api/business-rules/config', (req, res) => {
+  try {
+    const filePath = path.join(process.cwd(), 'public', 'config', 'business-rules.json');
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'business-rules.json not found' });
+    }
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const json = JSON.parse(raw);
+    res.setHeader('Cache-Control', 'no-cache');
+    return res.json(json);
+  } catch (err) {
+    console.error('Failed to read business-rules.json', err);
+    return res.status(500).json({ error: 'Failed to load business rules config' });
   }
 });
 

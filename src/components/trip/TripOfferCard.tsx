@@ -18,14 +18,14 @@ import { parseDuration } from "@/utils/parseDuration";
 
 export interface OfferProps {
   id: string;
-  price: number;
-  airline: string;
-  flight_number: string;
-  departure_date: string;
-  departure_time: string;
-  return_date: string;
-  return_time: string;
-  duration: string;
+  price?: number;
+  airline?: string;
+  flight_number?: string;
+  departure_date?: string;
+  departure_time?: string;
+  return_date?: string;
+  return_time?: string;
+  duration?: string;
   booking_url?: string;
   // Enhanced fields for better display
   carrier_code?: string;
@@ -33,9 +33,9 @@ export interface OfferProps {
   destination_airport?: string;
   // New pricing structure fields
   priceStructure?: {
-    base: number;
-    carryOnFee: number;
-    total: number;
+    base?: number;
+    carryOnFee?: number;
+    total?: number;
   };
   carryOnIncluded?: boolean;
   reasons?: string[];
@@ -45,20 +45,21 @@ const formatCurrency = (amount: number): string => {
   return `$${amount.toFixed(2)}`;
 };
 
+// Accepts a broad offer shape to be compatible with multiple sources (legacy and V2)
 const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
   const navigate = useNavigate();
 
   // Calculate display price with fallback
-  const total = offer.priceStructure?.total ?? offer.price;
+const total = offer.priceStructure?.total ?? (offer.price ?? 0);
 
   // 1. Determine the IATA carrier code
   const rawFlightNum = offer.flight_number || "";
   const extractedCarrier = rawFlightNum.match(/^([A-Z]{1,3})/)?.[1] || "";
-  const carrierCode = offer.carrier_code || extractedCarrier.toUpperCase() || offer.airline;
+const carrierCode = offer.carrier_code || extractedCarrier.toUpperCase() || (offer.airline || "");
 
   // 2. Determine friendly airline name
-  const friendlyAirline = 
-    (carrierCode && airlineNames[carrierCode]) || offer.airline || carrierCode;
+const friendlyAirline = 
+    (carrierCode && airlineNames[carrierCode as keyof typeof airlineNames]) || offer.airline || carrierCode;
 
   // 3. Airport display with fallbacks
   const originLabel =
@@ -71,21 +72,21 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
     "Destination";
 
   // 4. Combine date + time into ISO strings
-  const departureISO = combineDateTime(offer.departure_date, offer.departure_time);
-  const returnISO = combineDateTime(offer.return_date, offer.return_time);
+const departureISO = combineDateTime(offer.departure_date || new Date().toISOString().slice(0,10), offer.departure_time || "00:00");
+  const returnISO = combineDateTime(offer.return_date || new Date().toISOString().slice(0,10), offer.return_time || "00:00");
 
   // 5. Convert to local, 12-hour format
   const depLocal = formatLocalDateTime(departureISO);
   const retLocal = formatLocalDateTime(returnISO);
 
   // 6. Parse duration if ISO format, otherwise show as-is
-  const humanDuration = offer.duration.startsWith("PT")
-    ? parseDuration(offer.duration)
-    : offer.duration;
+const humanDuration = (offer.duration || "").startsWith("PT")
+    ? parseDuration((offer.duration as string) || "PT0H")
+    : (offer.duration || "");
 
   // Calculate trip duration in days
-  const departureDate = new Date(offer.departure_date);
-  const returnDate = new Date(offer.return_date);
+const departureDate = new Date(offer.departure_date || new Date().toISOString());
+  const returnDate = new Date(offer.return_date || new Date().toISOString());
   const tripDays = Math.ceil((returnDate.getTime() - departureDate.getTime()) / (1000 * 60 * 60 * 24));
 
   const handleSelect = () => {
@@ -116,14 +117,14 @@ const TripOfferCard = ({ offer }: { offer: OfferProps }) => {
     console.log('Selected offer for internal booking:', offer.id);
     const params = new URLSearchParams();
     params.set('id', offer.id);
-    params.set('airline', offer.airline);
-    params.set('flight_number', offer.flight_number);
+    params.set('airline', offer.airline || "");
+    params.set('flight_number', offer.flight_number || "");
     params.set('price', total.toString());
-    params.set('departure_date', offer.departure_date);
-    params.set('departure_time', offer.departure_time);
-    params.set('return_date', offer.return_date);
-    params.set('return_time', offer.return_time);
-    params.set('duration', offer.duration);
+    params.set('departure_date', (offer.departure_date || new Date().toISOString().slice(0,10)));
+    params.set('departure_time', (offer.departure_time || "00:00"));
+    params.set('return_date', (offer.return_date || new Date().toISOString().slice(0,10)));
+    params.set('return_time', (offer.return_time || "00:00"));
+    params.set('duration', offer.duration || "");
     
     navigate(`/trip/confirm?${params.toString()}`);
     

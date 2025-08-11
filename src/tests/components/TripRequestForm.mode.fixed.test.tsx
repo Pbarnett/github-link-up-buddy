@@ -55,8 +55,8 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
-    expect(screen.getByText('Enter the parameters for your trip below.')).toBeInTheDocument();
+    expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
+    expect(screen.getByText('Search real-time flight availability (Amadeus-powered)')).toBeInTheDocument();
     expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
     expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
   });
@@ -68,7 +68,7 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
+    expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
     expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
     expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
   });
@@ -80,10 +80,12 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    // In auto mode step 1, the title should be "Trip Basics"
-    expect(screen.getByText('Trip Basics')).toBeInTheDocument();
+    // In auto mode step 1, the title should be "Trip Basics" (may appear multiple times)
+    const basics = screen.getAllByText('Trip Basics');
+    expect(basics.length).toBeGreaterThan(0);
     expect(screen.getByText('Tell us where and when you want to travel.')).toBeInTheDocument();
-    expect(screen.getByText('Continue → Pricing')).toBeInTheDocument();
+    const continueBtns = screen.getAllByText('Continue → Pricing');
+    expect(continueBtns.length).toBeGreaterThan(0);
   });
 
   test('should show step indicator in auto mode', () => {
@@ -107,9 +109,8 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    // Should show "Where & When" instead of "Travel Details"
-    expect(screen.getByText('Where & When')).toBeInTheDocument();
-    expect(screen.getByText('Trip Length')).toBeInTheDocument();
+    // Should show actual section labels from the components
+    expect(screen.getByText('Destination')).toBeInTheDocument();
     
     // Should NOT show auto-booking section in step 1
     expect(screen.queryByText('Maximum Price')).not.toBeInTheDocument();

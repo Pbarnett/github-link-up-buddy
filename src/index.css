@@ -120,6 +120,22 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Skip link styling for visibility on focus */
+  .skip-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translateY(-150%);
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    border: 2px solid hsl(var(--ring));
+    padding: 0.5rem 1rem;
+    z-index: 10000;
+  }
+  .skip-link:focus {
+    transform: translateY(0);
+  }
 }
 
 @layer components {
@@ -218,6 +234,28 @@
     }
   }
 
+  /* Safe-area utilities for devices with notches */
+  .safe-area-x {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  .safe-area-y {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Content visibility utility for large below-the-fold sections */
+  .content-visibility-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 1000px 800px; /* tune per section to avoid layout shift */
+  }
+
   /* Primary path design system */
   .card-primary {
     transform: scale(var(--card-primary-scale));
@@ -308,9 +346,15 @@
   .card-grid {
     margin-top: -1.25rem;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 1.5rem;
     align-items: stretch;
+  }
+
+  @media (min-width: 768px) {
+    .card-grid {
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    }
   }
   
   .card-primary-enhanced {

@@ -31,6 +31,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { ModeToggle } from '@/components/mode-toggle';
+import { prefetchProfile, prefetchWallet, prefetchOffersV2, prefetchDashboard, prefetchAutoBookingNew, prefetchTripNew } from '@/lib/prefetchRoutes';
 
 interface User {
   id: string;
@@ -87,17 +89,17 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
   // Primary navigation items (left side) - Simplified for cleaner dashboard
   const primaryNavItems = [
     {
-      name: 'My Bookings',
+      name: 'Auto-Booking',
       href: '/auto-booking',
       icon: Home,
     },
     {
-      name: 'Set Auto-Booking',
+      name: 'Create Rule',
       href: '/auto-booking/new',
       icon: Calendar,
     },
     {
-      name: 'Search Available Flights',
+      name: 'Search Flights',
       href: '/search',
       icon: Search,
     }
@@ -135,8 +137,8 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
     return null;
   }
 
-  return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+return (
+    <nav role="navigation" aria-label="Primary" aria-busy={isLoading} className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 safe-area-x safe-area-top">
       <div className="container flex h-16 max-w-screen-2xl items-center">
         {/* Logo */}
         <Link 
@@ -144,7 +146,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
           className="flex items-center space-x-2 mr-8 hover:opacity-80 transition-opacity"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <PlaneTakeoff className="h-4 w-4" />
+            <PlaneTakeoff className="h-4 w-4" aria-hidden="true" />
           </div>
           <span className="hidden font-bold sm:inline-block text-lg">
             Parker Flight
@@ -160,6 +162,23 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
               <Link
                 key={item.name}
                 to={item.href}
+                onMouseEnter={() => {
+                  if (item.href === '/profile') prefetchProfile();
+                  if (item.href === '/wallet') prefetchWallet();
+                  if (item.href.startsWith('/trips/')) prefetchOffersV2();
+                  if (item.href === '/auto-booking') prefetchDashboard();
+                  if (item.href === '/auto-booking/new') prefetchAutoBookingNew();
+                  if (item.href === '/search') prefetchTripNew();
+                }}
+                onFocus={() => {
+                  if (item.href === '/profile') prefetchProfile();
+                  if (item.href === '/wallet') prefetchWallet();
+                  if (item.href.startsWith('/trips/')) prefetchOffersV2();
+                  if (item.href === '/auto-booking') prefetchDashboard();
+                  if (item.href === '/auto-booking/new') prefetchAutoBookingNew();
+                  if (item.href === '/search') prefetchTripNew();
+                }}
+                aria-current={active ? 'page' : undefined}
                 className={cn(
                   "nav-link px-3 py-2 inline-flex items-center gap-2 text-sm font-medium transition-all duration-200 relative",
                   active
@@ -167,7 +186,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
                     : "text-muted-foreground hover:text-foreground hover:border-b-2 hover:border-primary"
                 )}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-4 h-4" aria-hidden="true" />
                 <span>{item.name}</span>
               </Link>
             );
@@ -202,8 +221,9 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
                 variant="ghost"
                 size="icon"
                 className="md:hidden"
+                aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
               >
-                <Menu className="h-5 w-5" />
+                <Menu className="h-5 w-5" aria-hidden="true" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 mr-4" align="end">
@@ -217,6 +237,23 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
                       <Link
                         key={item.name}
                         to={item.href}
+                        aria-current={active ? 'page' : undefined}
+                        onMouseEnter={() => {
+                          if (item.href === '/profile') prefetchProfile();
+                          if (item.href === '/wallet') prefetchWallet();
+                          if (item.href.startsWith('/trips/')) prefetchOffersV2();
+                          if (item.href === '/auto-booking') prefetchDashboard();
+                          if (item.href === '/auto-booking/new') prefetchAutoBookingNew();
+                          if (item.href === '/search') prefetchTripNew();
+                        }}
+                        onFocus={() => {
+                          if (item.href === '/profile') prefetchProfile();
+                          if (item.href === '/wallet') prefetchWallet();
+                          if (item.href.startsWith('/trips/')) prefetchOffersV2();
+                          if (item.href === '/auto-booking') prefetchDashboard();
+                          if (item.href === '/auto-booking/new') prefetchAutoBookingNew();
+                          if (item.href === '/search') prefetchTripNew();
+                        }}
                         onClick={() => setIsMobileMenuOpen(false)}
                         className={cn(
                           "flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full",
@@ -225,7 +262,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
                             : "text-muted-foreground hover:text-foreground hover:bg-accent"
                         )}
                       >
-                        <Icon className="h-5 w-5" />
+                        <Icon className="h-5 w-5" aria-hidden="true" />
                         <span>{item.name}</span>
                       </Link>
                     );
@@ -254,11 +291,18 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
             </PopoverContent>
           </Popover>
 
+          {/* Theme toggle */}
+          <div className="hidden md:block">
+            {/* Mode toggle visible on desktop; on mobile user can access via user menu */}
+            {/* eslint-disable-next-line react/jsx-no-undef */}
+            <ModeToggle />
+          </div>
+
           {/* User dropdown */}
           {user && !isLoading ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full" aria-label="Open user menu">
                   <Avatar className="h-9 w-9">
                     <AvatarImage 
                       src={user.user_metadata?.avatar_url} 
@@ -268,7 +312,7 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
-                  <ChevronDown className="h-3 w-3 absolute -bottom-1 -right-1 opacity-50" />
+                  <ChevronDown className="h-3 w-3 absolute -bottom-1 -right-1 opacity-50" aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -284,16 +328,34 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                  Theme
+                </DropdownMenuLabel>
+                <div className="px-2 pb-2">
+                  {/* eslint-disable-next-line react/jsx-no-undef */}
+                  <ModeToggle />
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
                   Profile & Settings
                 </DropdownMenuLabel>
                 <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center">
+                  <Link 
+                    to="/profile" 
+                    className="flex items-center"
+                    onMouseEnter={() => prefetchProfile()}
+                    onFocus={() => prefetchProfile()}
+                  >
                     <User className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/wallet" className="flex items-center">
+                  <Link 
+                    to="/wallet" 
+                    className="flex items-center"
+                    onMouseEnter={() => prefetchWallet()}
+                    onFocus={() => prefetchWallet()}
+                  >
                     <CreditCard className="mr-2 h-4 w-4" />
                     <span>Payment Methods</span>
                   </Link>

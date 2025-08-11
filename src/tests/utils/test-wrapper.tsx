@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BusinessRulesProvider } from '@/hooks/useBusinessRules';
-import { FormAnalyticsProvider } from '@/hooks/useFormAnalytics';
+// import { FormAnalyticsProvider } from '@/hooks/useFormAnalytics';
 
 interface TestWrapperProps {
   children: ReactNode;
@@ -41,10 +41,8 @@ export function TestWrapper({ children, initialEntries = ['/'], queryClient }: T
   return (
     <QueryClientProvider client={testQueryClient}>
       <MemoryRouter initialEntries={initialEntries}>
-        <BusinessRulesProvider config={mockBusinessRulesConfig}>
-          <FormAnalyticsProvider enabled={false}>
+        <BusinessRulesProvider>
             {children}
-          </FormAnalyticsProvider>
         </BusinessRulesProvider>
       </MemoryRouter>
     </QueryClientProvider>

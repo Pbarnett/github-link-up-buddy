@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Campaign } from "@/types/campaign";
-import { campaignService } from "@/services/campaignService";
+import { campaignServiceAdapter as campaignService } from "@/services/campaignServiceAdapter";
 import { useCurrentUser } from "./useCurrentUser";
 
 export const useCampaigns = () => {

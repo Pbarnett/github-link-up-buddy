@@ -2,9 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Offer, fetchTripOffers } from "@/services/tripOffersService";
-import { ScoredOffer } from "@/types/offer";
 import { toast } from "@/components/ui/use-toast";
-import { invokeFlightSearch, FlightSearchRequestBody, FlightSearchResponse, fetchFlightSearch } from "@/services/api/flightSearchApi";
+import { invokeFlightSearch, FlightSearchRequestBody, FlightSearchResponse, fetchFlightSearch, ScoredOffer as ApiScoredOffer } from "@/services/api/flightSearchApi";
 import { Tables } from "@/integrations/supabase/types";
 import { PostgrestError } from "@supabase/supabase-js";
 import logger from "@/lib/logger";
@@ -28,9 +27,9 @@ export interface TripDetails {
  * Enhanced interface for the new pools-based functionality
  */
 export interface PoolsHookResult {
-  pool1: ScoredOffer[];
-  pool2: ScoredOffer[];
-  pool3: ScoredOffer[];
+  pool1: ApiScoredOffer[];
+  pool2: ApiScoredOffer[];
+  pool3: ApiScoredOffer[];
   budget: number;
   maxBudget: number;
   dateRange: { from: string; to: string };
@@ -47,11 +46,10 @@ export const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes - EXPORTED
 
 // Unified Cache Definition
 export const unifiedCache = new Map<string, {
-  legacy?: { offers: Offer[], tripDetails: TripDetails }, // Offer and TripDetails types are available
-  pools?: { pool1: ScoredOffer[], pool2: ScoredOffer[], pool3: ScoredOffer[], budget: number }, // ScoredOffer is available
-  timestamp: number
+  legacy?: { offers: Offer[]; tripDetails: TripDetails };
+  pools?: { pool1: ApiScoredOffer[]; pool2: ApiScoredOffer[]; pool3: ApiScoredOffer[]; budget: number };
+  timestamp: number;
 }>();
-
 // Exported function to clear the unified cache
 export const clearUnifiedCache = () => {
   unifiedCache.clear();
@@ -82,10 +80,10 @@ export const useTripOffersPools = ({ tripId }: { tripId: string | null }): Pools
   const [tripDetails, setTripDetails] = useState<TripDetails | null>(null);
   const [budget, setBudget] = useState<number>(1000);
   const [bumpsUsed, setBumpsUsed] = useState(0);
-  const [pools, setPools] = useState<{ pool1: ScoredOffer[], pool2: ScoredOffer[], pool3: ScoredOffer[] }>({ 
-    pool1: [], 
-    pool2: [], 
-    pool3: [] 
+const [pools, setPools] = useState<{ pool1: ApiScoredOffer[]; pool2: ApiScoredOffer[]; pool3: ApiScoredOffer[] }>({
+    pool1: [],
+    pool2: [],
+    pool3: []
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -168,9 +166,9 @@ export const useTripOffersPools = ({ tripId }: { tripId: string | null }): Pools
       });
       
       const newPools = {
-        pool1: response.pool1,
-        pool2: response.pool2,
-        pool3: response.pool3,
+        pool1: response.pool1 || [],
+        pool2: response.pool2 || [],
+        pool3: response.pool3 || [],
       };
       
       logger.info("[🔍 POOLS-DEBUG] Setting pools state:", {

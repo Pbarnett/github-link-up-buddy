@@ -36,7 +36,7 @@ import { cn } from '@/lib/utils';
 
 import type {
   FieldConfiguration,
-  DynamicFormConfig
+  FormConfiguration
 } from '@/types/dynamic-forms';
 
 // Import specialized field components
@@ -63,7 +63,7 @@ export interface DynamicFieldRendererProps {
   /** Whether field is required */
   required?: boolean;
   /** Form configuration for context */
-  config?: DynamicFormConfig;
+  config?: FormConfiguration;
   /** Full form data for conditional logic */
   formData?: Record<string, any>;
   /** Additional CSS classes */

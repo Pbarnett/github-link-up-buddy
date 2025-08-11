@@ -16,6 +16,33 @@ Object.defineProperty(import.meta, 'env', {
 ;(globalThis as any).React = React
 
 // ==============================================================================
+// GLOBAL CALENDAR MOCKS (for react-day-picker and Calendar component)
+// ==============================================================================
+
+// Provide a simple, test-friendly calendar mock available to all tests
+vi.mock('react-day-picker', () => ({
+  DayPicker: ({ onSelect }: any) => (
+    React.createElement('div', { 'data-testid': 'mock-calendar', role: 'grid' },
+      React.createElement('button', {
+        'data-testid': 'select-date-button',
+        onClick: () => onSelect && onSelect(new Date())
+      }, 'Select Date')
+    )
+  ),
+}))
+
+vi.mock('@/components/ui/calendar', () => ({
+  Calendar: ({ onSelect }: any) => (
+    React.createElement('div', { 'data-testid': 'mock-calendar', role: 'grid' },
+      React.createElement('button', {
+        'data-testid': 'select-date-button',
+        onClick: () => onSelect && onSelect(new Date())
+      }, 'Select Date')
+    )
+  ),
+}))
+
+// ==============================================================================
 // JSDOM POLYFILLS FOR RADIX UI
 // ==============================================================================
 
@@ -45,6 +72,26 @@ Object.defineProperty(HTMLElement.prototype, 'releasePointerCapture', {
   value: () => {},
   writable: true,
 })
+
+// matchMedia polyfill for components/hooks that depend on it
+// Hardened to ensure matchMedia is always a callable function with expected API
+if (typeof window !== 'undefined' && typeof (window as any).matchMedia !== 'function') {
+  const mm = (query: string) => ({
+    matches: false,
+    media: String(query),
+    onchange: null as ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | null,
+    addListener: () => {}, // deprecated
+    removeListener: () => {}, // deprecated
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }) as any
+
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: mm.bind(window),
+  })
+}
 
 // Scroll methods
 Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
@@ -88,7 +135,20 @@ const mockSupabaseClient = {
     getSession: vi.fn().mockResolvedValue({
       data: { session: { user: { id: 'test-user-id' } } },
       error: null
-    })
+    }),
+    onAuthStateChange: vi.fn((callback: any) => {
+      const session = { user: { id: 'test-user-id', email: 'test@example.com' } }
+      // Simulate immediate signed-in callback
+      try { callback('SIGNED_IN', { session }) } catch {}
+      return {
+        data: {
+          subscription: {
+            unsubscribe: () => {},
+          },
+        },
+        error: null,
+      }
+    }),
   },
   rpc: vi.fn().mockResolvedValue({ data: null, error: null })
 }

@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils';
 import type {
   FormConfiguration,
   ABTestConfiguration,
-  ABTestResults,
+  ABTestResult,
   DeploymentStrategy
 } from '@/types/dynamic-forms';
 

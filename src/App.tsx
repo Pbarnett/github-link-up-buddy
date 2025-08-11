@@ -1,11 +1,11 @@
 
-import { Toaster } from "@/components/ui/toaster";
+import Toaster from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { SmartErrorBoundary } from "@/components/ErrorBoundary";
 import { useRetryQueue } from "@/utils/retryQueue";
-import { useEffect } from "react";
+import { useEffect, Suspense, lazy } from "react";
 import { BusinessRulesProvider } from "./hooks/useBusinessRules";
 import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -14,20 +14,23 @@ import "@/utils/devAuth";
 import "@/utils/authTest";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
-import TripNew from "./pages/TripNew";
-import TripOffers from "./pages/TripOffers";
-import TripOffersV2 from "./pages/TripOffersV2"; // Import the V2 component
-import TripConfirm from "./pages/TripConfirm";
-import Profile from "./pages/Profile";
-import Wallet from "./pages/Wallet";
-import DuffelTest from "./pages/DuffelTest";
-import AutoBookingDashboard from "./pages/AutoBookingDashboard";
-import AutoBookingNew from "./pages/AutoBookingNew";
+import AuthCallback from "./pages/AuthCallback";
+const TripNew = lazy(() => import("./pages/TripNew"));
+const TripOffers = lazy(() => import("./pages/TripOffers"));
+const TripOffersV2 = lazy(() => import("./pages/TripOffersV2"));
+const TripConfirm = lazy(() => import("./pages/TripConfirm"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Wallet = lazy(() => import("./pages/Wallet"));
+const DuffelTest = lazy(() => import("./pages/DuffelTest"));
+const AutoBookingDashboard = lazy(() => import("./pages/AutoBookingDashboard"));
+const AutoBookingNew = lazy(() => import("./pages/AutoBookingNew"));
 import { FormAnalyticsDashboard } from "./components/forms/analytics/FormAnalyticsDashboard";
 import AuthGuard from "./components/AuthGuard";
 import NotFound from "./pages/NotFound";
+import AuthDebug from "./pages/AuthDebug";
 import TopNavigation from "./components/navigation/TopNavigation";
 import Breadcrumbs from "./components/navigation/Breadcrumbs";
+import RouteAnnouncer from "./components/RouteAnnouncer";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -109,10 +112,13 @@ const App = () => {
               <PersonalizationWrapper>
                 <NavigationWrapper />
                 <BreadcrumbsWrapper />
-                <main id="main" className="flex-1 overflow-auto">
+                <div id="sr-route-announcer" aria-live="polite" className="sr-only" />
+                <main id="main" className="flex-1 overflow-auto" tabIndex={-1}>
+                <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading…</div>}>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route
                     path="/dashboard"
                     element={
@@ -215,9 +221,12 @@ const App = () => {
                   />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
+                  <Route path="/debug/auth" element={<AuthGuard><AuthDebug /></AuthGuard>} />
                 </Routes>
+                </Suspense>
                 </main>
               </PersonalizationWrapper>
+              <RouteAnnouncer />
             </BrowserRouter>
             </GlobalMiddleware>
           </TooltipProvider>

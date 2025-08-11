@@ -35,7 +35,7 @@ export function PersonalizationProvider({
   } = usePersonalization(userId);
   
   const contextValue = useMemo(() => ({
-    personalizationData,
+    personalizationData: personalizationData ?? null,
     isLoading,
     error,
     trackEvent: useCallback((eventType: string, context?: any) => {

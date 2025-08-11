@@ -13,6 +13,13 @@ class CampaignService {
       .order('created_at', { ascending: false });
 
     if (error) {
+      const code = (error as any).code;
+      const msg = (error as any).message || '';
+      // 42P01 = undefined_table. In dev/test, treat as no campaigns configured yet.
+      if (code === '42P01' || /does not exist/i.test(msg)) {
+        console.warn('auto_booking_requests table missing; returning empty campaigns list.');
+        return [];
+      }
       throw new Error(`Failed to fetch campaigns: ${error.message}`);
     }
 

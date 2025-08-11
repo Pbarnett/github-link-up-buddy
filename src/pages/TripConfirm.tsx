@@ -6,7 +6,7 @@ import { Calendar, Clock, PlaneTakeoff, Check, X, Loader2, AlertCircle } from "l
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { OfferProps } from "@/components/trip/TripOfferCard";
-import { createDuffelBooking, checkBookingStatus } from "@/services/api/duffelBookingApi";
+// import { createDuffelBooking } from "@/services/api/duffelBookingApi";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import TravelerDataForm, { TravelerData } from "@/components/TravelerDataForm";
 import { TablesInsert } from "@/integrations/supabase/types";
@@ -542,7 +542,7 @@ const TripConfirm = () => {
                 <h4 className="font-medium">Departure</h4>
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                  <span>{new Date(offer.departure_date).toLocaleDateString()}</span>
+<span>{new Date(offer.departure_date || new Date().toISOString()).toLocaleDateString()}</span>
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-2 text-gray-500" />
@@ -553,7 +553,7 @@ const TripConfirm = () => {
                 <h4 className="font-medium">Return</h4>
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                  <span>{new Date(offer.return_date).toLocaleDateString()}</span>
+<span>{new Date(offer.return_date || new Date().toISOString()).toLocaleDateString()}</span>
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-2 text-gray-500" />

@@ -108,11 +108,10 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
     try {
       if (!validateForm()) {
         const errors = form.formState.errors;
-        onValidationError?.(
-          Object.fromEntries(
-            Object.entries(errors).map(([key, error]) => [key, error?.message || 'Invalid value'])
-          )
-        );
+        const messageMap = Object.fromEntries(
+          Object.entries(errors).map(([key, error]) => [key, (error as any)?.message || 'Invalid value'])
+        ) as Record<string, string>;
+        onValidationError?.(messageMap);
         return;
       }
 
@@ -197,11 +196,16 @@ export const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
                 <AlertDescription>
                   <div className="font-medium mb-2">Please fix the following errors:</div>
                   <ul className="list-disc list-inside space-y-1">
-                    {Object.entries(form.formState.errors).map(([field, error]) => (
-                      <li key={field} className="text-sm">
-                        {error?.message || `Invalid value for ${field}`}
-                      </li>
-                    ))}
+                    {Object.entries(form.formState.errors).map(([field, error]) => {
+                      const msg = typeof (error as any)?.message === 'string'
+                        ? (error as any).message as string
+                        : `Invalid value for ${field}`;
+                      return (
+                        <li key={field} className="text-sm">
+                          {msg}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </AlertDescription>
               </Alert>

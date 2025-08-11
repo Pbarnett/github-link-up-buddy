@@ -1,0 +1,32 @@
+{
+  "name": "auto-booking-cdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "auto-booking-cdk": "bin/auto-booking-cdk.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "cdk": "cdk",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy --require-approval never",
+    "diff": "cdk diff"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.864.0",
+    "@aws-sdk/client-sfn": "^3.864.0",
+    "@aws-sdk/client-ssm": "^3.864.0",
+    "aws-cdk-lib": "^2.150.0",
+    "constructs": "^10.3.0",
+    "source-map-support": "^0.5.21",
+    "stripe": "^18.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "aws-cdk": "^2.150.0",
+    "aws-cdk-lib": "^2.150.0",
+    "esbuild": "^0.21.5",
+    "typescript": "^5.5.4"
+  }
+}

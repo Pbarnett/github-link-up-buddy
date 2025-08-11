@@ -1,0 +1,20 @@
+{
+  "timestamp": "2025-07-29T05:08:49.244Z",
+  "config": {
+    "dryRun": true,
+    "maxAgeInDays": 90,
+    "excludeFlags": [
+      "auto_booking_emergency_disable",
+      "kill_switch_global",
+      "maintenance_mode"
+    ],
+    "requireConfirmation": true,
+    "archiveOnly": false
+  },
+  "summary": {
+    "totalFlagsProcessed": 0,
+    "flagsArchived": 0,
+    "flagsDeleted": 0,
+    "errors": 0
+  }
+}

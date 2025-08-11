@@ -218,31 +218,31 @@ export const setDatesWithMockedCalendar = async () => {
   const { tomorrow, nextWeek } = getTestDates();
   
   try {
-    // Open earliest date picker
-    const earliestButton = screen.getByText('Earliest');
-    await userEvent.click(earliestButton);
+    // Open earliest/departure date picker (updated label in new UI)
+    const firstDateButton = screen.getByRole('button', { name: /departure date/i });
+    await userEvent.click(firstDateButton);
     
-    // Wait for mocked calendar to appear
+    // Wait for mocked calendar to appear (global setup renders this test id)
     await waitFor(() => {
-      expect(screen.getByTestId('mock-day-picker')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
     });
     
-    // Click the tomorrow button in mocked calendar
-    const tomorrowButton = screen.getByTestId('calendar-day-tomorrow');
-    await userEvent.click(tomorrowButton);
+    // Click a simple mocked select-date button
+    const selectDateButton = screen.getByTestId('select-date-button');
+    await userEvent.click(selectDateButton);
     
-    // Open latest date picker
-    const latestButton = screen.getByText('Latest');
-    await userEvent.click(latestButton);
+    // Open latest date picker (updated label in new UI)
+    const secondDateButton = screen.getByRole('button', { name: /latest departure/i });
+    await userEvent.click(secondDateButton);
     
-    // Wait for calendar again
+    // Wait for mocked calendar again
     await waitFor(() => {
-      expect(screen.getByTestId('mock-day-picker')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
     });
     
-    // Click the next week button
-    const nextWeekButton = screen.getByTestId('calendar-day-next-week');
-    await userEvent.click(nextWeekButton);
+    // Select date for second picker
+    const selectDateButton2 = screen.getByTestId('select-date-button');
+    await userEvent.click(selectDateButton2);
     
   } catch (error) {
     console.warn('Mocked calendar interaction failed:', error);
@@ -312,16 +312,18 @@ export const setDatesRobust = async () => {
     ].filter(Boolean);
     
     if (earliestInputs.length > 0 && latestInputs.length > 0) {
-      fireEvent.change(earliestInputs[0], { 
+      const e0 = earliestInputs[0] as Element;
+      const l0 = latestInputs[0] as Element;
+      fireEvent.change(e0, { 
         target: { value: tomorrow.toISOString().split('T')[0] } 
       });
-      fireEvent.change(latestInputs[0], { 
+      fireEvent.change(l0, { 
         target: { value: nextWeek.toISOString().split('T')[0] } 
       });
       
       // Trigger form validation
-      fireEvent.blur(earliestInputs[0]);
-      fireEvent.blur(latestInputs[0]);
+      fireEvent.blur(e0);
+      fireEvent.blur(l0);
       return;
     }
   } catch (error) {

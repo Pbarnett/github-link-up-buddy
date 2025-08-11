@@ -60,12 +60,17 @@ const LegacyTripOffers = ({ tripId, initialTripDetails }: { tripId: string; init
         hasError={hasError || (!isLoading && offers.length === 0)}
       />
 
-      <TripOfferList
-        offers={offers}
-        isLoading={isLoading}
-        usedRelaxedCriteria={usedRelaxedCriteria}
-        ignoreFilter={ignoreFilter}
-      />
+      <div
+        className="w-full content-visibility-auto"
+        style={{ containIntrinsicSize: '1000px 1px' }}
+      >
+        <TripOfferList
+          offers={offers}
+          isLoading={isLoading}
+          usedRelaxedCriteria={usedRelaxedCriteria}
+          ignoreFilter={ignoreFilter}
+        />
+      </div>
     </div>
   );
 };

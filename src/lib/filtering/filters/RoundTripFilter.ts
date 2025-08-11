@@ -255,7 +255,7 @@ export class RoundTripFilter implements FlightFilter {
     
     const hasReturnDate = !!(searchParams.returnDate || searchParams.return_date);
     const isRoundTrip = searchParams.isRoundTrip;
-    const isRoundTripSearch = hasReturnDate || isRoundTrip;
+    const isRoundTripSearch = hasReturnDate || !!isRoundTrip;
     
     // If explicitly marked as round-trip but no return date provided
     if (isRoundTrip && !hasReturnDate) {
