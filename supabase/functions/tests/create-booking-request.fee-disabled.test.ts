@@ -36,8 +36,7 @@ vi.mock('https://esm.sh/@supabase/supabase-js@2.45.0', () => {
   };
 });
 
-// NOTE: Skipped due to Node/Vitest vs Deno Edge ESM runtime differences.
-describe.skip('create-booking-request fee disabled', () => {
+describe('create-booking-request fee disabled', () => {
   beforeEach(() => {
     vi.resetModules();
   });

@@ -90,7 +90,7 @@ describe('create-booking-request fee integration', () => {
           fee_amount_cents: '500',
         }),
       }),
-      expect.any(Object)
+      expect.objectContaining({ idempotencyKey: 'pi_create_br_1' })
     );
   });
 
@@ -117,6 +117,7 @@ describe('create-booking-request fee integration', () => {
     const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
     const sessionsCreate = stripeInstance.checkout.sessions.create as unknown as ReturnType<typeof vi.fn>;
     sessionsCreate.mockResolvedValue({ id: 'cs_123', url: 'https://checkout' });
+    // Capture second arg (options) for idempotency assertions via mock.calls
 
     // Stub Deno.env.get
     // @ts-ignore
@@ -140,8 +141,84 @@ describe('create-booking-request fee integration', () => {
           fee_amount_cents: '500',
         }),
       }),
-      expect.any(Object)
+      expect.objectContaining({ idempotencyKey: 'checkout_br_1' })
     );
+  });
+  it('returns 500 and does not call Stripe when offer is missing', async () => {
+    // Force manual capture path for variety
+    vi.doMock('../lib/config.ts', async (importOriginal) => {
+      const actual: any = await importOriginal();
+      return { ...actual, USE_MANUAL_CAPTURE: true };
+    });
+    const CreateBooking: any = await import('../create-booking-request/index.ts');
+
+    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const client = createClient();
+    const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
+    // 1) offer fetch fails
+    singleMock.mockResolvedValueOnce({ data: null, error: { message: 'No rows returned' } });
+
+    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
+    const stripeCtor = StripeMod.default as any;
+    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
+
+    const res = await (CreateBooking as any).testableHandler(new Request('http://local', { method: 'POST', body: JSON.stringify({ userId: 'u', offerId: 'missing' }) }));
+
+    expect(res.status).toBe(500);
+    expect(stripeInstance.paymentIntents.create).not.toHaveBeenCalled();
+    expect(stripeInstance.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 when Stripe PaymentIntent creation fails and no DB update persists', async () => {
+    vi.doMock('../lib/config.ts', async (importOriginal) => {
+      const actual: any = await importOriginal();
+      return { ...actual, USE_MANUAL_CAPTURE: true };
+    });
+    const CreateBooking: any = await import('../create-booking-request/index.ts');
+
+    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const client = createClient();
+    const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
+    singleMock
+      .mockResolvedValueOnce({ data: { id: 'offer_1', price: 300, currency: 'usd', trip_request_id: 'tr_1', airline: 'T', flight_number: 'T1', departure_date: '2025-08-10', return_date: '2025-08-12' }, error: null })
+      .mockResolvedValueOnce({ data: { id: 'br_1' }, error: null });
+
+    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
+    const stripeCtor = StripeMod.default as any;
+    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
+    (stripeInstance.paymentIntents.create as any).mockRejectedValue(new Error('Stripe down'));
+
+    const res = await (CreateBooking as any).testableHandler(new Request('http://local', { method: 'POST', body: JSON.stringify({ userId: 'u', offerId: 'offer_1' }) }));
+
+    expect(res.status).toBe(500);
+    // Ensure DB update to attach PI did not occur
+    expect(client.update).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 when Stripe Checkout Session creation fails and no DB update persists', async () => {
+    vi.doMock('../lib/config.ts', async (importOriginal) => {
+      const actual: any = await importOriginal();
+      return { ...actual, USE_MANUAL_CAPTURE: false };
+    });
+    const CreateBooking: any = await import('../create-booking-request/index.ts');
+
+    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const client = createClient();
+    const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
+    singleMock
+      .mockResolvedValueOnce({ data: { id: 'offer_1', price: 300, currency: 'usd', trip_request_id: 'tr_1', airline: 'Test', flight_number: 'T1', departure_date: '2025-08-10', return_date: '2025-08-12' }, error: null })
+      .mockResolvedValueOnce({ data: { id: 'br_1' }, error: null });
+
+    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
+    const stripeCtor = StripeMod.default as any;
+    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
+    (stripeInstance.checkout.sessions.create as any).mockRejectedValue(new Error('Stripe down'));
+
+    const res = await (CreateBooking as any).testableHandler(new Request('http://local', { method: 'POST', body: JSON.stringify({ userId: 'u', offerId: 'offer_1' }) }));
+
+    expect(res.status).toBe(500);
+    // Ensure DB update to attach checkout_session_id did not occur
+    expect(client.update).not.toHaveBeenCalled();
   });
 });
 

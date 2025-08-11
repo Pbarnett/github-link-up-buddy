@@ -81,4 +81,57 @@ describe('create-payment-session fee integration', () => {
       expect.any(Object)
     );
   });
+
+  it('returns 500 and does not call Stripe when trip or offer not found', async () => {
+    const Mod: any = await import('../create-payment-session/index.ts');
+    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const client = createClient();
+    const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
+    // Simulate missing trip_request (first .single() call)
+    singleMock
+      .mockResolvedValueOnce({ data: null, error: { message: 'No rows returned' } });
+
+    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
+    const stripeCtor = StripeMod.default as any;
+    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
+
+    const req = new Request('http://local', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer token', origin: 'http://localhost:5173' },
+      body: JSON.stringify({ trip_request_id: 'missing', offer_id: 'offer_1' }),
+    });
+    const res = await Mod.testableHandler(req);
+
+    expect(res.status).toBe(500);
+    // Ensure Stripe was never called
+    expect(stripeInstance.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 and avoids DB writes when offer is not found', async () => {
+    const Mod: any = await import('../create-payment-session/index.ts');
+    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const client = createClient();
+    const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
+    // 1) trip_request ok
+    singleMock.mockResolvedValueOnce({ data: { id: 'tr_1', max_price: 400, budget: null }, error: null });
+    // 2) offer missing
+    singleMock.mockResolvedValueOnce({ data: null, error: { message: 'No rows returned' } });
+
+    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
+    const stripeCtor = StripeMod.default as any;
+    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
+
+    const req = new Request('http://local', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer token', origin: 'http://localhost:5173' },
+      body: JSON.stringify({ trip_request_id: 'tr_1', offer_id: 'missing' }),
+    });
+    const res = await Mod.testableHandler(req);
+
+    expect(res.status).toBe(500);
+    expect(stripeInstance.checkout.sessions.create).not.toHaveBeenCalled();
+    // Verify no order was inserted
+    expect(client.insert).not.toHaveBeenCalled();
+    expect(client.update).not.toHaveBeenCalled();
+  });
 });
