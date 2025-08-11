@@ -95,11 +95,9 @@ export async function handleCreateBookingRequest(req: Request): Promise<Response
     
     console.log(`Created booking request: ${bookingRequest.id}`);
     
-    // 3. Initialize Stripe (lazy import)
-    const { default: Stripe } = await import("https://esm.sh/stripe@14.21.0");
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2023-10-16",
-    });
+    // 3. Initialize Stripe via shared factory
+    const { getStripe } = await import("../lib/stripe.ts");
+    const stripe = await getStripe();
     
     // 4. Conditional Stripe PaymentIntent or Checkout Session creation
     let responsePayload;

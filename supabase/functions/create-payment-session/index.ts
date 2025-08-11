@@ -107,11 +107,9 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
       throw new Error("Flight offer not found or doesn't belong to trip");
     }
     
-    // Initialize Stripe (lazy import for test compatibility)
-    const { default: Stripe } = await import("https://esm.sh/stripe@14.21.0");
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2023-10-16",
-    });
+    // Initialize Stripe via shared factory
+    const { getStripe } = await import("../lib/stripe.ts");
+    const stripe = await getStripe();
     
     // Get or create customer ID
     let customerId: string;
