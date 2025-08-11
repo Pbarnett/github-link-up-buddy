@@ -1,0 +1,7 @@
+#!/bin/sh
+# Block pushes directly from main. Enable with: git config core.hooksPath .githooks
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+if [ "$current_branch" = "main" ]; then
+  echo "Abort: push to main is blocked. Use a feature branch." 1>&2
+  exit 1
+fi

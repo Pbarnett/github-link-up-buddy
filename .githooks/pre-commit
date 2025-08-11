@@ -1,8 +1,20 @@
 #!/bin/sh
-# Block commits directly to main. Enable with: git config core.hooksPath .githooks
+# Block commits directly to main and enforce branch naming policy.
+# Enable with: git config core.hooksPath .githooks
 branch=$(git rev-parse --abbrev-ref HEAD)
 if [ "$branch" = "main" ]; then
-  echo "Abort: commit to main is blocked. Create a feature branch (feat/<topic> or fix/<topic>)." 1>&2
+  echo "Abort: commit to main is blocked. Create a feature branch." 1>&2
+  echo "Use: git switch -c feat/<topic> origin/main" 1>&2
   exit 1
 fi
+# Enforce branch naming convention for consistency
+case "$branch" in
+  feat/*|fix/*|chore/*|refactor/*|docs/*|test/*)
+    ;;
+  *)
+    echo "Abort: branch '$branch' doesn’t follow naming policy (feat|fix|chore|refactor|docs|test)/<topic>." 1>&2
+    echo "Use: git switch -c feat/<topic> origin/main" 1>&2
+    exit 1
+    ;;
+ esac
 
