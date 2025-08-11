@@ -3,8 +3,22 @@ name: Comprehensive Test Suite
 on:
   push:
     branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'playwright.*'
+      - 'vite.config.*'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'playwright.*'
+      - 'vite.config.*'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
   schedule:
     # Run nightly comprehensive tests
     - cron: '0 2 * * *'
