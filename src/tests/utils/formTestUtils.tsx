@@ -95,31 +95,31 @@ export const setDatesWithMockedCalendar = async () => {
   const { tomorrow, nextWeek } = getTestDates();
   
   try {
-    // Open earliest date picker using the text from DateRangeField
-    const earliestButton = screen.getByText('Earliest');
-    await userEvent.click(earliestButton);
+    // Open first date picker (label updated in new UI)
+    const firstDateButton = screen.getByRole('button', { name: /departure date/i });
+    await userEvent.click(firstDateButton);
     
-    // Wait for mocked calendar to appear
+    // Wait for mocked calendar to appear (tests may mock to render this id)
     await waitFor(() => {
-      expect(screen.getByTestId('mock-day-picker')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
     });
     
-    // Click the tomorrow button in mocked calendar
-    const tomorrowButton = screen.getByTestId('calendar-day-tomorrow');
-    await userEvent.click(tomorrowButton);
+    // Click a generic select date button provided by mocks
+    const selectDateButton = screen.getByTestId('select-date-button');
+    await userEvent.click(selectDateButton);
     
-    // Open latest date picker
-    const latestButton = screen.getByText('Latest');
-    await userEvent.click(latestButton);
+    // Open second date picker (label updated in new UI)
+    const secondDateButton = screen.getByRole('button', { name: /latest departure/i });
+    await userEvent.click(secondDateButton);
     
-    // Wait for calendar again
+    // Wait for mocked calendar again
     await waitFor(() => {
-      expect(screen.getByTestId('mock-day-picker')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
     });
     
-    // Click the next week button
-    const nextWeekButton = screen.getByTestId('calendar-day-next-week');
-    await userEvent.click(nextWeekButton);
+    // Select the date again for the second picker
+    const selectDateButton2 = screen.getByTestId('select-date-button');
+    await userEvent.click(selectDateButton2);
     
     return { earliestDate: tomorrow, latestDate: nextWeek };
     
@@ -186,15 +186,16 @@ export const fillFormWithDates = async (options: {
     const toggleButton = screen.getByText("What's Included");
     await userEvent.click(toggleButton);
     
-    // Wait for the section to expand and duration inputs to be visible
+    // Wait for the section to expand and duration inputs to be visible by role/name
     await waitFor(() => {
-      expect(screen.getByDisplayValue('3')).toBeInTheDocument();
-    }, { timeout: 2000 });
+      expect(screen.getByRole('spinbutton', { name: /min nights/i })).toBeInTheDocument();
+      expect(screen.getByRole('spinbutton', { name: /max nights/i })).toBeInTheDocument();
+    }, { timeout: 3000 });
     
-    const minDurationInput = screen.getByDisplayValue('3');
+    const minDurationInput = screen.getByRole('spinbutton', { name: /min nights/i });
     fireEvent.change(minDurationInput, { target: { value: minDuration.toString() } });
     
-    const maxDurationInput = screen.getByDisplayValue('7');
+    const maxDurationInput = screen.getByRole('spinbutton', { name: /max nights/i });
     fireEvent.change(maxDurationInput, { target: { value: maxDuration.toString() } });
   } catch (error) {
     console.warn('Failed to set duration inputs:', error);

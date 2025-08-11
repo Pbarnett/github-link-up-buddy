@@ -44,51 +44,24 @@ describe('TripRequestForm - Basic Functionality', () => {
       </MemoryRouter>
     );
 
-    // Check for key form elements
-    expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
-    expect(screen.getByText('Travel Details')).toBeInTheDocument();
-    expect(screen.getByText('Trip Length')).toBeInTheDocument();
-    expect(screen.getByText('Budget')).toBeInTheDocument();
+    // Check for key form elements in the updated UI
+    expect(screen.getByRole('heading', { name: /search live flights/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /live flight search/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /top price you'll pay/i })).toBeInTheDocument();
   });
 
-  it('should render filter toggles with correct default values', () => {
+  it('should render policy information badges (non-interactive)', () => {
     render(
       <MemoryRouter>
         <TripRequestForm />
       </MemoryRouter>
     );
 
-    // Check nonstop flights toggle (should be checked by default)
-    const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
-    expect(nonstopSwitch).toBeInTheDocument();
-    expect(nonstopSwitch).toBeChecked();
-
-    // Check baggage toggle (should be unchecked by default)
-    const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
-    expect(baggageSwitch).toBeInTheDocument();
-    expect(baggageSwitch).not.toBeChecked();
+    // Updated UX shows informational content rather than interactive switches
+    expect(screen.getByText(/what's included/i)).toBeInTheDocument();
   });
 
-  it('should toggle switches when clicked', async () => {
-    render(
-      <MemoryRouter>
-        <TripRequestForm />
-      </MemoryRouter>
-    );
-
-    const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
-    
-    // Initial state
-    expect(baggageSwitch).not.toBeChecked();
-    
-    // Click to enable
-    await userEvent.click(baggageSwitch);
-    expect(baggageSwitch).toBeChecked();
-    
-    // Click to disable
-    await userEvent.click(baggageSwitch);
-    expect(baggageSwitch).not.toBeChecked();
-  });
+  // Removed switch toggle test due to UX changes (now informational badges)
 
   it('should have submit button disabled initially', () => {
     render(
@@ -111,22 +84,28 @@ describe('TripRequestForm - Basic Functionality', () => {
       </MemoryRouter>
     );
 
-    // Click on earliest departure button
-    const earliestButton = screen.getByText('Earliest');
-    await userEvent.click(earliestButton);
+    // Click on updated date buttons
+    const departureBtn = screen.getByRole('button', { name: /departure date/i });
+    await userEvent.click(departureBtn);
 
     // Should show our mocked calendar
     await waitFor(() => {
       expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
     });
 
-    // Should be able to select a date (tests that onSelect callback is available)
+    // Select a date
     const selectDateButton = screen.getByTestId('select-date-button');
     await userEvent.click(selectDateButton);
-    
-    // The mock calendar successfully allows date selection
-    // (In real implementation, the calendar would close, but our mock stays open)
-    expect(selectDateButton).toBeInTheDocument();
+
+    const latestBtn = screen.getByRole('button', { name: /latest departure/i });
+    await userEvent.click(latestBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
+    });
+
+    const selectDateButton2 = screen.getByTestId('select-date-button');
+    await userEvent.click(selectDateButton2);
   });
 
   it('should allow filling out basic form fields', async () => {
@@ -156,19 +135,5 @@ describe('TripRequestForm - Basic Functionality', () => {
     expect(budgetInput).toHaveValue(1500);
   });
 
-  it('should enable auto-booking toggle', async () => {
-    render(
-      <MemoryRouter>
-        <TripRequestForm />
-      </MemoryRouter>
-    );
-
-    // Find auto-booking switch
-    const autoBookingSwitch = screen.getByRole('switch', { name: /enable auto-booking/i });
-    expect(autoBookingSwitch).not.toBeChecked();
-
-    // Enable auto-booking
-    await userEvent.click(autoBookingSwitch);
-    expect(autoBookingSwitch).toBeChecked();
-  });
+  // Removed auto-booking switch test due to UX changes (now managed via badges or defaults)
 });

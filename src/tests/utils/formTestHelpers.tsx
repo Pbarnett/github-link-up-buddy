@@ -218,31 +218,31 @@ export const setDatesWithMockedCalendar = async () => {
   const { tomorrow, nextWeek } = getTestDates();
   
   try {
-    // Open earliest date picker
-    const earliestButton = screen.getByText('Earliest');
-    await userEvent.click(earliestButton);
+    // Open earliest/departure date picker (updated label in new UI)
+    const firstDateButton = screen.getByRole('button', { name: /departure date/i });
+    await userEvent.click(firstDateButton);
     
-    // Wait for mocked calendar to appear
+    // Wait for mocked calendar to appear (global setup renders this test id)
     await waitFor(() => {
-      expect(screen.getByTestId('mock-day-picker')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
     });
     
-    // Click the tomorrow button in mocked calendar
-    const tomorrowButton = screen.getByTestId('calendar-day-tomorrow');
-    await userEvent.click(tomorrowButton);
+    // Click a simple mocked select-date button
+    const selectDateButton = screen.getByTestId('select-date-button');
+    await userEvent.click(selectDateButton);
     
-    // Open latest date picker
-    const latestButton = screen.getByText('Latest');
-    await userEvent.click(latestButton);
+    // Open latest date picker (updated label in new UI)
+    const secondDateButton = screen.getByRole('button', { name: /latest departure/i });
+    await userEvent.click(secondDateButton);
     
-    // Wait for calendar again
+    // Wait for mocked calendar again
     await waitFor(() => {
-      expect(screen.getByTestId('mock-day-picker')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
     });
     
-    // Click the next week button
-    const nextWeekButton = screen.getByTestId('calendar-day-next-week');
-    await userEvent.click(nextWeekButton);
+    // Select date for second picker
+    const selectDateButton2 = screen.getByTestId('select-date-button');
+    await userEvent.click(selectDateButton2);
     
   } catch (error) {
     console.warn('Mocked calendar interaction failed:', error);

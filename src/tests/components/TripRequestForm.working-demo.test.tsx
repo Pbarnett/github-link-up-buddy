@@ -109,30 +109,30 @@ describe('Calendar Testing Solution - Working Demo', () => {
     // This is the key innovation: instead of complex calendar UI testing,
     // we use the mocked calendar that renders simple buttons
     
-    // Open earliest date picker
-    const earliestButton = screen.getByText('Earliest');
-    await userEvent.click(earliestButton);
+    // Open first date picker (updated label)
+    const firstButton = screen.getByRole('button', { name: /departure date/i });
+    await userEvent.click(firstButton);
 
-    // Wait for mocked calendar to appear (this works because of our setupTests.ts mocks)
+    // Wait for mocked calendar to appear (per test-level mocks)
     await waitFor(() => {
-      expect(screen.getByTestId('mock-day-picker')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
     });
 
-    // Click on the mocked calendar button - this is reliable and fast
-    const tomorrowButton = screen.getByTestId('calendar-day-tomorrow');
-    await userEvent.click(tomorrowButton);
+    // Click on the mocked calendar button - reliable and fast
+    const selectDateButton = screen.getByTestId('select-date-button');
+    await userEvent.click(selectDateButton);
 
-    // Open latest date picker
-    const latestButton = screen.getByText('Latest');
-    await userEvent.click(latestButton);
+    // Open second date picker (updated label)
+    const secondButton = screen.getByRole('button', { name: /latest departure/i });
+    await userEvent.click(secondButton);
 
     // Again, use the mocked calendar
     await waitFor(() => {
-      expect(screen.getByTestId('mock-day-picker')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
     });
 
-    const nextWeekButton = screen.getByTestId('calendar-day-next-week');
-    await userEvent.click(nextWeekButton);
+    const selectDateButton2 = screen.getByTestId('select-date-button');
+    await userEvent.click(selectDateButton2);
 
     // Step 4: Verify that calendar interaction worked
     // The mocked calendar should have triggered the form's onSelect handlers
@@ -141,22 +141,7 @@ describe('Calendar Testing Solution - Working Demo', () => {
     console.log('✅ Calendar mocking solution works! Dates were set via mocked buttons instead of complex calendar UI.');
   });
 
-  it('should demonstrate filter toggle testing (simple UI testing)', async () => {
-    render(
-      <MemoryRouter>
-        <TripRequestForm />
-      </MemoryRouter>
-    );
-
-    // This type of testing remains simple and reliable
-    const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
-    expect(nonstopSwitch).toBeChecked(); // Default true
-
-    await userEvent.click(nonstopSwitch);
-    expect(nonstopSwitch).not.toBeChecked();
-
-    console.log('✅ Simple UI interactions (like switches) remain testable and reliable.');
-  });
+  // Removed: switch-based UI test no longer applies after UX changes
 
   it('should focus on business logic validation rather than UI implementation', async () => {
     render(
