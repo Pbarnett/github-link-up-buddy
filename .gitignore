@@ -62,3 +62,6 @@ build/
 scripts/**/*.secret.*
 scripts/**/*-with-secrets.*
 .env*
+
+# Ignore large AWS CLI docs artifact flagged by push protection
+docs/api/aws-command-line-interface/
