@@ -183,21 +183,38 @@ Deno.serve(async (req: Request) => {
 
     console.log(`[AutoBookDuffel] Found ${offers.length} offers`);
 
-    // 5. Find best offer within budget
-    const validOffers = offers.filter((offer: any) => {
-      const price = parseFloat(offer.total_amount);
-      return price <= trip.max_price && new Date(offer.expires_at) > new Date();
+    // 5. Normalize and run through shared pipeline for consistent policy enforcement
+    const { createFilterContext, normalizeOffers, FilterFactory } = await import('../_shared/filtering.ts');
+
+    const context = createFilterContext({
+      budget: trip.max_price,
+      currency: 'USD',
+      originLocationCode: trip.origin_location_code,
+      destinationLocationCode: trip.destination_location_code,
+      departureDate: trip.departure_date,
+      returnDate: trip.return_date,
+      nonstopRequired: trip.nonstop_required,
+      passengers: Math.max(1, trip.adults || 1),
     });
 
-    if (validOffers.length === 0) {
-      throw new Error(`No offers found within budget of ${trip.max_price}`);
+    const normalized = normalizeOffers(
+      offers.map((o: any) => ({ data: o, provider: 'Duffel' as const })),
+      context
+    );
+
+    const pipeline = FilterFactory.createPipeline('standard');
+    const result = await pipeline.execute(normalized, context);
+
+    if (result.filteredOffers.length === 0) {
+      throw new Error(`No Duffel offers after policy filters (budget incl. carry-on, nonstop, round-trip)`);
     }
 
-    // Sort by price and select cheapest
-    validOffers.sort((a: any, b: any) => parseFloat(a.total_amount) - parseFloat(b.total_amount));
-    const selectedOffer = validOffers[0];
-    
-    console.log(`[AutoBookDuffel] Selected offer: ${selectedOffer.id}, Price: ${selectedOffer.total_amount}`);
+    // Pick the cheapest by totalPriceWithCarryOn
+    result.filteredOffers.sort((a, b) => a.totalPriceWithCarryOn - b.totalPriceWithCarryOn);
+    const selected = result.filteredOffers[0];
+    const selectedOffer = selected.rawData; // Use raw Duffel payload for booking
+
+    console.log(`[AutoBookDuffel] Selected offer (pipeline): ${selectedOffer.id}, Effective total: ${selected.totalPriceWithCarryOn}`);
 
     // 6. Create booking with Duffel
     const bookingResponse = await fetch(`${DUFFEL_BASE_URL}/air/orders`, {

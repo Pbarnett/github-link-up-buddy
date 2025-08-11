@@ -24,6 +24,7 @@ const TripConfirm = () => {
   const [showTravelerForm, setShowTravelerForm] = useState(true);
   const [travelerData, setTravelerData] = useState<TravelerData | null>(null);
   const [bookingRequestId, setBookingRequestId] = useState<string | null>(null);
+  const [feeInfo, setFeeInfo] = useState<{ savings?: string; fee_amount_cents?: string; fee_pct?: string; threshold_price?: string } | null>(null);
   const [isSavingTravelerData, setIsSavingTravelerData] = useState(false);
   const [isCheckingOffer, setIsCheckingOffer] = useState(false);
   const [autoBookEnabled, setAutoBookEnabled] = useState<boolean | null>(null);
@@ -200,7 +201,22 @@ const TripConfirm = () => {
     const fetchBookingRequest = async () => {
       try {
         console.log("[TripConfirm] Fetching booking request status for sessionId:", sessionId);
-// TODO: Implement proper booking status check
+        if (sessionId) {
+          const { data, error } = await supabase
+            .from('booking_requests')
+            .select('id, offer_data, status')
+            .eq('checkout_session_id', sessionId)
+            .single();
+          if (!error && data?.offer_data?.fee_breakdown) {
+            setFeeInfo({
+              savings: data.offer_data.fee_breakdown.savings,
+              fee_amount_cents: data.offer_data.fee_breakdown.fee_amount_cents,
+              fee_pct: data.offer_data.fee_breakdown.fee_pct,
+              threshold_price: data.offer_data.fee_breakdown.threshold_price,
+            });
+            setBookingRequestId(data.id);
+          }
+        }
         // const { data, error } = await checkBookingStatus(bookingRequestId);
         // For now, skip the status check
         console.log('[TripConfirm] Booking status check not implemented yet');
@@ -239,6 +255,28 @@ const TripConfirm = () => {
       channel.unsubscribe();
     };
   }, [sessionId]);
+
+  const renderFeePanel = () => {
+    if (!feeInfo) return null;
+    const savings = Number.parseFloat(feeInfo.savings || '0');
+    const feeCents = Number.parseInt(feeInfo.fee_amount_cents || '0');
+    const fee = (feeCents / 100).toFixed(2);
+    const pct = Math.round((Number.parseFloat(feeInfo.fee_pct || '0') || 0) * 100);
+    return (
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Booking Savings and Service Fee</CardTitle>
+          <CardDescription>We found a cheaper fare and applied a small service fee.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-1 text-sm">
+            <div>Savings: ${savings.toFixed(2)}</div>
+            <div>Service fee ({pct}%): ${fee}</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
   
   const updateBookingStatusMessage = (status: string) => {
     console.log("[TripConfirm] Updating booking status message for status:", status);

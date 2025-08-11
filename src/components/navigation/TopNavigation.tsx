@@ -89,17 +89,17 @@ const TopNavigation = ({ hideFindFlights = false }: TopNavigationProps) => {
   // Primary navigation items (left side) - Simplified for cleaner dashboard
   const primaryNavItems = [
     {
-      name: 'Auto-Booking',
+      name: 'My Bookings',
       href: '/auto-booking',
       icon: Home,
     },
     {
-      name: 'Create Rule',
+      name: 'Book For Me',
       href: '/auto-booking/new',
       icon: Calendar,
     },
     {
-      name: 'Search Flights',
+      name: 'Currently Available Flights',
       href: '/search',
       icon: Search,
     }

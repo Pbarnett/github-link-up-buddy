@@ -12,8 +12,7 @@ if (!stripeSecretKey) {
 
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+// Stripe and Supabase imports are deferred to runtime within the handler to support test environments
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,7 +45,7 @@ async function createNotification(
   }
 }
 
-serve(async (req: Request) => {
+export async function handleCreatePaymentSession(req: Request): Promise<Response> {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -55,9 +54,10 @@ serve(async (req: Request) => {
     });
   }
   
-  // Initialize Supabase client
+  // Initialize Supabase client (lazy import for test compatibility)
   const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+  const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.45.0");
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
   try {
@@ -83,10 +83,10 @@ serve(async (req: Request) => {
     
     console.log(`Creating payment session for user: ${user.id}, trip: ${trip_request_id}, offer: ${offer_id}`);
     
-    // Verify trip request belongs to user
+    // Verify trip request belongs to user and pull pricing info
     const { data: tripRequest, error: tripError } = await supabase
       .from("trip_requests")
-      .select("id")
+      .select("id, max_price, budget")
       .eq("id", trip_request_id)
       .eq("user_id", user.id)
       .single();
@@ -107,7 +107,8 @@ serve(async (req: Request) => {
       throw new Error("Flight offer not found or doesn't belong to trip");
     }
     
-    // Initialize Stripe
+    // Initialize Stripe (lazy import for test compatibility)
+    const { default: Stripe } = await import("https://esm.sh/stripe@14.21.0");
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
@@ -145,9 +146,15 @@ serve(async (req: Request) => {
       customerId = await createCustomer(stripe, user);
     }
     
-    // Calculate amount in cents
-    const unitAmount = Math.round(flightOffer.price * 100);
+    // Calculate amount in cents, including savings-based fee if applicable
     const description = `${flightOffer.airline} ${flightOffer.flight_number}: ${flightOffer.departure_date} to ${flightOffer.return_date}`;
+    const { deriveThresholdPrice, computeTotalWithFeeCents } = await import("../lib/fees.ts");
+    const thresholdPrice = deriveThresholdPrice(tripRequest as any);
+    const { totalCents, feeCents, savings, feePct } = computeTotalWithFeeCents({
+      actualPrice: flightOffer.price,
+      thresholdPrice,
+    });
+    const unitAmount = totalCents;
     
     // Create checkout session
     const origin = req.headers.get("origin") || "http://localhost:5173";
@@ -174,7 +181,13 @@ serve(async (req: Request) => {
       metadata: {
         user_id: user.id,
         trip_request_id,
-        flight_offer_id: offer_id
+        flight_offer_id: offer_id,
+        fee_model: 'savings-based',
+        threshold_price: typeof thresholdPrice === 'number' ? String(thresholdPrice) : '',
+        actual_price: String(flightOffer.price),
+        savings: String(savings),
+        fee_pct: String(feePct),
+        fee_amount_cents: String(feeCents)
       }
     });
     
@@ -233,7 +246,14 @@ serve(async (req: Request) => {
       }
     );
   }
-});
+}
+
+// Only call serve when running in Deno (not in tests)
+if (typeof Deno !== 'undefined' && !Deno.env.get('VITEST')) {
+  serve(handleCreatePaymentSession);
+}
+
+export const testableHandler = handleCreatePaymentSession;
 
 // Helper function to create a new Stripe customer
 async function createCustomer(stripe: Stripe, user: any): Promise<string> {

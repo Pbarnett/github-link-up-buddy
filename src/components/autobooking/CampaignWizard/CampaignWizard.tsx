@@ -97,16 +97,21 @@ function CampaignWizard() {
     
     try {
       // Combine all data for campaign creation
+      const dateRange = `${wizardState.criteria.windowStart || ''} to ${wizardState.criteria.windowEnd || ''}`;
+      const cabinClass = wizardState.criteria.cabinClass === 'best_within_price'
+        ? undefined
+        : (wizardState.criteria.cabinClass as any);
+
       const campaignData = {
         name: wizardState.criteria.campaignName,
         destination: wizardState.criteria.destination,
-        departureDates: `${wizardState.criteria.departureStart} to ${wizardState.criteria.departureEnd}`,
+        departureDates: dateRange,
         maxPrice: wizardState.criteria.maxPrice,
         directFlightsOnly: wizardState.criteria.directFlightsOnly,
         departureAirports: wizardState.criteria.origin ? [wizardState.criteria.origin] : undefined,
-        cabinClass: wizardState.criteria.cabinClass,
-        minDuration: wizardState.criteria.minDuration,
-        maxDuration: wizardState.criteria.maxDuration,
+        cabinClass,
+        minDuration: wizardState.criteria.minNights,
+        maxDuration: wizardState.criteria.maxNights,
         traveler: wizardState.traveler,
         paymentMethodId: wizardState.paymentMethodId,
       };

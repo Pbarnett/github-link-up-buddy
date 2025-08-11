@@ -34,14 +34,32 @@ if (import.meta.env.VITE_SUPABASE_URL?.includes('127.0.0.1')) {
 
 // Initialize LaunchDarkly and render app
 (async () => {
+  const clientSideID = import.meta.env.VITE_LD_CLIENT_ID as string | undefined;
+  const rootEl = document.getElementById('root')!;
+  const root = createRoot(rootEl);
+
+  if (!clientSideID) {
+    // Fail-safe: render app without LD if misconfigured, with clear console error in dev
+    console.error('LaunchDarkly client ID (VITE_LD_CLIENT_ID) is missing. Rendering without LDProvider.');
+    root.render(<App />);
+    return;
+  }
+
   const LDProvider = await asyncWithLDProvider({
-    clientSideID: import.meta.env.VITE_LD_CLIENT_ID!,
+    clientSideID,
     user: {
       key: 'anonymous',
       anonymous: true,
     },
   });
 
-  const WrappedApp = LDProvider(App);
-  createRoot(document.getElementById("root")!).render(<WrappedApp />);
+  // Lazy import to avoid circulars
+  const { default: LaunchDarklyAuthSync } = await import('./components/LaunchDarklyAuthSync');
+
+  root.render(
+    <LDProvider>
+      <LaunchDarklyAuthSync />
+      <App />
+    </LDProvider>
+  );
 })();

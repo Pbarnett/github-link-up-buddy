@@ -218,7 +218,6 @@
     "immer": "^10.1.1",
     "input-otp": "^1.2.4",
     "launchdarkly-js-client-sdk": "^3.8.1",
-    "launchdarkly-node-server-sdk": "^7.0.4",
     "launchdarkly-react-client-sdk": "^3.8.1",
     "localforage": "^1.10.0",
     "lodash-es": "^4.17.21",

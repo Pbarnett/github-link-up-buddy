@@ -12,8 +12,7 @@ if (!stripeSecretKey) {
 
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+// Stripe and Supabase imports are deferred to runtime within the handler to support test environments
 import { USE_MANUAL_CAPTURE } from "../lib/config.ts";
 
 const corsHeaders = {
@@ -22,7 +21,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+export async function handleCreateBookingRequest(req: Request): Promise<Response> {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -38,7 +37,8 @@ serve(async (req) => {
       throw new Error("Missing required parameters: userId and offerId are required");
     }
 
-    // Initialize Supabase client with service role key for admin access
+    // Initialize Supabase client with service role key for admin access (lazy import)
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.45.0");
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") || "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "",
@@ -51,6 +51,24 @@ serve(async (req) => {
       .select("*")
       .eq("id", offerId)
       .single();
+
+    // 1b. Optionally fetch trip request pricing to compute savings-based fee
+    let thresholdPrice: number | undefined;
+    try {
+      if (offer?.trip_request_id) {
+        const { data: tr } = await supabase
+          .from("trip_requests")
+          .select("id, max_price, budget")
+          .eq("id", offer.trip_request_id)
+          .single();
+        // Lazy import to avoid top-level Deno resolution issues in tests
+        const { deriveThresholdPrice } = await import("../lib/fees.ts");
+        thresholdPrice = deriveThresholdPrice(tr as any);
+      }
+    } catch (e) {
+      // If we can't fetch threshold, we proceed without fee (defaults to zero)
+      console.warn("[CreateBookingRequest] Unable to derive threshold price:", e && (e as any).message);
+    }
       
     if (offerError || !offer) {
       throw offerError || new Error("Offer not found");
@@ -77,7 +95,8 @@ serve(async (req) => {
     
     console.log(`Created booking request: ${bookingRequest.id}`);
     
-    // 3. Initialize Stripe
+    // 3. Initialize Stripe (lazy import)
+    const { default: Stripe } = await import("https://esm.sh/stripe@14.21.0");
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
@@ -87,8 +106,14 @@ serve(async (req) => {
 
     if (USE_MANUAL_CAPTURE) {
         console.log(`[CreateBookingRequest] Using MANUAL CAPTURE flow for booking_request_id: ${bookingRequest.id}`);
+        // Compute savings-based fee and total amount
+        const { computeTotalWithFeeCents } = await import("../lib/fees.ts");
+        const { totalCents, feeCents, savings, feePct } = computeTotalWithFeeCents({
+          actualPrice: offer.price,
+          thresholdPrice,
+        });
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(offer.price * 100),
+            amount: totalCents,
             currency: offer.currency || 'usd', // Use offer's currency or default
             payment_method_types: ['card'],
             capture_method: 'manual',
@@ -97,7 +122,13 @@ serve(async (req) => {
                 trip_request_id: offer.trip_request_id,
                 flight_offer_id: offer.id,
                 booking_request_id: bookingRequest.id,
-                user_id: userId
+                user_id: userId,
+                fee_model: 'savings-based',
+                threshold_price: typeof thresholdPrice === 'number' ? String(thresholdPrice) : '',
+                actual_price: String(offer.price),
+                savings: String(savings),
+                fee_pct: String(feePct),
+                fee_amount_cents: String(feeCents),
             },
         }, {
              idempotencyKey: `pi_create_${bookingRequest.id}`
@@ -133,6 +164,11 @@ serve(async (req) => {
     } else {
         // --- EXISTING STRIPE CHECKOUT SESSION LOGIC ---
         console.log(`[CreateBookingRequest] Using CHECKOUT SESSION flow for booking_request_id: ${bookingRequest.id}`);
+        const { computeTotalWithFeeCents } = await import("../lib/fees.ts");
+        const { totalCents, feeCents, savings, feePct } = computeTotalWithFeeCents({
+          actualPrice: offer.price,
+          thresholdPrice,
+        });
         const session = await stripe.checkout.sessions.create({
             mode: "payment",
             payment_method_types: ["card"],
@@ -143,7 +179,7 @@ serve(async (req) => {
                         name: `Flight ${offer.airline} ${offer.flight_number}`,
                         description: `${offer.departure_date} to ${offer.return_date}`
                     },
-                    unit_amount: Math.round(offer.price * 100),
+                    unit_amount: totalCents,
                 },
                 quantity: 1,
             }],
@@ -151,7 +187,13 @@ serve(async (req) => {
                 trip_request_id: offer.trip_request_id,
                 flight_offer_id: offer.id,
                 order_id: bookingRequest.id, // This is booking_request_id, but named to match webhook expectations
-                user_id: userId
+                user_id: userId,
+                fee_model: 'savings-based',
+                threshold_price: typeof thresholdPrice === 'number' ? String(thresholdPrice) : '',
+                actual_price: String(offer.price),
+                savings: String(savings),
+                fee_pct: String(feePct),
+                fee_amount_cents: String(feeCents),
             },
             success_url: `${req.headers.get("origin")}/trip/confirm?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${req.headers.get("origin")}/trip/offers?id=${offer.trip_request_id}`,
@@ -198,4 +240,12 @@ serve(async (req) => {
       }
     );
   }
-});
+}
+
+// Only call serve when running in Deno (not in tests)
+if (typeof Deno !== 'undefined' && !Deno.env.get('VITEST')) {
+  serve(handleCreateBookingRequest);
+}
+
+// Export for tests
+export const testableHandler = handleCreateBookingRequest;
