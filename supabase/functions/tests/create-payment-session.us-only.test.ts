@@ -1,6 +1,4 @@
 import { describe as baseDescribe, it, expect, vi, beforeEach } from 'vitest';
-// Avoid loading Deno serve ESM URL in Node test env
-vi.mock('https://deno.land/std@0.168.0/http/server.ts', () => ({ serve: vi.fn() }));
 const describe = (process.env.RUN_EDGE_TESTS === 'true' ? baseDescribe : (baseDescribe as any));
 
 // Mock Stripe factory

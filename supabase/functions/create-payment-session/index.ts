@@ -11,7 +11,6 @@ if (!stripeSecretKey) {
 }
 
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // Stripe and Supabase imports are deferred to runtime within the handler to support test environments
 
 const corsHeaders = {
@@ -271,7 +270,10 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
 
 // Only call serve when running in Deno (not in tests)
 if (typeof Deno !== 'undefined' && !Deno.env.get('VITEST')) {
-  serve(handleCreatePaymentSession);
+  // Dynamically import Deno's serve only in Edge runtime to avoid Node test ESM loader issues
+  import('https://deno.land/std@0.168.0/http/server.ts')
+    .then(({ serve }) => serve(handleCreatePaymentSession))
+    .catch((e) => console.error('Failed to start Deno serve:', e?.message));
 }
 
 export const testableHandler = handleCreatePaymentSession;
