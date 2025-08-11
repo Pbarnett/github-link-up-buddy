@@ -174,3 +174,42 @@ README.md highlights
 
 This WARP.md intentionally focuses on commands and architectural context that are not immediately obvious from a quick file listing, consolidating multi-file patterns and scripts to accelerate future work.
 
+7) Branch safety and workflow
+
+- Never commit directly to main
+  - main is protected. Create a branch for every change:
+    - git switch -c feat/<topic> or fix/<topic>
+- Always start from an up-to-date main
+  - git fetch origin
+  - git switch -c feat/<topic> origin/main
+- Keep your branch current
+  - git fetch origin
+  - git merge origin/main  # or: git rebase origin/main
+- Take a safety snapshot before risky changes
+  - git tag -a safe/$(date +%Y%m%d-%H%M%S) -m "pre-refactor"
+  - or create a safety branch: git switch -c safe/pre-<operation>
+- Don’t switch branches with uncommitted work
+  - Prefer committing WIP or stashing with a timestamped message:
+    - git commit -m "WIP: <desc>"  (temporary)
+    - git stash push -u -m "$(date +%Y-%m-%d %H:%M) WIP: <desc>"
+  - Or use the helper: scripts/development/git-switch-safe.sh <target-branch>
+- Prefer separate worktrees for diverged experiments (prevents files "disappearing")
+  - git worktree add ../github-link-up-buddy-main main
+  - git worktree add ../github-link-up-buddy-ux feat/auto-booking-welcome-and-rule-ux
+- Recovery quick-reference
+  - View recent positions: git reflog
+  - Restore to a known good point: git reset --hard <sha> (or: git switch -c rescue/<date> <sha>)
+  - Stashes: git stash list; inspect: git stash show -p stash@{0}
+- Recommended git config
+  - git config --global push.default current
+  - git config --global fetch.prune true
+  - git config --global rerere.enabled true
+
+Guardrails (opt-in but recommended)
+- Pre-commit hook to block committing to main
+  - We ship a versioned hook at .githooks/pre-commit
+  - Enable once per machine in this repo: git config core.hooksPath .githooks
+  - Ensure executable: chmod +x .githooks/pre-commit
+- Safe branch switch helper
+  - scripts/development/git-switch-safe.sh checks for uncommitted changes, offers to stash with a timestamp, and suggests worktrees for large divergences. Ensure executable: chmod +x scripts/development/git-switch-safe.sh
+

@@ -34,3 +34,5 @@ function ToasterComponent() {
 
 // Named export
 export { ToasterComponent as Toaster }
+// Default export for convenience
+export default ToasterComponent
