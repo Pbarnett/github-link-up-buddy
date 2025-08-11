@@ -101,7 +101,7 @@ describe('create-booking-request fee integration', () => {
     const CreateBooking: any = await import('../create-booking-request/index.ts');
 
     // Arrange supabase chained responses
-    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const { createClient }: any = await import('@supabase/supabase-js');
     const client = createClient();
     const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
     singleMock
@@ -145,7 +145,7 @@ describe('create-booking-request fee integration', () => {
     });
     const CreateBooking: any = await import('../create-booking-request/index.ts');
 
-    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const { createClient }: any = await import('@supabase/supabase-js');
     const client = createClient();
     const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
     // 1) offer fetch fails
@@ -165,7 +165,7 @@ describe('create-booking-request fee integration', () => {
     });
     const CreateBooking: any = await import('../create-booking-request/index.ts');
 
-    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const { createClient }: any = await import('@supabase/supabase-js');
     const client = createClient();
     const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
     singleMock
@@ -188,7 +188,7 @@ describe('create-booking-request fee integration', () => {
     });
     const CreateBooking: any = await import('../create-booking-request/index.ts');
 
-    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const { createClient }: any = await import('@supabase/supabase-js');
     const client = createClient();
     const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
     singleMock
