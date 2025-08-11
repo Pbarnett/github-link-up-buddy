@@ -158,20 +158,31 @@ function AutoBookingDashboard() {
                 </div>
                 <h2 className="text-2xl font-semibold">Book For Me</h2>
                 <p className="text-muted-foreground hidden md:block">
-                  Tell me where you want to go. Dates and how long you're willing to travel, and your max price. I’ll book when it fits.
+                  Set your price. I’ll book when a fare matches. Today, tomorrow, or next month. I keep watch.
                 </p>
                 <p className="text-muted-foreground md:hidden">
-                  Price, dates, days. I’ll book when it fits.
-                </p>
-                <p className="text-muted-foreground">
-                  Nonstop roundtrip with carry‑on. Checks fares every 15 min. Pause anytime. Stripe encrypted.
+                  Set your price. I’ll book when a fare matches.
                 </p>
                 <div className="grid sm:grid-cols-2 gap-4 text-left max-w-3xl mx-auto">
                   <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-primary mt-1" />
                     <div>
+                      <p className="font-medium">Comfortable flights guaranteed</p>
+                      <p className="text-sm text-muted-foreground">We only book nonstop, roundtrip flights with a carry‑on included.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary mt-1" />
+                    <div>
                       <p className="font-medium">Always on</p>
                       <p className="text-sm text-muted-foreground">We check fares around the clock, typically every 15 minutes.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary mt-1" />
+                    <div>
+                      <p className="font-medium">You’re in control</p>
+                      <p className="text-sm text-muted-foreground">Pause anytime; most U.S. fares are refundable within 24 hours.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
