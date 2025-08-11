@@ -19,8 +19,8 @@ vi.stubGlobal('Deno', { env: { get: vi.fn((k: string) => ({
   VITEST: '1',
 }[k as any])) } } as any);
 
-// Supabase client mock
-vi.mock('https://esm.sh/@supabase/supabase-js@2.45.0', () => {
+// Supabase client mock (local package name)
+vi.mock('@supabase/supabase-js', () => {
   const from = vi.fn().mockReturnThis();
   return {
     createClient: vi.fn(() => ({
@@ -46,7 +46,7 @@ describe('create-payment-session fee integration', () => {
     const Mod: any = await import('../create-payment-session/index.ts');
 
     // Arrange supabase chained responses
-    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const { createClient }: any = await import('@supabase/supabase-js');
     const client = createClient();
     const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
     // trip_requests
@@ -58,6 +58,7 @@ describe('create-payment-session fee integration', () => {
       .mockResolvedValueOnce({ data: { id: 'order_1' }, error: null });
 
     // Mock Stripe
+    const sessionsCreate = mockStripe.checkout.sessions.create as unknown as ReturnType<typeof vi.fn>;
 
     // Act
     const req = new Request('http://local', {
@@ -69,7 +70,7 @@ describe('create-payment-session fee integration', () => {
 
     // Assert
     expect(res.status).toBe(200);
-    expect(sessionsCreate).toHaveBeenCalledWith(
+    expect((sessionsCreate as any)).toHaveBeenCalledWith(
       expect.objectContaining({
         line_items: [ expect.objectContaining({ price_data: expect.objectContaining({ unit_amount: 30500 }) }) ],
         metadata: expect.objectContaining({ fee_model: 'savings-based', fee_amount_cents: '500', actual_price: '300' })
@@ -110,10 +111,6 @@ describe('create-payment-session fee integration', () => {
     // 2) offer missing
     singleMock.mockResolvedValueOnce({ data: null, error: { message: 'No rows returned' } });
 
-    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
-    const stripeCtor = StripeMod.default as any;
-    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
-
     const req = new Request('http://local', {
       method: 'POST',
       headers: { Authorization: 'Bearer token', origin: 'http://localhost:5173' },
@@ -122,7 +119,7 @@ describe('create-payment-session fee integration', () => {
     const res = await Mod.testableHandler(req);
 
     expect(res.status).toBe(500);
-    expect(stripeInstance.checkout.sessions.create).not.toHaveBeenCalled();
+    expect(mockStripe.checkout.sessions.create).not.toHaveBeenCalled();
     // Verify no order was inserted
     expect(client.insert).not.toHaveBeenCalled();
     expect(client.update).not.toHaveBeenCalled();

@@ -1,7 +1,7 @@
 import { describe as baseDescribe, it, expect, vi, beforeEach } from 'vitest';
 const describe = (process.env.RUN_EDGE_TESTS === 'true' ? baseDescribe : (baseDescribe.skip as typeof baseDescribe));
 
-// Mock Stripe factory
+// Mock Stripe factory (local module)
 const mockStripe: any = {
   paymentIntents: { create: vi.fn() },
   checkout: { sessions: { create: vi.fn() } },
@@ -17,8 +17,8 @@ vi.stubGlobal('Deno', { env: { get: vi.fn((k: string) => ({
   SUPABASE_SERVICE_ROLE_KEY: 'service_key',
 }[k as any])) } } as any);
 
-// Supabase client mock
-vi.mock('https://esm.sh/@supabase/supabase-js@2.45.0', () => {
+// Supabase client mock (local package name)
+vi.mock('@supabase/supabase-js', () => {
   const from = vi.fn().mockReturnThis();
   return {
     createClient: vi.fn(() => ({
@@ -53,7 +53,7 @@ describe('create-booking-request fee integration', () => {
     const CreateBooking: any = await import('../create-booking-request/index.ts');
 
     // Arrange supabase chained responses
-    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const { createClient }: any = await import('@supabase/supabase-js');
     const client = createClient();
     // .single() is called multiple times; sequence:
     // 1) fetch flight_offers -> return offer
@@ -150,10 +150,6 @@ describe('create-booking-request fee integration', () => {
     const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
     // 1) offer fetch fails
     singleMock.mockResolvedValueOnce({ data: null, error: { message: 'No rows returned' } });
-
-    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
-    const stripeCtor = StripeMod.default as any;
-    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
 
     const res = await (CreateBooking as any).testableHandler(new Request('http://local', { method: 'POST', body: JSON.stringify({ userId: 'u', offerId: 'missing' }) }));
 

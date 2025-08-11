@@ -1,10 +1,7 @@
 import { describe as baseDescribe, it, expect, vi, beforeEach } from 'vitest';
 const describe = (process.env.RUN_EDGE_TESTS === 'true' ? baseDescribe : (baseDescribe.skip as typeof baseDescribe));
 
-// Mock Deno serve (Edge runtime)
-vi.mock('https://deno.land/std@0.168.0/http/server.ts', () => ({ serve: vi.fn() }));
-
-// Mock Stripe factory
+// Mock Stripe factory (local)
 const mockStripe: any = {
   checkout: { sessions: { create: vi.fn() } },
   paymentMethods: { retrieve: vi.fn() },
@@ -23,8 +20,8 @@ vi.stubGlobal('Deno', { env: { get: vi.fn((k: string) => ({
   VITEST: '1',
 }[k as any])) } } as any);
 
-// Supabase client mock
-vi.mock('https://esm.sh/@supabase/supabase-js@2.45.0', () => {
+// Supabase client mock (local package name)
+vi.mock('@supabase/supabase-js', () => {
   const from = vi.fn().mockReturnThis();
   return {
     createClient: vi.fn(() => ({
@@ -50,7 +47,7 @@ describe('create-payment-session fee disabled', () => {
     const Mod: any = await import('../create-payment-session/index.ts');
 
     // Arrange supabase chained responses
-    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const { createClient }: any = await import('@supabase/supabase-js');
     const client = createClient();
     const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
     // trip_requests
