@@ -9,9 +9,11 @@ import { useEffect } from "react";
 import { BusinessRulesProvider } from "./hooks/useBusinessRules";
 import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-// Import dev auth for easy development authentication
-import "@/utils/devAuth";
-import "@/utils/authTest";
+// Import dev auth for easy development authentication (guarded + lazy in dev)
+if (import.meta.env.DEV) {
+  import('@/utils/devAuth').catch(() => {});
+  import('@/utils/authTest').catch(() => {});
+}
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import TripNew from "./pages/TripNew";

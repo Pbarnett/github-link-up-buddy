@@ -25,9 +25,9 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     SUPABASE_ANON_KEY: !!SUPABASE_ANON_KEY
   });
   
-  // In test environment, provide a mock client instead of throwing
-  if (import.meta.env.MODE === 'test') {
-    console.log('🧪 Using mock Supabase client for testing');
+  // In test or dev environment, provide a mock client instead of throwing
+  if (import.meta.env.MODE === 'test' || import.meta.env.DEV) {
+    console.warn('🧪 Using mock Supabase client (env missing) for', import.meta.env.MODE);
     
     supabaseClient = {
       from: () => ({
@@ -41,7 +41,9 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       }),
       auth: {
         getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-        getSession: () => Promise.resolve({ data: { session: null }, error: null })
+        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+        signInWithPassword: () => Promise.resolve({ data: { user: null }, error: null }),
+        signOut: () => Promise.resolve({ error: null })
       },
       functions: {
         invoke: () => Promise.resolve({ data: null, error: null })

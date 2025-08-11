@@ -53,43 +53,17 @@ describe('TripRequestForm - Basic Functionality', () => {
     expect(screen.getByText("Top price you'll pay")).toBeInTheDocument();
   });
 
-  it('should render filter toggles with correct default values', () => {
+  it('should show included badges for nonstop and carry-on (informational only)', () => {
     render(
       <MemoryRouter>
         <TripRequestForm />
       </MemoryRouter>
     );
 
-    // Check nonstop flights toggle (should be checked by default)
-    const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
-    expect(nonstopSwitch).toBeInTheDocument();
-    expect(nonstopSwitch).toBeChecked();
-
-    // Check baggage toggle (should be unchecked by default)
-    const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
-    expect(baggageSwitch).toBeInTheDocument();
-    expect(baggageSwitch).not.toBeChecked();
-  });
-
-  it('should toggle switches when clicked', async () => {
-    render(
-      <MemoryRouter>
-        <TripRequestForm />
-      </MemoryRouter>
-    );
-
-    const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
-    
-    // Initial state
-    expect(baggageSwitch).not.toBeChecked();
-    
-    // Click to enable
-    await userEvent.click(baggageSwitch);
-    expect(baggageSwitch).toBeChecked();
-    
-    // Click to disable
-    await userEvent.click(baggageSwitch);
-    expect(baggageSwitch).not.toBeChecked();
+    expect(screen.getByText(/nonstop flights only/i)).toBeInTheDocument();
+    expect(screen.getByText(/carry-on \+ personal item/i)).toBeInTheDocument();
+    // Badges indicate these are included; there are no interactive switches anymore
+    expect(screen.getAllByText(/included/i).length).toBeGreaterThan(0);
   });
 
   it('should have submit button disabled initially', () => {

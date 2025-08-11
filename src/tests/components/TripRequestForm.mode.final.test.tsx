@@ -57,8 +57,8 @@ describe('TripRequestForm Mode Handling', () => {
 
     expect(screen.getByTestId('primary-submit-button')).toBeInTheDocument();
     expect(screen.getByTestId('primary-submit-button')).toHaveTextContent('Search Now');
-    expect(screen.getByText('Enter the parameters for your trip below.')).toBeInTheDocument();
-    // Component has multiple "Search Now" buttons (main form + sticky actions)
+    expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
+    expect(screen.getByText('Search real-time flight availability (Amadeus-powered)')).toBeInTheDocument();
     const searchButtons = screen.getAllByText('Search Now');
     expect(searchButtons.length).toBeGreaterThan(0);
   });
@@ -84,12 +84,9 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    // In auto mode step 1, the title should be "Trip Basics" (appears in both title and stepper)
     const tripBasicsElements = screen.getAllByText('Trip Basics');
     expect(tripBasicsElements.length).toBeGreaterThan(0);
-    
     expect(screen.getByText('Tell us where and when you want to travel.')).toBeInTheDocument();
-    // Component has multiple "Continue → Pricing" buttons (main form + sticky actions)
     const continueButtons = screen.getAllByText('Continue → Pricing');
     expect(continueButtons.length).toBeGreaterThan(0);
   });
@@ -115,11 +112,11 @@ describe('TripRequestForm Mode Handling', () => {
       </TestWrapper>
     );
 
-    // Should show "Where & When" instead of "Travel Details"
-    expect(screen.getByText('Where & When')).toBeInTheDocument();
+    expect(screen.getByText('When do you want to travel?')).toBeInTheDocument();
+    expect(screen.getByText('Departure Date')).toBeInTheDocument();
+    expect(screen.getByText('Latest Departure')).toBeInTheDocument();
     expect(screen.getByText('Trip Length')).toBeInTheDocument();
     
-    // Should NOT show auto-booking section in step 1
     expect(screen.queryByText('Maximum Price')).not.toBeInTheDocument();
     expect(screen.queryByText('Payment & Authorization')).not.toBeInTheDocument();
   });

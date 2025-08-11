@@ -51,7 +51,7 @@ vi.mock('@/services/api/flightSearchApi', () => ({
   invokeFlightSearch: vi.fn().mockResolvedValue({ success: true }),
 }));
 
-describe('TripRequestForm - Filter Toggles Logic', () => {
+describe('TripRequestForm - Policy Badges (non-interactive)', () => {
   beforeEach(() => {
     // Reset mocks before each test in this suite
     vi.clearAllMocks();
@@ -80,52 +80,22 @@ describe('TripRequestForm - Filter Toggles Logic', () => {
       error: null
     });
   });
-  // --- Tests for FilterTogglesSection functionality within TripRequestForm ---
+  // --- Tests for informational badges within TripRequestForm ---
 
-  it('should render "Nonstop flights only" switch checked by default', () => {
+  it('should render informational badges for Nonstop and Carry-on policy', () => {
     render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
-    const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
-    expect(nonstopSwitch).toBeInTheDocument();
-    expect(nonstopSwitch).toBeChecked();
+    expect(screen.getByText(/nonstop flights only/i)).toBeInTheDocument();
+    expect(screen.getByText(/carry-on \+ personal item/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/included/i).length).toBeGreaterThan(0);
   });
 
-  it('should render "Include carry-on + personal item" switch unchecked by default', () => {
+  it('should not render any interactive switches for these policies', () => {
     render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
-    const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
-    expect(baggageSwitch).toBeInTheDocument();
-    expect(baggageSwitch).not.toBeChecked();
+    const switches = screen.queryAllByRole('switch');
+    expect(switches.length).toBe(0);
   });
 
-  it('should update switch state when "Include carry-on + personal item" switch is toggled', async () => {
-    render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
-    const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
-    expect(baggageSwitch).not.toBeChecked(); // Initial state
-
-    await userEvent.click(baggageSwitch);
-    expect(baggageSwitch).toBeChecked(); // After first click
-
-    await userEvent.click(baggageSwitch);
-    expect(baggageSwitch).not.toBeChecked(); // After second click
-  });
-
-  // Simplified test for default Zod schema values affecting switches
-  it('should reflect Zod schema default values for switches on initial render', () => {
-    // TripRequestForm uses useForm with Zod schema defaults:
-    // nonstop_required: default(true)
-    // baggage_included_required: default(false)
-    render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
-
-    const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
-    const baggageSwitch = screen.getByRole('switch', { name: /include carry-on \+ personal item/i });
-
-    expect(nonstopSwitch).toBeChecked();
-    expect(baggageSwitch).not.toBeChecked();
-    // This test implicitly covers the "editing an existing trip with prefilled filter values" if
-    // the form.reset() in useEffect correctly populates these from fetched data.
-    // A more direct test for "editing" would require mocking the fetchTripDetails call.
-  });
-
-  // --- End of Tests for FilterTogglesSection functionality ---
+  // --- End of Tests for policy badges ---
 });
 
 describe('TripRequestForm - Submission Logic', () => {

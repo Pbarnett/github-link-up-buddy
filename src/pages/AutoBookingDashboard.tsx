@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/components/ui/use-toast";
-import { Plus, Plane, Pause, Play, X, Edit } from "lucide-react";
+import { Plus, Plane, Pause, Play, X, Edit, Rocket, Check } from "lucide-react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { CampaignCard } from "@/components/autobooking/CampaignCard";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 function AutoBookingDashboard() {
   const navigate = useNavigate();

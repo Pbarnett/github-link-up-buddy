@@ -19,6 +19,23 @@ Object.defineProperty(import.meta, 'env', {
 // JSDOM POLYFILLS FOR RADIX UI
 // ==============================================================================
 
+// matchMedia polyfill for useIsMobile and CSS media queries in tests
+if (!('matchMedia' in window)) {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(), // deprecated
+      removeListener: vi.fn(), // deprecated
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }),
+  })
+}
+
 // ResizeObserver polyfill for Radix UI components
 class ResizeObserverMock {
   observe() {}

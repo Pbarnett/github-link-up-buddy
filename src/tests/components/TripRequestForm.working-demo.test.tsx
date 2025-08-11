@@ -128,21 +128,16 @@ describe('Calendar Testing Solution - Working Demo', () => {
     // Verified: mocked calendar interaction works
   });
 
-  it('should demonstrate filter toggle testing (simple UI testing)', async () => {
+  it('should show policy badges as informational (no interactive switches)', async () => {
     render(
       <MemoryRouter>
         <TripRequestForm />
       </MemoryRouter>
     );
 
-    // This type of testing remains simple and reliable
-    const nonstopSwitch = screen.getByRole('switch', { name: /nonstop flights only/i });
-    expect(nonstopSwitch).toBeChecked(); // Default true
-
-    await userEvent.click(nonstopSwitch);
-    expect(nonstopSwitch).not.toBeChecked();
-
-    console.log('✅ Simple UI interactions (like switches) remain testable and reliable.');
+    expect(screen.getByText(/nonstop flights only/i)).toBeInTheDocument();
+    expect(screen.getByText(/carry-on \+ personal item/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/included/i).length).toBeGreaterThan(0);
   });
 
   it('should focus on business logic validation rather than UI implementation', async () => {
