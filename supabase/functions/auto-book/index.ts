@@ -71,7 +71,7 @@ Deno.serve(async (req: Request) => {
   // CORS headers (important for browser-based calls, though Edge Functions might be invoked server-side)
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cf-ipcountry, x-country, x-country-code',
   };
 
   if (req.method === 'OPTIONS') {
@@ -81,6 +81,21 @@ Deno.serve(async (req: Request) => {
 
   try {
     console.log('[AutoBook] Entering main try block.');
+
+    // US-only gate
+    try {
+      const { isUSUser } = await import('../_shared/eligibility.ts');
+      const check = isUSUser(req);
+      if (!check.allowed) {
+        console.warn(`[AutoBook] US-only gate blocked request from country=${check.country}`);
+        return new Response(JSON.stringify({ error: 'Auto-booking is currently available to US customers only.' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } catch (e) {
+      console.warn('[AutoBook] Eligibility helper not available, proceeding without geo gate');
+    }
     const body = await req.json();
     trip = body.trip as TripRequest; // Type assertion
 

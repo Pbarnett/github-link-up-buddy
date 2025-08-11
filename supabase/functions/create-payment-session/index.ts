@@ -17,7 +17,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey, cf-ipcountry, x-country, x-country-code",
 };
 
 // Helper function to create notifications
@@ -61,6 +61,20 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
   try {
+    // US-only gate
+    try {
+      const { isUSUser } = await import('../_shared/eligibility.ts');
+      const check = isUSUser(req);
+      if (!check.allowed) {
+        return new Response(JSON.stringify({ error: 'Payments are currently available to US customers only.' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } catch (e) {
+      // proceed if helper not available
+    }
+
     // Get user details from JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -176,6 +190,15 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
       ],
       success_url: `${origin}/trip/confirm?id=${offer_id}&payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/trip/confirm?id=${offer_id}&payment=canceled`,
+      billing_address_collection: 'required',
+      allow_promotion_codes: false,
+      automatic_tax: { enabled: false },
+      customer_update: { address: 'auto' },
+      phone_number_collection: { enabled: false },
+      // Restrict to US only
+      currency: 'usd',
+      customer_creation: 'if_required',
+      shipping_address_collection: { allowed_countries: ['US'] },
       metadata: {
         user_id: user.id,
         trip_request_id,
