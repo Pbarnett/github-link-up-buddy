@@ -120,10 +120,8 @@ function AutoBookingDashboard() {
         
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Auto-booking Campaigns</h1>
-            <p className="text-muted-foreground mt-2">
-              Manage your automated flight booking campaigns
-            </p>
+            <h1 className="text-3xl font-bold tracking-tight">Auto‑booking</h1>
+            <p className="text-muted-foreground mt-2">Set your max price. I'll book when the fare drops.</p>
           </div>
           <Button onClick={handleCreateCampaign} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
@@ -143,6 +141,83 @@ function AutoBookingDashboard() {
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-32 w-full" />
           </div>
+        ) : !hasAnyCampaigns ? (
+          {/* First‑time Welcome state */}
+          <Card>
+            <CardContent className="py-12">
+              <div className="max-w-3xl mx-auto text-center space-y-6">
+                <div className="flex items-center justify-center">
+                  <Rocket className="h-12 w-12 text-primary" />
+                </div>
+                <h2 className="sr-only">Overview</h2>
+                <p className="text-muted-foreground">
+                  Tell me the trip and your limit. I check fares every 15 minutes. When a match appears, I buy it on your saved card and you get a note right away.
+                </p>
+                <div className="text-left max-w-3xl mx-auto">
+                  <h3 className="mt-6 text-lg font-medium">What you can count on</h3>
+                  <ul className="mt-4 space-y-3">
+                    <li className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-primary mt-1" />
+                      <span>Never above your limit. Taxes and fees included.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-primary mt-1" />
+                      <span>Round trip only.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-primary mt-1" />
+                      <span>Nonstop only.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-primary mt-1" />
+                      <span>Carry-on and personal item included.</span>
+                    </li>
+                  </ul>
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    If a flight breaks a rule at your price, I skip it.
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    You can pause or change your rule any time. Most U.S. fares refund within 24 hours.
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Checkout is through Stripe. Your details stay encrypted.
+                  </p>
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    You can relax any of these rules in your settings if you prefer.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+                  <Button size="lg" onClick={handleCreateCampaign} className="px-6">
+                    <Plus className="h-4 w-4 mr-2" /> Set up auto-booking
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate('/search')} className="px-6">
+                    Search flights now
+                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <button className="text-sm text-muted-foreground hover:underline">See an example</button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Example auto‑book rule</DialogTitle>
+                      </DialogHeader>
+                      <div className="text-sm space-y-2">
+                        <p>LAX → CDG • Jul 4–18 • ≤ $800 • 0–1 stops</p>
+                        <p className="text-muted-foreground">We’ll monitor continuously and purchase within your max price. You can pause anytime.</p>
+                      </div>
+                  </DialogContent>
+                  </Dialog>
+                  <AutoBookingFAQDialog
+                    trigger={
+                      <button className="text-xs text-muted-foreground hover:underline">
+                        How auto‑booking works
+                      </button>
+                    }
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-8">
             {/* Active Campaigns */}

@@ -105,40 +105,27 @@ describe('Calendar Testing Solution - Working Demo', () => {
     const departureInput = screen.getByPlaceholderText(/e\.g\., BOS/i);
     fireEvent.change(departureInput, { target: { value: 'SFO' } });
 
-    // Step 3: SOLUTION - Use mocked calendar interaction
-    // This is the key innovation: instead of complex calendar UI testing,
-    // we use the mocked calendar that renders simple buttons
-    
-    // Open earliest date picker
+    // Step 3: Use mocked calendar interaction (aligned with local test mocks)
     const earliestButton = screen.getByText('Earliest');
     await userEvent.click(earliestButton);
 
-    // Wait for mocked calendar to appear (this works because of our setupTests.ts mocks)
     await waitFor(() => {
-      expect(screen.getByTestId('mock-day-picker')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
     });
 
-    // Click on the mocked calendar button - this is reliable and fast
-    const tomorrowButton = screen.getByTestId('calendar-day-tomorrow');
-    await userEvent.click(tomorrowButton);
+    const selectDateButton = screen.getByTestId('select-date-button');
+    await userEvent.click(selectDateButton);
 
-    // Open latest date picker
     const latestButton = screen.getByText('Latest');
     await userEvent.click(latestButton);
 
-    // Again, use the mocked calendar
     await waitFor(() => {
-      expect(screen.getByTestId('mock-day-picker')).toBeInTheDocument();
+      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
     });
 
-    const nextWeekButton = screen.getByTestId('calendar-day-next-week');
-    await userEvent.click(nextWeekButton);
+    await userEvent.click(selectDateButton);
 
-    // Step 4: Verify that calendar interaction worked
-    // The mocked calendar should have triggered the form's onSelect handlers
-    // This proves that our mocking strategy successfully replaces complex UI with simple interactions
-
-    console.log('✅ Calendar mocking solution works! Dates were set via mocked buttons instead of complex calendar UI.');
+    // Verified: mocked calendar interaction works
   });
 
   it('should demonstrate filter toggle testing (simple UI testing)', async () => {

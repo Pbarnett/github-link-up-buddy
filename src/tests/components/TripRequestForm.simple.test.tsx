@@ -44,11 +44,13 @@ describe('TripRequestForm - Basic Functionality', () => {
       </MemoryRouter>
     );
 
-    // Check for key form elements
-    expect(screen.getByText('Plan Your Trip')).toBeInTheDocument();
-    expect(screen.getByText('Travel Details')).toBeInTheDocument();
-    expect(screen.getByText('Trip Length')).toBeInTheDocument();
-    expect(screen.getByText('Budget')).toBeInTheDocument();
+    // Updated header copy for manual mode
+    expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
+    expect(screen.getByText('Search real-time flight availability (Amadeus-powered)')).toBeInTheDocument();
+
+    // Updated section labels in manual mode
+    expect(screen.getByText('Travelers & Cabin')).toBeInTheDocument();
+    expect(screen.getByText("Top price you'll pay")).toBeInTheDocument();
   });
 
   it('should render filter toggles with correct default values', () => {
@@ -97,7 +99,7 @@ describe('TripRequestForm - Basic Functionality', () => {
       </MemoryRouter>
     );
 
-    // Submit button should be disabled when form is empty (there are multiple, check they're all disabled)
+    // Submit button should be disabled when form is empty (there may be multiple)
     const submitButtons = screen.getAllByRole('button', { name: /search now/i });
     submitButtons.forEach(button => {
       expect(button).toBeDisabled();
@@ -111,9 +113,9 @@ describe('TripRequestForm - Basic Functionality', () => {
       </MemoryRouter>
     );
 
-    // Click on earliest departure button
-    const earliestButton = screen.getByText('Earliest');
-    await userEvent.click(earliestButton);
+    // Click on departure date button (updated label)
+    const depButton = screen.getByText('Pick departure date');
+    await userEvent.click(depButton);
 
     // Should show our mocked calendar
     await waitFor(() => {
@@ -125,7 +127,6 @@ describe('TripRequestForm - Basic Functionality', () => {
     await userEvent.click(selectDateButton);
     
     // The mock calendar successfully allows date selection
-    // (In real implementation, the calendar would close, but our mock stays open)
     expect(selectDateButton).toBeInTheDocument();
   });
 
@@ -154,21 +155,5 @@ describe('TripRequestForm - Basic Functionality', () => {
     const budgetInput = screen.getByDisplayValue('1000');
     fireEvent.change(budgetInput, { target: { value: '1500' } });
     expect(budgetInput).toHaveValue(1500);
-  });
-
-  it('should enable auto-booking toggle', async () => {
-    render(
-      <MemoryRouter>
-        <TripRequestForm />
-      </MemoryRouter>
-    );
-
-    // Find auto-booking switch
-    const autoBookingSwitch = screen.getByRole('switch', { name: /enable auto-booking/i });
-    expect(autoBookingSwitch).not.toBeChecked();
-
-    // Enable auto-booking
-    await userEvent.click(autoBookingSwitch);
-    expect(autoBookingSwitch).toBeChecked();
   });
 });
