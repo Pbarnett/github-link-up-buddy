@@ -1,4 +1,17 @@
 #!/bin/sh
+while read local_ref local_sha remote_ref remote_sha
+do
+  case "$remote_ref" in
+    refs/heads/main)
+      echo "Abort: push to main is blocked. Use a PR."
+      exit 1
+      ;;
+  esac
+
+done
+exit 0
+
+#!/bin/sh
 # Block pushes directly from main. Enable with: git config core.hooksPath .githooks
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 if [ "$current_branch" = "main" ]; then

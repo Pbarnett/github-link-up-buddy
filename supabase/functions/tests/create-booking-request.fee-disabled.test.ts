@@ -4,13 +4,14 @@ const describe = (process.env.RUN_EDGE_TESTS === 'true' ? baseDescribe : (baseDe
 // Mock Deno serve (Edge runtime)
 vi.mock('https://deno.land/std@0.168.0/http/server.ts', () => ({ serve: vi.fn() }));
 
-// Mock Stripe (ESM URL)
-vi.mock('https://esm.sh/stripe@14.21.0', () => {
-  const paymentIntents = { create: vi.fn() };
-  const checkout = { sessions: { create: vi.fn() } };
-  const Ctor = vi.fn(() => ({ paymentIntents, checkout }));
-  return { default: Ctor } as any;
-});
+// Mock Stripe factory
+const mockStripe: any = {
+  paymentIntents: { create: vi.fn() },
+  checkout: { sessions: { create: vi.fn() } },
+};
+vi.mock('../lib/stripe.ts', () => ({
+  getStripe: vi.fn().mockResolvedValue(mockStripe)
+}));
 
 // For Node/Vitest context, we won't execute Deno.serve path
 vi.stubGlobal('Deno', { env: { get: vi.fn((k: string) => ({
@@ -59,10 +60,7 @@ describe('create-booking-request fee disabled', () => {
       .mockResolvedValueOnce({ data: {}, error: null });
 
     // Mock Stripe
-    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
-    const stripeCtor = StripeMod.default as any;
-    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
-    const piCreate = stripeInstance.paymentIntents.create as unknown as ReturnType<typeof vi.fn>;
+    const piCreate = mockStripe.paymentIntents.create as unknown as ReturnType<typeof vi.fn>;
     piCreate.mockResolvedValue({ id: 'pi_123', client_secret: 'secret' });
 
     // Act

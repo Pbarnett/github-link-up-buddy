@@ -1,13 +1,14 @@
 import { describe as baseDescribe, it, expect, vi, beforeEach } from 'vitest';
 const describe = (process.env.RUN_EDGE_TESTS === 'true' ? baseDescribe : (baseDescribe.skip as typeof baseDescribe));
 
-// Mock Stripe (ESM URL)
-vi.mock('https://esm.sh/stripe@14.21.0', () => {
-  const paymentIntents = { create: vi.fn() };
-  const checkout = { sessions: { create: vi.fn() } };
-  const Ctor = vi.fn(() => ({ paymentIntents, checkout }));
-  return { default: Ctor } as any;
-});
+// Mock Stripe factory
+const mockStripe: any = {
+  paymentIntents: { create: vi.fn() },
+  checkout: { sessions: { create: vi.fn() } },
+};
+vi.mock('../lib/stripe.ts', () => ({
+  getStripe: vi.fn().mockResolvedValue(mockStripe)
+}));
 
 // For Node/Vitest context, we won't execute Deno.serve path
 vi.stubGlobal('Deno', { env: { get: vi.fn((k: string) => ({
@@ -65,10 +66,7 @@ describe('create-booking-request fee integration', () => {
       .mockResolvedValueOnce({ data: {}, error: null });
 
     // Mock Stripe
-    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
-    const stripeCtor = StripeMod.default as any;
-    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
-    const piCreate = stripeInstance.paymentIntents.create as unknown as ReturnType<typeof vi.fn>;
+    const piCreate = mockStripe.paymentIntents.create as unknown as ReturnType<typeof vi.fn>;
     piCreate.mockResolvedValue({ id: 'pi_123', client_secret: 'secret' });
 
     // Stub Deno.env.get
@@ -112,11 +110,6 @@ describe('create-booking-request fee integration', () => {
       .mockResolvedValueOnce({ data: {}, error: null });
 
     // Mock Stripe sessions.create
-    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
-    const stripeCtor = StripeMod.default as any;
-    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
-    const sessionsCreate = stripeInstance.checkout.sessions.create as unknown as ReturnType<typeof vi.fn>;
-    sessionsCreate.mockResolvedValue({ id: 'cs_123', url: 'https://checkout' });
     // Capture second arg (options) for idempotency assertions via mock.calls
 
     // Stub Deno.env.get
@@ -165,8 +158,8 @@ describe('create-booking-request fee integration', () => {
     const res = await (CreateBooking as any).testableHandler(new Request('http://local', { method: 'POST', body: JSON.stringify({ userId: 'u', offerId: 'missing' }) }));
 
     expect(res.status).toBe(500);
-    expect(stripeInstance.paymentIntents.create).not.toHaveBeenCalled();
-    expect(stripeInstance.checkout.sessions.create).not.toHaveBeenCalled();
+    expect(mockStripe.paymentIntents.create).not.toHaveBeenCalled();
+    expect(mockStripe.checkout.sessions.create).not.toHaveBeenCalled();
   });
 
   it('returns 500 when Stripe PaymentIntent creation fails and no DB update persists', async () => {
@@ -183,10 +176,7 @@ describe('create-booking-request fee integration', () => {
       .mockResolvedValueOnce({ data: { id: 'offer_1', price: 300, currency: 'usd', trip_request_id: 'tr_1', airline: 'T', flight_number: 'T1', departure_date: '2025-08-10', return_date: '2025-08-12' }, error: null })
       .mockResolvedValueOnce({ data: { id: 'br_1' }, error: null });
 
-    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
-    const stripeCtor = StripeMod.default as any;
-    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
-    (stripeInstance.paymentIntents.create as any).mockRejectedValue(new Error('Stripe down'));
+    (mockStripe.paymentIntents.create as any).mockRejectedValue(new Error('Stripe down'));
 
     const res = await (CreateBooking as any).testableHandler(new Request('http://local', { method: 'POST', body: JSON.stringify({ userId: 'u', offerId: 'offer_1' }) }));
 
@@ -209,10 +199,7 @@ describe('create-booking-request fee integration', () => {
       .mockResolvedValueOnce({ data: { id: 'offer_1', price: 300, currency: 'usd', trip_request_id: 'tr_1', airline: 'Test', flight_number: 'T1', departure_date: '2025-08-10', return_date: '2025-08-12' }, error: null })
       .mockResolvedValueOnce({ data: { id: 'br_1' }, error: null });
 
-    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
-    const stripeCtor = StripeMod.default as any;
-    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
-    (stripeInstance.checkout.sessions.create as any).mockRejectedValue(new Error('Stripe down'));
+    (mockStripe.checkout.sessions.create as any).mockRejectedValue(new Error('Stripe down'));
 
     const res = await (CreateBooking as any).testableHandler(new Request('http://local', { method: 'POST', body: JSON.stringify({ userId: 'u', offerId: 'offer_1' }) }));
 

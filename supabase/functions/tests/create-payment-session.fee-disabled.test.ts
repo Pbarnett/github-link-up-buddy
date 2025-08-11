@@ -4,14 +4,15 @@ const describe = (process.env.RUN_EDGE_TESTS === 'true' ? baseDescribe : (baseDe
 // Mock Deno serve (Edge runtime)
 vi.mock('https://deno.land/std@0.168.0/http/server.ts', () => ({ serve: vi.fn() }));
 
-// Mock Stripe (ESM URL)
-vi.mock('https://esm.sh/stripe@14.21.0', () => {
-  const checkout = { sessions: { create: vi.fn() } };
-  const paymentMethods = { retrieve: vi.fn() };
-  const customers = { create: vi.fn().mockResolvedValue({ id: 'cus_123' }) };
-  const Ctor = vi.fn(() => ({ checkout, paymentMethods, customers }));
-  return { default: Ctor } as any;
-});
+// Mock Stripe factory
+const mockStripe: any = {
+  checkout: { sessions: { create: vi.fn() } },
+  paymentMethods: { retrieve: vi.fn() },
+  customers: { create: vi.fn().mockResolvedValue({ id: 'cus_123' }) },
+};
+vi.mock('../lib/stripe.ts', () => ({
+  getStripe: vi.fn().mockResolvedValue(mockStripe)
+}));
 
 // For Node/Vitest context, we won't execute Deno.serve path
 vi.stubGlobal('Deno', { env: { get: vi.fn((k: string) => ({
@@ -61,10 +62,7 @@ describe('create-payment-session fee disabled', () => {
       .mockResolvedValueOnce({ data: { id: 'order_1' }, error: null });
 
     // Mock Stripe
-    const StripeMod: any = await import('https://esm.sh/stripe@14.21.0');
-    const stripeCtor = StripeMod.default as any;
-    const stripeInstance = stripeCtor.mock.results[0]?.value || stripeCtor();
-    const sessionsCreate = stripeInstance.checkout.sessions.create as unknown as ReturnType<typeof vi.fn>;
+    const sessionsCreate = mockStripe.checkout.sessions.create as unknown as ReturnType<typeof vi.fn>;
     sessionsCreate.mockResolvedValue({ id: 'cs_123', url: 'https://checkout' });
 
     // Act
