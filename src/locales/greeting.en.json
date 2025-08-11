@@ -1,0 +1,30 @@
+{
+  "greeting": {
+    "firstLaunch": [
+      "Good to see you, {firstName}.",
+      "Glad you’re here, {firstName}. Let’s pick somewhere fun.",
+      "Nice to see you, {firstName}. Ready when you are."
+    ],
+    "returnVisit": [
+      "Good to see you again, {firstName}. Any place in mind?",
+      "You’re back, {firstName}. This.",
+      "Nice to have you here, {firstName}. Where to today?"
+    ],
+    "bookingConfirmation": [
+      "Booking complete. {nextTripCity} is going to be a blast.",
+      "All set, {firstName}. Can’t wait for you to see {nextTripCity}.",
+      "Done and dusted. {nextTripCity} is waiting for you."
+    ],
+    "flightStatus": [
+      "Quick update for you, {firstName}. Your {nextTripCity} flight is on schedule.",
+      "Just checked. No changes to your {nextTripCity} flight.",
+      "Everything’s on track. {nextTripCity} here you come."
+    ],
+    "generalError": [
+      "Looks like a hiccup. Let’s refresh and try again.",
+      "Something glitched. Give it another go in a sec.",
+      "Odd snag there. One more reload should sort it out."
+    ]
+  }
+}
+

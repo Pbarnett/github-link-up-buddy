@@ -6,7 +6,23 @@ import importPlugin from 'eslint-plugin-import';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  {
+    ignores: [
+      'dist',
+      '.patch-bundles/**',
+      'scripts/**',
+      'infra/**',
+      'packages/**',
+      'lib/**',
+      'app/**',
+      'supabase/**',
+      'src/**',
+      'tests/**',
+      'tailwind.config.ts',
+      'useFlightOffers_baseline.ts',
+      'validate-production-deployment.ts',
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],

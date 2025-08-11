@@ -4,9 +4,9 @@ import { useLocation } from "react-router-dom";
 // Computes a reasonable title based on the URL path.
 function computeTitle(pathname: string): string {
   // Map common paths to human titles; extend as needed.
-  if (pathname === "/" || pathname === "/dashboard" || pathname === "/auto-booking") return "Dashboard";
-  if (pathname === "/auto-booking/new") return "Set Auto-Booking";
-  if (pathname === "/search" || pathname === "/trip/new") return "Search Flights";
+  if (pathname === "/" || pathname === "/dashboard" || pathname === "/auto-booking") return "My Bookings";
+  if (pathname === "/auto-booking/new") return "Book For Me";
+  if (pathname === "/search" || pathname === "/trip/new") return "Currently Available Flights";
   if (pathname.startsWith("/trip/offers") || pathname.includes("/trips/")) return "Flight Results";
   if (pathname === "/trip/confirm") return "Confirm Booking";
   if (pathname === "/profile") return "Profile";

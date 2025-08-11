@@ -610,9 +610,24 @@ serve(async (req: Request) => {
   // Ensure CORS headers are set for all responses, including errors
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*', // Or specific origins
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cf-ipcountry, x-country, x-country-code',
     'Access-Control-Allow-Methods': 'POST, OPTIONS', // Specify methods
   };
+
+  // US-only gate
+  try {
+    const { isUSUser } = await import('../_shared/eligibility.ts');
+    const check = isUSUser(req);
+    if (!check.allowed) {
+      console.warn(`[DEBUG] US-only gate blocked request from country=${check.country}`);
+      return new Response(JSON.stringify({ error: 'Service is currently available to US customers only.' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  } catch (e) {
+    console.warn('[DEBUG] Eligibility import failed or not available, proceeding without geo gate:', e?.message);
+  }
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {

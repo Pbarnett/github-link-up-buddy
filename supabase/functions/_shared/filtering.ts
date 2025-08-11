@@ -164,6 +164,94 @@ export class AmadeusEdgeAdapter {
   }
 }
 
+export class DuffelEdgeAdapter {
+  static normalize(rawOffer: any, context: FilterContext): FlightOffer {
+    const id = rawOffer.id || `duffel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const base = parseFloat(String(rawOffer.total_amount || rawOffer.price?.total || 0)) || 0;
+    const currency = String(rawOffer.total_currency || rawOffer.price?.currency || 'USD');
+    const carry = this.extractCarryOnInfo(rawOffer);
+    const itineraries = this.normalizeItineraries(rawOffer);
+    const paxCount = Math.max(1, context.passengers || 1);
+
+    return {
+      provider: 'Duffel',
+      id,
+      itineraries,
+      totalBasePrice: base,
+      currency,
+      carryOnIncluded: carry.included,
+      carryOnFee: carry.fee !== undefined ? carry.fee * paxCount : undefined,
+      totalPriceWithCarryOn: base + ((carry.fee !== undefined ? carry.fee * paxCount : 0)),
+      stopsCount: this.calculateStopsCount(itineraries),
+      validatingAirlines: rawOffer.owner?.iata_code ? [rawOffer.owner.iata_code] : [],
+      rawData: rawOffer,
+    };
+  }
+
+  private static normalizeItineraries(rawOffer: any): Itinerary[] {
+    const slices = rawOffer.slices || [];
+    return slices.map((slice: any) => ({
+      duration: slice.duration || '',
+      segments: (slice.segments || []).map((seg: any) => ({
+        departure: { iataCode: seg.origin?.iata_code || seg.departure?.iataCode || '', at: seg.departing_at || seg.departure?.at || '' },
+        arrival: { iataCode: seg.destination?.iata_code || seg.arrival?.iataCode || '', at: seg.arriving_at || seg.arrival?.at || '' },
+        carrierCode: seg.marketing_carrier?.iata_code || seg.operating_carrier?.iata_code || '',
+        flightNumber: seg.marketing_carrier_flight_number || seg.number || '',
+        duration: seg.duration || '',
+        numberOfStops: Array.isArray(seg.stops) ? seg.stops.length : (seg.numberOfStops || 0),
+      }))
+    }));
+  }
+
+  private static calculateStopsCount(itins: Itinerary[]): number {
+    return itins.reduce((acc, itin) => acc + itin.segments.reduce((s, seg) => s + (seg.numberOfStops || 0), 0), 0);
+  }
+
+  private static extractCarryOnInfo(rawOffer: any): { included: boolean; fee?: number } {
+    try {
+      // Included if any segment passenger shows a carry_on baggage allowance quantity > 0
+      const slices = rawOffer.slices || [];
+      for (const slice of slices) {
+        for (const seg of (slice.segments || [])) {
+          for (const pax of (seg.passengers || [])) {
+            for (const bag of (pax.baggages || [])) {
+              if ((bag.type === 'carry_on' || /carry_on/i.test(bag.type)) && typeof bag.quantity === 'number' && bag.quantity > 0) {
+                return { included: true, fee: 0 };
+              }
+            }
+          }
+        }
+      }
+
+      // If not included, check available_services for a carry-on service price if present
+      const services = rawOffer.available_services || rawOffer.services || [];
+      let minCarryPrice: number | undefined;
+      for (const svc of services) {
+        const type = svc.type || svc.service_type;
+        const title = svc.metadata?.title || svc.name || '';
+        const desc = svc.metadata?.description || svc.description || '';
+        if ((type === 'baggage' || /baggage/i.test(type)) && /(carry|cabin|hand).?bag/i.test(`${title} ${desc}`)) {
+          const amountStr = svc.total_amount || svc.amount || svc.price; // different shapes
+          const parsed = amountStr ? parseFloat(String(amountStr)) : undefined;
+          if (!isNaN(parsed as number)) {
+            if (minCarryPrice === undefined || (parsed as number) < minCarryPrice) {
+              minCarryPrice = parsed as number;
+            }
+          } else if (amountStr === '0' || amountStr === '0.00') {
+            minCarryPrice = 0;
+          }
+        }
+      }
+      if (minCarryPrice !== undefined) {
+        return { included: false, fee: minCarryPrice };
+      }
+      return { included: false };
+    } catch {
+      return { included: false };
+    }
+  }
+}
+
 // =============================================
 // Individual Filters
 // =============================================
@@ -462,8 +550,10 @@ export function normalizeOffers(
       if (provider === 'Amadeus') {
         const normalizedOffer = AmadeusEdgeAdapter.normalize(rawOffer, context);
         normalizedOffers.push(normalizedOffer);
+      } else if (provider === 'Duffel') {
+        const normalizedOffer = DuffelEdgeAdapter.normalize(rawOffer, context);
+        normalizedOffers.push(normalizedOffer);
       }
-      // Add Duffel adapter when needed
     } catch (error) {
       console.error(`[EdgeFilter] Error normalizing ${provider} offer:`, error);
     }

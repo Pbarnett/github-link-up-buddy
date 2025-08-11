@@ -124,8 +124,9 @@ function AutoBookingDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Auto‑booking</h1>
-            <p className="text-muted-foreground mt-2">Set it once. We'll book it when it's a deal.</p>
+            <h1 className="text-3xl font-bold tracking-tight">My Bookings</h1>
+            <p className="text-muted-foreground mt-2 hidden md:block">We’ll auto-book your flight at whatever price you choose.</p>
+            <p className="text-muted-foreground mt-2 md:hidden">We’ll auto-book your flight at whatever price you choose.</p>
           </div>
           {hasAnyCampaigns && (
             <Button variant="ghost" onClick={handleCreateCampaign} className="flex items-center gap-2">
@@ -155,16 +156,19 @@ function AutoBookingDashboard() {
                 <div className="flex items-center justify-center">
                   <Rocket className="h-12 w-12 text-primary" />
                 </div>
-                <h2 className="text-2xl font-semibold">Set it once. We’ll book it when it’s a deal.</h2>
-                <p className="text-muted-foreground">
-                  Tell us the trip you want and your max price. We’ll watch fares and buy the moment it drops—then notify you instantly.
+                <h2 className="text-2xl font-semibold">Book For Me</h2>
+                <p className="text-muted-foreground hidden md:block">
+                  Set your price. I’ll book when a fare matches. Today, tomorrow, or next month. I keep watch.
                 </p>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-4 text-left max-w-3xl mx-auto">
+                <p className="text-muted-foreground md:hidden">
+                  Set your price. I’ll book when a fare matches.
+                </p>
+                <div className="grid sm:grid-cols-2 gap-4 text-left max-w-3xl mx-auto">
                   <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-primary mt-1" />
                     <div>
-                      <p className="font-medium">Price cap respected</p>
-                      <p className="text-sm text-muted-foreground">We never book above your limit (taxes and fees included).</p>
+                      <p className="font-medium">Comfortable flights guaranteed</p>
+                      <p className="text-sm text-muted-foreground">We only book nonstop, roundtrip flights with a carry‑on included.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -191,10 +195,10 @@ function AutoBookingDashboard() {
                 </div>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                   <Button size="lg" onClick={handleCreateCampaign} className="px-6">
-                    <Plus className="h-4 w-4 mr-2" /> Create auto‑book rule
+                    <Plus className="h-4 w-4 mr-2" /> Book For Me
                   </Button>
                   <Button variant="outline" onClick={() => navigate('/search')} className="px-6">
-                    Search live flights instead
+                    Search flights now
                   </Button>
                   <Dialog>
                     <DialogTrigger asChild>
@@ -205,15 +209,15 @@ function AutoBookingDashboard() {
                         <DialogTitle>Example auto‑book rule</DialogTitle>
                       </DialogHeader>
                       <div className="text-sm space-y-2">
-                        <p>LAX → CDG • Jul 4–18 • ≤ $800 • 0–1 stops</p>
-                        <p className="text-muted-foreground">We’ll monitor continuously and purchase within your max price. You can pause anytime.</p>
+                        <p>LAX → CDG • Jul 4–18 • ≤ $800 • Nonstop roundtrip</p>
+                        <p className="text-muted-foreground">I’ll monitor continuously and purchase within your max price. You can pause anytime.</p>
                       </div>
                   </DialogContent>
                   </Dialog>
                   <AutoBookingFAQDialog
                     trigger={
                       <button className="text-xs text-muted-foreground hover:underline">
-                        How auto‑booking works
+                        How auto-booking works
                       </button>
                     }
                   />
@@ -239,7 +243,7 @@ function AutoBookingDashboard() {
                     </p>
                     <Button onClick={handleCreateCampaign}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Create Rule
+                      Book For Me
                     </Button>
                   </CardContent>
                 </Card>

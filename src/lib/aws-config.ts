@@ -112,7 +112,7 @@ export const getDynamoDBClient = (): DynamoDBDocumentClient => {
   if (!dynamoDbClient) {
     dynamoDbClient = createDynamoDBClient();
   }
-  return dynamoDbClient;
+  return dynamoDbClient as unknown as DynamoDBDocumentClient;
 };
 
 export const getS3Client = (): S3Client => {

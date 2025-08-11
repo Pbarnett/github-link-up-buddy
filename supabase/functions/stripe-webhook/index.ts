@@ -56,6 +56,53 @@ async function createNotification(
   }
 }
 
+// Helper to upsert fee metadata into booking_requests.offer_data JSON
+async function upsertFeeMetadataOnBookingRequest(bookingRequestId: string, meta: Record<string, any>) {
+  try {
+    const { data: br, error: fetchErr } = await supabase
+      .from('booking_requests')
+      .select('offer_data')
+      .eq('id', bookingRequestId)
+      .single();
+
+    if (fetchErr || !br) {
+      console.error('[STRIPE-WEBHOOK] Failed to fetch booking_request for fee upsert:', fetchErr);
+      return false;
+    }
+
+    const offerData = (br as any).offer_data || {};
+    const newOfferData = {
+      ...offerData,
+      fee_breakdown: {
+        fee_model: meta.fee_model || 'savings-based',
+        threshold_price: meta.threshold_price ?? '',
+        actual_price: meta.actual_price ?? '',
+        savings: meta.savings ?? '',
+        fee_pct: meta.fee_pct ?? '',
+        fee_amount_cents: meta.fee_amount_cents ?? '',
+        source: meta.source || 'stripe-webhook',
+        payment_intent_id: meta.payment_intent_id || undefined,
+        checkout_session_id: meta.checkout_session_id || undefined,
+        updated_at: new Date().toISOString(),
+      },
+    };
+
+    const { error: updateErr } = await supabase
+      .from('booking_requests')
+      .update({ offer_data: newOfferData, updated_at: new Date().toISOString() })
+      .eq('id', bookingRequestId);
+
+    if (updateErr) {
+      console.error('[STRIPE-WEBHOOK] Failed to update fee breakdown on booking_request:', updateErr);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('[STRIPE-WEBHOOK] Exception during fee metadata upsert:', e);
+    return false;
+  }
+}
+
 // Helper function to process booking requests
 async function processBookingRequest(orderId: string) {
   try {
@@ -249,6 +296,21 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log(`[STRIPE-WEBHOOK] Processing payment_intent.succeeded: ${paymentIntent.id}`);
 
+        // Persist fee breakdown on booking_request if present
+        const bookingRequestId = paymentIntent.metadata?.booking_request_id;
+        if (bookingRequestId) {
+          await upsertFeeMetadataOnBookingRequest(bookingRequestId, {
+            fee_model: paymentIntent.metadata?.fee_model,
+            threshold_price: paymentIntent.metadata?.threshold_price,
+            actual_price: paymentIntent.metadata?.actual_price,
+            savings: paymentIntent.metadata?.savings,
+            fee_pct: paymentIntent.metadata?.fee_pct,
+            fee_amount_cents: paymentIntent.metadata?.fee_amount_cents,
+            source: 'payment_intent.succeeded',
+            payment_intent_id: paymentIntent.id,
+          });
+        }
+
         // Check if this is an auto-booking payment
         const isAutoBooking = paymentIntent.metadata?.auto_booking === 'true';
         const campaignId = paymentIntent.metadata?.campaign_id;
@@ -339,6 +401,20 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
           // This is handled by setup_intent.succeeded above, but we can log for completeness
           console.log(`[STRIPE-WEBHOOK] Setup session completed, setup_intent.succeeded should handle payment method saving`);
         } else if (session.mode === "payment") {
+          // If fee metadata is present, persist to booking_request
+          if (orderId) {
+            await upsertFeeMetadataOnBookingRequest(orderId, {
+              fee_model: session.metadata?.fee_model,
+              threshold_price: session.metadata?.threshold_price,
+              actual_price: session.metadata?.actual_price,
+              savings: session.metadata?.savings,
+              fee_pct: session.metadata?.fee_pct,
+              fee_amount_cents: session.metadata?.fee_amount_cents,
+              source: 'checkout.session.completed',
+              checkout_session_id: session.id,
+            });
+          }
+
           // Handle payment mode - process booking request or complete order
           if (orderId) {
             // Handle new booking flow with booking_requests

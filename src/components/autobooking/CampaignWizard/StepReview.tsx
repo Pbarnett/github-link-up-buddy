@@ -113,28 +113,19 @@ function StepReview({
                 Departure Window
               </p>
               <p className="font-medium">
-                {formatDate(criteriaData.departureStart)} - {formatDate(criteriaData.departureEnd)}
+              		{formatDate(criteriaData.windowStart)} - {formatDate(criteriaData.windowEnd)}
               </p>
             </div>
           </div>
 
-          {criteriaData.tripType === 'round_trip' && (criteriaData.returnStart || criteriaData.returnEnd) && (
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-500">Return Window</p>
-                <p className="font-medium">
-                  {formatDate(criteriaData.returnStart || '')} - {formatDate(criteriaData.returnEnd || '')}
-                </p>
-              </div>
-              
               <div className="space-y-2">
                 <p className="text-sm font-medium text-gray-500">Trip Duration</p>
                 <p className="font-medium">
-                  {criteriaData.minDuration} - {criteriaData.maxDuration} days
+                  {criteriaData.minNights} - {criteriaData.maxNights} nights
                 </p>
               </div>
             </div>
-          )}
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
@@ -290,7 +281,7 @@ function StepReview({
             disabled={isLoading}
             className="bg-green-600 hover:bg-green-700"
           >
-            {isLoading ? 'Creating Rule...' : 'Create Rule'}
+            {isLoading ? 'Booking For You...' : 'Book For Me'}
           </Button>
         </div>
       </CardContent>

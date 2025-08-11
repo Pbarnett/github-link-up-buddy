@@ -1,17 +1,18 @@
 
-import Toaster from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import Toaster from "./components/ui/toaster";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { SmartErrorBoundary } from "@/components/ErrorBoundary";
-import { useRetryQueue } from "@/utils/retryQueue";
+import { SmartErrorBoundary } from "./components/ErrorBoundary";
+import { useRetryQueue } from "./utils/retryQueue";
 import { useEffect, Suspense, lazy } from "react";
 import { BusinessRulesProvider } from "./hooks/useBusinessRules";
-import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { PersonalizationProvider } from "./contexts/PersonalizationContext";
+import { useCurrentUser } from "./hooks/useCurrentUser";
+import { ThemeProvider } from "./components/theme-provider";
 // Import dev auth for easy development authentication
-import "@/utils/devAuth";
-import "@/utils/authTest";
+import "./utils/devAuth";
+import "./utils/authTest";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
@@ -97,9 +98,10 @@ const App = () => {
     <SmartErrorBoundary level="global">
       <QueryClientProvider client={queryClient}>
         <BusinessRulesProvider>
-          <TooltipProvider>
-            <GlobalMiddleware>
-            <Toaster />
+          <ThemeProvider>
+            <TooltipProvider>
+              <GlobalMiddleware>
+              <Toaster />
             <a href="#main" className="skip-link">
               Skip to content
             </a>
@@ -230,6 +232,7 @@ const App = () => {
             </BrowserRouter>
             </GlobalMiddleware>
           </TooltipProvider>
+          </ThemeProvider>
         </BusinessRulesProvider>
       </QueryClientProvider>
     </SmartErrorBoundary>
