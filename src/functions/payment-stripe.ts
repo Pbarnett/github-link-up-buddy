@@ -79,7 +79,7 @@ export async function handler(event: Event) {
 
   // Real Stripe path
   const secret = await getStripeSecret();
-const stripe = new Stripe(secret, { apiVersion: '2025-07-30.basil' });
+const stripe = new Stripe(secret, { apiVersion: '2025-06-30.basil' });
 
   try {
     const intent = await stripe.paymentIntents.create(
