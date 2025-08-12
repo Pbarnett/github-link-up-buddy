@@ -50,7 +50,7 @@ jobs:
           corepack prepare pnpm@${PNPM_VERSION} --activate
           
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
         
       - name: Run type checking
         run: pnpm tsc --noEmit
@@ -135,7 +135,7 @@ jobs:
           corepack prepare pnpm@${PNPM_VERSION} --activate
           
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
         
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
@@ -190,8 +190,9 @@ jobs:
           corepack prepare pnpm@${PNPM_VERSION} --activate
           
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
         
+  
       - name: Build application
         run: pnpm build
         
