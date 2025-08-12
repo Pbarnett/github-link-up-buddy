@@ -4,10 +4,11 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { logAuditEvent } from './auditService';
+import { STRIPE_API_VERSION } from '@/config/stripe';
 
 // Initialize Stripe with proper error handling
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
+  apiVersion: STRIPE_API_VERSION,
   typescript: true,
 });
 
