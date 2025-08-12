@@ -274,19 +274,30 @@ INSERT INTO public.notification_templates (name, notification_type, channel, sub
  NULL
 );
 
--- Initialize default user preferences for existing users
-INSERT INTO public.user_preferences (user_id, preferences)
-SELECT 
-    id,
-    '{
-        "booking_success": {"email": true, "sms": false},
-        "booking_failure": {"email": true, "sms": true},
-        "booking_canceled": {"email": true, "sms": false},
-        "reminder_23h": {"email": true, "sms": false},
-        "marketing": {"email": true, "sms": false}
-    }'::jsonb
-FROM auth.users
-WHERE id NOT IN (SELECT user_id FROM public.user_preferences);
+-- Initialize default user preferences for existing users (only if preferences column exists)
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'user_preferences'
+          AND column_name = 'preferences'
+    ) THEN
+        INSERT INTO public.user_preferences (user_id, preferences)
+        SELECT 
+            id,
+            '{
+                "booking_success": {"email": true, "sms": false},
+                "booking_failure": {"email": true, "sms": true},
+                "booking_canceled": {"email": true, "sms": false},
+                "reminder_23h": {"email": true, "sms": false},
+                "marketing": {"email": true, "sms": false}
+            }'::jsonb
+        FROM auth.users
+        WHERE id NOT IN (SELECT user_id FROM public.user_preferences);
+    END IF;
+END
+$$;
 
 -- Comments for documentation
 COMMENT ON TABLE public.events IS 'Immutable event log for event sourcing architecture';
