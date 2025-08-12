@@ -54,10 +54,15 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
   }
   
   // Initialize Supabase client (lazy import for test compatibility)
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-  const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.45.0");
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  let createClient: any;
+  try {
+    // Prefer local package import for Node/Vitest environment
+    ({ createClient } = await import('@supabase/supabase-js'));
+  } catch (_e) {
+    // Fallback to ESM URL for Deno runtime
+    ({ createClient } = await import('https://esm.sh/@supabase/supabase-js@2.45.0'));
+  }
+  const supabase = createClient(supabaseUrl as string, supabaseServiceRoleKey as string);
   
   try {
     // US-only gate

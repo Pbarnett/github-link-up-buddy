@@ -5,10 +5,11 @@
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgmq";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Events table (immutable log for event sourcing)
 CREATE TABLE IF NOT EXISTS public.events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type TEXT NOT NULL,
     payload JSONB NOT NULL,
     user_id UUID REFERENCES auth.users(id),
@@ -21,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.events (
 
 -- Notification templates for content management
 CREATE TABLE IF NOT EXISTS public.notification_templates (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL UNIQUE,
     notification_type TEXT NOT NULL,
     channel TEXT NOT NULL CHECK (channel IN ('email', 'sms', 'push', 'in_app')),
@@ -43,6 +44,44 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
     timezone TEXT DEFAULT 'America/New_York',
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- If the table already existed without these columns, add them now to be idempotent
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'user_preferences'
+    ) THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_schema = 'public' AND table_name = 'user_preferences' AND column_name = 'preferences'
+        ) THEN
+            ALTER TABLE public.user_preferences ADD COLUMN preferences JSONB DEFAULT '{}';
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_schema = 'public' AND table_name = 'user_preferences' AND column_name = 'quiet_hours'
+        ) THEN
+            ALTER TABLE public.user_preferences ADD COLUMN quiet_hours JSONB DEFAULT '{"start": 22, "end": 7}';
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_schema = 'public' AND table_name = 'user_preferences' AND column_name = 'timezone'
+        ) THEN
+            ALTER TABLE public.user_preferences ADD COLUMN timezone TEXT DEFAULT 'America/New_York';
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_schema = 'public' AND table_name = 'user_preferences' AND column_name = 'updated_at'
+        ) THEN
+            ALTER TABLE public.user_preferences ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+        END IF;
+    END IF;
+END
+$$;
 
 -- Enhanced notifications table (extending existing if needed)
 DO $$
@@ -87,8 +126,8 @@ BEGIN
         END IF;
     ELSE
         -- Create new comprehensive notifications table
-        CREATE TABLE public.notifications (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE public.notifications (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
             type TEXT NOT NULL,
             title TEXT,
@@ -107,7 +146,7 @@ $$;
 
 -- Delivery logs for tracking notification attempts
 CREATE TABLE IF NOT EXISTS public.notification_deliveries (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     notification_id UUID NOT NULL REFERENCES public.notifications(id) ON DELETE CASCADE,
     channel TEXT NOT NULL,
     provider TEXT NOT NULL,
@@ -125,7 +164,8 @@ CREATE INDEX IF NOT EXISTS idx_events_type_occurred ON public.events(type, occur
 CREATE INDEX IF NOT EXISTS idx_events_user_id ON public.events(user_id);
 CREATE INDEX IF NOT EXISTS idx_events_booking_id ON public.events(booking_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON public.notifications(user_id, is_read, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_notifications_scheduled ON public.notifications(scheduled_for) WHERE scheduled_for > NOW();
+-- Replace partial index using NOW() (not immutable) with a straightforward index
+CREATE INDEX IF NOT EXISTS idx_notifications_scheduled ON public.notifications(scheduled_for);
 CREATE INDEX IF NOT EXISTS idx_notifications_type ON public.notifications(type);
 CREATE INDEX IF NOT EXISTS idx_notifications_priority ON public.notifications(priority);
 CREATE INDEX IF NOT EXISTS idx_deliveries_status ON public.notification_deliveries(status, created_at);
@@ -138,37 +178,108 @@ ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_deliveries ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
-CREATE POLICY IF NOT EXISTS "Users can view own notifications" ON public.notifications
-    FOR SELECT USING (auth.uid() = user_id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'notifications' AND policyname = 'Users can view own notifications'
+    ) THEN
+        CREATE POLICY "Users can view own notifications" ON public.notifications
+            FOR SELECT USING (auth.uid() = user_id);
+    END IF;
+END
+$$;
 
-CREATE POLICY IF NOT EXISTS "Users can update own notification read status" ON public.notifications
-    FOR UPDATE USING (auth.uid() = user_id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'notifications' AND policyname = 'Users can update own notification read status'
+    ) THEN
+        CREATE POLICY "Users can update own notification read status" ON public.notifications
+            FOR UPDATE USING (auth.uid() = user_id);
+    END IF;
+END
+$$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all notifications" ON public.notifications
-    FOR ALL USING (current_setting('role') = 'service_role');
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'notifications' AND policyname = 'Service role can manage all notifications'
+    ) THEN
+        CREATE POLICY "Service role can manage all notifications" ON public.notifications
+            FOR ALL USING (current_setting('role') = 'service_role');
+    END IF;
+END
+$$;
 
-CREATE POLICY IF NOT EXISTS "Users can manage own preferences" ON public.user_preferences
-    FOR ALL USING (auth.uid() = user_id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'user_preferences' AND policyname = 'Users can manage own preferences'
+    ) THEN
+        CREATE POLICY "Users can manage own preferences" ON public.user_preferences
+            FOR ALL USING (auth.uid() = user_id);
+    END IF;
+END
+$$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all preferences" ON public.user_preferences
-    FOR ALL USING (current_setting('role') = 'service_role');
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'user_preferences' AND policyname = 'Service role can manage all preferences'
+    ) THEN
+        CREATE POLICY "Service role can manage all preferences" ON public.user_preferences
+            FOR ALL USING (current_setting('role') = 'service_role');
+    END IF;
+END
+$$;
 
-CREATE POLICY IF NOT EXISTS "Users can view own delivery logs" ON public.notification_deliveries
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.notifications n 
-            WHERE n.id = notification_deliveries.notification_id 
-            AND n.user_id = auth.uid()
-        )
-    );
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'notification_deliveries' AND policyname = 'Users can view own delivery logs'
+    ) THEN
+        CREATE POLICY "Users can view own delivery logs" ON public.notification_deliveries
+            FOR SELECT USING (
+                EXISTS (
+                    SELECT 1 FROM public.notifications n 
+                    WHERE n.id = notification_deliveries.notification_id 
+                    AND n.user_id = auth.uid()
+                )
+            );
+    END IF;
+END
+$$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all deliveries" ON public.notification_deliveries
-    FOR ALL USING (current_setting('role') = 'service_role');
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'notification_deliveries' AND policyname = 'Service role can manage all deliveries'
+    ) THEN
+        CREATE POLICY "Service role can manage all deliveries" ON public.notification_deliveries
+            FOR ALL USING (current_setting('role') = 'service_role');
+    END IF;
+END
+$$;
 
--- Initialize PGMQ queues for notification processing
-SELECT pgmq.create_queue('critical_notifications');
-SELECT pgmq.create_queue('notifications');
-SELECT pgmq.create_queue('marketing_notifications');
+-- Initialize PGMQ queues for notification processing (guarded if extension is unavailable)
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_proc WHERE proname = 'create_queue' AND pg_function_is_visible(oid)
+    ) THEN
+        PERFORM pgmq.create_queue('critical_notifications');
+        PERFORM pgmq.create_queue('notifications');
+        PERFORM pgmq.create_queue('marketing_notifications');
+    END IF;
+END
+$$;
 
 -- Insert default notification templates
 INSERT INTO public.notification_templates (name, notification_type, channel, subject, body_text, body_html) VALUES
@@ -201,19 +312,30 @@ INSERT INTO public.notification_templates (name, notification_type, channel, sub
  NULL
 );
 
--- Initialize default user preferences for existing users
-INSERT INTO public.user_preferences (user_id, preferences)
-SELECT 
-    id,
-    '{
-        "booking_success": {"email": true, "sms": false},
-        "booking_failure": {"email": true, "sms": true},
-        "booking_canceled": {"email": true, "sms": false},
-        "reminder_23h": {"email": true, "sms": false},
-        "marketing": {"email": true, "sms": false}
-    }'::jsonb
-FROM auth.users
-WHERE id NOT IN (SELECT user_id FROM public.user_preferences);
+-- Initialize default user preferences for existing users (only if preferences column exists)
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'user_preferences'
+          AND column_name = 'preferences'
+    ) THEN
+        INSERT INTO public.user_preferences (user_id, preferences)
+        SELECT 
+            id,
+            '{
+                "booking_success": {"email": true, "sms": false},
+                "booking_failure": {"email": true, "sms": true},
+                "booking_canceled": {"email": true, "sms": false},
+                "reminder_23h": {"email": true, "sms": false},
+                "marketing": {"email": true, "sms": false}
+            }'::jsonb
+        FROM auth.users
+        WHERE id NOT IN (SELECT user_id FROM public.user_preferences);
+    END IF;
+END
+$$;
 
 -- Comments for documentation
 COMMENT ON TABLE public.events IS 'Immutable event log for event sourcing architecture';

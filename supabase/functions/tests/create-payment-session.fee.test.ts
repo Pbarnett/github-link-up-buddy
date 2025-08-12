@@ -81,7 +81,7 @@ describe('create-payment-session fee integration', () => {
 
   it('returns 500 and does not call Stripe when trip or offer not found', async () => {
     const Mod: any = await import('../create-payment-session/index.ts');
-    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const { createClient }: any = await import('@supabase/supabase-js');
     const client = createClient();
     const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
     // Simulate missing trip_request (first .single() call)
@@ -103,7 +103,7 @@ describe('create-payment-session fee integration', () => {
 
   it('returns 500 and avoids DB writes when offer is not found', async () => {
     const Mod: any = await import('../create-payment-session/index.ts');
-    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const { createClient }: any = await import('@supabase/supabase-js');
     const client = createClient();
     const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
     // 1) trip_request ok

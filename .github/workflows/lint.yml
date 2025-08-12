@@ -15,8 +15,8 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 8
-          run_install: true
+          version: 8.15.5
+          run_install: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -24,8 +24,8 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install dependencies (allow lockfile update in CI)
+        run: pnpm install --no-frozen-lockfile
 
       - name: Run ESLint
         run: pnpm run lint

@@ -19,8 +19,8 @@ vi.stubGlobal('Deno', { env: { get: vi.fn((k: string) => ({
   VITEST: '1',
 }[k as any])) } } as any);
 
-// Supabase client mock
-vi.mock('https://esm.sh/@supabase/supabase-js@2.45.0', () => {
+// Supabase client mock (local package)
+vi.mock('@supabase/supabase-js', () => {
   const from = vi.fn().mockReturnThis();
   const auth = { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user_1', email: 'u@example.com' } }, error: null }) };
   const single = vi.fn();
@@ -53,7 +53,7 @@ describe('create-payment-session US-only gate', () => {
   it('rejects non-US requests with 403 when cf-ipcountry is not US', async () => {
     const Mod: any = await import('../create-payment-session/index.ts');
     // Prepare supabase responses but they should not be reached
-    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const { createClient }: any = await import('@supabase/supabase-js');
     const client = createClient();
     (client.single as any).mockResolvedValueOnce({ data: { id: 'tr_1' }, error: null });
 
@@ -72,7 +72,7 @@ describe('create-payment-session US-only gate', () => {
 
   it('allows US requests (cf-ipcountry=US) and proceeds to create session', async () => {
     const Mod: any = await import('../create-payment-session/index.ts');
-    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const { createClient }: any = await import('@supabase/supabase-js');
     const client = createClient();
     const singleMock = client.single as any;
     // trip_requests
@@ -95,7 +95,7 @@ describe('create-payment-session US-only gate', () => {
 
   it('allows when no geo header is present (dev/local) and proceeds', async () => {
     const Mod: any = await import('../create-payment-session/index.ts');
-    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
+    const { createClient }: any = await import('@supabase/supabase-js');
     const client = createClient();
     const singleMock = client.single as any;
     // trip_requests
