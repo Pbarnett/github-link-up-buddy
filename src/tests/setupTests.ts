@@ -8,6 +8,7 @@ Object.defineProperty(import.meta, 'env', {
     MODE: 'test',
     VITE_SUPABASE_URL: 'https://test.supabase.co',
     VITE_SUPABASE_ANON_KEY: 'test-anon-key-for-testing',
+    VITE_ENABLE_PREFERENCES_INIT: 'false',
   },
   configurable: true,
 })
