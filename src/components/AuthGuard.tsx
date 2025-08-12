@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserInitializationService } from '@/services/userInitialization';
 
 type AuthGuardProps = {
   children: React.ReactNode;
@@ -13,35 +12,32 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
   const location = useLocation();
 
   useEffect(() => {
+    let isMounted = true;
+    let unsubscribe: (() => void) | undefined;
+
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
       const hasSession = !!data.session;
-      setIsAuthenticated(hasSession);
+      if (isMounted) setIsAuthenticated(hasSession);
 
-      // Initialize user preferences if session exists
-      if (hasSession && data.session?.user?.id) {
-        UserInitializationService.ensureUserPreferences(data.session.user.id);
-      }
+      const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (isMounted) setIsAuthenticated(!!session);
 
-      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-        setIsAuthenticated(!!session);
-
-        if (event === 'SIGNED_IN' && session) {
-          UserInitializationService.handlePostSignin(session.user.id);
-        }
-
-        if (event === 'SIGNED_OUT') {
-          // Show a friendly session expiry notice; redirect handled by component render
+        // On SIGNED_OUT show a friendly session expiry notice; redirect handled by component render
+        if (!session) {
           toast({ title: 'Session expired', description: 'Please sign in again to continue.' });
         }
       });
 
-      return () => {
-        authListener.subscription.unsubscribe();
-      };
+      unsubscribe = () => authListener.subscription.unsubscribe();
     };
 
     checkAuth();
+
+    return () => {
+      isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   if (isAuthenticated === null) {
