@@ -37,7 +37,15 @@ jobs:
       - name: Check for remote imports in test files
         run: |
           echo "🔍 Checking for remote HTTPS imports in test files..."
-          if grep -r --include="*.test.ts" --include="*.test.tsx" --include="*.spec.ts" --include="*.spec.tsx" -n -E "(from\s+['\"]https?://|import.*['\"]https?://)" supabase/functions/tests/ src/; then
+          FOUND=0
+          for DIR in supabase/functions/tests src; do
+            if [ -d "$DIR" ]; then
+              if grep -R --include="*.test.ts" --include="*.test.tsx" --include="*.spec.ts" --include="*.spec.tsx" -n -E "(from\s+['\"]https?://|import.*['\"]https?://)" "$DIR"; then
+                FOUND=1
+              fi
+            fi
+          done
+          if [ "$FOUND" -eq 1 ]; then
             echo "::error::❌ Remote HTTPS import found in test files. Use local SDK imports and mock them instead."
             echo "::error::💡 Replace 'https://esm.sh/package' with 'package' and use vi.mock('package', ...) for mocking."
             exit 1
@@ -48,7 +56,15 @@ jobs:
       - name: Check for remote imports in vi.mock statements
         run: |
           echo "🔍 Checking for remote HTTPS imports in vi.mock statements..."
-          if grep -r --include="*.test.ts" --include="*.test.tsx" --include="*.spec.ts" --include="*.spec.tsx" -n -E "vi\.mock\s*\(\s*['\"]https?://" supabase/functions/tests/ src/; then
+          FOUND=0
+          for DIR in supabase/functions/tests src; do
+            if [ -d "$DIR" ]; then
+              if grep -R --include="*.test.ts" --include="*.test.tsx" --include="*.spec.ts" --include="*.spec.tsx" -n -E "vi\.mock\s*\(\s*['\"]https?://" "$DIR"; then
+                FOUND=1
+              fi
+            fi
+          done
+          if [ "$FOUND" -eq 1 ]; then
             echo "::error::❌ Remote HTTPS import found in vi.mock statements. Node.js ESM loader will fail before mocks can be applied."
             echo "::error::💡 Change the import to use local package name and mock the local import instead."
             exit 1
