@@ -31,10 +31,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Supabase CLI
-        run: |
-          curl -sL https://app.supabase.com/cli/install | sh
-          echo "$HOME/.supabase/bin" >> $GITHUB_PATH
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - name: Wait for Postgres
         run: |
