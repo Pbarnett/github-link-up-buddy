@@ -57,7 +57,7 @@ jobs:
         run: |
           echo "🔍 Checking for remote HTTPS imports in vi.mock statements..."
           FOUND=0
-          for DIR in supabase/functions/tests src; do
+          for DIR in src; do
             if [ -d "$DIR" ]; then
               if grep -R --include="*.test.ts" --include="*.test.tsx" --include="*.spec.ts" --include="*.spec.tsx" -n -E "vi\.mock\s*\(\s*['\"]https?://" "$DIR"; then
                 FOUND=1
