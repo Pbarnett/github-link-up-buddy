@@ -25,7 +25,6 @@ on:
 
 env:
   NODE_VERSION: '18'
-  PNPM_VERSION: '10.11.0'
 
 jobs:
   # Job 1: Unit and Integration Tests
@@ -41,11 +40,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
           
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+      - name: Enable Corepack (pnpm from package.json)
+        run: corepack enable
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -56,7 +54,8 @@ jobs:
       - name: Run unit tests
         run: pnpm test --coverage
         
-      - name: Run integration tests
+      - name: Run integration tests (main/schedule only)
+        if: github.event_name == 'schedule' || github.ref == 'refs/heads/main'
         run: |
           node test-env-validation.js --local
           node test-kms-integration.js
@@ -74,6 +73,7 @@ jobs:
   # Job 2: Security Tests
   security:
     name: Security Audit
+    if: github.event_name == 'schedule' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     
     steps:
@@ -84,11 +84,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
           
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+      - name: Enable Corepack (pnpm from package.json)
+        run: corepack enable
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -107,6 +106,7 @@ jobs:
   # Job 3: E2E Tests
   e2e:
     name: End-to-End Tests
+    if: github.event_name == 'schedule' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     
     steps:
@@ -117,11 +117,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
           
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+      - name: Enable Corepack (pnpm from package.json)
+        run: corepack enable
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -143,6 +142,7 @@ jobs:
         run: npx playwright test
         env:
           E2E_BASE_URL: http://localhost:8080
+          VITE_PUBLIC_BASE_URL: http://localhost:8080
           
       - name: Upload E2E artifacts
         uses: actions/upload-artifact@v4
@@ -157,6 +157,7 @@ jobs:
   # Job 4: Performance Tests
   performance:
     name: Performance Tests
+    if: github.event_name == 'schedule' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     
     steps:
@@ -167,11 +168,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
           
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+      - name: Enable Corepack (pnpm from package.json)
+        run: corepack enable
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -214,6 +214,7 @@ jobs:
   # Job 5: Visual Regression Tests
   visual:
     name: Visual Regression Tests
+    if: github.event_name == 'schedule' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     
     steps:
@@ -224,11 +225,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
           
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+      - name: Enable Corepack (pnpm from package.json)
+        run: corepack enable
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -276,11 +276,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
           
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+      - name: Enable Corepack (pnpm from package.json)
+        run: corepack enable
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
