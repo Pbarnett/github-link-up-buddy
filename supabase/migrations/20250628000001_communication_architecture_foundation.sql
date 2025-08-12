@@ -230,10 +230,18 @@ BEGIN
 END
 $$;
 
--- Initialize PGMQ queues for notification processing
-SELECT pgmq.create_queue('critical_notifications');
-SELECT pgmq.create_queue('notifications');
-SELECT pgmq.create_queue('marketing_notifications');
+-- Initialize PGMQ queues for notification processing (guarded if extension is unavailable)
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_proc WHERE proname = 'create_queue' AND pg_function_is_visible(oid)
+    ) THEN
+        PERFORM pgmq.create_queue('critical_notifications');
+        PERFORM pgmq.create_queue('notifications');
+        PERFORM pgmq.create_queue('marketing_notifications');
+    END IF;
+END
+$$;
 
 -- Insert default notification templates
 INSERT INTO public.notification_templates (name, notification_type, channel, subject, body_text, body_html) VALUES
