@@ -45,6 +45,44 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- If the table already existed without these columns, add them now to be idempotent
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'user_preferences'
+    ) THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_schema = 'public' AND table_name = 'user_preferences' AND column_name = 'preferences'
+        ) THEN
+            ALTER TABLE public.user_preferences ADD COLUMN preferences JSONB DEFAULT '{}';
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_schema = 'public' AND table_name = 'user_preferences' AND column_name = 'quiet_hours'
+        ) THEN
+            ALTER TABLE public.user_preferences ADD COLUMN quiet_hours JSONB DEFAULT '{"start": 22, "end": 7}';
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_schema = 'public' AND table_name = 'user_preferences' AND column_name = 'timezone'
+        ) THEN
+            ALTER TABLE public.user_preferences ADD COLUMN timezone TEXT DEFAULT 'America/New_York';
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_schema = 'public' AND table_name = 'user_preferences' AND column_name = 'updated_at'
+        ) THEN
+            ALTER TABLE public.user_preferences ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+        END IF;
+    END IF;
+END
+$$;
+
 -- Enhanced notifications table (extending existing if needed)
 DO $$
 BEGIN
