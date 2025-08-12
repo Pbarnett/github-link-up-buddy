@@ -126,7 +126,8 @@ CREATE INDEX IF NOT EXISTS idx_events_type_occurred ON public.events(type, occur
 CREATE INDEX IF NOT EXISTS idx_events_user_id ON public.events(user_id);
 CREATE INDEX IF NOT EXISTS idx_events_booking_id ON public.events(booking_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON public.notifications(user_id, is_read, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_notifications_scheduled ON public.notifications(scheduled_for) WHERE scheduled_for > NOW();
+-- Replace partial index using NOW() (not immutable) with a straightforward index
+CREATE INDEX IF NOT EXISTS idx_notifications_scheduled ON public.notifications(scheduled_for);
 CREATE INDEX IF NOT EXISTS idx_notifications_type ON public.notifications(type);
 CREATE INDEX IF NOT EXISTS idx_notifications_priority ON public.notifications(priority);
 CREATE INDEX IF NOT EXISTS idx_deliveries_status ON public.notification_deliveries(status, created_at);
