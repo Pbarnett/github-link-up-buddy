@@ -1,0 +1,46 @@
+name: E2E Smoke on PRs
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Enable Corepack (pnpm from package.json)
+        run: corepack enable
+
+      - name: Prepare pnpm via Corepack
+        run: |
+          PNPM_VERSION=$(node -p "require('./package.json').packageManager.split('@')[1]")
+          corepack prepare pnpm@${PNPM_VERSION} --activate
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build app
+        run: pnpm build
+
+      - name: Start preview server
+        run: |
+          pnpm preview &
+          sleep 10
+        env:
+          PORT: 8080
+
+      - name: Run E2E critical tests
+        run: pnpm run test:e2e:critical
+        env:
+          CI: '1'
+          E2E_BASE_URL: http://localhost:8080
+

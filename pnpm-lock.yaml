@@ -209,9 +209,6 @@ dependencies:
   launchdarkly-js-client-sdk:
     specifier: ^3.8.1
     version: 3.8.1
-  launchdarkly-node-server-sdk:
-    specifier: ^7.0.4
-    version: 7.0.4
   launchdarkly-react-client-sdk:
     specifier: ^3.8.1
     version: 3.8.1(react-dom@19.1.1)(react@19.1.1)
@@ -10772,11 +10769,6 @@ packages:
     engines: {node: '>=0.8'}
     dev: true
 
-  /clone@2.1.2:
-    resolution: {integrity: sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w==}
-    engines: {node: '>=0.8'}
-    dev: false
-
   /clsx@2.1.1:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
@@ -14097,11 +14089,6 @@ packages:
       json-buffer: 3.0.1
     dev: true
 
-  /launchdarkly-eventsource@1.4.4:
-    resolution: {integrity: sha512-GL+r2Y3WccJlhFyL2buNKel+9VaMnYpbE/FfCkOST5jSNSFodahlxtGyrE8o7R+Qhobyq0Ree4a7iafJDQi9VQ==}
-    engines: {node: '>=0.12.0'}
-    dev: false
-
   /launchdarkly-eventsource@2.2.0:
     resolution: {integrity: sha512-u38fYlLSq/m6oFz0MS1/76Sj2xzlYhTKZ+sf/vju6PA86PMc6fPlY5k8CdU79edLXjNwsvIQTDvDNy3llDqB8A==}
     engines: {node: '>=0.12.0'}
@@ -14119,19 +14106,6 @@ packages:
     dependencies:
       base64-js: 1.5.1
       fast-deep-equal: 2.0.1
-      uuid: 8.3.2
-    dev: false
-
-  /launchdarkly-node-server-sdk@7.0.4:
-    resolution: {integrity: sha512-LsbcWbzJNe6TSDQLwXvG1ZJyhm2zjYrpE/MYEvSv2ndt8Ddw8eaiOUruhhDgbMPMDoqV785RXV+8oS9o2sS0pA==}
-    engines: {node: '>= 12.0.0'}
-    dependencies:
-      async: 3.2.6
-      launchdarkly-eventsource: 1.4.4
-      lru-cache: 6.0.0
-      node-cache: 5.1.2
-      semver: 7.7.2
-      tunnel: 0.0.6
       uuid: 8.3.2
     dev: false
 
@@ -14912,13 +14886,6 @@ packages:
     dependencies:
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
-    dev: false
-
-  /node-cache@5.1.2:
-    resolution: {integrity: sha512-t1QzWwnk4sjLWaQAS8CHgOJ+RAfmHpxFWmc36IWTiWHQfs0w5JDMBS1b1ZxQteo0vVVuWJvIUKHDkkeK7vIGCg==}
-    engines: {node: '>= 8.0.0'}
-    dependencies:
-      clone: 2.1.2
     dev: false
 
   /node-fetch@2.7.0:
@@ -18251,11 +18218,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
-
-  /tunnel@0.0.6:
-    resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}
-    engines: {node: '>=0.6.11 <=0.7.0 || >=0.7.3'}
-    dev: false
 
   /tweetnacl@0.14.5:
     resolution: {integrity: sha512-KXXFFdAbFXY4geFIwoyNK+f5Z1b7swfXABfL7HXCmoIWMKU3dmS26672A4EeQtDzLKy7SXmfBu51JolvEKwtGA==}

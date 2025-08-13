@@ -10,14 +10,13 @@ export default tseslint.config(
     ignores: [
       'dist',
       '.patch-bundles/**',
-      'scripts/**',
+      // Keep infra/packages/lib/app ignored if not lint targets
       'infra/**',
       'packages/**',
       'lib/**',
       'app/**',
-      'supabase/**',
-      'src/**',
-      'tests/**',
+      // Do not ignore src or tests to ensure lint enforcement
+      // 'supabase/**',
       'tailwind.config.ts',
       'useFlightOffers_baseline.ts',
       'validate-production-deployment.ts',

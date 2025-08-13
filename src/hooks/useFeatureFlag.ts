@@ -8,55 +8,44 @@ import { type FeatureFlag, isEnabled } from '@shared/featureFlag';
 export const useFeatureFlag = (flagName: string, defaultValue: boolean = false) => {
   const flags = useFlags<Record<string, boolean>>();
   const { user } = useCurrentUser();
-  
-  // Check for test environment or preset flags from tests first
-  let flagValue = defaultValue;
+
+  // Start from provided default
+  let flagValue: boolean = Boolean(defaultValue);
+
+  // 1) Allow local preset override (used by tests and local dev)
   if (typeof window !== 'undefined') {
-    // Check if we're in a test environment (playwright sets this)
-    const isTestEnv = window.location.hostname === 'localhost' && 
-                     (window.navigator.userAgent.includes('HeadlessChrome') || 
-                      window.navigator.userAgent.includes('Playwright'));
-    
-    // Also check for explicit environment variables set by Playwright
-    const isPlaywrightTest = import.meta.env.VITE_PLAYWRIGHT_TEST === 'true';
-    const isWalletUIEnabled = import.meta.env.VITE_WALLET_UI_ENABLED === 'true';
-    
-    // In test environment, enable wallet_ui and profile_ui_revamp flags
-    if ((isTestEnv || isPlaywrightTest) && (flagName === 'wallet_ui' || flagName === 'profile_ui_revamp')) {
-      flagValue = true;
-    } else if (isWalletUIEnabled && flagName === 'wallet_ui') {
-      flagValue = true;
-    } else {
-      const presetFlags = localStorage.getItem('LD_PRESET_FLAGS');
-      if (presetFlags) {
-        try {
-          const parsedFlags = JSON.parse(presetFlags);
-          if (parsedFlags[flagName] !== undefined) {
-            flagValue = parsedFlags[flagName];
-          }
-        } catch (e) {
-          // Ignore parsing errors
+    try {
+      const preset = window.localStorage?.getItem('LD_PRESET_FLAGS');
+      if (preset) {
+        const parsed = JSON.parse(preset);
+        if (parsed && Object.prototype.hasOwnProperty.call(parsed, flagName)) {
+          flagValue = Boolean(parsed[flagName]);
         }
       }
+    } catch {}
+
+    // Optional explicit wallet flag via env
+    if (import.meta.env?.VITE_WALLET_UI_ENABLED === 'true' && flagName === 'wallet_ui') {
+      flagValue = true;
     }
   }
-  
-  // If no preset, use LaunchDarkly value
-  if (flagValue === defaultValue) {
-    flagValue = flags[flagName] ?? defaultValue;
+
+  // 2) If not overridden by local preset/env, use LaunchDarkly flag when available
+  if (flags && Object.prototype.hasOwnProperty.call(flags, flagName)) {
+    flagValue = Boolean(flags[flagName]);
   }
-  
+
   // Track personalization events
   useEffect(() => {
-    if (flagName === 'personalization_greeting' && typeof flagValue === 'boolean') {
+    if (flagName === 'personalization_greeting') {
       trackPersonalizationSeen(flagValue);
     }
   }, [flagName, flagValue]);
-  
+
   // Return object similar to useQuery for backward compatibility
   return {
     data: flagValue,
-    isLoading: flags === undefined,
+    isLoading: !flags,
     isError: false,
     error: null,
   };

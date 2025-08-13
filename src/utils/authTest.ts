@@ -50,4 +50,18 @@ export const testAuth = async () => {
 // Make it available globally for testing
 if (typeof window !== 'undefined') {
   (window as any).testAuth = testAuth;
+  // Provide a helper to force-set a test session for E2E
+  import('./../integrations/supabase/client').then(({ supabase }) => {
+    (window as any).__setTestSession = async () => {
+      try {
+        await supabase.auth.setSession({ access_token: 'test_access_token', refresh_token: 'test_refresh_token' });
+        return true;
+      } catch (e) {
+        console.warn('Failed to set test session', e);
+        return false;
+      }
+    };
+  }).catch(() => {
+    // ignore
+  });
 }

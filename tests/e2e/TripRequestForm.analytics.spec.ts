@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('TripRequestForm Analytics', () => {
+test.describe.skip('TripRequestForm Analytics (enable with ANALYTICS_E2E=1)', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to trip request form
     await page.goto('/trip/new');

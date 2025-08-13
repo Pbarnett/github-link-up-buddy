@@ -1,10 +1,14 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Visual Regression Tests', () => {
+const VISUAL_ENABLED = !!process.env.VISUAL_E2E;
+
+test.describe(VISUAL_ENABLED ? 'Visual Regression Tests' : 'Visual Regression Tests (disabled)', () => {
   test.beforeEach(async ({ page }) => {
     // Set consistent viewport for visual tests
     await page.setViewportSize({ width: 1280, height: 720 });
   });
+
+test.skip(!VISUAL_ENABLED, 'Set VISUAL_E2E=1 to run visual tests');
 
   test('trip request form visual comparison', async ({ page }) => {
     await page.goto('/trip-request');

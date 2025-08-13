@@ -43,6 +43,13 @@ vi.mock('@/components/ui/calendar', () => ({
   ),
 }))
 
+// Lightweight Popover mock to avoid Radix portal/transition complexity in unit tests
+vi.mock('@/components/ui/popover', () => ({
+  Popover: ({ children }: any) => React.createElement('div', null, children),
+  PopoverTrigger: ({ children }: any) => React.createElement(React.Fragment, null, children),
+  PopoverContent: ({ children }: any) => React.createElement('div', { role: 'dialog' }, children),
+}))
+
 // ==============================================================================
 // JSDOM POLYFILLS FOR RADIX UI
 // ==============================================================================

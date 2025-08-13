@@ -5,19 +5,20 @@ import { test, expect } from '@playwright/test';
 // and that VITE_PUBLIC_BASE_URL matches the server origin.
 
 test.describe('OAuth Callback Flow', () => {
-  test('should handle code exchange and redirect to returnTo', async ({ page, baseURL }) => {
-    test.skip(!baseURL, 'baseURL is required for this E2E to run');
+test('should handle code exchange and redirect to returnTo', async ({ page }) => {
+    const base = process.env.E2E_BASE_URL;
+    test.skip(!base, 'Set E2E_BASE_URL to run this test');
 
     const returnTo = '/auto-booking';
     const code = 'dummy-auth-code';
 
     // Simulate arrival at the callback URL with a code and returnTo.
-    await page.goto(`${baseURL}/auth/callback?code=${code}&returnTo=${encodeURIComponent(returnTo)}`);
+    await page.goto(`${base}/auth/callback?code=${code}&returnTo=${encodeURIComponent(returnTo)}`);
 
     // In a real test, you would mock network calls to Supabase endpoints
     // or run against a local Supabase with a test project. For now, this is a scaffold.
 
     // Expect that we are eventually redirected to returnTo or login (depending on environment setup).
-    await expect(page).toHaveURL(new RegExp(`${baseURL}(/login|${returnTo.replace('/', '\\/')})`));
+    await expect(page).toHaveURL(new RegExp(`${base}(/login|${returnTo.replace('/', '\\/')})`));
   });
 });

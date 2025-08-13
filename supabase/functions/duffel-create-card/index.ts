@@ -32,6 +32,17 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // Require auth and derive user from JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const { payment_method, cardholder_name, cardholder_email }: CardCreationRequest = await req.json()
 
     // Validate request
@@ -122,6 +133,7 @@ serve(async (req) => {
         card_id: cardData.data?.id,
         cardholder_name,
         cardholder_email,
+        user_id: user.id,
         created_at: new Date().toISOString()
       })
 
