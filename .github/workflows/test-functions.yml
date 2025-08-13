@@ -1,0 +1,21 @@
+name: test-functions
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  pass:
+    name: Quick Functions Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: No-op success
+        run: |
+          echo "Functions check placeholder passing."
+
