@@ -10,6 +10,7 @@ import { logger } from './_lib/logger';
 
 // Importing stripe at top allows bundling by esbuild; actual network use gated by feature flag
 import Stripe from 'stripe';
+import { STRIPE_API_VERSION } from '@/config/stripe';
 
 interface Event {
   correlationId: string;
@@ -79,7 +80,7 @@ export async function handler(event: Event) {
 
   // Real Stripe path
   const secret = await getStripeSecret();
-const stripe = new Stripe(secret, { apiVersion: '2025-07-30.basil' });
+const stripe = new Stripe(secret, { apiVersion: STRIPE_API_VERSION });
 
   try {
     const intent = await stripe.paymentIntents.create(

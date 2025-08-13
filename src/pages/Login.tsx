@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserInitializationService } from '@/services/userInitialization';
 
 /**
  * LOGIN COMPONENT - GOOGLE-ONLY MVP
@@ -85,22 +84,9 @@ const Login = () => {
     };
     
     initializeAuth();
-    
-    // Set up auth state change listener
-const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔍 Auth state changed:', event, session?.user?.id, !!session);
-      setIsAuthenticated(!!session);
 
-      if (event === 'SIGNED_IN' && session) {
-        // Call user initialization service
-        UserInitializationService.handlePostSignin(session.user.id);
-      }
-    });
-    
-    // Clean up subscription on unmount
-    return () => {
-      subscription.unsubscribe();
-    };
+    // No local auth listener here; rely on centralized AuthEvents and AuthCallback
+    return () => {};
   }, []);
 
   // ARCHIVED: Magic Link Login (commented out for Google-only MVP)

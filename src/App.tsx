@@ -32,6 +32,7 @@ import AuthDebug from "./pages/AuthDebug";
 import TopNavigation from "./components/navigation/TopNavigation";
 import Breadcrumbs from "./components/navigation/Breadcrumbs";
 import RouteAnnouncer from "./components/RouteAnnouncer";
+import AuthEvents from "./components/AuthEvents";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -117,6 +118,7 @@ const App = () => {
                 <div id="sr-route-announcer" aria-live="polite" className="sr-only" />
                 <main id="main" className="flex-1 overflow-auto" tabIndex={-1}>
                 <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading…</div>}>
+                <AuthEvents />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
