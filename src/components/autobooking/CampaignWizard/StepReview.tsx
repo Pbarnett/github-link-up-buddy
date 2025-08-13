@@ -9,7 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CheckCircle, User, CreditCard, MapPin, Calendar, DollarSign, Plane } from 'lucide-react';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import AuthModal from '@/components/auth/AuthModal';
 import { trackCampaignEvent } from '@/utils/monitoring';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
 import type { CriteriaFormData } from './StepCriteria';
 import type { TravelerFormData } from './StepTraveler';
 
@@ -30,9 +35,48 @@ function StepReview({
   onConfirm, 
   isLoading = false 
 }: StepReviewProps) {
+  const { user } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState<number>(0);
 
-  const handleConfirm = () => {
-    // Track campaign creation attempt
+  // Emit review_loaded when this step is shown
+  useEffect(() => {
+    try {
+      window?.analytics && window.analytics.track('review_loaded', {
+        location: 'StepReview',
+        has_payment_method: Boolean(paymentMethodId),
+      });
+    } catch {}
+  }, [paymentMethodId]);
+
+  // Cooldown timer effect
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => setCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  const handleConfirm = async () => {
+    // Test mode shim: allow proceeding without auth while still exercising the flow
+    const w: any = typeof window !== 'undefined' ? (window as any) : {};
+    const isTestMode = !!w.__TEST_MODE__;
+    const isTestBypass = w.__TEST_BYPASS_AUTH === true;
+
+    // If not authenticated, open auth modal and preserve intent (unless explicit test bypass)
+    if (!user && !isTestBypass) {
+      try {
+        const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        sessionStorage.setItem('returnTo', returnTo);
+      } catch {}
+      // Instrument auth prompt
+      try { window?.analytics && window.analytics.track('auth_prompt_shown', { reason: 'checkout', location: 'StepReview' }); } catch {}
+      setAuthOpen(true);
+      return;
+    }
+
+    // Track click and campaign creation attempt
+    try { window?.analytics && window.analytics.track('review_to_payment_click', { location: 'StepReview' }); } catch {}
     trackCampaignEvent('campaign_creation_started', 'temp-id', {
       destination: criteriaData.destination,
       trip_type: criteriaData.tripType,
@@ -40,6 +84,60 @@ function StepReview({
       has_passport: !!travelerData.passportNumber,
       payment_method_id: paymentMethodId,
     });
+
+    // Begin payment flow: create PaymentIntent only after auth
+    try { window?.analytics && window.analytics.track('payment_flow_started', { location: 'StepReview' }); } catch {}
+    try {
+      const headers: Record<string, string> = {};
+      if (isTestMode && w.__TEST_BEARER) {
+        headers['Authorization'] = `Bearer ${w.__TEST_BEARER}`;
+      }
+      // Generate an idempotency key per click to prevent duplicate sessions server-side
+      try { headers['Idempotency-Key'] = crypto.randomUUID(); } catch {}
+      const { data, error } = await supabase.functions.invoke('create-payment-session', {
+        body: {
+          trip_request_id: 'wizard_e2e',
+          offer_id: 'wizard_e2e',
+        },
+        headers,
+      });
+      if (error) {
+        console.error('Failed to create payment session:', error);
+        const msg = (error as any)?.message || '';
+        if (typeof msg === 'string' && msg.toLowerCase().includes('too many requests')) {
+          setErrorMsg("You're doing that too often. Please wait a minute and try again.");
+          // Attempt to extract retry seconds if the backend included it
+          try {
+            const m = msg.match(/(\d+)(?=\s*seconds?)/i);
+            if (m && m[1]) setCooldown(parseInt(m[1], 10));
+            else setCooldown((prev) => (prev > 0 ? prev : 60));
+          } catch {
+            setCooldown((prev) => (prev > 0 ? prev : 60));
+          }
+        } else if (typeof msg === 'string' && /us customers only/i.test(msg)) {
+          setErrorMsg('Payments are currently available to US customers only.');
+        } else {
+          setErrorMsg('Unable to start checkout right now. Please try again.');
+        }
+        return;
+      } else {
+        setErrorMsg(null);
+        try { window?.analytics && window.analytics.track('payment_intent_created', { id: data?.id, amount: data?.amount, currency: data?.currency }); } catch {}
+        // In non-test mode, redirect to Stripe Checkout if URL is provided
+        if (!isTestMode && data?.url) {
+          try { window.location.href = data.url; return; } catch {}
+        }
+      }
+    } catch (err) {
+      console.error('Error during payment flow:', err);
+      const msg = err instanceof Error ? err.message : '';
+      if (typeof msg === 'string' && msg.toLowerCase().includes('too many requests')) {
+        setErrorMsg("You're doing that too often. Please wait a minute and try again.");
+      } else {
+        setErrorMsg('Unable to start checkout right now. Please try again.');
+      }
+      return;
+    }
 
     onConfirm();
   };
@@ -60,16 +158,18 @@ function StepReview({
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-          <CheckCircle className="h-5 w-5" />
-          Review & Confirm Rule
-        </CardTitle>
-        <CardDescription>
-          Please review all details before creating your auto‑booking rule.
-        </CardDescription>
-      </CardHeader>
+    <div>
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} reason="checkout" returnTo={`${window.location.origin}${window.location.pathname}${window.location.search}${window.location.hash}`} />
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle data-testid="review-title" className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5" />
+            Review & Confirm Rule
+          </CardTitle>
+          <CardDescription>
+            Please review all details before creating your auto‑booking rule.
+          </CardDescription>
+        </CardHeader>
       
       <CardContent className="space-y-6">
         {/* Campaign Criteria Review */}
@@ -253,6 +353,12 @@ function StepReview({
 
         <Separator />
 
+        {errorMsg && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{errorMsg}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Final Actions */}
         <div className="bg-blue-50 p-4 rounded-lg">
           <h4 className="font-medium mb-2">What happens next?</h4>
@@ -278,14 +384,15 @@ function StepReview({
           
           <Button
             onClick={handleConfirm}
-            disabled={isLoading}
-            className="bg-green-600 hover:bg-green-700"
+            disabled={isLoading || cooldown > 0}
+            className="bg-green-600 hover:bg-green-700 disabled:opacity-60"
           >
-            {isLoading ? 'Booking For You...' : 'Book For Me'}
+            {cooldown > 0 ? `Try again in ${cooldown}s` : (isLoading ? 'Booking For You...' : 'Book For Me')}
           </Button>
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }
 

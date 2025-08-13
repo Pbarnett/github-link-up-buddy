@@ -27,6 +27,7 @@ const AutoBookingDashboard = lazy(() => import("./pages/AutoBookingDashboard"));
 const AutoBookingNew = lazy(() => import("./pages/AutoBookingNew"));
 import { FormAnalyticsDashboard } from "./components/forms/analytics/FormAnalyticsDashboard";
 import AuthGuard from "./components/AuthGuard";
+import RequireAuth from "./components/auth/RequireAuth";
 import NotFound from "./pages/NotFound";
 import AuthDebug from "./pages/AuthDebug";
 import TopNavigation from "./components/navigation/TopNavigation";
@@ -126,9 +127,9 @@ const App = () => {
                   <Route
                     path="/dashboard"
                     element={
-                      <AuthGuard>
+<RequireAuth reason="generic">
                         <AutoBookingDashboard />
-                      </AuthGuard>
+                      </RequireAuth>
                     }
                   />
                   <Route
@@ -137,11 +138,7 @@ const App = () => {
                   />
                   <Route
                     path="/search"
-                    element={
-                      <AuthGuard>
-                        <TripNew />
-                      </AuthGuard>
-                    }
+                    element={<TripNew />}
                   />
                   <Route
                     path="/trip/offers"
@@ -162,17 +159,17 @@ const App = () => {
                   <Route
                     path="/profile"
                     element={
-                      <AuthGuard>
+<RequireAuth reason="generic">
                         <Profile />
-                      </AuthGuard>
+                      </RequireAuth>
                     }
                   />
                   <Route
                     path="/wallet"
                     element={
-                      <AuthGuard>
+<RequireAuth reason="generic">
                         <Wallet />
-                      </AuthGuard>
+                      </RequireAuth>
                     }
                   />
                   <Route path="/trips/:tripId/v2"
@@ -192,11 +189,7 @@ const App = () => {
                   />
                   <Route
                     path="/auto-booking/new"
-                    element={
-                      <AuthGuard>
-                        <AutoBookingNew />
-                      </AuthGuard>
-                    }
+                    element={<AutoBookingNew />}
                   />
                   {/* Duffel Flight Search - Production Ready */}
                   <Route

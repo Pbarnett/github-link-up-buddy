@@ -25,6 +25,8 @@ interface PaymentFormProps {
   onSuccess: (paymentResult: any) => void;
   onError: (error: string) => void;
   onProcessing: (processing: boolean) => void;
+  // Optional callback to request authentication if user isn't signed in
+  onRequireAuth?: () => void;
 }
 
 interface DuffelPaymentDetails {
@@ -41,7 +43,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   passengers,
   onSuccess,
   onError,
-  onProcessing
+  onProcessing,
+  onRequireAuth,
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -52,16 +55,35 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   useEffect(() => {
     const createPaymentIntent = async () => {
       try {
+        // Ensure user is authenticated before creating a PaymentIntent
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          onError('Failed to check authentication status');
+          return;
+        }
+        const userId = sessionData?.session?.user?.id;
+        if (!userId) {
+          // Prompt caller to authenticate and bail early
+          if (typeof onRequireAuth === 'function') onRequireAuth();
+          return;
+        }
+
+        // Emit start of payment flow
+        try { window?.analytics && window.analytics.track('payment_flow_started', { offer_id: offerId, amount_cents: Math.round(amount * 100), currency: currency.toLowerCase() }); } catch {}
+
         const { data, error } = await supabase.functions.invoke('create-payment-session', {
           body: {
             amount: Math.round(amount * 100), // Convert to cents
             currency: currency.toLowerCase(),
             metadata: {
               offer_id: offerId,
-              passenger_count: passengers.length
+              passenger_count: passengers.length.toString(),
+              user_id: userId
             }
           }
         });
+
+        try { window?.analytics && window.analytics.track('payment_intent_created', { offer_id: offerId, amount_cents: Math.round(amount * 100), currency: currency.toLowerCase() }); } catch {}
 
         if (error) {
           onError(`Failed to create payment session: ${error.message}`);
@@ -79,6 +101,19 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    // Ensure user is authenticated before proceeding to any payment actions
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) {
+      onError('Failed to check authentication status');
+      return;
+    }
+    const userId = sessionData?.session?.user?.id;
+    if (!userId) {
+      if (typeof onRequireAuth === 'function') onRequireAuth();
+      else onError('Please sign in to continue with payment');
+      return;
+    }
 
     if (!stripe || !elements || !clientSecret) {
       onError('Payment system not ready');
@@ -121,6 +156,10 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           }
         }
       );
+
+      if (!paymentError && paymentIntent) {
+        try { window?.analytics && window.analytics.track('payment_confirmed', { payment_intent_id: paymentIntent.id, status: paymentIntent.status }); } catch {}
+      }
 
       if (paymentError) {
         onError(paymentError.message || 'Payment failed');

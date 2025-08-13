@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+echo "backup-staging (stub)"
+
 #!/bin/bash
 
 # Backup script for staging database before personalization migration

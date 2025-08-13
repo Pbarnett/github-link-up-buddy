@@ -4,9 +4,14 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "test:e2e:critical": "playwright test --grep @critical",
+    "test:e2e:callback": "playwright test tests/e2e/auth-callback.spec.ts",
     "tsc": "tsc",
     "dev": "concurrently \"vite --port 3000 --strictPort\" \"tsx server/index.ts\"",
     "dev:safe": "npm run check-localhost && npm run dev",
+    "supabase:start:local": "zsh -lc 'set -a; source .env.supabase-local; supabase start'",
+    "supabase:restart:local": "zsh -lc 'set -a; source .env.supabase-local; supabase stop && supabase start'",
+    "auth:preflight": "bash scripts/dev/check-auth-env.sh",
     "check-localhost": "node scripts/diagnostics/localhost-binding-check.js",
     "fix-localhost-binding": "node scripts/diagnostics/fix-localhost-binding.js",
     "smoke-test": "tsx scripts/smoke-test.ts",
@@ -27,7 +32,7 @@
     "test:integration": "vitest run --project integration",
     "test:integration:watch": "vitest --project integration",
     "test:edge": "vitest run --project edge",
-    "test:functions": "vitest run supabase/functions/tests --reporter=dot",
+    "test:functions": "vitest run --project edge --reporter=dot",
     "test:edge:personalization": "vitest run tests/edge/getPersonalizationData.test.ts",
     "test:function:local": "./scripts/test-local-function.sh",
     "test:function:staging": "./scripts/test-staging-function.sh",
@@ -40,6 +45,7 @@
     "test:e2e-headed": "playwright test --headed",
     "test:e2e-trace": "playwright test --trace on",
     "test:visual": "playwright test tests/e2e/visual/",
+    "test:e2e:trip-request": "playwright test tests/e2e/trip-request-form.spec.ts",
     "test:visual-update": "playwright test tests/e2e/visual/ --update-snapshots",
     "test:accessibility": "playwright test --grep accessibility",
     "test:a11y": "playwright test tests/e2e/accessibility.a11y.spec.ts",
@@ -311,6 +317,7 @@
     "@types/react-dom": "^19.1.6"
   },
   "packageManager": "pnpm@8.15.5",
+  "engines": { "node": ">=20 <21" },
   "playwright": {
     "reporter": [
       [

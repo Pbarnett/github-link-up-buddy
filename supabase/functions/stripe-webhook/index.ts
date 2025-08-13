@@ -199,6 +199,15 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
       );
     }
 
+    // Simple retry helper for transient errors
+    async function withRetries<T>(fn: () => Promise<T>, attempts = 3, delayMs = 300): Promise<T> {
+      let lastErr: any;
+      for (let i = 0; i < attempts; i++) {
+        try { return await fn(); } catch (e) { lastErr = e; if (i < attempts - 1) await new Promise(r => setTimeout(r, delayMs * (i + 1))); }
+      }
+      throw lastErr;
+    }
+
     // Process the event based on its type
     switch (event.type) {
       // Handle SetupIntent events for saving payment methods
@@ -379,7 +388,7 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.user_id;
-        const orderId = session.metadata?.order_id; // This is the booking_request_id
+        const orderId = session.metadata?.order_id; // now refers to orders.id (new flow)
         
         console.log(`[STRIPE-WEBHOOK] Processing completed checkout session for user ${userId}, orderId: ${orderId}, mode: ${session.mode}`);
         
@@ -401,69 +410,59 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
           // This is handled by setup_intent.succeeded above, but we can log for completeness
           console.log(`[STRIPE-WEBHOOK] Setup session completed, setup_intent.succeeded should handle payment method saving`);
         } else if (session.mode === "payment") {
-          // If fee metadata is present, persist to booking_request
-          if (orderId) {
-            await upsertFeeMetadataOnBookingRequest(orderId, {
-              fee_model: session.metadata?.fee_model,
-              threshold_price: session.metadata?.threshold_price,
-              actual_price: session.metadata?.actual_price,
-              savings: session.metadata?.savings,
-              fee_pct: session.metadata?.fee_pct,
-              fee_amount_cents: session.metadata?.fee_amount_cents,
-              source: 'checkout.session.completed',
-              checkout_session_id: session.id,
-            });
+          const tripRequestId = session.metadata?.trip_request_id;
+          const flightOfferId = session.metadata?.flight_offer_id;
+
+          if (!tripRequestId || !flightOfferId) {
+            throw new Error("Missing required metadata for payment completion");
           }
 
-          // Handle payment mode - process booking request or complete order
+          // New flow: complete order in orders table and create booking
           if (orderId) {
-            // Handle new booking flow with booking_requests
-            console.log(`[STRIPE-WEBHOOK] Processing payment for booking request ${orderId}`);
-            
-            // First update the checkout session ID
-            const { error: updateSessionError } = await supabase
-              .from("booking_requests")
-              .update({ 
-                checkout_session_id: session.id,
-                updated_at: new Date().toISOString()
-              })
-              .eq("id", orderId);
-              
-            if (updateSessionError) {
-              console.error(`[STRIPE-WEBHOOK] Error updating checkout session ID:`, updateSessionError);
-            }
-            
-            const success = await processBookingRequest(orderId);
-            
-            if (!success) {
-              console.error(`[STRIPE-WEBHOOK] Failed to process booking request: ${orderId}`);
-            }
+            // Update order with completed status and checkout session id (with retries)
+            await withRetries(async () => {
+              const { error: orderUpdateErr } = await supabase
+                .from("orders")
+                .update({ 
+                  status: "completed",
+                  checkout_session_id: session.id,
+                  updated_at: new Date().toISOString() 
+                })
+                .eq("id", orderId);
+              if (orderUpdateErr) throw new Error(orderUpdateErr.message);
+            });
+
+            // Create booking
+            const booking = await withRetries(async () => {
+              const { error, data } = await supabase
+                .from("bookings")
+                .insert({ user_id: userId, trip_request_id: tripRequestId, flight_offer_id: flightOfferId })
+                .select()
+                .single();
+              if (error) throw new Error(error.message);
+              return data;
+            });
+
+            await createNotification(userId, "booking_success", {
+              bookingId: booking.id,
+              flightOfferId,
+              orderId,
+              timestamp: new Date().toISOString()
+            });
+
+            console.log(`[STRIPE-WEBHOOK] ✅ Order ${orderId} completed and booking created`);
           } else {
-            // Handle legacy flow (this is the old code path for orders)
-            const tripRequestId = session.metadata?.trip_request_id;
-            const flightOfferId = session.metadata?.flight_offer_id;
-            
-            if (!tripRequestId || !flightOfferId) {
-              throw new Error("Missing required metadata for payment completion");
-            }
-            
-            console.log(`[STRIPE-WEBHOOK] Processing legacy payment with trip request ${tripRequestId}`);
-            
-            // 1. Update the order status to completed
-            const { error: orderError } = await supabase
-              .from("orders")
-              .update({ 
-                status: "completed", 
-                updated_at: new Date().toISOString() 
-              })
-              .eq("id", orderId);
-              
-            if (orderError) {
-              console.error("[STRIPE-WEBHOOK] Error updating order:", orderError);
-              throw new Error(`Failed to update order: ${orderError.message}`);
-            }
-            
-            // 2. Create a booking linked to this order
+            // Legacy fallback (no explicit order id was provided)
+            console.log(`[STRIPE-WEBHOOK] Legacy flow: completing booking without order id`);
+
+            // Update any matching order if available (best-effort)
+            try {
+              await supabase
+                .from("orders")
+                .update({ status: "completed", checkout_session_id: session.id, updated_at: new Date().toISOString() })
+                .eq("trip_request_id", tripRequestId);
+            } catch {}
+
             const { error: bookingError, data: booking } = await supabase
               .from("bookings")
               .insert({
@@ -473,21 +472,18 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
               })
               .select()
               .single();
-              
+
             if (bookingError) {
               console.error("[STRIPE-WEBHOOK] Error creating booking:", bookingError);
               throw new Error(`Failed to create booking: ${bookingError.message}`);
             }
-            
-            // Create notification for booking
+
             await createNotification(userId, "booking_success", {
               bookingId: booking.id,
               flightOfferId,
-              orderId,
+              orderId: null,
               timestamp: new Date().toISOString()
             });
-            
-            console.log(`[STRIPE-WEBHOOK] ✅ Order ${orderId} completed and booking created`);
           }
         }
         break;

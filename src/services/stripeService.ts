@@ -71,14 +71,28 @@ export class StripeService {
    */
   async createPaymentIntent(params: PaymentIntentParams) {
     try {
+      // Ensure user is authenticated before creating a PaymentIntent
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        throw new Error('Failed to check authentication status');
+      }
+      const userId = sessionData?.session?.user?.id;
+      if (!userId) {
+        const authErr: any = new Error('Authentication required');
+        authErr.code = 'AUTH_REQUIRED';
+        throw authErr;
+      }
+
       const { data, error } = await supabase.functions.invoke('create-payment-session', {
         body: {
           amount: Math.round(params.amount * 100), // Convert to cents
           currency: params.currency.toLowerCase(),
-          metadata: params.metadata || {},
+          metadata: { ...(params.metadata || {}), user_id: userId },
           automatic_payment_methods: params.automatic_payment_methods || { enabled: true }
         }
       });
+
+      try { (window as any)?.analytics && (window as any).analytics.track('payment_intent_created', { amount_cents: Math.round(params.amount * 100), currency: params.currency.toLowerCase() }); } catch {}
 
       if (error) {
         throw new Error(`Payment intent creation failed: ${error.message}`);
@@ -167,12 +181,25 @@ export class StripeService {
     passengers: any[];
   }): Promise<DuffelPaymentSession> {
     try {
+      // Ensure user is authenticated for Duffel payment session as well
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        throw new Error('Failed to check authentication status');
+      }
+      const userId = sessionData?.session?.user?.id;
+      if (!userId) {
+        const authErr: any = new Error('Authentication required');
+        authErr.code = 'AUTH_REQUIRED';
+        throw authErr;
+      }
+
       // Create temporary card with Duffel
       const { data: cardData, error: cardError } = await supabase.functions.invoke('duffel-create-card', {
         body: {
           payment_method: paymentMethod,
           cardholder_name: `${passengers[0]?.given_name} ${passengers[0]?.family_name}`,
-          cardholder_email: passengers[0]?.email
+          cardholder_email: passengers[0]?.email,
+          user_id: userId
         }
       });
 
@@ -181,22 +208,23 @@ export class StripeService {
       }
 
       // Create 3D Secure session
-      const { data: sessionData, error: sessionError } = await supabase.functions.invoke('duffel-3ds-session', {
+      const { data: threeDSData, error: sessionError2 } = await supabase.functions.invoke('duffel-3ds-session', {
         body: {
           card_id: cardData.card_id,
           offer_id: offerId,
-          cardholder_present: true
+          cardholder_present: true,
+          user_id: userId
         }
       });
 
-      if (sessionError) {
-        throw new Error(`3D Secure session creation failed: ${sessionError.message}`);
+      if (sessionError2) {
+        throw new Error(`3D Secure session creation failed: ${sessionError2.message}`);
       }
 
       return {
         card_id: cardData.card_id,
-        three_d_secure_session_id: sessionData.session_id,
-        status: sessionData.status
+        three_d_secure_session_id: threeDSData.session_id,
+        status: threeDSData.status
       };
 
     } catch (error) {

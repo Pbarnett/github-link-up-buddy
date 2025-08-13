@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+echo "deploy-function (stub)"
+
 #!/bin/bash
 
 # Deploy script for get-personalization-data edge function

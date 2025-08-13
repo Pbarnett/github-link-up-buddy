@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -37,13 +37,41 @@ function CampaignWizard() {
   const navigate = useNavigate();
   const { userId } = useCurrentUser();
   
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [wizardState, setWizardState] = useState<WizardState>({
-    criteria: null,
-    traveler: null,
-    paymentMethodId: '',
+  const [currentStep, setCurrentStep] = useState(() => {
+    try {
+      const savedStep = sessionStorage.getItem('wizardCurrentStep');
+      const stepNum = savedStep ? parseInt(savedStep, 10) : 0;
+      return Number.isNaN(stepNum) ? 0 : Math.max(0, Math.min(stepNum, STEPS.length - 1));
+    } catch {
+      return 0;
+    }
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [wizardState, setWizardState] = useState<WizardState>(() => {
+    try {
+      const saved = sessionStorage.getItem('wizardState');
+      if (saved) {
+        const parsed: WizardState = JSON.parse(saved);
+        return {
+          criteria: parsed.criteria ?? null,
+          traveler: parsed.traveler ?? null,
+          paymentMethodId: parsed.paymentMethodId ?? '',
+        };
+      }
+    } catch {}
+    return {
+      criteria: null,
+      traveler: null,
+      paymentMethodId: '',
+    };
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('wizardState', JSON.stringify(wizardState));
+      sessionStorage.setItem('wizardCurrentStep', String(currentStep));
+    } catch {}
+  }, [wizardState, currentStep]);
 
   const handleNext = (data: any) => {
     const newState = { ...wizardState };

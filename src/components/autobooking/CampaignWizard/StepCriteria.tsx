@@ -82,6 +82,25 @@ defaultValues: {
     },
   });
 
+  // Test-only: auto-fill and optionally auto-advance
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const w: any = typeof window !== 'undefined' ? (window as any) : {};
+  if (w.__TEST_MODE__ && w.__TEST_AUTO_ADVANCE) {
+    try {
+      setValue('campaignName', initialData?.campaignName || 'E2E');
+      setValue('origin', initialData?.origin || 'SFO');
+      setValue('destination', initialData?.destination || 'LAX');
+      setValue('windowStart', (initialData as any)?.windowStart || '2025-10-01');
+      setValue('windowEnd', (initialData as any)?.windowEnd || '2025-10-10');
+      setValue('maxPrice', initialData?.maxPrice || 500);
+      setValue('directFlightsOnly', true);
+      setValue('cabinClass', (initialData as any)?.cabinClass || 'economy');
+      setTimeout(() => {
+        handleSubmit(handleFormSubmit)();
+      }, 10);
+    } catch {}
+  }
+
   const handleFormSubmit = (data: CriteriaFormData) => {
     // Track step completion
     trackCampaignEvent('wizard_step_completed', 'temp-id', {
@@ -154,6 +173,7 @@ defaultValues: {
                 <Input
                   {...field}
                   id="campaignName"
+                  data-testid="criteria-campaignName"
                   placeholder="e.g., Summer Europe Trip 2025"
                   className={errors.campaignName ? 'border-red-500' : ''}
                 />
@@ -180,6 +200,7 @@ defaultValues: {
                   <Input
                     {...field}
                     id="origin"
+                    data-testid="criteria-origin"
                     placeholder="e.g., LAX, Los Angeles"
                     className={errors.origin ? 'border-red-500' : ''}
                   />
@@ -207,6 +228,7 @@ defaultValues: {
                   <Input
                     {...field}
                     id="destination"
+                    data-testid="criteria-destination"
                     placeholder="e.g., JFK, New York"
                     className={errors.destination ? 'border-red-500' : ''}
                   />
@@ -410,6 +432,7 @@ defaultValues: {
                 
                 <Button
                   type="submit"
+                  data-testid="criteria-next"
                   disabled={isLoading}
                 >
                   {isLoading ? 'Processing...' : 'Next: Traveler Info'}

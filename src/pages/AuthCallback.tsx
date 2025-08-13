@@ -64,6 +64,15 @@ const AuthCallback = () => {
         }
 
         if (data.session) {
+          // Emit auth_completed for analytics
+          try {
+            const qp = new URLSearchParams(location.search);
+            const hp = new URLSearchParams(location.hash.replace(/^#/, ''));
+            const provider = qp.get('provider') || hp.get('provider') || 'unknown';
+            const method = qp.get('flow') || hp.get('flow') || (provider !== 'unknown' ? 'oauth' : 'otp_or_unknown');
+            window?.analytics && window.analytics.track('auth_completed', { provider, method, status: 'success' });
+          } catch {}
+
           // Determine where to go: URL returnTo param, sessionStorage, or default
           const urlReturnTo = new URLSearchParams(location.search).get('returnTo');
           let returnTo = urlReturnTo || undefined;
@@ -75,6 +84,7 @@ const AuthCallback = () => {
           }
           navigate(returnTo || '/auto-booking', { replace: true });
         } else {
+          try { window?.analytics && window.analytics.track('auth_completed', { status: 'no_session' }); } catch {}
           // No session detected; send back to login
           navigate('/login', { replace: true });
         }

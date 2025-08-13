@@ -20,21 +20,20 @@ vi.stubGlobal('Deno', { env: { get: vi.fn((k: string) => ({
   VITEST: '1',
 }[k as any])) } } as any);
 
-// Supabase client mock (local package name)
-vi.mock('@supabase/supabase-js', () => {
-  const from = vi.fn().mockReturnThis();
+// Supabase client mock (match Edge import URL)
+vi.mock('https://esm.sh/@supabase/supabase-js@2.45.0', () => {
+  const client: any = {};
+  client.from = vi.fn(() => client);
+  client.select = vi.fn(() => client);
+  client.insert = vi.fn(() => client);
+  client.update = vi.fn(() => client);
+  client.order = vi.fn(() => client);
+  client.limit = vi.fn(() => client);
+  client.eq = vi.fn(() => client);
+  client.single = vi.fn();
+  client.auth = { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user_1', email: 'u@example.com' } }, error: null }) };
   return {
-    createClient: vi.fn(() => ({
-      from,
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockReturnThis(),
-      single: vi.fn(),
-      eq: vi.fn().mockReturnThis(),
-      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user_1', email: 'u@example.com' } }, error: null }) },
-    })),
+    createClient: vi.fn(() => client),
   };
 });
 
@@ -47,7 +46,7 @@ describe('create-payment-session fee disabled', () => {
     const Mod: any = await import('../create-payment-session/index.ts');
 
     // Arrange supabase chained responses
-    const { createClient }: any = await import('@supabase/supabase-js');
+    const { createClient }: any = await import('https://esm.sh/@supabase/supabase-js@2.45.0');
     const client = createClient();
     const singleMock = client.single as unknown as ReturnType<typeof vi.fn> & { mockResolvedValueOnce: any };
     // trip_requests
@@ -61,6 +60,14 @@ describe('create-payment-session fee disabled', () => {
     // Mock Stripe
     const sessionsCreate = mockStripe.checkout.sessions.create as unknown as ReturnType<typeof vi.fn>;
     sessionsCreate.mockResolvedValue({ id: 'cs_123', url: 'https://checkout' });
+    // Ensure fee is disabled for this test
+    (Deno as any).env.get = vi.fn((k: string) => ({
+      STRIPE_SECRET_KEY: 'sk_test_123',
+      SUPABASE_URL: 'http://localhost:54321',
+      SUPABASE_SERVICE_ROLE_KEY: 'service_key',
+      APPLY_SAVINGS_FEE: 'false',
+      VITEST: '1',
+    } as any)[k as any]);
 
     // Act
     const req = new Request('http://local', {
@@ -76,8 +83,7 @@ describe('create-payment-session fee disabled', () => {
       expect.objectContaining({
         line_items: [ expect.objectContaining({ price_data: expect.objectContaining({ unit_amount: 30000 }) }) ],
         metadata: expect.objectContaining({ fee_amount_cents: '0' })
-      }),
-      expect.any(Object)
+      })
     );
   });
 });

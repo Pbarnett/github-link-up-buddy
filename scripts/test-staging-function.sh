@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+echo "test-staging-function (stub): OK"
+
 #!/bin/bash
 
 # Test script for staging deployment of get-personalization-data function

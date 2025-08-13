@@ -39,7 +39,7 @@ describe('useTripOffersPools', () => {
     vi.clearAllMocks();
   });
 
-  it('should initialize with default values', () => {
+it('should initialize with default values', () => {
     const { result } = renderHook(() => useTripOffersPools({ tripId: null }));
 
     expect(result.current.pool1).toEqual([]);

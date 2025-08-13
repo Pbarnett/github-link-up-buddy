@@ -1,8 +1,8 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { createSupabaseMock } from '../../tests/setup/supabaseMock';
+import { supabase as supabaseMock, resetSupabaseMocks } from '../../tests/setup/supabaseMock';
 
-// Mock Supabase with enhanced functionality
-const supabase = createSupabaseMock();
+// Use shared supabase mock
+const supabase = supabaseMock;
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => supabase)

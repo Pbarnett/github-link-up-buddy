@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+echo "test-local-function (stub): OK"
+
 #!/bin/bash
 
 # Test script for get-personalization-data edge function

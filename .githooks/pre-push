@@ -1,20 +1,24 @@
 #!/bin/sh
+# Block pushes to main regardless of source, and block pushing when current branch is main.
+# Enable with: git config core.hooksPath .githooks
+
+# Prevent pushing to the main branch ref
 while read local_ref local_sha remote_ref remote_sha
 do
   case "$remote_ref" in
     refs/heads/main)
-      echo "Abort: push to main is blocked. Use a PR."
+      echo "Abort: push to main is blocked. Use a PR." 1>&2
       exit 1
       ;;
   esac
 
 done
-exit 0
 
-#!/bin/sh
-# Block pushes directly from main. Enable with: git config core.hooksPath .githooks
+# Also prevent pushing if currently on main locally
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 if [ "$current_branch" = "main" ]; then
   echo "Abort: push to main is blocked. Use a feature branch." 1>&2
   exit 1
 fi
+
+exit 0

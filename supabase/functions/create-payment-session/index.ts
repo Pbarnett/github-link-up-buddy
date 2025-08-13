@@ -16,7 +16,7 @@ if (!stripeSecretKey) {
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey, cf-ipcountry, x-country, x-country-code",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey, cf-ipcountry, x-country, x-country-code, Idempotency-Key",
 };
 
 // Helper function to create notifications
@@ -42,6 +42,63 @@ async function createNotification(
   } catch (err) {
     console.error("Exception creating notification:", err);
   }
+}
+
+// Simple in-memory rate limiter storage (per user) - fallback when Redis is not configured
+const rateLimiterStore: Map<string, number[]> = new Map();
+
+// Upstash Redis helpers (durable rate limiting + idempotency) if configured
+const upstashUrl = Deno.env.get('UPSTASH_REDIS_REST_URL');
+const upstashToken = Deno.env.get('UPSTASH_REDIS_REST_TOKEN');
+
+async function redisPipeline(cmds: unknown[]): Promise<any[] | null> {
+  if (!upstashUrl || !upstashToken) return null;
+  const res = await fetch(`${upstashUrl}/pipeline`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${upstashToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(cmds),
+  });
+  if (!res.ok) {
+    console.error('Upstash pipeline error:', res.status, await res.text());
+    return null;
+  }
+  const data = await res.json();
+  return Array.isArray(data) ? data : null;
+}
+
+async function checkRateLimitDurable(userId: string, windowSec: number, maxReq: number): Promise<{ limited: boolean, retryAfter?: number } | null> {
+  if (!upstashUrl || !upstashToken) return null;
+  const nowSec = Math.floor(Date.now() / 1000);
+  const start = nowSec - windowSec;
+  const key = `rl:pay:${userId}`;
+  const cmds = [
+    ['ZREMRANGEBYSCORE', key, 0, start],
+    ['ZADD', key, nowSec, String(nowSec)],
+    ['ZCARD', key],
+    ['EXPIRE', key, windowSec],
+  ];
+  const resp = await redisPipeline(cmds);
+  if (!resp) return null;
+  const count = Number(resp[2]);
+  const limited = count > maxReq;
+  return { limited, retryAfter: limited ? windowSec : undefined };
+}
+
+async function getIdempotentCache(userId: string, idemKey: string): Promise<any | null> {
+  if (!upstashUrl || !upstashToken) return null;
+  const key = `idem:pay:${userId}:${idemKey}`;
+  const resp = await redisPipeline([['GET', key]]);
+  if (!resp) return null;
+  try { return resp[0] ? JSON.parse(resp[0]) : null; } catch { return null; }
+}
+
+async function setIdempotentCache(userId: string, idemKey: string, value: any, ttlSec = 86400): Promise<void> {
+  if (!upstashUrl || !upstashToken) return;
+  const key = `idem:pay:${userId}:${idemKey}`;
+  await redisPipeline([
+    ['SET', key, JSON.stringify(value)],
+    ['EXPIRE', key, ttlSec],
+  ]);
 }
 
 export async function handleCreatePaymentSession(req: Request): Promise<Response> {
@@ -92,6 +149,48 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
     
     if (!trip_request_id || !offer_id) {
       throw new Error("Missing trip_request_id or offer_id");
+    }
+
+    // Optional minimal per-user rate limiting
+    const enableRateLimit = (Deno.env.get('ENABLE_RATE_LIMIT') || 'false').toLowerCase() === 'true';
+    if (enableRateLimit) {
+      const windowSec = Number(Deno.env.get('RATE_LIMIT_WINDOW_SEC') || '60');
+      const maxReq = Number(Deno.env.get('RATE_LIMIT_MAX_REQUESTS') || '3');
+
+      // Prefer durable limiter via Upstash if configured
+      const durable = await checkRateLimitDurable(user.id, windowSec, maxReq);
+      if (durable) {
+        if (durable.limited) {
+          return new Response(JSON.stringify({ error: 'Too many requests. Please try again shortly.', retry_after: durable.retryAfter || windowSec }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(durable.retryAfter || windowSec) },
+          });
+        }
+      } else {
+        // Fallback to in-memory limiter
+        const now = Date.now();
+        const windowStart = now - windowSec * 1000;
+        const key = user.id;
+        const history = rateLimiterStore.get(key) || [];
+        const recent = history.filter(ts => ts >= windowStart);
+        if (recent.length >= maxReq) {
+          return new Response(JSON.stringify({ error: 'Too many requests. Please try again shortly.', retry_after: windowSec }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(windowSec) },
+          });
+        }
+        recent.push(now);
+        rateLimiterStore.set(key, recent);
+      }
+    }
+
+    // Idempotency support: if Idempotency-Key present and cached, return cached result
+    const idemKey = req.headers.get('Idempotency-Key')?.trim();
+    if (idemKey) {
+      const cached = await getIdempotentCache(user.id, idemKey);
+      if (cached) {
+        return new Response(JSON.stringify(cached), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
     }
     
     console.log(`Creating payment session for user: ${user.id}, trip: ${trip_request_id}, offer: ${offer_id}`);
@@ -159,14 +258,52 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
     
     // Calculate amount in cents, including savings-based fee if applicable
     const description = `${flightOffer.airline} ${flightOffer.flight_number}: ${flightOffer.departure_date} to ${flightOffer.return_date}`;
-    const { deriveThresholdPrice, computeTotalWithFeeCents } = await import("../lib/fees.ts");
+    const { deriveThresholdPrice, computeTotalWithFeeCents, getFeePctFromEnv } = await import("../lib/fees.ts");
     const thresholdPrice = deriveThresholdPrice(tripRequest as any);
-    const { totalCents, feeCents, savings, feePct } = computeTotalWithFeeCents({
-      actualPrice: flightOffer.price,
-      thresholdPrice,
-    });
-    const unitAmount = totalCents;
+
+    const applySavingsFee = ((Deno.env.get('APPLY_SAVINGS_FEE') || 'true').toLowerCase() !== 'false');
+    let unitAmount: number;
+    let feeCents: number;
+    let savings: number;
+    let feePct: number;
+
+    if (applySavingsFee) {
+      const computed = computeTotalWithFeeCents({
+        actualPrice: flightOffer.price,
+        thresholdPrice,
+      });
+      unitAmount = computed.totalCents;
+      feeCents = computed.feeCents;
+      savings = computed.savings;
+      feePct = computed.feePct;
+    } else {
+      unitAmount = Math.round(Number(flightOffer.price) * 100);
+      feeCents = 0;
+      feePct = getFeePctFromEnv();
+      const thr = typeof thresholdPrice === 'number' ? thresholdPrice : undefined;
+      const actual = Number(flightOffer.price);
+      savings = thr && thr > actual ? (thr - actual) : 0;
+    }
     
+    // Create order record first so we can bind order_id into session metadata
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .insert({
+        user_id: user.id,
+        trip_request_id: trip_request_id,
+        amount: flightOffer.price,
+        currency: "usd",
+        status: "created",
+        description: description,
+      })
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error("Error creating order:", orderError);
+      throw new Error("Failed to create order record");
+    }
+
     // Create checkout session
     const origin = req.headers.get("origin") || "http://localhost:5173";
     const session = await stripe.checkout.sessions.create({
@@ -200,6 +337,7 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
       shipping_address_collection: { allowed_countries: ['US'] },
       metadata: {
         user_id: user.id,
+        order_id: order.id,
         trip_request_id,
         flight_offer_id: offer_id,
         fee_model: 'savings-based',
@@ -210,25 +348,15 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
         fee_amount_cents: String(feeCents)
       }
     });
-    
-    // Create order record
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        user_id: user.id,
-        trip_request_id: trip_request_id,
-        payment_intent_id: session.id,
-        amount: flightOffer.price,
-        currency: "usd",
-        status: "created",
-        description: description,
-      })
-      .select()
-      .single();
-    
-    if (orderError) {
-      console.error("Error creating order:", orderError);
-      throw new Error("Failed to create order record");
+
+    // Persist the checkout session id on the order for reference (optional)
+    try {
+      await supabase
+        .from("orders")
+        .update({ payment_intent_id: session.id, updated_at: new Date().toISOString() })
+        .eq("id", order.id);
+    } catch (e) {
+      console.error("Failed to update order with session id:", e);
     }
     
     // Create notification for payment session
@@ -240,11 +368,15 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
       timestamp: new Date().toISOString()
     });
     
+    const responsePayload = { url: session.url, orderId: order.id };
+
+    // Cache idempotent response if key provided
+    if (typeof idemKey === 'string' && idemKey.length > 0) {
+      try { await setIdempotentCache(user.id, idemKey, responsePayload); } catch (e) { console.error('Failed to set idempotency cache:', e); }
+    }
+
     return new Response(
-      JSON.stringify({ 
-        url: session.url,
-        orderId: order.id
-      }),
+      JSON.stringify(responsePayload),
       {
         status: 200,
         headers: {
