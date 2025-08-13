@@ -40,6 +40,7 @@
     "test:e2e-headed": "playwright test --headed",
     "test:e2e-trace": "playwright test --trace on",
     "test:visual": "playwright test tests/e2e/visual/",
+    "test:e2e:trip-request": "playwright test tests/e2e/trip-request-form.spec.ts",
     "test:visual-update": "playwright test tests/e2e/visual/ --update-snapshots",
     "test:accessibility": "playwright test --grep accessibility",
     "test:a11y": "playwright test tests/e2e/accessibility.a11y.spec.ts",
