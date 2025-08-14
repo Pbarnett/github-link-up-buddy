@@ -1,0 +1,50 @@
+name: E2E Smoke on PRs
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Enable pnpm cache
+        uses: actions/setup-node@v4
+        with:
+          cache: 'pnpm'
+
+      - name: Verify lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build app
+        run: pnpm build
+
+      - name: Start preview server
+        run: |
+          pnpm preview &
+          sleep 10
+        env:
+          PORT: 8080
+
+      - name: Run E2E critical tests
+        run: pnpm run test:e2e:critical
+        env:
+          CI: '1'
+          E2E_BASE_URL: http://localhost:8080
+
