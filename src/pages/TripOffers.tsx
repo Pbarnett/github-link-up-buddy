@@ -41,7 +41,7 @@ const LegacyTripOffers = ({ tripId, initialTripDetails }: { tripId: string; init
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-50 p-4">
+    <div className="min-h-screen flex flex-col items-center bg-background p-4">
       <TripOfferDetailsCard
         tripDetails={tripDetails}
         ignoreFilter={ignoreFilter}
@@ -59,6 +59,12 @@ const LegacyTripOffers = ({ tripId, initialTripDetails }: { tripId: string; init
         ignoreFilter={ignoreFilter}
         hasError={hasError || (!isLoading && offers.length === 0)}
       />
+
+      <div className="w-full">
+        <div className="results-toolbar">
+          <span className="text-xs text-muted-foreground">Sorted by price (low → high)</span>
+        </div>
+      </div>
 
       <div
         className="w-full content-visibility-auto"
@@ -93,11 +99,15 @@ export default function TripOffers() {
 
   useEffect(() => {
     if (flightSearchV2Enabled && tripId) {
-      // Preserve existing search params if any, though V2 might not use them
-      const currentSearchParams = new URLSearchParams(searchParams);
-      navigate(`/trips/${tripId}/v2?${currentSearchParams.toString()}`, { replace: true, state: location.state });
+      // Avoid redundant navigation if we are already on the V2 path
+      const targetPath = `/trips/${tripId}/v2`;
+      const alreadyOnV2 = location.pathname.startsWith(targetPath);
+      if (!alreadyOnV2) {
+        const currentSearchParams = new URLSearchParams(searchParams);
+        navigate(`${targetPath}?${currentSearchParams.toString()}`, { replace: true, state: location.state });
+      }
     }
-  }, [flightSearchV2Enabled, tripId, navigate, searchParams, location.state]);
+  }, [flightSearchV2Enabled, tripId, navigate, searchParams, location.pathname, location.state]);
 
   // If flightSearchV2Enabled is true, the useEffect will trigger navigation.
   // We should render null or a loading indicator while waiting for navigation,
