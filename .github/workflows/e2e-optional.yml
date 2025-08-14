@@ -61,6 +61,15 @@ jobs:
           CI: '1'
           E2E_BASE_URL: http://localhost:8080
 
+      - name: Upload E2E artifacts (trip) on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-trip-report
+          path: |
+            test-results/
+            playwright-report/
+
   e2e-oauth:
     if: ${{ inputs.run_oauth == true }}
     runs-on: ubuntu-latest
@@ -106,6 +115,15 @@ jobs:
           E2E_BASE_URL: http://localhost:8080
           MOCK_GOOGLE_OAUTH: '1'
 
+      - name: Upload E2E artifacts (oauth) on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-oauth-report
+          path: |
+            test-results/
+            playwright-report/
+
   e2e-visual:
     if: ${{ inputs.run_visual == true }}
     runs-on: ubuntu-latest
@@ -145,4 +163,13 @@ jobs:
         env:
           CI: '1'
           E2E_BASE_URL: http://localhost:8080
+
+      - name: Upload E2E artifacts (visual) on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-visual-report
+          path: |
+            test-results/
+            playwright-report/
 
