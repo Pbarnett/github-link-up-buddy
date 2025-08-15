@@ -66,33 +66,28 @@ export class StripeService {
   }
 
   /**
-   * Create a payment intent via Supabase edge function
-   * This ensures sensitive operations happen server-side
+   * Checkout flow helper: request a Checkout Session URL from the edge function
+   * Note: Checkout returns a session URL, not a client_secret.
    */
-  async createPaymentIntent(params: PaymentIntentParams) {
+  async createCheckoutSession(params: { trip_request_id: string; offer_id: string }) {
     try {
       const { data, error } = await supabase.functions.invoke('create-payment-session', {
         body: {
-          amount: Math.round(params.amount * 100), // Convert to cents
-          currency: params.currency.toLowerCase(),
-          metadata: params.metadata || {},
-          automatic_payment_methods: params.automatic_payment_methods || { enabled: true }
+          trip_request_id: params.trip_request_id,
+          offer_id: params.offer_id,
         }
       });
 
       if (error) {
-        throw new Error(`Payment intent creation failed: ${error.message}`);
+        throw new Error(`Checkout session creation failed: ${error.message}`);
       }
 
       return {
-        client_secret: data.client_secret,
-        id: data.id,
-        amount: data.amount,
-        currency: data.currency,
-        status: data.status
+        url: data.url as string,
+        orderId: data.orderId as string,
       };
     } catch (error) {
-      console.error('Error creating payment intent:', error);
+      console.error('Error creating Checkout Session:', error);
       throw error;
     }
   }
