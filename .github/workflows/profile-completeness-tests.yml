@@ -2,21 +2,14 @@ name: Profile Completeness Tests
 
 on:
   push:
-    branches: [ main, feature/profile-completeness-tests ]
-    paths:
-      - 'src/services/profileCompletenessService.ts'
-      - 'src/tests/unit/services/profileCompletenessService.enhanced.test.ts'
-      - 'src/tests/unit/database/profileCompleteness.trigger.test.ts'
-      - 'src/hooks/useTravelerProfile.ts'
-      - 'src/tests/**'
-  pull_request:
     branches: [ main ]
     paths:
       - 'src/services/profileCompletenessService.ts'
       - 'src/tests/unit/services/profileCompletenessService.enhanced.test.ts'
-      - 'src/tests/unit/database/profileCompleteness.trigger.test.ts'
+      - 'src/tests/unit/database/profileCompletenessService.trigger.test.ts'
       - 'src/hooks/useTravelerProfile.ts'
       - 'src/tests/**'
+  workflow_dispatch: {}
 
 jobs:
   profile-completeness-tests:
