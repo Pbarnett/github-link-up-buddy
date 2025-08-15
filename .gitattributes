@@ -1,0 +1,14 @@
+# Enforce consistent line endings and text normalization
+* text=auto eol=lf
+
+# Ensure TS/TSX use LF (avoid CRLF control characters issues)
+*.ts  text eol=lf
+*.tsx text eol=lf
+
+# Common config files
+*.sh   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+

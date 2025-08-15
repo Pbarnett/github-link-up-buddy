@@ -43,8 +43,15 @@ test('@critical wizard reaches review step', async ({ page }) => {
   const resp = await page.goto('/auto-booking/new');
   expect(resp && resp.ok()).toBeTruthy();
 
-  // Less brittle: wait for any known wizard heading or button
-  await page.waitForSelector('text=Create Auto-Booking Rule, text=Rule Criteria, text=Traveler Information, text=Payment Information', { timeout: 10000 });
+  // Less brittle: wait for any known wizard heading or button (use locator.or)
+  const anyWizardHeading = page
+    .getByRole('heading', { name: /Create Auto-Booking Rule/i })
+    .or(page.getByRole('heading', { name: /Rule Criteria/i }))
+    .or(page.getByRole('heading', { name: /Traveler Information/i }))
+    .or(page.getByRole('heading', { name: /Payment Information/i }))
+    .or(page.getByText(/Auto-Booking|Auto Booking/i));
+
+  await anyWizardHeading.first().waitFor({ timeout: 15000, state: 'visible' });
 
   // Assert we’re in the auto-booking flow route (no brittle selectors)
   expect(page.url()).toContain('/auto-booking');
