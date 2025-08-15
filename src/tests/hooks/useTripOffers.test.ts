@@ -1,4 +1,5 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
+import { renderHookAct, actAsync, flushMicrotasks } from '@/tests/utils/actHelpers';
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { useTripOffers, clearCache } from '@/hooks/useTripOffersLegacy';
 import { type TripDetails } from '@/hooks/useTripOffers';
@@ -140,7 +141,7 @@ async function renderHookAct<T>(callback: () => T) {
   return ret;
 }
 
-describe('useTripOffers', () => {
+describe('useTripOffers', () =>
   beforeEach(() => {
     vi.clearAllMocks();
     

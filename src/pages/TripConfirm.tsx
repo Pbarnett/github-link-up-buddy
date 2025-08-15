@@ -12,6 +12,7 @@ import TravelerDataForm, { TravelerData } from "@/components/TravelerDataForm";
 import { TablesInsert } from "@/integrations/supabase/types";
 import { toJsonSafe } from "@/utils/toJsonSafe";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureAuthenticated } from "@/lib/auth/ensureAuthenticated";
 
 const TripConfirm = () => {
   const navigate = useNavigate();
@@ -385,6 +386,8 @@ const TripConfirm = () => {
     }
 
     if (!userId) {
+      const ok = await ensureAuthenticated();
+      if (!ok) return;
       console.error("[TripConfirm] User not authenticated");
       toast({
         title: "Authentication Error",
