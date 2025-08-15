@@ -199,7 +199,7 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
       );
     }
 
-    // Process the event based on its type
+    // Process the event based on its type (idempotent handlers)
     switch (event.type) {
       // Handle SetupIntent events for saving payment methods
       case "setup_intent.succeeded": {
