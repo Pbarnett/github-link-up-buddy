@@ -40,9 +40,11 @@ test.beforeEach(async ({ page }) => {
 
 test('@critical wizard reaches review step', async ({ page }) => {
   // Minimal smoke: page responds OK and we land on /auto-booking
-  const resp = await page.goto('/auto-booking/new', { waitUntil: 'load' });
+  const resp = await page.goto('/auto-booking/new');
   expect(resp && resp.ok()).toBeTruthy();
-  await page.waitForLoadState('networkidle');
+
+  // Less brittle: wait for any known wizard heading or button
+  await page.waitForSelector('text=Create Auto-Booking Rule, text=Rule Criteria, text=Traveler Information, text=Payment Information', { timeout: 10000 });
 
   // Assert we’re in the auto-booking flow route (no brittle selectors)
   expect(page.url()).toContain('/auto-booking');

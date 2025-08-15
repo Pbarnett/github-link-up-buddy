@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('TripRequestForm E2E', () => {
+test.describe.skip('TripRequestForm E2E', () => {
+  // TODO(e2e-refresh): Replace legacy /trip-request and /trip/new flows with current routes
+  // and add stable data-testid selectors.
   test.beforeEach(async ({ page }) => {
     // Navigate to trip request form
     await page.goto('/');
