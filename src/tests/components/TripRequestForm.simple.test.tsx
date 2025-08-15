@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import TripRequestForm from '@/components/trip/TripRequestForm';
@@ -37,12 +37,15 @@ describe('TripRequestForm - Basic Functionality', () => {
     vi.clearAllMocks();
   });
 
-  it('should render the form with basic elements', () => {
-    render(
-      <MemoryRouter>
-        <TripRequestForm />
-      </MemoryRouter>
-    );
+  it('should render the form with basic elements', async () => {
+    await userEvent.setup();
+    await (await import('@testing-library/react')).act(async () => {
+      render(
+        cMemoryRoutere
+          cTripRequestForm /e
+        c/MemoryRoutere
+      );
+    });
 
     // Check for key form elements in the updated UI
     expect(screen.getByRole('heading', { name: /search live flights/i })).toBeInTheDocument();
@@ -50,12 +53,14 @@ describe('TripRequestForm - Basic Functionality', () => {
     expect(screen.getByRole('heading', { name: /top price you'll pay/i })).toBeInTheDocument();
   });
 
-  it('should render policy information badges (non-interactive)', () => {
-    render(
-      <MemoryRouter>
-        <TripRequestForm />
-      </MemoryRouter>
-    );
+  it('should render policy information badges (non-interactive)', async () => {
+    await (await import('@testing-library/react')).act(async () => {
+      render(
+        cMemoryRoutere
+          cTripRequestForm /e
+        c/MemoryRoutere
+      );
+    });
 
     // Updated UX shows informational content rather than interactive switches
     expect(screen.getByText(/what's included/i)).toBeInTheDocument();
@@ -63,12 +68,14 @@ describe('TripRequestForm - Basic Functionality', () => {
 
   // Removed switch toggle test due to UX changes (now informational badges)
 
-  it('should have submit button disabled initially', () => {
-    render(
-      <MemoryRouter>
-        <TripRequestForm />
-      </MemoryRouter>
-    );
+  it('should have submit button disabled initially', async () => {
+    await (await import('@testing-library/react')).act(async () => {
+      render(
+        cMemoryRoutere
+          cTripRequestForm /e
+        c/MemoryRoutere
+      );
+    });
 
     // Submit button should be disabled when form is empty (there are multiple, check they're all disabled)
     const submitButtons = screen.getAllByRole('button', { name: /search now/i });
@@ -77,16 +84,18 @@ describe('TripRequestForm - Basic Functionality', () => {
     });
   });
 
-  it('should show calendar when date buttons are clicked', async () => {
+it('should show calendar when date buttons are clicked', async () => {
     render(
       <MemoryRouter>
         <TripRequestForm />
       </MemoryRouter>
     );
 
+    const user = userEvent.setup();
+
     // Click on updated date buttons
     const departureBtn = screen.getByRole('button', { name: /departure date/i });
-    await userEvent.click(departureBtn);
+    await user.click(departureBtn);
 
     // Should show our mocked calendar
     await waitFor(() => {
@@ -95,43 +104,49 @@ describe('TripRequestForm - Basic Functionality', () => {
 
     // Select a date
     const selectDateButton = screen.getByTestId('select-date-button');
-    await userEvent.click(selectDateButton);
+    await user.click(selectDateButton);
 
     const latestBtn = screen.getByRole('button', { name: /latest departure/i });
-    await userEvent.click(latestBtn);
+    await user.click(latestBtn);
 
     await waitFor(() => {
       expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
     });
 
     const selectDateButton2 = screen.getByTestId('select-date-button');
-    await userEvent.click(selectDateButton2);
+    await user.click(selectDateButton2);
   });
 
-  it('should allow filling out basic form fields', async () => {
+it('should allow filling out basic form fields', async () => {
     render(
       <MemoryRouter>
         <TripRequestForm />
       </MemoryRouter>
     );
 
+    const user = userEvent.setup();
+
     // Fill out departure airport
     const departureInput = screen.getByPlaceholderText(/e\.g\., BOS/i);
-    fireEvent.change(departureInput, { target: { value: 'SFO' } });
+    await user.clear(departureInput);
+    await user.type(departureInput, 'SFO');
     expect(departureInput).toHaveValue('SFO');
 
     // Fill out duration fields (numeric inputs return numbers, not strings)
     const minDurationInput = screen.getByDisplayValue('3');
-    fireEvent.change(minDurationInput, { target: { value: '5' } });
+    await user.clear(minDurationInput);
+    await user.type(minDurationInput, '5');
     expect(minDurationInput).toHaveValue(5);
 
     const maxDurationInput = screen.getByDisplayValue('7');
-    fireEvent.change(maxDurationInput, { target: { value: '10' } });
+    await user.clear(maxDurationInput);
+    await user.type(maxDurationInput, '10');
     expect(maxDurationInput).toHaveValue(10);
 
     // Fill out budget (numeric input returns number)
     const budgetInput = screen.getByDisplayValue('1000');
-    fireEvent.change(budgetInput, { target: { value: '1500' } });
+    await user.clear(budgetInput);
+    await user.type(budgetInput, '1500');
     expect(budgetInput).toHaveValue(1500);
   });
 

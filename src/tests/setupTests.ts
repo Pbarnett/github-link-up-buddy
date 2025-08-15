@@ -1,4 +1,4 @@
-import { vi, afterEach } from 'vitest'
+import { vi, afterEach, beforeEach } from 'vitest'
 import '@testing-library/jest-dom'
 import React from 'react'
 
@@ -225,21 +225,36 @@ vi.mock('@/lib/utils/formatDate', () => ({
 // This allows MemoryRouter in tests to work correctly with query parameters
 
 // ==============================================================================
+// React Router v7 future flag warnings: filter in test output
+// ==============================================================================
+// React Router emits deprecation-like warnings about upcoming v7 behavior. These are
+// informative but extremely noisy in tests, and we intentionally exercise routing.
+// We filter only those specific warnings while letting other warnings pass through.
+try {
+  const originalWarn = console.warn.bind(console);
+  (globalThis as any).consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation((...args: any[]) => {
+    const first = args[0];
+    const isRouterFutureWarning = typeof first === 'string' && first.includes('React Router Future Flag Warning');
+    if (isRouterFutureWarning) return;
+    originalWarn(...args as Parameters<typeof console.warn>);
+  });
+} catch {}
+
+// ==============================================================================
+// DEBOUNCE: MAKE SYNCHRONOUS IN TESTS
+// ==============================================================================
+// If a debounce utility exists, force it to call immediately to avoid act warnings
+try {
+  vi.mock('@/lib/utils/debounce', () => ({
+    debounce: (fn: any) => fn,
+  }));
+} catch {}
+
+// ==============================================================================
 // GLOBAL TEST ENVIRONMENT RESET
 // ==============================================================================
 
 afterEach(() => {
-// Run all pending timers first, in case they're pending
-  try {
-    vi.runAllTimers()
-  } catch {}
-  // Clear all timers and restore real timers (only if fake timers are active)
-  try {
-    vi.runOnlyPendingTimers()
-    vi.useRealTimers()
-  } catch {}
-  // Timers aren't mocked, ignore
-  
   // Clear all mocks and restore functions
   vi.clearAllMocks()
   

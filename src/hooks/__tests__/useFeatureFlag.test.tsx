@@ -22,7 +22,7 @@ describe('useFeatureFlag', () => {
     }
   });
 
-  it.skip('returns LaunchDarkly value when available', async () =e {
+  it.skip('returns LaunchDarkly value when available', async () => {
     vi.mock('launchdarkly-react-client-sdk', () => ({
       useFlags: () => ({ wallet_ui: true, profile_ui_revamp: false }),
     }));
@@ -40,7 +40,7 @@ describe('useFeatureFlag', () => {
     expect(result.current.data).toBe(true);
   });
 
-  it.skip('falls back to default when flag not set', async () =e {
+  it.skip('falls back to default when flag not set', async () => {
     vi.mock('launchdarkly-react-client-sdk', () => ({ useFlags: () => ({}) }));
     vi.mock('@/hooks/useCurrentUser', () => ({ useCurrentUser: () => ({ user: { id: 'u1' } }) }));
     const { LDTestHarness } = await import('@/tests/utils/LDTestHarness');
@@ -54,7 +54,7 @@ describe('useFeatureFlag', () => {
     expect(result.current.data).toBe(false);
   });
 
-  it.skip('honors localStorage LD_PRESET_FLAGS override', async () =e {
+  it.skip('honors localStorage LD_PRESET_FLAGS override', async () => {
     vi.mock('launchdarkly-react-client-sdk', () => ({ useFlags: () => ({}) }));
     vi.mock('@/hooks/useCurrentUser', () => ({ useCurrentUser: () => ({ user: { id: 'u2' } }) }));
     window.localStorage.setItem('LD_PRESET_FLAGS', JSON.stringify({ profile_ui_revamp: true }));
@@ -69,7 +69,7 @@ describe('useFeatureFlag', () => {
     expect(result.current.data).toBe(true);
   });
 
-  it.skip('tracks personalization_greeting flag exposures', async () =e {
+  it.skip('tracks personalization_greeting flag exposures', async () => {
     const tracker = vi.fn();
     vi.mock('launchdarkly-react-client-sdk', () => ({ useFlags: () => ({ personalization_greeting: true }) }));
     vi.mock('@/hooks/useCurrentUser', () => ({ useCurrentUser: () => ({ user: { id: 'u3' } }) }));

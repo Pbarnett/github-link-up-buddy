@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { V7TestRouter } from '@/tests/utils/V7TestRouter';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BusinessRulesProvider } from '@/hooks/useBusinessRules';
 // import { FormAnalyticsProvider } from '@/hooks/useFormAnalytics';
@@ -40,11 +40,11 @@ export function TestWrapper({ children, initialEntries = ['/'], queryClient }: T
 
   return (
     <QueryClientProvider client={testQueryClient}>
-      <MemoryRouter initialEntries={initialEntries}>
+      <V7TestRouter initialEntries={initialEntries}>
         <BusinessRulesProvider>
             {children}
         </BusinessRulesProvider>
-      </MemoryRouter>
+      </V7TestRouter>
     </QueryClientProvider>
   );
 }

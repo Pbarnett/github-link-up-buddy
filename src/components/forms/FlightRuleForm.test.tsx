@@ -130,7 +130,7 @@ describe('FlightRuleForm', () => {
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
-  it.skip('allows selection of different cabin classes', async () =e {
+  it.skip('allows selection of different cabin classes', async () => {
     const defaultValues = {
       origin: ['JFK'],
       destination: 'LAX',

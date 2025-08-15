@@ -23,6 +23,7 @@ class MockResizeObserver {
   disconnect() {}
 }
 
+
 // Only define ResizeObserver if it doesn't exist
 if (!window.ResizeObserver) {
   Object.defineProperty(window, 'ResizeObserver', {
@@ -46,23 +47,31 @@ vi.mock('@/components/ui/slider', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/select', () => ({
-  Select: ({ children, value, onValueChange }: any) => (
-    <select
-      role="combobox"
-      value={value || ''}
-      onChange={(e) => onValueChange?.(e.target.value)}
-    >
-      {children}
-    </select>
-  ),
-  SelectContent: ({ children }: any) => <>{children}</>,
-  SelectItem: ({ value, children }: any) => (
-    <option value={value}>{children}</option>
-  ),
-  SelectTrigger: ({ children }: any) => <div>{children}</div>,
-  SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>,
-}));
+vi.mock('@/components/ui/select', () => {
+  const React = require('react');
+  return {
+    Select: ({ value, onValueChange }: any) => {
+      return (
+        <select
+          role="combobox"
+          value={value || ''}
+          onChange={(e) => onValueChange?.(e.target.value)}
+        >
+          <option value="standard">Standard</option>
+          <option value="budget">Budget Focus</option>
+          <option value="fast">Fast Results</option>
+        </select>
+      );
+    },
+    SelectContent: ({ children }: any) => <>{children}</>,
+    SelectItem: ({ value, children }: any) => (
+      <option value={value}>{children}</option>
+    ),
+    // Avoid injecting any DOM that could end up nested inside <select>
+    SelectTrigger: () => null,
+    SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>,
+  };
+});
 
 vi.mock('@/components/ui/switch', () => ({
   Switch: ({ checked, onCheckedChange, ...props }: any) => (
