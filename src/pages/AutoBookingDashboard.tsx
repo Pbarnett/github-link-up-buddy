@@ -22,8 +22,7 @@ function AutoBookingDashboard() {
   const { campaigns, isLoading, error, refreshCampaigns, pauseCampaign, resumeCampaign, deleteCampaign } = useCampaigns();
 
   // No breadcrumbs needed since this is the main dashboard page
-
-  const handleCreateCampaign = async () => {
+  const handleCreateCampaign = async () => {
     // Soft-gating: allow starting wizard without auth to maximize conversions
     navigate("/auto-booking/new");
   };
