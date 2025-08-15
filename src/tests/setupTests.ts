@@ -236,23 +236,31 @@ try {
   const suppressedPatterns = [
     /React Router Future Flag Warning/i,
   ];
-  (globalThis as any).consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation((...args: any[]) =3e {
+  (globalThis as any).consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation((...args: any[]) => {
     try {
-      const msg = args.map(a =3e (typeof a === 'string' ? a : (a 2626 a.message) ? a.message : String(a))).join(' ');
-      if (suppressedPatterns.some((re) =3e re.test(msg))) {
+      const msg = args.map((a: unknown) => {
+        if (typeof a === 'string') return a;
+        const m = (a as any)?.message;
+        return typeof m === 'string' ? m : String(a);
+      }).join(' ');
+      if (suppressedPatterns.some((re) => re.test(msg))) {
         return;
       }
     } catch {}
-    originalWarn(...(args as Parameters3ctypeof console.warn3e));
+    originalWarn(...(args as Parameters<typeof console.warn>));
   });
-  (globalThis as any).consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation((...args: any[]) =3e {
+  (globalThis as any).consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation((...args: any[]) => {
     try {
-      const msg = args.map(a =3e (typeof a === 'string' ? a : (a 2626 a.message) ? a.message : String(a))).join(' ');
-      if (suppressedPatterns.some((re) =3e re.test(msg))) {
+      const msg = args.map((a: unknown) => {
+        if (typeof a === 'string') return a;
+        const m = (a as any)?.message;
+        return typeof m === 'string' ? m : String(a);
+      }).join(' ');
+      if (suppressedPatterns.some((re) => re.test(msg))) {
         return;
       }
     } catch {}
-    originalError(...(args as Parameters3ctypeof console.error3e));
+    originalError(...(args as Parameters<typeof console.error>));
   });
 } catch {}
 
