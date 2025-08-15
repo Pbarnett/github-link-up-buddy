@@ -84,7 +84,7 @@ function CampaignWizard() {
     });
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = async () => {
     // Final guard: ensure authenticated before creating the campaign
     const ok = await ensureAuthenticated();
     if (!ok) return;
