@@ -51,7 +51,7 @@ function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
   const stripe = useStripe();
   const elements = useElements();
 
-  const handleFormSubmit = async (data: PaymentFormData) => {
+  const handleFormSubmit = async (data: PaymentFormData) => {
     // Require auth here (conversion-optimized step) before creating payment method
     const ok = await ensureAuthenticated();
     if (!ok) return;
