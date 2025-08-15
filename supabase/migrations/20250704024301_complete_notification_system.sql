@@ -36,21 +36,29 @@ CREATE INDEX IF NOT EXISTS idx_deliveries_created_at ON notification_deliveries(
 -- 3. Enable RLS for notification_deliveries
 ALTER TABLE public.notification_deliveries ENABLE ROW LEVEL SECURITY;
 
--- 4. Create RLS policies for notification_deliveries
-CREATE POLICY "Users can view deliveries of their notifications"
-  ON public.notification_deliveries FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM notifications n 
-      WHERE n.id = notification_deliveries.notification_id 
-      AND n.user_id = auth.uid()
-    )
-  );
+-- 4. Create RLS policies for notification_deliveries (guarded to avoid duplicates)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notification_deliveries' AND policyname='Users can view deliveries of their notifications'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view deliveries of their notifications" 
+      ON public.notification_deliveries FOR SELECT 
+      USING (EXISTS (SELECT 1 FROM notifications n WHERE n.id = notification_deliveries.notification_id AND n.user_id = auth.uid()))';
+  END IF;
+END $$;
 
-CREATE POLICY "Service role can manage all deliveries"
-  ON public.notification_deliveries FOR ALL
-  TO service_role
-  USING (true);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notification_deliveries' AND policyname='Service role can manage all deliveries'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Service role can manage all deliveries" 
+      ON public.notification_deliveries FOR ALL 
+      TO service_role 
+      USING (true)';
+  END IF;
+END $$;
 
 -- 5. Create updated_at trigger for notification_deliveries
 CREATE OR REPLACE FUNCTION update_notification_deliveries_updated_at()
