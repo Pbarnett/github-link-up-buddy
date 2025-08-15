@@ -79,7 +79,7 @@ jobs:
           fi
           for func in "${funcs[@]}"; do
             echo "Validating $func"
-            deno check "$func"
+            deno check --config supabase/functions/deno.json "$func"
           done
 
   deploy:
