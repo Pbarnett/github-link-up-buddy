@@ -106,7 +106,16 @@ BEGIN
 END
 $$;
 CREATE INDEX IF NOT EXISTS idx_events_user_id ON events(user_id);
-CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema='public' AND table_name='events' AND column_name='created_at'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_events_created_at ON public.events(created_at)';
+  END IF;
+END
+$$;
 
 -- Create duffel_webhook_events table
 CREATE TABLE IF NOT EXISTS public.duffel_webhook_events (
