@@ -51,13 +51,13 @@ describe('useTripOffersPools', () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  it('should handle budget bumping correctly', async () => {
-    const { result } = renderHook(() => useTripOffersPools({ tripId: 'test-trip' }));
+  it('should handle budget bumping correctly', async () => {
+    const { result } = renderHook(() => useTripOffersPools({ tripId: 'test-trip' }));
 
     // Flush initial async effects
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await Promise.resolve(); });
 
-    await act(async () => {
+    await act(async () => {
       result.current.bumpBudget();
       await Promise.resolve();
     });
@@ -66,14 +66,14 @@ describe('useTripOffersPools', () => {
     expect(result.current.bumpsUsed).toBe(1);
   });
 
-  it('should prevent budget bumping after 3 uses', async () => {
-    const { result } = renderHook(() => useTripOffersPools({ tripId: 'test-trip' }));
+  it('should prevent budget bumping after 3 uses', async () => {
+    const { result } = renderHook(() => useTripOffersPools({ tripId: 'test-trip' }));
 
     // Flush initial async effects
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await Promise.resolve(); });
 
     // Bump 3 times
-    await act(async () => {
+    await act(async () => {
       result.current.bumpBudget();
       result.current.bumpBudget();
       result.current.bumpBudget();
@@ -83,7 +83,7 @@ describe('useTripOffersPools', () => {
     const budgetAfterThreeBumps = result.current.budget;
 
     // Try to bump a 4th time
-    await act(async () => {
+    await act(async () => {
       result.current.bumpBudget();
       await Promise.resolve();
     });
