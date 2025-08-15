@@ -6,10 +6,30 @@ BEGIN;
 -- Load testing framework
 SELECT plan(15);
 
--- Test RLS is enabled on critical tables
-SELECT has_policy('public', 'profiles', 'Users can view public profiles');
-SELECT has_policy('public', 'github_repositories', 'Users can view public repositories');
-SELECT has_policy('public', 'connections', 'Users can view their own connections');
+-- Test RLS is enabled on critical tables (use pg_policies for compatibility with older pgTAP)
+SELECT ok(
+  EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'profiles' AND policyname = 'Users can view public profiles'
+  ),
+  'Users can view public profiles policy exists on public.profiles'
+);
+
+SELECT ok(
+  EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'github_repositories' AND policyname = 'Users can view public repositories'
+  ),
+  'Users can view public repositories policy exists on public.github_repositories'
+);
+
+SELECT ok(
+  EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'connections' AND policyname = 'Users can view their own connections'
+  ),
+  'Users can view their own connections policy exists on public.connections'
+);
 
 -- Test user can only access their own profile for updates
 PREPARE test_profile_access AS
