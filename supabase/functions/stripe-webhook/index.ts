@@ -22,7 +22,7 @@ const corsHeaders = {
 };
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-  apiVersion: "2023-10-16",
+  apiVersion: "2024-06-20",
 });
 
 const endpointSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";
@@ -379,7 +379,7 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.user_id;
-        const orderId = session.metadata?.order_id; // This is the booking_request_id
+        const orderId = session.metadata?.order_id;
         
         console.log(`[STRIPE-WEBHOOK] Processing completed checkout session for user ${userId}, orderId: ${orderId}, mode: ${session.mode}`);
         
@@ -415,28 +415,56 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
             });
           }
 
-          // Handle payment mode - process booking request or complete order
+          // Handle payment mode - process order reconciliation (Orders-first)
           if (orderId) {
-            // Handle new booking flow with booking_requests
-            console.log(`[STRIPE-WEBHOOK] Processing payment for booking request ${orderId}`);
-            
-            // First update the checkout session ID
-            const { error: updateSessionError } = await supabase
-              .from("booking_requests")
-              .update({ 
-                checkout_session_id: session.id,
-                updated_at: new Date().toISOString()
-              })
-              .eq("id", orderId);
-              
-            if (updateSessionError) {
-              console.error(`[STRIPE-WEBHOOK] Error updating checkout session ID:`, updateSessionError);
-            }
-            
-            const success = await processBookingRequest(orderId);
-            
-            if (!success) {
-              console.error(`[STRIPE-WEBHOOK] Failed to process booking request: ${orderId}`);
+            console.log(`[STRIPE-WEBHOOK] Processing payment for order ${orderId}`);
+
+            // Update the order with checkout session id and set status completed idempotently
+            const { data: existingOrder } = await supabase
+              .from('orders')
+              .select('status')
+              .eq('id', orderId)
+              .single();
+
+            if (!existingOrder || existingOrder.status !== 'completed') {
+              const { error: updOrderErr } = await supabase
+                .from('orders')
+                .update({ checkout_session_id: session.id, status: 'completed', updated_at: new Date().toISOString() })
+                .eq('id', orderId);
+              if (updOrderErr) {
+                console.error('[STRIPE-WEBHOOK] Error updating order status:', updOrderErr);
+              }
+
+              // Create a booking linked to this payment using metadata context
+              const tripRequestId = session.metadata?.trip_request_id;
+              const flightOfferId = session.metadata?.flight_offer_id;
+
+              if (tripRequestId && flightOfferId) {
+                const { data: booking, error: bookingError } = await supabase
+                  .from('bookings')
+                  .insert({
+                    user_id: userId,
+                    trip_request_id: tripRequestId,
+                    flight_offer_id: flightOfferId,
+                  })
+                  .select()
+                  .single();
+
+                if (bookingError) {
+                  console.error('[STRIPE-WEBHOOK] Error creating booking:', bookingError);
+                } else {
+                  await createNotification(userId!, 'booking_success', {
+                    bookingId: booking.id,
+                    flightOfferId,
+                    orderId,
+                    timestamp: new Date().toISOString(),
+                  });
+                }
+              } else {
+                console.warn('[STRIPE-WEBHOOK] Missing trip_request_id or flight_offer_id in session metadata; skipping booking creation');
+              }
+            } else {
+              console.log(`[STRIPE-WEBHOOK] Order ${orderId} already completed; skipping duplicate processing`);
             }
           } else {
             // Handle legacy flow (this is the old code path for orders)
