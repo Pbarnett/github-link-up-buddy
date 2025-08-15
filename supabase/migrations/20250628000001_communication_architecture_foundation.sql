@@ -4,11 +4,12 @@
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "pgmq";
 
 -- Events table (immutable log for event sourcing)
 CREATE TABLE IF NOT EXISTS public.events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type TEXT NOT NULL,
     payload JSONB NOT NULL,
     user_id UUID REFERENCES auth.users(id),
@@ -21,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.events (
 
 -- Notification templates for content management
 CREATE TABLE IF NOT EXISTS public.notification_templates (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL UNIQUE,
     notification_type TEXT NOT NULL,
     channel TEXT NOT NULL CHECK (channel IN ('email', 'sms', 'push', 'in_app')),
@@ -87,8 +88,8 @@ BEGIN
         END IF;
     ELSE
         -- Create new comprehensive notifications table
-        CREATE TABLE public.notifications (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE public.notifications (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
             type TEXT NOT NULL,
             title TEXT,
@@ -107,7 +108,7 @@ $$;
 
 -- Delivery logs for tracking notification attempts
 CREATE TABLE IF NOT EXISTS public.notification_deliveries (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     notification_id UUID NOT NULL REFERENCES public.notifications(id) ON DELETE CASCADE,
     channel TEXT NOT NULL,
     provider TEXT NOT NULL,
