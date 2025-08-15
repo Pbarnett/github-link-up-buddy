@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
+import { V7TestRouter } from '@/tests/utils/V7TestRouter';
 
 interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
   queryClient?: QueryClient;
@@ -36,10 +36,10 @@ export const renderWithProviders = (
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={initialEntries}>
+      <V7TestRouter initialEntries={initialEntries}>
         {children}
         <Toaster />
-      </MemoryRouter>
+      </V7TestRouter>
     </QueryClientProvider>
   );
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { vi } from 'vitest';
 import { PersonalizationProvider, usePersonalization } from '@/contexts/PersonalizationContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -101,7 +101,9 @@ describe('PersonalizationContext', () => {
   });
 
   it('should provide personalization data when enabled', async () => {
-    renderWithProviders(<TestComponent />);
+    await act(async () => {
+      renderWithProviders(<TestComponent />);
+    });
 
     await waitFor(() => {
       expect(screen.getByTestId('personalization-enabled')).toHaveTextContent('enabled');
@@ -112,8 +114,10 @@ describe('PersonalizationContext', () => {
     });
   });
 
-  it('should handle loading state', () => {
-    renderWithProviders(<TestComponent />);
+  it('should handle loading state', async () => {
+    await act(async () => {
+      renderWithProviders(<TestComponent />);
+    });
     expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
@@ -128,7 +132,9 @@ describe('PersonalizationContext', () => {
       );
     };
 
-    render(<DisabledTestComponent />);
+    await act(async () => {
+      render(<DisabledTestComponent />);
+    });
 
     expect(screen.getByTestId('personalization-enabled')).toHaveTextContent('disabled');
     expect(screen.getByTestId('first-name')).toHaveTextContent('N/A');

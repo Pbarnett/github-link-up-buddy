@@ -1,6 +1,6 @@
-const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-if (!supabaseUrl || !supabaseServiceRoleKey) {
+const supabaseUrlCheck = Deno.env.get("SUPABASE_URL");
+const supabaseServiceRoleKeyCheck = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+if (!supabaseUrlCheck || !supabaseServiceRoleKeyCheck) {
   console.error('Error: Missing Supabase environment variables. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.');
   throw new Error('Edge Function: Missing Supabase environment variables (SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY).');
 }
@@ -14,6 +14,7 @@ if (!stripeSecretKey) {
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { verifyAndParseEvent, StripeLike } from "./core.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -163,14 +164,15 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
   }
 
   try {
-    // Verify webhook signature
+    // Verify webhook signature using pure helper
     const payload = await req.text();
     const sig = req.headers.get("stripe-signature");
-    
-    if (!sig || !endpointSecret) {
-      console.error("[STRIPE-WEBHOOK] Missing signature or webhook secret");
+    const { verifyStripeSignature } = await import('../lib/webhookVerify.ts');
+    const result = verifyStripeSignature(payload, sig, endpointSecret, stripe.webhooks.constructEvent.bind(stripe.webhooks));
+    if (!result.valid) {
+      console.error("[STRIPE-WEBHOOK] Signature verification failed:", result.error);
       return new Response(
-        JSON.stringify({ error: "Missing signature or webhook secret" }),
+        JSON.stringify({ error: result.error || 'Invalid signature' }),
         {
           status: 400,
           headers: {
@@ -180,24 +182,8 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
         }
       );
     }
-    
-    let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
-      console.log(`[STRIPE-WEBHOOK] ✅ Webhook verified: ${event.type}`);
-    } catch (err) {
-      console.error(`[STRIPE-WEBHOOK] ⚠️ Webhook signature verification failed:`, err);
-      return new Response(
-        JSON.stringify({ error: "Invalid signature" }),
-        {
-          status: 400,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
+    const event: Stripe.Event = result.event as Stripe.Event;
+    console.log(`[STRIPE-WEBHOOK] ✅ Webhook verified: ${event.type}`);
 
     // Process the event based on its type (idempotent handlers)
     switch (event.type) {
