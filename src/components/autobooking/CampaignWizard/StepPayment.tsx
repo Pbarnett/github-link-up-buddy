@@ -15,6 +15,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { CreditCard, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
+import { ensureAuthenticated } from '@/lib/auth/ensureAuthenticated';
 import { trackCampaignEvent } from '@/utils/monitoring';
 
 // Initialize Stripe.js with your publishable key
@@ -50,7 +51,11 @@ function StepPayment({ onNext, onBack, isLoading = false }: StepPaymentProps) {
   const stripe = useStripe();
   const elements = useElements();
 
-  const handleFormSubmit = async (data: PaymentFormData) => {
+  const handleFormSubmit = async (data: PaymentFormData) => {
+    // Require auth here (conversion-optimized step) before creating payment method
+    const ok = await ensureAuthenticated();
+    if (!ok) return;
+
     if (!stripe || !elements) {
       console.error("Stripe.js hasn't loaded yet.");
       return;
