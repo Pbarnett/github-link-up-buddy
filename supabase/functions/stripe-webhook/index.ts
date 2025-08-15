@@ -1,6 +1,6 @@
-const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-if (!supabaseUrl || !supabaseServiceRoleKey) {
+const supabaseUrlCheck = Deno.env.get("SUPABASE_URL");
+const supabaseServiceRoleKeyCheck = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+if (!supabaseUrlCheck || !supabaseServiceRoleKeyCheck) {
   console.error('Error: Missing Supabase environment variables. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.');
   throw new Error('Edge Function: Missing Supabase environment variables (SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY).');
 }
@@ -14,6 +14,7 @@ if (!stripeSecretKey) {
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { verifyAndParseEvent, StripeLike } from "./core.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,7 +23,7 @@ const corsHeaders = {
 };
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-  apiVersion: "2023-10-16",
+  apiVersion: "2024-06-20",
 });
 
 const endpointSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";
@@ -163,14 +164,15 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
   }
 
   try {
-    // Verify webhook signature
+    // Verify webhook signature using pure helper
     const payload = await req.text();
     const sig = req.headers.get("stripe-signature");
-    
-    if (!sig || !endpointSecret) {
-      console.error("[STRIPE-WEBHOOK] Missing signature or webhook secret");
+    const { verifyStripeSignature } = await import('../lib/webhookVerify.ts');
+    const result = verifyStripeSignature(payload, sig, endpointSecret, stripe.webhooks.constructEvent.bind(stripe.webhooks));
+    if (!result.valid) {
+      console.error("[STRIPE-WEBHOOK] Signature verification failed:", result.error);
       return new Response(
-        JSON.stringify({ error: "Missing signature or webhook secret" }),
+        JSON.stringify({ error: result.error || 'Invalid signature' }),
         {
           status: 400,
           headers: {
@@ -180,26 +182,10 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
         }
       );
     }
-    
-    let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
-      console.log(`[STRIPE-WEBHOOK] ✅ Webhook verified: ${event.type}`);
-    } catch (err) {
-      console.error(`[STRIPE-WEBHOOK] ⚠️ Webhook signature verification failed:`, err);
-      return new Response(
-        JSON.stringify({ error: "Invalid signature" }),
-        {
-          status: 400,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
+    const event: Stripe.Event = result.event as Stripe.Event;
+    console.log(`[STRIPE-WEBHOOK] ✅ Webhook verified: ${event.type}`);
 
-    // Process the event based on its type
+    // Process the event based on its type (idempotent handlers)
     switch (event.type) {
       // Handle SetupIntent events for saving payment methods
       case "setup_intent.succeeded": {
@@ -215,19 +201,19 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
         const pm = await stripe.paymentMethods.retrieve(setupIntent.payment_method as string);
         console.log(`[STRIPE-WEBHOOK] Retrieved payment method: ${pm.id}`);
 
-        // Find user by Stripe customer ID
-        const { data: profile, error: profileError } = await supabase
-          .from('traveler_profiles')
+        // Find user by Stripe customer ID using the canonical mapping table
+        const { data: stripeCustomer, error: scError } = await supabase
+          .from('stripe_customers')
           .select('user_id')
           .eq('stripe_customer_id', setupIntent.customer as string)
           .single();
 
-        if (profileError || !profile) {
+        if (scError || !stripeCustomer) {
           console.error("[STRIPE-WEBHOOK] Cannot find user for customer:", setupIntent.customer);
           break;
         }
 
-        const userId = profile.user_id;
+        const userId = stripeCustomer.user_id;
 
         // Check if payment method already exists (idempotency)
         const { data: existingPM } = await supabase
@@ -379,7 +365,7 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.user_id;
-        const orderId = session.metadata?.order_id; // This is the booking_request_id
+        const orderId = session.metadata?.order_id;
         
         console.log(`[STRIPE-WEBHOOK] Processing completed checkout session for user ${userId}, orderId: ${orderId}, mode: ${session.mode}`);
         
@@ -415,28 +401,56 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
             });
           }
 
-          // Handle payment mode - process booking request or complete order
+          // Handle payment mode - process order reconciliation (Orders-first)
           if (orderId) {
-            // Handle new booking flow with booking_requests
-            console.log(`[STRIPE-WEBHOOK] Processing payment for booking request ${orderId}`);
-            
-            // First update the checkout session ID
-            const { error: updateSessionError } = await supabase
-              .from("booking_requests")
-              .update({ 
-                checkout_session_id: session.id,
-                updated_at: new Date().toISOString()
-              })
-              .eq("id", orderId);
-              
-            if (updateSessionError) {
-              console.error(`[STRIPE-WEBHOOK] Error updating checkout session ID:`, updateSessionError);
-            }
-            
-            const success = await processBookingRequest(orderId);
-            
-            if (!success) {
-              console.error(`[STRIPE-WEBHOOK] Failed to process booking request: ${orderId}`);
+            console.log(`[STRIPE-WEBHOOK] Processing payment for order ${orderId}`);
+
+            // Update the order with checkout session id and set status completed idempotently
+            const { data: existingOrder } = await supabase
+              .from('orders')
+              .select('status')
+              .eq('id', orderId)
+              .single();
+
+            if (!existingOrder || existingOrder.status !== 'completed') {
+              const { error: updOrderErr } = await supabase
+                .from('orders')
+                .update({ checkout_session_id: session.id, status: 'completed', updated_at: new Date().toISOString() })
+                .eq('id', orderId);
+              if (updOrderErr) {
+                console.error('[STRIPE-WEBHOOK] Error updating order status:', updOrderErr);
+              }
+
+              // Create a booking linked to this payment using metadata context
+              const tripRequestId = session.metadata?.trip_request_id;
+              const flightOfferId = session.metadata?.flight_offer_id;
+
+              if (tripRequestId && flightOfferId) {
+                const { data: booking, error: bookingError } = await supabase
+                  .from('bookings')
+                  .insert({
+                    user_id: userId,
+                    trip_request_id: tripRequestId,
+                    flight_offer_id: flightOfferId,
+                  })
+                  .select()
+                  .single();
+
+                if (bookingError) {
+                  console.error('[STRIPE-WEBHOOK] Error creating booking:', bookingError);
+                } else {
+                  await createNotification(userId!, 'booking_success', {
+                    bookingId: booking.id,
+                    flightOfferId,
+                    orderId,
+                    timestamp: new Date().toISOString(),
+                  });
+                }
+              } else {
+                console.warn('[STRIPE-WEBHOOK] Missing trip_request_id or flight_offer_id in session metadata; skipping booking creation');
+              }
+            } else {
+              console.log(`[STRIPE-WEBHOOK] Order ${orderId} already completed; skipping duplicate processing`);
             }
           } else {
             // Handle legacy flow (this is the old code path for orders)

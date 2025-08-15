@@ -158,88 +158,26 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { 
-      status: 405, 
-      headers: corsHeaders 
-    });
-  }
-
-  try {
-    const body = await req.text();
-    const signature = req.headers.get('stripe-signature');
-
-    if (!signature) {
-      throw new Error('No Stripe signature found');
-    }
-
-    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-    if (!webhookSecret) {
-      throw new Error('No webhook secret configured');
-    }
-
-    // Verify webhook signature
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-
-    console.log(`Received webhook event: ${event.type}`);
-
-    // Handle different event types
-    switch (event.type) {
-      case 'payment_method.attached':
-        await handlePaymentMethodAttached(event.data.object as Stripe.PaymentMethod);
-        break;
-      
-      case 'payment_method.detached':
-        await handlePaymentMethodDetached(event.data.object as Stripe.PaymentMethod);
-        break;
-      
-      case 'setup_intent.succeeded':
-        // SetupIntent succeeded - payment method should be attached automatically
-        console.log(`SetupIntent succeeded: ${event.data.object.id}`);
-        break;
-      
-      case 'setup_intent.setup_failed':
-        // SetupIntent failed - log for monitoring
-        console.error(`SetupIntent failed: ${event.data.object.id}`);
-        await logAuditEvent({
-          user_id: 'system',
-          action: 'SETUP_INTENT_FAILED',
-          table_name: 'setup_intents',
-          record_id: event.data.object.id,
-          new_data: {
-            error: event.data.object.last_setup_error?.message || 'Unknown error',
-          },
-        });
-        break;
-      
-      default:
-        console.log(`Unhandled event type: ${event.type}`);
-    }
-
-    return new Response(
-      JSON.stringify({ received: true }),
-      {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-  } catch (error) {
-    console.error('Webhook error:', error);
-    
+  // Hard deprecation: return 410 Gone for all non-OPTIONS requests
+  const url = new URL(req.url);
+  if (url.searchParams.get('action') === 'health') {
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Webhook processing failed',
+        status: 'deprecated',
+        endpoint: 'stripe-webhook-wallet',
+        message: 'This webhook is deprecated. Wallet persistence is handled by setup_intent.succeeded in stripe-webhook.',
+        timestamp: new Date().toISOString(),
       }),
-      {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
+
+  console.warn('[DEPRECATION] stripe-webhook-wallet invoked. Returning 410 Gone.');
+  return new Response(
+    JSON.stringify({
+      error: 'This endpoint is deprecated (PCI/architecture consolidation). Use the canonical stripe-webhook handler.',
+      code: 'endpoint_deprecated'
+    }),
+    { status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 });

@@ -138,17 +138,13 @@ const App = () => {
                   <Route
                     path="/search"
                     element={
-                      <AuthGuard>
-                        <TripNew />
-                      </AuthGuard>
+                      <TripNew />
                     }
                   />
                   <Route
                     path="/trip/offers"
                     element={
-                      <AuthGuard>
-                        <TripOffers />
-                      </AuthGuard>
+                      <TripOffers />
                     }
                   />
                   <Route
@@ -177,50 +173,38 @@ const App = () => {
                   />
                   <Route path="/trips/:tripId/v2"
                     element={
-                      <AuthGuard>
-                        <TripOffersV2 />
-                      </AuthGuard>
+                      <TripOffersV2 />
                     }
                   />
                   <Route
                     path="/auto-booking"
                     element={
-                      <AuthGuard>
-                        <AutoBookingDashboard />
-                      </AuthGuard>
+                      <AutoBookingDashboard />
                     }
                   />
                   <Route
                     path="/auto-booking/new"
                     element={
-                      <AuthGuard>
-                        <AutoBookingNew />
-                      </AuthGuard>
+                      <AutoBookingNew />
                     }
                   />
                   {/* Duffel Flight Search - Production Ready */}
                   <Route
                     path="/duffel-test"
                     element={
-                      <AuthGuard>
-                        <DuffelTest />
-                      </AuthGuard>
+                      <DuffelTest />
                     }
                   />
                   <Route
                     path="/flight-search"
                     element={
-                      <AuthGuard>
-                        <DuffelTest />
-                      </AuthGuard>
+                      <DuffelTest />
                     }
                   />
                   <Route
                     path="/form-analytics"
                     element={
-                      <AuthGuard>
-                        <FormAnalyticsDashboard />
-                      </AuthGuard>
+                      <FormAnalyticsDashboard />
                     }
                   />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -9,6 +9,7 @@ import { toast } from '@/components/ui/use-toast';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { trackCampaignEvent } from '@/utils/monitoring';
 import { campaignService } from '@/services/campaignService';
+import { ensureAuthenticated } from '@/lib/auth/ensureAuthenticated';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { CriteriaFormData } from './StepCriteria';
 import { TravelerFormData } from './StepTraveler';
@@ -83,7 +84,11 @@ function CampaignWizard() {
     });
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = async () => {
+    // Final guard: ensure authenticated before creating the campaign
+    const ok = await ensureAuthenticated();
+    if (!ok) return;
+
     if (!userId || !wizardState.criteria || !wizardState.traveler || !wizardState.paymentMethodId) {
       toast({
         title: 'Missing Information',

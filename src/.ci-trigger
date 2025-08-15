@@ -1,0 +1,4 @@
+This is a no-op file to trigger the Comprehensive Test Suite workflow on pull_request events, which is path-filtered to src/** on the base branch.
+
+It has no impact on application code.
+

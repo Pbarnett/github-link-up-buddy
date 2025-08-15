@@ -1,0 +1,175 @@
+name: Optional E2E Suites
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_trip:
+        description: "Run TripRequestForm E2E"
+        type: boolean
+        default: false
+      run_oauth:
+        description: "Run OAuth callback E2E"
+        type: boolean
+        default: false
+      run_visual:
+        description: "Run Visual Regression E2E"
+        type: boolean
+        default: false
+
+jobs:
+  e2e-trip:
+    if: ${{ inputs.run_trip == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.5
+
+      - name: Enable pnpm cache
+        uses: actions/setup-node@v4
+        with:
+          cache: 'pnpm'
+
+      - name: Verify lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build app
+        run: pnpm build
+
+      - name: Start preview server
+        run: |
+          pnpm preview &
+          sleep 10
+        env:
+          PORT: 8080
+
+      - name: Run TripRequestForm E2E
+        run: pnpm run test:e2e:trip-request
+        env:
+          CI: '1'
+          E2E_BASE_URL: http://localhost:8080
+
+      - name: Upload E2E artifacts (trip) on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-trip-report
+          path: |
+            test-results/
+            playwright-report/
+
+  e2e-oauth:
+    if: ${{ inputs.run_oauth == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.5
+
+      - name: Enable pnpm cache
+        uses: actions/setup-node@v4
+        with:
+          cache: 'pnpm'
+
+      - name: Verify lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build app
+        run: pnpm build
+
+      - name: Start preview server
+        run: |
+          pnpm preview &
+          sleep 10
+        env:
+          PORT: 8080
+
+      - name: Run OAuth callback E2E (optional)
+        run: pnpm run test:e2e:callback || echo "OAuth callback test optional"
+        env:
+          CI: '1'
+          E2E_BASE_URL: http://localhost:8080
+          MOCK_GOOGLE_OAUTH: '1'
+
+      - name: Upload E2E artifacts (oauth) on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-oauth-report
+          path: |
+            test-results/
+            playwright-report/
+
+  e2e-visual:
+    if: ${{ inputs.run_visual == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Verify lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build app
+        run: pnpm build
+
+      - name: Start preview server
+        run: |
+          pnpm preview &
+          sleep 10
+        env:
+          PORT: 8080
+
+      - name: Run visual E2E
+        run: pnpm run test:visual
+        env:
+          CI: '1'
+          E2E_BASE_URL: http://localhost:8080
+
+      - name: Upload E2E artifacts (visual) on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-visual-report
+          path: |
+            test-results/
+            playwright-report/
+

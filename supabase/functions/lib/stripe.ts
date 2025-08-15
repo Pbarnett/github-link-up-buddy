@@ -12,7 +12,7 @@ export async function getStripe(): Promise<any> {
     throw new Error('Edge Function: Missing Stripe environment variable (STRIPE_SECRET_KEY).');
   }
   const { default: Stripe } = await import("https://esm.sh/stripe@14.21.0");
-  cachedStripe = new Stripe(sk, { apiVersion: "2023-10-16" });
+  cachedStripe = new Stripe(sk, { apiVersion: "2024-06-20" });
   return cachedStripe;
 }
 

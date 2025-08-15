@@ -1,13 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 
 describe('TripRequestForm - Minimal Test', () => {
-  it('should render without crashing', () => {
-    // Let's try this without any router to see if that fixes the timeout
+  it('should render without crashing', async () => {
     const TestComponent = () => <div>Hello Test</div>;
-    
-    render(<TestComponent />);
-
+    await act(async () => {
+      render(<TestComponent />);
+    });
     expect(screen.getByText('Hello Test')).toBeInTheDocument();
   });
 });

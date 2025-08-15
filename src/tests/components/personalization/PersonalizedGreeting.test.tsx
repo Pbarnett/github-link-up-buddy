@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import PersonalizedGreeting from '@/components/personalization/PersonalizedGreeting';
 
@@ -19,12 +19,16 @@ describe('PersonalizedGreeting', () => {
   });
 
   it('renders loading state initially', () => {
+    // Keep the fetch pending so the component stays in loading state
+    fetch.mockResolvedValueOnce(new Promise(() => {}));
     render(<PersonalizedGreeting userId="123" />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('renders generic greeting when personalization is disabled', async () => {
-    render(<PersonalizedGreeting userId="123" isPersonalizationEnabled={false} />);
+    await act(async () => {
+      render(<PersonalizedGreeting userId="123" isPersonalizationEnabled={false} />);
+    });
     
     await waitFor(() => {
       expect(screen.getByText('Welcome!')).toBeInTheDocument();
@@ -42,7 +46,9 @@ describe('PersonalizedGreeting', () => {
       json: async () => mockResponse,
     });
 
-    render(<PersonalizedGreeting userId="123" />);
+    await act(async () => {
+      render(<PersonalizedGreeting userId="123" />);
+    });
 
     await waitFor(() => {
       expect(screen.getByText(/John Doe!/)).toBeInTheDocument();
@@ -62,7 +68,9 @@ describe('PersonalizedGreeting', () => {
       json: async () => mockResponse,
     });
 
-    render(<PersonalizedGreeting userId="123" />);
+    await act(async () => {
+      render(<PersonalizedGreeting userId="123" />);
+    });
 
     await waitFor(() => {
       expect(screen.getByText(/Good (morning|afternoon|evening)/)).toBeInTheDocument();
@@ -72,7 +80,9 @@ describe('PersonalizedGreeting', () => {
   it('handles API error gracefully', async () => {
     fetch.mockRejectedValueOnce(new Error('API Error'));
 
-    render(<PersonalizedGreeting userId="123" />);
+    await act(async () => {
+      render(<PersonalizedGreeting userId="123" />);
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Welcome!')).toBeInTheDocument();
@@ -90,7 +100,9 @@ describe('PersonalizedGreeting', () => {
       json: async () => mockResponse,
     });
 
-    render(<PersonalizedGreeting userId="user123" />);
+    await act(async () => {
+      render(<PersonalizedGreeting userId="user123" />);
+    });
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith('/api/personalization/greeting?userId=user123');
@@ -110,7 +122,9 @@ describe('PersonalizedGreeting', () => {
       json: async () => mockResponse,
     });
 
-    render(<PersonalizedGreeting userId="123" />);
+    await act(async () => {
+      render(<PersonalizedGreeting userId="123" />);
+    });
 
     await waitFor(() => {
       expect(trackGreetingDisplay).toHaveBeenCalledWith('personalized', mockResponse);
@@ -130,7 +144,9 @@ describe('PersonalizedGreeting', () => {
       json: async () => mockResponse,
     });
 
-    render(<PersonalizedGreeting userId="123" />);
+    await act(async () => {
+      render(<PersonalizedGreeting userId="123" />);
+    });
 
     await waitFor(() => {
       expect(trackGreetingDisplay).toHaveBeenCalledWith('generic', mockResponse);

@@ -19,47 +19,57 @@ export const useCurrentUser = (): CurrentUserState => {
   });
 
   useEffect(() => {
-    const getCurrentUser = async () => {
+    let isMounted = true;
+
+    const initFromSession = async () => {
       try {
-        const { data, error } = await supabase.auth.getUser();
-        
+        // Prefer session-first to avoid AuthSessionMissingError
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (!isMounted) return;
+
         if (error) {
-          throw error;
+          // Non-fatal in unauthenticated state; record but don't spam console
+          setState(prev => ({ ...prev, loading: false, error }));
+          return;
         }
-        
+
         setState({
-          user: data.user,
-          userId: data.user?.id || null,
+          user: session?.user ?? null,
+          userId: session?.user?.id ?? null,
           loading: false,
           error: null,
         });
-      } catch (error) {
-        console.error("Error getting user:", error);
+      } catch (err) {
+        if (!isMounted) return;
+        // Log once; avoid noisy stack during initial load
+        console.error('Error initializing auth session:', err);
         setState({
           user: null,
           userId: null,
           loading: false,
-          error: error instanceof Error ? error : new Error(String(error)),
+          error: err instanceof Error ? err : new Error(String(err)),
         });
       }
     };
-    
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setState(prev => ({
-          ...prev,
-          user: session?.user || null,
-          userId: session?.user?.id || null,
-        }));
-      }
-    );
-    
-    // Initial user check
-    getCurrentUser();
-    
+
+    // Subscribe to auth state changes (SIGNED_IN, SIGNED_OUT, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      if (!isMounted) return;
+      setState(prev => ({
+        ...prev,
+        user: session?.user || null,
+        userId: session?.user?.id || null,
+        // Keep existing error but clear loading once we have an event
+        loading: false,
+      }));
+    });
+
+    // Initial session check
+    void initFromSession();
+
     // Clean up subscription
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);

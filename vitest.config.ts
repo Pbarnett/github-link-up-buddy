@@ -17,7 +17,15 @@ export default defineConfig({
       SUPABASE_URL: 'http://localhost:54321',
       SUPABASE_ANON_KEY: 'local-test-anon-key'
     },
-setupFiles: ['./src/tests/setupTests.ts', './vitest.setup.ts'],
+    setupFiles: ['./src/tests/setupTests.ts', './vitest.setup.ts'],
+    reporters: [
+      [
+        'default',
+        {
+          summary: true
+        }
+      ]
+    ],
     exclude: [
       'tests/e2e/**',      // Playwright
       'playwright/**',     // any other PW dirs

@@ -14,6 +14,7 @@ import PageWrapper from "@/components/layout/PageWrapper";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AutoBookingFAQDialog } from "@/components/autobooking/AutoBookingFAQDialog";
+import { ensureAuthenticated } from "@/lib/auth/ensureAuthenticated";
 
 function AutoBookingDashboard() {
   const navigate = useNavigate();
@@ -22,7 +23,8 @@ function AutoBookingDashboard() {
 
   // No breadcrumbs needed since this is the main dashboard page
 
-  const handleCreateCampaign = () => {
+  const handleCreateCampaign = async () => {
+    // Soft-gating: allow starting wizard without auth to maximize conversions
     navigate("/auto-booking/new");
   };
 
@@ -31,6 +33,8 @@ function AutoBookingDashboard() {
   };
 
   const handlePauseCampaign = async (campaignId: string) => {
+    const ok = await ensureAuthenticated();
+    if (!ok) return;
     try {
       await pauseCampaign(campaignId);
       toast({
@@ -47,6 +51,8 @@ function AutoBookingDashboard() {
   };
 
   const handleResumeCampaign = async (campaignId: string) => {
+    const ok = await ensureAuthenticated();
+    if (!ok) return;
     try {
       await resumeCampaign(campaignId);
       toast({
@@ -63,6 +69,8 @@ function AutoBookingDashboard() {
   };
 
   const handleDeleteCampaign = async (campaignId: string) => {
+    const ok = await ensureAuthenticated();
+    if (!ok) return;
     if (window.confirm("Are you sure you want to delete this campaign? This action cannot be undone.")) {
       try {
         await deleteCampaign(campaignId);

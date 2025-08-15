@@ -4,19 +4,25 @@ import { asyncWithLDProvider } from 'launchdarkly-react-client-sdk'
 import App from './App.tsx'
 import './index.css'
 
-// Initialize Sentry
-Sentry.init({
-  dsn: import.meta.env.VITE_SENTRY_DSN,
-  environment: import.meta.env.VITE_ENVIRONMENT || 'development',
-  tracesSampleRate: 1.0,
-  debug: import.meta.env.DEV,
-  integrations: [
-    Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration(),
-  ],
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0,
-});
+// Initialize Sentry only if DSN is provided
+const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN as string | undefined;
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    environment: import.meta.env.VITE_ENVIRONMENT || 'development',
+    tracesSampleRate: 1.0,
+    debug: import.meta.env.DEV,
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
+    ],
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+  });
+} else if (import.meta.env.DEV) {
+  // In development, avoid noisy warnings if no DSN is configured
+  console.warn('[Sentry] DSN not provided; Sentry is disabled in this environment.');
+}
 
 // Temporary debug logging
 console.log('🔍 Environment Variables at App Startup:');
@@ -25,7 +31,7 @@ console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 
 console.log('VITE_STRIPE_PUBLISHABLE_KEY:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'SET' : 'MISSING');
 
 if (import.meta.env.VITE_SUPABASE_URL?.includes('127.0.0.1')) {
-  console.log('❌ Still using LOCAL Supabase instance');
+  console.log('ℹ️ Using LOCAL Supabase instance (expected in development)');
 } else if (import.meta.env.VITE_SUPABASE_URL?.includes('supabase.co')) {
   console.log('✅ Using PRODUCTION Supabase instance');
 } else {

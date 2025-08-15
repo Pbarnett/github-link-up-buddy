@@ -1,4 +1,4 @@
-import { screen, waitFor, fireEvent } from '@testing-library/react';
+import { screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect } from 'vitest';
 
@@ -221,28 +221,36 @@ export const setDatesWithMockedCalendar = async () => {
     // Open earliest/departure date picker (updated label in new UI)
     const firstDateButton = screen.getByRole('button', { name: /departure date/i });
     await userEvent.click(firstDateButton);
-    
-    // Wait for mocked calendar to appear (global setup renders this test id)
+
+    // Wait for at least one mocked calendar to appear and scope to the most recently opened one
     await waitFor(() => {
-      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
+      const calendars = screen.getAllByTestId('mock-calendar');
+      expect(calendars.length).toBeGreaterThan(0);
     });
-    
-    // Click a simple mocked select-date button
-    const selectDateButton = screen.getByTestId('select-date-button');
-    await userEvent.click(selectDateButton);
-    
+    const calendars1 = screen.getAllByTestId('mock-calendar');
+    const calendar1 = calendars1[calendars1.length - 1];
+    const calendarScope1 = within(calendar1);
+
+    // Click a simple mocked select-date button within the scoped calendar
+    const selectButtons1 = calendarScope1.getAllByTestId('select-date-button');
+    await userEvent.click(selectButtons1[0]);
+
     // Open latest date picker (updated label in new UI)
     const secondDateButton = screen.getByRole('button', { name: /latest departure/i });
     await userEvent.click(secondDateButton);
-    
-    // Wait for mocked calendar again
+
+    // Wait for mocked calendar again and scope to the most recently opened one
     await waitFor(() => {
-      expect(screen.getByTestId('mock-calendar')).toBeInTheDocument();
+      const calendars = screen.getAllByTestId('mock-calendar');
+      expect(calendars.length).toBeGreaterThan(0);
     });
-    
-    // Select date for second picker
-    const selectDateButton2 = screen.getByTestId('select-date-button');
-    await userEvent.click(selectDateButton2);
+    const calendars2 = screen.getAllByTestId('mock-calendar');
+    const calendar2 = calendars2[calendars2.length - 1];
+    const calendarScope2 = within(calendar2);
+
+    // Select date for second picker within the scoped calendar
+    const selectButtons2 = calendarScope2.getAllByTestId('select-date-button');
+    await userEvent.click(selectButtons2[0]);
     
   } catch (error) {
     console.warn('Mocked calendar interaction failed:', error);

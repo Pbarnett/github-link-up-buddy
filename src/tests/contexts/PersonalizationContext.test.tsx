@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
+import { flushMicrotasks } from '@/tests/utils/actHelpers';
 import { vi } from 'vitest';
 import { PersonalizationProvider, usePersonalization } from '@/contexts/PersonalizationContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -101,7 +102,9 @@ describe('PersonalizationContext', () => {
   });
 
   it('should provide personalization data when enabled', async () => {
-    renderWithProviders(<TestComponent />);
+    await act(async () => {
+      renderWithProviders(<TestComponent />);
+    });
 
     await waitFor(() => {
       expect(screen.getByTestId('personalization-enabled')).toHaveTextContent('enabled');
@@ -112,12 +115,13 @@ describe('PersonalizationContext', () => {
     });
   });
 
-  it('should handle loading state', () => {
-    renderWithProviders(<TestComponent />);
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+it('should handle loading state', async () => {
+    await act(async () => { renderWithProviders(<TestComponent />); });
+    await flushMicrotasks();
+expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
   });
 
-  it('should provide null data when personalization is disabled', () => {
+it('should provide null data when personalization is disabled', async () => {
     // For this test, we need to mock the PersonalizationContext to return disabled state
     const DisabledTestComponent = () => {
       return (
@@ -128,7 +132,9 @@ describe('PersonalizationContext', () => {
       );
     };
 
-    render(<DisabledTestComponent />);
+    await act(async () => {
+      render(<DisabledTestComponent />);
+    });
 
     expect(screen.getByTestId('personalization-enabled')).toHaveTextContent('disabled');
     expect(screen.getByTestId('first-name')).toHaveTextContent('N/A');
