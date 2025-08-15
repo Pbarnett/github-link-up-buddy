@@ -1,4 +1,5 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
+import { renderHookAct, actAsync, flushMicrotasks } from '@/tests/utils/actHelpers';
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { useTripOffers, clearCache } from '@/hooks/useTripOffersLegacy';
 import { type TripDetails } from '@/hooks/useTripOffers';
@@ -130,9 +131,9 @@ const mockFlightSearchResponseB: flightSearchApi.FlightSearchResponse = {
 };
 
 // Helper to render hooks inside act to avoid warnings
-async function renderHookActT(callback: () = T) {
-  let ret: ReturnTypetypeof renderHook;
-  await act(async () => {
+async function renderHookAct<T>(callback: () => T) {
+  let ret: ReturnType<typeof renderHook>;
+  await act(async () => {
     // @ts-ignore - relax types for test helper
     ret = renderHook(callback);
   });
@@ -140,7 +141,7 @@ async function renderHookActT(callback: () = T) {
   return ret;
 }
 
-describe('useTripOffers', () => {
+describe('useTripOffers', () =>
   beforeEach(() => {
     vi.clearAllMocks();
     

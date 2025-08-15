@@ -7,6 +7,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { safeQuery } from "@/lib/supabaseUtils";
+import { ensureAuthenticated } from "@/lib/auth/ensureAuthenticated";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { AddPaymentMethodForm } from "@/components/AddPaymentMethodForm";
@@ -25,6 +26,8 @@ function WalletPage() {
 
   const handleSetDefault = async (paymentMethod: PaymentMethod) => {
     if (!user) {
+      const ok = await ensureAuthenticated();
+      if (!ok) return;
       toast({
         title: "Error",
         description: "User not authenticated",
@@ -84,6 +87,8 @@ function WalletPage() {
 
   const handleDeleteCard = async (paymentMethod: PaymentMethod) => {
     if (!user) {
+      const ok = await ensureAuthenticated();
+      if (!ok) return;
       toast({
         title: "Error",
         description: "User not authenticated",
