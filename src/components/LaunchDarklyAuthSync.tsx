@@ -10,6 +10,14 @@ export default function LaunchDarklyAuthSync() {
   useEffect(() => {
     if (!ldClient) return;
 
+    // Ensure client initialization completes with a bounded timeout (quiet warning in SDK)
+    if (typeof (ldClient as any).waitForInitialization === 'function') {
+      try {
+        // Some SDK versions accept no args; ignore result intentionally
+        void (ldClient as any).waitForInitialization();
+      } catch {}
+    }
+
     // Build context from current user
     const identify = async () => {
       try {
@@ -20,10 +28,17 @@ export default function LaunchDarklyAuthSync() {
             email: user.email ?? undefined,
             // you can extend with app-specific traits here
           } as const;
+          if (import.meta.env.DEV) {
+            console.log('[LD] identify → user', { key: context.key, email: context.email });
+          }
           await ldClient.identify(context);
         } else {
           // Anonymous/device context when signed out
-          await ldClient.identify({ kind: 'device', key: 'anonymous' } as const);
+          const anon = { kind: 'device', key: 'anonymous' } as const;
+          if (import.meta.env.DEV) {
+            console.log('[LD] identify → anonymous', anon);
+          }
+          await ldClient.identify(anon);
         }
       } catch (e) {
         // Non-fatal: fail closed to defaults on errors
