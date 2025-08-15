@@ -90,7 +90,21 @@ CREATE TABLE IF NOT EXISTS public.events (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema='public' AND table_name='events' AND column_name='event_type'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_events_type ON public.events(event_type)';
+  ELSIF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema='public' AND table_name='events' AND column_name='type'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_events_type ON public.events(type)';
+  END IF;
+END
+$$;
 CREATE INDEX IF NOT EXISTS idx_events_user_id ON events(user_id);
 CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at);
 
