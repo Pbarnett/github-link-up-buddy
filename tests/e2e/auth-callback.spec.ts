@@ -12,12 +12,12 @@ test.describe('OAuth Callback Flow', () => {
     const code = 'dummy-auth-code';
 
     // Simulate arrival at the callback URL with a code and returnTo.
-    await page.goto(`${baseURL}/auth/callback?code=${code}&returnTo=${encodeURIComponent(returnTo)}`);
+    await page.goto(`/auth/callback?code=${code}&returnTo=${encodeURIComponent(returnTo)}`);
 
     // In a real test, you would mock network calls to Supabase endpoints
     // or run against a local Supabase with a test project. For now, this is a scaffold.
 
     // Expect that we are eventually redirected to returnTo or login (depending on environment setup).
-    await expect(page).toHaveURL(new RegExp(`${baseURL}(/login|${returnTo.replace('/', '\\/')})`));
+    await expect(page).toHaveURL(new RegExp(`(/login|${returnTo.replace('/', '\\/')})`));
   });
 });

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // Read baseURL from environment (GitHub Actions sets E2E_BASE_URL)
-const baseURL = process.env.E2E_BASE_URL || 'http://localhost:8080';
+const baseURL = process.env.E2E_BASE_URL || 'http://localhost:3000';
 
 export default defineConfig({
   testDir: './tests/e2e',
