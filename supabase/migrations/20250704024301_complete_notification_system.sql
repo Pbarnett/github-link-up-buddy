@@ -27,6 +27,11 @@ CREATE TABLE IF NOT EXISTS public.notification_deliveries (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure missing columns exist in case the table predated these fields
+ALTER TABLE public.notification_deliveries
+  ADD COLUMN IF NOT EXISTS provider_id TEXT,
+  ADD COLUMN IF NOT EXISTS provider_response JSONB;
+
 -- 2. Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_deliveries_notification_id ON notification_deliveries(notification_id);
 CREATE INDEX IF NOT EXISTS idx_deliveries_status ON notification_deliveries(status);
