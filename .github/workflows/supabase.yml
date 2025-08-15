@@ -49,10 +49,21 @@ jobs:
       - name: Run database tests
         run: supabase test db
 
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
       - name: Validate Edge Functions
         run: |
           # Check if functions compile
-          for func in supabase/functions/*/index.ts; do
+          shopt -s nullglob
+          funcs=(supabase/functions/*/index.ts)
+          if [ ${#funcs[@]} -eq 0 ]; then
+            echo "No Edge Functions found to validate. Skipping."
+            exit 0
+          fi
+          for func in "${funcs[@]}"; do
             echo "Validating $func"
             deno check "$func"
           done
