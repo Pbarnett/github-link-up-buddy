@@ -1,0 +1,29 @@
+name: Policy checks
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  workflow-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Forbid pnpm/action-setup in workflows
+        run: |
+          if grep -R "pnpm/action-setup" -n .github/workflows; then
+            echo "Do not use pnpm/action-setup. Use Corepack (corepack enable + corepack prepare)."
+            exit 1
+          else
+            echo "OK: No pnpm/action-setup usage detected."
+          fi
+
+      - name: Forbid hardcoded pnpm versions in workflows
+        run: |
+          if grep -R -n -E "pnpm@|pnpm-version|setup-pnpm" .github/workflows; then
+            echo "Do not hardcode pnpm versions in workflows. Use package.json packageManager and Corepack."
+            exit 1
+          else
+            echo "OK: No hardcoded pnpm versions found."
+          fi
