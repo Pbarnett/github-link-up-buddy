@@ -45,6 +45,13 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure expected columns exist on user_preferences even if the table predates this migration
+ALTER TABLE public.user_preferences
+    ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}'::jsonb,
+    ADD COLUMN IF NOT EXISTS quiet_hours JSONB DEFAULT '{"start": 22, "end": 7}',
+    ADD COLUMN IF NOT EXISTS timezone TEXT DEFAULT 'America/New_York',
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
 -- Enhanced notifications table (extending existing if needed)
 DO $$
 BEGIN
