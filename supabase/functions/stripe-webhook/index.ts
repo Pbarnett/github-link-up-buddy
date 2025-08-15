@@ -215,19 +215,19 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
         const pm = await stripe.paymentMethods.retrieve(setupIntent.payment_method as string);
         console.log(`[STRIPE-WEBHOOK] Retrieved payment method: ${pm.id}`);
 
-        // Find user by Stripe customer ID
-        const { data: profile, error: profileError } = await supabase
-          .from('traveler_profiles')
+        // Find user by Stripe customer ID using the canonical mapping table
+        const { data: stripeCustomer, error: scError } = await supabase
+          .from('stripe_customers')
           .select('user_id')
           .eq('stripe_customer_id', setupIntent.customer as string)
           .single();
 
-        if (profileError || !profile) {
+        if (scError || !stripeCustomer) {
           console.error("[STRIPE-WEBHOOK] Cannot find user for customer:", setupIntent.customer);
           break;
         }
 
-        const userId = profile.user_id;
+        const userId = stripeCustomer.user_id;
 
         // Check if payment method already exists (idempotency)
         const { data: existingPM } = await supabase
