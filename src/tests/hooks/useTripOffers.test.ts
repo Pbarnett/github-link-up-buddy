@@ -186,8 +186,8 @@ describe('useTripOffers', () =>
   });
 
   describe('Initial loading', () => {
-it('should initialize with loading state when tripId is provided', async () => {
-const { result } = await renderHookAct(() =>
+it('should initialize with loading state when tripId is provided', async () => {
+const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: 'test-trip-id' })
       );
 
@@ -196,8 +196,8 @@ const { result } = await renderHookAct(() =>
       expect(result.current.hasError).toBe(false);
     });
 
-it('should not load when tripId is null', async () => {
-const { result } = await renderHookAct(() =>
+it('should not load when tripId is null', async () => {
+const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: null })
       );
 
@@ -205,8 +205,8 @@ const { result } = await renderHookAct(() =>
       expect(result.current.offers).toEqual([]);
     });
 
-it('should use initialTripDetails when provided', async () => {
-const { result } = await renderHookAct(() =>
+it('should use initialTripDetails when provided', async () => {
+const { result } = await renderHookAct(() =>
         useTripOffers({ 
           tripId: 'test-trip-id', 
           initialTripDetails: mockTripDetails 
@@ -249,7 +249,7 @@ const { result } = await renderHookAct(() =>
       (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
       
 
-const { result } = await renderHookAct(() =>
+const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: uniqueTripId })
       );
 
@@ -294,7 +294,7 @@ const { result } = await renderHookAct(() =>
         };
       });
 
-const { result } = await renderHookAct(() =>
+const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: uniqueToastTestTripId })
       );
 
@@ -333,7 +333,7 @@ const { result } = await renderHookAct(() =>
         };
       });
 
-const { result } = await renderHookAct(() => useTripOffers({ tripId: uniqueOverrideTripId }));
+const { result } = await renderHookAct(() => useTripOffers({ tripId: uniqueOverrideTripId }));
 
       // Wait for initial load to complete
       await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -398,7 +398,7 @@ const { result } = await renderHookAct(() => useTripOffers({ tripId: uniqueOve
       // Clear any previous mock calls
       mockToast.mockClear();
 
-const { result } = await renderHookAct(() =>
+const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: uniqueErrorTripId })
       );
 
@@ -444,7 +444,7 @@ const { result } = await renderHookAct(() =>
 
       vi.spyOn(flightSearchApi, 'invokeFlightSearch').mockRejectedValue(new Error('Flight search failed'));
 
-const { result } = await renderHookAct(() =>
+const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: uniqueFallbackTripId })
       );
 
@@ -478,7 +478,7 @@ const { result } = await renderHookAct(() =>
       (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
       mockTripOffersService.fetchTripOffers.mockResolvedValue([]);
 
-const { result } = await renderHookAct(() =>
+const { result } = await renderHookAct(() =>
 
         useTripOffers({ tripId: uniqueSupabaseErrorId })
 
@@ -493,7 +493,7 @@ const { result } = await renderHookAct(() =>
     });
 
     it('should handle missing trip ID', () => {
-const { result } = await renderHookAct(() =>
+const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: '' })
       );
 
@@ -519,7 +519,7 @@ const { result } = await renderHookAct(() =>
       });
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers); // This might be overridden by pools logic if useTripOffersPools is used
 
-const { result } = await renderHookAct(() =>
+const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: uniqueRefreshTripId }) // This is useTripOffersPools
       );
 
@@ -610,7 +610,7 @@ const { result } = await renderHookAct(() =>
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
       mockToast.mockClear();
 
-const { result } = await renderHookAct(() =>
+const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: uniqueRelaxedId })
       );
 
@@ -663,7 +663,7 @@ const { result } = await renderHookAct(() =>
       mockTripOffersService.fetchTripOffers.mockResolvedValue(mockOffers);
 
       // First render
-const { result: result1, unmount } = await renderHookAct(() =>
+const { result: result1, unmount } = await renderHookAct(() =>
         useTripOffers({ tripId: cachedTripId })
       );
 
@@ -678,7 +678,7 @@ const { result: result1, unmount } = await renderHookAct(() =>
       // Second render with same tripId should use cache
       // No need to re-mock supabase for the second call if it's a cache hit for tripDetails too.
       // The hook also caches tripDetailsState if fetched from DB.
-const { result: result2 } = await renderHookAct(() =>
+const { result: result2 } = await renderHookAct(() =>
         useTripOffers({ tripId: cachedTripId })
       );
 
@@ -716,7 +716,7 @@ const { result: result2 } = await renderHookAct(() =>
 
       mockTripOffersService.fetchTripOffers.mockResolvedValue(offersWithInvalidDates);
 
-const { result } = await renderHookAct(() =>
+const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: 'test-trip-id' })
       );
 
@@ -742,7 +742,7 @@ const { result } = await renderHookAct(() =>
       mockTripOffersService.fetchTripOffers.mockResolvedValue(offersOutsideDuration);
       (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
 
-const { result } = await renderHookAct(() =>
+const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: 'test-trip-id-new' })
       );
 
@@ -766,7 +766,7 @@ const { result } = await renderHookAct(() =>
       mockTripOffersService.fetchTripOffers.mockResolvedValue([]);
       (invokeFlightSearch as Mock).mockResolvedValue(mockFlightSearchResponse);
 
-const { result } = await renderHookAct(() =>
+const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: 'test-trip-id-empty' })
       );
 

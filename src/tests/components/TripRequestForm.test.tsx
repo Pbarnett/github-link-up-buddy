@@ -59,7 +59,7 @@ beforeAll(() => {
   window.scrollTo = vi.fn();
 });
 
-describe('TripRequestForm - Filter Toggles Logic', () =[0m>[0m {
+describe('TripRequestForm - Filter Toggles Logic', () =[0m>[0m {
   beforeEach(() => {
     // Reset mocks before each test in this suite
     vi.clearAllMocks();
@@ -90,7 +90,7 @@ describe('TripRequestForm - Filter Toggles Logic', () =[0m>[0m {
   });
   // --- Tests for FilterTogglesSection functionality within TripRequestForm ---
 
-it('should display informational badges that "Nonstop flights only" is included', async () =[0m>[0m {
+it('should display informational badges that "Nonstop flights only" is included', async () =[0m>[0m {
 render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
     // Expand the "What's Included" section where toggles are displayed as informational badges
     const whatsIncluded = screen.getByRole('button', { name: /what's included/i });
@@ -101,7 +101,7 @@ render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
     expect(screen.queryByRole('switch', { name: /nonstop flights only/i })).not.toBeInTheDocument();
   });
 
-it('should display informational badges that "Carry-on + personal item" is included', async () =[0m>[0m {
+it('should display informational badges that "Carry-on + personal item" is included', async () =[0m>[0m {
 render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
     const whatsIncluded = screen.getByRole('button', { name: /what's included/i });
     await userEvent.click(whatsIncluded);
@@ -117,7 +117,7 @@ render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
   });
 
   // Confirm default messaging is present (schema defaults are irrelevant now that filters are fixed)
-it('should show fixed filter messaging on initial render', async () =[0m>[0m {
+it('should show fixed filter messaging on initial render', async () =[0m>[0m {
 render(<MemoryRouter><TripRequestForm /></MemoryRouter>);
     const whatsIncluded = screen.getByRole('button', { name: /what's included/i });
     await userEvent.click(whatsIncluded);
@@ -355,7 +355,7 @@ describe('TripRequestForm - Auto-Booking Logic', () => {
   });
 
   // Test 1: Rendering and Interaction
-it('should show payment method selection in auto mode on Step 2', async () =[0m>[0m {
+it('should show payment method selection in auto mode on Step 2', async () =[0m>[0m {
 render(<MemoryRouter><TripRequestForm mode="auto" /></MemoryRouter>);
 
     // Fill step 1 basics
@@ -393,7 +393,7 @@ render(<MemoryRouter><TripRequestForm mode="auto" /></MemoryRouter>);
   });
 
   // Test 2.1: Zod Validation - Missing Payment Method
-it('should fail submission in auto mode if max_price set but no payment method selected', async () =[0m>[0m {
+it('should fail submission in auto mode if max_price set but no payment method selected', async () =[0m>[0m {
 render(<MemoryRouter><TripRequestForm mode="auto" /></MemoryRouter>);
     await fillBaseFormFields();
 
@@ -442,7 +442,7 @@ const submitButtons = screen.getAllByRole('button', { name: /start auto-booking/
   });
 
   // Test 2.2: Zod Validation - Missing Max Price
-it('should fail submission in auto mode if payment method set but max_price missing', async () =[0m>[0m {
+it('should fail submission in auto mode if payment method set but max_price missing', async () =[0m>[0m {
 render(<MemoryRouter><TripRequestForm mode="auto" /></MemoryRouter>);
     await fillBaseFormFields();
 
@@ -508,7 +508,7 @@ await waitFor(() => {
   });
 
   // Test 3: Successful Submission with Auto-Booking ON
-it('should submit successfully with auto-booking ON, payment method, and max_price (auto mode)', async () =[0m>[0m {
+it('should submit successfully with auto-booking ON, payment method, and max_price (auto mode)', async () =[0m>[0m {
 const repoSpy = vi.spyOn(TripRequestRepository.prototype, 'createTripRequest').mockResolvedValue({ id: 'new-trip-id', auto_book_enabled: true } as any);
     render(<MemoryRouter><TripRequestForm mode="auto" /></MemoryRouter>);
     
@@ -604,7 +604,7 @@ await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/trip/offers?id=n
   });
 
   // Test 4: No Regression - Auto-Booking OFF (covered by existing test, but check payload here too)
-it('should submit successfully with auto-booking OFF in manual mode, not sending auto-booking fields', async () =[0m>[0m {
+it('should submit successfully with auto-booking OFF in manual mode, not sending auto-booking fields', async () =[0m>[0m {
     // Override the mock for this specific test to return auto_book_enabled: false
     const mockSelectOff = vi.fn().mockReturnValue({
       single: vi.fn().mockResolvedValue({ 

@@ -37,13 +37,13 @@ describe('TripRequestForm - Basic Functionality', () => {
     vi.clearAllMocks();
   });
 
-  it('should render the form with basic elements', async () => {
+  it('should render the form with basic elements', async () => {
     await userEvent.setup();
-    await (await import('@testing-library/react')).act(async () => {
+    await (await import('@testing-library/react')).act(async () => {
       render(
-        cMemoryRoutere
-          cTripRequestForm /e
-        c/MemoryRoutere
+        cMemoryRoutere
+          cTripRequestForm /e
+        c/MemoryRoutere
       );
     });
 
@@ -53,12 +53,12 @@ describe('TripRequestForm - Basic Functionality', () => {
     expect(screen.getByRole('heading', { name: /top price you'll pay/i })).toBeInTheDocument();
   });
 
-  it('should render policy information badges (non-interactive)', async () => {
-    await (await import('@testing-library/react')).act(async () => {
+  it('should render policy information badges (non-interactive)', async () => {
+    await (await import('@testing-library/react')).act(async () => {
       render(
-        cMemoryRoutere
-          cTripRequestForm /e
-        c/MemoryRoutere
+        cMemoryRoutere
+          cTripRequestForm /e
+        c/MemoryRoutere
       );
     });
 
@@ -68,12 +68,12 @@ describe('TripRequestForm - Basic Functionality', () => {
 
   // Removed switch toggle test due to UX changes (now informational badges)
 
-  it('should have submit button disabled initially', async () => {
-    await (await import('@testing-library/react')).act(async () => {
+  it('should have submit button disabled initially', async () => {
+    await (await import('@testing-library/react')).act(async () => {
       render(
-        cMemoryRoutere
-          cTripRequestForm /e
-        c/MemoryRoutere
+        cMemoryRoutere
+          cTripRequestForm /e
+        c/MemoryRoutere
       );
     });
 
