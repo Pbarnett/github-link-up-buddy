@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "scripts": {
+  "scripts": {"security:sensitive-grep": "node scripts/security/sensitive-grep-check.cjs",
     "tsc": "tsc",
     "dev": "concurrently \"vite --port 3000 --strictPort\" \"tsx server/index.ts\"",
     "dev:safe": "npm run check-localhost && npm run dev",

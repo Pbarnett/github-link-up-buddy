@@ -49,12 +49,67 @@ jobs:
       - name: Run database tests
         run: supabase test db
 
-      - name: Validate Edge Functions
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
+
+      - name: Determine changed Edge Functions
+        if: github.event_name == 'pull_request'
+        id: changes
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1 || true
+          CHANGED=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD | grep '^supabase/functions/' || true)
+          FUNCS=$(echo "$CHANGED" | awk -F/ '/^supabase\/functions\//{print $1"/"$2"/"$3}' | sort -u)
+          echo "functions<<EOF" >> $GITHUB_OUTPUT
+          echo "$FUNCS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Validate changed Edge Functions (PR)
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ -z "${{ steps.changes.outputs.functions }}" ]; then
+            echo "No changed Edge Functions; skipping validation."
+            exit 0
+          fi
+          while read -r fn; do
+            [ -z "$fn" ] && continue
+            file="$fn/index.ts"
+            if [ -f "$file" ]; then
+              echo "Validating $file"
+              deno check --config supabase/functions/deno.json "$file"
+            else
+              echo "No index.ts found for $fn, skipping"
+            fi
+          done <<< "${{ steps.changes.outputs.functions }}"
+
+      - name: Validate all Edge Functions (non-PR)
+        if: github.event_name != 'pull_request'
         run: |
           # Check if functions compile
-          for func in supabase/functions/*/index.ts; do
+          shopt -s nullglob
+          funcs=(supabase/functions/*/index.ts)
+          if [ ${#funcs[@]} -eq 0 ]; then
+            echo "No Edge Functions found to validate. Skipping."
+            exit 0
+          fi
+          for func in "${funcs[@]}"; do
             echo "Validating $func"
-            deno check "$func"
+            deno check --config supabase/functions/deno.json "$func"
           done
 
   deploy:

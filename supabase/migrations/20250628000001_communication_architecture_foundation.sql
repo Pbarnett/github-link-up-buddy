@@ -4,11 +4,12 @@
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "pgmq";
 
 -- Events table (immutable log for event sourcing)
 CREATE TABLE IF NOT EXISTS public.events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type TEXT NOT NULL,
     payload JSONB NOT NULL,
     user_id UUID REFERENCES auth.users(id),
@@ -21,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.events (
 
 -- Notification templates for content management
 CREATE TABLE IF NOT EXISTS public.notification_templates (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL UNIQUE,
     notification_type TEXT NOT NULL,
     channel TEXT NOT NULL CHECK (channel IN ('email', 'sms', 'push', 'in_app')),
@@ -43,6 +44,13 @@ CREATE TABLE IF NOT EXISTS public.user_preferences (
     timezone TEXT DEFAULT 'America/New_York',
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ensure expected columns exist on user_preferences even if the table predates this migration
+ALTER TABLE public.user_preferences
+    ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}'::jsonb,
+    ADD COLUMN IF NOT EXISTS quiet_hours JSONB DEFAULT '{"start": 22, "end": 7}',
+    ADD COLUMN IF NOT EXISTS timezone TEXT DEFAULT 'America/New_York',
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
 -- Enhanced notifications table (extending existing if needed)
 DO $$
@@ -87,8 +95,8 @@ BEGIN
         END IF;
     ELSE
         -- Create new comprehensive notifications table
-        CREATE TABLE public.notifications (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE public.notifications (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
             type TEXT NOT NULL,
             title TEXT,
@@ -107,7 +115,7 @@ $$;
 
 -- Delivery logs for tracking notification attempts
 CREATE TABLE IF NOT EXISTS public.notification_deliveries (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     notification_id UUID NOT NULL REFERENCES public.notifications(id) ON DELETE CASCADE,
     channel TEXT NOT NULL,
     provider TEXT NOT NULL,
@@ -125,7 +133,9 @@ CREATE INDEX IF NOT EXISTS idx_events_type_occurred ON public.events(type, occur
 CREATE INDEX IF NOT EXISTS idx_events_user_id ON public.events(user_id);
 CREATE INDEX IF NOT EXISTS idx_events_booking_id ON public.events(booking_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON public.notifications(user_id, is_read, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_notifications_scheduled ON public.notifications(scheduled_for) WHERE scheduled_for > NOW();
+-- Note: Avoid non-IMMUTABLE functions in partial index predicates for CI/local images.
+-- Using a simple index on scheduled_for to satisfy query performance without NOW() in predicate.
+CREATE INDEX IF NOT EXISTS idx_notifications_scheduled ON public.notifications(scheduled_for);
 CREATE INDEX IF NOT EXISTS idx_notifications_type ON public.notifications(type);
 CREATE INDEX IF NOT EXISTS idx_notifications_priority ON public.notifications(priority);
 CREATE INDEX IF NOT EXISTS idx_deliveries_status ON public.notification_deliveries(status, created_at);
@@ -137,38 +147,88 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_deliveries ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
-CREATE POLICY IF NOT EXISTS "Users can view own notifications" ON public.notifications
-    FOR SELECT USING (auth.uid() = user_id);
+-- RLS Policies (Postgres does not support IF NOT EXISTS for CREATE POLICY); use guards via pg_policies
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notifications' AND policyname='Users can view own notifications'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id)';
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Users can update own notification read status" ON public.notifications
-    FOR UPDATE USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notifications' AND policyname='Users can update own notification read status'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can update own notification read status" ON public.notifications FOR UPDATE USING (auth.uid() = user_id)';
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all notifications" ON public.notifications
-    FOR ALL USING (current_setting('role') = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notifications' AND policyname='Service role can manage all notifications'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Service role can manage all notifications" ON public.notifications FOR ALL USING (current_setting(''role'') = ''service_role'')';
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Users can manage own preferences" ON public.user_preferences
-    FOR ALL USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='user_preferences' AND policyname='Users can manage own preferences'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can manage own preferences" ON public.user_preferences FOR ALL USING (auth.uid() = user_id)';
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all preferences" ON public.user_preferences
-    FOR ALL USING (current_setting('role') = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='user_preferences' AND policyname='Service role can manage all preferences'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Service role can manage all preferences" ON public.user_preferences FOR ALL USING (current_setting(''role'') = ''service_role'')';
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Users can view own delivery logs" ON public.notification_deliveries
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.notifications n 
-            WHERE n.id = notification_deliveries.notification_id 
-            AND n.user_id = auth.uid()
-        )
-    );
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notification_deliveries' AND policyname='Users can view own delivery logs'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view own delivery logs" ON public.notification_deliveries FOR SELECT USING (EXISTS (SELECT 1 FROM public.notifications n WHERE n.id = notification_deliveries.notification_id AND n.user_id = auth.uid()))';
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all deliveries" ON public.notification_deliveries
-    FOR ALL USING (current_setting('role') = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notification_deliveries' AND policyname='Service role can manage all deliveries'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Service role can manage all deliveries" ON public.notification_deliveries FOR ALL USING (current_setting(''role'') = ''service_role'')';
+  END IF;
+END $$;
 
 -- Initialize PGMQ queues for notification processing
-SELECT pgmq.create_queue('critical_notifications');
-SELECT pgmq.create_queue('notifications');
-SELECT pgmq.create_queue('marketing_notifications');
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE p.proname = 'create_queue'
+      AND n.nspname = 'pgmq'
+  ) THEN
+    PERFORM pgmq.create_queue('critical_notifications');
+    PERFORM pgmq.create_queue('notifications');
+    PERFORM pgmq.create_queue('marketing_notifications');
+  ELSE
+    RAISE NOTICE 'pgmq.create_queue not available; skipping queue initialization';
+  END IF;
+END
+$$;
 
 -- Insert default notification templates
 INSERT INTO public.notification_templates (name, notification_type, channel, subject, body_text, body_html) VALUES

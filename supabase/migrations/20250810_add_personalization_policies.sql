@@ -24,21 +24,36 @@ create index if not exists idx_profiles_personalization
 alter table public.profiles enable row level security;
 alter table public.personalization_events enable row level security;
 
--- 4) RLS Policies
+-- 4) RLS Policies (guarded to avoid duplicates)
 -- Allow users to read their own profile
-create policy if not exists "read own profile"
-  on public.profiles for select
-  using (id = auth.uid());
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'profiles' AND policyname = 'read own profile'
+  ) THEN
+    EXECUTE 'CREATE POLICY "read own profile" ON public.profiles FOR SELECT USING (id = auth.uid())';
+  END IF;
+END $$;
 
 -- Allow users to insert their own personalization events
-create policy if not exists "insert own personalization events"
-  on public.personalization_events for insert
-  with check (user_id = auth.uid());
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'personalization_events' AND policyname = 'insert own personalization events'
+  ) THEN
+    EXECUTE 'CREATE POLICY "insert own personalization events" ON public.personalization_events FOR INSERT WITH CHECK (user_id = auth.uid())';
+  END IF;
+END $$;
 
 -- Optional: allow users to read their own events (for debugging/analytics UI)
-create policy if not exists "read own personalization events"
-  on public.personalization_events for select
-  using (user_id = auth.uid());
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'personalization_events' AND policyname = 'read own personalization events'
+  ) THEN
+    EXECUTE 'CREATE POLICY "read own personalization events" ON public.personalization_events FOR SELECT USING (user_id = auth.uid())';
+  END IF;
+END $$;
 
 -- 5) Helper function to seed or ensure a profile row exists for a given user
 create or replace function public.ensure_profile_exists(p_user_id uuid, p_first_name text default null)

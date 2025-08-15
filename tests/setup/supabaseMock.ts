@@ -35,6 +35,11 @@ export const mockSupabaseClient: any = {
 // Default export as a proxy of the client for convenience
 export const supabase = mockSupabaseClient;
 
+// For compatibility with tests that expect a factory function
+export function createSupabaseMock() {
+  return mockSupabaseClient;
+}
+
 // Helper to reset mocks between tests
 export function resetSupabaseMocks() {
   mockFrom.mockClear();

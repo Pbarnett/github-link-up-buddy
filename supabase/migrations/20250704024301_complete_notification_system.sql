@@ -27,6 +27,11 @@ CREATE TABLE IF NOT EXISTS public.notification_deliveries (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure missing columns exist in case the table predated these fields
+ALTER TABLE public.notification_deliveries
+  ADD COLUMN IF NOT EXISTS provider_id TEXT,
+  ADD COLUMN IF NOT EXISTS provider_response JSONB;
+
 -- 2. Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_deliveries_notification_id ON notification_deliveries(notification_id);
 CREATE INDEX IF NOT EXISTS idx_deliveries_status ON notification_deliveries(status);
@@ -36,21 +41,29 @@ CREATE INDEX IF NOT EXISTS idx_deliveries_created_at ON notification_deliveries(
 -- 3. Enable RLS for notification_deliveries
 ALTER TABLE public.notification_deliveries ENABLE ROW LEVEL SECURITY;
 
--- 4. Create RLS policies for notification_deliveries
-CREATE POLICY "Users can view deliveries of their notifications"
-  ON public.notification_deliveries FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM notifications n 
-      WHERE n.id = notification_deliveries.notification_id 
-      AND n.user_id = auth.uid()
-    )
-  );
+-- 4. Create RLS policies for notification_deliveries (guarded to avoid duplicates)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notification_deliveries' AND policyname='Users can view deliveries of their notifications'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view deliveries of their notifications" 
+      ON public.notification_deliveries FOR SELECT 
+      USING (EXISTS (SELECT 1 FROM notifications n WHERE n.id = notification_deliveries.notification_id AND n.user_id = auth.uid()))';
+  END IF;
+END $$;
 
-CREATE POLICY "Service role can manage all deliveries"
-  ON public.notification_deliveries FOR ALL
-  TO service_role
-  USING (true);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notification_deliveries' AND policyname='Service role can manage all deliveries'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Service role can manage all deliveries" 
+      ON public.notification_deliveries FOR ALL 
+      TO service_role 
+      USING (true)';
+  END IF;
+END $$;
 
 -- 5. Create updated_at trigger for notification_deliveries
 CREATE OR REPLACE FUNCTION update_notification_deliveries_updated_at()
@@ -82,9 +95,32 @@ CREATE TABLE IF NOT EXISTS public.events (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema='public' AND table_name='events' AND column_name='event_type'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_events_type ON public.events(event_type)';
+  ELSIF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema='public' AND table_name='events' AND column_name='type'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_events_type ON public.events(type)';
+  END IF;
+END
+$$;
 CREATE INDEX IF NOT EXISTS idx_events_user_id ON events(user_id);
-CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema='public' AND table_name='events' AND column_name='created_at'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_events_created_at ON public.events(created_at)';
+  END IF;
+END
+$$;
 
 -- Create duffel_webhook_events table
 CREATE TABLE IF NOT EXISTS public.duffel_webhook_events (
