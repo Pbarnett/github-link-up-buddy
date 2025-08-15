@@ -140,33 +140,69 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_deliveries ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
-CREATE POLICY IF NOT EXISTS "Users can view own notifications" ON public.notifications
-    FOR SELECT USING (auth.uid() = user_id);
+-- RLS Policies (Postgres does not support IF NOT EXISTS for CREATE POLICY); use guards via pg_policies
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notifications' AND policyname='Users can view own notifications'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id)';
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Users can update own notification read status" ON public.notifications
-    FOR UPDATE USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notifications' AND policyname='Users can update own notification read status'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can update own notification read status" ON public.notifications FOR UPDATE USING (auth.uid() = user_id)';
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all notifications" ON public.notifications
-    FOR ALL USING (current_setting('role') = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notifications' AND policyname='Service role can manage all notifications'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Service role can manage all notifications" ON public.notifications FOR ALL USING (current_setting(''role'') = ''service_role'')';
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Users can manage own preferences" ON public.user_preferences
-    FOR ALL USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='user_preferences' AND policyname='Users can manage own preferences'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can manage own preferences" ON public.user_preferences FOR ALL USING (auth.uid() = user_id)';
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all preferences" ON public.user_preferences
-    FOR ALL USING (current_setting('role') = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='user_preferences' AND policyname='Service role can manage all preferences'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Service role can manage all preferences" ON public.user_preferences FOR ALL USING (current_setting(''role'') = ''service_role'')';
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Users can view own delivery logs" ON public.notification_deliveries
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.notifications n 
-            WHERE n.id = notification_deliveries.notification_id 
-            AND n.user_id = auth.uid()
-        )
-    );
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notification_deliveries' AND policyname='Users can view own delivery logs'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view own delivery logs" ON public.notification_deliveries FOR SELECT USING (EXISTS (SELECT 1 FROM public.notifications n WHERE n.id = notification_deliveries.notification_id AND n.user_id = auth.uid()))';
+  END IF;
+END $$;
 
-CREATE POLICY IF NOT EXISTS "Service role can manage all deliveries" ON public.notification_deliveries
-    FOR ALL USING (current_setting('role') = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname='public' AND tablename='notification_deliveries' AND policyname='Service role can manage all deliveries'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Service role can manage all deliveries" ON public.notification_deliveries FOR ALL USING (current_setting(''role'') = ''service_role'')';
+  END IF;
+END $$;
 
 -- Initialize PGMQ queues for notification processing
 SELECT pgmq.create_queue('critical_notifications');
