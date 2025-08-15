@@ -167,6 +167,25 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
     });
     const unitAmount = totalCents;
     
+    // Create order record first (Orders-first reconciliation)
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .insert({
+        user_id: user.id,
+        // trip_request_id: trip_request_id, // keep if column exists; metadata still carries IDs
+        amount: flightOffer.price,
+        currency: "usd",
+        status: "created",
+        description: description,
+      })
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error("Error creating order:", orderError);
+      throw new Error("Failed to create order record");
+    }
+
     // Create checkout session
     const origin = req.headers.get("origin") || "http://localhost:5173";
     const session = await stripe.checkout.sessions.create({
@@ -200,6 +219,7 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
       shipping_address_collection: { allowed_countries: ['US'] },
       metadata: {
         user_id: user.id,
+        order_id: order.id,
         trip_request_id,
         flight_offer_id: offer_id,
         fee_model: 'savings-based',
@@ -209,26 +229,19 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
         fee_pct: String(feePct),
         fee_amount_cents: String(feeCents)
       }
+    }, {
+      idempotencyKey: `checkout-session:${user.id}:${offer_id}`
     });
     
-    // Create order record
-    const { data: order, error: orderError } = await supabase
+    // Update order with checkout session ID
+    const { error: updateOrderError } = await supabase
       .from("orders")
-      .insert({
-        user_id: user.id,
-        trip_request_id: trip_request_id,
-        payment_intent_id: session.id,
-        amount: flightOffer.price,
-        currency: "usd",
-        status: "created",
-        description: description,
-      })
-      .select()
-      .single();
+      .update({ checkout_session_id: session.id, updated_at: new Date().toISOString() })
+      .eq("id", order.id);
     
-    if (orderError) {
-      console.error("Error creating order:", orderError);
-      throw new Error("Failed to create order record");
+    if (updateOrderError) {
+      console.error("Error updating order with session id:", updateOrderError);
+      // Non-fatal: proceed to return session URL
     }
     
     // Create notification for payment session

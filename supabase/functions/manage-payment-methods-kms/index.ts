@@ -27,6 +27,18 @@ serve(async (req) => {
     );
   }
 
+  const kmsEnabled = (Deno.env.get('ENABLE_KMS_CARD_STORAGE') || '').toLowerCase() === 'true';
+  if (kmsEnabled) {
+    console.warn('[DEPRECATION] manage-payment-methods-kms temporarily enabled by env; proceed with extreme caution');
+    return new Response(
+      JSON.stringify({
+        status: 'soft-deprecated',
+        warning: 'KMS endpoints are slated for removal. Set ENABLE_KMS_CARD_STORAGE=false to disable.',
+      }),
+      { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   console.warn('[DEPRECATION] manage-payment-methods-kms called. Returning 410 Gone.');
   return new Response(
     JSON.stringify({

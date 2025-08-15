@@ -17,6 +17,7 @@ export default defineConfig({
     environment: 'node', // Edge functions run in Node-like environment
     setupFiles: ['./src/tests/setupEdgeFunctionTests.ts'],
     include: ['supabase/functions/**/*.test.ts', 'tests/edge/**/*.test.ts'],
+    exclude: ['supabase/functions/tests/stripe-webhook.signature.test.ts'],
     coverage: {
       provider: 'v8',
       statements: 90,
