@@ -19,6 +19,7 @@ on:
   schedule:
     # Run nightly comprehensive tests
     - cron: '0 2 * * *'
+  workflow_dispatch: {}
 
 env:
   NODE_VERSION: '18'
