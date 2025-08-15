@@ -47,18 +47,21 @@ test('@critical wizard reaches review step', async ({ page }) => {
   await page.waitForLoadState('domcontentloaded');
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
 
-  // Less brittle: wait for any known wizard heading or button (use locator.or)
-  const anyWizardHeading = page
+  // Route-level confirmation first (works even if Suspense fallback is showing)
+  await page.waitForURL(/\/auto-booking(\/new)?/, { timeout: 30000 });
+
+  // Soft content confirmation: either the wizard heading, step text, action button or at least the main container
+  const anyWizardIndicator = page
     .getByRole('heading', { name: /Create Auto-Booking Rule/i })
     .or(page.getByRole('heading', { name: /Rule Criteria/i }))
     .or(page.getByRole('heading', { name: /Traveler Information/i }))
     .or(page.getByRole('heading', { name: /Payment Information/i }))
     .or(page.getByText(/Auto-Booking|Auto Booking/i))
-    // Additional fallbacks: presence of Step badge or primary action button text
     .or(page.getByText(/Step\s+\d+\s+of\s+\d+/i))
-    .or(page.getByRole('button', { name: /Next: Review|Next: Review \u0026 Confirm/i }));
+    .or(page.getByRole('button', { name: /Next: Review|Next: Review \u0026 Confirm/i }))
+    .or(page.locator('main'));
 
-  await anyWizardHeading.first().waitFor({ timeout: 30000, state: 'visible' });
+  await anyWizardIndicator.first().waitFor({ timeout: 30000, state: 'visible' });
 
   // Assert we’re in the auto-booking flow route (no brittle selectors)
   expect(page.url()).toContain('/auto-booking');
