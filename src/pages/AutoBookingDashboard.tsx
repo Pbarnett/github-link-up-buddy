@@ -23,9 +23,8 @@ function AutoBookingDashboard() {
 
   // No breadcrumbs needed since this is the main dashboard page
 
-  const handleCreateCampaign = async () => {
-    const ok = await ensureAuthenticated();
-    if (!ok) return; // redirected to login
+  const handleCreateCampaign = async () => {
+    // Soft-gating: allow starting wizard without auth to maximize conversions
     navigate("/auto-booking/new");
   };
 
