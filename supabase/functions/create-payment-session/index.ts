@@ -217,7 +217,7 @@ export async function handleCreatePaymentSession(req: Request): Promise<Response
       .insert({
         user_id: user.id,
         trip_request_id: trip_request_id,
-        payment_intent_id: session.id,
+        checkout_session_id: session.id,
         amount: flightOffer.price,
         currency: "usd",
         status: "created",
