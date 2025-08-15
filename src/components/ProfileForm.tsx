@@ -14,6 +14,7 @@ import { CheckCircle, AlertTriangle, User, Shield, FileText, Bell, Calendar } fr
 import { profileCompletenessService, ProfileRecommendation } from "@/services/profileCompletenessService";
 import { useTravelerProfile } from "@/hooks/useTravelerProfile";
 import { useProfile } from "@/hooks/useProfile";
+import { ensureAuthenticated } from "@/lib/auth/ensureAuthenticated";
 
 export function ProfileForm() {
   const { profile, isLoading, updateProfile, isUpdating } = useProfile();
@@ -35,8 +36,10 @@ export function ProfileForm() {
     }
   }, [profile]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const ok = await ensureAuthenticated();
+    if (!ok) return;
     updateProfile(formData);
   };
 
