@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi, beforeEach, afterEach } from 'vitest';
 import 'dotenv/config';
 
 /**
@@ -40,6 +40,36 @@ export const mockAnalytics = {
   trackFieldError: vi.fn(),
   trackFormSubmit: vi.fn(),
 };
+
+// Fail tests on unexpected console.error or console.warn to catch regressions early
+let originalError: typeof console.error;
+let originalWarn: typeof console.warn;
+
+beforeEach(() => {
+  originalError = console.error;
+  originalWarn = console.warn;
+  console.error = (...args: unknown[]) => {
+    // Allow specific noisy libraries if needed by pattern; otherwise fail
+    const message = String(args?.[0] ?? '');
+    if (/ReactDOMTestUtils\.act/.test(message)) return; // example allowlist
+    // Allow React 19 concurrent rendering recovery noise in tests not under focus
+    if (/error during concurrent rendering/i.test(message) && /React was able to recover/i.test(message)) return;
+    throw new Error(`console.error called during test: ${message}`);
+  };
+  console.warn = (...args: unknown[]) => {
+    const message = String(args?.[0] ?? '');
+    // Allow deprecation warnings pattern if needed
+    if (/deprecated/i.test(message)) return;
+    // Suppress React Router v7 future flag warnings to reduce noise in tests
+    if (/React Router Future Flag Warning/i.test(message)) return;
+    throw new Error(`console.warn called during test: ${message}`);
+  };
+});
+
+afterEach(() => {
+  console.error = originalError;
+  console.warn = originalWarn;
+});
 
 /**
  * Form-analytics hook (test stub)
