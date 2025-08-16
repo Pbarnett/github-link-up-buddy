@@ -34,6 +34,16 @@ jobs:
       - name: Run TypeScript check
         run: pnpm run tsc
 
+      - name: Scan for control characters in TS/TSX
+        run: |
+          echo "🔍 Scanning for control characters in TypeScript files..."
+          if git grep -nI -P "[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]" -- '*.ts' '*.tsx'; then
+            echo "::error::❌ Found control characters in source files. Remove them (often caused by bad paste/merge)."
+            exit 1
+          else
+            echo "✅ No control characters found."
+          fi
+
       - name: Check for remote imports in test files
         run: |
           echo "🔍 Checking for remote HTTPS imports in test files..."

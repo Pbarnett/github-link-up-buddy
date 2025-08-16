@@ -221,7 +221,7 @@ describe('FlightRuleForm', () => {
     expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument();
   });
 
-  it.skip('prevents submission with dates in the past', async () =e {
+  it.skip('prevents submission with dates in the past', async () => {
     const user = userEvent.setup();
     
     const tomorrow = new Date();
