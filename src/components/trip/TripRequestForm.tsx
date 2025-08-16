@@ -33,6 +33,7 @@ import TripSummaryChips from "./sections/TripSummaryChips";
 import AutoBookingSection from "./sections/AutoBookingSection";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { retryPromise } from "@/lib/resilience/retryPromise";
+import { emitSubmitEvent } from "@/lib/analytics/submitEvents";
 
 interface TripRequestFormProps {
   tripRequestId?: string;
@@ -277,6 +278,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
   };
 
   const onSubmit = async (data: FormValues) => {
+    emitSubmitEvent('submit_attempt', { form: 'TripRequestForm', mode });
     setIsSubmitting(true);
     try {
       // Cancel any previous in-flight submit
@@ -342,6 +344,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       }
       
       navigateToConfirmation(resultingTripRequest);
+      emitSubmitEvent('submit_success', { form: 'TripRequestForm', mode });
       
     } catch (error) {
       const errorResponse = handleError(error, {
@@ -361,6 +364,11 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
         description: errorResponse.userMessage || errorResponse.message,
         variant: "destructive",
       });
+      // Classify error type for analytics
+      const errType = error instanceof ValidationError
+        ? 'validation'
+        : (errorResponse?.code ? 'service' : 'unknown');
+      emitSubmitEvent('submit_failure', { form: 'TripRequestForm', mode, errorType: errType as any });
     } finally {
       try { submitAbortRef.current?.abort(); } catch {}
       submitAbortRef.current = null;
@@ -409,7 +417,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
 
   const memoButtonText = useMemo(() => {
     if (mode === 'auto') {
-      if (currentStep === 1) return "Continue -> Pricing";
+      if (currentStep === 1) return "Continue → Pricing";
 
       return tripRequestId ? "Update Auto-Booking" : "Start Auto-Booking";
     }
