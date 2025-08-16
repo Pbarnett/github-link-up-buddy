@@ -145,20 +145,10 @@ entry: path.join(__dirname, '../../../../src/functions/payment-stub.ts'),
     paymentStubFn.grantInvoke(sfnRole);
 
     // Stripe payment Lambda (feature-flagged) - legacy plaintext param remains for now
-    const stripeSecretParam = new ssm.StringParameter(this, 'StripeSecretParam', {
-      parameterName: '/auto-booking/stripe-secret',
-      stringValue: 'REPLACE_WITH_REAL_SECRET', // replace later out-of-band
-      description: 'Stripe secret key for auto-booking (SecureString recommended in production)'
-    });
+    // Removed plaintext parameter creation. Use pre-provisioned SecureString only.
 
     // Prepare new SecureString parameter (added now, wired later)
     const secureStripeParamName = '/auto-booking/secure/stripe-secret';
-    const secureStripeParamCfn = new ssm.CfnParameter(this, 'SecureStripeSecretParam', {
-      name: secureStripeParamName,
-      type: 'SecureString',
-      value: 'REPLACE_WITH_REAL_SECRET',
-      description: 'Stripe secret key (SecureString)'.slice(0, 1024),
-    });
     const secureStripeParamRef = ssm.StringParameter.fromStringParameterName(this, 'SecureStripeSecretParamRef', secureStripeParamName);
 
 const paymentStripeFn = new NodejsFunction(this, 'PaymentStripeFn', {
@@ -192,21 +182,10 @@ entry: path.join(__dirname, '../../../../src/functions/payment-stripe.ts'),
     });
 
     // Generate or retrieve a webhook secret (simple generation at deploy time)
-    const webhookSecret = (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
-    const webhookSecretParam = new ssm.StringParameter(this, 'WebhookSecretParam', {
-      parameterName: '/auto-booking/webhook-secret',
-      stringValue: webhookSecret,
-      description: 'Shared secret for provider webhook authentication',
-    });
+    // Webhook secret must be pre-provisioned in SSM as SecureString; reference only.
 
     // Prepare new SecureString parameter (added now, wired later)
     const secureWebhookParamName = '/auto-booking/secure/webhook-secret';
-    const secureWebhookParamCfn = new ssm.CfnParameter(this, 'SecureWebhookSecretParam', {
-      name: secureWebhookParamName,
-      type: 'SecureString',
-      value: webhookSecret,
-      description: 'Provider webhook secret (SecureString)'.slice(0, 1024),
-    });
     const secureWebhookParamRef = ssm.StringParameter.fromStringParameterName(this, 'SecureWebhookSecretParamRef', secureWebhookParamName);
 
 
@@ -265,8 +244,8 @@ entry: path.join(__dirname, '../../../../src/functions/provider-webhook-complete
       tracingEnabled: true,
       logs: {
         destination: logGroup,
-        level: sfn.LogLevel.ERROR,
-        includeExecutionData: false,
+        level: sfn.LogLevel.ALL,
+        includeExecutionData: true,
       },
       role: sfnRole,
     });
@@ -433,12 +412,7 @@ entry: path.join(__dirname, '../../../../src/functions/provider-webhook-complete
 
     // API Gateway HTTP API fronting the provider webhook lambda
     const httpApi = new apigwv2.HttpApi(this, 'AutoBookingHttpApi', {
-      apiName: 'auto-booking-api',
-      corsPreflight: {
-        allowHeaders: ['*'],
-        allowMethods: [apigwv2.CorsHttpMethod.ANY],
-        allowOrigins: ['*']
-      }
+      apiName: 'auto-booking-api'
     });
 
     const webhookIntegration = new apigwv2Integrations.HttpLambdaIntegration(
@@ -453,7 +427,7 @@ entry: path.join(__dirname, '../../../../src/functions/provider-webhook-complete
     });
 
     new cdk.CfnOutput(this, 'WebhookUrl', { value: `${httpApi.apiEndpoint}/provider/webhook` });
-    new cdk.CfnOutput(this, 'WebhookSecretParameter', { value: webhookSecretParam.parameterName });
+    new cdk.CfnOutput(this, 'WebhookSecretParameter', { value: secureWebhookParamName });
   }
 }
 
