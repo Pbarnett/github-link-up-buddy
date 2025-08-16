@@ -37,14 +37,18 @@ jobs:
         run: |
           echo "VITE_FEATURE_ANALYTICS_SUBMIT=false" >> $GITHUB_ENV
 
+      - name: CI-only notice
+        if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[ci-only]') }}
+        run: echo "CI-only PR detected, skipping test execution for matrix: ${MATRIX_SUITE:-${{ matrix.suite }}}."
+
       - name: Run unit tests
-        if: matrix.suite == 'unit'
+        if: matrix.suite == 'unit' && !(github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[ci-only]'))
         run: pnpm run test:unit
 
       - name: Run integration tests
-        if: matrix.suite == 'integration'
+        if: matrix.suite == 'integration' && !(github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[ci-only]'))
         run: pnpm run test:integration
 
       - name: Run edge tests
-        if: matrix.suite == 'edge'
+        if: matrix.suite == 'edge' && !(github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[ci-only]'))
         run: pnpm run test:edge

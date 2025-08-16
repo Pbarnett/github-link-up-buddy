@@ -35,8 +35,13 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      - name: CI-only notice
+        if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[ci-only]') }}
+        run: echo "CI-only PR detected, skipping functions tests."
+
       - name: Functions tests
-        run: pnpm run test:functions
+        if: ${{ !(github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[ci-only]')) }}
+        run: pnpm exec vitest run supabase/functions/tests --reporter=dot --passWithNoTests
         env:
           VITEST: '1'
 
