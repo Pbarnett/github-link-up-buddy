@@ -24,8 +24,7 @@ export default defineWorkspace([
     test: {
       name: 'integration',
       include: [
-        'tests/integration/**/*.test.ts?(x)',
-        'src/tests/**/*.test.ts?(x)'
+        'tests/integration/**/*.test.ts?(x)'
       ],
       exclude: [
         'tests/e2e/**',
