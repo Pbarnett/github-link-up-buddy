@@ -32,6 +32,25 @@
       "TimeoutSeconds": 86400,
       "HeartbeatSeconds": 3600,
       "ResultPath": "$.provider",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "DynamoDB.ServiceException",
+            "DynamoDB.AWSServiceException",
+            "DynamoDB.RequestLimitExceeded",
+            "States.TaskFailed",
+            "States.Timeout",
+            "TransientProviderError"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
       "Catch": [
         {
           "ErrorEquals": ["States.Timeout"],
