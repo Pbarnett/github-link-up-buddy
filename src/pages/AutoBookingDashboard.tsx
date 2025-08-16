@@ -23,7 +23,7 @@ function AutoBookingDashboard() {
 
   // No breadcrumbs needed since this is the main dashboard page
 
-  const handleCreateCampaign = async () => {
+  const handleCreateCampaign = async () => {
     // Soft-gating: allow starting wizard without auth to maximize conversions
     navigate("/auto-booking/new");
   };
@@ -133,8 +133,8 @@ function AutoBookingDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">My Bookings</h1>
-            <p className="text-muted-foreground mt-2 hidden md:block">We’ll auto-book your flight at whatever price you choose.</p>
-            <p className="text-muted-foreground mt-2 md:hidden">We’ll auto-book your flight at whatever price you choose.</p>
+            <p className="text-muted-foreground mt-2 hidden md:block">Well auto-book your flight at whatever price you choose.</p>
+            <p className="text-muted-foreground mt-2 md:hidden">Well auto-book your flight at whatever price you choose.</p>
           </div>
           {hasAnyCampaigns && (
             <Button variant="ghost" onClick={handleCreateCampaign} className="flex items-center gap-2">
@@ -157,7 +157,7 @@ function AutoBookingDashboard() {
             <Skeleton className="h-32 w-full" />
           </div>
         ) : !hasAnyCampaigns ? (
-          // First‑time Welcome state
+          // Firsttime Welcome state
           <Card>
             <CardContent className="py-12">
               <div className="max-w-3xl mx-auto text-center space-y-6">
@@ -166,17 +166,17 @@ function AutoBookingDashboard() {
                 </div>
                 <h2 className="text-2xl font-semibold">Book For Me</h2>
                 <p className="text-muted-foreground hidden md:block">
-                  Set your price. I’ll book when a fare matches. Today, tomorrow, or next month. I keep watch.
+                  Set your price. Ill book when a fare matches. Today, tomorrow, or next month. I keep watch.
                 </p>
                 <p className="text-muted-foreground md:hidden">
-                  Set your price. I’ll book when a fare matches.
+                  Set your price. Ill book when a fare matches.
                 </p>
                 <div className="grid sm:grid-cols-2 gap-4 text-left max-w-3xl mx-auto">
                   <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <p className="font-medium">Comfortable flights guaranteed</p>
-                      <p className="text-sm text-muted-foreground">We only book nonstop, roundtrip flights with a carry‑on included.</p>
+                      <p className="text-sm text-muted-foreground">We only book nonstop, roundtrip flights with a carryon included.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -189,7 +189,7 @@ function AutoBookingDashboard() {
                   <div className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-primary mt-1" />
                     <div>
-                      <p className="font-medium">You’re in control</p>
+                      <p className="font-medium">Youre in control</p>
                       <p className="text-sm text-muted-foreground">Pause anytime; most U.S. fares are refundable within 24 hours.</p>
                     </div>
                   </div>
@@ -214,11 +214,11 @@ function AutoBookingDashboard() {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Example auto‑book rule</DialogTitle>
+                        <DialogTitle>Example autobook rule</DialogTitle>
                       </DialogHeader>
                       <div className="text-sm space-y-2">
-                        <p>LAX → CDG • Jul 4–18 • ≤ $800 • Nonstop roundtrip</p>
-                        <p className="text-muted-foreground">I’ll monitor continuously and purchase within your max price. You can pause anytime.</p>
+                        <p>LAX  CDG  Jul 418   $800  Nonstop roundtrip</p>
+                        <p className="text-muted-foreground">Ill monitor continuously and purchase within your max price. You can pause anytime.</p>
                       </div>
                   </DialogContent>
                   </Dialog>

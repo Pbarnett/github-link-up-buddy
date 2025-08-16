@@ -84,7 +84,7 @@ function CampaignWizard() {
     });
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = async () => {
     // Final guard: ensure authenticated before creating the campaign
     const ok = await ensureAuthenticated();
     if (!ok) return;
@@ -131,8 +131,8 @@ function CampaignWizard() {
       });
 
       toast({
-        title: 'Rule Created! 🎉',
-        description: 'Your auto‑booking rule is now active and monitoring flights.',
+        title: 'Rule Created! ',
+        description: 'Your autobooking rule is now active and monitoring flights.',
       });
 
       // Navigate to dashboard
