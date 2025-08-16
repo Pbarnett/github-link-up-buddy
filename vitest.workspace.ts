@@ -30,6 +30,11 @@ export default defineWorkspace([
       exclude: [
         'tests/e2e/**',
         'supabase/functions/**'
+      ],
+      testTimeout: 20000,
+      setupFiles: [
+        './src/tests/setupTests.ts',
+        './tests/integration/setup/integration.setup.ts'
       ]
     }
   }
