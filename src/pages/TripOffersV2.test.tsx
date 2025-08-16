@@ -122,27 +122,28 @@ describe('TripOffersV2 Component', () => {
   });
 
   it('should format dates correctly, including return date if present, and handle invalid dates gracefully', () => {
-    // Using imported format function from date-fns
     const offersWithSpecificDates = [
-        // Use unique originIata for each offer to ensure `getByText` can find the specific row
-        { ...mockOffersData[0], id:'offer-valid-no-return', departDt: '2024-12-01T10:00:00Z', returnDt: '2024-12-03T15:00:00Z', originIata: 'DT1' },
-        { ...mockOffersData[1], id:'offer-valid-with-return', departDt: '2024-12-05T12:30:00Z', returnDt: '2024-12-10T15:00:00Z', originIata: 'DT2' },
-        { ...mockOffersData[0], id:'offer-invalid-date', departDt: 'invalid-date-string', returnDt: '2024-12-05T15:00:00Z', originIata: 'INV', destinationIata: 'LID' }
+      { ...mockOffersData[0], id: 'offer-valid-no-return', departDt: '2024-12-01T10:00:00Z', returnDt: '2024-12-03T15:00:00Z', originIata: 'DT1' },
+      { ...mockOffersData[1], id: 'offer-valid-with-return', departDt: '2024-12-05T12:30:00Z', returnDt: '2024-12-10T15:00:00Z', originIata: 'DT2' },
+      { ...mockOffersData[0], id: 'offer-invalid-date', departDt: 'invalid-date-string', returnDt: '2024-12-05T15:00:00Z', originIata: 'INV', destinationIata: 'LID' },
     ];
-    mockUseFlightOffers.mockReturnValueOnce({ ...defaultMockHookReturn, offers: offersWithSpecificDates, isFeatureEnabled: true });
+    mockUseFlightOffers.mockReturnValue({ ...defaultMockHookReturn, offers: offersWithSpecificDates, isFeatureEnabled: true });
+
+    // Suppress the expected error log emitted for invalid date formatting in this negative-path test
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
     renderWithRouter(<TripOffersV2 />);
 
-    // Check that the valid offers are displayed
-    expect(screen.getByText(/DT1 →/)).toBeInTheDocument();
-    expect(screen.getByText(/DT2 →/)).toBeInTheDocument();
+    expect(screen.getByText((_, node) => !!node?.textContent && node.textContent.includes('DT1') && node.textContent.includes('LAX'))).toBeInTheDocument();
+    expect(screen.getByText((_, node) => !!node?.textContent && node.textContent.includes('DT2') && node.textContent.includes('MIA'))).toBeInTheDocument();
 
-    // Check that date labels are shown (multiple instances across offers)
-    expect(screen.getAllByText('Depart:')).toHaveLength(3); // 3 offers shown
-    expect(screen.getAllByText('Return:')).toHaveLength(3); // 3 offers shown
+    expect(screen.getAllByText('Depart:')).toHaveLength(3);
+    expect(screen.getAllByText('Return:')).toHaveLength(3);
 
-    // Check that invalid date shows "Invalid Date"
-    expect(screen.getByText('INV → LID')).toBeInTheDocument();
+    expect(screen.getByText((_, node) => node?.textContent === 'INV → LID')).toBeInTheDocument();
     expect(screen.getByText(/Invalid Date/)).toBeInTheDocument();
+
+    errSpy.mockRestore();
   });
 
 

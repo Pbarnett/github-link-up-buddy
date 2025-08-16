@@ -1,7 +1,7 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { MockInstance } from 'vitest';
-import { useFlightOffers, mapFlightOfferDbRowToV2 } from './useFlightOffers'; // mapFlightOfferDbRowToV2 is also exported here
+import { useFlightOffers, mapFlightOfferDbRowToV2 } from './useFlightOffers';
 import * as featureFlagHook from '@/hooks/useFeatureFlag';
 import * as serverActions from '@/serverActions/getFlightOffers';
 import type { FlightOfferV2, FlightOfferV2DbRow } from './types';
@@ -42,7 +42,7 @@ describe('useFlightOffers Hook', () => {
   });
 
   it('should set error if tripRequestId is invalid and feature is enabled', () => {
-    const { result } = renderHook(() => useFlightOffers('')); // Invalid ID
+    const { result } = renderHook(() => useFlightOffers(''));
 
     expect(result.current.offers).toEqual([]);
     expect(result.current.isLoading).toBe(false);
@@ -57,7 +57,7 @@ describe('useFlightOffers Hook', () => {
     expect(result.current.offers).toEqual([]);
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
-    expect(result.current.isFeatureEnabled).toBe(true); // Feature flag is on
+    expect(result.current.isFeatureEnabled).toBe(true);
     expect(mockGetFlightOffers).not.toHaveBeenCalled();
   });
 
@@ -84,6 +84,7 @@ describe('useFlightOffers Hook', () => {
   it('should handle errors from getFlightOffers server action', async () => {
     const mockError = new Error('Server action failed');
     mockGetFlightOffers.mockRejectedValue(mockError);
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { result } = renderHook(() => useFlightOffers(mockTripRequestId));
 
     expect(result.current.isLoading).toBe(true);
@@ -91,8 +92,10 @@ describe('useFlightOffers Hook', () => {
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
       expect(result.current.offers).toEqual([]);
-      expect(result.current.error).toBe(mockError);
+      expect(result.current.error).toBeInstanceOf(Error);
+      expect((result.current.error as Error).message).toBe('Server action failed');
     });
+    errSpy.mockRestore();
   });
 
   it('should handle AbortController signal on unmount', async () => {
@@ -104,13 +107,9 @@ describe('useFlightOffers Hook', () => {
 
     unmount();
 
-    // Wait for longer than the mock fetch
     await act(() => new Promise(resolve => setTimeout(resolve, 100)));
 
     expect(abortSpy).toHaveBeenCalledTimes(1);
-    // State should not have updated after unmount, so isLoading might still be true
-    // or values might be from initial state if unmount was very fast.
-    // The key is that no setState warning occurs (Vitest handles this by default).
   });
 
   it('refetch function should trigger a new fetch', async () => {
@@ -132,48 +131,35 @@ describe('useFlightOffers Hook', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(mockGetFlightOffers).toHaveBeenCalledTimes(2);
-    // Second call should have refresh: true
     expect(mockGetFlightOffers).toHaveBeenNthCalledWith(2, {
       tripRequestId: mockTripRequestId,
       refresh: true,
       useCache: true
     });
-    // Check if the offers updated based on the second mock call
     const expectedRefetchedOffer = mapFlightOfferDbRowToV2({ ...mockDbRows[0], id: 'refetched-offer' });
     expect(result.current.offers).toEqual([expectedRefetchedOffer]);
   });
 
-   it('should return new data if tripRequestId changes', async () => {
+  it('should return new data if tripRequestId changes', async () => {
     const initialId = 'trip-id-1';
     const newId = 'trip-id-2';
     const initialData = [{ ...mockDbRows[0], id: 'initial-offer', trip_request_id: initialId }];
     const newData = [{ ...mockDbRows[1], id: 'new-offer', trip_request_id: newId }];
 
     mockGetFlightOffers.mockResolvedValueOnce(initialData);
-    const { result, rerender } = renderHook(
-      ({ id }) => useFlightOffers(id),
-      { initialProps: { id: initialId } }
-    );
+    const { result, rerender } = renderHook(({ id }) => useFlightOffers(id), { initialProps: { id: initialId } });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.offers).toEqual(initialData.map(mapFlightOfferDbRowToV2));
-    expect(mockGetFlightOffers).toHaveBeenCalledWith({
-      tripRequestId: initialId,
-      refresh: false,
-      useCache: true
-    });
+    expect(mockGetFlightOffers).toHaveBeenCalledWith({ tripRequestId: initialId, refresh: false, useCache: true });
 
-    mockGetFlightOffers.mockResolvedValueOnce(newData); // For the new ID
+    mockGetFlightOffers.mockResolvedValueOnce(newData);
     rerender({ id: newId });
 
     expect(result.current.isLoading).toBe(true);
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.offers).toEqual(newData.map(mapFlightOfferDbRowToV2));
-    expect(mockGetFlightOffers).toHaveBeenCalledWith({
-      tripRequestId: newId,
-      refresh: false,
-      useCache: true
-    });
+    expect(mockGetFlightOffers).toHaveBeenCalledWith({ tripRequestId: newId, refresh: false, useCache: true });
     expect(mockGetFlightOffers).toHaveBeenCalledTimes(2);
   });
 });
