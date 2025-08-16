@@ -7,9 +7,11 @@ export default defineWorkspace([
       name: 'unit',
       include: [
         'tests/unit/**/*.test.ts?(x)',
-        'src/**/*.test.ts?(x)'
+        'src/**/__tests__/**/*.test.ts?(x)',
+        'src/**/*.unit.test.ts?(x)'
       ],
       exclude: [
+        'src/tests/**',
         'tests/integration/**',
         'tests/e2e/**',
         'supabase/functions/**',
@@ -23,7 +25,7 @@ export default defineWorkspace([
       name: 'integration',
       include: [
         'tests/integration/**/*.test.ts?(x)',
-        'src/**/*integration*.test.ts?(x)'
+        'src/tests/**/*.test.ts?(x)'
       ],
       exclude: [
         'tests/e2e/**',
