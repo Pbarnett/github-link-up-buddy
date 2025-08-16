@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { parseISO } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { TripRequestRepository, type TripRequestInsert, type TripRequestUpdate }
 import { handleError, mapAmadeusError, ValidationError, BusinessLogicError, ErrorCode } from "@/lib/errors";
 import { retryHttpRequest, RetryDecorators } from "@/lib/resilience/retry";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toInsert, toUpdate, createIdempotencyKey } from "@/services/tripRequestAdapter";
 import EnhancedDestinationSection from "./sections/EnhancedDestinationSection";
 import EnhancedBudgetSection from "./sections/EnhancedBudgetSection";
 import DepartureAirportsSection from "./sections/DepartureAirportsSection";
@@ -79,6 +80,15 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       preferred_payment_method_id: null,
     },
   });
+  const [errorSummary, setErrorSummary] = useState<string>("");
+  const submitAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      // Abort any in-flight submission on unmount
+      try { submitAbortRef.current?.abort(); } catch {}
+    };
+  }, []);
 
   useEffect(() => {
     if (tripRequestId) {
@@ -177,36 +187,18 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
 
   const createTripRequest = async (formData: ExtendedTripFormValues): Promise<TripRequestFromDB> => {
     if (!userId) throw new ValidationError("You must be logged in to create a trip request.");
-    
     const repository = new TripRequestRepository(supabase);
-    
-    const tripRequestData: TripRequestInsert = {
-      user_id: userId,
-      destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport || '',
-      departure_airports: formData.departure_airports || [],
-      earliest_departure: formData.earliestDeparture.toISOString(),
-      latest_departure: formData.latestDeparture.toISOString(),
-      min_duration: formData.min_duration,
-      max_duration: formData.max_duration,
-      budget: formData.budget,
-      nonstop_required: formData.nonstop_required ?? true,
-      baggage_included_required: formData.baggage_included_required ?? false,
-      auto_book_enabled: formData.auto_book_enabled ?? false,
-      max_price: formData.max_price,
-      preferred_payment_method_id: formData.preferred_payment_method_id,
-    };
-    
+    const tripRequestData: TripRequestInsert = toInsert(formData as any, userId);
+    const idempotencyKey = createIdempotencyKey();
     console.log('[PAYLOAD-DEBUG] Trip request payload:', {
-      isRoundTrip: true, // Always round-trip
       earliestDeparture: tripRequestData.earliest_departure,
       latestDeparture: tripRequestData.latest_departure,
-      duration: `${formData.min_duration}-${formData.max_duration} days`,
-      autoBookEnabled: tripRequestData.auto_book_enabled
+      duration: `${tripRequestData.min_duration}-${tripRequestData.max_duration} days`,
+      autoBookEnabled: tripRequestData.auto_book_enabled,
+      idempotencyKey,
     });
-    
     return await repository.createTripRequest(tripRequestData, {
-      context: { operation: 'createTripRequest', userId }
+      context: { operation: 'createTripRequest', userId, idempotencyKey, signal: submitAbortRef.current?.signal },
     }) as TripRequestFromDB;
   };
 
@@ -214,34 +206,17 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
     if (!userId || !tripRequestId) {
       throw new ValidationError("User ID or Trip Request ID is missing for update.");
     }
-    
     const repository = new TripRequestRepository(supabase);
-    
-    const tripRequestData: TripRequestUpdate = {
-      destination_airport: formData.destination_airport,
-      destination_location_code: formData.destination_airport,
-      departure_airports: formData.departure_airports || [],
-      earliest_departure: formData.earliestDeparture.toISOString(),
-      latest_departure: formData.latestDeparture.toISOString(),
-      min_duration: formData.min_duration,
-      max_duration: formData.max_duration,
-      budget: formData.budget,
-      nonstop_required: formData.nonstop_required ?? true,
-      baggage_included_required: formData.baggage_included_required ?? false,
-      auto_book_enabled: formData.auto_book_enabled ?? false,
-      max_price: formData.max_price,
-      preferred_payment_method_id: formData.preferred_payment_method_id,
-    };
-    
+    const tripRequestData: TripRequestUpdate = toUpdate(formData as any);
+    const idempotencyKey = createIdempotencyKey();
     console.log('[PAYLOAD-DEBUG] Trip request UPDATE payload:', {
-      isRoundTrip: true, // Always round-trip
       earliestDeparture: tripRequestData.earliest_departure,
       latestDeparture: tripRequestData.latest_departure,
-      autoBookEnabled: tripRequestData.auto_book_enabled
+      autoBookEnabled: tripRequestData.auto_book_enabled,
+      idempotencyKey,
     });
-    
     return await repository.updateTripRequest(tripRequestId, tripRequestData, {
-      context: { operation: 'updateTripRequest', tripRequestId, userId }
+      context: { operation: 'updateTripRequest', tripRequestId, userId, idempotencyKey, signal: submitAbortRef.current?.signal },
     }) as TripRequestFromDB;
   };
 
@@ -304,6 +279,9 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
+      // Cancel any previous in-flight submit
+      try { submitAbortRef.current?.abort(); } catch {}
+      submitAbortRef.current = new AbortController();
       if (!userId) {
         toast({ title: "Authentication error", description: "You must be logged in.", variant: "destructive" });
         setIsSubmitting(false);
@@ -331,7 +309,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       } else {
         resultingTripRequest = await retryPromise(() => createTripRequest(transformedData), { retries: 2, delayMs: 300, jitter: true });
         
-        // 🎯 INTELLIGENT FLIGHT SEARCH TRIGGER for new trips
+        // INTELLIGENT FLIGHT SEARCH TRIGGER for new trips
         try {
           // Calculate date range to determine search strategy
           const timeDiff = transformedData.latestDeparture.getTime() - transformedData.earliestDeparture.getTime();
@@ -384,44 +362,63 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
         variant: "destructive",
       });
     } finally {
+      try { submitAbortRef.current?.abort(); } catch {}
+      submitAbortRef.current = null;
       setIsSubmitting(false);
     }
   };
 
-  // Check if required fields are filled for enabling submit button
-  const watchedFields = form.watch();
-  
+  // Check if required fields are filled for enabling submit button (targeted watches to reduce re-renders)
+  const earliestDeparture = useWatch({ control: form.control, name: 'earliestDeparture' });
+  const latestDeparture = useWatch({ control: form.control, name: 'latestDeparture' });
+  const min_duration = useWatch({ control: form.control, name: 'min_duration' });
+  const max_duration = useWatch({ control: form.control, name: 'max_duration' });
+  const nyc_airports = useWatch({ control: form.control, name: 'nyc_airports' });
+  const other_departure_airport = useWatch({ control: form.control, name: 'other_departure_airport' });
+  const destination_airport = useWatch({ control: form.control, name: 'destination_airport' });
+  const destination_other = useWatch({ control: form.control, name: 'destination_other' });
+  const max_price = useWatch({ control: form.control, name: 'max_price' });
+  const auto_book_enabled = useWatch({ control: form.control, name: 'auto_book_enabled' });
+  const preferred_payment_method_id = useWatch({ control: form.control, name: 'preferred_payment_method_id' });
+  const auto_book_consent = useWatch({ control: form.control, name: 'auto_book_consent' });
+
   const isStep1Valid = Boolean(
-    watchedFields.earliestDeparture &&
-    watchedFields.latestDeparture &&
-    watchedFields.min_duration &&
-    watchedFields.max_duration &&
-    ((watchedFields.nyc_airports && watchedFields.nyc_airports.length > 0) || watchedFields.other_departure_airport) &&
-    (watchedFields.destination_airport || watchedFields.destination_other)
+    earliestDeparture &&
+    latestDeparture &&
+    min_duration &&
+    max_duration &&
+    ((nyc_airports && (nyc_airports as any[]).length > 0) || other_departure_airport) &&
+    (destination_airport || destination_other)
   );
   
   const isStep2Valid = Boolean(
-    watchedFields.max_price &&
+    max_price &&
     // Only require payment method if auto-booking is enabled
-    (!watchedFields.auto_book_enabled || watchedFields.preferred_payment_method_id) &&
-    (mode !== 'auto' || watchedFields.auto_book_consent)
+    (!auto_book_enabled || preferred_payment_method_id) &&
+    (mode !== 'auto' || auto_book_consent)
   );
   
-  const isFormValid = mode === 'auto' 
-    ? (currentStep === 1 ? isStep1Valid : isStep1Valid && isStep2Valid)
-    : watchedFields.auto_book_enabled 
-      ? isStep1Valid && isStep2Valid
-      : isStep1Valid;
-
-  const buttonText = () => {
+  const isFormValid = useMemo(() => {
+    const step1 = isStep1Valid;
+    const step2 = isStep2Valid;
     if (mode === 'auto') {
-      if (currentStep === 1) return "Continue → Pricing";
+      return currentStep === 1 ? step1 : step1 && step2;
+    }
+    return auto_book_enabled ? step1 && step2 : step1;
+  }, [mode, currentStep, isStep1Valid, isStep2Valid, auto_book_enabled]);
+
+  const memoButtonText = useMemo(() => {
+    if (mode === 'auto') {
+      if (currentStep === 1) return "Continue -> Pricing";
+
       return tripRequestId ? "Update Auto-Booking" : "Start Auto-Booking";
     }
-    return watchedFields.auto_book_enabled 
+    return auto_book_enabled 
       ? (tripRequestId ? "Update Auto-Booking" : "Start Auto-Booking")
       : (tripRequestId ? "Update Trip Request" : "Search Now");
-  };
+  }, [mode, currentStep, tripRequestId, auto_book_enabled]);
+
+  const buttonText = () => memoButtonText;
 
   const getPageTitle = () => {
     if (mode === 'auto') {
@@ -485,7 +482,22 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
                 
                 <FormProvider {...form}>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleStepSubmit)} className="space-y-6">
+                    <form 
+                      onSubmit={form.handleSubmit(handleStepSubmit, (errors) => {
+                        const keys = Object.keys(errors || {});
+                        if (keys.length > 0) {
+                          // Focus the first invalid field
+                          form.setFocus(keys[0] as any);
+                          setErrorSummary(`There ${keys.length === 1 ? 'is 1 error' : `are ${keys.length} errors`} in the form. Please review the highlighted fields.`);
+                        }
+                      })}
+                      className="space-y-6"
+                      aria-describedby={errorSummary ? 'form-error-summary' : undefined}
+                    >
+                      {/* A11y live region for aggregated errors */}
+                      <div id="form-error-summary" role="alert" aria-live="assertive" className="sr-only">
+                        {errorSummary}
+                      </div>
                       {/* Step Indicator for Auto Mode */}
               {mode === 'auto' && (
                 <div className="flex items-center justify-center mb-8">
@@ -592,7 +604,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
                             disabled={isSubmitting}
                             className="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 h-11"
                           >
-                            {mode === 'auto' && currentStep === 2 ? '← Back to Basics' : 'Back'}
+                            {mode === 'auto' && currentStep === 2 ? '<- Back to Basics' : 'Back'}
                           </Button>
                           <Button 
                             type={mode === 'auto' && currentStep === 1 ? "button" : "submit"}

@@ -19,26 +19,40 @@ case "$branch" in
  esac
 
 # Scan staged TS/TSX files for stray control characters that break builds (e.g., \x03)
-# Portable check using perl (works on macOS and Linux)
 CONTROL_PATTERN='[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]'
 files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$')
 if [ -n "$files" ]; then
   found=0
   for f in $files; do
     if [ -f "$f" ]; then
-      perl -ne "if (/$CONTROL_PATTERN/) { print qq{$f:$.: $_}; $found=1 } END { exit $found?1:0 }" "$f" >/tmp/ctrlchars.$$ 2>/dev/null
-      if [ $? -ne 0 ]; then
+      # Check the staged blob content using Python for portability
+      if git show ":$f" | python3 - <<'PY'
+import sys, re
+pat = re.compile(rb'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]')
+flag = 0
+for i, line in enumerate(sys.stdin.buffer, 1):
+    if pat.search(line):
+        sys.stdout.write(f"{i}: {line.decode('utf-8', 'replace')}")
+        flag = 1
+sys.exit(flag)
+PY
+      then
+        : # no matches
+      else
         found=1
-        echo "❌ Control characters detected in $f:" 1>&2
-        cat /tmp/ctrlchars.$$ 1>&2 || true
+        echo "❌ Control characters detected in $f (staged):" 1>&2
+        git show ":$f" | python3 - <<'PY'
+import sys, re
+pat = re.compile(rb'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]')
+for i, line in enumerate(sys.stdin.buffer, 1):
+    if pat.search(line):
+        sys.stdout.write(f"{i}: {line.decode('utf-8', 'replace')}")
+PY
       fi
-      rm -f /tmp/ctrlchars.$$ 2>/dev/null || true
     fi
   done
   if [ "$found" -ne 0 ]; then
     echo "Abort: control characters found in staged files. Please remove them and retry commit." 1>&2
-    echo "Hint: you can visualize them by opening the file in an editor and searching for non-printable chars or run:" 1>&2
-    echo "      git grep -nI -P \"$CONTROL_PATTERN\" -- '*.ts' '*.tsx'" 1>&2
     exit 1
   fi
 fi
