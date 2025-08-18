@@ -40,6 +40,44 @@ export default defineConfig({
       functions: 90,
       lines: 90,
       perFile: false  // Global thresholds only
-    }
+    },
+    // Define projects inline (replaces deprecated workspace file usage)
+    projects: [
+      {
+        test: {
+          name: 'unit',
+          include: [
+            'tests/unit/**/*.test.ts?(x)',
+            'src/**/__tests__/**/*.test.ts?(x)',
+            'src/**/*.unit.test.ts?(x)'
+          ],
+          exclude: [
+            'src/tests/**',
+            'tests/integration/**',
+            'tests/e2e/**',
+            'supabase/functions/**',
+            '**/*integration*.test.ts?(x)'
+          ]
+        }
+      },
+      {
+        test: {
+          name: 'integration',
+          include: [
+            'tests/integration/**/*.test.ts?(x)'
+          ],
+          exclude: [
+            'tests/e2e/**',
+            'supabase/functions/**'
+          ],
+          testTimeout: 20000,
+          setupFiles: [
+            './src/tests/setupTests.ts',
+            './vitest.setup.ts',
+            './tests/integration/setup/integration.setup.ts'
+          ]
+        }
+      }
+    ]
   }
 })
