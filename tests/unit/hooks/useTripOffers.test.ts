@@ -7,7 +7,6 @@ import * as tripOffersService from '@/services/tripOffersService';
 import * as flightSearchApi from '@/services/api/flightSearchApi';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
 // Mock the services
 vi.mock('@/services/tripOffersService');
 
@@ -141,7 +140,7 @@ async function renderHookAct<T>(callback: () => T) {
   return ret;
 }
 
-describe('useTripOffers', () =>
+describe('useTripOffers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     

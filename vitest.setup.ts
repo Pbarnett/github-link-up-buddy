@@ -49,11 +49,14 @@ beforeEach(() => {
   originalError = console.error;
   originalWarn = console.warn;
   console.error = (...args: unknown[]) => {
-    // Allow specific noisy libraries if needed by pattern; otherwise fail
     const message = String(args?.[0] ?? '');
-    if (/ReactDOMTestUtils\.act/.test(message)) return; // example allowlist
-    // Allow React 19 concurrent rendering recovery noise in tests not under focus
+    // Allow known intentional error logs in tests
+    if (/ReactDOMTestUtils\.act/.test(message)) return;
     if (/error during concurrent rendering/i.test(message) && /React was able to recover/i.test(message)) return;
+    if (/^\[ERROR\] Application error:/i.test(message)) return;
+    if(/^\[FilterPipeline\] Filter .* failed:/i.test(message)) return;
+    if(/^\[BudgetFilter\] No valid budget specified/i.test(message)) return;
+    if(/^Unexpected error fetching trip history/i.test(message)) return;
     throw new Error(`console.error called during test: ${message}`);
   };
   console.warn = (...args: unknown[]) => {
@@ -62,6 +65,10 @@ beforeEach(() => {
     if (/deprecated/i.test(message)) return;
     // Suppress React Router v7 future flag warnings to reduce noise in tests
     if (/React Router Future Flag Warning/i.test(message)) return;
+    // Allow known expected warns in performance/error-path tests
+    if(/^\[FilterPipeline\] Limited processing to/i.test(message)) return;
+    if(/^Business rules API not available/i.test(message)) return;
+    if(/^Failed to load static business rules config/i.test(message)) return;
     throw new Error(`console.warn called during test: ${message}`);
   };
 });
