@@ -491,8 +491,8 @@ const { result } = await renderHookAct(() =>
       expect(result.current.errorMessage).toBe('Trip not found');
     });
 
-    it('should handle missing trip ID', () => {
-const { result } = await renderHookAct(() =>
+it('should handle missing trip ID', async () => {
+      const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: '' })
       );
 
