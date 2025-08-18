@@ -1,6 +1,20 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import React from 'react';
+
+// Ensure a DOM is available even if environment is misconfigured
+beforeAll(async () => {
+  if (typeof document === 'undefined') {
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM('<!doctype html><html><body></body></html>');
+    // @ts-ignore
+    globalThis.window = dom.window;
+    // @ts-ignore
+    globalThis.document = dom.window.document;
+    // @ts-ignore
+    globalThis.navigator = dom.window.navigator;
+  }
+});
 
 const identifyMock = vi.fn();
 

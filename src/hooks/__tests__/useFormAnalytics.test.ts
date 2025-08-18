@@ -37,7 +37,13 @@ function mockRpcSequence(responses: Array<{ data?: any; error?: any }>) {
 // Helper to flush promises
 const flushPromises = () => new Promise(resolve => queueMicrotask(resolve));
 
-Object.defineProperty(window, 'localStorage', {
+// Ensure jsdom-style globals for tests
+const g: any = globalThis as any;
+if (!g.window) {
+  // Create a minimal window-like object if not provided yet
+  g.window = {};
+}
+Object.defineProperty(g.window, 'localStorage', {
   value: localStorageMock
 });
 
