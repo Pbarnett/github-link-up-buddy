@@ -6,9 +6,9 @@ import {
   FormItem, 
   FormLabel, 
   FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+} from "../../ui/form";
+import { Input } from "../../ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../ui/tooltip";
 import { HelpCircle } from "lucide-react";
 
 interface EnhancedBudgetSectionProps {
@@ -23,8 +23,7 @@ const EnhancedBudgetSection = ({ control }: EnhancedBudgetSectionProps) => {
       render={({ field }) => (
         <FormItem>
           <div className="flex items-center gap-2">
-            <FormLabel 
-              htmlFor="max_price_input" 
+          <FormLabel 
               className="text-base lg:text-lg font-semibold text-gray-900"
             >
               Top price you'll pay
@@ -44,7 +43,6 @@ const EnhancedBudgetSection = ({ control }: EnhancedBudgetSectionProps) => {
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">$</span>
               <Input
-                id="max_price_input"
                 type="number"
                 min="100"
                 max="10000"

@@ -1,8 +1,7 @@
 import React from 'react';
 import { Control, useWatch } from 'react-hook-form';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { Input } from "../../ui/input";
+import { Button } from "../../ui/button";
 import { differenceInCalendarDays, isValid } from 'date-fns';
 import {
   FormControl,
@@ -10,7 +9,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from "../../ui/form";
 
 interface NightsRangeSectionProps {
   control: Control<any>;
@@ -102,14 +101,13 @@ const NightsRangeSection = ({ control }: NightsRangeSectionProps) => {
             name="min_duration"
             render={({ field }) => (
               <FormItem className="flex-1">
-                <Label htmlFor="minNights" className="text-sm font-medium text-gray-700">
+                <FormLabel className="text-sm font-medium text-gray-700">
                   Min nights
-                </Label>
+                </FormLabel>
                 <FormControl>
                   <div className="flex items-center gap-2">
                     <Button type="button" variant="outline" size="icon" aria-label="Decrease min nights" onClick={() => setMin(field.onChange, minNights - 1)}>-</Button>
                     <Input
-                      id="minNights"
                       type="number"
                       min={1}
                       max={30}
@@ -135,14 +133,13 @@ const NightsRangeSection = ({ control }: NightsRangeSectionProps) => {
             name="max_duration"
             render={({ field }) => (
               <FormItem className="flex-1">
-                <Label htmlFor="maxNights" className="text-sm font-medium text-gray-700">
+                <FormLabel className="text-sm font-medium text-gray-700">
                   Max nights
-                </Label>
+                </FormLabel>
                 <FormControl>
                   <div className="flex items-center gap-2">
                     <Button type="button" variant="outline" size="icon" aria-label="Decrease max nights" onClick={() => setMax(field.onChange, maxNights - 1)}>-</Button>
                     <Input
-                      id="maxNights"
                       type="number"
                       min={1}
                       max={30}
