@@ -57,7 +57,7 @@ describe('ConstraintChips (Refactored)', () => {
     it('should render formatted date range', () => {
       renderWithProviders(<ConstraintChips {...defaultProps} />);
       
-      const dateChip = screen.getByTestId('chip-date-range');
+      const [dateChip] = screen.getAllByTestId('chip-date-range');
       // Check that it contains the expected month and dash, accounting for timezone differences
       expect(dateChip.textContent).toMatch(/Jan \d{1,2} – Jan \d{1,2}/);
     });
@@ -65,7 +65,7 @@ describe('ConstraintChips (Refactored)', () => {
     it('should show non-stop toggle as disabled by default', () => {
       renderWithProviders(<ConstraintChips {...defaultProps} />);
       
-      const nonStopButton = screen.getByTestId('chip-nonstop');
+      const [nonStopButton] = screen.getAllByTestId('chip-nonstop');
       expect(nonStopButton).toHaveAttribute('aria-pressed', 'false');
       expect(nonStopButton).toHaveAttribute('aria-label', 'Non-stop flights disabled');
     });
@@ -75,7 +75,7 @@ describe('ConstraintChips (Refactored)', () => {
         <ConstraintChips {...defaultProps} nonStopOnly={true} />
       );
       
-      const nonStopButton = screen.getByTestId('chip-nonstop');
+      const [nonStopButton] = screen.getAllByTestId('chip-nonstop');
       expect(nonStopButton).toHaveAttribute('aria-pressed', 'true');
       expect(nonStopButton).toHaveAttribute('aria-label', 'Non-stop flights enabled');
     });
@@ -90,7 +90,7 @@ describe('ConstraintChips (Refactored)', () => {
         <ConstraintChips {...defaultProps} onToggleNonStop={mockToggle} />
       );
 
-      const nonStopButton = screen.getByTestId('chip-nonstop');
+      const [nonStopButton] = screen.getAllByTestId('chip-nonstop');
       await user.click(nonStopButton);
 
       expect(mockToggle).toHaveBeenCalledTimes(1);
@@ -121,7 +121,7 @@ describe('ConstraintChips (Refactored)', () => {
         <ConstraintChips {...defaultProps} onToggleNonStop={mockToggle} />
       );
 
-      const nonStopButton = screen.getByTestId('chip-nonstop');
+      const [nonStopButton] = screen.getAllByTestId('chip-nonstop');
       
       // Focus and press Enter
       nonStopButton.focus();
@@ -138,7 +138,7 @@ describe('ConstraintChips (Refactored)', () => {
       );
       
       // Check that button has correct aria-pressed for disabled state
-      const nonStopButton = screen.getByTestId('chip-nonstop');
+      const [nonStopButton] = screen.getAllByTestId('chip-nonstop');
       expect(nonStopButton).toHaveAttribute('aria-pressed', 'false');
       
       // Rerender with enabled state

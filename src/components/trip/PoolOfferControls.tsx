@@ -39,8 +39,10 @@ const PoolOfferControls: React.FC<PoolOfferControlsProps> = ({ tripId }) => {
     });
   };
 
+  const reachedLimit = bumpsUsed >= 3 || budget >= maxBudget;
+
   return (
-    <div className="space-y-4 p-4 bg-white rounded-lg border ring-focus" tabIndex={-1}>
+    <div className="space-y-4 p-4 bg-white rounded-lg border ring-focus" tabIndex={-1} data-testid="pool-offer-controls">
       <ConstraintChips
         dateRange={dateRange}
         nonStopOnly={nonStopOnly}
@@ -48,7 +50,7 @@ const PoolOfferControls: React.FC<PoolOfferControlsProps> = ({ tripId }) => {
       />
       
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600" data-testid="budget-summary">
           Budget: ${budget.toFixed(0)} / Max: ${maxBudget.toFixed(0)}
           {bumpsUsed > 0 && (
             <span className="ml-2 text-orange-600">
@@ -59,10 +61,12 @@ const PoolOfferControls: React.FC<PoolOfferControlsProps> = ({ tripId }) => {
         
         <Button
           onClick={handleBumpBudget}
-          disabled={bumpsUsed >= 3 || budget >= maxBudget}
+          disabled={reachedLimit}
           variant="outline"
           size="sm"
           aria-label={`Increase budget by 20% (${bumpsUsed}/3 increases used)`}
+          aria-disabled={reachedLimit ? true : undefined}
+          data-testid="bump-budget"
         >
           +20% Budget
         </Button>

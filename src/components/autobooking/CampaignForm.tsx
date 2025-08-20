@@ -49,7 +49,7 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" data-testid="campaign-form">
       {/* Campaign Details */}
       <Card>
         <CardHeader>
@@ -264,7 +264,7 @@ const LegacyCampaignForm = ({ onSubmit, onCancel, isSubmitting, submitLabel, ini
         <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting} data-testid="campaign-submit">
           {isSubmitting ? "Creating..." : submitLabel}
         </Button>
       </div>

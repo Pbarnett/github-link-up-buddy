@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../ui/collapsible';
 import PoolHeader from './PoolHeader';
 
 interface PoolSectionProps {

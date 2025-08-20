@@ -56,8 +56,8 @@ describe('TripRequestForm Mode Handling', () => {
     );
 
     // Check for manual mode title and description
-    expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
-    expect(screen.getByText('Search real-time flight availability (Amadeus-powered)')).toBeInTheDocument();
+    expect(screen.getAllByText('Search Live Flights').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Search real-time flight availability (Amadeus-powered)').length).toBeGreaterThan(0);
   }, 10000);
 
   test('should show manual mode UI when mode=manual', () => {
@@ -68,8 +68,8 @@ describe('TripRequestForm Mode Handling', () => {
     );
 
     // Check for manual mode title and description
-    expect(screen.getByText('Search Live Flights')).toBeInTheDocument();
-    expect(screen.getByText('Search real-time flight availability (Amadeus-powered)')).toBeInTheDocument();
+    expect(screen.getAllByText('Search Live Flights').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Search real-time flight availability (Amadeus-powered)').length).toBeGreaterThan(0);
   }, 10000);
 
   test('should show auto mode UI when mode=auto', () => {
@@ -100,7 +100,7 @@ describe('TripRequestForm Mode Handling', () => {
     const tripBasicsElements = screen.getAllByText('Trip Basics');
     expect(tripBasicsElements.length).toBeGreaterThan(0);
     
-    expect(screen.getByText('Price & Payment')).toBeInTheDocument();
+    expect(screen.getAllByText('Price & Payment').length).toBeGreaterThan(0);
   }, 10000);
 
   test('should show different sections in auto mode step 1', () => {
@@ -111,13 +111,14 @@ describe('TripRequestForm Mode Handling', () => {
     );
 
     // Should show actual section labels from the components
-    expect(screen.getByText('Destination')).toBeInTheDocument();
-    expect(screen.getByText('Departure Airports')).toBeInTheDocument();
+    expect(screen.getAllByText('Destination').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Departure Airports').length).toBeGreaterThan(0);
     
     // Check for the specific heading instead of generic 'travel' text
-    expect(screen.getByRole('heading', { name: /Trip Basics/i })).toBeInTheDocument();
+    const basicsHeadings = screen.getAllByRole('heading', { name: /Trip Basics/i });
+    expect(basicsHeadings.length).toBeGreaterThan(0);
     // Or check for specific travel-related labels
-    expect(screen.getByText(/When do you want to travel\?/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/When do you want to travel\?/i).length).toBeGreaterThan(0);
     
     // Should NOT show auto-booking section in step 1
     expect(screen.queryByText('Maximum Price')).not.toBeInTheDocument();

@@ -51,12 +51,12 @@ export function SimpleProfileStatus({
   };
 
   return (
-    <Card className={className}>
+    <Card className={className} data-testid="simple-profile-status">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg">Profile Completion</CardTitle>
-            <CardDescription>{status.message}</CardDescription>
+            <CardDescription data-testid="status-message">{status.message}</CardDescription>
           </div>
           <Badge variant={overall >= 80 ? 'default' : 'secondary'} className="text-lg px-3 py-1">
             {overall}%
@@ -68,14 +68,14 @@ export function SimpleProfileStatus({
         {/* Progress Bar */}
         <div className="space-y-2">
           <Progress value={overall} className="h-2" />
-          <p className="text-xs text-muted-foreground text-center">
+          <p className="text-xs text-muted-foreground text-center" data-testid="progress-text">
             {overall < 100 ? `${100 - overall}% remaining` : 'Complete!'}
           </p>
         </div>
 
         {/* Next Step Recommendation */}
         {nextStep && overall < 100 && (
-          <Alert>
+          <Alert data-testid="next-step-alert">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               <div className="flex items-center justify-between">
@@ -90,6 +90,7 @@ export function SimpleProfileStatus({
                     size="sm" 
                     onClick={() => onActionClick(nextStep.action)}
                     className="ml-4"
+                    data-testid="next-step-action"
                   >
                     {getActionIcon(nextStep.action) && 
                       React.createElement(getActionIcon(nextStep.action), { className: 'h-3 w-3 mr-1' })
@@ -104,12 +105,12 @@ export function SimpleProfileStatus({
 
         {/* Completion Status */}
         {overall >= 100 ? (
-          <div className="flex items-center justify-center p-4 bg-green-50 rounded-lg">
+          <div className="flex items-center justify-center p-4 bg-green-50 rounded-lg" data-testid="complete-status">
             <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
             <span className="text-green-700 font-medium">Profile Complete!</span>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2" data-testid="missing-info-section">
             <p className="text-sm font-medium">Missing Information:</p>
             <div className="flex flex-wrap gap-1">
               {missing_fields.slice(0, 4).map((field) => (
@@ -132,6 +133,7 @@ export function SimpleProfileStatus({
             className="w-full" 
             variant={overall < 50 ? 'default' : 'outline'}
             onClick={() => onActionClick?.('complete_profile')}
+            data-testid="main-action"
           >
             {overall < 50 ? 'Start Completing Profile' : 'Continue Profile'}
           </Button>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast'; // Added useToast
+import { supabase } from '../../integrations/supabase/client';
+import { Button } from '../ui/button';
+import { useToast } from '../ui/use-toast'; // Added useToast
 import { Loader2 } from 'lucide-react'; // Added Loader2
 // For now, using 'any'. Replace with a proper type for booking history items.
 // import { Tables } from '@/integrations/supabase/types'; // Example if you have this type
@@ -150,7 +150,7 @@ const TripHistory: React.FC<TripHistoryProps> = ({ userId }) => {
                   </td>
                   <td className="px-6 py-4">
                     {booking.trip_request_id ? (
-                      <Button variant="link" asChild className="p-0 h-auto text-blue-600 hover:underline">
+                      <Button variant="link" asChild className="p-0 h-auto text-blue-600 hover:underline" data-testid={`view-details-${booking.trip_request_id}`}>
                         <Link to={`/trip/confirm?tripId=${booking.trip_request_id}`}>View Details</Link>
                       </Button>
                     ) : (

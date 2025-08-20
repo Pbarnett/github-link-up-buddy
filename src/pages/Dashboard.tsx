@@ -1,16 +1,16 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { toast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { toast } from '../components/ui/use-toast';
+import { supabase } from '../integrations/supabase/client';
 import { RefreshCw, AlertCircle, CheckCircle, Clock, XCircle, Eye, PlusCircle, Plane, Calendar, DollarSign, Activity, TrendingUp } from 'lucide-react';
-import TripHistory from '@/components/dashboard/TripHistory'; // Added import
-import { DashboardGreeting } from '@/components/personalization/GreetingBanner';
+import TripHistory from '../components/dashboard/TripHistory'; // Added import
+import { DashboardGreeting } from '../components/personalization/GreetingBanner';
 
 interface BookingRequest {
   id: string;
@@ -490,18 +490,20 @@ const Dashboard = () => {
               <TabsTrigger 
                 value="currentRequests"
                 className="rounded-md transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium"
+                data-testid="tab-trigger-current-requests"
               >
                 Active Watches
               </TabsTrigger>
               <TabsTrigger 
                 value="tripHistory"
                 className="rounded-md transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm font-medium"
+                data-testid="tab-trigger-trip-history"
               >
                 My Trips
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="currentRequests">
+            <TabsContent value="currentRequests" data-testid="tab-panel-current-requests">
               {/* Active Watches with its own internal Tabs for filtering */}
               <Card className="card-enhanced mt-4">
                 <CardHeader className="pb-4">
@@ -684,7 +686,7 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="tripHistory">
+          <TabsContent value="tripHistory" data-testid="tab-panel-trip-history">
             <Card className="mt-4">
               <CardHeader>
                 <CardTitle>Past Bookings</CardTitle>
