@@ -56,9 +56,21 @@ jobs:
           VITE_DISABLE_BASE_ENFORCE: true
         run: pnpm -s test:unit && pnpm -s test:integration && pnpm -s test:edge
 
+      - name: Build application for E2E
+        run: pnpm build
+
+      - name: Start preview server
+        run: |
+          pnpm preview &
+          sleep 10
+        env:
+          PORT: 3000
+
       - name: Run critical e2e (Playwright) with JUnit + HTML reporters
         env:
           CI: true
+          E2E_BASE_URL: http://localhost:3000
+          VITE_PUBLIC_BASE_URL: http://localhost:3000
           # Path for JUnit report
           PLAYWRIGHT_JUNIT_OUTPUT: tests/reports/junit/playwright-junit.xml
         run: |
