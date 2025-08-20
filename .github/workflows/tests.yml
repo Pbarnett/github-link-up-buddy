@@ -21,6 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'pnpm'
 
       - name: Enable Corepack (respect packageManager)
         run: corepack enable
@@ -31,11 +32,16 @@ jobs:
           corepack prepare pnpm@${PNPM_VERSION} --activate
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
-      - name: Set env for analytics flag (disabled by default)
+      - name: Set baseline CI env vars
         run: |
+          echo "CI=true" >> $GITHUB_ENV
           echo "VITE_FEATURE_ANALYTICS_SUBMIT=false" >> $GITHUB_ENV
+          echo "VITE_SUPABASE_URL=http://localhost:54321" >> $GITHUB_ENV
+          echo "VITE_SUPABASE_ANON_KEY=ci-test-key" >> $GITHUB_ENV
+          echo "VITE_LD_CLIENT_ID=ci-test" >> $GITHUB_ENV
+          echo "LD_SDK_KEY=ci-test" >> $GITHUB_ENV
 
       - name: CI-only notice
         if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[ci-only]') }}
