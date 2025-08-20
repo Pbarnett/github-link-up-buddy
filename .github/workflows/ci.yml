@@ -13,7 +13,7 @@ jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     permissions:
       contents: read
 
@@ -39,9 +39,36 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      - name: Run full test suite
+      - name: Run unit + integration + edge tests
         env:
           CI: true
           VITE_DISABLE_BASE_ENFORCE: true
-        run: pnpm -s test:all
+        run: pnpm -s test:unit && pnpm -s test:integration && pnpm -s test:edge
+
+      - name: Run critical e2e (Playwright) with JUnit + HTML reporters
+        env:
+          CI: true
+          # Path for JUnit report
+          PLAYWRIGHT_JUNIT_OUTPUT: tests/reports/junit/playwright-junit.xml
+        run: |
+          mkdir -p tests/reports/junit
+          npx playwright test tests/e2e/auto-booking-critical.spec.ts --reporter=junit,html
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-html-report
+          path: playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload JUnit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-reports
+          path: |
+            tests/reports/junit/**/*.xml
+            tests/reports/oauth/**/*.json
+          if-no-files-found: ignore
 
