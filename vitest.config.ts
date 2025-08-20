@@ -1,6 +1,5 @@
 import { defineConfig } from 'vitest/config'
 import path from 'path'
-import { fileURLToPath } from 'url'
 import { loadEnv } from 'vite'
 
 // Ensure robust alias resolution for both src and packages/shared
