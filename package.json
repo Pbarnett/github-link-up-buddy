@@ -151,7 +151,8 @@
     "test:flaky": "node scripts/testing/advanced-test-runner.js --flaky-detection",
     "test:enterprise": "node scripts/testing/advanced-test-runner.js --mutation --flaky-detection --verbose",
     "type:strict": "tsc --project tsconfig.strict.json --noEmit",
-    "quality:enterprise": "npm run ai:analyze && npm run test:enterprise && npm run quality:check"
+    "quality:enterprise": "npm run ai:analyze && npm run test:enterprise && npm run quality:check",
+    "test:all": "pnpm run test:unit && pnpm run test:integration && pnpm run test:edge && pnpm run test:e2e:critical"
   },
   "dependencies": {
     "@aws-sdk/client-cloudformation": "^3.848.0",
