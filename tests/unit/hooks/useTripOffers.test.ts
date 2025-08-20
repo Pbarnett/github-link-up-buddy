@@ -185,11 +185,9 @@ describe('useTripOffers', () => {
   });
 
   describe('Initial loading', () => {
-it('should initialize with loading state when tripId is provided', async () => {
-const { result } = await renderHookAct(() =>
-        useTripOffers({ tripId: 'test-trip-id' })
-      );
-
+it('should initialize with loading state when tripId is provided', () => {
+      // Render synchronously to capture the initial state before async effects run
+      const { result } = renderHook(() => useTripOffers({ tripId: 'test-trip-id' }));
       expect(result.current.isLoading).toBe(true);
       expect(result.current.offers).toEqual([]);
       expect(result.current.hasError).toBe(false);
@@ -561,7 +559,7 @@ const { result } = await renderHookAct(() =>
       mockToast.mockClear();
 
 
-      const { result } = await renderHookAct(() =
+      const { result } = await renderHookAct(() =>
         useTripOffers({ tripId: uniqueRapidRefreshId })
       );
 

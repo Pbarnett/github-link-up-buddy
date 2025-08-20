@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLDClient } from 'launchdarkly-react-client-sdk';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 // Sync LaunchDarkly context with auth state
 export default function LaunchDarklyAuthSync() {

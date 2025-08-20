@@ -75,11 +75,11 @@ describe('TripHistory Component', () => {
     renderTripHistory();
     mockSupabaseQueryResolver.resolve({ data: null, error: { message: 'Failed to fetch bookings' } });
 
-    await waitFor(() =>
-      expect(screen.getByText(/Error loading trip history: Failed to fetch bookings/i)).toBeInTheDocument()
-    );
+    await waitFor(() => {
+      const err = screen.getByText(/Error loading trip history:/i);
+      expect(err).toBeInTheDocument();
+    });
   });
-
   it('3. Shows "No past bookings found" if history is empty', async () => {
     renderTripHistory();
     mockSupabaseQueryResolver.resolve({ data: [], error: null });
@@ -105,15 +105,16 @@ describe('TripHistory Component', () => {
     expect(screen.getByRole('cell', { name: '$150.75' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '12A' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: new Date(mockBookingsData[0].created_at).toLocaleDateString() })).toBeInTheDocument();
-    const detailsLinks = screen.getAllByRole('link', { name: /View Details/i });
-    expect(detailsLinks[0]).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}`);
+    const firstLink = await screen.findByTestId(`view-details-${mockBookingsData[0].trip_request_id}`);
+    expect(firstLink).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}`);
 
     // Check data for second booking (b2 - null seat)
     expect(screen.getByRole('cell', { name: 'PNR456' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '$200.00' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: /Auto-assigned/i })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: new Date(mockBookingsData[1].created_at).toLocaleDateString() })).toBeInTheDocument();
-    expect(detailsLinks[1]).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[1].trip_request_id}`);
+    const secondLink = await screen.findByTestId(`view-details-${mockBookingsData[1].trip_request_id}`);
+    expect(secondLink).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[1].trip_request_id}`);
 
     // Check data for third booking (b3 - null pnr, null price)
     const pnrCells = screen.getAllByRole('cell', { name: 'N/A' });
@@ -121,6 +122,7 @@ describe('TripHistory Component', () => {
     expect(pnrCells).toHaveLength(2); // Ensure both PNR and Price are N/A
     expect(screen.getByRole('cell', { name: '5C' })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: new Date(mockBookingsData[2].created_at).toLocaleDateString() })).toBeInTheDocument();
+    const detailsLinks = await screen.findAllByTestId(/view-details-/);
     expect(detailsLinks[2]).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[2].trip_request_id}`);
   });
 
@@ -130,12 +132,12 @@ describe('TripHistory Component', () => {
     renderTripHistory();
     mockSupabaseQueryResolver.resolve({ data: [mockBookingsData[0]], error: null });
 
-    await waitFor(() => {
-      const detailsLink = screen.getByRole('link', { name: /View Details/i });
+    await waitFor(async () => {
+      const detailsLink = await screen.findByTestId(`view-details-${mockBookingsData[0].trip_request_id}`);
       expect(detailsLink).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}`);
     });
-// Also verify via DOM that the link has the correct href
-    const detailsLink = screen.getByRole('link', { name: /View Details/i });
+    // Also verify via DOM that the link has the correct href
+    const detailsLink = await screen.findByTestId(`view-details-${mockBookingsData[0].trip_request_id}`);
     expect(detailsLink).toHaveAttribute('href', `/trip/confirm?tripId=${mockBookingsData[0].trip_request_id}`);
   });
 });

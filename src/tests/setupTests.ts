@@ -1,5 +1,5 @@
 import { vi, afterEach, beforeEach } from 'vitest'
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom/vitest'
 import React from 'react'
 
 // Set up environment variables for testing before any imports
@@ -59,20 +59,23 @@ Object.defineProperty(globalThis, 'ResizeObserver', {
 })
 
 // Pointer capture methods for Radix UI components
-Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
-  value: () => false,
-  writable: true,
-})
+// Guard for environments where HTMLElement may not yet be defined
+if (typeof HTMLElement !== 'undefined' && HTMLElement.prototype) {
+  Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
+    value: () => false,
+    writable: true,
+  })
 
-Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
-  value: () => {},
-  writable: true,
-})
+  Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
+    value: () => {},
+    writable: true,
+  })
 
-Object.defineProperty(HTMLElement.prototype, 'releasePointerCapture', {
-  value: () => {},
-  writable: true,
-})
+  Object.defineProperty(HTMLElement.prototype, 'releasePointerCapture', {
+    value: () => {},
+    writable: true,
+  })
+}
 
 // matchMedia polyfill for components/hooks that depend on it
 // Hardened to ensure matchMedia is always a callable function with expected API
@@ -95,10 +98,12 @@ if (typeof window !== 'undefined' && typeof (window as any).matchMedia !== 'func
 }
 
 // Scroll methods
-Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
-  value: vi.fn(),
-  writable: true,
-})
+if (typeof HTMLElement !== 'undefined' && HTMLElement.prototype) {
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    value: vi.fn(),
+    writable: true,
+  })
+}
 
 // PointerEvent constructor for JSDOM
 if (!globalThis.PointerEvent) {

@@ -1,6 +1,6 @@
 // Legacy useTripOffers hook with dependency injection and improved testability.
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Offer, fetchTripOffers } from "@/services/tripOffersService";
 import { toast } from "@/components/ui/use-toast";
@@ -48,6 +48,15 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
   const [ignoreFilterState, setIgnoreFilterState] = useState(false);
   const [usedRelaxedCriteriaState, setUsedRelaxedCriteriaState] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
+
+  // Prevent state updates after unmount to avoid act() warnings in tests
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const validateOfferDuration = useCallback((offer: Offer, minDuration: number, maxDuration: number): boolean => {
     if (!offer.departure_date || !offer.return_date) return false;
@@ -184,8 +193,8 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
       const fetchedOffers: Offer[] = await fetchTripOffers(tripId);
       logger.info(`[useTripOffersLegacy] Fetched ${fetchedOffers.length} offers via service for tripId: ${tripId}`);
       
-      // 🔍 DEBUG: Log all fetched offers before any filtering
-      console.log(`🔍 [OFFERS-DEBUG] All ${fetchedOffers.length} offers before filtering:`, fetchedOffers.map(o => ({
+      // 🔍 DEBUG: Log all fetched offers before any filtering (use logger.debug to avoid noisy test stdout)
+      logger.debug(`[OFFERS-DEBUG] All ${fetchedOffers.length} offers before filtering:`, fetchedOffers.map(o => ({
         id: o.id,
         airline: o.airline,
         departure_date: o.departure_date,
@@ -214,7 +223,7 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
       } else {
         let finalOffers: Offer[];
         if (!overrideFilterArg && currentTripDetails) {
-          console.log(`🔍 [DURATION-FILTER-DEBUG] Applying duration filter: ${currentTripDetails.min_duration}-${currentTripDetails.max_duration} days`);
+          logger.debug(`[DURATION-FILTER-DEBUG] Applying duration filter: ${currentTripDetails.min_duration}-${currentTripDetails.max_duration} days`);
           
           const validOffers = fetchedOffers.filter((offer, index) => {
             const isValid = validateOfferDuration(offer, currentTripDetails.min_duration, currentTripDetails.max_duration);
@@ -228,7 +237,7 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
               actualDuration = `${tripDays} days`;
             }
             
-            console.log(`🔍 [DURATION-FILTER-DEBUG] Offer ${index + 1}: ${offer.airline} - Duration: ${actualDuration} - Valid: ${isValid ? '✓' : '✗'}`);
+            logger.debug(`[DURATION-FILTER-DEBUG] Offer ${index + 1}: ${offer.airline} - Duration: ${actualDuration} - Valid: ${isValid ? '✓' : '✗'}`);
             return isValid;
           });
 
@@ -247,7 +256,7 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
             });
           }
         } else {
-          console.log(`🔍 [DURATION-FILTER-DEBUG] BYPASSING duration filter (overrideFilterArg=${overrideFilterArg}). Using all ${fetchedOffers.length} offers.`);
+          logger.debug(`[DURATION-FILTER-DEBUG] BYPASSING duration filter (overrideFilterArg=${overrideFilterArg}). Using all ${fetchedOffers.length} offers.`);
           finalOffers = fetchedOffers;
           if (overrideFilterArg) {
             toast({
@@ -281,6 +290,7 @@ export const useTripOffers = ({ tripId, initialTripDetails }: UseTripOffersProps
         variant: "destructive"
       });
     } finally {
+      if (!isMountedRef.current) return;
       setIsLoading(false);
       setIsRefreshing(false);
       setLastRefreshTime(Date.now());

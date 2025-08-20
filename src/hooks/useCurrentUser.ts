@@ -1,7 +1,6 @@
-
-import { useState, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import type { User } from "@supabase/supabase-js";
+import { useState, useEffect } from "react";
+import { supabase } from "../integrations/supabase/client";
 
 interface CurrentUserState {
   user: User | null;
@@ -34,7 +33,7 @@ export const useCurrentUser = (): CurrentUserState => {
         }
 
         setState({
-          user: session?.user ?? null,
+          user: (session?.user as User) ?? null,
           userId: session?.user?.id ?? null,
           loading: false,
           error: null,
@@ -53,16 +52,20 @@ export const useCurrentUser = (): CurrentUserState => {
     };
 
     // Subscribe to auth state changes (SIGNED_IN, SIGNED_OUT, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      if (!isMounted) return;
-      setState(prev => ({
-        ...prev,
-        user: session?.user || null,
-        userId: session?.user?.id || null,
-        // Keep existing error but clear loading once we have an event
-        loading: false,
-      }));
-    });
+    let unsubscribe: (() => void) | undefined;
+    if (supabase?.auth?.onAuthStateChange) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+        if (!isMounted) return;
+        setState(prev => ({
+          ...prev,
+          user: (session?.user as User) || null,
+          userId: session?.user?.id || null,
+          // Keep existing error but clear loading once we have an event
+          loading: false,
+        }));
+      });
+      unsubscribe = () => subscription.unsubscribe();
+    }
 
     // Initial session check
     void initFromSession();
@@ -70,7 +73,7 @@ export const useCurrentUser = (): CurrentUserState => {
     // Clean up subscription
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
+      if (unsubscribe) unsubscribe();
     };
   }, []);
   

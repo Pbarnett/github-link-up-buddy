@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { supabase } from '@/integrations/supabase/client';
-import { vi, beforeEach, describe, it, expect } from 'vitest';
+import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest';
 
 // Import real implementation - we want to test the actual logic
 vi.doUnmock('../useFormAnalytics');

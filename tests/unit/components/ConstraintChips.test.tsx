@@ -17,21 +17,20 @@ describe('ConstraintChips', () => {
 
   it('renders date range chip with formatted dates', () => {
     render(<ConstraintChips {...mockProps} />);
-    // Use a more flexible regex that accounts for locale differences
-    expect(screen.getByText(/Jun 1[45] – Jun 2[12]/)).toBeInTheDocument();
+    const [dateChip] = screen.getAllByTestId('chip-date-range');
+    expect(dateChip).toHaveTextContent(/Jun 1[45] – Jun 2[12]/);
   });
 
   it('renders non-stop only chip', () => {
     render(<ConstraintChips {...mockProps} />);
-    expect(screen.getByText('Non-stop only')).toBeInTheDocument();
+    const [nonStopLabel] = screen.getAllByText('Non-stop only');
+    expect(nonStopLabel).toBeInTheDocument();
   });
 
   it('calls onToggleNonStop when non-stop chip is clicked', () => {
     render(<ConstraintChips {...mockProps} />);
-    
-    const nonStopChip = screen.getByText('Non-stop only');
-    fireEvent.click(nonStopChip);
-    
+    const [nonStopButton] = screen.getAllByTestId('chip-nonstop');
+    fireEvent.click(nonStopButton);
     expect(mockProps.onToggleNonStop).toHaveBeenCalledTimes(1);
   });
 

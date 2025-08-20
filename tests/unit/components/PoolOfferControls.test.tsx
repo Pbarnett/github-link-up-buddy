@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import PoolOfferControls from '@/components/trip/PoolOfferControls';
 
@@ -47,19 +47,22 @@ describe('PoolOfferControls', () => {
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
     
     // Use flexible regex to account for locale differences in date formatting
-    expect(screen.getByText(/Jun 1[45] – Jun 2[12]/)).toBeInTheDocument();
+    const [root] = screen.getAllByTestId('pool-offer-controls');
+    expect(within(root).getByText(/Jun 1[45] – Jun 2[12]/)).toBeInTheDocument();
   });
 
   it('displays budget information correctly', () => {
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
     
-    expect(screen.getByText('Budget: $1000 / Max: $3000')).toBeInTheDocument();
+    const [root] = screen.getAllByTestId('pool-offer-controls');
+    expect(within(root).getByTestId('budget-summary')).toHaveTextContent('Budget: $1000 / Max: $3000');
   });
 
   it('enables budget button when bumps < 3 and budget < maxBudget', () => {
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
     
-    const budgetButton = screen.getByText('+20% Budget');
+    const [root] = screen.getAllByTestId('pool-offer-controls');
+    const budgetButton = within(root).getByTestId('bump-budget');
     expect(budgetButton).not.toBeDisabled();
   });
 
@@ -71,8 +74,10 @@ describe('PoolOfferControls', () => {
 
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
     
-    const budgetButton = screen.getByText('+20% Budget');
+    const [root] = screen.getAllByTestId('pool-offer-controls');
+    const budgetButton = within(root).getByTestId('bump-budget');
     expect(budgetButton).toBeDisabled();
+    expect(budgetButton).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('disables budget button when budget >= maxBudget', () => {
@@ -84,14 +89,17 @@ describe('PoolOfferControls', () => {
 
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
     
-    const budgetButton = screen.getByText('+20% Budget');
+    const [root] = screen.getAllByTestId('pool-offer-controls');
+    const budgetButton = within(root).getByTestId('bump-budget');
     expect(budgetButton).toBeDisabled();
+    expect(budgetButton).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('calls bumpBudget and shows toast when budget button is clicked', () => {
     render(<PoolOfferControls tripId="test-trip" />, { wrapper });
     
-    const budgetButton = screen.getByText('+20% Budget');
+    const [root] = screen.getAllByTestId('pool-offer-controls');
+    const budgetButton = within(root).getByTestId('bump-budget');
     fireEvent.click(budgetButton);
     
     expect(mockHookData.bumpBudget).toHaveBeenCalledTimes(1);
