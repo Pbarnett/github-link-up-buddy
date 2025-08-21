@@ -58,16 +58,22 @@ jobs:
       - name: Build app
         run: pnpm build
 
-      - name: Run TripRequestForm E2E
-        run: |
-          pnpm preview -- --host 0.0.0.0 --strictPort --port 8080 > preview.log 2>&1 &
-          npx -y wait-on tcp:127.0.0.1:8080
-          curl -sf http://127.0.0.1:8080/ || { echo 'Preview failed to respond'; cat preview.log || true; exit 1; }
-          pnpm run test:e2e:trip-request
+      - name: Run TripRequestForm E2E (Playwright-managed server)
         env:
           CI: '1'
-          E2E_BASE_URL: http://127.0.0.1:8080
-          PORT: 8080
+          E2E_BASE_URL: http://127.0.0.1:3000
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+          VITE_DISABLE_BASE_ENFORCE: true
+          PLAYWRIGHT_SERVER_CMD: bash -lc "pnpm preview -- --host 0.0.0.0 --strictPort --port 3000 2>&1 | tee preview.log"
+        run: pnpm run test:e2e:trip-request
+
+      - name: Upload preview server log (trip)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-log-trip
+          path: preview.log
+          if-no-files-found: ignore
 
       - name: Upload E2E artifacts (trip) on failure
         if: failure()
@@ -112,17 +118,23 @@ jobs:
       - name: Build app
         run: pnpm build
 
-      - name: Run OAuth callback E2E (optional)
-        run: |
-          pnpm preview -- --host 0.0.0.0 --strictPort --port 8080 > preview.log 2>&1 &
-          npx -y wait-on tcp:127.0.0.1:8080
-          curl -sf http://127.0.0.1:8080/ || { echo 'Preview failed to respond'; cat preview.log || true; exit 1; }
-          pnpm run test:e2e:callback || echo "OAuth callback test optional"
+      - name: Run OAuth callback E2E (optional, Playwright-managed)
         env:
           CI: '1'
-          E2E_BASE_URL: http://127.0.0.1:8080
+          E2E_BASE_URL: http://127.0.0.1:3000
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+          VITE_DISABLE_BASE_ENFORCE: true
           MOCK_GOOGLE_OAUTH: '1'
-          PORT: 8080
+          PLAYWRIGHT_SERVER_CMD: bash -lc "pnpm preview -- --host 0.0.0.0 --strictPort --port 3000 2>&1 | tee preview.log"
+        run: pnpm run test:e2e:callback || echo "OAuth callback test optional"
+
+      - name: Upload preview server log (oauth)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-log-oauth
+          path: preview.log
+          if-no-files-found: ignore
 
       - name: Upload E2E artifacts (oauth) on failure
         if: failure()
@@ -162,16 +174,22 @@ jobs:
       - name: Build app
         run: pnpm build
 
-      - name: Run visual E2E
-        run: |
-          pnpm preview -- --host 0.0.0.0 --strictPort --port 8080 > preview.log 2>&1 &
-          npx -y wait-on tcp:127.0.0.1:8080
-          curl -sf http://127.0.0.1:8080/ || { echo 'Preview failed to respond'; cat preview.log || true; exit 1; }
-          pnpm run test:visual
+      - name: Run visual E2E (Playwright-managed)
         env:
           CI: '1'
-          E2E_BASE_URL: http://127.0.0.1:8080
-          PORT: 8080
+          E2E_BASE_URL: http://127.0.0.1:3000
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+          VITE_DISABLE_BASE_ENFORCE: true
+          PLAYWRIGHT_SERVER_CMD: bash -lc "pnpm preview -- --host 0.0.0.0 --strictPort --port 3000 2>&1 | tee preview.log"
+        run: pnpm run test:visual
+
+      - name: Upload preview server log (visual)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-log-visual
+          path: preview.log
+          if-no-files-found: ignore
 
       - name: Upload E2E artifacts (visual) on failure
         if: failure()

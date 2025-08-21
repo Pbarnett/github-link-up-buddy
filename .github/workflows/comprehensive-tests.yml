@@ -185,18 +185,21 @@ jobs:
       - name: Build application
         run: pnpm build
         
-      - name: Start application
-        run: |
-          pnpm preview &
-          sleep 10
+      - name: Run E2E tests (Playwright-managed)
         env:
-          PORT: 8080
-          
-      - name: Run E2E tests
+          E2E_BASE_URL: http://127.0.0.1:3000
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+          VITE_DISABLE_BASE_ENFORCE: true
+          PLAYWRIGHT_SERVER_CMD: bash -lc "pnpm preview -- --host 0.0.0.0 --strictPort --port 3000 2>&1 | tee preview.log"
         run: npx playwright test
-        env:
-          E2E_BASE_URL: http://localhost:8080
-          VITE_PUBLIC_BASE_URL: http://localhost:8080
+
+      - name: Upload preview server log (comprehensive e2e)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-log-comprehensive-e2e
+          path: preview.log
+          if-no-files-found: ignore
           
       - name: Upload E2E artifacts
         uses: actions/upload-artifact@v4
@@ -302,17 +305,21 @@ jobs:
       - name: Build application
         run: pnpm build
         
-      - name: Start application
-        run: |
-          pnpm preview &
-          sleep 10
+      - name: Run visual regression tests (Playwright-managed)
         env:
-          PORT: 8080
-          
-      - name: Run visual regression tests
+          E2E_BASE_URL: http://127.0.0.1:3000
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+          VITE_DISABLE_BASE_ENFORCE: true
+          PLAYWRIGHT_SERVER_CMD: bash -lc "pnpm preview -- --host 0.0.0.0 --strictPort --port 3000 2>&1 | tee preview.log"
         run: npx playwright test tests/e2e/visual/
-        env:
-          E2E_BASE_URL: http://localhost:8080
+
+      - name: Upload preview server log (visual)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-log-comprehensive-visual
+          path: preview.log
+          if-no-files-found: ignore
           
       - name: Upload visual test results
         uses: actions/upload-artifact@v4
