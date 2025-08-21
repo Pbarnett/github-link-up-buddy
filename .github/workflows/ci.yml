@@ -44,8 +44,20 @@ jobs:
           fi
           pnpm -v
 
+      - name: Configure pnpm store
+        run: |
+          pnpm config set store-dir ~/.pnpm-store
+          pnpm config set side-effects-cache false
+      
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          for i in 1 2 3; do
+            pnpm install --frozen-lockfile && break || {
+              echo "pnpm install failed (attempt $i). Retrying in $((i*5))s...";
+              pnpm store prune || true
+              sleep $((i*5));
+            }
+          done
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
@@ -56,23 +68,13 @@ jobs:
           VITE_DISABLE_BASE_ENFORCE: true
         run: pnpm -s test:unit && pnpm -s test:integration && pnpm -s test:edge
 
-      - name: Build application for E2E
-        run: pnpm build
-
-      - name: Start preview server
-        run: |
-          pnpm preview &
-          sleep 10
-        env:
-          PORT: 3000
-
       - name: Run critical e2e (Playwright) with JUnit + HTML reporters
         env:
           CI: true
-          E2E_BASE_URL: http://localhost:3000
-          VITE_PUBLIC_BASE_URL: http://localhost:3000
-          # Path for JUnit report
+          E2E_BASE_URL: http://127.0.0.1:3000
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
           PLAYWRIGHT_JUNIT_OUTPUT: tests/reports/junit/playwright-junit.xml
+          PLAYWRIGHT_SERVER_CMD: pnpm preview -- --host 0.0.0.0 --strictPort --port 3000
         run: |
           mkdir -p tests/reports/junit
           npx playwright test tests/e2e/auto-booking-critical.spec.ts --reporter=junit,html
@@ -83,6 +85,14 @@ jobs:
         with:
           name: playwright-html-report
           path: playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload preview server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-log
+          path: preview.log
           if-no-files-found: ignore
 
       - name: Upload JUnit reports

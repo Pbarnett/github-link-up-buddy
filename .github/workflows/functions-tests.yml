@@ -29,7 +29,13 @@ jobs:
           corepack prepare pnpm@${PNPM_VERSION} --activate
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          for i in 1 2 3; do
+            pnpm install --frozen-lockfile && break || {
+              echo "pnpm install failed (attempt $i). Retrying in $((i*5))s...";
+              sleep $((i*5));
+            }
+          done
 
       - name: Run functions tests
         run: pnpm exec vitest run supabase/functions/tests --reporter=dot --passWithNoTests
