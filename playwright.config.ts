@@ -20,10 +20,10 @@ export default defineConfig({
   },
   // Let Playwright manage the server lifecycle in all environments
   webServer: {
-    command: process.env.PLAYWRIGHT_SERVER_CMD || 'pnpm preview -- --host 0.0.0.0 --strictPort --port 3000',
+    command: process.env.PLAYWRIGHT_SERVER_CMD || 'pnpm preview --host 0.0.0.0 --strictPort --port 3000',
     url: process.env.E2E_BASE_URL || 'http://127.0.0.1:3000',
     reuseExistingServer: false,
-    timeout: 120 * 1000,
+    timeout: 180 * 1000,
   },
   projects: [
     {
