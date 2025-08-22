@@ -26,7 +26,7 @@ permissions:
   statuses: write
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
 
 jobs:
   # Job 0: Quick status for PRs so required check reports
@@ -134,6 +134,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         
+      - name: Set baseline CI env vars
+        run: |
+          echo "CI=true" >> $GITHUB_ENV
+          echo "VITE_SUPABASE_URL=http://localhost:54321" >> $GITHUB_ENV
+          echo "VITE_SUPABASE_ANON_KEY=ci-test-key" >> $GITHUB_ENV
+          echo "VITE_LD_CLIENT_ID=ci-test" >> $GITHUB_ENV
+          echo "LD_SDK_KEY=ci-test" >> $GITHUB_ENV
+        
       - name: Run security audit
         run: node scripts/security/security-audit.js
         continue-on-error: true
@@ -169,7 +177,7 @@ jobs:
           corepack prepare pnpm@${PNPM_VERSION} --activate
           
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
         
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
@@ -177,18 +185,21 @@ jobs:
       - name: Build application
         run: pnpm build
         
-      - name: Start application
-        run: |
-          pnpm preview &
-          sleep 10
+      - name: Run E2E tests (Playwright-managed)
         env:
-          PORT: 8080
-          
-      - name: Run E2E tests
+          E2E_BASE_URL: http://127.0.0.1:3000
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+          VITE_DISABLE_BASE_ENFORCE: true
+          PLAYWRIGHT_SERVER_CMD: bash -lc "pnpm preview -- --host 0.0.0.0 --strictPort --port 3000 2>&1 | tee preview.log"
         run: npx playwright test
-        env:
-          E2E_BASE_URL: http://localhost:8080
-          VITE_PUBLIC_BASE_URL: http://localhost:8080
+
+      - name: Upload preview server log (comprehensive e2e)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-log-comprehensive-e2e
+          path: preview.log
+          if-no-files-found: ignore
           
       - name: Upload E2E artifacts
         uses: actions/upload-artifact@v4
@@ -224,7 +235,7 @@ jobs:
           corepack prepare pnpm@${PNPM_VERSION} --activate
           
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
         
   
       - name: Build application
@@ -287,7 +298,6 @@ jobs:
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        run: pnpm install --frozen-lockfile
         
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
@@ -295,17 +305,21 @@ jobs:
       - name: Build application
         run: pnpm build
         
-      - name: Start application
-        run: |
-          pnpm preview &
-          sleep 10
+      - name: Run visual regression tests (Playwright-managed)
         env:
-          PORT: 8080
-          
-      - name: Run visual regression tests
+          E2E_BASE_URL: http://127.0.0.1:3000
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+          VITE_DISABLE_BASE_ENFORCE: true
+          PLAYWRIGHT_SERVER_CMD: bash -lc "pnpm preview -- --host 0.0.0.0 --strictPort --port 3000 2>&1 | tee preview.log"
         run: npx playwright test tests/e2e/visual/
-        env:
-          E2E_BASE_URL: http://localhost:8080
+
+      - name: Upload preview server log (visual)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-log-comprehensive-visual
+          path: preview.log
+          if-no-files-found: ignore
           
       - name: Upload visual test results
         uses: actions/upload-artifact@v4
@@ -332,7 +346,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
           
       - name: Enable Corepack (pnpm from package.json)
         run: corepack enable

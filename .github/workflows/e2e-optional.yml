@@ -29,18 +29,28 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8.15.5
 
-      - name: Enable pnpm cache
-        uses: actions/setup-node@v4
-        with:
-          cache: 'pnpm'
+      - name: Enable Corepack (pnpm from package.json)
+        run: corepack enable
 
+      - name: Prepare pnpm via Corepack
+        run: |
+          PNPM_VERSION=$(node -p "require('./package.json').packageManager.split('@')[1]")
+          corepack prepare pnpm@${PNPM_VERSION} --activate
+
+      - name: Configure pnpm store
+        run: |
+          pnpm config set store-dir ~/.pnpm-store
+          pnpm config set side-effects-cache false
       - name: Verify lockfile
-        run: pnpm install --frozen-lockfile
+        run: |
+          for i in 1 2 3; do
+            pnpm install --frozen-lockfile && break || {
+              echo "pnpm install failed (attempt $i). Retrying in $((i*5))s...";
+              pnpm store prune || true
+              sleep $((i*5));
+            }
+          done
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
@@ -48,18 +58,22 @@ jobs:
       - name: Build app
         run: pnpm build
 
-      - name: Start preview server
-        run: |
-          pnpm preview &
-          sleep 10
-        env:
-          PORT: 8080
-
-      - name: Run TripRequestForm E2E
-        run: pnpm run test:e2e:trip-request
+      - name: Run TripRequestForm E2E (Playwright-managed server)
         env:
           CI: '1'
-          E2E_BASE_URL: http://localhost:8080
+          E2E_BASE_URL: http://127.0.0.1:3000
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+          VITE_DISABLE_BASE_ENFORCE: true
+          PLAYWRIGHT_SERVER_CMD: bash -lc "pnpm preview -- --host 0.0.0.0 --strictPort --port 3000 2>&1 | tee preview.log"
+        run: pnpm run test:e2e:trip-request
+
+      - name: Upload preview server log (trip)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-log-trip
+          path: preview.log
+          if-no-files-found: ignore
 
       - name: Upload E2E artifacts (trip) on failure
         if: failure()
@@ -82,15 +96,18 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8.15.5
-
       - name: Enable pnpm cache
         uses: actions/setup-node@v4
         with:
           cache: 'pnpm'
+
+      - name: Enable Corepack (pnpm from package.json)
+        run: corepack enable
+
+      - name: Prepare pnpm via Corepack
+        run: |
+          PNPM_VERSION=$(node -p "require('./package.json').packageManager.split('@')[1]")
+          corepack prepare pnpm@${PNPM_VERSION} --activate
 
       - name: Verify lockfile
         run: pnpm install --frozen-lockfile
@@ -101,19 +118,23 @@ jobs:
       - name: Build app
         run: pnpm build
 
-      - name: Start preview server
-        run: |
-          pnpm preview &
-          sleep 10
-        env:
-          PORT: 8080
-
-      - name: Run OAuth callback E2E (optional)
-        run: pnpm run test:e2e:callback || echo "OAuth callback test optional"
+      - name: Run OAuth callback E2E (optional, Playwright-managed)
         env:
           CI: '1'
-          E2E_BASE_URL: http://localhost:8080
+          E2E_BASE_URL: http://127.0.0.1:3000
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+          VITE_DISABLE_BASE_ENFORCE: true
           MOCK_GOOGLE_OAUTH: '1'
+          PLAYWRIGHT_SERVER_CMD: bash -lc "pnpm preview -- --host 0.0.0.0 --strictPort --port 3000 2>&1 | tee preview.log"
+        run: pnpm run test:e2e:callback || echo "OAuth callback test optional"
+
+      - name: Upload preview server log (oauth)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-log-oauth
+          path: preview.log
+          if-no-files-found: ignore
 
       - name: Upload E2E artifacts (oauth) on failure
         if: failure()
@@ -131,16 +152,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8.15.5
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm'
+
+      - name: Enable Corepack (pnpm from package.json)
+        run: corepack enable
+
+      - name: Prepare pnpm via Corepack
+        run: |
+          PNPM_VERSION=$(node -p "require('./package.json').packageManager.split('@')[1]")
+          corepack prepare pnpm@${PNPM_VERSION} --activate
 
       - name: Verify lockfile
         run: pnpm install --frozen-lockfile
@@ -151,18 +174,22 @@ jobs:
       - name: Build app
         run: pnpm build
 
-      - name: Start preview server
-        run: |
-          pnpm preview &
-          sleep 10
-        env:
-          PORT: 8080
-
-      - name: Run visual E2E
-        run: pnpm run test:visual
+      - name: Run visual E2E (Playwright-managed)
         env:
           CI: '1'
-          E2E_BASE_URL: http://localhost:8080
+          E2E_BASE_URL: http://127.0.0.1:3000
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+          VITE_DISABLE_BASE_ENFORCE: true
+          PLAYWRIGHT_SERVER_CMD: bash -lc "pnpm preview -- --host 0.0.0.0 --strictPort --port 3000 2>&1 | tee preview.log"
+        run: pnpm run test:visual
+
+      - name: Upload preview server log (visual)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-log-visual
+          path: preview.log
+          if-no-files-found: ignore
 
       - name: Upload E2E artifacts (visual) on failure
         if: failure()

@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable Corepack (pnpm from package.json)
+        run: corepack enable
+
+      - name: Prepare pnpm via Corepack
+        run: |
+          PNPM_VERSION=$(node -p "require('./package.json').packageManager.split('@')[1]")
+          corepack prepare pnpm@${PNPM_VERSION} --activate
+          echo "Using pnpm ${PNPM_VERSION}"
+          pnpm -v || true
+
+      - name: Fallback install pnpm if corepack failed
+        run: |
+          if ! command -v pnpm >/dev/null 2>&1; then
+            PNPM_VERSION=$(node -p "require('./package.json').packageManager.split('@')[1]")
+            npm i -g pnpm@${PNPM_VERSION}
+          fi
+          pnpm -v
+
+      - name: Configure pnpm store
+        run: |
+          pnpm config set store-dir ~/.pnpm-store
+          pnpm config set side-effects-cache false
+      
+      - name: Install dependencies
+        run: |
+          for i in 1 2 3; do
+            pnpm install --frozen-lockfile && break || {
+              echo "pnpm install failed (attempt $i). Retrying in $((i*5))s...";
+              pnpm store prune || true
+              sleep $((i*5));
+            }
+          done
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run unit + integration + edge tests
+        env:
+          CI: true
+          VITE_DISABLE_BASE_ENFORCE: true
+        run: pnpm -s test:unit && pnpm -s test:integration && pnpm -s test:edge
+
+      - name: Build app
+        env:
+          VITE_DISABLE_BASE_ENFORCE: true
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+        run: pnpm build
+
+      - name: Run critical e2e (Playwright) with JUnit + HTML reporters
+        env:
+          CI: true
+          E2E_BASE_URL: http://127.0.0.1:3000
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+          VITE_DISABLE_BASE_ENFORCE: true
+          PLAYWRIGHT_JUNIT_OUTPUT: tests/reports/junit/playwright-junit.xml
+          PLAYWRIGHT_SERVER_CMD: bash -lc "npx vite preview --host 0.0.0.0 --strictPort --port 3000 2>\&1 | tee preview.log"
+        run: |
+          mkdir -p tests/reports/junit
+          npx playwright test tests/e2e/auto-booking-critical.spec.ts --reporter=junit,html || {
+            echo "===== preview.log (tail) =====";
+            tail -n +1 preview.log || true;
+            echo "===== end preview.log =====";
+            exit 1;
+          }
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-html-report
+          path: playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload preview server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-log
+          path: preview.log
+          if-no-files-found: ignore
+
+      - name: Upload JUnit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-reports
+          path: |
+            tests/reports/junit/**/*.xml
+            tests/reports/oauth/**/*.json
+          if-no-files-found: ignore
+
