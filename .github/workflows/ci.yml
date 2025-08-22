@@ -68,6 +68,12 @@ jobs:
           VITE_DISABLE_BASE_ENFORCE: true
         run: pnpm -s test:unit && pnpm -s test:integration && pnpm -s test:edge
 
+      - name: Build app
+        env:
+          VITE_DISABLE_BASE_ENFORCE: true
+          VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
+        run: pnpm build
+
       - name: Run critical e2e (Playwright) with JUnit + HTML reporters
         env:
           CI: true
@@ -75,10 +81,15 @@ jobs:
           VITE_PUBLIC_BASE_URL: http://127.0.0.1:3000
           VITE_DISABLE_BASE_ENFORCE: true
           PLAYWRIGHT_JUNIT_OUTPUT: tests/reports/junit/playwright-junit.xml
-          PLAYWRIGHT_SERVER_CMD: bash -lc "pnpm preview -- --host 0.0.0.0 --strictPort --port 3000 2>&1 | tee preview.log"
+          PLAYWRIGHT_SERVER_CMD: bash -lc "npx vite preview --host 0.0.0.0 --strictPort --port 3000 2>\&1 | tee preview.log"
         run: |
           mkdir -p tests/reports/junit
-          npx playwright test tests/e2e/auto-booking-critical.spec.ts --reporter=junit,html
+          npx playwright test tests/e2e/auto-booking-critical.spec.ts --reporter=junit,html || {
+            echo "===== preview.log (tail) =====";
+            tail -n +1 preview.log || true;
+            echo "===== end preview.log =====";
+            exit 1;
+          }
 
       - name: Upload Playwright HTML report
         if: always()
