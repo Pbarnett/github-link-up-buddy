@@ -83,10 +83,13 @@ describe('TripRequestForm submit (integration) — success path', () => {
   });
 
   it('submits form, creates trip, triggers flight search, and navigates to offers', async () => {
+    // Suppress known benign warnings from robust helpers (combobox fallbacks)
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     render(wrapper(<TripRequestForm mode="manual" />));
 
     // Fill the minimal valid set of fields (robust helper)
-    await fillBaseFormFieldsWithDates({ destination: 'LAX', departureAirport: 'JFK', maxPrice: 1200 });
+    // Use MVY (in POPULAR_DESTINATIONS) to avoid combobox fallback warnings
+    await fillBaseFormFieldsWithDates({ destination: 'MVY', departureAirport: 'JFK', maxPrice: 1200 });
 
     // Form becomes valid and enables submit
     await waitForFormValid(10000);
@@ -102,5 +105,6 @@ describe('TripRequestForm submit (integration) — success path', () => {
     });
     const navArg = (navigateMock.mock.calls[0] || [])[0] as string;
     expect(navArg).toMatch(/\/trip\/offers\?id=new-trip-id/);
+    warnSpy.mockRestore();
   }, 20000);
 });

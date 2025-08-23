@@ -75,9 +75,12 @@ describe('TripRequestForm submit (integration) — flight search 500 path', () =
   });
 
   it('still navigates and shows fallback toast when flight search fails', async () => {
+    // Suppress known benign warnings from robust helpers (combobox/calendar fallbacks)
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     render(wrapper(<TripRequestForm mode="manual" />));
 
-    await fillBaseFormFieldsWithDates({ destination: 'LAX', departureAirport: 'JFK', maxPrice: 1200 });
+    // Use MVY (in POPULAR_DESTINATIONS) to avoid combobox fallback warnings
+    await fillBaseFormFieldsWithDates({ destination: 'MVY', departureAirport: 'JFK', maxPrice: 1200 });
     await waitForFormValid(10000);
 
     const submit = await screen.findByTestId('primary-submit-button');
@@ -94,5 +97,6 @@ describe('TripRequestForm submit (integration) — flight search 500 path', () =
     expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({
       title: expect.stringMatching(/search in progress/i),
     }));
+    warnSpy.mockRestore();
   }, 20000);
 });
