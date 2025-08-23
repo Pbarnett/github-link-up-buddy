@@ -533,7 +533,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
                   {/* Trip Basics - Destination & Origin */}
                   <div className="space-y-6 mb-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <EnhancedDestinationSection control={form.control} watch={form.watch} />
+<EnhancedDestinationSection control={form.control} />
                       <DepartureAirportsSection control={form.control} />
                     </div>
                   </div>

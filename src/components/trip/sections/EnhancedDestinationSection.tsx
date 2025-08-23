@@ -1,5 +1,5 @@
-
-import { Control, UseFormWatch } from "react-hook-form";
+import React from "react";
+import { Control, useWatch } from "react-hook-form";
 import { 
   FormControl, 
   FormDescription, 
@@ -13,14 +13,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
 import { POPULAR_DESTINATIONS } from "@/data/airports";
+import { useRenderCount } from "@/hooks/useRenderCount";
 
 interface EnhancedDestinationSectionProps {
   control: Control<any>;
-  watch: UseFormWatch<any>;
 }
 
-const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSectionProps) => {
-  const selectedDestination = watch("destination_airport");
+const EnhancedDestinationSection = ({ control }: EnhancedDestinationSectionProps) => {
+  // Dev-only render counter for Phase 2 baseline
+  useRenderCount('EnhancedDestinationSection');
+  const selectedDestination = useWatch({ control, name: "destination_airport" });
   
   const destOtherDescId = "destination_other-help";
   const destOtherErrorId = "destination_other-error";
@@ -107,4 +109,4 @@ const EnhancedDestinationSection = ({ control, watch }: EnhancedDestinationSecti
   );
 };
 
-export default EnhancedDestinationSection;
+export default React.memo(EnhancedDestinationSection);

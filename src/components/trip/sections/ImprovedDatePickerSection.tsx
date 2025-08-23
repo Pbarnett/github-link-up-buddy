@@ -1,11 +1,10 @@
 import React from 'react';
-import { Control, useWatch } from 'react-hook-form';
+import { Control } from 'react-hook-form';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { DateRange } from 'react-day-picker';
 import {
   Popover,
   PopoverContent,
@@ -20,13 +19,15 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import NightsRangeSection from './NightsRangeSection';
+import { useRenderCount } from '@/hooks/useRenderCount';
 
 interface ImprovedDatePickerSectionProps {
   control: Control<any>;
 }
 
 const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) => {
-  const watchedFields = useWatch({ control });
+  // Dev-only render counter for Phase 2 baseline
+  useRenderCount('ImprovedDatePickerSection');
 
   return (
     <div className="space-y-6">
@@ -159,4 +160,4 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
   );
 };
 
-export default ImprovedDatePickerSection;
+export default React.memo(ImprovedDatePickerSection);
