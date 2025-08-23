@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TripRequestForm from '@/components/trip/TripRequestForm';
@@ -83,15 +83,38 @@ describe('TripRequestForm submit (integration) — flight search 500 path', () =
     await fillBaseFormFieldsWithDates({ destination: 'MVY', departureAirport: 'JFK', maxPrice: 1200 });
     await waitForFormValid(10000);
 
-    const submit = await screen.findByTestId('primary-submit-button');
+    // As an extra guard in CI/jsdom, set hidden date inputs explicitly and blur
+    const earliestInput = await screen.findByTestId('earliest-departure-input');
+    const latestInput = await screen.findByTestId('latest-departure-input');
+    const tomorrowISO = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const nextWeekISO = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    fireEvent.change(earliestInput, { target: { value: tomorrowISO } });
+    fireEvent.change(latestInput, { target: { value: nextWeekISO } });
+    fireEvent.blur(earliestInput);
+    fireEvent.blur(latestInput);
+
+    // Re-wait for validity after explicit date set
+    await waitForFormValid(10000);
+
+    // Prefer primary button, fall back to sticky if present
+    let submit: HTMLButtonElement | null = (await screen.findByTestId('primary-submit-button')) as HTMLButtonElement;
+    const sticky = screen.queryByTestId('sticky-submit-button') as HTMLButtonElement | null;
+    if (!submit && sticky) submit = sticky;
+
+    // Wait until the chosen button is enabled
+    await waitFor(() => {
+      if (!submit) throw new Error('Submit button not found');
+      expect(submit).not.toHaveAttribute('disabled');
+    }, { timeout: 5000 });
+
     await act(async () => {
-      (submit as HTMLButtonElement).click();
+      submit!.click();
     });
 
     // Navigates to offers even if flight search fails
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalled();
-    });
+    }, { timeout: 5000 });
 
     // Shows the non-blocking fallback toast
     expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({

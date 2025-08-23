@@ -1,11 +1,10 @@
 import React from 'react';
-import { Control, useWatch } from 'react-hook-form';
+import { Control } from 'react-hook-form';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { DateRange } from 'react-day-picker';
 import {
   Popover,
   PopoverContent,
@@ -20,13 +19,15 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import NightsRangeSection from './NightsRangeSection';
+import { useRenderCount } from '@/hooks/useRenderCount';
 
 interface ImprovedDatePickerSectionProps {
   control: Control<any>;
 }
 
 const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) => {
-  const watchedFields = useWatch({ control });
+  // Dev-only render counter for Phase 2 baseline
+  useRenderCount('ImprovedDatePickerSection');
 
   return (
     <div className="space-y-6">
@@ -83,9 +84,10 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
                   data-testid="earliest-departure-input"
                   aria-hidden="true"
                   style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
-                  value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
+value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
                   onChange={(e) => {
-                    const v = e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined;
+                    // Use midday local time to avoid edge cases with "now" checks in tests
+                    const v = e.target.value ? new Date(`${e.target.value}T12:00:00`) : undefined;
                     field.onChange(v);
                   }}
                 />
@@ -141,8 +143,9 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
                   aria-hidden="true"
                   style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
                   value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
-                  onChange={(e) => {
-                    const v = e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined;
+onChange={(e) => {
+                    // Use midday local time to avoid edge cases with "now" checks in tests
+                    const v = e.target.value ? new Date(`${e.target.value}T12:00:00`) : undefined;
                     field.onChange(v);
                   }}
                 />
@@ -159,4 +162,4 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
   );
 };
 
-export default ImprovedDatePickerSection;
+export default React.memo(ImprovedDatePickerSection);

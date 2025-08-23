@@ -138,6 +138,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
   const validateFormData = (data: FormValues): boolean => {
     const destinationAirport = data.destination_airport || data.destination_other || "";
     if (!destinationAirport) {
+      if (import.meta.env.DEV) console.log('[TEST] validateFormData failed: missing destination');
       toast({
         title: "Validation error",
         description: "Please select a destination or enter a custom one.",
@@ -228,6 +229,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       title: `Trip request ${actionText}`,
       description: `Your trip request has been successfully ${actionText}!${autoBookText}`,
     });
+    if (import.meta.env.DEV) console.log('[TEST] Navigating to offers with id:', tripRequest?.id);
     navigate(`/trip/offers?id=${tripRequest.id}&mode=${mode}`);
   };
 
@@ -267,6 +269,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
   };
 
   const handleStepSubmit = async (data: FormValues) => {
+    if (import.meta.env.DEV) console.log('[TEST] handleStepSubmit called');
     // For auto mode step 1, use the new continue handler
     if (mode === 'auto' && currentStep === 1) {
       await handleContinueToPricing();
@@ -278,6 +281,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
   };
 
   const onSubmit = async (data: FormValues) => {
+    if (import.meta.env.DEV) console.log('[TEST] onSubmit start');
     emitSubmitEvent('submit_attempt', { form: 'TripRequestForm', mode });
     setIsSubmitting(true);
     try {
@@ -294,7 +298,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
         return;
       }
 
-      console.log("Form data before transform:", data);
+      if (import.meta.env.DEV) console.log("Form data before transform:", data);
       // Specifically to check data.preferred_payment_method_id when auto_book_enabled is true
       
       const action = tripRequestId ? "Updating" : "Creating";
@@ -310,6 +314,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
         resultingTripRequest = await retryPromise(() => updateTripRequest(transformedData), { retries: 2, delayMs: 300, jitter: true });
       } else {
         resultingTripRequest = await retryPromise(() => createTripRequest(transformedData), { retries: 2, delayMs: 300, jitter: true });
+        if (import.meta.env.DEV) console.log('[TEST] Created trip request id:', (resultingTripRequest as any)?.id);
         
         // INTELLIGENT FLIGHT SEARCH TRIGGER for new trips
         try {
@@ -335,7 +340,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
           
         } catch (searchError) {
           // Don't block navigation if search fails - user can retry on offers page
-          console.warn('Flight search failed during form submission:', searchError);
+          if (import.meta.env.DEV) console.warn('Flight search failed during form submission:', searchError);
           toast({
             title: "Search in progress",
             description: "Flight search will continue on the next page.",
@@ -494,6 +499,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
                       onSubmit={form.handleSubmit(handleStepSubmit, (errors) => {
                         const keys = Object.keys(errors || {});
                         if (keys.length > 0) {
+                          if (import.meta.env.DEV) console.log('[TEST] submit error keys:', keys);
                           // Focus the first invalid field
                           form.setFocus(keys[0] as any);
                           setErrorSummary(`There ${keys.length === 1 ? 'is 1 error' : `are ${keys.length} errors`} in the form. Please review the highlighted fields.`);
@@ -533,7 +539,7 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
                   {/* Trip Basics - Destination & Origin */}
                   <div className="space-y-6 mb-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <EnhancedDestinationSection control={form.control} watch={form.watch} />
+<EnhancedDestinationSection control={form.control} />
                       <DepartureAirportsSection control={form.control} />
                     </div>
                   </div>
