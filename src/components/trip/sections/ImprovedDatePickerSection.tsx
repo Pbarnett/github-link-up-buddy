@@ -77,6 +77,18 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
                     />
                   </PopoverContent>
                 </Popover>
+                {/* Test-only hidden input to allow programmatic date setting in integration tests */}
+                <input
+                  type="date"
+                  data-testid="earliest-departure-input"
+                  aria-hidden="true"
+                  style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+                  value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
+                  onChange={(e) => {
+                    const v = e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined;
+                    field.onChange(v);
+                  }}
+                />
                 <FormMessage />
               </FormItem>
             )}
@@ -122,6 +134,18 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
                     />
                   </PopoverContent>
                 </Popover>
+                {/* Test-only hidden input to allow programmatic date setting in integration tests */}
+                <input
+                  type="date"
+                  data-testid="latest-departure-input"
+                  aria-hidden="true"
+                  style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+                  value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
+                  onChange={(e) => {
+                    const v = e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined;
+                    field.onChange(v);
+                  }}
+                />
                 <FormMessage />
               </FormItem>
             )}
