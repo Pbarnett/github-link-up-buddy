@@ -3,7 +3,13 @@ export type SubmitEventType = 'submit_attempt' | 'submit_success' | 'submit_fail
 export interface SubmitEventPayload {
   form: 'TripRequestForm';
   mode: 'manual' | 'auto';
+  // Optional fields for richer analytics
   errorType?: 'validation' | 'transport' | 'service' | 'unknown';
+  durationMs?: number;
+  validationErrorCount?: number;
+  destinationType?: 'airport' | 'custom' | 'unknown';
+  autoBookEnabled?: boolean;
+  tripId?: string;
 }
 
 let emitter: ((type: SubmitEventType, payload: SubmitEventPayload) => void) | null = null;
