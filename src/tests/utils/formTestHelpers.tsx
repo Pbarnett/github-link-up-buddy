@@ -233,6 +233,7 @@ export const setDatesWithMockedCalendar = async () => {
 
     // Click a simple mocked select-date button within the scoped calendar
     const selectButtons1 = calendarScope1.getAllByTestId('select-date-button');
+    // Choose "tomorrow" for earliest
     await userEvent.click(selectButtons1[0]);
 
     // Open latest date picker (updated label in new UI)
@@ -250,7 +251,8 @@ export const setDatesWithMockedCalendar = async () => {
 
     // Select date for second picker within the scoped calendar
     const selectButtons2 = calendarScope2.getAllByTestId('select-date-button');
-    await userEvent.click(selectButtons2[0]);
+    // Choose "next week" for latest (index 1)
+    await userEvent.click(selectButtons2[1]);
     
   } catch (error) {
     console.warn('Mocked calendar interaction failed:', error);

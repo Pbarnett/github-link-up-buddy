@@ -22,25 +22,65 @@ Object.defineProperty(import.meta, 'env', {
 
 // Provide a simple, test-friendly calendar mock available to all tests
 vi.mock('react-day-picker', () => ({
-  DayPicker: ({ onSelect }: any) => (
-    React.createElement('div', { 'data-testid': 'mock-calendar', role: 'grid' },
-      React.createElement('button', {
-        'data-testid': 'select-date-button',
-        onClick: () => onSelect && onSelect(new Date())
-      }, 'Select Date')
+  DayPicker: ({ onSelect }: any) => {
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(today.getDate() + 1)
+    const nextWeek = new Date(today)
+    nextWeek.setDate(today.getDate() + 7)
+
+    return React.createElement(
+      'div',
+      { 'data-testid': 'mock-calendar', role: 'grid' },
+      React.createElement(
+        'button',
+        {
+          'data-testid': 'select-date-button',
+          onClick: () => onSelect && onSelect(tomorrow),
+        },
+        'Select Tomorrow',
+      ),
+      React.createElement(
+        'button',
+        {
+          'data-testid': 'select-date-button',
+          onClick: () => onSelect && onSelect(nextWeek),
+        },
+        'Select Next Week',
+      ),
     )
-  ),
+  },
 }))
 
 vi.mock('@/components/ui/calendar', () => ({
-  Calendar: ({ onSelect }: any) => (
-    React.createElement('div', { 'data-testid': 'mock-calendar', role: 'grid' },
-      React.createElement('button', {
-        'data-testid': 'select-date-button',
-        onClick: () => onSelect && onSelect(new Date())
-      }, 'Select Date')
+  Calendar: ({ onSelect }: any) => {
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(today.getDate() + 1)
+    const nextWeek = new Date(today)
+    nextWeek.setDate(today.getDate() + 7)
+
+    return React.createElement(
+      'div',
+      { 'data-testid': 'mock-calendar', role: 'grid' },
+      React.createElement(
+        'button',
+        {
+          'data-testid': 'select-date-button',
+          onClick: () => onSelect && onSelect(tomorrow),
+        },
+        'Select Tomorrow',
+      ),
+      React.createElement(
+        'button',
+        {
+          'data-testid': 'select-date-button',
+          onClick: () => onSelect && onSelect(nextWeek),
+        },
+        'Select Next Week',
+      ),
     )
-  ),
+  },
 }))
 
 // ==============================================================================

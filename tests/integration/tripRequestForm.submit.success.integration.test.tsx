@@ -56,6 +56,19 @@ vi.mock('@/services/api/flightSearchApi', () => ({
   }),
 }));
 
+// Provide a lightweight repository mock so submission doesn't depend on Supabase chain shape
+const createTripRequestMock = vi.fn().mockResolvedValue({ id: 'new-trip-id', auto_book_enabled: false });
+vi.mock('@/lib/repositories', async () => {
+  const actual = await vi.importActual<any>('@/lib/repositories');
+  return {
+    ...actual,
+    TripRequestRepository: vi.fn().mockImplementation(() => ({
+      createTripRequest: createTripRequestMock,
+      updateTripRequest: vi.fn(),
+    })),
+  };
+});
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<any>('react-router-dom');
   return {
