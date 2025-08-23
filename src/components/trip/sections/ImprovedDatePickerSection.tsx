@@ -84,9 +84,10 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
                   data-testid="earliest-departure-input"
                   aria-hidden="true"
                   style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
-                  value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
+value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
                   onChange={(e) => {
-                    const v = e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined;
+                    // Use midday local time to avoid edge cases with "now" checks in tests
+                    const v = e.target.value ? new Date(`${e.target.value}T12:00:00`) : undefined;
                     field.onChange(v);
                   }}
                 />
@@ -142,8 +143,9 @@ const ImprovedDatePickerSection = ({ control }: ImprovedDatePickerSectionProps) 
                   aria-hidden="true"
                   style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
                   value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
-                  onChange={(e) => {
-                    const v = e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined;
+onChange={(e) => {
+                    // Use midday local time to avoid edge cases with "now" checks in tests
+                    const v = e.target.value ? new Date(`${e.target.value}T12:00:00`) : undefined;
                     field.onChange(v);
                   }}
                 />
