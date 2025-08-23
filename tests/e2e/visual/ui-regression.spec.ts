@@ -1,17 +1,42 @@
 import { test, expect } from '@playwright/test';
 
-test.describe.skip('Visual Regression Tests', () => {
-  // TODO(e2e-refresh): Establish new snapshots after route/selector updates. Keep skipped to avoid noisy failures.
+test.describe('Visual Regression Tests', () => {
+  // Establish stable environment: viewport and API stubs
   test.beforeEach(async ({ page }) => {
     // Set consistent viewport for visual tests
     await page.setViewportSize({ width: 1280, height: 720 });
+
+    // Stub business rules config to avoid backend dependency during preview
+    await page.route('**/api/business-rules/config**', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          flightSearch: {
+            minPriceUSD: 100,
+            maxPriceUSD: 2000,
+            defaultNonstopRequired: false
+          },
+          autoBooking: { enabled: false }
+        })
+      });
+    });
+
+    // Fallback stub for any remaining API calls
+    await page.route('**/api/**', async route => {
+      try {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+      } catch {
+        await route.continue();
+      }
+    });
   });
 
   test('trip request form visual comparison', async ({ page }) => {
-    await page.goto('/trip-request');
+    await page.goto('/trip/new');
     
     // Wait for form to be fully loaded
-    await page.waitForSelector('[data-testid="trip-request-form"], form', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="primary-submit-button"], form', { timeout: 15000 });
     await page.waitForLoadState('networkidle');
     
     // Hide dynamic elements that change between runs
@@ -80,8 +105,8 @@ test.describe.skip('Visual Regression Tests', () => {
     
     // Test mobile trip request if accessible
     try {
-      await page.goto('/trip-request');
-      await page.waitForSelector('form', { timeout: 5000 });
+      await page.goto('/trip/new');
+      await page.waitForSelector('[data-testid="primary-submit-button"], form', { timeout: 10000 });
       
       await expect(page).toHaveScreenshot('trip-request-mobile.png', {
         fullPage: true,
@@ -94,8 +119,8 @@ test.describe.skip('Visual Regression Tests', () => {
   });
 
   test('component states visual comparison', async ({ page }) => {
-    await page.goto('/trip-request');
-    await page.waitForSelector('form');
+    await page.goto('/trip/new');
+    await page.waitForSelector('[data-testid="primary-submit-button"], form', { timeout: 15000 });
     
     // Test form component in different states
     
@@ -106,19 +131,23 @@ test.describe.skip('Visual Regression Tests', () => {
     });
     
     // 2. Partially filled state
-    const originInput = page.locator('input[placeholder*="From"], input[aria-label*="origin"]').first();
-    if (await originInput.isVisible()) {
-      await originInput.fill('Los Angeles');
-      await page.keyboard.press('Tab');
-      
-      await expect(page.locator('form')).toHaveScreenshot('form-partial-state.png', {
-        threshold: 0.2,
-        animations: 'disabled'
-      });
+    // Fill minimal fields if available (custom destination + other departure)
+    const customDestination = page.getByLabel('Custom Destination').or(page.getByPlaceholder('Enter airport code (e.g., LAX)')).first();
+    const otherDeparture = page.getByPlaceholder('e.g., BOS').first();
+    if (await customDestination.isVisible()) {
+      await customDestination.fill('LAX');
+    }
+    if (await otherDeparture.isVisible()) {
+      await otherDeparture.fill('JFK');
     }
     
+    await expect(page.locator('form')).toHaveScreenshot('form-partial-state.png', {
+      threshold: 0.2,
+      animations: 'disabled'
+    });
+    
     // 3. Test error states (if validation exists)
-    const submitButton = page.locator('button[type="submit"], button:has-text("Search")').first();
+    const submitButton = page.getByTestId('primary-submit-button').or(page.locator('button[type="submit"], button:has-text("Search")')).first();
     if (await submitButton.isVisible()) {
       await submitButton.click();
       await page.waitForTimeout(1000); // Wait for potential validation
@@ -135,8 +164,8 @@ test.describe.skip('Visual Regression Tests', () => {
   });
 
   test('loading states visual comparison', async ({ page }) => {
-    await page.goto('/trip-request');
-    await page.waitForSelector('form');
+    await page.goto('/trip/new');
+    await page.waitForSelector('[data-testid="primary-submit-button"], form', { timeout: 15000 });
     
     // Mock slow API response to capture loading state
     await page.route('**/flight-search**', async route => {
@@ -146,13 +175,13 @@ test.describe.skip('Visual Regression Tests', () => {
     });
     
     // Fill form and submit to trigger loading
-    const originInput = page.locator('input[placeholder*="From"]').first();
-    const destInput = page.locator('input[placeholder*="To"]').first();
-    const submitButton = page.locator('button[type="submit"]').first();
+    const customDestination = page.getByLabel('Custom Destination').or(page.getByPlaceholder('Enter airport code (e.g., LAX)')).first();
+    const otherDeparture = page.getByPlaceholder('e.g., BOS').first();
+    const submitButton = page.getByTestId('primary-submit-button').or(page.locator('button[type="submit"]').first());
     
-    if (await originInput.isVisible() && await destInput.isVisible() && await submitButton.isVisible()) {
-      await originInput.fill('LAX');
-      await destInput.fill('JFK');
+    if (await customDestination.isVisible() && await otherDeparture.isVisible() && await submitButton.isVisible()) {
+      await customDestination.fill('LAX');
+      await otherDeparture.fill('JFK');
       
       // Submit and quickly capture loading state
       await submitButton.click();

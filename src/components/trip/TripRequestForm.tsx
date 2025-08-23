@@ -266,6 +266,16 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
     });
   };
 
+  const submitAttemptStartRef = useRef<number | null>(null);
+
+  const getDestinationType = (vals: { destination_airport?: string; destination_other?: string }): 'airport' | 'custom' | 'unknown' => {
+    const iata = (vals.destination_airport || '').trim();
+    const other = (vals.destination_other || '').trim();
+    if (iata && iata.length === 3 && iata.toUpperCase() === iata) return 'airport';
+    if (other) return 'custom';
+    return 'unknown';
+  };
+
   const handleStepSubmit = async (data: FormValues) => {
     // For auto mode step 1, use the new continue handler
     if (mode === 'auto' && currentStep === 1) {
@@ -278,7 +288,13 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
   };
 
   const onSubmit = async (data: FormValues) => {
-    emitSubmitEvent('submit_attempt', { form: 'TripRequestForm', mode });
+    submitAttemptStartRef.current = (performance?.now?.() ?? Date.now());
+    emitSubmitEvent('submit_attempt', {
+      form: 'TripRequestForm',
+      mode,
+      destinationType: getDestinationType(data),
+      autoBookEnabled: !!data.auto_book_enabled,
+    });
     setIsSubmitting(true);
     try {
       // Cancel any previous in-flight submit
@@ -344,7 +360,14 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       }
       
       navigateToConfirmation(resultingTripRequest);
-      emitSubmitEvent('submit_success', { form: 'TripRequestForm', mode });
+      emitSubmitEvent('submit_success', {
+        form: 'TripRequestForm',
+        mode,
+        durationMs: submitAttemptStartRef.current ? ((performance?.now?.() ?? Date.now()) - submitAttemptStartRef.current) : undefined,
+        destinationType: getDestinationType(data),
+        autoBookEnabled: !!transformedData.auto_book_enabled,
+        tripId: resultingTripRequest.id,
+      });
       
     } catch (error) {
       const errorResponse = handleError(error, {
@@ -368,7 +391,14 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
       const errType = error instanceof ValidationError
         ? 'validation'
         : (errorResponse?.code ? 'service' : 'unknown');
-      emitSubmitEvent('submit_failure', { form: 'TripRequestForm', mode, errorType: errType as any });
+      emitSubmitEvent('submit_failure', {
+        form: 'TripRequestForm',
+        mode,
+        errorType: errType as any,
+        durationMs: submitAttemptStartRef.current ? ((performance?.now?.() ?? Date.now()) - submitAttemptStartRef.current) : undefined,
+        destinationType: getDestinationType(form.getValues() as any),
+        autoBookEnabled: !!form.getValues('auto_book_enabled'),
+      });
     } finally {
       try { submitAbortRef.current?.abort(); } catch {}
       submitAbortRef.current = null;
@@ -497,6 +527,18 @@ const LegacyTripRequestForm = ({ tripRequestId, mode = 'manual' }: TripRequestFo
                           // Focus the first invalid field
                           form.setFocus(keys[0] as any);
                           setErrorSummary(`There ${keys.length === 1 ? 'is 1 error' : `are ${keys.length} errors`} in the form. Please review the highlighted fields.`);
+                          // Emit validation failure analytics
+                          try {
+                            emitSubmitEvent('submit_failure', {
+                              form: 'TripRequestForm',
+                              mode,
+                              errorType: 'validation',
+                              validationErrorCount: keys.length,
+                              durationMs: submitAttemptStartRef.current ? ((performance?.now?.() ?? Date.now()) - submitAttemptStartRef.current) : undefined,
+                              destinationType: getDestinationType(form.getValues() as any),
+                              autoBookEnabled: !!form.getValues('auto_book_enabled'),
+                            });
+                          } catch {}
                         }
                       })}
                       className="space-y-6"
